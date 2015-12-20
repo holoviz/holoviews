@@ -227,6 +227,7 @@ class SelectionWidget(NdWidget):
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
             next_dim = ''
+            visible = False
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
@@ -263,10 +264,11 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
+                visible = len(dim_vals) > 1
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = repr([v for v in dim_vals if v is not None])
             dim_str = safe_unicode(dim.name)
-            visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
+            visibility = 'visibility: visible' if visible else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
