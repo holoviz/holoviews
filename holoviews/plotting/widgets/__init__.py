@@ -227,7 +227,7 @@ class SelectionWidget(NdWidget):
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
             next_dim = ''
-            visible = False
+            visible = True
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
