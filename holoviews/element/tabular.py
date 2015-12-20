@@ -196,7 +196,7 @@ class TableConversion(object):
         if vdims is None:
             vdims = self._table.vdims
         if mdims is None:
-            mdims = [d for d in self._table.kdims if d not in kdims]
+            mdims = [d for d in self._table.kdims if d not in kdims+vdims]
         if vdims and not isinstance(vdims, list): vdims = [vdims]
 
         selected = self._table.reindex(mdims+kdims, vdims)
