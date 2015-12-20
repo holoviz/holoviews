@@ -9,11 +9,12 @@ from matplotlib.collections import LineCollection
 import param
 
 from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec, unique_iterator
+from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
+from .plot import AdjoinedPlot
 
 
 class ChartPlot(ElementPlot):
@@ -417,24 +418,16 @@ class HistogramPlot(ChartPlot):
 
 
 
-class SideHistogramPlot(HistogramPlot):
+class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
-    aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on SideHistogramPlot should be determined by the
-        AdjointLayoutPlot.""")
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
 
     offset = param.Number(default=0.2, bounds=(0,1), doc="""
         Histogram value offset for a colorbar.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Whether to overlay a grid on the axis.""")
-
-    show_title = param.Boolean(default=False, doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""")
-
-    show_xlabel = param.Boolean(default=False, doc="""
-        Whether to show the x-label of the plot. Disabled by default
-        because plots are often too cramped to fit the title correctly.""")
 
     def _process_hist(self, hist):
         """
@@ -862,18 +855,22 @@ class BarPlot(LegendPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
+        self.handles['artist'], self.handles['xticks'], xlabel = self._create_bars(axis, element)
+        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'], xlabel=xlabel, ylabel=str(vdim))
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        super(BarPlot, self)._finalize_ticks(axis, element, [ticks, labels], yticks, zticks)
-        for t, y in zip(axis.get_xticklabels(), yalignments):
-            t.set_y(y)
+        yalignments = None
+        if xticks is not None:
+            ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
+            xticks = [ticks, labels]
+        super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
+        if yalignments:
+            for t, y in zip(axis.get_xticklabels(), yalignments):
+                t.set_y(y)
 
 
     def _create_bars(self, axis, element):
@@ -948,6 +945,7 @@ class BarPlot(LegendPlot):
                     labels.append(label)
         title = [str(element.kdims[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
+
         if self.show_legend and any(len(l) for l in labels):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
@@ -967,13 +965,14 @@ class BarPlot(LegendPlot):
                 prev = 0
                 for s in self.values['stack']:
                     if s is not None: val_key[si] = s
-                    bar = self.handles['bars'].get(tuple(val_key))
+                    bar = self.handles['artist'].get(tuple(val_key))
                     if bar:
-                        height = element.get(tuple(val_key), np.NaN)
-                        height = height if np.isscalar(height) else height[0]
+                        vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                        height = float(vals[0]) if len(vals) else np.NaN
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+        return {'xticks': self.handles['xticks']}
 
 
 class SpikesPlot(PathPlot):
@@ -1049,23 +1048,19 @@ class SpikesPlot(PathPlot):
             artist.set_array(array)
 
 
-class SideSpikesPlot(SpikesPlot):
-
-    aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on SideHistogramPlot should be determined by the
-        AdjointLayoutPlot.""")
+class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
 
     bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
         Make plot background invisible.""")
 
-    show_title = param.Boolean(default=False, doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""")
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
 
-    show_frame = param.Boolean(default=False)
+    subplot_size = param.Number(default=0.1, doc="""
+        The size subplots as expressed as a fraction of the main plot.""")
 
-    show_xlabel = param.Boolean(default=False, doc="""
-        Whether to show the x-label of the plot. Disabled by default
-        because plots are often too cramped to fit the title correctly.""")
+    spike_length = param.Number(default=1, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
 
     xaxis = param.ObjectSelector(default='bare',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
@@ -1081,3 +1076,91 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
+
+
+class BoxPlot(ChartPlot):
+    """
+    BoxPlot plots the ErrorBar Element type and supporting
+    both horizontal and vertical error bars via the 'horizontal'
+    plot option.
+    """
+
+    style_opts = ['notch', 'sym', 'whis', 'bootstrap',
+                  'conf_intervals', 'widths', 'showmeans',
+                  'show_caps', 'showfliers', 'boxprops',
+                  'whiskerprops', 'capprops', 'flierprops',
+                  'medianprops', 'meanprops', 'meanline']
+
+    def get_extents(self, element, ranges):
+        return (np.NaN,)*4
+
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        xlabel = ','.join([str(d) for d in element.kdims])
+        ylabel = str(element.vdims[0])
+
+        self.handles['artist'] = self.get_artist(element, axis)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel,
+                                   ylabel=ylabel)
+
+    def get_artist(self, element, axis):
+        dims = element.dimensions()
+        groups = element.groupby(element.kdims)
+
+        data, labels = [], []
+
+        groups = groups.data.items() if element.kdims else [(element.label, element)]
+        for key, group in groups:
+            if element.kdims:
+                key = [k if isinstance(k, basestring) else str(k) for k in key]
+                label = ','.join([safe_unicode(d.pprint_value(v))
+                                  for d, v in zip(element.kdims, key)])
+            else:
+                label = key
+            data.append(group[group.vdims[0]])
+            labels.append(label)
+        return axis.boxplot(data, labels=labels, vert=not self.invert_axes,
+                            **self.style[self.cyclic_index])
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        for k, group in self.handles['artist'].items():
+            for v in group:
+                v.remove()
+        self.handles['artist'] = self.get_artist(element, axis)
+
+
+
+class SideBoxPlot(AdjoinedPlot, BoxPlot):
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                 objects=['left', 'right', 'bare', 'left-bare',
+                                          'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    def __init__(self, *args, **kwargs):
+        super(SideBoxPlot, self).__init__(*args, **kwargs)
+        if self.adjoined:
+            self.invert_axes = not self.invert_axes

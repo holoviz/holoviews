@@ -1,11 +1,12 @@
 import numpy as np
-from bokeh.models import Circle
+from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
+from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...core import Dimension
 from ...core.util import max_range
 from ...element import Chart, Raster, Points, Polygons, Spikes
-from ..util import compute_sizes, get_sideplot_ranges
+from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import map_colors, get_cmap, mpl_to_bokeh
@@ -311,3 +312,172 @@ class SideSpikesPlot(SpikesPlot):
     height = param.Integer(default=80, doc="Height of plot")
 
     width = param.Integer(default=80, doc="Width of plot")
+
+
+
+class ChartPlot(ElementPlot):
+    """
+    ChartPlot creates and updates Bokeh high-level Chart instances.
+    The current implementation requires creating a new Chart for each
+    frame and updating the existing Chart. Once Bokeh supports updating
+    Charts directly this workaround will no longer be required.
+    """
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        """
+        Initializes a new plot object with the last available frame.
+        """
+        # Get element key and ranges for frame
+        element = self.hmap.last
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
+
+        # Initialize plot, source and glyph
+        if plot is not None:
+            raise Exception("Can't overlay Bokeh Charts based plot properties")
+
+        init_element = element.clone(element.interface.concat(self.hmap.values()))
+        properties = self.style[self.cyclic_index]
+        plot = self._init_chart(init_element, ranges)
+
+        self.handles['plot'] = plot
+        self.handles['glyph_renderers'] = [r for r in plot.renderers
+                                           if isinstance(r, GlyphRenderer)]
+        self._update_chart(key, element, ranges)
+
+        # Update plot, source and glyph
+        self.drawn = True
+
+        return plot
+
+
+    def update_frame(self, key, ranges=None, plot=None, element=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+        element = self._get_frame(key)
+        if not element:
+            if self.dynamic and self.overlaid:
+                self.current_key = key
+                element = self.current_frame
+            else:
+                element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        self.style = self.lookup_options(element, 'style')
+        self.set_param(**self.lookup_options(element, 'plot').options)
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        self.current_ranges = ranges
+
+        self._update_chart(key, element, ranges)
+
+
+    def _update_chart(self, key, element, ranges):
+        new_chart = self._init_chart(element, ranges)
+        old_chart = self.handles['plot']
+        old_renderers = old_chart.select(type=GlyphRenderer)
+        new_renderers = new_chart.select(type=GlyphRenderer)
+
+        old_chart.y_range.update(**new_chart.y_range.properties_with_values())
+        updated = []
+        for new_r in new_renderers:
+            for old_r in old_renderers:
+                if type(old_r.glyph) == type(new_r.glyph):
+                    old_renderers.pop(old_renderers.index(old_r))
+                    new_props = new_r.properties_with_values()
+                    source = new_props.pop('data_source')
+                    old_r.glyph.update(**new_r.glyph.properties_with_values())
+                    old_r.update(**new_props)
+                    old_r.data_source.data.update(source.data)
+                    updated.append(old_r)
+                    break
+
+        for old_r in old_renderers:
+            if old_r not in updated:
+                emptied = {k: [] for k in old_r.data_source.data}
+                old_r.data_source.data.update(emptied)
+
+        properties = self._plot_properties(key, old_chart, element)
+        old_chart.update(**properties)
+
+
+    @property
+    def current_handles(self):
+        plot = self.handles['plot']
+        sources = plot.select(type=ColumnDataSource)
+        return sources
+
+
+class BoxPlot(ChartPlot):
+    """
+    BoxPlot generates a box and whisker plot from a BoxWhisker
+    Element. This allows plotting the median, mean and various
+    percentiles. Displaying outliers is currently not supported
+    as they cannot be consistently updated.
+    """
+
+    style_opts = ['color', 'whisker_color'] + line_properties
+
+    def _init_chart(self, element, ranges):
+        properties = self.style[self.cyclic_index]
+        dframe = element.dframe()
+        label = element.dimensions('key', True)
+        if len(element.dimensions()) == 1:
+            dframe[''] = ''
+            label = ['']
+        plot = BokehBoxPlot(dframe, label=label,
+                            values=element.dimensions('value', True)[0],
+                            **properties)
+
+        # Disable outliers for now as they cannot be consistently updated.
+        plot.renderers = [r for r in plot.renderers
+                          if not (isinstance(r, GlyphRenderer) and
+                                  isinstance(r.glyph, Circle))]
+        return plot
+
+
+class BarPlot(ChartPlot):
+    """
+    BarPlot allows generating single- or multi-category
+    bar Charts, by selecting which key dimensions are
+    mapped onto separate groups, categories and stacks.
+    """
+
+    group_index = param.Integer(default=0, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will be laid out into groups.""")
+
+    category_index = param.Integer(default=1, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will be laid out into categories.""")
+
+    stack_index = param.Integer(default=2, doc="""
+       Index of the dimension in the supplied Bars
+       Element, which will stacked.""")
+
+    style_opts = ['bar_width', 'max_height', 'color', 'fill_alpha']
+
+    def _init_chart(self, element, ranges):
+        kdims = element.dimensions('key', True)
+        vdim = element.dimensions('value', True)[0]
+
+        kwargs = self.style[self.cyclic_index]
+        if self.group_index < element.ndims:
+            kwargs['label'] = kdims[self.group_index]
+        if self.category_index < element.ndims:
+            kwargs['group'] = kdims[self.category_index]
+        if self.stack_index < element.ndims:
+            kwargs['stack'] = kdims[self.stack_index]
+        crange = Range1d(*ranges.get(vdim))
+        plot = Bar(element.dframe(), values=vdim,
+                   continuous_range=crange, **kwargs)
+        return plot
+

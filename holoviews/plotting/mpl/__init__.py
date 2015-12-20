@@ -108,7 +108,8 @@ Store.register({Curve: CurvePlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
-                Spikes: SpikesPlot,
+		Spikes: SpikesPlot,
+                BoxWhisker: BoxPlot,
 
                 # General plots
                 GridSpace: GridPlot,
@@ -159,7 +160,8 @@ Store.register({Curve: CurvePlot,
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           GridSpace: GridPlot,
-                          Spikes: SideSpikesPlot})
+                          Spikes: SideSpikesPlot,
+                          BoxWhisker: SideBoxPlot})
 
 options = Store.options(backend='matplotlib')
 
@@ -178,6 +180,8 @@ options.Scatter3D = Options('style', facecolors=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Spikes = Options('style', color='black')
+options.BoxWhisker = Options('style', boxprops=dict(color='k'),
+                             whiskerprops=dict(color='k'))
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')

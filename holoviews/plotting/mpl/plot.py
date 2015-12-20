@@ -573,33 +573,17 @@ class AdjointLayoutPlot(CompositePlot):
     match the number of rows and columns as part of a larger grid.
     """
 
-    layout_dict = {'Single':          {'width_ratios': [4],
-                                       'height_ratios': [4],
-                                       'positions': ['main']},
-                   'Dual':            {'width_ratios': [4, 1],
-                                       'height_ratios': [4],
-                                       'positions': ['main', 'right']},
-                   'Triple':          {'width_ratios': [4, 1],
-                                       'height_ratios': [1, 4],
-                                       'positions': ['top',   None,
-                                                     'main', 'right']},
-                   'Embedded Dual':   {'width_ratios': [4],
-                                       'height_ratios': [1, 4],
-                                       'positions': [None, 'main']}}
-
-    border_size = param.Number(default=0.25, doc="""
-        The size of the border expressed as a fraction of the main plot.""")
-
-    subplot_size = param.Number(default=0.25, doc="""
-        The size subplots as expressed as a fraction of the main plot.""")
-
+    layout_dict = {'Single': ['main'],
+                   'Dual': ['main', 'right'],
+                   'Triple': ['top', None, 'main', 'right'],
+                   'Embedded Dual': [None, 'main']}
 
     def __init__(self, layout, layout_type, subaxes, subplots, **params):
         # The AdjointLayout ViewableElement object
         self.layout = layout
         # Type may be set to 'Embedded Dual' by a call it grid_situate
         self.layout_type = layout_type
-        self.view_positions = self.layout_dict[self.layout_type]['positions']
+        self.view_positions = self.layout_dict[self.layout_type]
 
         # The supplied (axes, view) objects as indexed by position
         self.subaxes = {pos: ax for ax, pos in zip(subaxes, self.view_positions)}
@@ -649,17 +633,17 @@ class AdjointLayoutPlot(CompositePlot):
         if right:
             ax = self.subaxes['right']
             subplot = self.subplots['right']
-            ax.set_position([bbox.x1 + bbox.width * self.border_size,
+            ax.set_position([bbox.x1 + bbox.width * subplot.border_size,
                              bbox.y0,
-                             bbox.width * self.subplot_size, bbox.height])
+                             bbox.width * subplot.subplot_size, bbox.height])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
         if top:
             ax = self.subaxes['top']
             subplot = self.subplots['top']
             ax.set_position([bbox.x0,
-                             bbox.y1 + bbox.height * self.border_size,
-                             bbox.width, bbox.height * self.subplot_size])
+                             bbox.y1 + bbox.height * subplot.border_size,
+                             bbox.width, bbox.height * subplot.subplot_size])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
 
@@ -738,7 +722,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Compute shape of AdjointLayout element
             layout_lens = {1:'Single', 2:'Dual', 3:'Triple'}
             layout_type = layout_lens[len(layout_view)]
-            hidx = 0
 
             # Get aspects
             main = layout_view.main
@@ -749,21 +732,40 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
                 main_aspect = 1
-            if layout_type == 'Triple':
-                row_aspect = [0.25, 1./main_aspect]
-            else:
-                row_aspect = [1./main_aspect, 0]
+
             if layout_type in ['Dual', 'Triple']:
-                col_aspect = [main_aspect, 0.25]
+                el = layout_view.get('right', None)
+                eltype = type(el)
+                if el and eltype in MPLPlot.sideplots:
+                    plot_type = MPLPlot.sideplots[type(el)]
+                    ratio = plot_type.border_size + plot_type.subplot_size
+                    width_ratios = [4, 4*ratio]
+                else:
+                    width_ratios = [4, 1]
+                col_aspect = [main_aspect, 1/(4/width_ratios[1])]
             else:
+                width_ratios = [4]
                 col_aspect = [main_aspect, 0]
 
-            # Compute width and height ratios
-            width_ratios = AdjointLayoutPlot.layout_dict[layout_type]['width_ratios'][:]
-            height_ratios = AdjointLayoutPlot.layout_dict[layout_type]['height_ratios'][:]
+            if layout_type in ['Embedded Dual', 'Triple']:
+                el = layout_view.get('top', None)
+                eltype = type(el)
+                if el and eltype in MPLPlot.sideplots:
+                    plot_type = MPLPlot.sideplots[type(el)]
+                    ratio = plot_type.border_size + plot_type.subplot_size
+                    height_ratios = [4*ratio, 4]
+                else:
+                    height_ratios = [1, 4]
+                row_aspect = [1/(4/height_ratios[0]), 1./main_aspect]
+                hidx = 1
+            else:
+                height_ratios = [4]
+                row_aspect = [0, 1./main_aspect]
+                hidx = 0
+
             if not isinstance(main_aspect, (basestring, type(None))):
                 width_ratios[0] = (width_ratios[0] * main_aspect)
-                height_ratios[0] = (height_ratios[hidx] * 1./main_aspect)
+                height_ratios[-1] = (height_ratios[-1] * 1./main_aspect)
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
@@ -772,7 +774,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
                 row_heightratios[r] = [layout_shape[1], height_ratios]
             if height_ratios[hidx] > row_heightratios[r][1][hidx]:
-                row_heightratios[r][1][hidx] = height_ratios[hidx]
+                row_heightratios[r][1][-1] = height_ratios[hidx]
 
             if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
                 col_widthratios[c] = (layout_shape[0], width_ratios)
@@ -848,7 +850,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             # Get the AdjoinLayout at the specified coordinate
             view = layouts[(r, c)]
-            positions = AdjointLayoutPlot.layout_dict[layout_type]['positions']
+            positions = AdjointLayoutPlot.layout_dict[layout_type]
 
             # Create temporary subplots to get projections types
             # to create the correct subaxes for all plots in the layout
@@ -1037,3 +1039,29 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             subplot.initialize_plot(ranges=ranges)
 
         return self._finalize_axis(None)
+
+
+
+class AdjoinedPlot(DimensionedPlot):
+
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on SideHistogramPlot should be determined by the
+        AdjointLayoutPlot.""")
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    border_size = param.Number(default=0.25, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    show_frame = param.Boolean(default=False)
+
+    show_title = param.Boolean(default=False, doc="""
+        Titles should be disabled on all SidePlots to avoid clutter.""")
+
+    subplot_size = param.Number(default=0.25, doc="""
+        The size subplots as expressed as a fraction of the main plot.""")
+
+    show_xlabel = param.Boolean(default=False, doc="""
+        Whether to show the x-label of the plot. Disabled by default
+        because plots are often too cramped to fit the title correctly.""")
