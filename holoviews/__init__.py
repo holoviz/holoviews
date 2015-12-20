@@ -58,28 +58,25 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def help(obj, visualization=True, ansi=True, backend='matplotlib'):
+def help(obj, visualization=True, ansi=True, backend='matplotlib',
+         recursive=False, pattern=None):
     """
     Extended version of the built-in help that supports parameterized
-    functions and objects. If ansi is set to False, all ANSI color
+    functions and objects. A pattern (regular expression) may be used to
+    filter the output and if recursive is set to True, documentation for
+    the supplied object is shown. Note that the recursive option will
+    only work with an object instance and not a class.
+
+    If ansi is set to False, all ANSI color
     codes are stripped out.
     """
-    ansi_escape = re.compile(r'\x1b[^m]*m')
-    parameterized_object = isinstance(obj, param.Parameterized)
-    parameterized_class = (isinstance(obj,type)
-                           and  issubclass(obj,param.Parameterized))
+    info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
+                      recursive=recursive, pattern=pattern)
 
-    if parameterized_object or parameterized_class:
-        if Store.registry[backend].get(obj if parameterized_class else type(obj), False):
-            if visualization is False:
-                print("\nTo view the visualization options applicable to this object or class, use:\n\n"
-                      "   holoviews.help(obj, visualization=True)\n")
-            else:
-                Store.info(obj, ansi=ansi, backend=backend)
-                return
-        info = param.ipython.ParamPager()(obj)
-        if ansi is False:
-            info = ansi_escape.sub('', info)
-        print(info)
+    msg = ( "\nTo view the visualization options applicable to this "
+            "object or class, use:\n\n"
+            "   holoviews.help(obj, visualization=True)\n\n")
+    if info:
+        print((msg if visualization is False else '') + info)
     else:
         pydoc.help(obj)

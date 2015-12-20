@@ -858,12 +858,33 @@ class Store(object):
         return val
 
     @classmethod
-    def info(cls, obj, ansi=True, backend='matplotlib'):
+    def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
+             recursive=False, pattern=None):
         """
         Show information about a particular object or component class
-        including the applicable style and plot options.
+        including the applicable style and plot options. Returns None if
+        the object is not parameterized.
         """
-        print(InfoPrinter.info(obj, ansi=ansi, backend=backend))
+        parameterized_object = isinstance(obj, param.Parameterized)
+        parameterized_class = (isinstance(obj,type)
+                               and  issubclass(obj,param.Parameterized))
+        info = None
+        if parameterized_object or parameterized_class:
+            info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
+                                    visualization=visualization, pattern=pattern)
+
+        if parameterized_object and recursive:
+            hierarchy = obj.traverse(lambda x: type(x))
+            listed = []
+            for c in hierarchy[1:]:
+                if c not in listed:
+                    inner_info = InfoPrinter.info(c, ansi=ansi, backend=backend,
+                                                  visualization=visualization,
+                                                  pattern=pattern)
+                    black = '\x1b[1;30m%s\x1b[0m' if ansi else '%s'
+                    info +=  '\n\n' + (black % inner_info)
+                    listed.append(c)
+        return info
 
 
     @classmethod
