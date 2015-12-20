@@ -145,7 +145,7 @@ class BoxWhisker(Chart):
 
     group = param.String(default='BoxWhisker', constant=True)
 
-    kdims = param.List(default=[Dimension('x')], bounds=(0,None))
+    kdims = param.List(default=[], bounds=(0,None))
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
