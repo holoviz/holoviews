@@ -170,6 +170,10 @@ class notebook_extension(param.ParameterizedFunction):
             Store.renderers[r].load_nb()
 
 
+        if resources[-1] != 'holoviews':
+            get_ipython().magic(u"output backend=%r" % resources[-1])
+
+
     def _get_resources(self, args, params):
         """
         Finds the list of resources from the keyword parameters and pops
