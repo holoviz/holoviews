@@ -34,6 +34,7 @@ Store:
 """
 import pickle
 from contextlib import contextmanager
+from collections import OrderedDict
 
 import numpy as np
 
@@ -774,7 +775,7 @@ class Store(object):
     object.
     """
 
-    renderers = {} # The set of available Renderers across all backends.
+    renderers = OrderedDict() # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
