@@ -37,20 +37,17 @@ var BokehMethods = {
 		if (data !== undefined) {
 			if (data.root !== undefined) {
 				doc = Bokeh.index[data.root].model.document;
-				$.each(data, function(id, value) {
-					ds = doc.get_model_by_id(id);
-					if (ds != undefined) {
-						ds.set(value.data);
-					}
-				});
-			} else {
-				$.each(data, function(id, value) {
-					var ds = Bokeh.Collections(value.type).get(id);
-					if (ds != undefined) {
-						ds.set(value.data);
-					}
-				});
 			}
+			$.each(data.data, function(i, value) {
+				if (data.root !== undefined) {
+					ds = doc.get_model_by_id(value.id);
+				} else if {
+					var ds = Bokeh.Collections(value.type).get(value.id);
+				}
+				if (ds != undefined) {
+					ds.set(value.data);
+				}
+			});
 		}
 	},
 	dynamic_update : function(current){

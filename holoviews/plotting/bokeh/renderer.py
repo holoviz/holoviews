@@ -57,7 +57,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
-            data = OrderedDict()
+            data = dict(data=[])
             if not old_bokeh:
                 data['root'] = plot.state._id
             for plotobj in plotobjects:
@@ -65,8 +65,9 @@ class BokehRenderer(Renderer):
                     json = plotobj.vm_serialize(changed_only=True)
                 else:
                     json = plotobj.to_json(False)
-                data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
-                                           'data': json}
+                data['data'].append({'id': plotobj.ref['id'],
+                                     'type': plotobj.ref['type'],
+                                     'data': json})
             return serialize_json(data), info
 
 
