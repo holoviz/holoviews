@@ -155,12 +155,13 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
         cls.equality_type_funcs[Spikes] =       cls.compare_spikes
+        cls.equality_type_funcs[BoxWhisker] =   cls.compare_boxwhisker
+        cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
         cls.equality_type_funcs[Table] =        cls.compare_tables
         cls.equality_type_funcs[Points] =       cls.compare_points
-        cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
         # Pandas DFrame objects
         cls.equality_type_funcs[DataFrameView] = cls.compare_dframe
@@ -503,6 +504,10 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_spikes(cls, el1, el2, msg='Spikes'):
+        cls.compare_columns(el1, el2, msg)
+
+    @classmethod
+    def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
         cls.compare_columns(el1, el2, msg)
 
     #=========#
