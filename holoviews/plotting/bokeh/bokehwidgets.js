@@ -73,14 +73,10 @@ var BokehMethods = {
 				this.update(current);
 			}
 		}
-		if(!(current in this.frames)) {
-			var kernel = IPython.notebook.kernel;
-			callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
-			var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-		} else {
-			this.update(current);
-		}
+		var kernel = IPython.notebook.kernel;
+		callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
+		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
 }
 
