@@ -47,7 +47,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
 
-    border = param.Number(default=2, doc="""
+    border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
