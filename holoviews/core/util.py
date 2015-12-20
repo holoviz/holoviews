@@ -9,6 +9,11 @@ import numpy as np
 import param
 
 try:
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
+
+try:
     import pandas as pd
 except ImportError:
     pd = None
@@ -707,6 +712,107 @@ def get_param_values(data):
     return params
 
 
+def get_ndmapping_label(ndmapping, attr):
+    """
+    Function to get the first non-auxiliary object
+    label attribute from an NdMapping.
+    """
+    label = None
+    els = itervalues(ndmapping.data)
+    while label is None:
+        el = next(els)
+        if not el._auxiliary_component:
+            label = getattr(el, attr)
+    if attr == 'group':
+        tp = type(el).__name__
+        if tp == label:
+            return None
+    return label
+
+
 def wrap_tuple(unwrapped):
     """ Wraps any non-tuple types in a tuple """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
+
+
+def itervalues(obj):
+    "Get value iterator from dictionary for Python 2 and 3"
+    return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
+
+
+def iterkeys(obj):
+    "Get key iterator from dictionary for Python 2 and 3"
+    return iter(obj.keys()) if sys.version_info.major == 3 else obj.iterkeys()
+
+
+def get_unique_keys(ndmapping, dimensions):
+    inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
+    getter = operator.itemgetter(*inds)
+    return unique_iterator(getter(key) if len(inds) > 1 else (key[inds[0]],)
+                           for key in ndmapping.data.keys())
+
+
+def unpack_group(group, getter):
+    for k, v in group.iterrows():
+        obj = v.values[0]
+        key = getter(k)
+        if hasattr(obj, 'kdims'):
+            yield (key, obj)
+        else:
+            obj = tuple(v)
+            yield (wrap_tuple(key), obj)
+
+
+
+
+class ndmapping_groupby(param.ParameterizedFunction):
+    """
+    Apply a groupby operation to an NdMapping, using pandas to improve
+    performance (if available).
+    """
+
+    def __call__(self, ndmapping, dimensions, container_type,
+                 group_type, sort=False, **kwargs):
+        try:
+            import pandas
+            groupby = self.groupby_pandas
+        except:
+            groupby = self.groupby_python
+        return groupby(ndmapping, dimensions, container_type,
+                       group_type, sort=sort, **kwargs)
+
+    @param.parameterized.bothmethod
+    def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
+        if 'kdims' in kwargs:
+            idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
+        else:
+            idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+
+        all_dims = [d.name for d in ndmapping.kdims]
+        inds = [ndmapping.get_dimension_index(dim) for dim in idims]
+        getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+
+        multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
+        df = pd.DataFrame(ndmapping.values(), index=multi_index)
+
+        kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
+        groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+                   for k, group in df.groupby(level=[d.name for d in dimensions]))
+
+        if sort:
+            selects = list(get_unique_keys(ndmapping, dimensions))
+            groups = sorted(groups, key=lambda x: selects.index(x[0]))
+        return container_type(groups, kdims=dimensions)
+
+    @param.parameterized.bothmethod
+    def groupby_python(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
+        idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+        dim_names = [dim.name for dim in dimensions]
+        selects = get_unique_keys(ndmapping, dimensions)
+        selects = group_select(list(selects))
+        groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
+                                  else [((), (v,))]), **kwargs))
+                  for k, v in iterative_select(ndmapping, dim_names, selects)]
+        return container_type(groups, kdims=dimensions)

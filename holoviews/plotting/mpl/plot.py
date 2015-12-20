@@ -988,11 +988,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 if not isinstance(view, GridSpace):
                     override_opts = dict(aspect='square')
             elif pos == 'right':
-                right_opts = dict(orientation='vertical',
-                                  xaxis=None, yaxis='left')
+                right_opts = dict(invert_axes=True,
+                                  xaxis=None)
                 override_opts = dict(subplot_opts, **right_opts)
             elif pos == 'top':
-                top_opts = dict(xaxis='bottom', yaxis=None)
+                top_opts = dict(yaxis=None)
                 override_opts = dict(subplot_opts, **top_opts)
 
             # Override the plotopts as required

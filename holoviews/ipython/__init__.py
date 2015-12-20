@@ -14,7 +14,7 @@ from ..plotting.renderer import Renderer
 from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import display      # pyflakes:ignore (API import)
+from .display_hooks import display  # pyflakes:ignore (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
@@ -23,6 +23,14 @@ from param import ipython as param_ext
 
 Collector.interval_hook = RunProgress
 holoviews.archive = notebook_archive
+
+
+def show_traceback():
+    """
+    Display the full traceback after an abbreviated traceback has occured.
+    """
+    from .display_hooks import FULL_TRACEBACK
+    print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):
@@ -105,14 +113,31 @@ class notebook_extension(param.ParameterizedFunction):
     width = param.Number(default=None, bounds=(0, 100), doc="""
         Width of the notebook as a percentage of the browser screen window width.""")
 
+    display_formats = param.List(default=['html'], doc="""
+        A list of formats that are rendered to the notebook where
+        multiple formats may be selected at once (although only one
+        format will be displayed).
+
+        Although the 'html' format is supported across backends, other
+        formats supported by the current backend (e.g 'png' and 'svg'
+        using the matplotlib backend) may be used. This may be useful to
+        export figures to other formats such as PDF with nbconvert. """)
+
     ip = param.Parameter(default=None, doc="IPython kernel instance")
 
     _loaded = False
 
-    def __call__(self, **params):
-        resources = self._get_resources(params)
+    def __call__(self, *args, **params):
+        resources = self._get_resources(args, params)
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
+        Store.display_formats = p.display_formats
+
+        if 'html' not in p.display_formats and len(p.display_formats) > 1:
+            msg = ('Output magic unable to control displayed format '
+                   'as IPython notebook uses fixed precedence '
+                   'between %r' % p.display_formats)
+            display(HTML('<b>Warning</b>: %s' % msg))
 
         if notebook_extension._loaded == False:
             ip = get_ipython() if ip is None else ip
@@ -145,7 +170,7 @@ class notebook_extension(param.ParameterizedFunction):
             Store.renderers[r].load_nb()
 
 
-    def _get_resources(self, params):
+    def _get_resources(self, args, params):
         """
         Finds the list of resources from the keyword parameters and pops
         them out of the params dictionary.
@@ -153,13 +178,23 @@ class notebook_extension(param.ParameterizedFunction):
         resources = []
         disabled = []
         for resource in ['holoviews'] + list(Store.renderers.keys()):
+            if resource in args:
+                resources.append(resource)
+
             if resource in params:
                 setting = params.pop(resource)
                 if setting is True and resource != 'matplotlib':
-                    resources.append(resource)
+                    if resource not in resources:
+                        resources.append(resource)
                 if setting is False:
                     disabled.append(resource)
 
+        unmatched_args = set(args) - set(resources)
+        if unmatched_args:
+            display(HTML('<b>Warning:</b> Unrecognized resources %s'
+                         % ', '.join(unmatched_args)))
+
+        resources = [r for r in resources if r not in disabled]
         if ('holoviews' not in disabled) and ('holoviews' not in resources):
             resources = ['holoviews'] + resources
         return resources

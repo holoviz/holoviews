@@ -21,7 +21,7 @@ except ImportError:
 
 import param
 
-from .dimension import Dimension
+from .dimension import Dimension, Dimensioned
 from .element import Element, NdElement
 from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
@@ -269,14 +269,15 @@ class Columns(Element):
         return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=[], function=None, spreadfn=None, **kwargs):
+    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
         """
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
-        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if dimensions is None: dimensions = self.kdims
+        elif not isinstance(dimensions, list): dimensions = [dimensions]
         aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
@@ -348,6 +349,18 @@ class Columns(Element):
             return dim_vals
 
 
+    def get_dimension_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dimension_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.get_dimension(dim)
+        if dim_obj and dim_obj.type is not None:
+            return dim_obj.type
+        return self.interface.dimension_type(self, dim)
+
+
     def dframe(self, dimensions=None):
         """
         Returns the data in the form of a DataFrame.
@@ -355,6 +368,7 @@ class Columns(Element):
         if dimensions:
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
+
 
     def columns(self, dimensions=None):
         if dimensions is None: dimensions = self.dimensions()
@@ -442,6 +456,16 @@ class DataColumns(param.Parameterized):
                              "were able to support the supplied data format.")
 
         return data, kdims, vdims, interface
+
+
+    @classmethod
+    def validate(cls, columns):
+        not_found = [d for d in columns.dimensions(label=True)
+                     if d not in columns.data]
+        if not_found:
+            raise ValueError("Supplied data does not contain specified "
+                             "dimensions, the following dimensions were "
+                             "not found: %s" % repr(not_found))
 
 
     @classmethod
@@ -549,9 +573,6 @@ class DataColumns(param.Parameterized):
     def length(cls, columns):
         return len(columns.data)
 
-    @classmethod
-    def validate(cls, columns):
-        pass
 
 
 
@@ -602,6 +623,17 @@ class NdColumns(DataColumns):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
 
+
+    @classmethod
+    def validate(cls, columns):
+        """
+        NdElement will validate the data
+        """
+        pass
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return Dimensioned.get_dimension_type(columns, dim)
 
     @classmethod
     def shape(cls, columns):
@@ -671,6 +703,12 @@ class DFColumns(DataColumns):
     datatype = 'dataframe'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        idx = list(columns.data.columns).index(name)
+        return columns.data.dtypes[idx].type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
@@ -715,13 +753,6 @@ class DFColumns(DataColumns):
             else:
                 data = pd.DataFrame(data, columns=columns)
         return data, kdims, vdims
-
-
-    @classmethod
-    def validate(cls, columns):
-        if not all(c in columns.data.columns for c in columns.dimensions(label=True)):
-            raise ValueError("Supplied dimensions don't match columns "
-                             "in the dataframe.")
 
 
     @classmethod
@@ -857,6 +888,10 @@ class ArrayColumns(DataColumns):
     datatype = 'array'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        return columns.data.dtype.type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         if kdims is None:
             kdims = eltype.kdims
@@ -899,6 +934,13 @@ class ArrayColumns(DataColumns):
             vdims = eltype.vdims
         return data, kdims, vdims
 
+    @classmethod
+    def validate(cls, columns):
+        ndims = len(columns.dimensions())
+        ncols = columns.data.shape[1] if columns.data.ndim > 1 else 1
+        if ncols < ndims:
+            raise ValueError("Supplied data does not match specified "
+                             "dimensions, expected at least %s columns." % ndims)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -1059,6 +1101,11 @@ class DictColumns(DataColumns):
     types = (dict, OrderedDict, cyODict)
 
     datatype = 'dictionary'
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        return columns.data[name].dtype.type
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):

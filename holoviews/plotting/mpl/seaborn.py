@@ -167,12 +167,13 @@ class DistributionPlot(FullRedrawPlot):
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
     def initialize_plot(self, ranges=None):
-        distview = self.hmap.last
+        element = self.hmap.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
-        self._update_plot(axis, distview)
+        self._update_plot(axis, element)
+        dim = element.get_dimension(0)
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], xlabel='', ylabel=str(dim))
 
 
     def _update_plot(self, axis, view):

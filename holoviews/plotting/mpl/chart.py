@@ -4,6 +4,7 @@ from itertools import product
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
 
 import param
 
@@ -12,6 +13,7 @@ from ...core.util import match_spec, unique_iterator
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .path  import PathPlot
 
 
 class ChartPlot(ElementPlot):
@@ -291,7 +293,7 @@ class HistogramPlot(ChartPlot):
 
         super(HistogramPlot, self).__init__(histograms, **params)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
@@ -309,7 +311,7 @@ class HistogramPlot(ChartPlot):
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.offset_linefn = self.handles['axis'].axvline
             self.plotfn = self.handles['axis'].barh
         else:
@@ -363,7 +365,7 @@ class HistogramPlot(ChartPlot):
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         y0 = np.nanmin([0, y0])
-        return (y0, x0, y1, x1) if self.orientation == 'vertical' else (x0, y0, x1, y1)
+        return (x0, y0, x1, y1)
 
 
     def _process_axsettings(self, hist, lims, ticks):
@@ -390,7 +392,7 @@ class HistogramPlot(ChartPlot):
         """
         plot_vals = zip(self.handles['artist'], edges, hvals, widths)
         for bar, edge, height, width in plot_vals:
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 bar.set_y(edge)
                 bar.set_width(height)
                 bar.set_height(width)
@@ -446,16 +448,6 @@ class SideHistogramPlot(HistogramPlot):
         return edges, hvals, widths, lims
 
 
-    def _process_axsettings(self, hist, lims, ticks):
-        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
-        label = 'ylabel' if self.orientation == 'vertical' else 'xlabel'
-        if not self.show_xlabel:
-            axsettings[label] = ''
-        else:
-            axsettings[label] = str(hist.kdims[0])
-        return axsettings
-
-
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
         super(SideHistogramPlot, self)._update_artists(n, element, edges, hvals, widths, lims, ranges)
         self._update_plot(n, element, self.handles['artist'], lims, ranges)
@@ -494,7 +486,7 @@ class SideHistogramPlot(HistogramPlot):
     def get_extents(self, element, ranges):
         x0, _, x1, _ = element.extents
         _, y1 = element.range(1)
-        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        return (x0, 0, x1, y1)
 
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
@@ -521,7 +513,7 @@ class SideHistogramPlot(HistogramPlot):
             offset_line.set_visible(False)
         else:
             offset_line.set_visible(True)
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 offset_line.set_xdata(offset)
             else:
                 offset_line.set_ydata(offset)
@@ -570,17 +562,19 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ndims = points.shape[1]
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
-        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
+        cs = None
+        if self.color_index is not None and self.color_index < ndims:
+            cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
-        if cs is not None:
-            style['c'] = cs
-        else:
+        if cs is None:
             style['c'] = color
+        else:
+            style['c'] = cs
         edgecolor = style.pop('edgecolors', 'none')
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
@@ -980,3 +974,110 @@ class BarPlot(LegendPlot):
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+
+
+class SpikesPlot(PathPlot):
+
+    aspect = param.Parameter(default='square', doc="""
+        The aspect ratio mode of the plot. Allows setting an
+        explicit aspect ratio as width/height as well as
+        'square' and 'equal' options.""")
+
+    color_index = param.Integer(default=1, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    spike_length = param.Number(default=0.1, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
+
+    position = param.Number(default=0., doc="""
+      The position of the lower end of each spike.""")
+
+    style_opts = PathPlot.style_opts + ['cmap']
+
+    def initialize_plot(self, ranges=None):
+        lines = self.hmap.last
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(lines, ranges)
+        style = self.style[self.cyclic_index]
+        label = lines.label if self.show_legend else ''
+
+        data, array, clim = self.get_data(lines, ranges)
+        if array is not None:
+            style['array'] = array
+            style['clim'] = clim
+
+        line_segments = LineCollection(data, label=label,
+                                       zorder=self.zorder, **style)
+        self.handles['artist'] = line_segments
+        self.handles['axis'].add_collection(line_segments)
+
+        return self._finalize_axis(key, ranges=ranges)
+
+
+    def get_data(self, element, ranges):
+        dimensions = element.dimensions(label=True)
+        ndims = len(dimensions)
+
+        pos = self.position
+        if ndims > 1:
+            data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
+        else:
+            height = self.spike_length
+            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array()]
+
+        if self.invert_axes:
+            data = [(line[0][::-1], line[1][::-1]) for line in data]
+
+        array, clim = None, None
+        if self.color_index < ndims:
+            cdim = dimensions[self.color_index]
+            array = element.dimension_values(cdim)
+            clime = ranges[cdim]
+        return data, array, clim
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        artist = self.handles['artist']
+        data, array, clim = self.get_data(element, ranges)
+        artist.set_paths(data)
+        visible = self.style[self.cyclic_index].get('visible', True)
+        artist.set_visible(visible)
+        if array is not None:
+            artist.set_clim(clim)
+            artist.set_array(array)
+
+
+class SideSpikesPlot(SpikesPlot):
+
+    aspect = param.Parameter(default='auto', doc="""
+        Aspect ratios on SideHistogramPlot should be determined by the
+        AdjointLayoutPlot.""")
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    show_title = param.Boolean(default=False, doc="""
+        Titles should be disabled on all SidePlots to avoid clutter.""")
+
+    show_frame = param.Boolean(default=False)
+
+    show_xlabel = param.Boolean(default=False, doc="""
+        Whether to show the x-label of the plot. Disabled by default
+        because plots are often too cramped to fit the title correctly.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+

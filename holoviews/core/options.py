@@ -42,6 +42,17 @@ from .tree import AttrTree
 from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
 
+
+class BackendError(Exception):
+    """
+    Custom exception used to generate abbreviated tracebacks when there
+    is an error in the backend. Use to suppress long tracebacks that can
+    easily be caused by the users (e.g a typo in the style options)
+    where the user would be better served by a short error message
+    rather than a long traceback.
+    """
+    pass
+
 class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
@@ -769,6 +780,10 @@ class Store(object):
     # types grouped by the backend. Set using the register method.
     registry = {}
 
+    # A list of formats to be published for display on the frontend (e.g
+    # IPython Notebook or a GUI application)
+    display_formats = ['html']
+
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
     _options = {}
@@ -965,6 +980,21 @@ class StoreOptions(object):
 
 
     @classmethod
+    def tree_to_dict(cls, tree):
+        """
+        Given an OptionTree, convert it into the equivalent dictionary format.
+        """
+        specs = {}
+        for k in tree.keys():
+            spec_key = '.'.join(k)
+            specs[spec_key] = {}
+            for grp in tree[k].groups:
+                kwargs = tree[k].groups[grp].kwargs
+                if kwargs:
+                    specs[spec_key][grp] = kwargs
+        return specs
+
+    @classmethod
     def propagate_ids(cls, obj, match_id, new_id, applied_keys):
         """
         Recursively propagate an id through an object for components
@@ -975,8 +1005,10 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id)
-                      if o.id == match_id else None, specs=set(applied_keys))
+        def propagate(o):
+            if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
+                setattr(o, 'id', new_id)
+        obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
     @classmethod
     def capture_ids(cls, obj):

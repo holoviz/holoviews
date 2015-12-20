@@ -284,13 +284,17 @@ class NdElement(NdMapping, Tabular):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
-        if not isinstance(data, NdElement) and isinstance(data, Element):
-            mapping = data.mapping()
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            if isinstance(data, NdElement):
+                mapping = data.mapping()
+                data = mapping.data
+            else:
+                data = data.data
             if 'kdims' not in params:
                 params['kdims'] = mapping.kdims
             if 'vdims' not in params:
                 params['vdims'] = mapping.vdims
-            data = mapping.data
 
         kdims = params.get('kdims', self.kdims)
         if (data is not None and not isinstance(data, NdMapping)
@@ -348,8 +352,11 @@ class NdElement(NdMapping, Tabular):
 
 
     def _add_item(self, key, value, sort=True, update=True):
-        value = (value,) if np.isscalar(value) else tuple(value)
-        if len(value) != len(self.vdims):
+        if np.isscalar(value):
+            value = (value,)
+        elif not isinstance(value, NdElement):
+            value = tuple(value)
+        if len(value) != len(self.vdims) and not isinstance(value, NdElement):
             raise ValueError("%s values must match value dimensions"
                              % type(self).__name__)
         super(NdElement, self)._add_item(key, value, sort, update)
@@ -458,14 +465,6 @@ class NdElement(NdMapping, Tabular):
         return self.clone(sample_data)
 
 
-    def _item_check(self, dim_vals, data):
-        if isinstance(data, tuple):
-            for el in data:
-                self._item_check(dim_vals, el)
-            return
-        super(NdElement, self)._item_check(dim_vals, data)
-
-
     def aggregate(self, dimensions, function, **kwargs):
         """
         Allows aggregating.
@@ -474,7 +473,7 @@ class NdElement(NdMapping, Tabular):
         grouped = self.groupby(dimensions) if len(dimensions) else HoloMap({(): self}, kdims=[])
         for k, group in grouped.data.items():
             reduced = []
-            for vdim in group.vdims:
+            for vdim in self.vdims:
                 data = group[vdim.name]
                 if isinstance(function, np.ufunc):
                     reduced.append(function.reduce(data, **kwargs))

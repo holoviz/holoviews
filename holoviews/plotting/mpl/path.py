@@ -9,10 +9,13 @@ from .element import ElementPlot, ColorbarPlot
 
 class PathPlot(ElementPlot):
 
+    aspect = param.Parameter(default='equal', doc="""
+        PathPlots axes usually define single space so aspect of Paths
+        follows aspect in data coordinates by default.""")
+
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def __init__(self, *args, **params):
-        self.aspect = 'equal'
         super(PathPlot, self).__init__(*args, **params)
 
     def initialize_plot(self, ranges=None):

@@ -8,18 +8,13 @@ from __future__ import unicode_literals
 import re
 from operator import itemgetter
 
-try:
-    from cyordereddict import OrderedDict
-except:
-    from collections import OrderedDict
-
 import numpy as np
 import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer,
-                         safe_unicode)
+                         find_range, dimension_sanitizer, safe_unicode,
+			 OrderedDict)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -131,7 +126,7 @@ class Dimension(param.Parameterized):
     def pprint_label(self):
         "The pretty-printed label string for the Dimension"
         unit = '' if self.unit is None else self.unit_format.format(unit=self.unit)
-        return safe_unicode(self.name) + unit
+        return self.name + unit
 
 
     def pprint_value(self, value):
@@ -595,7 +590,8 @@ class Dimensioned(LabelledData):
                    'c': (lambda x: x.cdims, {})}
         aliases = {'key': 'k', 'value': 'v', 'constant': 'c'}
         if selection == 'all':
-            dims = [dim for group in self._dim_groups
+            groups = [d for d in self._dim_groups if d != 'cdims']
+            dims = [dim for group in groups
                     for dim in getattr(self, group)]
         elif isinstance(selection, list):
             dims =  [dim for group in selection

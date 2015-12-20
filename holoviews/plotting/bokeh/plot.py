@@ -37,7 +37,7 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges=None, empty=False):
         """
         Returns the data from an element in the appropriate format for
         initializing or updating a ColumnDataSource and a dictionary
@@ -108,8 +108,10 @@ class BokehPlot(DimensionedPlot):
                     source_data.update(plot.handles['source'].data)
                 new_source = ColumnDataSource(source_data)
                 for _, plot in group:
-                    renderer = plot.handles['glyph_renderer']
-                    if 'data_source' in renderer.properties():
+                    renderer = plot.handles.get('glyph_renderer')
+                    if renderer is None:
+                        continue
+                    elif 'data_source' in renderer.properties():
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
@@ -353,13 +355,15 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if pos != 'main':
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
-                    side_opts = dict(height=main_plot.height, yaxis='right',
-                                     invert_axes=True, width=120, show_labels=['y'],
-                                     xticks=2, show_title=False)
+                    yaxis = 'right-bare' if 'bare' in plot_type.yaxis else 'right'
+                    side_opts = dict(height=main_plot.height, yaxis=yaxis,
+                                     width=plot_type.width, invert_axes=True,
+                                     show_labels=['y'], xticks=1, xaxis=main_plot.xaxis)
                 else:
-                    side_opts = dict(width=main_plot.width, xaxis='top',
-                                     height=120, show_labels=['x'], yticks=2,
-                                     show_title=False)
+                    xaxis = 'top-bare' if 'bare' in plot_type.xaxis else 'top'
+                    side_opts = dict(width=main_plot.width, xaxis=xaxis,
+                                     height=plot_type.height, show_labels=['x'],
+                                     yticks=1, yaxis=main_plot.yaxis)
 
             # Override the plotopts as required
             # Customize plotopts depending on position.
@@ -522,13 +526,15 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        if plots is None: plots = []
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=plots))
+                passed_plots = plots  + adjoined_plots
+                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots

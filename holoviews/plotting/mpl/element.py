@@ -31,6 +31,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
         If set bgcolor overrides the background color of the axis.""")
 
+    invert_axes = param.ObjectSelector(default=False, doc="""
+        Inverts the axes of the plot. Note that this parameter may not
+        always be respected by all plots but should be respected by
+        adjoined plots when appropriate.""")
+
     invert_xaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot x-axis.""")
 
@@ -45,13 +50,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
-
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
-        The orientation of the plot. Note that this parameter may not
-        always be respected by all plots but should be respected by
-        adjoined plots when appropriate valid options are 'horizontal'
-        and 'vertical'.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -139,6 +137,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                            if isinstance(sp.hmap, HoloMap))
             if element is not None and not suppress:
                 xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
+                if self.invert_axes:
+                    xlabel, ylabel = ylabel, xlabel
+
                 self._finalize_limits(axis, element, subplots, ranges)
 
                 # Tick formatting
@@ -227,6 +228,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
             l, r = (c if np.isfinite(c) else None for c in (l, r))
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
@@ -643,7 +646,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             leg = axis.legend(data.keys(), data.values(),
                               title=title, scatterpoints=1,
-                              **leg_spec)
+                              **dict(leg_spec, **self._fontsize('legend')))
+            title_fontsize = self._fontsize('legend_title')
+            if title_fontsize:
+                leg.get_title().set_fontsize(title_fontsize['fontsize'])
             frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
