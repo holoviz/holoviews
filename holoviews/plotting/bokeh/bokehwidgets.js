@@ -41,7 +41,7 @@ var BokehMethods = {
 			$.each(data.data, function(i, value) {
 				if (data.root !== undefined) {
 					ds = doc.get_model_by_id(value.id);
-				} else if {
+				} else {
 					var ds = Bokeh.Collections(value.type).get(value.id);
 				}
 				if (ds != undefined) {
