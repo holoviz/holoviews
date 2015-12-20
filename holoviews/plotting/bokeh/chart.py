@@ -343,15 +343,17 @@ class ChartPlot(ElementPlot):
         init_element = element.clone(element.interface.concat(self.hmap.values()))
         properties = self.style[self.cyclic_index]
         plot = self._init_chart(init_element, ranges)
+
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
                                            if isinstance(r, GlyphRenderer)]
-        self._update_chart(element, ranges)
+        self._update_chart(key, element, ranges)
 
         # Update plot, source and glyph
         self.drawn = True
 
         return plot
+
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
@@ -375,10 +377,10 @@ class ChartPlot(ElementPlot):
         ranges = match_spec(element, ranges)
         self.current_ranges = ranges
 
-        self._update_chart(element, ranges)
+        self._update_chart(key, element, ranges)
 
 
-    def _update_chart(self, element, ranges):
+    def _update_chart(self, key, element, ranges):
         new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
         old_renderers = old_chart.select(type=GlyphRenderer)
@@ -402,6 +404,9 @@ class ChartPlot(ElementPlot):
             if old_r not in updated:
                 emptied = {k: [] for k in old_r.data_source.data}
                 old_r.data_source.data.update(emptied)
+
+        properties = self._plot_properties(key, old_chart, element)
+        old_chart.update(**properties)
 
 
     @property
