@@ -70,14 +70,10 @@ var MPLMethods = {
 				this.update(current);
 			}
 		}
-		if((this.mode == 'nbagg') || !(current in this.cache)) {
-			var kernel = IPython.notebook.kernel;
-			callbacks = {iopub: {output: $.proxy(callback, this)}};
-			var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-		} else {
-			this.update(current);
-		}
+		var kernel = IPython.notebook.kernel;
+		callbacks = {iopub: {output: $.proxy(callback, this)}};
+		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
 }
 
