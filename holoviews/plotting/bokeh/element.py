@@ -454,6 +454,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_key = key
             self.current_frame = element
 
+        if isinstance(self.hmap, DynamicMap):
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+        else:
+            ranges = self.compute_ranges(element, key, ranges)
+
         if not element:
             source = self.handles['source']
             source.data = {k: [] for k in source.data}
