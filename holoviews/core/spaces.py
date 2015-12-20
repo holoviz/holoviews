@@ -1,3 +1,5 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 from numbers import Number
 import itertools
 import numpy as np

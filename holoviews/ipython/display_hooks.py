@@ -1,6 +1,8 @@
 """
 Definition and registration of display hooks for the IPython Notebook.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 from functools import wraps
 import sys, traceback, inspect, io
 
@@ -13,9 +15,9 @@ from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys, bijective
+from .archive import notebook_archive
 from .magics import OutputMagic, OptsMagic
 
-from .archive import notebook_archive
 # To assist with debugging of display hooks
 FULL_TRACEBACK = None
 ABBREVIATE_TRACEBACKS = True

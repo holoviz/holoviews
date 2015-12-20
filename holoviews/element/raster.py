@@ -1,6 +1,9 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import warnings
 from operator import itemgetter
 from itertools import product
+
 import numpy as np
 import colorsys
 import param

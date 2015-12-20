@@ -1,8 +1,10 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import os, uuid, json, math
 
 import param
-
 import numpy as np
+
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode, basestring,

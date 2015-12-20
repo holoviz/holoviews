@@ -3,11 +3,9 @@ The HoloViews Seaborn interface wraps around a wide range
 of Seaborn plot types including time series, kernel density
 estimates, distributions and regression plots.
 """
-
-from __future__ import absolute_import
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import numpy as np
-
 import param
 
 from ..core import Dimension, NdMapping, Element2D, HoloMap

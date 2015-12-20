@@ -1,3 +1,5 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table

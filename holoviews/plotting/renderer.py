@@ -2,6 +2,7 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 from io import BytesIO
 import os, json, base64
@@ -12,10 +13,9 @@ from ..core.io import Exporter
 from ..core.options import Store, StoreOptions
 from ..core.util import find_file
 from .. import Layout, HoloMap, AdjointLayout
-from .widgets import NdWidget, ScrubberWidget, SelectionWidget
-
 from .. import DynamicMap
 from . import Plot
+from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 from .util import displayable, collate
 
 from param.parameterized import bothmethod

@@ -1,6 +1,8 @@
-from itertools import product
-import numpy as np
+from __future__ import unicode_literals, division, absolute_import, print_function
 
+from itertools import product
+
+import numpy as np
 from bokeh.models.mappers import LinearColorMapper
 
 from ...element import Image, RGB, Raster

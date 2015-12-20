@@ -3,6 +3,8 @@ Bounding regions and bounding boxes.
 
 File originally part of the Topographica project.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 ### JABALERT: The aarect information should probably be rewritten in
 ### matrix notation, not list notation, so that it can be scaled,
 ### translated, etc. easily.

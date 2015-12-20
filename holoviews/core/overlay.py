@@ -6,6 +6,7 @@ that allows Views to be overlayed on top of each other.
 Also supplies ViewMap which is the primary multi-dimensional Map type
 for indexing, slicing and animating collections of Views.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 from functools import reduce
 import numpy as np

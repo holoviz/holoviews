@@ -5,6 +5,7 @@ any third-party plotting/rendering package.
 This file defines the HTML tags used to wrap renderered output for
 display in the IPython Notebook (optional).
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 from ..core.options import Cycle
 from .plot import Plot

@@ -12,8 +12,10 @@ operations per element type. Unlike display normalization, data
 normalizations result in transformations to the stored data within
 each element.
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import param
+
 from ..core.operation import ElementOperation
 from ..element import Raster
 from ..core import Overlay

@@ -12,7 +12,7 @@ Archives: A collection of HoloViews objects that are first collected
           objects for a report then generating a PDF or collecting
           HoloViews objects to dump to HDF5.
 """
-from __future__ import absolute_import
+from __future__ import unicode_literals, division, absolute_import, print_function
 
 import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
 from collections import defaultdict

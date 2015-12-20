@@ -32,6 +32,8 @@ Store:
    extension together.
 
 """
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import pickle
 from contextlib import contextmanager
 

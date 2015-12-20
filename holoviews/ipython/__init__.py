@@ -1,3 +1,5 @@
+from __future__ import unicode_literals, division, absolute_import, print_function
+
 import os
 import base64
 from unittest import SkipTest
