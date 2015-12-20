@@ -462,9 +462,9 @@ class BarPlot(ChartPlot):
 
         kwargs = self.style[self.cyclic_index]
         if self.group_index < element.ndims:
-            kwargs['group'] = kdims[self.group_index]
+            kwargs['label'] = kdims[self.group_index]
         if self.category_index < element.ndims:
-            kwargs['label'] = kdims[self.category_index]
+            kwargs['group'] = kdims[self.category_index]
         if self.stack_index < element.ndims:
             kwargs['stack'] = kdims[self.stack_index]
         crange = Range1d(*ranges.get(vdim))
