@@ -678,10 +678,14 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             self.current_frame = element
             self.current_key = key
 
-        range_obj = element if isinstance(self.hmap, DynamicMap) else self.hmap
+        if isinstance(self.hmap, DynamicMap):
+            range_obj = element
+            items = element.items()
+        else:
+            range_obj = self.hmap
+            items = element.items()
         ranges = self.compute_ranges(range_obj, key, ranges)
 
-        items = element.items()
         for k, subplot in self.subplots.items():
             el = element.get(k, None)
             if isinstance(self.hmap, DynamicMap):

@@ -454,15 +454,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_key = key
             self.current_frame = element
 
-        if isinstance(self.hmap, DynamicMap):
-            ranges = self.compute_ranges(self.hmap, key, ranges)
-        else:
-            ranges = self.compute_ranges(element, key, ranges)
-
         if not element:
             source = self.handles['source']
             source.data = {k: [] for k in source.data}
             return
+
+        if isinstance(self.hmap, DynamicMap):
+            ranges = self.compute_ranges(self.hmap, key, ranges)
+        else:
+            ranges = self.compute_ranges(element, key, ranges)
 
         self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = util.match_spec(element, ranges)
@@ -693,19 +693,21 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self.current_frame = element
             self.current_key = key
 
-        range_obj = element if isinstance(self.hmap, DynamicMap) else self.hmap
+        if isinstance(self.hmap, DynamicMap):
+            range_obj = element
+            items = element.items()
+        else:
+            range_obj = self.hmap
+            items = element.items()
         ranges = self.compute_ranges(range_obj, key, ranges)
-
-        items = element.items()
         for k, subplot in self.subplots.items():
             empty, el = False, None
             if isinstance(self.hmap, DynamicMap):
                 idx = dynamic_update(self, subplot, k, element, items)
                 empty = idx is None
-                if empty:
+                if not empty:
                     _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=empty)
-
 
         if isinstance(self.hmap, DynamicMap) and items:
             raise Exception("Some Elements returned by the dynamic callback "
