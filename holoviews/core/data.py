@@ -458,6 +458,16 @@ class DataColumns(param.Parameterized):
 
 
     @classmethod
+    def validate(cls, columns):
+        not_found = [d for d in columns.dimensions(label=True)
+                     if d not in columns.data]
+        if not_found:
+            raise ValueError("Supplied data does not contain specified "
+                             "dimensions, the following dimensions were "
+                             "not found: %s" % repr(not_found))
+
+
+    @classmethod
     def select_mask(cls, columns, selection):
         """
         Given a Columns object and a dictionary with dimension keys and
@@ -562,9 +572,6 @@ class DataColumns(param.Parameterized):
     def length(cls, columns):
         return len(columns.data)
 
-    @classmethod
-    def validate(cls, columns):
-        pass
 
 
 
@@ -614,6 +621,14 @@ class NdColumns(DataColumns):
         elif not isinstance(data, NdElement):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
+
+
+    @classmethod
+    def validate(cls, columns):
+        """
+        NdElement will validate the data
+        """
+        pass
 
     @classmethod
     def dimension_type(cls, columns, dim):
@@ -737,13 +752,6 @@ class DFColumns(DataColumns):
             else:
                 data = pd.DataFrame(data, columns=columns)
         return data, kdims, vdims
-
-
-    @classmethod
-    def validate(cls, columns):
-        if not all(c in columns.data.columns for c in columns.dimensions(label=True)):
-            raise ValueError("Supplied dimensions don't match columns "
-                             "in the dataframe.")
 
 
     @classmethod
@@ -925,6 +933,12 @@ class ArrayColumns(DataColumns):
             vdims = eltype.vdims
         return data, kdims, vdims
 
+    @classmethod
+    def validate(cls, columns):
+        ndims = len(columns.dimensions())
+        if len(columns.data) < ndims:
+            raise ValueError("Supplied data does not match specified "
+                             "dimensions, expected at least %s columns." % ndims)
 
     @classmethod
     def array(cls, columns, dimensions):
