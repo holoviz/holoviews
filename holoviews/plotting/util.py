@@ -2,7 +2,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store)
-from ..core.util import match_spec
+from ..core.util import match_spec, is_number, wrap_tuple, get_overlay_spec
 
 
 def displayable(obj):
@@ -159,3 +159,49 @@ def save_frames(obj, filename, fmt=None, backend=None, options=None):
     for i in range(len(plot)):
         plot.update(i)
         renderer.save(plot, '%s_%s' % (filename, i), fmt=fmt, options=options)
+
+
+def dynamic_update(plot, subplot, key, overlay, items):
+    """
+    Given a plot, subplot and dynamically generated (Nd)Overlay
+    find the closest matching Element for that plot.
+    """
+    match_spec = get_overlay_spec(overlay,
+                                  wrap_tuple(key),
+                                  subplot.current_frame)
+    specs = [(i, get_overlay_spec(overlay, wrap_tuple(k), el))
+             for i, (k, el) in enumerate(items)]
+    return closest_match(match_spec, specs)
+
+
+def closest_match(match, specs, depth=0):
+    """
+    Recursively iterates over type, group, label and overlay key,
+    finding the closest matching spec.
+    """
+    new_specs = []
+    match_lengths = []
+    for i, spec in specs:
+        if spec[0] == match[0]:
+            new_specs.append((i, spec[1:]))
+        else:
+            if is_number(match[0]) and is_number(spec[0]):
+                match_length = -abs(match[0]-spec[0])
+            elif all(isinstance(s[0], basestring) for s in [spec, match]):
+                match_length = max(i for i in range(len(match[0]))
+                                   if match[0].startswith(spec[0][:i]))
+            else:
+                match_length = 0
+            match_lengths.append((i, match_length, spec[0]))
+
+    if len(new_specs) == 1:
+        return new_specs[0][0]
+    elif new_specs:
+        depth = depth+1
+        return closest_match(match[1:], new_specs, depth)
+    else:
+        if depth == 0 or not match_lengths:
+            return None
+        else:
+            return sorted(match_lengths, key=lambda x: -x[1])[0][0]
+

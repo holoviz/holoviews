@@ -441,7 +441,10 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def _get_frame(self, key):
-        if self.dynamic:
+        if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
+            self.current_key = key
+            return self.current_frame
+        elif self.dynamic:
             if isinstance(key, tuple):
                 frame = self.hmap[key]
             elif key < self.hmap.counter:
@@ -457,7 +460,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return frame
 
-        if not self.dynamic and isinstance(key, int):
+        if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
         if key == self.current_key:
@@ -688,8 +691,17 @@ class GenericOverlayPlot(GenericElementPlot):
 
     def get_extents(self, overlay, ranges):
         extents = []
+        items = overlay.items()
         for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, False)
+            layer = overlay.data.get(key, None)
+            found = False
+            if isinstance(self.hmap, DynamicMap) and layer is None:
+                for i, (k, layer) in enumerate(items):
+                    if isinstance(layer, subplot.hmap.type):
+                        found = True
+                        break
+                if not found:
+                    layer = None
             if layer and subplot.apply_ranges:
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
