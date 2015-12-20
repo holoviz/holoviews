@@ -936,7 +936,8 @@ class ArrayColumns(DataColumns):
     @classmethod
     def validate(cls, columns):
         ndims = len(columns.dimensions())
-        if len(columns.data) < ndims:
+        ncols = columns.data.shape[1] if columns.data.ndim > 1 else 1
+        if ncols < ndims:
             raise ValueError("Supplied data does not match specified "
                              "dimensions, expected at least %s columns." % ndims)
 
