@@ -269,14 +269,15 @@ class Columns(Element):
         return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=[], function=None, spreadfn=None, **kwargs):
+    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
         """
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
-        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if dimensions is None: dimensions = self.kdims
+        elif not isinstance(dimensions, list): dimensions = [dimensions]
         aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
