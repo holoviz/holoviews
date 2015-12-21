@@ -6,13 +6,12 @@ import sys, traceback, inspect, io
 
 import IPython
 from IPython.core.ultratb import AutoFormattedTB
-import param
 
 from ..core.options import Store, StoreOptions, BackendError
-from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
+from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
-from ..core.traversal import unique_dimkeys, bijective
+from ..core.traversal import unique_dimkeys
 from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
