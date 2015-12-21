@@ -1,5 +1,5 @@
 from __future__ import print_function, absolute_import
-import os, sys, re, pydoc
+import os, sys, pydoc
 
 import numpy as np # noqa (API import)
 
@@ -31,7 +31,7 @@ warnings.filterwarnings("ignore",
                         message="elementwise comparison failed; returning scalar instead")
 
 try:
-    import IPython
+    import IPython  # noqa (API import)
     from .ipython import notebook_extension
 except ImportError as e:
     class notebook_extension(param.ParameterizedFunction):
