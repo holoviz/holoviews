@@ -1019,8 +1019,8 @@ class ArrayColumns(DataColumns):
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = np.logical_and.reduce([data[:, idx] == group[i]
-                                          for i, idx in enumerate(dim_idxs)])
+            mask = np.logical_and.reduce([data[:, d_idx] == group[i]
+                                          for i, d_idx in enumerate(dim_idxs)])
             group_data = data[mask, ndims:]
             if not group_type == 'raw':
                 if issubclass(group_type, dict):

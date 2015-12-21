@@ -588,7 +588,7 @@ class Image(SheetCoordinateSystem, Raster):
             data = np.atleast_3d(self.data)[:, :, dim_idx]
             drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            soft_range = [r for r in dim.soft_range if r is not None]
+            soft_range = [sr for sr in dim.soft_range if sr is not None]
             if soft_range:
                 return util.max_range([drange, soft_range])
             else:
