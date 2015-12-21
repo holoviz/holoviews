@@ -1032,7 +1032,7 @@ class SpikesPlot(PathPlot):
         if self.color_index < ndims:
             cdim = dimensions[self.color_index]
             array = element.dimension_values(cdim)
-            clime = ranges[cdim]
+            clim = ranges[cdim]
         return data, array, clim
 
 
