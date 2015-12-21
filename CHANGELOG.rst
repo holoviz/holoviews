@@ -38,7 +38,7 @@ New features:
   (`PR #349 <https://github.com/ioam/holoviews/pull/349>`_,
   `PR #359 <https://github.com/ioam/holoviews/pull/359>`_)
 
-Important bug fixes:
+Notable bug fixes:
 
 * DynamicMaps are now properly integrated into the style system and can
   be customized in the same way as HoloMaps.
