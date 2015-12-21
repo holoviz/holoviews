@@ -8,7 +8,7 @@ from matplotlib.collections import LineCollection
 
 import param
 
-from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
+from ...core import OrderedDict
 from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges

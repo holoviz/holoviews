@@ -16,9 +16,8 @@ from param.parameterized import bothmethod
 from ...core import HoloMap
 from ...core.options import Store
 
-from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import MPLWidget, MPLSelectionWidget, MPLScrubberWidget
+from .widgets import MPLSelectionWidget, MPLScrubberWidget
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
