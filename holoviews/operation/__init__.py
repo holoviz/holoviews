@@ -1,8 +1,8 @@
-from ..core.operation import ElementOperation, MapOperation, TreeOperation # pyflakes:ignore (API import)
+from ..core.operation import ElementOperation, MapOperation, TreeOperation # noqa (API import)
 from ..core.options import Compositor
 
-from .element import *      # pyflakes:ignore (API import)
-from ..core import Overlay  # pyflakes:ignore (API import)
+from .element import *      # noqa (API import)
+from ..core import Overlay  # noqa (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False

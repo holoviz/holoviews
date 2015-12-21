@@ -14,7 +14,7 @@ from ..plotting.renderer import Renderer
 from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import display  # pyflakes:ignore (API import)
+from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
@@ -95,8 +95,8 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette # pyflakes:ignore (namespace import)
-import numpy as np                        # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette # noqa (namespace import)
+import numpy as np                        # noqa (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 

@@ -3,7 +3,7 @@
 import sys, os
 sys.path.insert(0, os.getcwd())
 
-from builder.shared_conf import * # pyflakes:ignore (API import)
+from builder.shared_conf import * # noqa (API import)
 
 paths = ['../param/', '.', '..']
 add_paths(paths)
@@ -97,7 +97,7 @@ from nbpublisher import nbbuild
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
     try:
-        import runipy # pyflakes:ignore (Warning import)
+        import runipy # noqa (Warning import)
         nbbuild.setup(app)
     except:
         print('RunIPy could not be imported; pages including the '
