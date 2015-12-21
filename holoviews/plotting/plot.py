@@ -17,7 +17,7 @@ from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
-from ..element import Table, Annotation
+from ..element import Table
 from .util import get_dynamic_mode, initialize_sampled
 
 
