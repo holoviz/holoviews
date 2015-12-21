@@ -3,7 +3,6 @@ Unit tests of Ellipsis (...) in __getitem__
 """
 import numpy as np
 import holoviews as hv
-from holoviews.element import Raster, Image, Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 
