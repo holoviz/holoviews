@@ -1,3 +1,53 @@
+Version 1.4.1
+-------------
+
+Over the past two weeks since the 1.4 release, we have implemented
+several important bug fixes and have made several usability
+improvements.
+
+New features:
+
+* Improved help system. It is now possible to recursively list all the
+  applicable documentation for a composite object. In addition, the
+  documentation may now be filtered using a regular expression pattern.
+  (`PR #370 <https://github.com/ioam/holoviews/pull/370>`_)
+
+* HoloViews now supports multiple active display hooks making it easier
+  to use nbconvert. For instance, PNG data will be embedded in the
+  notebook if the argument display_formats=['html','png'] is supplied to
+  the notebook_extension. (`PR #355 <https://github.com/ioam/holoviews/pull/355>`_)
+
+* Improvements to the display of DynamicMaps as well as many new
+  improvements to the Bokeh backend including better VLines/HLines and
+  support for the Bars element.
+  (`PR #367 <https://github.com/ioam/holoviews/pull/367>`_ ,
+  `PR #362 <https://github.com/ioam/holoviews/pull/362>`_,
+  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_).
+
+* New Spikes and BoxWhisker elements suitable for representing
+  distributions as a sequence of lines or as a box-and-whisker plot.
+  (`PR #346 <https://github.com/ioam/holoviews/pull/346>`_,
+  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_) 
+
+* Improvements to the notebook_extension. For instance, executing
+  hv.notebook_extension('bokeh') will now load BokehJS and automatically
+  activate the Bokeh backend (if available).
+
+* Significant performance improvements when using the groupby operation
+  on HoloMaps and when working with highly nested datastructures.
+  (`PR #349 <https://github.com/ioam/holoviews/pull/349>`_,
+  `PR #359 <https://github.com/ioam/holoviews/pull/359>`_)
+
+Important bug fixes:
+
+* DynamicMaps are now properly integrated into the style system and can
+  be customized in the same way as HoloMaps.
+  (`PR #368 <https://github.com/ioam/holoviews/pull/368>`_)
+
+* Widgets now work correctly when unicode is used in the dimension
+  labels and values (`PR #376 <https://github.com/ioam/holoviews/pull/376>`_).
+  
+  
 Version 1.4.0
 -------------
 
