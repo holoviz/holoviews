@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core import (OrderedDict, Dimension, Element, Columns,
-                    Tabular, NdElement, HoloMap)
+                    Tabular, HoloMap)
 
 
 class ItemTable(Element):

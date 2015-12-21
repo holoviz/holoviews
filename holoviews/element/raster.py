@@ -7,7 +7,7 @@ import param
 
 from ..core import util
 from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
-from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
+from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
