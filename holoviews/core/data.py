@@ -5,8 +5,8 @@ backends.
 
 import sys
 from distutils.version import LooseVersion
-from collections import defaultdict, Iterable, OrderedDict
-from itertools import groupby, compress
+from collections import OrderedDict
+from itertools import compress
 
 try:
     import itertools.izip as zip

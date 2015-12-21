@@ -14,7 +14,7 @@ except:
     from collections import OrderedDict
 
 try:
-    import pandas as pd
+    import pandas as pd # noqa (optional import)
 except ImportError:
     pd = None
 
@@ -781,7 +781,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
     def __call__(self, ndmapping, dimensions, container_type,
                  group_type, sort=False, **kwargs):
         try:
-            import pandas
+            import pandas # noqa (optional import)
             groupby = self.groupby_pandas
         except:
             groupby = self.groupby_python
