@@ -133,7 +133,6 @@ class CurvePlot(ChartPlot):
     def get_data(self, element):
         # Create xticks and reorder data if cyclic
         xticks = None
-        data = element.data
         if self.cyclic_range and all(v is not None for v in self.cyclic_range):
             if self.center_cyclic:
                 self.peak_argmax = np.argmax(element.dimension_values(1))
@@ -1111,7 +1110,6 @@ class BoxPlot(ChartPlot):
                                    ylabel=ylabel)
 
     def get_artist(self, element, axis):
-        dims = element.dimensions()
         groups = element.groupby(element.kdims)
 
         data, labels = [], []
