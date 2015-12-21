@@ -361,7 +361,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(adjoined=layout)
-        main, main_plot = None, None
+        main_plot = None
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)

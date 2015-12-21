@@ -339,7 +339,6 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        properties = self.style[self.cyclic_index]
         plot = self._init_chart(init_element, ranges)
 
         self.handles['plot'] = plot

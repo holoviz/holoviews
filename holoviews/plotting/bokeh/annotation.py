@@ -26,7 +26,6 @@ class LineAnnotationPlot(ElementPlot):
     style_opts = line_properties
 
     def get_data(self, element, ranges=None, empty=False):
-        plot = self.handles['plot']
         data, mapping = {}, {}
         if isinstance(element, HLine):
             mapping['bottom'] = element.data
