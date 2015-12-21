@@ -100,7 +100,11 @@ def display_hook(fn):
             html = fn(element,
                       max_frames=OutputMagic.options['max_frames'],
                       max_branches = OutputMagic.options['max_branches'])
-            notebook_archive.add(element, html=html)
+
+            # Only want to add to the archive for one display hook...
+            disabled_suffixes = ['png_display', 'svg_display']
+            if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
+                notebook_archive.add(element, html=html)
             filename = OutputMagic.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
@@ -266,6 +270,8 @@ def set_display_hooks(ip):
     html_formatter.for_type(AdjointLayout, pprint_display)
     html_formatter.for_type(Layout, pprint_display)
 
+    # Note: Disable additional hooks from calling archive
+    #       (see disabled_suffixes variable in the display decorator)
     png_formatter = ip.display_formatter.formatters['image/png']
     png_formatter.for_type(ViewableElement, element_png_display)
 
