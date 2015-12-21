@@ -1,14 +1,12 @@
-from ...core import Store, HoloMap, OrderedDict
+from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehWidget, BokehScrubberWidget, BokehSelectionWidget
+from .widgets import BokehScrubberWidget, BokehSelectionWidget
 
 import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document
-from bokeh.models import DataSource
-from bokeh.plotting import Figure
 from bokeh.resources import CDN
 
 try:

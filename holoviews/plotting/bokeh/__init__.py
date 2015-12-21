@@ -2,16 +2,16 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
-                        Path, Box, Bounds, Ellipse, Polygons, BoxWhisker,
+                        Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface)
-from ...core.options import Options, Cycle, OptionTree
+from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
 from ..mpl import SurfacePlot, Scatter3DPlot, TrisurfacePlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .callbacks import Callbacks
+from .callbacks import Callbacks # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)

@@ -1,9 +1,8 @@
-from itertools import product
 import numpy as np
 
 from bokeh.models.mappers import LinearColorMapper
 
-from ...element import Image, RGB, Raster
+from ...element import Image, Raster
 from .element import ElementPlot, line_properties, fill_properties
 from .util import mplcmap_to_palette, map_colors, get_cmap
 

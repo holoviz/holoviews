@@ -3,9 +3,7 @@ from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
-from ...core import Dimension
-from ...core.util import max_range
-from ...element import Chart, Raster, Points, Polygons, Spikes
+from ...element import Raster, Points, Polygons, Spikes
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot

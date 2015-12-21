@@ -15,7 +15,6 @@ except ImportError:
 import param
 
 from ...core.data import ArrayColumns
-from .plot import BokehPlot
 
 
 class Callback(param.ParameterizedFunction):
