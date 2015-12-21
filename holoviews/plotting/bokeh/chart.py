@@ -91,7 +91,7 @@ class PointPlot(ElementPlot):
             properties.pop('legend', None)
             unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
             selected = Circle(**dict(properties, fill_color=color, **mapping))
-            renderer = plot.add_glyph(source, selected, selection_glyph=glyph,
+            renderer = plot.add_glyph(source, selected, selection_glyph=selected,
                                       nonselection_glyph=unselected)
         else:
             renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
