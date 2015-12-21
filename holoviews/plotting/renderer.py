@@ -4,7 +4,7 @@ regardless of plotting package or backend.
 """
 
 from io import BytesIO
-import os, json, base64
+import os, base64
 from contextlib import contextmanager
 
 import param

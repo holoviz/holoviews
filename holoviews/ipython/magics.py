@@ -15,7 +15,6 @@ from ..core.pprint import InfoPrinter
 from IPython.display import display, HTML
 from ..operation import Compositor
 
-import param
 
 #========#
 # Magics #

@@ -1,10 +1,10 @@
 from ..core import ViewableElement
-from .annotation import * # pyflakes:ignore (API import)
-from .chart import * # pyflakes:ignore (API import)
-from .chart3d import * # pyflakes:ignore (API import)
-from .path import * # pyflakes:ignore (API import)
-from .raster import * # pyflakes:ignore (API import)
-from .tabular import * # pyflakes:ignore (API import)
+from .annotation import * # noqa (API import)
+from .chart import * # noqa (API import)
+from .chart3d import * # noqa (API import)
+from .path import * # noqa (API import)
+from .raster import * # noqa (API import)
+from .tabular import * # noqa (API import)
 
 
 def public(obj):

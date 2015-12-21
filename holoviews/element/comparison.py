@@ -22,7 +22,7 @@ from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from . import *    # pyflakes:ignore (All Elements need to support comparison)
+from . import *    # noqa (All Elements need to support comparison)
 from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
                    Dimensioned, Layout, NdLayout, NdOverlay, GridSpace, DynamicMap
 from ..core.options import Options, Cycle

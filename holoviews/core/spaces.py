@@ -6,11 +6,10 @@ import param
 import types
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
-from .overlay import Overlayable, Overlay, CompositeOverlay, NdOverlay
-from .tree import AttrTree
+from .overlay import Overlay, CompositeOverlay, NdOverlay
 from .options import Store, StoreOptions
 
 class HoloMap(UniformNdMapping):

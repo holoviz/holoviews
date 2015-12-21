@@ -4,7 +4,6 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
-from collections import Sequence
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
@@ -14,8 +13,7 @@ import param
 from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, itervalues,
-                   get_ndmapping_label)
+                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 
 class item_check(object):

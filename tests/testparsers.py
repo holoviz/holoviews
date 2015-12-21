@@ -5,7 +5,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from unittest import SkipTest
 
 try:
-    import pyparsing     # pyflakes:ignore (import test)
+    import pyparsing     # noqa (import test)
 except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing parsers")
 

@@ -1,18 +1,16 @@
 import operator
-from itertools import groupby, cycle
-from numbers import Number
+from itertools import groupby
 import numpy as np
 
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
-from .layout import Composable, Layout, AdjointLayout, NdLayout
-from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check, sorted_context
-from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
+from .layout import Composable, Layout, NdLayout
+from .ndmapping import OrderedDict, NdMapping
+from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import (sanitize_identifier, is_dataframe, dimension_sort,
-                   get_param_values, dimension_sanitizer)
+from .util import dimension_sort, get_param_values, dimension_sanitizer
 
 
 class Element(ViewableElement, Composable, Overlayable):

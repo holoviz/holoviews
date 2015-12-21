@@ -3,9 +3,8 @@ import numpy as np
 
 import param
 
-from bokeh.io import gridplot, vplot, hplot
 from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
-from bokeh.models.widgets import Panel, Tabs, DataTable
+from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
@@ -13,7 +12,7 @@ from ...core import traversal
 from ...core.options import Compositor
 from ...core.util import basestring
 from ...element import Histogram
-from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
+from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
 from .util import layout_padding
@@ -362,7 +361,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(adjoined=layout)
-        main, main_plot = None, None
+        main_plot = None
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)

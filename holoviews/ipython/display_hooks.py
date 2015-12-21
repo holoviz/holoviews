@@ -6,13 +6,12 @@ import sys, traceback, inspect, io
 
 import IPython
 from IPython.core.ultratb import AutoFormattedTB
-import param
 
 from ..core.options import Store, StoreOptions, BackendError
-from ..core import (LabelledData, Element, ViewableElement, UniformNdMapping,
+from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
-from ..core.traversal import unique_dimkeys, bijective
+from ..core.traversal import unique_dimkeys
 from .magics import OutputMagic, OptsMagic
 
 from .archive import notebook_archive
@@ -210,7 +209,7 @@ def pprint_display(obj):
         return None
 
     # If pretty printing is off, return None (fallback to next display format)
-    ip = get_ipython()  #  # pyflakes:ignore (in IPython namespace)
+    ip = get_ipython()  #  # noqa (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
     return display(obj, raw=True)

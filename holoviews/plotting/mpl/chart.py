@@ -8,7 +8,7 @@ from matplotlib.collections import LineCollection
 
 import param
 
-from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
+from ...core import OrderedDict
 from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
@@ -133,7 +133,6 @@ class CurvePlot(ChartPlot):
     def get_data(self, element):
         # Create xticks and reorder data if cyclic
         xticks = None
-        data = element.data
         if self.cyclic_range and all(v is not None for v in self.cyclic_range):
             if self.center_cyclic:
                 self.peak_argmax = np.argmax(element.dimension_values(1))
@@ -1033,7 +1032,7 @@ class SpikesPlot(PathPlot):
         if self.color_index < ndims:
             cdim = dimensions[self.color_index]
             array = element.dimension_values(cdim)
-            clime = ranges[cdim]
+            clim = ranges[cdim]
         return data, array, clim
 
 
@@ -1111,7 +1110,6 @@ class BoxPlot(ChartPlot):
                                    ylabel=ylabel)
 
     def get_artist(self, element, axis):
-        dims = element.dimensions()
         groups = element.groupby(element.kdims)
 
         data, labels = [], []

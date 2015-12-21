@@ -8,15 +8,15 @@ display in the IPython Notebook (optional).
 
 from ..core.options import Cycle
 from .plot import Plot
-from .renderer import Renderer, HTML_TAGS # pyflakes:ignore (API import)
+from .renderer import Renderer, HTML_TAGS # noqa (API import)
 
 try:
-    from . import mpl                     # pyflakes:ignore (API import)
+    from . import mpl                     # noqa (API import)
 except ImportError:
     pass
 
 try:
-    from . import bokeh                   # pyflakes:ignore (API import)
+    from . import bokeh                   # noqa (API import)
 except ImportError:
     pass
 

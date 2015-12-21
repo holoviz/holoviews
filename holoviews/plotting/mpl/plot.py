@@ -4,13 +4,13 @@ from collections import defaultdict
 
 import numpy as np
 import matplotlib as mpl
-from mpl_toolkits.mplot3d import Axes3D  # pyflakes:ignore (For 3D plots)
+from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
 from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Element3D,
-                     Empty, Collator, DynamicMap)
+                     Empty, Collator)
 from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal

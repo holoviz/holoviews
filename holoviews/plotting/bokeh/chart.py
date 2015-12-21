@@ -3,9 +3,7 @@ from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
-from ...core import Dimension
-from ...core.util import max_range
-from ...element import Chart, Raster, Points, Polygons, Spikes
+from ...element import Raster, Points, Polygons, Spikes
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -93,7 +91,7 @@ class PointPlot(ElementPlot):
             properties.pop('legend', None)
             unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
             selected = Circle(**dict(properties, fill_color=color, **mapping))
-            renderer = plot.add_glyph(source, selected, selection_glyph=glyph,
+            renderer = plot.add_glyph(source, selected, selection_glyph=selected,
                                       nonselection_glyph=unselected)
         else:
             renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
@@ -341,7 +339,6 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        properties = self.style[self.cyclic_index]
         plot = self._init_chart(init_element, ranges)
 
         self.handles['plot'] = plot

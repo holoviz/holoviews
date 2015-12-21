@@ -1,5 +1,4 @@
 import os
-import base64
 from unittest import SkipTest
 
 import param
@@ -11,10 +10,9 @@ from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
-from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import display  # pyflakes:ignore (API import)
+from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
@@ -95,8 +93,8 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette # pyflakes:ignore (namespace import)
-import numpy as np                        # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette # noqa (namespace import)
+import numpy as np                        # noqa (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
@@ -140,7 +138,7 @@ class notebook_extension(param.ParameterizedFunction):
             display(HTML('<b>Warning</b>: %s' % msg))
 
         if notebook_extension._loaded == False:
-            ip = get_ipython() if ip is None else ip
+            ip = get_ipython() if ip is None else ip # noqa (get_ipython)
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize()
@@ -171,7 +169,7 @@ class notebook_extension(param.ParameterizedFunction):
 
 
         if resources[-1] != 'holoviews':
-            get_ipython().magic(u"output backend=%r" % resources[-1])
+            get_ipython().magic(u"output backend=%r" % resources[-1]) # noqa (get_ipython))
 
 
     def _get_resources(self, args, params):

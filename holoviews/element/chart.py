@@ -3,8 +3,7 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import OrderedDict, Dimension, UniformNdMapping, Element, Columns, Element2D, NdElement, HoloMap
-from .tabular import ItemTable, Table
+from ..core import Dimension, Columns, Element2D
 from .util import compute_edges
 
 class Chart(Columns, Element2D):

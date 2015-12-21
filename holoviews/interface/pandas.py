@@ -19,7 +19,7 @@ except:
 import param
 
 from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
-    NdLayout, GridSpace, NdElement, HoloMap
+    NdLayout, GridSpace, HoloMap
 from ..core.data import DFColumns
 from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
                        VectorField, HeatMap, Scatter3D, Surface)

@@ -28,7 +28,7 @@ from .element import Collator, Element
 from .layout import Layout
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
-from .util import unique_iterator, sanitize_identifier, group_sanitizer, label_sanitizer
+from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
 class Reference(param.Parameterized):

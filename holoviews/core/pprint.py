@@ -17,7 +17,7 @@ import re
 import param
 # IPython not required to import ParamPager
 from param.ipython import ParamPager
-from holoviews.core.util import sanitize_identifier, group_sanitizer, label_sanitizer
+from holoviews.core.util import group_sanitizer, label_sanitizer
 
 
 

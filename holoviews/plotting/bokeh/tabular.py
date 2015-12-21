@@ -1,4 +1,3 @@
-from bokeh.models import ColumnDataSource
 from bokeh.models.widgets import DataTable, TableColumn
 
 import param

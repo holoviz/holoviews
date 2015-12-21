@@ -14,17 +14,17 @@ from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
-from ...element import * # pyflakes:ignore (API import)
+from ...element import * # noqa (API import)
 from ..plot import PlotSelector
-from .annotation import * # pyflakes:ignore (API import)
-from .chart import * # pyflakes:ignore (API import)
-from .chart3d import * # pyflakes:ignore (API import)
-from .path import * # pyflakes:ignore (API import)
-from .plot import * # pyflakes:ignore (API import)
-from .raster import * # pyflakes:ignore (API import)
-from .tabular import * # pyflakes:ignore (API import)
-from . import pandas # pyflakes:ignore (API import)
-from . import seaborn # pyflakes:ignore (API import)
+from .annotation import * # noqa (API import)
+from .chart import * # noqa (API import)
+from .chart3d import * # noqa (API import)
+from .path import * # noqa (API import)
+from .plot import * # noqa (API import)
+from .raster import * # noqa (API import)
+from .tabular import * # noqa (API import)
+from . import pandas # noqa (API import)
+from . import seaborn # noqa (API import)
 
 from .renderer import MPLRenderer
 

@@ -4,7 +4,7 @@ Tests for the Columns Element types.
 
 from unittest import SkipTest
 import numpy as np
-from holoviews import Columns, Curve, ItemTable, NdElement, HoloMap
+from holoviews import Columns, NdElement, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.ndmapping import sorted_context
 
