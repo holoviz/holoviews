@@ -25,6 +25,8 @@ class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
 
+    _update_handles = ['glyph']
+
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = {}, {}
         if isinstance(element, HLine):
