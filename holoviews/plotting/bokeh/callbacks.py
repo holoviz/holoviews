@@ -85,6 +85,7 @@ class Callback(param.ParameterizedFunction):
               }
               if (ds != undefined) {
                 ds.set(value.data);
+                ds.trigger('change');
               }
             });
           } else {

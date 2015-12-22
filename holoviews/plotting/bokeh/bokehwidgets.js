@@ -46,6 +46,7 @@ var BokehMethods = {
 				}
 				if (ds != undefined) {
 					ds.set(value.data);
+					ds.trigger('change');
 				}
 			});
 		}
