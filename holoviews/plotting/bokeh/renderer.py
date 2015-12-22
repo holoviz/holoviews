@@ -72,6 +72,7 @@ class BokehRenderer(Renderer):
                 json_data.append({'id': plotobj.ref['id'],
                                   'type': plotobj.ref['type'],
                                   'data': json})
+            data['data'] = json_data
             return serialize_json(data), info
 
 
