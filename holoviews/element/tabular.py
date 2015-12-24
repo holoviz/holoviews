@@ -132,7 +132,7 @@ class ItemTable(Element):
                            else k): [v] for k, v in self.data.items()})
 
 
-    def table(self):
+    def table(self, datatype=None):
         return Table(OrderedDict([((), self.values())]), kdims=[],
                      vdims=self.vdims)
 
