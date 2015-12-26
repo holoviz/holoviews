@@ -727,7 +727,10 @@ def get_ndmapping_label(ndmapping, attr):
     label = None
     els = itervalues(ndmapping.data)
     while label is None:
-        el = next(els)
+        try:
+            el = next(els)
+        except StopIteration:
+            return None
         if not el._auxiliary_component:
             label = getattr(el, attr)
     if attr == 'group':
