@@ -111,8 +111,8 @@ def hierarchical(keys):
     ndims = len(keys[0])
     if ndims <= 1:
         return True
-    dim_vals = zip(*keys)
-    combinations = (zip(*dim_vals[i:i+2])
+    dim_vals = list(zip(*keys))
+    combinations = (list(zip(*dim_vals[i:i+2]))
                     for i in range(ndims-1))
     hierarchies = []
     for combination in combinations:
