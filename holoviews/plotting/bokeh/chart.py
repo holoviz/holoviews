@@ -21,13 +21,15 @@ class PointPlot(ElementPlot):
     radius_index = param.Integer(default=None, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
     scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     size_fn = param.Callable(default=np.abs, doc="""
       Function applied to size values before applying scaling,
@@ -67,7 +69,7 @@ class PointPlot(ElementPlot):
                 ms = style.get('size', 1)
                 sizes = element.dimension_values(self.size_index)
                 data[map_key] = compute_sizes(sizes, self.size_fn,
-                                              self.scaling_factor, ms)
+                                    self.scaling_factor, self.scaling_method, ms)
 
         data[dims[0]] = [] if empty else element.dimension_values(0)
         data[dims[1]] = [] if empty else element.dimension_values(1)
