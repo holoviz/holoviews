@@ -56,7 +56,7 @@ Store.register({Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
-                GeoMap:   PolygonPlot,
+                GeoMap:   GeoMapPlot,
 
                 # Annotations
                 HLine: LineAnnotationPlot,

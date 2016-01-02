@@ -103,3 +103,16 @@ class PolygonPlot(ColorbarPlot):
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])
+
+
+class GeoMapPlot(PolygonPlot):
+    """
+    GeoMapPlot draws paths representing the region boundaries in the
+    supplied GeoMap. If the GeoMap has an associated value the color of
+    regions will be drawn from the supplied cmap, otherwise the supplied
+    facecolor will apply.
+    """
+
+    aspect = param.Parameter(default='equal', doc="""
+        GeoMap elements use an 'equal' aspect ratio by default but
+        may be set to an explicit aspect ratio or to 'square'.""")
