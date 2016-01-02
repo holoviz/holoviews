@@ -2,7 +2,7 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
-                        Box, Bounds, Ellipse, Polygons, BoxWhisker,
+                        Box, Bounds, Ellipse, Polygons, GeoMap, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface)
 from ...core.options import Options, Cycle
@@ -56,6 +56,7 @@ Store.register({Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+                GeoMap:   PolygonPlot,
 
                 # Annotations
                 HLine: LineAnnotationPlot,
