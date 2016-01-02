@@ -1,4 +1,5 @@
 import numpy as np
+import param
 
 from .element import ElementPlot, line_properties, fill_properties
 from .util import get_cmap, map_colors
@@ -49,3 +50,6 @@ class GeoMapPlot(PolygonPlot):
     aspect = param.Parameter(default='equal', doc="""
         GeoMap elements use an 'equal' aspect ratio by default but
         may be set to an explicit aspect ratio or to 'square'.""")
+
+    bgcolor = param.Parameter(default='white', doc="""
+        Background color of the plot.""")

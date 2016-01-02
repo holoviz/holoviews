@@ -15,7 +15,7 @@ from .callbacks import Callbacks # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)
-from .path import PathPlot, PolygonPlot
+from .path import PathPlot, PolygonPlot, GeoMapPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
 from .renderer import BokehRenderer
@@ -127,6 +127,7 @@ options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle())
+options.GeoMap = Options('style', fill_color='white', line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap='hot')

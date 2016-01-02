@@ -116,3 +116,6 @@ class GeoMapPlot(PolygonPlot):
     aspect = param.Parameter(default='equal', doc="""
         GeoMap elements use an 'equal' aspect ratio by default but
         may be set to an explicit aspect ratio or to 'square'.""")
+
+    bgcolor = param.Parameter(default='white', doc="""
+        Background color of the map.""")

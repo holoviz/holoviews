@@ -204,7 +204,7 @@ options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle())
 options.Path = Options('style', color=Cycle())
-options.GeoMap = Options('style', color=Cycle(), edgecolor='black', facecolor='none')
+options.GeoMap = Options('style', color=Cycle(), edgecolor='black', facecolor='white')
 options.Box = Options('style', color=Cycle())
 options.Bounds = Options('style', color=Cycle())
 options.Ellipse = Options('style', color=Cycle())
