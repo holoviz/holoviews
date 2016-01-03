@@ -152,7 +152,16 @@ class GeoMap(Contours):
             xs, ys = poly.exterior.xy
             return np.array([xs, ys]).T
 
-        data = [get_array_for_poly(poly) for poly in data.geometry]
+        geoms = []
+
+        for poly in data.geometry:
+            try:
+                geoms.append(get_array_for_poly(poly))
+            except AttributeError:
+                for subpoly in poly.geoms:
+                    geoms.append(get_array_for_poly(subpoly))
+
+        data = geoms
         super(GeoMap, self).__init__(data, **params)
 
 
