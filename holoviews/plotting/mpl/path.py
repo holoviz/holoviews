@@ -119,3 +119,29 @@ class GeoMapPlot(PolygonPlot):
 
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the map.""")
+
+    frame = param.Boolean(default=False, doc="""
+        Whether to show the frame around the plot.""")
+
+    def initialize_plot(self, ranges=None):
+        # TODO: Most of this is copied & pasted from PolygonPlot.
+        #       How can we avoid the code duplication?!?
+        element = self.hmap.last
+        key = self.keys[-1]
+        axis = self.handles['axis']
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        collection, polys = self._create_polygons(element, ranges)
+        axis.add_collection(collection)
+        self.handles['polys'] = polys
+
+        axis.xaxis.set_visible(False)
+        axis.yaxis.set_visible(False)
+        axis.set_frame_on(self.frame)
+
+        if self.colorbar:
+            self._draw_colorbar(collection, element)
+
+        self.handles['artist'] = collection
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
