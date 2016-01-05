@@ -9,7 +9,7 @@ try:
     old_bokeh = True
 except ImportError:
     from bokeh.models import Component as PlotObject
-    from bokeh._json_encoder import serialize_json
+    from bokeh.core.json_encoder import serialize_json
     old_bokeh = False
 
 import param

@@ -7,8 +7,13 @@ try:
 except ImportError:
     cm, colors = None, None
 
-from bokeh.enums import Palette
-from bokeh.plotting import figure, Plot
+try:
+    from bokeh.enums import Palette
+    from bokeh.plotting import lot
+except:
+    from bokeh.core.enums import Palette
+    from bokeh.models.plots import Plot
+from bokeh.plotting import figure
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},

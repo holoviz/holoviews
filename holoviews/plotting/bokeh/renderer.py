@@ -13,7 +13,7 @@ try:
     from bokeh.protocol import serialize_json
     old_bokeh = True
 except ImportError:
-    from bokeh._json_encoder import serialize_json
+    from bokeh.core.json_encoder import serialize_json
     old_bokeh = False
 
 class BokehRenderer(Renderer):
