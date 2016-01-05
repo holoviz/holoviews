@@ -268,7 +268,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
             bg_attr = 'background_fill'
-            if not old_bokeh: bg_attr += ' _color'
+            if not old_bokeh: bg_attr += '_color'
             plot_props[bg_attr] = self.bgcolor
         if self.border is not None:
             plot_props['min_border'] = self.border
