@@ -77,11 +77,6 @@ class BokehRenderer(Renderer):
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        if not old_bokeh:
-            doc = Document()
-            doc.add_root(plot.state)
-            plot.set_root(plot.state)
-            plot.set_document(doc)
         return notebook_div(plot.state)
 
 
