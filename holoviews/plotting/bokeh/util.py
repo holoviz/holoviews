@@ -9,7 +9,7 @@ except ImportError:
 
 try:
     from bokeh.enums import Palette
-    from bokeh.plotting import lot
+    from bokeh.plotting import Plot
 except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
