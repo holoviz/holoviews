@@ -529,7 +529,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
       Determines whether the `scaling_factor` should be applied to
       the width or area of each point (default: "area").""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
 
@@ -561,7 +561,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims and self.scaling_factor > 1:
+        if self.size_index < ndims:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
