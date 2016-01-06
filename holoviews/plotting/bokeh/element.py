@@ -624,7 +624,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if legend_fontsize:
             plot.legend[0].label_text_font_size = legend_fontsize
 
-        plot.legend.orientation = self.legend_position
+        if old_bokeh:
+            plot.legend.orientation = self.legend_position
+        else:
+            plot.legend.location = self.legend_position
         legends = plot.legend[0].legends
         new_legends = []
         for label, l in legends:
