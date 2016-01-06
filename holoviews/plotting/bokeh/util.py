@@ -15,7 +15,7 @@ except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
     old_bokeh = False
-from bokeh.plotting import figure
+from bokeh.plotting import Figure
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -111,7 +111,7 @@ def layout_padding(plots):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                p = figure(plot_width=widths[c], 
+                p = Figure(plot_width=widths[c],
                            plot_height=heights[r])
                 p.text(x=0, y=0, text=[' '])
                 p.xaxis.visible = False
