@@ -75,11 +75,11 @@ class Callback(param.ParameterizedFunction):
           if (msg.msg_type == "execute_result") {
             var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
             if (data.root !== undefined) {
-              doc = Bokeh.index[data.root].model.document;
+              var doc = Bokeh.index[data.root].model.document;
             }
             $.each(data.data, function(i, value) {
               if (data.root !== undefined) {
-                ds = doc.get_model_by_id(value.id);
+                var ds = doc.get_model_by_id(value.id);
               } else {
                 var ds = Bokeh.Collections(value.type).get(value.id);
               }
@@ -162,6 +162,7 @@ class Callback(param.ParameterizedFunction):
                 json = obj.vm_serialize(changed_only=True)
             else:
                 json = obj.to_json(False)
+            json.pop('renderers', None)
             data['data'].append({'id': obj.ref['id'], 'type': obj.ref['type'],
                                  'data': json})
         return serialize_json(data)

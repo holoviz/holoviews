@@ -36,11 +36,11 @@ var BokehMethods = {
 		}
 		if (data !== undefined) {
 			if (data.root !== undefined) {
-				doc = Bokeh.index[data.root].model.document;
+				var doc = Bokeh.index[data.root].model.document;
 			}
 			$.each(data.data, function(i, value) {
 				if (data.root !== undefined) {
-					ds = doc.get_model_by_id(value.id);
+					var ds = doc.get_model_by_id(value.id);
 				} else {
 					var ds = Bokeh.Collections(value.type).get(value.id);
 				}
