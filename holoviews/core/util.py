@@ -804,7 +804,7 @@ class ndmapping_groupby(param.ParameterizedFunction):
         getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
 
         multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
-        df = pd.DataFrame(ndmapping.values(), index=multi_index)
+        df = pd.DataFrame(map(wrap_tuple, ndmapping.values()), index=multi_index)
 
         kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
         groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
