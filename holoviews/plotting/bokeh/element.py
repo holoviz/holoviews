@@ -271,7 +271,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not old_bokeh: bg_attr += '_color'
             plot_props[bg_attr] = self.bgcolor
         if self.border is not None:
-            plot_props['min_border'] = self.border
+            for p in ['left', 'right', 'top', 'bottom']:
+                plot_props['min_border_'+p] = self.border
         lod = dict(self.defaults()['lod'], **self.lod)
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
