@@ -15,6 +15,7 @@ except ImportError:
 import param
 
 from ...core.data import ArrayColumns
+from .util import models_to_json
 
 
 class Callback(param.ParameterizedFunction):
@@ -156,16 +157,7 @@ class Callback(param.ParameterizedFunction):
         if not old_bokeh:
             plot = self.plot[0]
             data['root'] = plot.state._id
-
-        for obj in objects:
-            if old_bokeh:
-                json = obj.vm_serialize(changed_only=True)
-            else:
-                json = obj.to_json(False)
-            json.pop('renderers', None)
-            data['data'].append({'id': obj.ref['id'], 'type': obj.ref['type'],
-                                 'data': json})
-        return serialize_json(data)
+        return serialize_json(models_to_json(objects))
 
 
 

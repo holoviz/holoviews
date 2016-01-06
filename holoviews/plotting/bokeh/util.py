@@ -10,9 +10,11 @@ except ImportError:
 try:
     from bokeh.enums import Palette
     from bokeh.plotting import Plot
+    old_bokeh = True
 except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
+    old_bokeh = False
 from bokeh.plotting import figure
 
 # Conversion between matplotlib and bokeh markers
@@ -123,3 +125,25 @@ def layout_padding(plots):
 
 def convert_datetime(time):
     return time.astype('datetime64[s]').astype(float)*1000
+
+
+def models_to_json(models):
+    """
+    Convert list of bokeh models into json to update plot(s).
+    """
+    json_data, ids = [], []
+    for plotobj in models:
+        if plotobj.ref['id'] in ids:
+            continue
+        else:
+            ids.append(plotobj.ref['id'])
+        if old_bokeh:
+            json = plotobj.vm_serialize(changed_only=True)
+        else:
+            json = plotobj.to_json(False)
+            json.pop('tool_events', None)
+            json.pop('renderers', None)
+            json_data.append({'id': plotobj.ref['id'],
+                              'type': plotobj.ref['type'],
+                              'data': json})
+    return json_data

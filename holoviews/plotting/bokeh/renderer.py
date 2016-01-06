@@ -2,6 +2,7 @@ import uuid
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .util import models_to_json
 
 import param
 from param.parameterized import bothmethod
@@ -59,25 +60,9 @@ class BokehRenderer(Renderer):
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
             data = dict(data=[])
-            ids = []
             if not old_bokeh:
                 data['root'] = plot.state._id
-            json_data = []
-            for plotobj in plotobjects:
-                if plotobj.ref['id'] in ids:
-                    continue
-                else:
-                    ids.append(plotobj.ref['id'])
-                if old_bokeh:
-                    json = plotobj.vm_serialize(changed_only=True)
-                else:
-                    json = plotobj.to_json(False)
-                json.pop('tool_events', None)
-                json.pop('renderers', None)
-                json_data.append({'id': plotobj.ref['id'],
-                                  'type': plotobj.ref['type'],
-                                  'data': json})
-            data['data'] = json_data
+            data['data'] = models_to_json(plotobjects)
             return serialize_json(data), info
 
 
