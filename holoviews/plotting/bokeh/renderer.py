@@ -16,7 +16,6 @@ try:
     old_bokeh = True
 except ImportError:
     from bokeh.core.json_encoder import serialize_json
-    from bokeh.model import _find_some_document
     old_bokeh = False
 
 
@@ -68,10 +67,8 @@ class BokehRenderer(Renderer):
 
     def figure_data(self, plot, fmt='html', **kwargs):
         if not old_bokeh:
-            doc = _find_some_document([plot.state])
-            if not doc:
-                doc = Document()
-                doc.add_root(plot.state)
+            doc = Document()
+            doc.add_root(plot.state)
             comms_target = str(uuid.uuid4())
             doc.last_comms_target = comms_target
             div = notebook_div(plot.state, comms_target)
