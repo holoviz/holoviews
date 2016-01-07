@@ -6,15 +6,16 @@ from bokeh.models import CustomJS, TapTool, ColumnDataSource
 try:
     from bokeh.models import PlotObject
     from bokeh.protocol import serialize_json
-    old_bokeh = True
+    bokeh_lt_011 = True
 except ImportError:
     from bokeh.models import Component as PlotObject
-    from bokeh._json_encoder import serialize_json
-    old_bokeh = False
+    from bokeh.core.json_encoder import serialize_json
+    bokeh_lt_011 = False
 
 import param
 
 from ...core.data import ArrayColumns
+from .util import models_to_json
 
 
 class Callback(param.ParameterizedFunction):
@@ -75,11 +76,11 @@ class Callback(param.ParameterizedFunction):
           if (msg.msg_type == "execute_result") {
             var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
             if (data.root !== undefined) {
-              doc = Bokeh.index[data.root].model.document;
+              var doc = Bokeh.index[data.root].model.document;
             }
             $.each(data.data, function(i, value) {
               if (data.root !== undefined) {
-                ds = doc.get_model_by_id(value.id);
+                var ds = doc.get_model_by_id(value.id);
               } else {
                 var ds = Bokeh.Collections(value.type).get(value.id);
               }
@@ -153,18 +154,10 @@ class Callback(param.ParameterizedFunction):
         Serializes any Bokeh plot objects passed to it as a list.
         """
         data = dict(data=[])
-        if not old_bokeh:
+        if not bokeh_lt_011:
             plot = self.plot[0]
             data['root'] = plot.state._id
-
-        for obj in objects:
-            if old_bokeh:
-                json = obj.vm_serialize(changed_only=True)
-            else:
-                json = obj.to_json(False)
-            data['data'].append({'id': obj.ref['id'], 'type': obj.ref['type'],
-                                 'data': json})
-        return serialize_json(data)
+        return serialize_json(models_to_json(objects))
 
 
 

@@ -21,7 +21,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
-from .renderer import old_bokeh
+from .renderer import bokeh_lt_011
 from .util import mpl_to_bokeh, convert_datetime
 
 
@@ -268,10 +268,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
             bg_attr = 'background_fill'
-            if not old_bokeh: bg_attr += ' _color'
+            if not bokeh_lt_011: bg_attr += '_color'
             plot_props[bg_attr] = self.bgcolor
         if self.border is not None:
-            plot_props['min_border'] = self.border
+            for p in ['left', 'right', 'top', 'bottom']:
+                plot_props['min_border_'+p] = self.border
         lod = dict(self.defaults()['lod'], **self.lod)
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
@@ -623,7 +624,10 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if legend_fontsize:
             plot.legend[0].label_text_font_size = legend_fontsize
 
-        plot.legend.orientation = self.legend_position
+        if bokeh_lt_011:
+            plot.legend.orientation = self.legend_position
+        else:
+            plot.legend.location = self.legend_position
         legends = plot.legend[0].legends
         new_legends = []
         for label, l in legends:

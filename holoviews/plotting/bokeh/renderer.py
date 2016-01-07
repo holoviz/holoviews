@@ -1,6 +1,8 @@
+import uuid
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .util import models_to_json
 
 import param
 from param.parameterized import bothmethod
@@ -11,10 +13,11 @@ from bokeh.resources import CDN
 
 try:
     from bokeh.protocol import serialize_json
-    old_bokeh = True
+    bokeh_lt_011 = True
 except ImportError:
-    from bokeh._json_encoder import serialize_json
-    old_bokeh = False
+    from bokeh.core.json_encoder import serialize_json
+    bokeh_lt_011 = False
+
 
 class BokehRenderer(Renderer):
 
@@ -56,33 +59,22 @@ class BokehRenderer(Renderer):
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
             data = dict(data=[])
-            ids = []
-            if not old_bokeh:
+            if not bokeh_lt_011:
                 data['root'] = plot.state._id
-            json_data = []
-            for plotobj in plotobjects:
-                if plotobj.ref['id'] in ids:
-                    continue
-                else:
-                    ids.append(plotobj.ref['id'])
-                if old_bokeh:
-                    json = plotobj.vm_serialize(changed_only=True)
-                else:
-                    json = plotobj.to_json(False)
-                json_data.append({'id': plotobj.ref['id'],
-                                  'type': plotobj.ref['type'],
-                                  'data': json})
-            data['data'] = json_data
+            data['data'] = models_to_json(plotobjects)
             return serialize_json(data), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        if not old_bokeh:
+        if not bokeh_lt_011:
             doc = Document()
             doc.add_root(plot.state)
-            plot.set_root(plot.state)
-            plot.set_document(doc)
-        return notebook_div(plot.state)
+            comms_target = str(uuid.uuid4())
+            doc.last_comms_target = comms_target
+            div = notebook_div(plot.state, comms_target)
+            return div
+        else:
+            return notebook_div(plot.state)
 
 
     @classmethod
