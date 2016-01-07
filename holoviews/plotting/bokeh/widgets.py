@@ -3,11 +3,11 @@ from distutils.version import LooseVersion
 
 import param
 import bokeh
-from bokeh.io import push_notebook, Document
+from bokeh.io import Document
 
 if LooseVersion(bokeh.__version__) >= LooseVersion('0.11'):
     old_bokeh = False
-    from bokeh.io import _CommsHandle
+    from bokeh.io import push_notebook, _CommsHandle
     from bokeh.util.notebook import get_comms
 else:
     old_bokeh = True
