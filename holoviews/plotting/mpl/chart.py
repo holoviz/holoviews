@@ -206,7 +206,7 @@ class ErrorPlot(ChartPlot):
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
 
-        if self.horizontal:
+        if self.invert_axes:
             bdata = xvals - neg_error
             tdata = xvals + pos_error
             tops.set_xdata(bdata)
