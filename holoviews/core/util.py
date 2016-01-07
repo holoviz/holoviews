@@ -375,8 +375,11 @@ def max_range(ranges):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            arr = np.array([r for r in ranges for v in r if v is not None])
-            if arr.dtype.kind == 'M':
+            values = [r for r in ranges for v in r if v is not None]
+            if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
+                values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
+            arr = np.array(values)
+            if arr.dtype.kind in 'M':
                 return arr[:, 0].min(), arr[:, 1].max()
             return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except:
