@@ -6,11 +6,11 @@ import bokeh
 from bokeh.io import Document
 
 if LooseVersion(bokeh.__version__) >= LooseVersion('0.11'):
-    old_bokeh = False
+    bokeh_lt_011 = False
     from bokeh.io import push_notebook, _CommsHandle
     from bokeh.util.notebook import get_comms
 else:
-    old_bokeh = True
+    bokeh_lt_011 = True
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
@@ -43,7 +43,7 @@ class BokehWidget(NdWidget):
         first call and
         """
         state = self.plot.update(idx)
-        if self.embed or fig_format == 'html' or old_bokeh:
+        if self.embed or fig_format == 'html' or bokeh_lt_011:
             return self.renderer.html(self.plot, fig_format)
         else:
             doc = state.document

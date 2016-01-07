@@ -10,11 +10,11 @@ except ImportError:
 try:
     from bokeh.enums import Palette
     from bokeh.plotting import Plot
-    old_bokeh = True
+    bokeh_lt_011 = True
 except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
-    old_bokeh = False
+    bokeh_lt_011 = False
 from bokeh.plotting import Figure
 
 # Conversion between matplotlib and bokeh markers
@@ -137,7 +137,7 @@ def models_to_json(models):
             continue
         else:
             ids.append(plotobj.ref['id'])
-        if old_bokeh:
+        if bokeh_lt_011:
             json = plotobj.vm_serialize(changed_only=True)
         else:
             json = plotobj.to_json(False)

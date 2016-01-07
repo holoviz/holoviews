@@ -6,11 +6,11 @@ from bokeh.models import CustomJS, TapTool, ColumnDataSource
 try:
     from bokeh.models import PlotObject
     from bokeh.protocol import serialize_json
-    old_bokeh = True
+    bokeh_lt_011 = True
 except ImportError:
     from bokeh.models import Component as PlotObject
     from bokeh.core.json_encoder import serialize_json
-    old_bokeh = False
+    bokeh_lt_011 = False
 
 import param
 
@@ -154,7 +154,7 @@ class Callback(param.ParameterizedFunction):
         Serializes any Bokeh plot objects passed to it as a list.
         """
         data = dict(data=[])
-        if not old_bokeh:
+        if not bokeh_lt_011:
             plot = self.plot[0]
             data['root'] = plot.state._id
         return serialize_json(models_to_json(objects))

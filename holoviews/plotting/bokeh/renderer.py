@@ -13,10 +13,10 @@ from bokeh.resources import CDN
 
 try:
     from bokeh.protocol import serialize_json
-    old_bokeh = True
+    bokeh_lt_011 = True
 except ImportError:
     from bokeh.core.json_encoder import serialize_json
-    old_bokeh = False
+    bokeh_lt_011 = False
 
 
 class BokehRenderer(Renderer):
@@ -59,14 +59,14 @@ class BokehRenderer(Renderer):
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
             data = dict(data=[])
-            if not old_bokeh:
+            if not bokeh_lt_011:
                 data['root'] = plot.state._id
             data['data'] = models_to_json(plotobjects)
             return serialize_json(data), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        if not old_bokeh:
+        if not bokeh_lt_011:
             doc = Document()
             doc.add_root(plot.state)
             comms_target = str(uuid.uuid4())
