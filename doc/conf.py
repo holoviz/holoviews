@@ -15,7 +15,7 @@ project = u'HoloViews'
 authors = u'IOAM: Jean-Luc R. Stevens, Philipp Rudiger, and James A. Bednar'
 copyright = u'2015 ' + authors
 ioam_module = 'holoviews'
-description = 'Composable, declarative data structures for building even complex visualizations easily'
+description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
