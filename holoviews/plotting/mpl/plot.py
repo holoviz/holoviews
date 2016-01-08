@@ -59,19 +59,19 @@ class MPLPlot(DimensionedPlot):
         Size relative to the supplied overall fig_inches in percent.""")
 
     initial_hooks = param.HookList(default=[], doc="""
-        Optional list of hooks called when finalizing an axis.
-        The hook is passed the full set of plot handles and the
-        displayed object.""")
+        Optional list of hooks called before plotting the data onto
+        the axis. The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
 
     final_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
-        The hook is passed the full set of plot handles and the
-        displayed object.""")
+        The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
 
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
-        The hook is passed the full set of plot handles and the
-        displayed object.""")
+        The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
 
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
