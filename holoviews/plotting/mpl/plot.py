@@ -107,13 +107,10 @@ class MPLPlot(DimensionedPlot):
         self.handles['fig'] = fig
         self.handles['axis'] = axis
 
-        if not self.final_hooks and self.finalize_hooks:
-            self.warning('Using deprecated finalize_hooks options, '
-                         'use final_hooks instead')
-            self.final_hooks = self.finalize_hooks
-        elif self.final_hooks and self.finalize_hooks:
-            raise ValueError('Set either final_hooks or deprecated '
-                             'finalize_hooks, not both.')
+        if self.final_hooks and self.finalize_hooks:
+            self.warning('Set either final_hooks or deprecated '
+                         'finalize_hooks, not both.')
+        self.finalize_hooks = self.final_hooks
 
 
     def _init_axis(self, fig, axis):
