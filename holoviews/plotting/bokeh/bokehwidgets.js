@@ -14,9 +14,19 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 // Define methods to override on widgets
 var BokehMethods = {
 	init_slider : function(init_val){
-		$.each(this.frames, $.proxy(function(index, frame) {
-			this.frames[index] = JSON.parse(frame);
-		}, this));
+		if(this.load_json) {
+			var data_url = this.json_path + '/' + this.id + '.json';
+			$.getJSON(data_url, $.proxy(function(json_data) {
+				this.frames = json_data;
+				$.each(this.frames, $.proxy(function(index, frame) {
+					this.frames[index] = JSON.parse(frame);
+				}, this));
+			}, this));
+		} else {
+			$.each(this.frames, $.proxy(function(index, frame) {
+				this.frames[index] = JSON.parse(frame);
+			}, this));
+		}
 	},
 	update : function(current){
 		if (current === undefined) {
@@ -24,11 +34,19 @@ var BokehMethods = {
 		} else {
 			var data = this.frames[current];
 		}
-		if (data != undefined) {
-			$.each(data, function(id, value) {
-				var ds = Bokeh.Collections(value.type).get(id);
+		if (data !== undefined) {
+			if (data.root !== undefined) {
+				var doc = Bokeh.index[data.root].model.document;
+			}
+			$.each(data.data, function(i, value) {
+				if (data.root !== undefined) {
+					var ds = doc.get_model_by_id(value.id);
+				} else {
+					var ds = Bokeh.Collections(value.type).get(value.id);
+				}
 				if (ds != undefined) {
 					ds.set(value.data);
+					ds.trigger('change');
 				}
 			});
 		}
@@ -56,14 +74,10 @@ var BokehMethods = {
 				this.update(current);
 			}
 		}
-		if(!(current in this.frames)) {
-			var kernel = IPython.notebook.kernel;
-			callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
-			var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-		} else {
-			this.update(current);
-		}
+		var kernel = IPython.notebook.kernel;
+		callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
+		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
 }
 

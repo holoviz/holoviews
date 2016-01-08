@@ -163,7 +163,6 @@ class RasterPlot(ColorbarPlot):
             if type(element) == Raster:
                 b, t = t, b
 
-        val_dim = [d.name for d in element.vdims][0]
         opts = self.style[self.cyclic_index]
 
         clim, norm, opts = self._norm_kwargs(element, ranges, opts)
@@ -198,7 +197,6 @@ class QuadMeshPlot(ColorbarPlot):
         opts = self.style[self.cyclic_index]
         if 'cmesh' in self.handles:
             self.handles['cmesh'].remove()
-        clims = opts.get('clim', ranges.get(element.get_dimension(2).name))
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
@@ -241,6 +239,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_ranges = param.Parameter(precedence=-1)
     apply_ticks = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
+    invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
@@ -248,7 +247,6 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
     logz = param.Parameter(precedence=-1)
-    orientation = param.Parameter(precedence=-1)
     show_grid = param.Parameter(precedence=-1)
     style_grouping = param.Parameter(precedence=-1)
     xticks = param.Parameter(precedence=-1)

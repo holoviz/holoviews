@@ -4,14 +4,17 @@ from itertools import product
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
+from matplotlib.collections import LineCollection
 
 import param
 
-from ...core import OrderedDict, NdMapping, CompositeOverlay, HoloMap
-from ...core.util import match_spec, unique_iterator
+from ...core import OrderedDict
+from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
 from ...element import Points, Raster, Polygons
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
+from .path  import PathPlot
+from .plot import AdjoinedPlot
 
 
 class ChartPlot(ElementPlot):
@@ -24,25 +27,28 @@ class ChartPlot(ElementPlot):
 
     def _cyclic_format_x_tick_label(self, x):
         if self.relative_labels:
-            return str(x)
-        return str(int(np.round(180*x/self.cyclic_range[1])))
+            return str(int(x))
+        return str(int(np.rad2deg(x)))
 
 
     def _rotate(self, seq, n=1):
         n = n % len(seq) # n=hop interval
-        return seq[n:] + seq[:n]
+        return seq[n:-1] + seq[:n]
 
-    def _cyclic_reduce_ticks(self, x_values):
+
+    def _cyclic_reduce_ticks(self, x_values, ticks):
         values = []
         labels = []
-        step = self.cyclic_range[1] / (self.xticks - 1)
-        if self.relative_labels:
-            labels.append(-90)
-            label_step = 180 / (self.xticks - 1)
-        else:
-            labels.append(x_values[0])
-            label_step = step
+        crange = self.cyclic_range[1] - self.cyclic_range[0]
+        step = crange / (self.xticks - 1)
+
         values.append(x_values[0])
+        if self.relative_labels:
+            labels.append(-np.rad2deg(crange/2))
+            label_step = np.rad2deg(crange) / (self.xticks - 1)
+        else:
+            labels.append(ticks[0])
+            label_step = step
         for i in range(0, self.xticks - 1):
             labels.append(labels[-1] + label_step)
             values.append(values[-1] + step)
@@ -55,19 +61,17 @@ class ChartPlot(ElementPlot):
         """
         x_values = list(curveview.dimension_values(0))
         y_values = list(curveview.dimension_values(1))
+        crange = self.cyclic_range[1] - self.cyclic_range[0]
         if self.center_cyclic:
             rotate_n = self.peak_argmax+len(x_values)/2
             y_values = self._rotate(y_values, n=rotate_n)
             ticks = self._rotate(x_values, n=rotate_n)
+            ticks = np.array(ticks) - crange
+            ticks = list(ticks) + [ticks[0]]
+            y_values = list(y_values) + [y_values[0]]
         else:
-            ticks = list(x_values)
-
-        ticks.append(ticks[0])
-        x_values.append(x_values[0]+self.cyclic_range[1])
-        y_values.append(y_values[0])
-
-        self.xvalues = x_values
-        return np.vstack([x_values, y_values]).T
+            ticks = x_values
+        return x_values, y_values, ticks
 
 
 class CurvePlot(ChartPlot):
@@ -115,33 +119,39 @@ class CurvePlot(ChartPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        # Create xticks and reorder data if cyclic
-        xticks = None
-        data = element.data
-        if self.cyclic_range is not None:
-            if self.center_cyclic:
-                self.peak_argmax = np.argmax(element.data[:, 1])
-            data = self._cyclic_curves(element)
-            if self.xticks is not None:
-                xticks = self._cyclic_reduce_ticks(self.xvalues)
-
+        xs, ys, xticks = self.get_data(element)
         # Create line segments and apply style
         style = self.style[self.cyclic_index]
         legend = element.label if self.show_legend else ''
-        line_segment = axis.plot(element.dimension_values(0),
-                                 element.dimension_values(1), label=legend,
+        line_segment = axis.plot(xs, ys, label=legend,
                                  zorder=self.zorder, **style)[0]
 
         self.handles['artist'] = line_segment
         return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
 
 
+    def get_data(self, element):
+        # Create xticks and reorder data if cyclic
+        xticks = None
+        if self.cyclic_range and all(v is not None for v in self.cyclic_range):
+            if self.center_cyclic:
+                self.peak_argmax = np.argmax(element.dimension_values(1))
+            xs, ys, ticks = self._cyclic_curves(element)
+            if self.xticks is not None and not isinstance(self.xticks, (list, tuple)):
+                xticks = self._cyclic_reduce_ticks(xs, ticks)
+        else:
+            xs = element.dimension_values(0)
+            ys = element.dimension_values(1)
+        return xs, ys, xticks
+
+
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        if self.cyclic_range is not None:
-            data = self._cyclic_curves(element)
-        artist.set_xdata(element.dimension_values(0))
-        artist.set_ydata(element.dimension_values(1))
+        xs, ys, xticks = self.get_data(element)
+
+        artist.set_xdata(xs)
+        artist.set_ydata(ys)
+        return {'xticks': xticks}
 
 
 
@@ -196,7 +206,7 @@ class ErrorPlot(ChartPlot):
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
 
-        if self.horizontal:
+        if self.invert_axes:
             bdata = xvals - neg_error
             tdata = xvals + pos_error
             tops.set_xdata(bdata)
@@ -283,7 +293,7 @@ class HistogramPlot(ChartPlot):
 
         super(HistogramPlot, self).__init__(histograms, **params)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.axis_settings = ['ylabel', 'xlabel', 'yticks']
         else:
             self.axis_settings = ['xlabel', 'ylabel', 'xticks']
@@ -301,7 +311,7 @@ class HistogramPlot(ChartPlot):
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
 
-        if self.orientation == 'vertical':
+        if self.invert_axes:
             self.offset_linefn = self.handles['axis'].axvline
             self.plotfn = self.handles['axis'].barh
         else:
@@ -355,7 +365,7 @@ class HistogramPlot(ChartPlot):
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         y0 = np.nanmin([0, y0])
-        return (y0, x0, y1, x1) if self.orientation == 'vertical' else (x0, y0, x1, y1)
+        return (x0, y0, x1, y1)
 
 
     def _process_axsettings(self, hist, lims, ticks):
@@ -382,7 +392,7 @@ class HistogramPlot(ChartPlot):
         """
         plot_vals = zip(self.handles['artist'], edges, hvals, widths)
         for bar, edge, height, width in plot_vals:
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 bar.set_y(edge)
                 bar.set_width(height)
                 bar.set_height(width)
@@ -407,24 +417,16 @@ class HistogramPlot(ChartPlot):
 
 
 
-class SideHistogramPlot(HistogramPlot):
+class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
-    aspect = param.Parameter(default='auto', doc="""
-        Aspect ratios on SideHistogramPlot should be determined by the
-        AdjointLayoutPlot.""")
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
 
     offset = param.Number(default=0.2, bounds=(0,1), doc="""
         Histogram value offset for a colorbar.""")
 
     show_grid = param.Boolean(default=True, doc="""
         Whether to overlay a grid on the axis.""")
-
-    show_title = param.Boolean(default=False, doc="""
-        Titles should be disabled on all SidePlots to avoid clutter.""")
-
-    show_xlabel = param.Boolean(default=False, doc="""
-        Whether to show the x-label of the plot. Disabled by default
-        because plots are often too cramped to fit the title correctly.""")
 
     def _process_hist(self, hist):
         """
@@ -436,16 +438,6 @@ class SideHistogramPlot(HistogramPlot):
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
         return edges, hvals, widths, lims
-
-
-    def _process_axsettings(self, hist, lims, ticks):
-        axsettings = super(SideHistogramPlot, self)._process_axsettings(hist, lims, ticks)
-        label = 'ylabel' if self.orientation == 'vertical' else 'xlabel'
-        if not self.show_xlabel:
-            axsettings[label] = ''
-        else:
-            axsettings[label] = str(hist.kdims[0])
-        return axsettings
 
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
@@ -486,7 +478,7 @@ class SideHistogramPlot(HistogramPlot):
     def get_extents(self, element, ranges):
         x0, _, x1, _ = element.extents
         _, y1 = element.range(1)
-        return (0, x0, y1, x1) if self.orientation == 'vertical' else (x0, 0, x1, y1)
+        return (x0, 0, x1, y1)
 
 
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
@@ -494,14 +486,11 @@ class SideHistogramPlot(HistogramPlot):
         Use the given cmap to color the bars, applying the correct
         color ranges as necessary.
         """
-        vertical = (self.orientation == 'vertical')
         cmap_range = main_range[1] - main_range[0]
         lower_bound = main_range[0]
         colors = np.array(element.dimension_values(dim))
         colors = (colors - lower_bound) / (cmap_range)
         for c, bar in zip(colors, bars):
-            bar_bin = bar.get_y() if vertical else bar.get_x()
-            width = bar.get_height() if vertical else bar.get_width()
             bar.set_facecolor(cmap(c))
             bar.set_clip_on(False)
 
@@ -516,7 +505,7 @@ class SideHistogramPlot(HistogramPlot):
             offset_line.set_visible(False)
         else:
             offset_line.set_visible(True)
-            if self.orientation == 'vertical':
+            if self.invert_axes:
                 offset_line.set_xdata(offset)
             else:
                 offset_line.set_ydata(offset)
@@ -553,6 +542,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'linewidth', 'marker', 'size', 'visible',
                   'cmap', 'vmin', 'vmax']
 
+    _disabled_opts = ['size']
+
     def initialize_plot(self, ranges=None):
         points = self.hmap.last
         axis = self.handles['axis']
@@ -563,17 +554,19 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ndims = points.shape[1]
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
-        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
+        cs = None
+        if self.color_index is not None and self.color_index < ndims:
+            cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
         if self.size_index < ndims and self.scaling_factor > 1:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
-        if cs is not None:
-            style['c'] = cs
-        else:
+        if cs is None:
             style['c'] = color
+        else:
+            style['c'] = cs
         edgecolor = style.pop('edgecolors', 'none')
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
@@ -813,11 +806,9 @@ class BarPlot(LegendPlot):
                 dim = dims[vidx]
                 dimensions.append(dim)
                 vals = self.hmap.dimension_values(dim.name)
-                params = dict(kdims=[dim])
             else:
                 dimensions.append(None)
                 vals = [None]
-                params = {}
             values[vtype] = list(unique_iterator(vals))
         return values, dimensions
 
@@ -863,18 +854,22 @@ class BarPlot(LegendPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], xticks, xlabel = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=xticks, xlabel=xlabel, ylabel=str(vdim))
+        self.handles['artist'], self.handles['xticks'], xlabel = self._create_bars(axis, element)
+        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'], xlabel=xlabel, ylabel=str(vdim))
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
         """
         Apply ticks with appropriate offsets.
         """
-        ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-        super(BarPlot, self)._finalize_ticks(axis, element, [ticks, labels], yticks, zticks)
-        for t, y in zip(axis.get_xticklabels(), yalignments):
-            t.set_y(y)
+        yalignments = None
+        if xticks is not None:
+            ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
+            xticks = [ticks, labels]
+        super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
+        if yalignments:
+            for t, y in zip(axis.get_xticklabels(), yalignments):
+                t.set_y(y)
 
 
     def _create_bars(self, axis, element):
@@ -949,6 +944,7 @@ class BarPlot(LegendPlot):
                     labels.append(label)
         title = [str(element.kdims[indices[cg]])
                  for cg in self.color_by if indices[cg] < ndims]
+
         if self.show_legend and any(len(l) for l in labels):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
@@ -968,10 +964,201 @@ class BarPlot(LegendPlot):
                 prev = 0
                 for s in self.values['stack']:
                     if s is not None: val_key[si] = s
-                    bar = self.handles['bars'].get(tuple(val_key))
+                    bar = self.handles['artist'].get(tuple(val_key))
                     if bar:
-                        height = element.get(tuple(val_key), np.NaN)
-                        height = height if np.isscalar(height) else height[0]
+                        vals = element.sample([tuple(val_key)]).dimension_values(element.vdims[0].name)
+                        height = float(vals[0]) if len(vals) else np.NaN
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
                         prev += height if np.isfinite(height) else 0
+        return {'xticks': self.handles['xticks']}
+
+
+class SpikesPlot(PathPlot):
+
+    aspect = param.Parameter(default='square', doc="""
+        The aspect ratio mode of the plot. Allows setting an
+        explicit aspect ratio as width/height as well as
+        'square' and 'equal' options.""")
+
+    color_index = param.Integer(default=1, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    spike_length = param.Number(default=0.1, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
+
+    position = param.Number(default=0., doc="""
+      The position of the lower end of each spike.""")
+
+    style_opts = PathPlot.style_opts + ['cmap']
+
+    def initialize_plot(self, ranges=None):
+        lines = self.hmap.last
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(lines, ranges)
+        style = self.style[self.cyclic_index]
+        label = lines.label if self.show_legend else ''
+
+        data, array, clim = self.get_data(lines, ranges)
+        if array is not None:
+            style['array'] = array
+            style['clim'] = clim
+
+        line_segments = LineCollection(data, label=label,
+                                       zorder=self.zorder, **style)
+        self.handles['artist'] = line_segments
+        self.handles['axis'].add_collection(line_segments)
+
+        return self._finalize_axis(key, ranges=ranges)
+
+
+    def get_data(self, element, ranges):
+        dimensions = element.dimensions(label=True)
+        ndims = len(dimensions)
+
+        pos = self.position
+        if ndims > 1:
+            data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
+        else:
+            height = self.spike_length
+            data = [[(x[0], pos), (x[0], pos+height)] for x in element.array()]
+
+        if self.invert_axes:
+            data = [(line[0][::-1], line[1][::-1]) for line in data]
+
+        array, clim = None, None
+        if self.color_index < ndims:
+            cdim = dimensions[self.color_index]
+            array = element.dimension_values(cdim)
+            clim = ranges[cdim]
+        return data, array, clim
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        artist = self.handles['artist']
+        data, array, clim = self.get_data(element, ranges)
+        artist.set_paths(data)
+        visible = self.style[self.cyclic_index].get('visible', True)
+        artist.set_visible(visible)
+        if array is not None:
+            artist.set_clim(clim)
+            artist.set_array(array)
+
+
+class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    subplot_size = param.Number(default=0.1, doc="""
+        The size subplots as expressed as a fraction of the main plot.""")
+
+    spike_length = param.Number(default=1, doc="""
+      The length of each spike if Spikes object is one dimensional.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+
+
+class BoxPlot(ChartPlot):
+    """
+    BoxPlot plots the ErrorBar Element type and supporting
+    both horizontal and vertical error bars via the 'horizontal'
+    plot option.
+    """
+
+    style_opts = ['notch', 'sym', 'whis', 'bootstrap',
+                  'conf_intervals', 'widths', 'showmeans',
+                  'show_caps', 'showfliers', 'boxprops',
+                  'whiskerprops', 'capprops', 'flierprops',
+                  'medianprops', 'meanprops', 'meanline']
+
+    def get_extents(self, element, ranges):
+        return (np.NaN,)*4
+
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        axis = self.handles['axis']
+        key = self.keys[-1]
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+
+        xlabel = ','.join([str(d) for d in element.kdims])
+        ylabel = str(element.vdims[0])
+
+        self.handles['artist'] = self.get_artist(element, axis)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel,
+                                   ylabel=ylabel)
+
+    def get_artist(self, element, axis):
+        groups = element.groupby(element.kdims)
+
+        data, labels = [], []
+
+        groups = groups.data.items() if element.kdims else [(element.label, element)]
+        for key, group in groups:
+            if element.kdims:
+                key = [k if isinstance(k, basestring) else str(k) for k in key]
+                label = ','.join([safe_unicode(d.pprint_value(v))
+                                  for d, v in zip(element.kdims, key)])
+            else:
+                label = key
+            data.append(group[group.vdims[0]])
+            labels.append(label)
+        return axis.boxplot(data, labels=labels, vert=not self.invert_axes,
+                            **self.style[self.cyclic_index])
+
+
+    def update_handles(self, axis, element, key, ranges=None):
+        for k, group in self.handles['artist'].items():
+            for v in group:
+                v.remove()
+        self.handles['artist'] = self.get_artist(element, axis)
+
+
+
+class SideBoxPlot(AdjoinedPlot, BoxPlot):
+
+    bgcolor = param.Parameter(default=(1, 1, 1, 0), doc="""
+        Make plot background invisible.""")
+
+    border_size = param.Number(default=0, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
+    xaxis = param.ObjectSelector(default='bare',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='bare',
+                                 objects=['left', 'right', 'bare', 'left-bare',
+                                          'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    def __init__(self, *args, **kwargs):
+        super(SideBoxPlot, self).__init__(*args, **kwargs)
+        if self.adjoined:
+            self.invert_axes = not self.invert_axes

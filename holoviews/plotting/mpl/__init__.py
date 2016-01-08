@@ -14,17 +14,17 @@ from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
-from ...element import * # pyflakes:ignore (API import)
+from ...element import * # noqa (API import)
 from ..plot import PlotSelector
-from .annotation import * # pyflakes:ignore (API import)
-from .chart import * # pyflakes:ignore (API import)
-from .chart3d import * # pyflakes:ignore (API import)
-from .path import * # pyflakes:ignore (API import)
-from .plot import * # pyflakes:ignore (API import)
-from .raster import * # pyflakes:ignore (API import)
-from .tabular import * # pyflakes:ignore (API import)
-from . import pandas # pyflakes:ignore (API import)
-from . import seaborn # pyflakes:ignore (API import)
+from .annotation import * # noqa (API import)
+from .chart import * # noqa (API import)
+from .chart3d import * # noqa (API import)
+from .path import * # noqa (API import)
+from .plot import * # noqa (API import)
+from .raster import * # noqa (API import)
+from .tabular import * # noqa (API import)
+from . import pandas # noqa (API import)
+from . import seaborn # noqa (API import)
 
 from .renderer import MPLRenderer
 
@@ -84,7 +84,7 @@ style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
                  'markerfacecolor': ['mfc'], 'markersize': ['ms']}
 
-Store.renderers['matplotlib'] = MPLRenderer
+Store.renderers['matplotlib'] = MPLRenderer.instance()
 
 # Defines a wrapper around GridPlot and RasterGridPlot
 # switching to RasterGridPlot if the plot only contains
@@ -108,6 +108,8 @@ Store.register({Curve: CurvePlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
+		Spikes: SpikesPlot,
+                BoxWhisker: BoxPlot,
 
                 # General plots
                 GridSpace: GridPlot,
@@ -157,7 +159,9 @@ Store.register({Curve: CurvePlot,
 
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
-                          GridSpace: GridPlot})
+                          GridSpace: GridPlot,
+                          Spikes: SideSpikesPlot,
+                          BoxWhisker: SideBoxPlot})
 
 options = Store.options(backend='matplotlib')
 
@@ -175,6 +179,9 @@ options.Points = Options('style', color=Cycle(), marker='o')
 options.Scatter3D = Options('style', facecolors=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
+options.Spikes = Options('style', color='black')
+options.BoxWhisker = Options('style', boxprops=dict(color='k'),
+                             whiskerprops=dict(color='k'))
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')

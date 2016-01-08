@@ -12,8 +12,13 @@ HoloViewsWidget.prototype.init_slider = function(init_val){
 
 HoloViewsWidget.prototype.populate_cache = function(idx){
     if(this.load_json) {
-        var data_url = this.server + this.fig_id + "/" + idx;
-        this.cache[idx].load(data_url);
+		var data_url = "./" + this.id + '.json';
+		$.getJSON(data_url, $.proxy(function(json_data) {
+			this.frames = json_data;
+			$.each(this.frames, $.proxy(function(index, frame) {
+				this.cache[index].html(frame);
+			}, this));
+		}, this));
     } else {
         this.cache[idx].html(this.frames[idx]);
         if (this.embed) {
@@ -78,12 +83,11 @@ HoloViewsWidget.prototype.update = function(current){
 }
 
 
-function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached, server, dynamic){
+function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached, json_path, dynamic){
     this.frames = frames;
     this.fig_id = "fig_" + id;
     this.img_id = "_anim_img" + id;
     this.id = id;
-    this.server = server;
     this.slider_ids = slider_ids;
     this.keyMap = keyMap
     this.current_frame = 0;
@@ -94,6 +98,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
     this.cached = cached;
     this.dynamic = dynamic;
     this.cache = {};
+	this.json_path = json_path;
     this.init_slider(this.current_vals[0]);
 }
 
@@ -130,7 +135,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 
 
 /* Define the ScrubberWidget class */
-function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, dynamic){
+function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, json_path, dynamic){
     this.img_id = "_anim_img" + id;
     this.slider_id = "_anim_slider" + id;
     this.loop_select_id = "_anim_loop_select" + id;
@@ -147,6 +152,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
     this.frames = frames;
     this.cache = {};
     this.length = num_frames;
+	this.json_path = json_path;
     document.getElementById(this.slider_id).max = this.length - 1;
     this.init_slider(0);
 }
@@ -284,4 +290,21 @@ function extend(destination, source) {
         }
     }
     return destination;
+}
+
+function update_widget(widget, values) {
+	if (widget.hasClass("ui-slider")) {
+		widget.slider('option',
+					  {'min': 0, 'max': values.length-1,
+					   'dim_vals': values, 'value': 0})
+		widget.slider('option', 'slide').call(widget, event, {'value': 0})
+	} else {
+		widget.empty();
+		for (var i=0; i<values.length; i++){
+			widget.append($("<option>", {
+				value: i,
+				text: values[i]
+			}))};
+		widget.trigger("change");
+	};
 }

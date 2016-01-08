@@ -3,7 +3,7 @@
 import sys, os
 sys.path.insert(0, os.getcwd())
 
-from builder.shared_conf import * # pyflakes:ignore (API import)
+from builder.shared_conf import * # noqa (API import)
 
 paths = ['../param/', '.', '..']
 add_paths(paths)
@@ -37,6 +37,7 @@ import sphinx_rtd_theme
 html_theme = "sphinx_rtd_theme"
 html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
 html_logo = '_static/holoviews_logo.png'
+html_favicon = '_static/favicon.ico'
 
 # -------------------------------------------------------------------------
 # -- The remaining items are less likely to need changing for a new project
@@ -96,7 +97,7 @@ from nbpublisher import nbbuild
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
     try:
-        import runipy # pyflakes:ignore (Warning import)
+        import runipy # noqa (Warning import)
         nbbuild.setup(app)
     except:
         print('RunIPy could not be imported; pages including the '

@@ -36,6 +36,11 @@ HoloViews may be used:
   Visualizing the marking results of an undergraduate assignment with
   HoloViews.
 
+* `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of
+`Jake Vanderplas' blog post
+<https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
+about dynamic systems and modeling of conformity.
+
 
 Extensions
 ----------

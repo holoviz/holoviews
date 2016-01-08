@@ -4,7 +4,7 @@ Tests for the Columns Element types.
 
 from unittest import SkipTest
 import numpy as np
-from holoviews import OrderedDict, Columns, Curve, ItemTable, NdElement, HoloMap
+from holoviews import Columns, NdElement, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.ndmapping import sorted_context
 
@@ -311,6 +311,24 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def test_columns_index_column_ht(self):
         self.compare_arrays(self.columns_ht['y'], self.ys)
 
+    def test_columns_boolean_index(self):
+        row = self.table[np.array([True, True, False])]
+        indexed = Columns({'Gender':['M','M'],'Age':[10,16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(row, indexed)
+
+    def test_columns_value_dim_index(self):
+        row = self.table[:, :, 'Weight']
+        indexed = Columns({'Gender':['M','M','F'],'Age':[10,16, 12],
+                           'Weight':[15,18, 10]},
+                          kdims=self.kdims, vdims=self.vdims[:1])
+        self.assertEquals(row, indexed)
+
+    def test_columns_value_dim_scalar_index(self):
+        row = self.table['M', 10, 'Weight']
+        self.assertEquals(row, 15)
+
     # Casting
 
     def test_columns_array_ht(self):
@@ -318,17 +336,18 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                          np.column_stack([self.xs, self.ys]))
 
 
-class ArrayColumnsTest(ComparisonTestCase, HomogeneousColumnTypes):
+class ArrayColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the ArrayColumns interface.
     """
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['array']
         self.data_instance_type = np.ndarray
         self.init_data()
 
 
-class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DFColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the pandas DFColumns interface.
     """
@@ -336,30 +355,33 @@ class DFColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
     def setUp(self):
         if pd is None:
             raise SkipTest("Pandas not available")
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dataframe']
         self.data_instance_type = pd.DataFrame
         self.init_data()
 
 
 
-class DictColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class DictColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the generic dictionary interface.
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['dictionary']
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_data()
 
 
 
-class NdColumnsTest(ComparisonTestCase, HeterogeneousColumnTypes):
+class NdColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the NdColumns interface (mostly for backwards compatibility)
     """
 
     def setUp(self):
+        self.restore_datatype = Columns.datatype
         Columns.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_data()

@@ -3,17 +3,20 @@ Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
 
-import os
-import base64
+from io import BytesIO
+import os, base64
 from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
+from ..core.options import Store, StoreOptions
 from ..core.util import find_file
-from .. import Store, Layout, HoloMap, AdjointLayout
-from .widgets import ScrubberWidget, SelectionWidget
+from .. import Layout, HoloMap, AdjointLayout
+from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
+from .. import DynamicMap
 from . import Plot
+from .util import displayable, collate
 
 from param.parameterized import bothmethod
 
@@ -49,6 +52,17 @@ MIME_TYPES = {
     'json':  None
 }
 
+static_template = """
+<html>
+  <head>
+    {css}
+    {js}
+  </head>
+  <body>
+    {html}
+  </body>
+</html>
+"""
 
 class Renderer(Exporter):
     """
@@ -67,26 +81,34 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
-    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
-         The available rendering modes. As a minimum, the 'default'
-         mode must be supported.""")
+    dpi=param.Integer(None, allow_None=True, doc="""
+        The render resolution in dpi (dots per inch)""")
 
-    fig = param.ObjectSelector(default='auto', doc="""
+    fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
-
-    holomap = param.ObjectSelector(default='auto', doc="""
-        Output render multi-frame (typically animated) format. If
-        None, no multi-frame rendering will occur.""")
-
-    size=param.Integer(100, doc="""
-        The rendered size as a percentage size""")
 
     fps=param.Integer(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
-    dpi=param.Integer(None, allow_None=True, doc="""
-        The render resolution in dpi (dots per inch)""")
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['scrubber','widgets', None, 'auto'], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
+
+    mode = param.ObjectSelector(default='default', objects=['default'], doc="""
+         The available rendering modes. As a minimum, the 'default'
+         mode must be supported.""")
+
+    size=param.Integer(100, doc="""
+        The rendered size as a percentage size""")
+
+    widget_mode = param.ObjectSelector(default='embed', objects=['embed', 'live'], doc="""
+        The widget mode determining whether frames are embedded or generated
+        'live' when interacting with the widget.""")
+
+    css = param.Dict(default={},
+                     doc="Dictionary of CSS attributes and values to apply to HTML output")
 
     info_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object info metadata""")
@@ -95,43 +117,77 @@ class Renderer(Exporter):
         Renderers do not support the saving of object key metadata""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': [None]}, 'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': [None, 'auto']},
+                    'holomap': {'default': [None, 'auto']}}
 
     # Define appropriate widget classes
-    widgets = {'scrubber': ScrubberWidget, 'selection': SelectionWidget}
+    widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
+
+    js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
+                       'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
+
+    css_dependencies = ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css']
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
 
 
-    def _validate(self, obj, fmt):
+    @bothmethod
+    def get_plot(self_or_cls, obj):
         """
-        Helper method to be used in the __call__ method to get a
-        suitable plot object and the appropriate format.
+        Given a HoloViews Viewable return a corresponding plot instance.
         """
-        fig_formats = self.mode_formats['fig'][self.mode]
-        holomap_formats = self.mode_formats['holomap'][self.mode]
+        if not isinstance(obj, Plot) and not displayable(obj):
+            obj = collate(obj)
+
+        # Initialize DynamicMaps with first data item
+        dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
+        for dmap in dmaps:
+            if dmap.sampled:
+                # Skip initialization until plotting code
+                continue
+            if dmap.call_mode == 'key':
+                dmap[dmap._initial_key()]
+            else:
+                next(dmap)
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
-            plot = self.plotting_class(obj)(obj, **self.plot_options(obj, self.size))
+            plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
+            plot = self_or_cls.plotting_class(obj)(obj, **plot_opts)
             plot.update(0)
-        elif fmt is None:
-            raise Exception("Format must be specified when supplying a plot instance")
         else:
             plot = obj
+        return plot
 
-        if fmt is None: return (None,None)
-        elif fmt =='auto' and len(plot) == 1:
+
+    def _validate(self, obj, fmt):
+        """
+        Helper method to be used in the __call__ method to get a
+        suitable plot or widget object and the appropriate format.
+        """
+        if isinstance(obj, tuple(self.widgets.values())):
+            return obj, 'html'
+        plot = self.get_plot(obj)
+
+        fig_formats = self.mode_formats['fig'][self.mode]
+        holomap_formats = self.mode_formats['holomap'][self.mode]
+
+        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
             fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt ==  'auto':
+        elif fmt is None:
             fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+
+        if fmt in self.widgets:
+            plot = self.get_widget(plot, fmt)
+            fmt = 'html'
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
                             % (fmt, self.mode, fig_formats + holomap_formats))
         return plot, fmt
+
 
     def __call__(self, obj, fmt=None):
         """
@@ -148,12 +204,13 @@ class Renderer(Exporter):
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
-    def html(self, obj, fmt=None, css={}):
+    def html(self, obj, fmt=None, css=None):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
+        if css is None: css = self.css
 
         if fmt in ['html', 'json']:
             return figdata
@@ -173,6 +230,94 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         return tag.format(src=src, mime_type=mime_type, css=css)
+
+
+    def static_html(self, obj, fmt=None, template=None):
+        """
+        Generates a static HTML with the rendered object in the
+        supplied format. Allows supplying a template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'.
+        """
+        css_html, js_html = '', ''
+        js, css = self.embed_assets()
+        for url in self.js_dependencies:
+            js_html += '<script src="%s" type="text/javascript"></script>' % url
+        js_html += '<script type="text/javascript">%s</script>' % js
+
+        for url in self.css_dependencies:
+            css_html += '<link rel="stylesheet" href="%s">' % url
+        css_html += '<style>%s</style>' % css
+
+        if template is None: template = static_template
+
+        html = self.html(obj, fmt)
+        return template.format(js=js_html, css=css_html, html=html)
+
+
+    @bothmethod
+    def get_widget(self_or_cls, plot, widget_type, **kwargs):
+        if not isinstance(plot, Plot):
+            plot = self_or_cls.get_plot(plot)
+        dynamic = plot.dynamic
+        if widget_type == 'auto':
+            isuniform = plot.uniform
+            if not isuniform:
+                widget_type = 'scrubber'
+            else:
+                widget_type = 'widgets'
+        elif dynamic == 'open': widget_type = 'scrubber'
+        elif dynamic == 'closed': widget_type = 'widgets'
+        elif widget_type == 'widgets' and dynamic == 'open':
+            raise ValueError('Selection widgets not supported in dynamic open mode')
+        elif widget_type == 'scrubber' and dynamic == 'closed':
+            raise ValueError('Scrubber widget not supported in dynamic closed mode')
+
+        if widget_type in [None, 'auto']:
+            holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]
+            widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
+
+        widget_cls = self_or_cls.widgets[widget_type]
+        return widget_cls(plot, renderer=self_or_cls,
+                          embed=self_or_cls.widget_mode == 'embed', **kwargs)
+
+
+    @bothmethod
+    def export_widgets(self_or_cls, obj, filename, fmt=None, template=None,
+                       json=False, json_path='', **kwargs):
+        """
+        Render and export object as a widget to a static HTML
+        file. Allows supplying a custom template formatting string
+        with fields to interpolate 'js', 'css' and the main 'html'
+        containing the widget. Also provides options to export widget
+        data to a json file in the supplied json_path (defaults to
+        current path).
+        """
+        if fmt not in list(self_or_cls.widgets.keys())+['auto', None]:
+            raise ValueError("Renderer.export_widget may only export "
+                             "registered widget types.")
+
+        if not isinstance(obj, NdWidget):
+            if not isinstance(filename, BytesIO):
+                filedir = os.path.dirname(filename)
+                current_path = os.getcwd()
+                html_path = os.path.abspath(filedir)
+                rel_path = os.path.relpath(html_path, current_path)
+                save_path = os.path.join(rel_path, json_path)
+            else:
+                save_path = json_path
+            kwargs['json_save_path'] = save_path
+            kwargs['json_load_path'] = json_path
+            widget = self_or_cls.get_widget(obj, fmt, **kwargs)
+        else:
+            widget = obj
+
+        html = self_or_cls.static_html(widget, fmt, template)
+        if isinstance(filename, BytesIO):
+            filename.write(html)
+            filename.seek(0)
+        else:
+            with open(filename, 'w') as f:
+                f.write(html)
 
 
     @classmethod
@@ -200,8 +345,8 @@ class Renderer(Exporter):
         Returns JS and CSS and for embedding of widgets.
         """
         # Get all the widgets and find the set of required js widget files
-        widgets = [wdgt for cls in Renderer.__subclasses__()
-                   for wdgt in cls.widgets.values()]
+        widgets = [wdgt for r in Renderer.__subclasses__()
+                   for wdgt in r.widgets.values()]
         css = list({wdgt.css for wdgt in widgets})
         basejs = list({wdgt.basejs for wdgt in widgets})
         extensionjs = list({wdgt.extensionjs for wdgt in widgets})
@@ -230,12 +375,35 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
+    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
         """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
+        Save a HoloViews object to file, either using an explicitly
+        supplied format or to the appropriate default.
         """
-        raise NotImplementedError
+        if info or key:
+            raise Exception('MPLRenderer does not support saving metadata to file.')
+
+        with StoreOptions.options(obj, options, **kwargs):
+            plot = self_or_cls.get_plot(obj)
+
+        if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
+            with StoreOptions.options(obj, options, **kwargs):
+                self_or_cls.export_widgets(plot, basename+'.html', fmt)
+            return
+
+        with StoreOptions.options(obj, options, **kwargs):
+            rendered = self_or_cls(plot, fmt)
+        if rendered is None: return
+        (data, info) = rendered
+        if isinstance(basename, BytesIO):
+            basename.write(data)
+            basename.seek(0)
+        else:
+            encoded = self_or_cls.encode(rendered)
+            filename ='%s.%s' % (basename, info['file-ext'])
+            with open(filename, 'wb') as f:
+                f.write(encoded)
+
 
     @bothmethod
     def get_size(self_or_cls, plot):
@@ -257,3 +425,18 @@ class Renderer(Exporter):
         """
         yield
 
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validate an options dictionary for the renderer.
+        """
+        return options
+
+
+    @classmethod
+    def load_nb(cls):
+        """
+        Loads any resources required for display of plots
+        in the Jupyter notebook
+        """

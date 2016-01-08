@@ -93,35 +93,13 @@ class Distribution(Chart):
     list. Internally it uses Seaborn to make all the conversions.
     """
 
-    kdims = param.List(default=[Dimension('Value')], bounds=(1,1))
+    kdims = param.List(default=[], bounds=(0,0))
 
     group = param.String(default='Distribution', constant=True)
 
     vdims = param.List(default=[Dimension('Frequency')])
 
-    def __init__(self, data, **params):
-        super(Distribution, self).__init__(data, **params)
-        self.data = self.interface.reindex(self, [0], [])
-
-    def range(self, dimension):
-        dim_idx = self.get_dimension_index(dimension)
-        if dim_idx == 1:
-            dim = self.get_dimension(dim_idx)
-            if dim.range != (None, None):
-                return dim.range
-            else:
-                return (None, None)
-        else:
-            return super(Distribution, self).dimension_values(dimension)
-
-    def dimension_values(self, dimension):
-        dim_idx = self.get_dimension_index(dimension)
-        if dim_idx == 0:
-            return self.interface.values(self, 0)
-        elif dim_idx == 1:
-            return []
-        else:
-            return super(Distribution, self).dimension_values(dimension)
+    _1d = True
 
 
 class Regression(Scatter):

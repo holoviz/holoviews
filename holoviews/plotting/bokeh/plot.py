@@ -3,17 +3,17 @@ import numpy as np
 
 import param
 
-from bokeh.io import gridplot, vplot, hplot
-from bokeh.models import ColumnDataSource
-from bokeh.models.widgets import Panel, Tabs, DataTable
+from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
+from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, CompositeOverlay, Store, Layout,
+from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor
 from ...core.util import basestring
-from ..plot import Plot, DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
-from ..util import get_dynamic_mode
+from ...element import Histogram
+from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
+from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
 from .util import layout_padding
 
@@ -36,7 +36,13 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
-    def get_data(self, element, ranges=None):
+    def __init__(self, *args, **params):
+        super(BokehPlot, self).__init__(*args, **params)
+        self.document = None
+        self.root = None
+
+
+    def get_data(self, element, ranges=None, empty=False):
         """
         Returns the data from an element in the appropriate format for
         initializing or updating a ColumnDataSource and a dictionary
@@ -44,6 +50,22 @@ class BokehPlot(DimensionedPlot):
         the column in the datasource.
         """
         raise NotImplementedError
+
+
+    def set_document(self, document):
+        """
+        Sets the current document on all subplots.
+        """
+        for plot in self.traverse(lambda x: x):
+            plot.document = document
+
+
+    def set_root(self, root):
+        """
+        Sets the current document on all subplots.
+        """
+        for plot in self.traverse(lambda x: x):
+            plot.root = root
 
 
     def _init_datasource(self, data):
@@ -107,8 +129,10 @@ class BokehPlot(DimensionedPlot):
                     source_data.update(plot.handles['source'].data)
                 new_source = ColumnDataSource(source_data)
                 for _, plot in group:
-                    renderer = plot.handles['glyph_renderer']
-                    if 'data_source' in renderer.properties():
+                    renderer = plot.handles.get('glyph_renderer')
+                    if renderer is None:
+                        continue
+                    elif 'data_source' in renderer.properties():
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
@@ -126,7 +150,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                  layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        dynamic = get_dynamic_mode(layout)
+
         self.layout = layout
         self.rows, self.cols = layout.shape
         self.layout_num = layout_num
@@ -135,6 +159,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             dimensions, keys = traversal.unique_dimkeys(layout)
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
+
+        dynamic, sampled = get_dynamic_mode(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
 
         super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
                                        dynamic=dynamic,
@@ -184,6 +212,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             if 'height' not in kwargs:
                 kwargs['height'] = 125
 
+            if isinstance(layout, GridMatrix):
+                if view.traverse(lambda x: x, [Histogram]):
+                    kwargs['shared_axes'] = False
+
             # Create subplot
             plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
             if plotting_class is None:
@@ -199,7 +231,14 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                                            if isinstance(subplot, GenericCompositePlot)
                                            else subplot.hmap)
                 subplots[coord] = subplot
+        self.sync_tools(subplots)
         return subplots, collapsed_layout
+
+
+    def sync_tools(self, subplots):
+        tools = list({t for p in subplots.values() for t in p.tools})
+        for plot in subplots.values():
+            plot.tools = tools
 
 
     def initialize_plot(self, ranges=None, plots=[]):
@@ -216,7 +255,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
                 passed_plots.append(None)
-        self.handles['plot'] = gridplot(plots[::-1])
+        self.handles['plot'] = BokehGridPlot(children=plots[::-1])
         self.handles['plots'] = plots
         if self.shared_datasource:
             self.sync_sources()
@@ -232,10 +271,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        plots = self.handles['plots']
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
-            r = i % self.cols
-            c = i // self.cols
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
@@ -263,7 +299,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
-        gidx = 0
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
@@ -272,7 +307,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}
-        inserts_cols = []
         for r, c in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             key, view = layout_items.get((r, c), (None, None))
@@ -325,10 +359,9 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         empty axes as necessary.
         """
         subplots = {}
-        projections = []
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(adjoined=layout)
-        main, main_plot = None, None
+        main_plot = None
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)
@@ -343,13 +376,15 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if pos != 'main':
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
-                    side_opts = dict(height=main_plot.height, yaxis='right',
-                                     invert_axes=True, width=120, show_labels=['y'],
-                                     xticks=2, show_title=False)
+                    yaxis = 'right-bare' if 'bare' in plot_type.yaxis else 'right'
+                    side_opts = dict(height=main_plot.height, yaxis=yaxis,
+                                     width=plot_type.width, invert_axes=True,
+                                     show_labels=['y'], xticks=1, xaxis=main_plot.xaxis)
                 else:
-                    side_opts = dict(width=main_plot.width, xaxis='top',
-                                     height=120, show_labels=['x'], yticks=2,
-                                     show_title=False)
+                    xaxis = 'top-bare' if 'bare' in plot_type.xaxis else 'top'
+                    side_opts = dict(width=main_plot.width, xaxis=xaxis,
+                                     height=plot_type.height, show_labels=['x'],
+                                     yticks=1, yaxis=main_plot.yaxis)
 
             # Override the plotopts as required
             # Customize plotopts depending on position.
@@ -375,7 +410,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             else:
                 adjoint_clone[pos] = subplots[pos].hmap
             if pos == 'main':
-                main = element
                 main_plot = subplot
 
         return subplots, adjoint_clone
@@ -457,11 +491,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = vplot(hplot(*plots[0]))
+            layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:
-            layout_plot = vplot(*[p[0] for p in plots])
+            layout_plot = VBox(children=[p[0] for p in plots])
         else:
-            layout_plot = gridplot(plots)
+            layout_plot = BokehGridPlot(children=plots)
 
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
@@ -480,7 +514,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        plots = self.handles['plots']
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
@@ -514,13 +547,15 @@ class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
         invoke subplots with correct options and styles and hide any
         empty axes as necessary.
         """
+        if plots is None: plots = []
         adjoined_plots = []
         for pos in ['main', 'right', 'top']:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
-                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=plots))
+                passed_plots = plots  + adjoined_plots
+                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots

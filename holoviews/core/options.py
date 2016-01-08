@@ -34,13 +34,25 @@ Store:
 """
 import pickle
 from contextlib import contextmanager
+from collections import OrderedDict
 
 import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
+
+
+class BackendError(Exception):
+    """
+    Custom exception used to generate abbreviated tracebacks when there
+    is an error in the backend. Use to suppress long tracebacks that can
+    easily be caused by the users (e.g a typo in the style options)
+    where the user would be better served by a short error message
+    rather than a long traceback.
+    """
+    pass
 
 class OptionError(Exception):
     """
@@ -479,8 +491,9 @@ class OptionTree(AttrTree):
         In addition, closest supports custom options by checking the
         object
         """
-        components = (obj.__class__.__name__, sanitize_identifier(obj.group),
-                      sanitize_identifier(obj.label))
+        components = (obj.__class__.__name__,
+                      group_sanitizer(obj.group),
+                      label_sanitizer(obj.label))
         return self.find(components).options(group)
 
 
@@ -700,12 +713,12 @@ class Compositor(param.Parameterized):
             level += 1      # Types match
             if len(spec) == 1: continue
 
-            group = [el.group, sanitize_identifier(el.group, escape=False)]
+            group = [el.group, group_sanitizer(el.group, escape=False)]
             if spec[1] in group: level += 1  # Values match
             else:                     return None
 
             if len(spec) == 3:
-                group = [el.label, sanitize_identifier(el.label, escape=False)]
+                group = [el.label, label_sanitizer(el.label, escape=False)]
                 if (spec[2] in group):
                     level += 1  # Labels match
                 else:
@@ -762,11 +775,15 @@ class Store(object):
     object.
     """
 
-    renderers = {} # The set of available Renderers across all backends.
+    renderers = OrderedDict() # The set of available Renderers across all backends.
 
     # A mapping from ViewableElement types to their corresponding plot
     # types grouped by the backend. Set using the register method.
     registry = {}
+
+    # A list of formats to be published for display on the frontend (e.g
+    # IPython Notebook or a GUI application)
+    display_formats = ['html']
 
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
@@ -804,8 +821,7 @@ class Store(object):
         Equivalent to pickle.load except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.load(filename)
         cls.load_counter_offset = None
         return val
@@ -816,12 +832,10 @@ class Store(object):
         Equivalent to pickle.loads except that the HoloViews trees is
         restored appropriately.
         """
-        cls.load_counter_offset = (max(max(d) for d in  cls._custom_options.values())
-                                   if cls.custom_options() else 0)
+        cls.load_counter_offset = StoreOptions.id_offset()
         val = pickle.loads(pickle_string)
         cls.load_counter_offset = None
         return val
-
 
     @classmethod
     def dump(cls, obj, filename, protocol=0):
@@ -845,22 +859,42 @@ class Store(object):
         return val
 
     @classmethod
-    def info(cls, obj, ansi=True, backend='matplotlib'):
+    def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
+             recursive=False, pattern=None):
         """
         Show information about a particular object or component class
-        including the applicable style and plot options.
+        including the applicable style and plot options. Returns None if
+        the object is not parameterized.
         """
-        print(InfoPrinter.info(obj, ansi=ansi, backend=backend))
+        parameterized_object = isinstance(obj, param.Parameterized)
+        parameterized_class = (isinstance(obj,type)
+                               and  issubclass(obj,param.Parameterized))
+        info = None
+        if parameterized_object or parameterized_class:
+            info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
+                                    visualization=visualization, pattern=pattern)
+
+        if parameterized_object and recursive:
+            hierarchy = obj.traverse(lambda x: type(x))
+            listed = []
+            for c in hierarchy[1:]:
+                if c not in listed:
+                    inner_info = InfoPrinter.info(c, ansi=ansi, backend=backend,
+                                                  visualization=visualization,
+                                                  pattern=pattern)
+                    black = '\x1b[1;30m%s\x1b[0m' if ansi else '%s'
+                    info +=  '\n\n' + (black % inner_info)
+                    listed.append(c)
+        return info
 
 
     @classmethod
     def lookup_options(cls, backend, obj, group):
-        if obj.id is None:
-            return cls._options[backend].closest(obj, group)
-        elif obj.id in cls._custom_options[backend]:
+        # Current custom_options dict may not have entry for obj.id
+        if obj.id in cls._custom_options[backend]:
             return cls._custom_options[backend][obj.id].closest(obj, group)
         else:
-            raise KeyError("No custom settings defined for object with id %d" % obj.id)
+            return cls._options[backend].closest(obj, group)
 
     @classmethod
     def lookup(cls, backend, obj):
@@ -924,7 +958,8 @@ class Store(object):
         for view_class, plot in cls.registry[backend].items():
             expanded_opts = [opt for key in plot.style_opts
                              for opt in style_aliases.get(key, [])]
-            style_opts = sorted(set(expanded_opts + plot.style_opts))
+            style_opts = sorted(set(opt for opt in (expanded_opts + plot.style_opts)
+                                    if opt not in plot._disabled_opts))
             plot_opts = [k for k in plot.params().keys() if k not in ['name']]
 
             with param.logging_level('CRITICAL'):
@@ -967,6 +1002,21 @@ class StoreOptions(object):
 
 
     @classmethod
+    def tree_to_dict(cls, tree):
+        """
+        Given an OptionTree, convert it into the equivalent dictionary format.
+        """
+        specs = {}
+        for k in tree.keys():
+            spec_key = '.'.join(k)
+            specs[spec_key] = {}
+            for grp in tree[k].groups:
+                kwargs = tree[k].groups[grp].kwargs
+                if kwargs:
+                    specs[spec_key][grp] = kwargs
+        return specs
+
+    @classmethod
     def propagate_ids(cls, obj, match_id, new_id, applied_keys):
         """
         Recursively propagate an id through an object for components
@@ -977,8 +1027,10 @@ class StoreOptions(object):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
-        obj.traverse(lambda o: setattr(o, 'id', new_id)
-                     if o.id == match_id else None, specs=set(applied_keys))
+        def propagate(o):
+            if o.id == match_id or (o.__class__.__name__ == 'DynamicMap'):
+                setattr(o, 'id', new_id)
+        obj.traverse(propagate, specs=set(applied_keys) | {'DynamicMap'})
 
     @classmethod
     def capture_ids(cls, obj):
@@ -1062,11 +1114,10 @@ class StoreOptions(object):
         """
         clones, id_mapping = {}, []
         obj_ids = cls.get_object_ids(obj)
-        store_ids = Store.custom_options().keys()
-        offset = (max(store_ids)+1) if len(store_ids) > 0 else 0
+        offset = cls.id_offset()
         obj_ids = [None] if len(obj_ids)==0 else obj_ids
         for tree_id in obj_ids:
-            if tree_id is not None:
+            if tree_id is not None and tree_id in Store.custom_options():
                 original = Store.custom_options()[tree_id]
                 clone = OptionTree(items = original.items(),
                                    groups = original.groups)
@@ -1075,7 +1126,7 @@ class StoreOptions(object):
             else:
                 clone = OptionTree(groups=Store.options().groups)
                 clones[offset] = clone
-                id_mapping.append((None, offset))
+                id_mapping.append((tree_id, offset))
 
            # Nodes needed to ensure allowed_keywords is respected
             for (k,v) in Store.options().items():
@@ -1171,6 +1222,39 @@ class StoreOptions(object):
 
 
     @classmethod
+    def id_offset(cls):
+        """
+        Compute an appropriate offset for future id values given the set
+        of ids currently defined across backends.
+        """
+        max_ids = []
+        for backend in Store.renderers.keys():
+            store_ids = Store.custom_options(backend=backend).keys()
+            max_id = max(store_ids)+1 if len(store_ids) > 0 else 0
+            max_ids.append(max_id)
+        # If no backends defined (e.g plotting not imported) return zero
+        return max(max_ids) if len(max_ids) else 0
+
+
+    @classmethod
+    def update_backends(cls, id_mapping, custom_trees):
+        """
+        Given the id_mapping from previous ids to new ids and the new
+        custom tree dictionary, update the current backend with the
+        supplied trees and update the keys in the remaining backends to
+        stay linked with the current object.
+        """
+        # Update the custom option entries for the current backend
+        Store.custom_options().update(custom_trees)
+        # Update the entries in other backends so the ids match correctly
+        for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
+            for (old_id, new_id) in id_mapping:
+                tree = Store._custom_options[backend].pop(old_id, None)
+                if tree is not None:
+                    Store._custom_options[backend][new_id] = tree
+
+
+    @classmethod
     def set_options(cls, obj, options=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
@@ -1217,7 +1301,7 @@ class StoreOptions(object):
         options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
-        Store.custom_options().update(custom_trees)
+        cls.update_backends(id_mapping, custom_trees)
         for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj

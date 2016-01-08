@@ -17,8 +17,8 @@ from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
-from ..element import Table, Annotation
-from .util import get_dynamic_mode
+from ..element import Table
+from .util import get_dynamic_mode, initialize_sampled
 
 
 class Plot(param.Parameterized):
@@ -30,6 +30,9 @@ class Plot(param.Parameterized):
     # A list of style options that may be supplied to the plotting
     # call
     style_opts = []
+    # Sometimes matplotlib doesn't support the common aliases.
+    # Use this list to disable any invalid style options
+    _disabled_opts = []
 
     def initialize_plot(self, ranges=None):
         """
@@ -72,6 +75,8 @@ class PlotSelector(object):
     function of the plotted object. Behaves like a Plot class and
     presents the same parameterized interface.
     """
+
+    _disabled_opts = []
     def __init__(self, selector, plot_classes, allow_mismatch=False):
         """
         The selector function accepts a component instance and returns
@@ -130,7 +135,12 @@ class DimensionedPlot(Plot):
        Finer control is available by supplying a dictionary where any
        unmentioned keys reverts to the default sizes, e.g:
 
-          {'ticks':20, 'title':15, 'ylabel':5, 'xlabel':5}""")
+          {'ticks':20, 'title':15,
+           'ylabel':5, 'xlabel':5,
+           'legend':8, 'legend_title':13}
+
+       You can set the fontsize of both 'ylabel' and 'xlabel' together
+       using the 'labels' key.""")
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -233,7 +243,7 @@ class DimensionedPlot(Plot):
             key = self.current_key
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
-        elif not self.dynamic and (not self.uniform or len(self) == 1 or self.subplot):
+        elif not self.dynamic and (not self.uniform or len(self) == 1) or self.subplot:
             return ''
         else:
             key = key if isinstance(key, tuple) else (key,)
@@ -252,10 +262,13 @@ class DimensionedPlot(Plot):
         if not self.fontsize:
             return {}
         if isinstance(self.fontsize, dict):
-            if key not in self.fontsize:
-                return {}
-            else:
+            if key in self.fontsize:
                 return {label:self.fontsize[key]}
+            elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
+                return {label:self.fontsize['labels']}
+            else:
+                return {}
+
         return {label:self.fontsize} if common else {}
 
 
@@ -314,8 +327,8 @@ class DimensionedPlot(Plot):
         norm_opts = {}
 
         # Get all elements' type.group.label specs and ids
-        type_val_fn = lambda x: (x.id, (type(x).__name__, util.sanitize_identifier(x.group, escape=False),
-                                        util.sanitize_identifier(x.label, escape=False))) \
+        type_val_fn = lambda x: (x.id, (type(x).__name__, util.group_sanitizer(x.group, escape=False),
+                                        util.label_sanitizer(x.label, escape=False))) \
             if isinstance(x, Element) else None
         element_specs = {(idspec[0], idspec[1]) for idspec in obj.traverse(type_val_fn)
                          if idspec is not None}
@@ -477,14 +490,17 @@ class GenericElementPlot(DimensionedPlot):
         keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(self.hmap.last, 'plot').options
 
-        dynamic = element.mode if isinstance(element, DynamicMap) else False
+        dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
 
 
     def _get_frame(self, key):
-        if self.dynamic:
+        if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
+            self.current_key = key
+            return self.current_frame
+        elif self.dynamic:
             if isinstance(key, tuple):
                 frame = self.hmap[key]
             elif key < self.hmap.counter:
@@ -500,7 +516,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return frame
 
-        if not self.dynamic and isinstance(key, int):
+        if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
         if key == self.current_key:
@@ -537,17 +553,21 @@ class GenericElementPlot(DimensionedPlot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
+        ndims = len(view.dimensions())
         num = 6 if self.projection == '3d' else 4
         if self.apply_ranges:
             if ranges:
                 dims = view.dimensions()
                 x0, x1 = ranges[dims[0].name]
-                y0, y1 = ranges[dims[1].name]
+                if ndims > 1:
+                    y0, y1 = ranges[dims[1].name]
+                else:
+                    y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = ranges[dims[2].name]
             else:
                 x0, x1 = view.range(0)
-                y0, y1 = view.range(1)
+                y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
                 if self.projection == '3d':
                     z0, z1 = view.range(2)
             if self.projection == '3d':
@@ -559,7 +579,7 @@ class GenericElementPlot(DimensionedPlot):
 
         if self.apply_extents:
             norm_opts = self.lookup_options(view, 'norm').options
-            if norm_opts.get('framewise', False):
+            if norm_opts.get('framewise', False) or self.dynamic:
                 extents = view.extents
             else:
                 extent_list = self.hmap.traverse(lambda x: x.extents, [Element])
@@ -727,8 +747,17 @@ class GenericOverlayPlot(GenericElementPlot):
 
     def get_extents(self, overlay, ranges):
         extents = []
+        items = overlay.items()
         for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, False)
+            layer = overlay.data.get(key, None)
+            found = False
+            if isinstance(self.hmap, DynamicMap) and layer is None:
+                for i, (k, layer) in enumerate(items):
+                    if isinstance(layer, subplot.hmap.type):
+                        found = True
+                        break
+                if not found:
+                    layer = None
             if layer and subplot.apply_ranges:
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
@@ -848,8 +877,11 @@ class GenericLayoutPlot(GenericCompositePlot):
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic = get_dynamic_mode(layout)
+        dynamic, sampled = get_dynamic_mode(layout)
         dimensions, keys = traversal.unique_dimkeys(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
+
         uniform = traversal.uniform(layout)
         plotopts = self.lookup_options(layout, 'plot').options
         super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,

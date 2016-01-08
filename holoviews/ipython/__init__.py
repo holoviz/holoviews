@@ -1,18 +1,18 @@
 import os
-import base64
 from unittest import SkipTest
 
+import param
 import jinja2
-from IPython.display import display, HTML
+from IPython.display import HTML
 
 import holoviews
+from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
-from ..plotting.widgets import NdWidget
 from .archive import notebook_archive
 from .magics import load_magics
-from .display_hooks import display      # pyflakes:ignore (API import)
+from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
@@ -21,6 +21,14 @@ from param import ipython as param_ext
 
 Collector.interval_hook = RunProgress
 holoviews.archive = notebook_archive
+
+
+def show_traceback():
+    """
+    Display the full traceback after an abbreviated traceback has occured.
+    """
+    from .display_hooks import FULL_TRACEBACK
+    print(FULL_TRACEBACK)
 
 
 class IPTestCase(ComparisonTestCase):
@@ -66,37 +74,152 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
-def load_notebook():
+def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
-    Displays javascript and CSS to initialize HoloViews widgets
+    Displays javascript and CSS to initialize HoloViews widgets.
     """
     # Evaluate load_notebook.html template with widgetjs code
-    widgetjs, widgetcss = Renderer.embed_assets()
+    if JS:
+        widgetjs, widgetcss = Renderer.embed_assets()
+    else:
+        widgetjs, widgetcss = '', ''
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
     jinjaEnv = jinja2.Environment(loader=templateLoader)
     template = jinjaEnv.get_template('load_notebook.html')
     display(HTML(template.render({'widgetjs': widgetjs,
-                                  'widgetcss': widgetcss})))
+                                  'widgetcss': widgetcss,
+                                  'logo': logo,
+                                  'message':message})))
 
 
 # Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette, Store # pyflakes:ignore (namespace import)
-import numpy as np                               # pyflakes:ignore (namespace import)
+from ..core.options import Cycle, Palette # noqa (namespace import)
+import numpy as np                        # noqa (namespace import)
 
 Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
-_loaded = False
-def load_ipython_extension(ip):
+class notebook_extension(param.ParameterizedFunction):
+    """
+    Parameterized function to initialize notebook resources
+    and register magics.
+    """
 
-    global _loaded
-    if not _loaded:
-        _loaded = True
-        param_ext.load_ipython_extension(ip, verbose=False)
-        load_magics(ip)
-        OutputMagic.register_supported_formats(OutputMagic.optional_formats)
-        set_display_hooks(ip)
-        load_notebook()
+    css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
+
+    logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
+
+    width = param.Number(default=None, bounds=(0, 100), doc="""
+        Width of the notebook as a percentage of the browser screen window width.""")
+
+    display_formats = param.List(default=['html'], doc="""
+        A list of formats that are rendered to the notebook where
+        multiple formats may be selected at once (although only one
+        format will be displayed).
+
+        Although the 'html' format is supported across backends, other
+        formats supported by the current backend (e.g 'png' and 'svg'
+        using the matplotlib backend) may be used. This may be useful to
+        export figures to other formats such as PDF with nbconvert. """)
+
+    ip = param.Parameter(default=None, doc="IPython kernel instance")
+
+    _loaded = False
+
+    def __call__(self, *args, **params):
+        resources = self._get_resources(args, params)
+        ip = params.pop('ip', None)
+        p = param.ParamOverrides(self, params)
+        Store.display_formats = p.display_formats
+
+        if 'html' not in p.display_formats and len(p.display_formats) > 1:
+            msg = ('Output magic unable to control displayed format '
+                   'as IPython notebook uses fixed precedence '
+                   'between %r' % p.display_formats)
+            display(HTML('<b>Warning</b>: %s' % msg))
+
+        if notebook_extension._loaded == False:
+            ip = get_ipython() if ip is None else ip # noqa (get_ipython)
+            param_ext.load_ipython_extension(ip, verbose=False)
+            load_magics(ip)
+            OutputMagic.initialize()
+            set_display_hooks(ip)
+            notebook_extension._loaded = True
+
+        css = ''
+        if p.width is not None:
+            css += '<style>div.container { width: %s%% }</style>' % p.width
+        if p.css:
+            css += '<style>%s</style>' % p.css
+        if css:
+            display(HTML(css))
+
+        resources = list(resources)
+        if len(resources) == 0: return
+
+        # Create a message for the logo (if shown)
+        js_names = {'holoviews':'HoloViewsJS'} # resource : displayed name
+        loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
+                           for r in resources)
+
+        load_hvjs(logo=p.logo,
+                  JS=('holoviews' in resources),
+                  message = '%s successfully loaded in this cell.' % loaded)
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb()
+
+
+        if resources[-1] != 'holoviews':
+            get_ipython().magic(u"output backend=%r" % resources[-1]) # noqa (get_ipython))
+
+
+    def _get_resources(self, args, params):
+        """
+        Finds the list of resources from the keyword parameters and pops
+        them out of the params dictionary.
+        """
+        resources = []
+        disabled = []
+        for resource in ['holoviews'] + list(Store.renderers.keys()):
+            if resource in args:
+                resources.append(resource)
+
+            if resource in params:
+                setting = params.pop(resource)
+                if setting is True and resource != 'matplotlib':
+                    if resource not in resources:
+                        resources.append(resource)
+                if setting is False:
+                    disabled.append(resource)
+
+        unmatched_args = set(args) - set(resources)
+        if unmatched_args:
+            display(HTML('<b>Warning:</b> Unrecognized resources %s'
+                         % ', '.join(unmatched_args)))
+
+        resources = [r for r in resources if r not in disabled]
+        if ('holoviews' not in disabled) and ('holoviews' not in resources):
+            resources = ['holoviews'] + resources
+        return resources
+
+
+    @param.parameterized.bothmethod
+    def tab_completion_docstring(self_or_cls):
+        """
+        Generates a docstring that can be used to enable tab-completion
+        of resources.
+        """
+        elements = ['%s=Boolean' %k for k in list(Store.renderers.keys())]
+        for name, p in self_or_cls.params().items():
+            param_type = p.__class__.__name__
+            elements.append("%s=%s" % (name, param_type))
+
+        return "params(%s)" % ', '.join(['holoviews=Boolean'] + elements)
+
+
+notebook_extension.__doc__ = notebook_extension.tab_completion_docstring()
+
+def load_ipython_extension(ip):
+    notebook_extension(ip=ip)
 
 def unload_ipython_extension(ip):
-    global _loaded
-    _loaded = False
+    notebook_extension._loaded = False

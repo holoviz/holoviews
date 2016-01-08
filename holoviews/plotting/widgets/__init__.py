@@ -1,16 +1,34 @@
+from __future__ import unicode_literals
+
 import os, uuid, json, math
 
 import param
 
 from ...core import OrderedDict, NdMapping
-from ...core.util import sanitize_identifier, safe_unicode, basestring
+from ...core.options import Store
+from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
+                          unique_iterator)
+from ...core.traversal import hierarchical
 
 def isnumeric(val):
+    if isinstance(val, basestring):
+        return False
     try:
         float(val)
         return True
     except:
         return False
+
+
+def escape_list(vals):
+    """
+    Escapes a list of values to a string, converting to
+    unicode for safety.
+    """
+    vals = ["'"+safe_unicode(v)+"'" if isinstance(v, basestring) else str(v)
+            for v in vals if v is not None]
+    return "[" + ", ".join(vals) + "]"
+
 
 subdirs = [p[0] for p in os.walk(os.path.join(os.path.split(__file__)[0], '..'))]
 
@@ -37,14 +55,14 @@ class NdWidget(param.Parameterized):
          plots as json files, which can be dynamically loaded through
          a callback from the slider.""")
 
-    json_path = param.String(default='./json_figures', doc="""
-         If export_json is True the json files will be written to this
-         directory.""")
+    json_save_path = param.String(default='./json_figures', doc="""
+         If export_json is enabled the widget will save the json
+         data to this path. If None data will be accessible via the
+         json_data attribute.""")
 
-    server_url = param.String(default='', doc="""If export_json is
-         True the slider widget will expect to be served the plot data
-         from this URL. Data should be served from:
-         server_url/fig_{id}/{frame}.""")
+    json_load_path = param.String(default=None, doc="""
+         If export_json is enabled the widget JS code will load the data
+         from this relative path, if None defaults to json_save_path.""")
 
     ##############################
     # Javascript include options #
@@ -72,9 +90,11 @@ class NdWidget(param.Parameterized):
         self.dimensions = plot.dimensions
         self.keys = plot.keys
 
+        self.json_data = {}
         if self.plot.dynamic: self.embed = False
         if renderer is None:
-            self.renderer = plot.renderer.instance(dpi=self.display_options.get('dpi', 72))
+            backend = Store.current_backend
+            self.renderer = Store.renderers[backend]
         else:
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
@@ -101,11 +121,12 @@ class NdWidget(param.Parameterized):
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
         mode = repr(self.renderer.mode)
+        json_path = (self.json_save_path if self.json_load_path is None
+                     else self.json_load_path)
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
-                    server=self.server_url, cached=cached,
-                    load_json=load_json, mode=mode, id=self.id,
-                    Nframes=len(self.plot), widget_name=name,
+                    cached=cached, load_json=load_json, mode=mode, id=self.id,
+                    Nframes=len(self.plot), widget_name=name, json_path=json_path,
                     widget_template=template, dynamic=dynamic)
 
 
@@ -119,21 +140,27 @@ class NdWidget(param.Parameterized):
             frames = OrderedDict([(idx, self._plot_figure(idx))
                                   for idx in range(len(self.plot))])
         else:
-            frames = {0: self._plot_figure(0)}
+            frames = {}
         return self.encode_frames(frames)
 
 
     def encode_frames(self, frames):
         if isinstance(frames, dict):
             frames = {idx: frame for idx, frame in frames.items()}
-        if self.export_json:
-            if not os.path.isdir(self.json_path):
-                os.mkdir(self.json_path)
-            with open(self.json_path+'/fig_%s.json' % self.id, 'wb') as f:
-                json.dump(frames, f)
-            frames = {}
         return frames
 
+    def save_json(self, frames):
+        """
+        Saves frames data into a json file at the
+        specified json_path, named with the widget uuid.
+        """
+        if self.json_save_path is None: return
+        path = os.path.join(self.json_save_path, '%s.json' % self.id)
+        if not os.path.isdir(self.json_save_path):
+            os.mkdir(self.json_save_path)
+        with open(path, 'w') as f:
+            json.dump(frames, f)
+        self.json_data = frames
 
     def _plot_figure(self, idx):
         with self.renderer.state():
@@ -207,41 +234,62 @@ class SelectionWidget(NdWidget):
         widgets = []
         dimensions = []
         init_dim_vals = []
+        hierarchy = hierarchical(list(self.mock_obj.data.keys()))
+        next_vals = {}
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
+            next_dim = ''
+            visible = True
             if self.plot.dynamic:
                 if dim.values:
-                    if all(isnumeric(v) and not isinstance(v, basestring)
-                           for v in dim.values):
+                    if all(isnumeric(v) for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                     else:
-                        dim_vals = dim.values
+                        dim_vals = escape_list(dim.values)
                         widget_type = 'dropdown'
+                    init_dim_vals.append(dim_vals[0])
                 else:
-                    dim_vals = []
-                    vals = list(dim.range)
-                    int_type = isinstance(dim.type, object) and issubclass(dim.type, np.int64)
+                    dim_vals = list(dim.range)
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     widget_type = 'slider'
-                    dim_range = vals[1] - vals[0]
+                    dim_range = dim_vals[1] - dim_vals[0]
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
+                    init_dim_vals.append(dim_vals[0])
+                    dim_vals = escape_list(dim_vals)
             else:
-                dim_vals = dim.values if dim.values else sorted(set(self.mock_obj.dimension_values(dim.name)))
-                if not isinstance(dim_vals[0], basestring) and isnumeric(dim_vals[0]):
+                if next_vals:
+                    dim_vals = next_vals[init_dim_vals[idx-1]]
+                else:
+                    dim_vals = (dim.values if dim.values else
+                                list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
+                if idx < self.mock_obj.ndims-1:
+                    next_vals = hierarchy[idx]
+                    next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
+                else:
+                    next_vals = {}
+                if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
+                    if next_vals:
+                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v for v in vals]
+                                     for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
+                    next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-            init_dim_vals.append(dim_vals[0])
-            dim_vals = repr([v for v in dim_vals if v is not None])
+                visible = len(dim_vals) > 1
+                init_dim_vals.append(dim_vals[0])
+                dim_vals = escape_list(dim_vals)
             dim_str = safe_unicode(dim.name)
-            visibility = 'visibility: visible' if len(dim_vals) > 1 else 'visibility: hidden; height: 0;'
-            widget_data = dict(dim=sanitize_identifier(dim_str), dim_label=dim_str,
+            visibility = 'visibility: visible' if visible else 'visibility: hidden; height: 0;'
+            widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step)
+                               visibility=visibility, step=step, next_dim=next_dim,
+                               next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
+        init_dim_vals = escape_list(init_dim_vals)
         return widgets, dimensions, init_dim_vals
 
 
@@ -250,8 +298,8 @@ class SelectionWidget(NdWidget):
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
             key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if not isinstance(v, basestring) and isnumeric(v) else v for v in k]
-            key = str(tuple(key))
+                   if isnumeric(v) else safe_unicode(v) for v in k]
+            key = "('" + "', '".join(key) + ("',)" if len(key) == 1 else "')")
             key_data[key] = i
         return json.dumps(key_data)
 

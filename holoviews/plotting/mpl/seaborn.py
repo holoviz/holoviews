@@ -167,12 +167,13 @@ class DistributionPlot(FullRedrawPlot):
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
     def initialize_plot(self, ranges=None):
-        distview = self.hmap.last
+        element = self.hmap.last
         axis = self.handles['axis']
         self.style = self.style[self.cyclic_index]
-        self._update_plot(axis, distview)
+        self._update_plot(axis, element)
+        dim = element.get_dimension(0)
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], xlabel='', ylabel=str(dim))
 
 
     def _update_plot(self, axis, view):
@@ -326,7 +327,7 @@ class SNSFramePlot(DFrameViewPlot):
             for opt, args in map_opts:
                 plot_fn = getattr(sns, args[0]) if hasattr(sns, args[0]) else getattr(plt, args[0])
                 getattr(g, opt)(plot_fn, *args[1:])
-            if self._close_fig:
+            if self._close_figures:
                 plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:

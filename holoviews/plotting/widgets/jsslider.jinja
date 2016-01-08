@@ -71,32 +71,47 @@
                         require(["jQueryUI", "underscore"], function(jUI, _){
                             if (noConflict) $.noConflict(true);
                             var vals = {{ widget_data['vals'] }};
-                            if ({{ dynamic }} && vals.constructor !== Array) {
+                            var next_vals = {{ widget_data['next_vals'] }};
+                            if ({{ dynamic }} && vals.constructor === Array) {
                                 var min = vals[0];
                                 var max = vals[vals.length-1];
                                 var step = {{ widget_data['step'] }};
                             } else {
                                 var min = 0;
-                                var max = vals.length - 1;
+								if ({{ dynamic }}) {
+                                   var max = Object.keys(vals).length - 1;
+								} else {
+								   var max = vals.length - 1;
+								}
                                 var step = 1;
                             }
-                            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').slider({
+                            var slider = $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}');
+                            slider.slider({
                                 animate: "fast",
                                 min: min,
                                 max: max,
                                 step: step,
                                 value: min,
+                                dim_vals: vals,
+                                next_vals: next_vals,
                                 slide: _.throttle(function(event, ui) {
+                                    var vals = $(this).slider("option", "dim_vals");
+                                    var next_vals = $(this).slider("option", "next_vals");
                                     if ({{ dynamic }} && vals.constructor === Array) {
-                                        var dim_val = ui.value
+                                        var dim_val = ui.value;
                                     } else {
                                         var dim_val = vals[ui.value];
                                     }
                                     $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
                                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+                                    if (Object.keys(next_vals).length > 0) {
+                                        var new_vals = next_vals[dim_val];
+                                        var next_widget = $('#_anim_widget{{ id }}_{{ widget_data['next_dim'] }}');
+                                        update_widget(next_widget, new_vals);
+									}
                                 }, {{ throttle }})
                             });
-                            $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').keypress(function(event) {
+                            slider.keypress(function(event) {
                                 if (event.which == 80 || event.which == 112) {
                                     var start = $(this).slider("option", "value");
                                     var stop =  $(this).slider("option", "max");
@@ -131,24 +146,31 @@
                     </script>
                 {% elif widget_data['type']=='dropdown' %}
                     <div class="form-group control-group" style='{{ widget_data['visibility'] }}'>
-                        <label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim'] }}:</strong></label>
+                        <label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim_label'] }}:</strong></label>
                         <select class="holoselect form-control" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
                         </select>
                     </div>
                     <script>
                         var vals = {{ widget_data['vals'] }};
-                        var options = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
+                        var widget = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
                         for (var i=0; i<vals.length; i++){
-                            options.append($("<option>", {
+                            widget.append($("<option>", {
                                 value: i,
                                 text: vals[i]
                             }));
                         };
-                        $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}').on('change', function(event, ui) {
-                            var dim_val = vals[this.value];
+                        widget.data("next_vals", {{ widget_data['next_vals'] }});
+                        widget.on('change', function(event, ui) {
+                            var dim_val = this.options[this.value].text;
                             if(anim{{ id }}) {
                                 anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                             }
+							var next_vals = $.data(this, "next_vals");
+							if (Object.keys(next_vals).length > 0) {
+                                var new_vals = next_vals[dim_val];
+                                var next_widget = $('#_anim_widget{{ id }}_{{ widget_data['next_dim'] }}');
+                                update_widget(next_widget, new_vals);
+							}
                         });
                     </script>
                 {% endif %}
@@ -175,7 +197,7 @@
             setTimeout(function() {
                 anim{{ id }} = new {{ widget_name }}(frame_data, "{{ id }}", widget_ids,
                         keyMap, dim_vals, notFound, {{ load_json }}, {{ mode }},
-                        {{ cached }}, "", {{ dynamic }});
+                        {{ cached }}, "{{ json_path}}", {{ dynamic }});
             }, 0);
         }
 

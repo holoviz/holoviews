@@ -10,8 +10,8 @@ from param import _is_number
 
 from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Columns, Element)
-from ..core.util import find_minmax, sanitize_identifier
-from ..element.chart import Histogram, Curve, Scatter
+from ..core.util import find_minmax, group_sanitizer, label_sanitizer
+from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
 
@@ -204,9 +204,10 @@ class image_overlay(ElementOperation):
         if not isinstance(el, Image) or spec_dict['type'] != 'Image':
             raise NotImplementedError("Only Image currently supported")
 
+        sanitizers = {'group':group_sanitizer, 'label':label_sanitizer}
         strength = 1
         for key in ['group', 'label']:
-            attr_value = sanitize_identifier(getattr(el, key))
+            attr_value = sanitizers[key](getattr(el, key))
             if key in spec_dict:
                 if spec_dict[key] != attr_value: return None
                 strength += 1
@@ -619,7 +620,6 @@ class gridmatrix(param.ParameterizedFunction):
 
         data = {}
         for d1, d2 in permuted_dims:
-            key = (d1.name, d2.name)
             if d1 == d2:
                 if p.diagonal_type is Histogram:
                     bin_range = ranges.get(d1.name, element.range(d1))

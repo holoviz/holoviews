@@ -7,7 +7,7 @@ import param
 
 from ..core import util
 from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
-from ..core import (OrderedDict, Dimension, NdMapping, Element2D,
+from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
@@ -53,9 +53,16 @@ class Raster(Element2D):
 
     def __getitem__(self, slices):
         if slices in self.dimensions(): return self.dimension_values(slices)
-        if not isinstance(slices, tuple): slices = (slices, slice(None))
-        slc_types = [isinstance(sl, slice) for sl in slices]
-        data = self.data.__getitem__(slices[::-1])
+        slices = util.process_ellipses(self,slices)
+        if not isinstance(slices, tuple):
+            slices = (slices, slice(None))
+        elif len(slices) > (2 + self.depth):
+            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
+        elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
+
+        slc_types = [isinstance(sl, slice) for sl in slices[:2]]
+        data = self.data.__getitem__(slices[:2][::-1])
         if all(slc_types):
             return self.clone(data, extents=None)
         elif not any(slc_types):
@@ -147,7 +154,7 @@ class Raster(Element2D):
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, unique=True)
-            reduced = reduce_fn(self._zdata, axis=oidx)
+            reduced = function(self._zdata, axis=oidx)
             data = zip(x_vals, reduced if not oidx else reduced[::-1])
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
@@ -213,7 +220,7 @@ class QuadMesh(Raster):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')])
 
-    vdims = param.List(default=[Dimension('z')])
+    vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
     def __init__(self, data, **params):
         data = self._process_data(data)
@@ -221,6 +228,9 @@ class QuadMesh(Raster):
         self.data = self._validate_data(self.data)
         self._grid = self.data[0].ndim == 1
 
+
+    @property
+    def depth(self): return 1
 
     def _process_data(self, data):
         data = tuple(np.array(el) for el in data)
@@ -256,10 +266,16 @@ class QuadMesh(Raster):
 
 
     def __getitem__(self, slices):
-        if slices in self.dimensions(): return self.dimension_values(key)
+        if slices in self.dimensions(): return self.dimension_values(slices)
+        slices = util.process_ellipses(self,slices)
         if not self._grid:
-            raise IndexError("Indexing of non-grid based QuadMesh"
+            raise KeyError("Indexing of non-grid based QuadMesh"
                              "currently not supported")
+        if len(slices) > (2 + self.depth):
+            raise KeyError("Can only slice %d dimensions" % (2 + self.depth))
+        elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
+        slices = slices[:2]
         if not isinstance(slices, tuple): slices = (slices, slice(None))
         slc_types = [isinstance(sl, slice) for sl in slices]
         if not any(slc_types):
@@ -294,7 +310,7 @@ class QuadMesh(Raster):
         Allows collapsing the data of a number of QuadMesh
         Elements with a function.
         """
-        if not self._grid:
+        if not all(data[0].ndim == 1 for data in data_list):
             raise Exception("Collapsing of non-grid based QuadMesh"
                             "currently not supported")
         xs, ys, zs = zip(data_list)
@@ -417,6 +433,7 @@ class HeatMap(Columns, Element2D):
             (d1, d2) = self.raster.shape[:2]
             self.extents = (0, 0, d2, d1)
 
+        super(HeatMap, self).__setstate__(state)
 
     def dense_keys(self):
         d1keys = self.dimension_values(0, True)
@@ -528,9 +545,16 @@ class Image(SheetCoordinateSystem, Raster):
         Slice the underlying numpy array in sheet coordinates.
         """
         if coords in self.dimensions(): return self.dimension_values(coords)
+        coords = util.process_ellipses(self,coords)
         if coords is () or coords == slice(None, None):
             return self
 
+        if len(coords) > (2 + self.depth):
+            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
+        elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
+            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
+
+        coords = coords[:2]
         if not any([isinstance(el, slice) for el in coords]):
             return self.data[self.sheet2matrixidx(*coords)]
         if all([isinstance(c, slice) for c in coords]):
@@ -542,7 +566,7 @@ class Image(SheetCoordinateSystem, Raster):
             yend = t if ycoords.stop is None else min(t, ycoords.stop)
             bounds = BoundingBox(points=((xstart, ystart), (xend, yend)))
         else:
-            raise IndexError('Indexing requires x- and y-slice ranges.')
+            raise KeyError('Indexing requires x- and y-slice ranges.')
 
         return self.clone(Slice(bounds, self).submatrix(self.data),
                           bounds=bounds)
@@ -564,7 +588,7 @@ class Image(SheetCoordinateSystem, Raster):
             data = np.atleast_3d(self.data)[:, :, dim_idx]
             drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            soft_range = [r for r in dim.soft_range if r is not None]
+            soft_range = [sr for sr in dim.soft_range if sr is not None]
             if soft_range:
                 return util.max_range([drange, soft_range])
             else:
@@ -723,19 +747,27 @@ class RGB(Image):
         Slice the underlying numpy array in sheet coordinates.
         """
         if coords in self.dimensions(): return self.dimension_values(coords)
+        coords = util.process_ellipses(self, coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
-            value = coords[self.ndims:]
-            if len(value) > 1:
-                raise KeyError("Only one value dimension may be indexed at a time")
-
-            sliced = super(RGB, self).__getitem__(coords[:self.ndims])
-            vidx = self.get_dimension_index(value[0])
-            val_index = vidx - self.ndims
-            data = sliced.data[:,:, val_index]
-            return Image(data, **dict(self.get_param_values(onlychanged=True),
-                                       vdims=[self.vdims[val_index]]))
-        else:
-            return super(RGB, self).__getitem__(coords)
+            values = coords[self.ndims:]
+            channels = [el for el in values if isinstance(el, (str, Dimension))]
+            if len(channels) == 1:
+                sliced = super(RGB, self).__getitem__(coords[:self.ndims])
+                if channels[0] not in self.vdims:
+                    raise KeyError("%r is not an available value dimension"
+                                    % channels[0])
+                vidx = self.get_dimension_index(channels[0])
+                val_index = vidx - self.ndims
+                data = sliced.data[:,:, val_index]
+                return Image(data, **dict(util.get_param_values(self),
+                                          vdims=[self.vdims[val_index]]))
+            elif len(channels) > 1:
+                raise KeyError("Channels can only be selected once in __getitem__")
+            elif all(v==slice(None) for v in values):
+                coords = coords[:self.ndims]
+            else:
+                raise KeyError("Only empty value slices currently supported in RGB")
+        return super(RGB, self).__getitem__(coords)
 
 
 class HSV(RGB):

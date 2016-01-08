@@ -1,25 +1,44 @@
-from ...core import Store, HoloMap, OrderedDict
+import uuid
+from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .util import models_to_json
 
+import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
-from bokeh.models import DataSource
-from bokeh.plotting import Figure
-from bokeh.protocol import serialize_json
+from bokeh.io import load_notebook, Document
+from bokeh.resources import CDN
+
+try:
+    from bokeh.protocol import serialize_json
+    bokeh_lt_011 = True
+except ImportError:
+    from bokeh.core.json_encoder import serialize_json
+    bokeh_lt_011 = False
 
 
 class BokehRenderer(Renderer):
 
-    backend = 'bokeh'
+    backend = param.String(default='bokeh', doc="The backend name.")
+
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json']},
-                    'holomap': {'default': [None]}}
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
+                    'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
 
     widgets = {'scrubber': BokehScrubberWidget,
-               'selection': BokehSelectionWidget}
+               'widgets': BokehSelectionWidget}
+
+    js_dependencies = Renderer.js_dependencies + CDN.js_files
+
+    css_dependencies = Renderer.css_dependencies + CDN.css_files
+
+    _loaded = False
 
     def __call__(self, obj, fmt=None):
         """
@@ -27,26 +46,35 @@ class BokehRenderer(Renderer):
         backend. The output is not a file format but a suitable,
         in-memory byte stream together with any suitable metadata.
         """
-        # Example of the return format where the first value is the rendered data.
-
         plot, fmt =  self._validate(obj, fmt)
-        if fmt == 'html':
+        info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
+
+        if isinstance(plot, tuple(self.widgets.values())):
+            return plot(), info
+        elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+            return html, info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
-            data = OrderedDict()
-            for plotobj in plotobjects:
-                json = plotobj.vm_serialize(changed_only=True)
-                data[plotobj.ref['id']] = {'type': plotobj.ref['type'],
-                                           'data': json}
-            return serialize_json(data), {'file-ext':json, 'mime_type':MIME_TYPES[fmt]}
+            data = dict(data=[])
+            if not bokeh_lt_011:
+                data['root'] = plot.state._id
+            data['data'] = models_to_json(plotobjects)
+            return serialize_json(data), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        return notebook_div(plot.state)
+        if not bokeh_lt_011:
+            doc = Document()
+            doc.add_root(plot.state)
+            comms_target = str(uuid.uuid4())
+            doc.last_comms_target = comms_target
+            div = notebook_div(plot.state, comms_target)
+            return div
+        else:
+            return notebook_div(plot.state)
 
 
     @classmethod
@@ -76,14 +104,6 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def save(self_or_cls, obj, basename, fmt=None, key={}, info={}, options=None, **kwargs):
-        """
-        Given an object, a basename for the output file, a file format
-        and some options, save the element in a suitable format to disk.
-        """
-        raise NotImplementedError
-
-    @bothmethod
     def get_size(self_or_cls, plot):
         """
         Return the display size associated with a plot before
@@ -93,3 +113,10 @@ class BokehRenderer(Renderer):
         Returns a tuple of (width, height) in pixels.
         """
         return (plot.state.height, plot.state.height)
+
+    @classmethod
+    def load_nb(cls):
+        """
+        Loads the bokeh notebook resources.
+        """
+        load_notebook(hide_banner=True)

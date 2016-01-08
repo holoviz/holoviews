@@ -7,10 +7,11 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import (OrderedDict, Collator, NdOverlay, HoloMap,
+from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement)
 from ...element import Table, ItemTable, Raster
 from ..plot import GenericElementPlot, GenericOverlayPlot
+from ..util import dynamic_update
 from .plot import MPLPlot
 from .util import wrap_formatter
 
@@ -28,12 +29,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
-    orientation = param.ObjectSelector(default='horizontal',
-                                       objects=['horizontal', 'vertical'], doc="""
-        The orientation of the plot. Note that this parameter may not
+    invert_axes = param.ObjectSelector(default=False, doc="""
+        Inverts the axes of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
-        adjoined plots when appropriate valid options are 'horizontal'
-        and 'vertical'.""")
+        adjoined plots when appropriate.""")
 
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
@@ -42,10 +41,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Rotation angle of the xticks.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the yticks.""")
 
     zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
+        Rotation angle of the zticks.""")
 
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
@@ -70,12 +69,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         When the number of the frame is supplied as n, this method looks
         up and computes the appropriate title, axis labels and axis bounds.
         """
-
+        element = self._get_frame(key)
+        self.current_frame = element
         axis = self.handles['axis']
         if self.bgcolor:
             axis.set_axis_bgcolor(self.bgcolor)
 
-        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             title = None if self.zorder > 0 else self._format_title(key)
@@ -83,6 +82,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                            if isinstance(sp.hmap, HoloMap))
             if element is not None and not suppress:
                 xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
+                if self.invert_axes:
+                    xlabel, ylabel = ylabel, xlabel
+
                 self._finalize_limits(axis, element, subplots, ranges)
 
                 # Tick formatting
@@ -90,8 +92,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 xformat, yformat = None, None
                 if xdim is None:
                     pass
-                elif xdim.formatter:
-                    xformat = xdim.formatter
+                elif xdim.value_format:
+                    xformat = xdim.value_format
                 elif xdim.type in xdim.type_formatters:
                     xformat = xdim.type_formatters[xdim.type]
                 if xformat:
@@ -99,8 +101,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
                 if ydim is None:
                     pass
-                elif ydim.formatter:
-                    yformat = ydim.formatter
+                elif ydim.value_format:
+                    yformat = ydim.value_format
                 elif ydim.type in ydim.type_formatters:
                     yformat = ydim.type_formatters[ydim.type]
                 if yformat:
@@ -171,6 +173,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
             l, r = (c if np.isfinite(c) else None for c in (l, r))
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
@@ -245,7 +249,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.xticks)
                 axis.xaxis.set_major_locator(locator)
-            elif isinstance(self.xticks, list):
+            elif isinstance(self.xticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.xticks):
                     xticks, xlabels = zip(*self.xticks)
                 else:
@@ -274,7 +278,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.yticks)
                 axis.yaxis.set_major_locator(locator)
-            elif isinstance(self.yticks, list):
+            elif isinstance(self.yticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.yticks):
                     yticks, ylabels = zip(*self.yticks)
                 else:
@@ -305,7 +309,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 else:
                     locator = ticker.MaxNLocator(self.zticks)
                 axis.zaxis.set_major_locator(locator)
-            elif isinstance(self.zticks, list):
+            elif isinstance(self.zticks, (list, tuple)):
                 if all(isinstance(t, tuple) for t in self.zticks):
                     zticks, zlabels = zip(*self.zticks)
                 else:
@@ -332,12 +336,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         If n is greater than the number of available frames, update
         using the last available frame.
         """
-        if not element:
-            if self.dynamic and self.overlaid:
-                self.current_key = key
-                element = self.current_frame
-            else:
-                element = self._get_frame(key)
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
         else:
             self.current_key = key
             self.current_frame = element
@@ -587,7 +588,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             leg = axis.legend(data.keys(), data.values(),
                               title=title, scatterpoints=1,
-                              **leg_spec)
+                              **dict(leg_spec, **self._fontsize('legend')))
+            title_fontsize = self._fontsize('legend_title')
+            if title_fontsize:
+                leg.get_title().set_fontsize(title_fontsize['fontsize'])
             frame = leg.get_frame()
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
@@ -617,9 +621,27 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         else:
             self.current_frame = element
             self.current_key = key
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        for k, plot in self.subplots.items():
-            plot.update_frame(key, ranges, element.get(k, None))
+
+        if isinstance(self.hmap, DynamicMap):
+            range_obj = element
+            items = element.items()
+        else:
+            range_obj = self.hmap
+            items = element.items()
+        ranges = self.compute_ranges(range_obj, key, ranges)
+
+        for k, subplot in self.subplots.items():
+            el = element.get(k, None)
+            if isinstance(self.hmap, DynamicMap):
+                idx = dynamic_update(self, subplot, k, element, items)
+                if idx is not None:
+                    _, el = items.pop(idx)
+            subplot.update_frame(key, ranges, el)
+
+        if isinstance(self.hmap, DynamicMap) and items:
+            raise Exception("Some Elements returned by the dynamic callback "
+                            "were not initialized correctly and could not be "
+                            "rendered.")
 
         self._finalize_axis(key, ranges=ranges)
 

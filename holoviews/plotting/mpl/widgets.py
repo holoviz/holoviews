@@ -62,17 +62,17 @@ class MPLWidget(NdWidget):
     def _plot_figure(self, idx):
         with self.renderer.state():
             self.plot.update(idx)
-            css = self.display_options.get('css', {})
             if self.renderer.mode == 'mpld3':
                 figure_format = 'json'
+            elif self.renderer.fig == 'auto':
+                figure_format = self.renderer.params('fig').objects[0]
             else:
-                figure_format = self.display_options.get('figure_format',
-                                                         self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css)
+                figure_format = self.renderer.fig
+            return self.renderer.html(self.plot, figure_format)
 
 
     def update(self, key):
-        if self.dynamic == 'closed' and not isinstance(key, int):
+        if self.plot.dynamic == 'closed' and not isinstance(key, int):
             key = tuple(key)
 
         if self.renderer.mode == 'nbagg':
@@ -101,7 +101,12 @@ class MPLWidget(NdWidget):
 
 
     def encode_frames(self, frames):
-        if self.renderer.mode == 'mpld3':
+        if self.export_json:
+            self.save_json(frames)
+            return {}
+        elif not isinstance(frames, dict):
+            pass
+        elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
             frames = {idx: frame for idx, frame in frames.items()}

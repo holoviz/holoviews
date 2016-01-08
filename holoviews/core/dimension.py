@@ -6,16 +6,12 @@ baseclass for classes that accept Dimension values.
 import re
 from operator import itemgetter
 
-try:
-    from cyordereddict import OrderedDict
-except:
-    from collections import OrderedDict
-
 import numpy as np
 import param
 
-from ..core.util import (basestring, sanitize_identifier, max_range,
-                         find_range, dimension_sanitizer)
+from ..core.util import (basestring, sanitize_identifier,
+                         group_sanitizer, label_sanitizer, max_range,
+                         find_range, dimension_sanitizer, OrderedDict)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -24,6 +20,8 @@ from .pprint import PrettyPrinter
 
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
            'constant_dimensions': 'cdims'}
+
+title_format = "{name}: {val}{unit}"
 
 def param_aliases(d):
     """
@@ -63,7 +61,7 @@ class Dimension(param.Parameterized):
         maximum allowed value (defined by the range parameter) is
         continuous with the minimum allowed value.""")
 
-    formatter = param.Callable(default=None, doc="""
+    value_format = param.Callable(default=None, doc="""
         Formatting function applied to each value before display.""")
 
     range = param.Tuple(default=(None, None), doc="""
@@ -89,12 +87,6 @@ class Dimension(param.Parameterized):
         be used to retain a categorical ordering. Setting values to
         'initial' indicates that the values will be added during construction.""")
 
-    format_string = param.String(default="{name}: {val}{unit}", doc="""
-        Format string to specify how pprint_value_string is generated. Valid
-        format keys include: 'name' (Dimension name), 'val' (a
-        particular dimension value to be presented) and 'unit' (the
-        unit string).""")
-
     # Defines default formatting by type
     type_formatters = {}
     unit_format = ' ({unit})'
@@ -107,7 +99,14 @@ class Dimension(param.Parameterized):
             existing_params = dict(name.get_param_values())
         else:
             existing_params = {'name': name}
-        super(Dimension, self).__init__(**dict(existing_params, **params))
+
+        all_params = dict(existing_params, **params)
+        if isinstance(all_params['name'], tuple):
+            alias, long_name = all_params['name']
+            dimension_sanitizer.add_aliases(**{alias:long_name})
+            all_params['name'] = long_name
+
+        super(Dimension, self).__init__(**all_params)
 
 
     def __call__(self, name=None, **overrides):
@@ -132,7 +131,8 @@ class Dimension(param.Parameterized):
         Applies the defined formatting to the value.
         """
         own_type = type(value) if self.type is None else self.type
-        formatter = self.formatter if self.formatter else self.type_formatters.get(own_type)
+        formatter = (self.value_format if self.value_format
+                     else self.type_formatters.get(own_type))
         if formatter:
             if callable(formatter):
                 return formatter(value)
@@ -150,13 +150,13 @@ class Dimension(param.Parameterized):
 
     def pprint_value_string(self, value):
         """
-        Pretty prints the dimension name and value using the
-        format_string parameter, including the unit string (if
+        Pretty prints the dimension name and value using the global
+        title_format variable, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return self.format_string.format(name=self.name, val=value, unit=unit)
+        return title_format.format(name=self.name, val=value, unit=unit)
 
 
     def __hash__(self):
@@ -240,11 +240,21 @@ class LabelledData(param.Parameterized):
         """
         self.data = data
         self.id = id
+        if isinstance(params.get('label',None), tuple):
+            (alias, long_name) = params['label']
+            label_sanitizer.add_aliases(**{alias:long_name})
+            params['label'] = long_name
+
+        if isinstance(params.get('group',None), tuple):
+            (alias, long_name) = params['group']
+            group_sanitizer.add_aliases(**{alias:long_name})
+            params['group'] = long_name
+
         super(LabelledData, self).__init__(**params)
-        if not sanitize_identifier.allowable(self.group):
+        if not group_sanitizer.allowable(self.group):
             raise ValueError("Supplied group %r contains invalid characters." %
                              self.group)
-        elif not sanitize_identifier.allowable(self.label):
+        elif not label_sanitizer.allowable(self.label):
             raise ValueError("Supplied label %r contains invalid characters." %
                              self.label)
 
@@ -268,7 +278,10 @@ class LabelledData(param.Parameterized):
         settings = dict(params, **overrides)
         if data is None and shared_data:
             data = self.data
-        return clone_type(data, *args, **settings)
+        # Apply name mangling for __ attribute
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
+        return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                          if k not in pos_args})
 
 
     def relabel(self, label=None, group=None, depth=0):
@@ -308,8 +321,9 @@ class LabelledData(param.Parameterized):
         self_spec = match_fn(split_spec)
         unescaped_match = match_fn(specification[:len(split_spec)]) == self_spec
         if unescaped_match: return True
-        identifier_specification = tuple(sanitize_identifier(ident, escape=False)
-                                         for ident in specification)
+        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
+        identifier_specification = tuple(fn(ident, escape=False)
+                                         for ident, fn in zip(specification, sanitizers))
         identifier_match = match_fn(identifier_specification[:len(split_spec)]) == self_spec
         return identifier_match
 
@@ -371,7 +385,8 @@ class LabelledData(param.Parameterized):
                 custom_key = '_custom_option_%d' % obj_dict['id']
                 if custom_key not in obj_dict:
                     obj_dict[custom_key] = {backend:s[obj_dict['id']]
-                                            for backend,s in Store._custom_options.items()}
+                                            for backend,s in Store._custom_options.items()
+                                            if obj_dict['id'] in s}
             else:
                 obj_dict['id'] = None
         except:
@@ -391,15 +406,15 @@ class LabelledData(param.Parameterized):
                 matches = [k for k in d if k.startswith('_custom_option')]
                 for match in matches:
                     custom_id = int(match.split('_')[-1])
-
-                    backend_info = (d[match] if all(isinstance(d,dict)
-                                                    for d in d[match].values())
-                                    else {'matplotlib':d[match]})
-
+                    if not isinstance(d[match], dict):
+                        # Backward compatibility before multiple backends
+                        backend_info = {'matplotlib':d[match]}
+                    else:
+                        backend_info = d[match]
                     for backend, info in  backend_info.items():
                         if backend not in Store._custom_options:
                             Store._custom_options[backend] = {}
-                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info[backend]
+                        Store._custom_options[backend][Store.load_counter_offset + custom_id] = info
 
                     d.pop(match)
 
@@ -572,7 +587,8 @@ class Dimensioned(LabelledData):
                    'c': (lambda x: x.cdims, {})}
         aliases = {'key': 'k', 'value': 'v', 'constant': 'c'}
         if selection == 'all':
-            dims = [dim for group in self._dim_groups
+            groups = [d for d in self._dim_groups if d != 'cdims']
+            dims = [dim for group in groups
                     for dim in getattr(self, group)]
         elif isinstance(selection, list):
             dims =  [dim for group in selection
@@ -784,11 +800,11 @@ class Dimensioned(LabelledData):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
             elif not any(targets):
                 # Not targets specified - add current object as target
-                sanitized_group = sanitize_identifier(self.group)
+                sanitized_group = group_sanitizer(self.group)
                 if self.label:
                     identifier = ('%s.%s.%s' % (self.__class__.__name__,
                                                 sanitized_group,
-                                                sanitize_identifier(self.label)))
+                                                label_sanitizer(self.label)))
                 elif  sanitized_group != self.__class__.__name__:
                     identifier = '%s.%s' % (self.__class__.__name__, sanitized_group)
                 else:

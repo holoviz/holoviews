@@ -9,7 +9,12 @@ import numpy as np
 import param
 
 try:
-    import pandas as pd
+    from cyordereddict import OrderedDict
+except:
+    from collections import OrderedDict
+
+try:
+    import pandas as pd # noqa (optional import)
 except ImportError:
     pd = None
 
@@ -25,6 +30,38 @@ except ImportError:
 
 # Python3 compatibility
 basestring = str if sys.version_info.major == 3 else basestring
+
+
+
+def process_ellipses(obj, key, vdim_selection=False):
+    """
+    Helper function to pad a __getitem__ key with the right number of
+    empty slices (i.e :) when the key contains an Ellipsis (...).
+
+    If the vdim_selection flag is true, check if the end of the key
+    contains strings or Dimension objects in obj. If so, extra padding
+    will not be applied for the value dimensions (i.e the resulting key
+    will be exactly one longer than the number of kdims). Note: this
+    flag should not be used for composite types.
+    """
+    if isinstance(key, np.ndarray) and key.dtype.kind == 'b':
+        return key
+    wrapped_key = wrap_tuple(key)
+    if wrapped_key.count(Ellipsis)== 0:
+        return key
+    if wrapped_key.count(Ellipsis)!=1:
+        raise Exception("Only one ellipsis allowed at a time.")
+    dim_count = len(obj.dimensions())
+    index = wrapped_key.index(Ellipsis)
+    head = wrapped_key[:index]
+    tail = wrapped_key[index+1:]
+
+    padlen = dim_count - (len(head) + len(tail))
+    if vdim_selection:
+        # If the end of the key (i.e the tail) is in vdims, pad to len(kdims)+1
+        if wrapped_key[-1] in obj.vdims:
+            padlen = (len(obj.kdims) +1 ) - len(head+tail)
+    return head + ((slice(None),) * padlen) + tail
 
 
 def safe_unicode(value):
@@ -44,6 +81,27 @@ def capitalize_unicode_name(s):
     tail = s[index:].replace('capital', '').strip()
     tail = tail[0].upper() + tail[1:]
     return s[:index] + tail
+
+
+class Aliases(object):
+    """
+    Helper class useful for defining a set of alias tuples on a single object.
+
+    For instance, when defining a group or label with an alias, instead
+    of setting tuples in the constructor, you could use
+    ``aliases.water`` if you first define:
+
+    >>> aliases = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
+    >>> aliases.water
+    ('water', 'H_2O')
+
+    This may be used to conveniently define aliases for groups, labels
+    or dimension names.
+    """
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, (k,v))
+
 
 
 class sanitize_identifier_fn(param.ParameterizedFunction):
@@ -114,9 +172,31 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
        Whether leading underscores should be allowed to be sanitized
        with the leading prefix.""")
 
+    aliases = param.Dict(default={}, doc="""
+       A dictionary of aliases mapping long strings to their short,
+       sanitized equivalents""")
+
     prefix = 'A_'
 
     _lookup_table = {}
+
+
+    @param.parameterized.bothmethod
+    def add_aliases(self_or_cls, **kwargs):
+        """
+        Conveniently add new aliases as keyword arguments. For instance
+        you can add one new alias with add_aliases(short='Longer string')
+        """
+        self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
+
+    @param.parameterized.bothmethod
+    def remove_aliases(self_or_cls, aliases):
+        """
+        Remove a list of aliases.
+        """
+        for k,v in self_or_cls.aliases.items():
+            if v in aliases:
+                self_or_cls.aliases.pop(k)
 
     @param.parameterized.bothmethod
     def allowable(self_or_cls, name, disable_leading_underscore=None):
@@ -177,6 +257,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     def __call__(self, name, escape=True, version=None):
         if name in [None, '']:
            return name
+        elif name in self.aliases:
+            return self.aliases[name]
         elif name in self._lookup_table:
            return self._lookup_table[name]
         name = safe_unicode(name)
@@ -244,6 +326,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         return self._process_underscores(sanitized + ([chars] if chars else []))
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+group_sanitizer = sanitize_identifier_fn.instance()
+label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
 def find_minmax(lims, olims):
@@ -289,8 +375,11 @@ def max_range(ranges):
     try:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
-            arr = np.array([r for r in ranges for v in r if v is not None])
-            if arr.dtype.kind == 'M':
+            values = [r for r in ranges for v in r if v is not None]
+            if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
+                values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
+            arr = np.array(values)
+            if arr.dtype.kind in 'M':
                 return arr[:, 0].min(), arr[:, 1].max()
             return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
     except:
@@ -390,8 +479,8 @@ def match_spec(element, specification):
     match_tuple = ()
     match = specification.get((), {})
     for spec in [type(element).__name__,
-                 sanitize_identifier(element.group, escape=False),
-                 sanitize_identifier(element.label, escape=False)]:
+                 group_sanitizer(element.group, escape=False),
+                 label_sanitizer(element.label, escape=False)]:
         match_tuple += (spec,)
         if match_tuple in specification:
             match = specification[match_tuple]
@@ -525,6 +614,14 @@ def sort_topologically(graph):
                                     (names_by_level.get(i, None)
                                      for i in itertools.count())))
 
+def get_overlay_spec(o, k, v):
+    """
+    Gets the type.group.label + key spec from an Element in an Overlay.
+    """
+    k = wrap_tuple(k)
+    return ((type(v).__name__, v.group, v.label) + k if len(o.kdims) else
+            (type(v).__name__,) + k)
+
 
 def layer_sort(hmap):
    """
@@ -533,8 +630,7 @@ def layer_sort(hmap):
    """
    orderings = {}
    for o in hmap:
-      okeys = [(type(v).__name__, v.group, v.label) + k if len(o.kdims) else
-               (type(v).__name__,) + k for k, v in o.data.items()]
+      okeys = [get_overlay_spec(o, k, v) for k, v in o.data.items()]
       if len(okeys) == 1 and not okeys[0] in orderings:
          orderings[okeys[0]] = []
       else:
@@ -626,6 +722,110 @@ def get_param_values(data):
     return params
 
 
+def get_ndmapping_label(ndmapping, attr):
+    """
+    Function to get the first non-auxiliary object
+    label attribute from an NdMapping.
+    """
+    label = None
+    els = itervalues(ndmapping.data)
+    while label is None:
+        try:
+            el = next(els)
+        except StopIteration:
+            return None
+        if not el._auxiliary_component:
+            label = getattr(el, attr)
+    if attr == 'group':
+        tp = type(el).__name__
+        if tp == label:
+            return None
+    return label
+
+
 def wrap_tuple(unwrapped):
     """ Wraps any non-tuple types in a tuple """
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
+
+
+def itervalues(obj):
+    "Get value iterator from dictionary for Python 2 and 3"
+    return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
+
+
+def iterkeys(obj):
+    "Get key iterator from dictionary for Python 2 and 3"
+    return iter(obj.keys()) if sys.version_info.major == 3 else obj.iterkeys()
+
+
+def get_unique_keys(ndmapping, dimensions):
+    inds = [ndmapping.get_dimension_index(dim) for dim in dimensions]
+    getter = operator.itemgetter(*inds)
+    return unique_iterator(getter(key) if len(inds) > 1 else (key[inds[0]],)
+                           for key in ndmapping.data.keys())
+
+
+def unpack_group(group, getter):
+    for k, v in group.iterrows():
+        obj = v.values[0]
+        key = getter(k)
+        if hasattr(obj, 'kdims'):
+            yield (key, obj)
+        else:
+            obj = tuple(v)
+            yield (wrap_tuple(key), obj)
+
+
+
+
+class ndmapping_groupby(param.ParameterizedFunction):
+    """
+    Apply a groupby operation to an NdMapping, using pandas to improve
+    performance (if available).
+    """
+
+    def __call__(self, ndmapping, dimensions, container_type,
+                 group_type, sort=False, **kwargs):
+        try:
+            import pandas # noqa (optional import)
+            groupby = self.groupby_pandas
+        except:
+            groupby = self.groupby_python
+        return groupby(ndmapping, dimensions, container_type,
+                       group_type, sort=sort, **kwargs)
+
+    @param.parameterized.bothmethod
+    def groupby_pandas(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
+        if 'kdims' in kwargs:
+            idims = [ndmapping.get_dimension(d) for d in kwargs['kdims']]
+        else:
+            idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+
+        all_dims = [d.name for d in ndmapping.kdims]
+        inds = [ndmapping.get_dimension_index(dim) for dim in idims]
+        getter = operator.itemgetter(*inds) if inds else lambda x: tuple()
+
+        multi_index = pd.MultiIndex.from_tuples(ndmapping.keys(), names=all_dims)
+        df = pd.DataFrame(list(map(wrap_tuple, ndmapping.values())), index=multi_index)
+
+        kwargs = dict(dict(get_param_values(ndmapping), kdims=idims), **kwargs)
+        groups = ((wrap_tuple(k), group_type(OrderedDict(unpack_group(group, getter)), **kwargs))
+                   for k, group in df.groupby(level=[d.name for d in dimensions]))
+
+        if sort:
+            selects = list(get_unique_keys(ndmapping, dimensions))
+            groups = sorted(groups, key=lambda x: selects.index(x[0]))
+        return container_type(groups, kdims=dimensions)
+
+    @param.parameterized.bothmethod
+    def groupby_python(self_or_cls, ndmapping, dimensions, container_type,
+                       group_type, sort=False, **kwargs):
+        idims = [dim for dim in ndmapping.kdims if dim not in dimensions]
+        dim_names = [dim.name for dim in dimensions]
+        selects = get_unique_keys(ndmapping, dimensions)
+        selects = group_select(list(selects))
+        groups = [(k, group_type((v.reindex(idims) if hasattr(v, 'kdims')
+                                  else [((), (v,))]), **kwargs))
+                  for k, v in iterative_select(ndmapping, dim_names, selects)]
+        return container_type(groups, kdims=dimensions)

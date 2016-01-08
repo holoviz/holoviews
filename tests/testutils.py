@@ -8,11 +8,12 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.core.util import sanitize_identifier, find_range, max_range
+from holoviews.core.util import sanitize_identifier_fn, find_range, max_range
 from holoviews.element.comparison import ComparisonTestCase
 
 py_version = sys.version_info.major
 
+sanitize_identifier = sanitize_identifier_fn.instance()
 
 class TestAllowablePrefix(ComparisonTestCase):
     """

@@ -82,12 +82,12 @@ class HistogramIndexingTest(ComparisonTestCase):
         try:
             self.hist[-0.1]
         except Exception as e:
-            if not str(e).startswith("Key value -0.1 is out of the histogram bounds"):
+            if not str(e).startswith("'Key value -0.1 is out of the histogram bounds"):
                 raise AssertionError("Out of bound exception not generated")
 
     def test_scalar_highest_index_out_of_bounds(self):
         try:
             self.hist[10]
         except Exception as e:
-            if not str(e).startswith("Key value 10 is out of the histogram bounds"):
+            if not str(e).startswith("'Key value 10 is out of the histogram bounds"):
                 raise AssertionError("Out of bound exception not generated")

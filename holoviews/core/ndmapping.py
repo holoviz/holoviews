@@ -4,16 +4,16 @@ map types. The former class only allows indexing whereas the latter
 also enables slicing over multiple dimension ranges.
 """
 
-from collections import Sequence
 from itertools import cycle
 from operator import itemgetter
 import numpy as np
 
 import param
 
-from . import traversal
+from . import traversal, util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
-from .util import unique_iterator, sanitize_identifier, dimension_sort, group_select, iterative_select
+from .util import (unique_iterator, sanitize_identifier, dimension_sort,
+                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label, pd)
 
 
 class item_check(object):
@@ -145,7 +145,7 @@ class MultiDimensionalMapping(Dimensioned):
             raise KeyError('Key has to match number of dimensions.')
 
 
-    def _add_item(self, dim_vals, data, sort=True):
+    def _add_item(self, dim_vals, data, sort=True, update=True):
         """
         Adds item to the data, applying dimension types and ensuring
         key conforms to Dimension type and values.
@@ -176,8 +176,8 @@ class MultiDimensionalMapping(Dimensioned):
                                ' specified dimension values.' % (dim, repr(val)))
 
         # Updates nested data structures rather than simply overriding them.
-        if ((dim_vals in self.data)
-            and isinstance(self.data[dim_vals], (NdMapping, OrderedDict))):
+        if (update and (dim_vals in self.data)
+            and isinstance(self.data[dim_vals], (MultiDimensionalMapping, OrderedDict))):
             self.data[dim_vals].update(data)
         else:
             self.data[dim_vals] = data
@@ -275,22 +275,13 @@ class MultiDimensionalMapping(Dimensioned):
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
             return self
-
-        dimensions = [self.get_dimension(d).name for d in dimensions]
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
-        dims, inds = zip(*((self.get_dimension(dim), self.get_dimension_index(dim))
-                         for dim in dimensions))
-        inames, idims = zip(*((dim.name, dim) for dim in self.kdims
-                              if not dim.name in dimensions))
-        selects = unique_iterator(itemgetter(*inds)(key) if len(inds) > 1 else (key[inds[0]],)
-                                  for key in self.data.keys())
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        sort = not self._sorted
         with item_check(False):
-            selects = group_select(list(selects))
-            groups = [(k, group_type((v.reindex(inames) if isinstance(v, NdMapping)
-                                      else [((), (v,))]), **kwargs))
-                      for k, v in iterative_select(self, dimensions, selects)]
-            return container_type(groups, kdims=dims)
+            return util.ndmapping_groupby(self, dimensions, container_type,
+                                          group_type, sort=sort, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -319,7 +310,7 @@ class MultiDimensionalMapping(Dimensioned):
             dims.insert(dim_pos, dimension)
             dimensions = dict(kdims=dims)
 
-        if np.isscalar(dim_val):
+        if isinstance(dim_val, basestring) or not hasattr(dim_val, '__iter__'):
             dim_val = cycle([dim_val])
         else:
             if not len(dim_val) == len(self):
@@ -432,16 +423,17 @@ class MultiDimensionalMapping(Dimensioned):
                 info_str += '%s Dimensions: \n' % group.capitalize()
             for d in dimensions:
                 dmin, dmax = self.range(d.name)
-                if d.formatter:
-                    dmin, dmax = d.formatter(dmin), d.formatter(dmax)
+                if d.value_format:
+                    dmin, dmax = d.value_format(dmin), d.value_format(dmax)
                 info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
         print(info_str)
 
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
+        if datatype is None:
+            datatype = ['dataframe' if pd else 'dictionary']
 
-        datatype = ['ndelement', 'dataframe']
         tables = []
         for key, value in self.data.items():
             value = value.table(datatype=datatype, **kwargs)
@@ -529,7 +521,7 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def __setitem__(self, key, value):
-        self._add_item(key, value)
+        self._add_item(key, value, update=False)
 
 
     def __str__(self):
@@ -572,13 +564,15 @@ class NdMapping(MultiDimensionalMapping):
         data elements, otherwise it will return the requested slice of
         the data.
         """
-        if indexslice in [Ellipsis, ()]:
-            return self
-        elif isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
+        if isinstance(indexslice, np.ndarray) and indexslice.dtype.kind == 'b':
             if not len(indexslice) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
             selection = zip(indexslice, self.data.items())
             return self.clone([item for c, item in selection if c])
+        elif indexslice in [Ellipsis, ()]:
+            return self
+        elif Ellipsis in wrap_tuple(indexslice):
+            indexslice = process_ellipses(self, indexslice)
 
         map_slice, data_slice = self._split_index(indexslice)
         map_slice = self._transform_indices(map_slice)
@@ -657,15 +651,15 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._from_condition(dim_slice))
                 else:
                     conditions.append(self._range_condition(dim_slice))
-            elif isinstance(dim_slice, set):
+            elif isinstance(dim_slice, (set, list)):
                 if dim.values:
                     dim_slice = [self._cached_index_values[dim.name].index(dim_val)
                                  for dim_val in dim_slice]
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
-            elif isinstance(dim_slice, (list, tuple)):
-                raise ValueError("Keys may only be selected with sets, not lists or tuples.")
+            elif isinstance(dim_slice, (tuple)):
+                raise IndexError("Keys may only be selected with sets or lists, not tuples.")
             else:
                 if dim.values:
                     dim_slice = self._cached_index_values[dim.name].index(dim_slice)
@@ -759,16 +753,10 @@ class UniformNdMapping(NdMapping):
     def group(self):
         if self._group:
             return self._group
-        else:
-            vals = self.values()
-            groups = {v.group for v in vals
-                      if not v._auxiliary_component}
-            if len(groups) == 1:
-                tp = type(vals[0]).__name__
-                group = list(groups)[0]
-                if tp != group:
-                    return group
+        group =  get_ndmapping_label(self, 'group') if len(self) else None
+        if group is None:
             return type(self).__name__
+        return group
 
 
     @group.setter
@@ -784,12 +772,12 @@ class UniformNdMapping(NdMapping):
         if self._label:
             return self._label
         else:
-            labels = {v.label for v in self.values()
-                      if not v._auxiliary_component}
-            if len(labels) == 1:
-                return list(labels)[0]
+            if len(self):
+                label = get_ndmapping_label(self, 'label')
+                return '' if label is None else label
             else:
                 return ''
+
 
     @label.setter
     def label(self, label):

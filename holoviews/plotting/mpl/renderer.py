@@ -13,12 +13,14 @@ from mpl_toolkits.mplot3d import Axes3D
 import param
 from param.parameterized import bothmethod
 
-from ...core import HoloMap, displayable, undisplayable_info
-from ...core.options import Store, StoreOptions
+from ...core import HoloMap
+from ...core.options import Store
 
-from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
+
+class OutputWarning(param.Parameterized):pass
+outputwarning = OutputWarning(name='Warning')
 
 
 class MPLRenderer(Renderer):
@@ -39,12 +41,12 @@ class MPLRenderer(Renderer):
     backend = param.String('matplotlib', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto',
-                               objects=['png', 'svg', 'pdf', None, 'auto'], doc="""
+                               objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
     holomap = param.ObjectSelector(default='auto',
-                                   objects=['webm','mp4', 'gif', None, 'auto'], doc="""
+                                   objects=['widgets', 'scrubber', 'webm','mp4', 'gif', None, 'auto'], doc="""
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
@@ -64,31 +66,30 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
-    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', None, 'auto'],
+    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', 'html', None, 'auto'],
                            'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['webm','mp4', 'gif', None, 'auto', 'html']
+                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                   'html', None, 'auto']
                                 for m in ['default', 'mpld3', 'nbagg']}}
 
     counter = 0
 
     # Define appropriate widget classes
     widgets = {'scrubber': MPLScrubberWidget,
-               'selection': MPLSelectionWidget}
-
+               'widgets': MPLSelectionWidget}
 
     def __call__(self, obj, fmt='auto'):
         """
         Render the supplied HoloViews component or MPLPlot instance
         using matplotlib.
         """
-        if not isinstance(obj, Plot) and not displayable(obj):
-            raise Exception(undisplayable_info(obj, html=False))
-
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
 
-        if fmt in ['png', 'svg', 'pdf', 'html', 'json']:
+        if isinstance(plot, tuple(self.widgets.values())):
+            data = plot()
+        elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
             data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
             if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
@@ -128,28 +129,6 @@ class MPLRenderer(Renderer):
 
         return dict({'fig_inches':fig_inches},
                     **Store.lookup_options(cls.backend, obj, 'plot').options)
-
-    @bothmethod
-    def save(self_or_cls, obj, basename, fmt='auto', key={}, info={}, options=None, **kwargs):
-        """
-        Save a HoloViews object to file, either using an explicitly
-        supplied format or to the appropriate default.
-        """
-        if info or key:
-            raise Exception('MPLRenderer does not support saving metadata to file.')
-
-        with StoreOptions.options(obj, options, **kwargs):
-            rendered = self_or_cls(obj, fmt)
-        if rendered is None: return
-        (data, info) = rendered
-        if isinstance(basename, BytesIO):
-            basename.write(data)
-            basename.seek(0)
-        else:
-            encoded = self_or_cls.encode(rendered)
-            filename ='%s.%s' % (basename, info['file-ext'])
-            with open(filename, 'wb') as f:
-                f.write(encoded)
 
 
     @bothmethod
@@ -287,3 +266,18 @@ class MPLRenderer(Renderer):
             yield
         finally:
             mpl.rcParams = cls._rcParams
+
+    @classmethod
+    def validate(cls, options):
+        """
+        Validates a dictionary of options set on the backend.
+        """
+        if options['fig']=='pdf':
+            outputwarning.warning("PDF output is experimental, may not be supported"
+                                  "by your browser and may change in future.")
+
+        if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
+            outputwarning.warning("The widget mode must be set to 'live' for "
+                                  "matplotlib:nbagg.\nSwitching widget mode to 'live'.")
+            options['widgets'] = 'live'
+        return options

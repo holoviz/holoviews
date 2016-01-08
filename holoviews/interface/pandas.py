@@ -19,7 +19,7 @@ except:
 import param
 
 from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
-    NdLayout, GridSpace, NdElement, HoloMap
+    NdLayout, GridSpace, HoloMap
 from ..core.data import DFColumns
 from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
                        VectorField, HeatMap, Scatter3D, Surface)
@@ -97,7 +97,6 @@ class DataFrameView(Columns):
                             % invalid_dims)
 
         index_dims = [self.get_dimension(d) for d in dimensions]
-        view_dims = [d for d in self.kdims if d not in dimensions]
         mapping_data = []
         for k, v in self.data.groupby([self.get_dimension(d).name for d in dimensions]):
             data = v.drop(dimensions, axis=1)

@@ -1,3 +1,121 @@
+Version 1.4.1
+-------------
+
+Over the past two weeks since the 1.4 release, we have implemented
+several important bug fixes and have made several usability
+improvements.
+
+New features:
+
+* Improved help system. It is now possible to recursively list all the
+  applicable documentation for a composite object. In addition, the
+  documentation may now be filtered using a regular expression pattern.
+  (`PR #370 <https://github.com/ioam/holoviews/pull/370>`_)
+
+* HoloViews now supports multiple active display hooks making it easier
+  to use nbconvert. For instance, PNG data will be embedded in the
+  notebook if the argument display_formats=['html','png'] is supplied to
+  the notebook_extension. (`PR #355 <https://github.com/ioam/holoviews/pull/355>`_)
+
+* Improvements to the display of DynamicMaps as well as many new
+  improvements to the Bokeh backend including better VLines/HLines and
+  support for the Bars element.
+  (`PR #367 <https://github.com/ioam/holoviews/pull/367>`_ ,
+  `PR #362 <https://github.com/ioam/holoviews/pull/362>`_,
+  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_).
+
+* New Spikes and BoxWhisker elements suitable for representing
+  distributions as a sequence of lines or as a box-and-whisker plot.
+  (`PR #346 <https://github.com/ioam/holoviews/pull/346>`_,
+  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_) 
+
+* Improvements to the notebook_extension. For instance, executing
+  hv.notebook_extension('bokeh') will now load BokehJS and automatically
+  activate the Bokeh backend (if available).
+
+* Significant performance improvements when using the groupby operation
+  on HoloMaps and when working with highly nested datastructures.
+  (`PR #349 <https://github.com/ioam/holoviews/pull/349>`_,
+  `PR #359 <https://github.com/ioam/holoviews/pull/359>`_)
+
+Notable bug fixes:
+
+* DynamicMaps are now properly integrated into the style system and can
+  be customized in the same way as HoloMaps.
+  (`PR #368 <https://github.com/ioam/holoviews/pull/368>`_)
+
+* Widgets now work correctly when unicode is used in the dimension
+  labels and values (`PR #376 <https://github.com/ioam/holoviews/pull/376>`_).
+  
+  
+Version 1.4.0
+-------------
+
+Over the past few months we have added several major new features and
+with the help of our users have been able to address a number of bugs
+and inconsistencies. We have closed 57 issues and added over 1100 new
+commits.
+
+Major new features:
+
+* Data API: The new data API brings an extensible system of to add new
+  data interfaces to column based Element types. These interfaces
+  allow applying powerful operations on the data independently of the
+  data format. The currently supported datatypes include NumPy, pandas
+  dataframes and a simple dictionary format. (`PR #284 <https://github.com/ioam/holoviews/pull/284>`_)
+
+* Backend API: In this release we completely refactored the rendering,
+  plotting and IPython display system to make it easy to add new plotting
+  backends. Data may be styled and pickled for each backend independently and
+  renderers now support exporting all plotting data including widgets
+  as standalone HTML files or with separate JSON data. 
+
+* Bokeh backend: The first new plotting backend added via the new backend
+  API. Bokeh plots allow for much faster plotting and greater interactivity.
+  Supports most Element types and layouts and provides facilities for sharing
+  axes across plots and linked brushing across plots. (`PR #250 <https://github.com/ioam/holoviews/pull/250>`_)
+
+* DynamicMap: The new DynamicMap class allows HoloMap data to be generated
+  on-the-fly while running a Jupyter IPython notebook kernel. Allows
+  visualization of unbounded data streams and smooth exploration of large
+  continuous parameter spaces. (`PR #278 <https://github.com/ioam/holoviews/pull/278>`_)
+
+Other features:
+
+* Easy definition of custom aliases for group, label and Dimension
+  names, allowing easier use of LaTeX.
+* New Trisurface and QuadMesh elements.
+* Widgets now allow expressing hierarchical relationships between
+  dimensions.
+* Added GridMatrix container for heterogeneous Elements and gridmatrix
+  operation to generate scatter matrix showing relationship between
+  dimensions.
+* Filled contour regions can now be generated using the contours operation.
+* Consistent indexing semantics for all Elements and support for
+  boolean indexing for Columns and NdMapping types.
+* New hv.notebook_extension function offers a more flexible alternative
+  to %load_ext, e.g. for loading other extensions
+  hv.notebook_extension(bokeh=True).
+
+Experimental features:
+
+* Bokeh callbacks allow adding interactivity by communicating between
+  bokehJS tools and the IPython kernel, e.g. allowing downsampling
+  based on the zoom level.
+
+Notable bug fixes:
+
+* Major speedup rendering large HoloMaps (~ 2-3 times faster).
+* Colorbars now consistent for all plot configurations.
+* Style pickling now works correctly.
+
+API Changes:
+
+* Dimension formatter parameter now deprecated in favor of value_format.
+* Types of Chart and Table Element data now dependent on selected interface.
+* DFrame conversion interface deprecated in favor of Columns pandas interface.
+
+
 Version 1.3.2
 -------------
 

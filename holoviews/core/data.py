@@ -5,8 +5,8 @@ backends.
 
 import sys
 from distutils.version import LooseVersion
-from collections import defaultdict, Iterable, OrderedDict
-from itertools import groupby, compress
+from collections import OrderedDict
+from itertools import compress
 
 try:
     import itertools.izip as zip
@@ -21,13 +21,13 @@ except ImportError:
 
 import param
 
-from .dimension import Dimension
+from .dimension import Dimension, Dimensioned
 from .element import Element, NdElement
 from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple
+from .util import wrap_tuple, basestring
 
 
 class Columns(Element):
@@ -51,6 +51,10 @@ class Columns(Element):
         constructor cannot be put into the requested format, the next
         format listed will be used until a suitable format is found (or
         the data fails to be understood).""")
+
+    # In the 1D case the interfaces should not automatically add x-values
+    # to supplied data
+    _1d = False
 
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
@@ -82,6 +86,7 @@ class Columns(Element):
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
 
+        super(Columns, self).__setstate__(state)
 
     def closest(self, coords):
         """
@@ -213,11 +218,13 @@ class Columns(Element):
            (4) A boolean array index matching the length of the Columns
                object.
         """
-        if slices is (): return self
+        slices = util.process_ellipses(self, slices, vdim_selection=True)
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            return self.clone(self.data[slices])
+            return self.clone(self.interface.select(self, selection_mask=slices))
+        elif slices in [(), Ellipsis]:
+            return self
         if not isinstance(slices, tuple): slices = (slices,)
         value_select = None
         if len(slices) == 1 and slices[0] in self.dimensions():
@@ -225,15 +232,17 @@ class Columns(Element):
         elif len(slices) == self.ndims+1 and slices[self.ndims] in self.dimensions():
             selection = dict(zip(self.dimensions('key', label=True), slices))
             value_select = slices[self.ndims]
+        elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
+                                                        (Dimension,str)):
+            raise Exception("%r is not an available value dimension'" % slices[self.ndims])
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
         if value_select:
-            values = data.dimension_values(value_select)
-            if len(values) > 1:
-                return values
+            if len(data) == 1:
+                return data[value_select][0]
             else:
-                return values[0]
+                return data.reindex(vdims=[value_select])
         return data
 
 
@@ -260,14 +269,15 @@ class Columns(Element):
         return self.aggregate(dims, function, spreadfn)
 
 
-    def aggregate(self, dimensions=[], function=None, spreadfn=None, **kwargs):
+    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Aggregates over the supplied key dimensions with the defined
         function.
         """
         if function is None:
             raise ValueError("The aggregate method requires a function to be specified")
-        if not isinstance(dimensions, list): dimensions = [dimensions]
+        if dimensions is None: dimensions = self.kdims
+        elif not isinstance(dimensions, list): dimensions = [dimensions]
         aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
@@ -339,6 +349,18 @@ class Columns(Element):
             return dim_vals
 
 
+    def get_dimension_type(self, dim):
+        """
+        Returns the specified Dimension type if specified or
+        if the dimension_values types are consistent otherwise
+        None is returned.
+        """
+        dim_obj = self.get_dimension(dim)
+        if dim_obj and dim_obj.type is not None:
+            return dim_obj.type
+        return self.interface.dimension_type(self, dim)
+
+
     def dframe(self, dimensions=None):
         """
         Returns the data in the form of a DataFrame.
@@ -346,6 +368,7 @@ class Columns(Element):
         if dimensions:
             dimensions = [self.get_dimension(d).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
+
 
     def columns(self, dimensions=None):
         if dimensions is None: dimensions = self.dimensions()
@@ -413,7 +436,8 @@ class DataColumns(param.Parameterized):
         # Set interface priority order
         if datatype is None:
             datatype = eltype.datatype
-        prioritized = [cls.interfaces[p] for p in datatype]
+        prioritized = [cls.interfaces[p] for p in datatype
+                       if p in cls.interfaces]
 
         head = [intfc for intfc in prioritized if type(data) in intfc.types]
         if head:
@@ -432,6 +456,16 @@ class DataColumns(param.Parameterized):
                              "were able to support the supplied data format.")
 
         return data, kdims, vdims, interface
+
+
+    @classmethod
+    def validate(cls, columns):
+        not_found = [d for d in columns.dimensions(label=True)
+                     if d not in columns.data]
+        if not_found:
+            raise ValueError("Supplied data does not contain specified "
+                             "dimensions, the following dimensions were "
+                             "not found: %s" % repr(not_found))
 
 
     @classmethod
@@ -539,9 +573,6 @@ class DataColumns(param.Parameterized):
     def length(cls, columns):
         return len(columns.data)
 
-    @classmethod
-    def validate(cls, columns):
-        pass
 
 
 
@@ -567,7 +598,10 @@ class NdColumns(DataColumns):
             data = tuple(data.get(d) for d in dimensions)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = (np.arange(len(data)), data)
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = (np.arange(len(data)), data)
             else:
                 data = tuple(data[:, i]  for i in range(data.shape[1]))
         elif isinstance(data, list) and np.isscalar(data[0]):
@@ -589,6 +623,17 @@ class NdColumns(DataColumns):
             raise ValueError("NdColumns interface couldn't convert data.""")
         return data, kdims, vdims
 
+
+    @classmethod
+    def validate(cls, columns):
+        """
+        NdElement will validate the data
+        """
+        pass
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        return Dimensioned.get_dimension_type(columns, dim)
 
     @classmethod
     def shape(cls, columns):
@@ -624,8 +669,11 @@ class NdColumns(DataColumns):
             return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
 
     @classmethod
-    def select(cls, columns, **selection):
-        return columns.data.select(**selection)
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            return columns.data.select(**selection)
+        else:
+            return columns.data[selection_mask]
 
     @classmethod
     def sample(cls, columns, samples=[]):
@@ -655,13 +703,19 @@ class DFColumns(DataColumns):
     datatype = 'dataframe'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        idx = list(columns.data.columns).index(name)
+        return columns.data.dtypes[idx].type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
             columns = data.columns
-            ndim = kdim_param.bounds[1] if kdim_param.bounds else None
+            ndim = len(kdim_param.default) if kdim_param.bounds else None
             if kdims and not vdims:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and not kdims:
@@ -686,7 +740,10 @@ class DFColumns(DataColumns):
                 data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    data = (range(len(data)), data)
+                    if eltype._1d:
+                        data = np.atleast_2d(data).T
+                    else:
+                        data = (range(len(data)), data)
                 else:
                     data = tuple(data[:, i]  for i in range(data.shape[1]))
 
@@ -696,13 +753,6 @@ class DFColumns(DataColumns):
             else:
                 data = pd.DataFrame(data, columns=columns)
         return data, kdims, vdims
-
-
-    @classmethod
-    def validate(cls, columns):
-        if not all(c in columns.data.columns for c in columns.dimensions(label=True)):
-            raise ValueError("Supplied dimensions don't match columns "
-                             "in the dataframe.")
 
 
     @classmethod
@@ -783,11 +833,12 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
+    def select(cls, columns, selection_mask=None, **selection):
         df = columns.data
-        mask = cls.select_mask(columns, selection)
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
-        df = df.ix[mask]
+        df = df.ix[selection_mask]
         if indexed and len(df) == 1:
             return df[columns.vdims[0].name].iloc[0]
         return df
@@ -804,11 +855,13 @@ class DFColumns(DataColumns):
     @classmethod
     def sample(cls, columns, samples=[]):
         data = columns.data
-        mask = np.zeros(cls.length(columns), dtype=bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask = np.logical_or(mask, data.iloc[:, i]==v)
+                sample_mask = np.logical_and(sample_mask, data.iloc[:, i]==v)
+            mask |= sample_mask
         return data[mask]
 
 
@@ -824,7 +877,7 @@ class DFColumns(DataColumns):
         if dimensions:
             return columns.reindex(columns=dimensions)
         else:
-            return columns.data
+            return columns.data.copy()
 
 
 
@@ -835,8 +888,11 @@ class ArrayColumns(DataColumns):
     datatype = 'array'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        return columns.data.dtype.type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
-        element_params = eltype.params()
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
@@ -867,7 +923,10 @@ class ArrayColumns(DataColumns):
         if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
             raise ValueError("ArrayColumns interface could not handle input type.")
         elif data.ndim == 1:
-            data = np.column_stack([np.arange(len(data)), data])
+            if eltype._1d:
+                data = np.atleast_2d(data).T
+            else:
+                data = np.column_stack([np.arange(len(data)), data])
 
         if kdims is None:
             kdims = eltype.kdims
@@ -875,6 +934,13 @@ class ArrayColumns(DataColumns):
             vdims = eltype.vdims
         return data, kdims, vdims
 
+    @classmethod
+    def validate(cls, columns):
+        ndims = len(columns.dimensions())
+        ncols = columns.data.shape[1] if columns.data.ndim > 1 else 1
+        if ncols < ndims:
+            raise ValueError("Supplied data does not match specified "
+                             "dimensions, expected at least %s columns." % ndims)
 
     @classmethod
     def array(cls, columns, dimensions):
@@ -953,8 +1019,8 @@ class ArrayColumns(DataColumns):
         # to apply the group selection
         grouped_data = []
         for group in unique_indices:
-            mask = np.logical_and.reduce([data[:, idx] == group[i]
-                                          for i, idx in enumerate(dim_idxs)])
+            mask = np.logical_and.reduce([data[:, d_idx] == group[i]
+                                          for i, d_idx in enumerate(dim_idxs)])
             group_data = data[mask, ndims:]
             if not group_type == 'raw':
                 if issubclass(group_type, dict):
@@ -972,10 +1038,11 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
-        mask = cls.select_mask(columns, selection)
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
-        data = np.atleast_2d(columns.data[mask, :])
+        data = np.atleast_2d(columns.data[selection_mask, :])
         if len(data) == 1 and indexed:
             data = data[0, columns.ndims]
         return data
@@ -987,9 +1054,12 @@ class ArrayColumns(DataColumns):
         data = columns.data
         mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                mask |= data[:, i]==v
+                sample_mask &= data[:, i]==v
+            mask |= sample_mask
+
         return data[mask]
 
 
@@ -1033,6 +1103,11 @@ class DictColumns(DataColumns):
     datatype = 'dictionary'
 
     @classmethod
+    def dimension_type(cls, columns, dim):
+        name = columns.get_dimension(dim).name
+        return columns.data[name].dtype.type
+
+    @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
         odict_types = (OrderedDict, cyODict)
         if kdims is None:
@@ -1049,7 +1124,10 @@ class DictColumns(DataColumns):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                data = np.column_stack([np.arange(len(data)), data])
+                if eltype._1d:
+                    data = np.atleast_2d(data).T
+                else:
+                    data = np.column_stack([np.arange(len(data)), data])
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
@@ -1101,7 +1179,7 @@ class DictColumns(DataColumns):
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
-        if np.isscalar(values):
+        if isinstance(values, basestring) or not hasattr(values, '__iter__'):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)
@@ -1135,7 +1213,7 @@ class DictColumns(DataColumns):
     @classmethod
     def reindex(cls, columns, kdims, vdims):
         # DataFrame based tables don't need to be reindexed
-        return OrderedDict([(d, columns.dimension_values(d))
+        return OrderedDict([(d.name, columns.dimension_values(d))
                             for d in kdims+vdims])
 
 
@@ -1174,24 +1252,30 @@ class DictColumns(DataColumns):
 
 
     @classmethod
-    def select(cls, columns, **selection):
-       mask = cls.select_mask(columns, selection)
-       indexed = cls.indexed(columns, selection)
-       data = OrderedDict((k, list(compress(v, mask))) for k, v in columns.data.items())
-       if indexed and len(list(data.values())[0]) == 1:
-           return data[columns.vdims[0].name][0]
-       return data
+    def select(cls, columns, selection_mask=None, **selection):
+        if selection_mask is None:
+            selection_mask = cls.select_mask(columns, selection)
+        indexed = cls.indexed(columns, selection)
+        data = OrderedDict((k, list(compress(v, selection_mask)))
+                           for k, v in columns.data.items())
+        if indexed and len(list(data.values())[0]) == 1:
+            return data[columns.vdims[0].name][0]
+        return data
 
 
     @classmethod
     def sample(cls, columns, samples=[]):
-        mask = np.zeros(len(columns),  dtype=np.bool)
+        mask = False
         for sample in samples:
+            sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
                 name = columns.get_dimension(i).name
-                mask |= (np.array(columns.data[name])==v)
-        return  {k:np.array(col)[mask] for k, col in columns.data.items()}
+                sample_mask &= (np.array(columns.data[name])==v)
+            mask |= sample_mask
+        return {k: np.array(col)[mask]
+                for k, col in columns.data.items()}
+
 
     @classmethod
     def aggregate(cls, columns, kdims, function, **kwargs):

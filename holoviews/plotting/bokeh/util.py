@@ -7,8 +7,15 @@ try:
 except ImportError:
     cm, colors = None, None
 
-from bokeh.enums import Palette
-from bokeh.plotting import figure, Plot
+try:
+    from bokeh.enums import Palette
+    from bokeh.plotting import Plot
+    bokeh_lt_011 = True
+except:
+    from bokeh.core.enums import Palette
+    from bokeh.models.plots import Plot
+    bokeh_lt_011 = False
+from bokeh.plotting import Figure
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -28,7 +35,7 @@ def mplcmap_to_palette(cmap):
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
     if colors is None:
-        raise ValueException("Using cmaps on objects requires matplotlib.")
+        raise ValueError("Using cmaps on objects requires matplotlib.")
     colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
     return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
@@ -104,7 +111,7 @@ def layout_padding(plots):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                p = figure(plot_width=widths[c], 
+                p = Figure(plot_width=widths[c],
                            plot_height=heights[r])
                 p.text(x=0, y=0, text=[' '])
                 p.xaxis.visible = False
@@ -118,3 +125,25 @@ def layout_padding(plots):
 
 def convert_datetime(time):
     return time.astype('datetime64[s]').astype(float)*1000
+
+
+def models_to_json(models):
+    """
+    Convert list of bokeh models into json to update plot(s).
+    """
+    json_data, ids = [], []
+    for plotobj in models:
+        if plotobj.ref['id'] in ids:
+            continue
+        else:
+            ids.append(plotobj.ref['id'])
+        if bokeh_lt_011:
+            json = plotobj.vm_serialize(changed_only=True)
+        else:
+            json = plotobj.to_json(False)
+            json.pop('tool_events', None)
+            json.pop('renderers', None)
+            json_data.append({'id': plotobj.ref['id'],
+                              'type': plotobj.ref['type'],
+                              'data': json})
+    return json_data

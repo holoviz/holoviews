@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core import (OrderedDict, Dimension, Element, Columns,
-                    Tabular, NdElement, HoloMap)
+                    Tabular, HoloMap)
 
 
 class ItemTable(Element):
@@ -61,7 +61,7 @@ class ItemTable(Element):
         if heading is ():
             return self
         if heading not in self.vdims:
-            raise IndexError("%r not in available headings." % heading)
+            raise KeyError("%r not in available headings." % heading)
         return np.array(self.data.get(heading, np.NaN))
 
 
@@ -132,7 +132,7 @@ class ItemTable(Element):
                            else k): [v] for k, v in self.data.items()})
 
 
-    def table(self):
+    def table(self, datatype=None):
         return Table(OrderedDict([((), self.values())]), kdims=[],
                      vdims=self.vdims)
 
@@ -195,9 +195,9 @@ class TableConversion(object):
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
             vdims = self._table.vdims
-        if mdims is None:
-            mdims = [d for d in self._table.kdims if d not in kdims]
         if vdims and not isinstance(vdims, list): vdims = [vdims]
+        if mdims is None:
+            mdims = [d for d in self._table.kdims if d not in kdims+vdims]
 
         selected = self._table.reindex(mdims+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
@@ -218,6 +218,10 @@ class TableConversion(object):
     def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Bars
         return self._conversion(kdims, vdims, mdims, Bars, **kwargs)
+
+    def box(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import BoxWhisker
+        return self._conversion(kdims, vdims, mdims, BoxWhisker, **kwargs)
 
     def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from ..interface.seaborn import Bivariate
@@ -259,6 +263,7 @@ class TableConversion(object):
         return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
     def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from ..interface.seaborn import Regression
         return self._convert(kdims, vdims, mdims, Regression, **kwargs)
 
     def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):

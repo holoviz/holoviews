@@ -22,9 +22,9 @@ from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
-from . import *    # pyflakes:ignore (All Elements need to support comparison)
+from . import *    # noqa (All Elements need to support comparison)
 from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
-                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace
+                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace, DynamicMap
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -154,12 +154,14 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
+        cls.equality_type_funcs[Spikes] =       cls.compare_spikes
+        cls.equality_type_funcs[BoxWhisker] =   cls.compare_boxwhisker
+        cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
         cls.equality_type_funcs[Table] =        cls.compare_tables
         cls.equality_type_funcs[Points] =       cls.compare_points
-        cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
         # Pandas DFrame objects
         cls.equality_type_funcs[DataFrameView] = cls.compare_dframe
@@ -178,6 +180,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
         cls.equality_type_funcs[GridSpace] =     cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
+        cls.equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
 
         # Option objects
         cls.equality_type_funcs[Options] =     cls.compare_options
@@ -248,9 +251,6 @@ class Comparison(ComparisonInterface):
         if dim1.values != dim2.values:
             raise cls.failureException("Dimension value declarations mismatched: %s != %s"
                                        % (dim1.values , dim2.values))
-        if dim1.format_string != dim2.format_string:
-            raise cls.failureException("Dimension format string declarations mismatched: %s != %s"
-                                       % (dim1.format_string , dim2.format_string))
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
@@ -329,6 +329,12 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_holomap(cls, el1, el2, msg='HoloMaps'):
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_ndmappings(el1, el2, msg)
+
+
+    @classmethod
+    def compare_dynamicmap(cls, el1, el2, msg='DynamicMap'):
         cls.compare_dimensioned(el1, el2)
         cls.compare_ndmappings(el1, el2, msg)
 
@@ -494,6 +500,14 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_bars(cls, el1, el2, msg='Bars'):
+        cls.compare_columns(el1, el2, msg)
+
+    @classmethod
+    def compare_spikes(cls, el1, el2, msg='Spikes'):
+        cls.compare_columns(el1, el2, msg)
+
+    @classmethod
+    def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
         cls.compare_columns(el1, el2, msg)
 
     #=========#

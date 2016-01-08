@@ -1,15 +1,16 @@
 from numbers import Number
+import itertools
 import numpy as np
 
 import param
 import types
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
-from .overlay import Overlayable, Overlay, CompositeOverlay, NdOverlay
-from .tree import AttrTree
+from .overlay import Overlay, CompositeOverlay, NdOverlay
+from .options import Store, StoreOptions
 
 class HoloMap(UniformNdMapping):
     """
@@ -257,7 +258,7 @@ class HoloMap(UniformNdMapping):
                 X,Y = np.meshgrid(xsamples, ysamples)
                 linsamples = zip(X.flat, Y.flat)
             else:
-                raise NotImplementedError("Regular sampling not implented"
+                raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
 
             samples = set(self.last.closest(linsamples))
@@ -347,6 +348,8 @@ class DynamicMap(HoloMap):
     dimensions are fully bounded.
     """
     _sorted = False
+    # Declare that callback is a positional parameter (used in clone)
+    __pos_params = ['callback']
 
     callback = param.Parameter(doc="""
         The callable or generator used to generate the elements. In the
@@ -378,8 +381,15 @@ class DynamicMap(HoloMap):
        element will be cached and therefore accessible when casting to a
        HoloMap.  Applicable in open mode only.""")
 
-    def __init__(self, initial_items=None, **params):
-        super(DynamicMap, self).__init__(initial_items, **params)
+    sampled = param.Boolean(default=False, doc="""
+       Allows defining a DynamicMap in closed mode without defining the
+       dimension bounds or values. The DynamicMap may then be explicitly
+       sampled via getitem or the sampling is determined during plotting
+       by a HoloMap with fixed sampling.
+       """)
+
+    def __init__(self, callback, initial_items=None, **params):
+        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
@@ -387,14 +397,6 @@ class DynamicMap(HoloMap):
 
         self.call_mode = self._validate_mode()
         self.mode = 'closed' if self.call_mode == 'key' else 'open'
-        # Needed to initialize the plotting system
-        if self.call_mode == 'key':
-            self[self._initial_key()]
-        elif self.call_mode == 'counter':
-            self[self.counter]
-            self.counter += 1
-        else:
-            next(self)
 
 
     def _initial_key(self):
@@ -417,7 +419,12 @@ class DynamicMap(HoloMap):
         """
         isgenerator = isinstance(self.callback, types.GeneratorType)
         if isgenerator:
+            if self.sampled:
+                raise ValueError("Cannot set DynamicMap containing generator "
+                                 "to sampled")
             return 'generator'
+        if self.sampled:
+            return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
             if (kdim.values) and kdim.range != (None,None):
@@ -449,6 +456,17 @@ class DynamicMap(HoloMap):
                                         % (val, high))
 
 
+    def _style(self, retval):
+        """
+        Use any applicable OptionTree of the DynamicMap to apply options
+        to the return values of the callback.
+        """
+        if self.id not in Store.custom_options():
+            return retval
+        spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
+        return retval(spec)
+
+
     def _execute_callback(self, *args):
         """
         Execute the callback, validating both the input key and output
@@ -458,28 +476,32 @@ class DynamicMap(HoloMap):
             self._validate_key(args)      # Validate input key
 
         if self.call_mode == 'generator':
-            retval = self.callback.next()
+            retval = next(self.callback)
         else:
             retval = self.callback(*args)
 
         if self.call_mode=='key':
-            return retval
+            return self._style(retval)
 
         if isinstance(retval, tuple):
             self._validate_key(retval[0]) # Validated output key
-            return retval
+            return self._style(retval)
         else:
             self._validate_key((self.counter,))
-            return (self.counter, retval)
+            return (self.counter, self._style(retval))
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
-        Overrides Dimensioned clone to avoid checking items if data
-        is unchanged.
+        Clone method to adapt the slightly different signature of
+        DynamicMap that also overrides Dimensioned clone to avoid
+        checking items if data is unchanged.
         """
-        return super(UniformNdMapping, self).clone(data, shared_data,
-                                                   *args, **overrides)
+        if data is None and shared_data:
+            data = self.data
+        return super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
+                                                   shared_data, new_type,
+                                                   *(data,) + args, **overrides)
 
 
     def reset(self):
@@ -494,23 +516,75 @@ class DynamicMap(HoloMap):
         return self
 
 
+    def _cross_product(self, tuple_key, cache):
+        """
+        Returns a new DynamicMap if the key (tuple form) expresses a
+        cross product, otherwise returns None. The cache argument is a
+        dictionary (key:element pairs) of all the data found in the
+        cache for this key.
+
+        Each key inside the cross product is looked up in the cache
+        (self.data) to check if the appropriate element is
+        available. Oherwise the element is computed accordingly.
+        """
+        if self.mode != 'closed': return None
+        if not any(isinstance(el, (list, set)) for el in tuple_key):
+            return None
+        if len(tuple_key)==1:
+            product = tuple_key[0]
+        else:
+            args = [set(el) if isinstance(el, (list,set))
+                    else set([el]) for el in tuple_key]
+            product = itertools.product(*args)
+
+        data = []
+        for inner_key in product:
+            key = util.wrap_tuple(inner_key)
+            if key in cache:
+                val = cache[key]
+            else:
+                val = self._execute_callback(*key)
+            data.append((key, val))
+        return self.clone(data)
+
+
     def __getitem__(self, key):
         """
         Return an element for any key chosen key (in'closed mode') or
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
+        tuple_key = util.wrap_tuple(key)
+
+        # Validation for closed mode
+        if self.mode == 'closed':
+            # DynamicMap(...)[:] returns a new DynamicMap with the same cache
+            if key == slice(None, None, None):
+                return self.clone(self)
+
+            if any(isinstance(el, slice) for el in tuple_key):
+                raise Exception("Slices not supported by DynamicMap in closed mode "
+                                "except for the global slice [:] to create a clone.")
+
+        # Cache lookup
         try:
-            retval = super(DynamicMap,self).__getitem__(key)
-            if isinstance(retval, DynamicMap):
-                return HoloMap(retval)
-            else:
-                return retval
+            cache = super(DynamicMap,self).__getitem__(key)
+            # Return selected cache items in a new DynamicMap
+            if isinstance(cache, DynamicMap) and self.mode=='open':
+                cache = self.clone(cache)
         except KeyError as e:
+            cache = None
             if self.mode == 'open' and len(self.data)>0:
                 raise KeyError(str(e) + " Note: Cannot index outside "
-                               "available cache over an open interval.")
-        tuple_key = util.wrap_tuple(key)
+                               "available cache in open interval mode.")
+
+        # If the key expresses a cross product, compute the elements and return
+        product = self._cross_product(tuple_key, cache.data if cache else {})
+        if product is not None:
+            return product
+
+        # Not a cross product and nothing cached so compute element.
+        if cache: return cache
         val = self._execute_callback(*tuple_key)
         if self.call_mode == 'counter':
             val = val[1]
@@ -526,7 +600,7 @@ class DynamicMap(HoloMap):
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
         if len(self) >= self.cache_size:
-            first_key = self.data.iterkeys().next()
+            first_key = next(self.data.iterkeys())
             self.data.pop(first_key)
         self.data[key] = val
 
@@ -555,6 +629,8 @@ class DynamicMap(HoloMap):
         self.counter += 1
         return val
 
+    # For Python 2 and 3 compatibility
+    __next__ = next
 
 
 

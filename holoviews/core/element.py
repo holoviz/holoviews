@@ -1,18 +1,16 @@
 import operator
-from itertools import groupby, cycle
-from numbers import Number
+from itertools import groupby
 import numpy as np
 
 import param
 
 from .dimension import Dimension, Dimensioned, ViewableElement
-from .layout import Composable, Layout, AdjointLayout, NdLayout
-from .ndmapping import OrderedDict, UniformNdMapping, NdMapping, item_check, sorted_context
-from .overlay import Overlayable, NdOverlay, Overlay, CompositeOverlay
+from .layout import Composable, Layout, NdLayout
+from .ndmapping import OrderedDict, NdMapping
+from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import (sanitize_identifier, is_dataframe, dimension_sort,
-                   get_param_values, dimension_sanitizer)
+from .util import dimension_sort, get_param_values, dimension_sanitizer
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -284,8 +282,17 @@ class NdElement(NdMapping, Tabular):
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
-        if not isinstance(data, NdElement) and isinstance(data, Element):
-            data = data.mapping()
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            if isinstance(data, NdElement):
+                mapping = data.mapping()
+                data = mapping.data
+            else:
+                data = data.data
+            if 'kdims' not in params:
+                params['kdims'] = mapping.kdims
+            if 'vdims' not in params:
+                params['vdims'] = mapping.vdims
 
         kdims = params.get('kdims', self.kdims)
         if (data is not None and not isinstance(data, NdMapping)
@@ -342,12 +349,15 @@ class NdElement(NdMapping, Tabular):
         return reindexed
 
 
-    def _add_item(self, key, value, sort=True):
-        value = (value,) if np.isscalar(value) else tuple(value)
-        if len(value) != len(self.vdims):
+    def _add_item(self, key, value, sort=True, update=True):
+        if np.isscalar(value):
+            value = (value,)
+        elif not isinstance(value, NdElement):
+            value = tuple(value)
+        if len(value) != len(self.vdims) and not isinstance(value, NdElement):
             raise ValueError("%s values must match value dimensions"
                              % type(self).__name__)
-        super(NdElement, self)._add_item(key, value, sort)
+        super(NdElement, self)._add_item(key, value, sort, update)
 
 
     def _filter_columns(self, index, col_names):
@@ -392,10 +402,10 @@ class NdElement(NdMapping, Tabular):
         In addition to usual NdMapping indexing, NdElements can be indexed
         by column name (or a slice over column names)
         """
-        if args in self.dimensions():
-            return self.dimension_values(args)
         if isinstance(args, np.ndarray) and args.dtype.kind == 'b':
             return NdMapping.__getitem__(self, args)
+        elif args in self.dimensions():
+            return self.dimension_values(args)
         if not isinstance(args, tuple): args = (args,)
         ndmap_index = args[:self.ndims]
         val_index = args[self.ndims:]
@@ -453,14 +463,6 @@ class NdElement(NdMapping, Tabular):
         return self.clone(sample_data)
 
 
-    def _item_check(self, dim_vals, data):
-        if isinstance(data, tuple):
-            for el in data:
-                self._item_check(dim_vals, el)
-            return
-        super(NdElement, self)._item_check(dim_vals, data)
-
-
     def aggregate(self, dimensions, function, **kwargs):
         """
         Allows aggregating.
@@ -469,7 +471,7 @@ class NdElement(NdMapping, Tabular):
         grouped = self.groupby(dimensions) if len(dimensions) else HoloMap({(): self}, kdims=[])
         for k, group in grouped.data.items():
             reduced = []
-            for vdim in group.vdims:
+            for vdim in self.vdims:
                 data = group[vdim.name]
                 if isinstance(function, np.ufunc):
                     reduced.append(function.reduce(data, **kwargs))
@@ -598,8 +600,8 @@ class Collator(NdElement):
         return accumulator
 
 
-    def _add_item(self, key, value, sort=True):
-        NdMapping._add_item(self, key, value, sort)
+    def _add_item(self, key, value, sort=True, update=True):
+        NdMapping._add_item(self, key, value, sort, update)
 
 
     @property

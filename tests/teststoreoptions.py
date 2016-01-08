@@ -6,6 +6,7 @@ import numpy as np
 from holoviews import Overlay, Curve, Image
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews import plotting              # noqa Register backends
 
 class TestStoreOptionsMerge(ComparisonTestCase):
 

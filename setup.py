@@ -18,7 +18,8 @@ extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornad
 extras_require['recommended'] = (extras_require['notebook-dependencies']
                                  + ['matplotlib', 'lancet-ioam'])
 # Additional, useful third-party packages
-extras_require['extras'] = ['pandas', 'seaborn', 'mpld3'] + extras_require['recommended']
+extras_require['extras'] = (['pandas', 'seaborn', 'mpld3', 'bokeh']
+                            + extras_require['recommended'])
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = (extras_require['recommended']
                          + extras_require['extras']
@@ -26,10 +27,10 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.4.1a1",
+    version="1.4.1",
     install_requires = install_requires,
     extras_require = extras_require,
-    description='Composable, declarative data structures for building complex visualizations easily.',
+    description='Stop plotting your data - annotate your data and let it visualize itself.',
     long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "holoviews@googlegroups.com",
