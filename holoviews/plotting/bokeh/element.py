@@ -684,7 +684,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None, element=None):
+    def update_frame(self, key, ranges=None, element=None, empty=False):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
@@ -702,6 +702,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         else:
             range_obj = self.hmap
             items = element.items()
+
+        all_empty = empty
         ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
@@ -710,7 +712,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 empty = idx is None
                 if not empty:
                     _, el = items.pop(idx)
-            subplot.update_frame(key, ranges, element=el, empty=empty)
+            subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
         if isinstance(self.hmap, DynamicMap) and items:
             raise Exception("Some Elements returned by the dynamic callback "
