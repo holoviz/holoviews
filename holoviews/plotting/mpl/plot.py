@@ -58,10 +58,20 @@ class MPLPlot(DimensionedPlot):
     fig_size = param.Integer(default=100, bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
+    initial_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called before plotting the data onto
+        the axis. The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
+
+    final_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing an axis.
+        The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
+
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
-        The hook is passed the full set of plot handles and the
-        displayed object.""")
+        The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
 
     sublabel_format = param.String(default=None, allow_None=True, doc="""
         Allows labeling the subaxes in each plot with various formatters
@@ -96,6 +106,11 @@ class MPLPlot(DimensionedPlot):
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
+
+        if self.final_hooks and self.finalize_hooks:
+            self.warning('Set either final_hooks or deprecated '
+                         'finalize_hooks, not both.')
+        self.finalize_hooks = self.final_hooks
 
 
     def _init_axis(self, fig, axis):

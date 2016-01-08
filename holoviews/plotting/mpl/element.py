@@ -115,6 +115,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if isinstance(check, Element3D):
             self.projection = '3d'
 
+        for hook in self.initial_hooks:
+            try:
+                hook(self, element)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+
 
     def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
                        zticks=None, xlabel=None, ylabel=None, zlabel=None):
