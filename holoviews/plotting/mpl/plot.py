@@ -58,6 +58,16 @@ class MPLPlot(DimensionedPlot):
     fig_size = param.Integer(default=100, bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
+    initial_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing an axis.
+        The hook is passed the full set of plot handles and the
+        displayed object.""")
+
+    final_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing an axis.
+        The hook is passed the full set of plot handles and the
+        displayed object.""")
+
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing an axis.
         The hook is passed the full set of plot handles and the
@@ -96,6 +106,14 @@ class MPLPlot(DimensionedPlot):
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
+
+        if not self.final_hooks and self.finalize_hooks:
+            self.warning('Using deprecated finalize_hooks options, '
+                         'use final_hooks instead')
+            self.final_hooks = self.finalize_hooks
+        elif self.final_hooks and self.finalize_hooks:
+            raise ValueError('Set either final_hooks or deprecated '
+                             'finalize_hooks, not both.')
 
 
     def _init_axis(self, fig, axis):
