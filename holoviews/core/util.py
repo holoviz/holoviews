@@ -185,7 +185,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     def add_aliases(self_or_cls, **kwargs):
         """
         Conveniently add new aliases as keyword arguments. For instance
-        you can add one new alias with add_aliases(short='Longer string')
+        you can add a new alias with add_aliases(short='Longer string')
         """
         self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
 
