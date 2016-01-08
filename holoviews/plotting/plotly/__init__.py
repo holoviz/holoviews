@@ -8,7 +8,7 @@ from .chart import *
 from .raster import *
 from .plot import *
 
-Store.renderers['plotly'] = PlotlyRenderer
+Store.renderers['plotly'] = PlotlyRenderer.instance()
 
 Store.register({Points: PointPlot,
                 Scatter: PointPlot,

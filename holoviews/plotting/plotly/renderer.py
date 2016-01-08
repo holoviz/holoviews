@@ -1,44 +1,41 @@
 import uuid, json
 from plotly.offline.offline import utils, get_plotlyjs
 
-from holoviews.plotting.renderer import Renderer, MIME_TYPES
-from holoviews.core.options import Store
-from holoviews.core import HoloMap
+import param
 
+from ..renderer import Renderer, MIME_TYPES
+from ...core.options import Store
+from ...core import HoloMap
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 
 class PlotlyRenderer(Renderer):
     
     backend = 'plotly'
+
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
+        Output render format for static figures. If None, no figure
+        rendering will occur. """)
     
     mode_formats = {'fig': {'default': ['html', 'json']},
-                    'holomap': {'default': [None]}}
+                    'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
 
     widgets = {'scrubber': PlotlyScrubberWidget,
-               'selection': PlotlySelectionWidget}
+               'widgets': PlotlySelectionWidget}
 
     def __call__(self, obj, fmt='html', divuuid=None):
         divuuid = uuid.uuid4() if divuuid is None else divuuid
-        mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
-        fig = obj.state
-        if fmt == 'html':
-            return self.figure_data(fig, divuuid), mime_types
-        else:
-            return json.dumps({str(divuuid): {'data': fig.get('data', []),
-                                              'layout': fig.get('layout', {})}},
-                              cls=utils.PlotlyJSONEncoder), mime_types
-
-
-    def html(self, obj, fmt=None, css={}, divuuid=None):
-        """
-        Renders plot or data structure and wraps the output in HTML.
-        """
         plot, fmt =  self._validate(obj, fmt)
-        figdata, _ = self(plot, fmt, divuuid=divuuid)
+        mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        if fmt in ['html', 'json']:
-            return figdata
+        if isinstance(plot, tuple(self.widgets.values())):
+            return plot(), mime_types
+        elif fmt == 'html':
+            return self.figure_data(plot.state, divuuid), mime_types
+        elif fmt == 'json':
+            return json.dumps({str(divuuid): {'data': plot.state.get('data', []),
+                                              'layout': plot.state.get('layout', {})}},
+                              cls=utils.PlotlyJSONEncoder), mime_types
 
 
     @classmethod
@@ -84,6 +81,15 @@ class PlotlyRenderer(Renderer):
         width = options.get('width', plot.width) * factor
         height = options.get('height', plot.height) * factor
         return dict(options, **{'width':int(width), 'height': int(height)})
+
+
+    @classmethod
+    def load_nb(cls):
+        """
+        Loads the plotly notebook resources.
+        """
+        from IPython.display import display, HTML
+        display(HTML(plotly_include()))
 
 
 def plotly_include():

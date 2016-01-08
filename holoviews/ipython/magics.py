@@ -70,7 +70,6 @@ class OptionsMagic(Magics):
             if keyword in items:
                 value = items[keyword]
                 allowed = cls.allowed[keyword]
-                cls.update_allowed_options(keyword, value)
                 if isinstance(allowed, set):  pass
                 elif isinstance(allowed, dict):
                     if not isinstance(value, dict):

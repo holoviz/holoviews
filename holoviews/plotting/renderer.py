@@ -204,12 +204,12 @@ class Renderer(Exporter):
         return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
 
 
-    def html(self, obj, fmt=None, css=None):
+    def html(self, obj, fmt=None, css=None, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         """
         plot, fmt =  self._validate(obj, fmt)
-        figdata, _ = self(plot, fmt)
+        figdata, _ = self(plot, fmt, **kwargs)
         if css is None: css = self.css
 
         if fmt in ['html', 'json']:

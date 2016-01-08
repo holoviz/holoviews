@@ -20,6 +20,11 @@ try:
 except ImportError:
     pass
 
+try:
+    from . import plotly                  # noqa (API import)
+except ImportError:
+    pass
+
 
 def public(obj):
     if not isinstance(obj, type): return False
