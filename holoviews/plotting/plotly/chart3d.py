@@ -22,7 +22,7 @@ class Chart3DPlot(ElementPlot):
     def init_layout(self, key, element, ranges):
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
 
-        xd, yd = (element.get_dimension(i) for i in range(2))
+        xd, yd, zd = (element.get_dimension(i) for i in range(3))
         xaxis = dict(range=[l, r], title=str(xd))
         if self.logx:
             xaxis['type'] = 'log'
@@ -31,7 +31,7 @@ class Chart3DPlot(ElementPlot):
         if self.logy:
             yaxis['type'] = 'log'
 
-        zaxis = dict(range=[zmin, zmax], title=str(yd))
+        zaxis = dict(range=[zmin, zmax], title=str(zd))
         if self.logz:
             zaxis['type'] = 'log'
 
