@@ -65,16 +65,6 @@ class DistributionPlot(ElementPlot):
         return trace
 
 
-class Scatter3dPlot(ElementPlot):
-    
-    def init_graph(self, element, ranges, **opts):
-        trace = go.Scatter3d(x=element.dimension_values(0),
-                             y=element.dimension_values(1),
-                             z=element.dimension_values(2),
-                             mode = 'markers', **opts)
-        return trace
-
-
 class VectorPlot(ElementPlot):
 
     def init_graph(self, element, ranges, **opts):

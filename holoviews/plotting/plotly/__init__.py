@@ -5,6 +5,7 @@ from ...element import *
 from .renderer import PlotlyRenderer
 from .element import *
 from .chart import *
+from .chart3d import *
 from .raster import *
 from .plot import *
 

@@ -33,11 +33,3 @@ class RasterPlot(ElementPlot):
             z=element.data, **opts)
         return data
 
-class SurfacePlot(ElementPlot):
-
-    def init_graph(self, element, ranges, **opts):
-        data = go.Surface(
-            x=element.dimension_values(0, True),
-            y=element.dimension_values(1, True),
-            z=element.data, **opts)
-        return data

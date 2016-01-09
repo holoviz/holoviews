@@ -10,6 +10,13 @@ from .. import util
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
     
+    aspect = param.Parameter(default='cube', doc="""
+        The aspect ratio mode of the plot. By default, a plot may
+        select its own appropriate aspect ratio but sometimes it may
+        be necessary to force a square aspect ratio (e.g. to display
+        the plot as an element of a grid). The modes 'auto' and
+        'equal' correspond to the axis modes of the same name in
+        matplotlib, a numeric value may also be passed.""")
 
     def initialize_plot(self, ranges=None):
         """
