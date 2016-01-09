@@ -22,8 +22,11 @@ var PlotlyMethods = {
 		var data = this.frames[current];
 		$.each(data, function(id, data) {
 			var plot = $('#'+id)[0];
-			plot.data = data.data;
-			plot.layout = data.layout;
+			$.each(data.data, function(i, obj) {
+				$.each(Object.keys(obj), function(j, key) {
+					plot.data[i][key] = data.data[i][key];
+				});
+			});
 			Plotly.relayout(plot, data.layout);
 			Plotly.redraw(plot);
 		});
