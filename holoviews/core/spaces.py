@@ -255,13 +255,13 @@ class HoloMap(UniformNdMapping):
                 xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
                 ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
 
-                X,Y = np.meshgrid(xsamples, ysamples)
+                Y,X = np.meshgrid(ysamples, xsamples)
                 linsamples = zip(X.flat, Y.flat)
             else:
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
 
-            samples = set(self.last.closest(linsamples))
+            samples = list(util.unique_iterator(self.last.closest(linsamples)))
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.data.items()])
