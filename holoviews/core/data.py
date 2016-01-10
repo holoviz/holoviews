@@ -716,11 +716,11 @@ class DFColumns(DataColumns):
         if util.is_dataframe(data):
             columns = data.columns
             ndim = len(kdim_param.default) if kdim_param.bounds else None
-            if kdims and not vdims:
+            if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
-            elif vdims and not kdims:
+            elif vdims and kdims is None:
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
-            elif not kdims and not vdims:
+            elif kdims is None and vdims is None:
                 kdims = list(data.columns[:ndim])
                 vdims = list(data.columns[ndim:])
         else:
