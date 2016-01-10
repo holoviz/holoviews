@@ -868,7 +868,8 @@ class DFColumns(DataColumns):
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
-        data.insert(dim_pos, dimension.name, values)
+        if dimension.name not in data:
+            data.insert(dim_pos, dimension.name, values)
         return data
 
 
