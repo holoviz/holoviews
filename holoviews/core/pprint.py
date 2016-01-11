@@ -138,7 +138,7 @@ class InfoPrinter(object):
         plot_class = cls.store.registry[backend].get(obj if isclass else type(obj), None)
         # Special case to handle PlotSelectors
         if hasattr(plot_class, 'plot_classes'):
-            plot_class = plot_class.plot_classes.values()[0]
+            plot_class =  list(plot_class.plot_classes.values())[0]
 
 
         if visualization is False or plot_class is None:
