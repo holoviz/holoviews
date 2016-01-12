@@ -45,7 +45,7 @@ class Columns(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dictionary', 'dataframe', 'ndelement'],
+    datatype = param.List(['array', 'dataframe', 'dictionary', 'ndelement'],
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -716,11 +716,11 @@ class DFColumns(DataColumns):
         if util.is_dataframe(data):
             columns = data.columns
             ndim = len(kdim_param.default) if kdim_param.bounds else None
-            if kdims and not vdims:
+            if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
-            elif vdims and not kdims:
+            elif vdims and kdims is None:
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
-            elif not kdims and not vdims:
+            elif kdims is None and vdims is None:
                 kdims = list(data.columns[:ndim])
                 vdims = list(data.columns[ndim:])
         else:
@@ -868,7 +868,8 @@ class DFColumns(DataColumns):
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
-        data.insert(dim_pos, dimension.name, values)
+        if dimension.name not in data:
+            data.insert(dim_pos, dimension.name, values)
         return data
 
 
