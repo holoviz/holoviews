@@ -551,7 +551,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
-        ndims = points.shape[1]
+        ndims = len(points.dimensions())
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
         cs = None
@@ -590,8 +590,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
-        ndims = element.shape[1]
         dims = element.dimensions(label=True)
+        ndims = len(dims)
         if self.size_index < ndims:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
@@ -655,13 +655,14 @@ class VectorFieldPlot(ElementPlot):
 
 
     def _get_info(self, vfield, input_scale, ranges):
+        ndims = len(vfield.dimensions())
         xs = vfield.dimension_values(0) if len(vfield.data) else []
         ys = vfield.dimension_values(1) if len(vfield.data) else []
         radians = vfield.dimension_values(2) if len(vfield.data) else []
-        magnitudes = vfield.dimension_values(3) if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
+        magnitudes = vfield.dimension_values(3) if ndims>=4 else np.array([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
-        if vfield.data.shape[1] >= 4:
+        if ndims >= 4:
             magnitude_dim = vfield.get_dimension(3).name
             _, max_magnitude = ranges[magnitude_dim]
         else:
@@ -678,8 +679,8 @@ class VectorFieldPlot(ElementPlot):
 
     def _get_min_dist(self, vfield):
         "Get the minimum sampling distance."
-        xys = np.array([complex(x,y) for x,y in zip(vfield.data[:,0],
-                                                    vfield.data[:,1])])
+        xys = np.array([complex(x,y) for x,y in zip(vfield.dimension_values(0),
+                                                    vfield.dimension_values(1))])
         m, n = np.meshgrid(xys, xys)
         distances = abs(m-n)
         np.fill_diagonal(distances, np.inf)
@@ -728,7 +729,7 @@ class VectorFieldPlot(ElementPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        artist.set_offsets(element.data[:,0:2])
+        artist.set_offsets(element.array()[:,0:2])
         input_scale = self.handles['input_scale']
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)

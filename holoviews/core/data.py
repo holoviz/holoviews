@@ -45,7 +45,7 @@ class Columns(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dictionary', 'dataframe', 'ndelement'],
+    datatype = param.List(['array', 'dataframe', 'dictionary', 'ndelement'],
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -189,12 +189,12 @@ class Columns(Element):
         converting key dimensions to value dimensions and vice versa.
         """
         if kdims is None:
-            key_dims = [d for d in self.kdims if d not in vdims]
+            key_dims = [d for d in self.kdims if not vdims or d not in vdims]
         else:
             key_dims = [self.get_dimension(k) for k in kdims]
 
         if vdims is None:
-            val_dims = [d for d in self.vdims if d not in kdims]
+            val_dims = [d for d in self.vdims if not kdims or d not in kdims]
         else:
             val_dims = [self.get_dimension(v) for v in vdims]
 
@@ -716,11 +716,11 @@ class DFColumns(DataColumns):
         if util.is_dataframe(data):
             columns = data.columns
             ndim = len(kdim_param.default) if kdim_param.bounds else None
-            if kdims and not vdims:
+            if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
-            elif vdims and not kdims:
+            elif vdims and kdims is None:
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
-            elif not kdims and not vdims:
+            elif kdims is None and vdims is None:
                 kdims = list(data.columns[:ndim])
                 vdims = list(data.columns[ndim:])
         else:
@@ -868,7 +868,8 @@ class DFColumns(DataColumns):
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
-        data.insert(dim_pos, dimension.name, values)
+        if dimension.name not in data:
+            data.insert(dim_pos, dimension.name, values)
         return data
 
 

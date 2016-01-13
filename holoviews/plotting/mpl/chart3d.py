@@ -126,7 +126,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
-        ndims = points.shape[1]
+        ndims = len(points.dimensions())
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
         cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
 

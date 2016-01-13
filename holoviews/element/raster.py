@@ -616,7 +616,7 @@ class Image(SheetCoordinateSystem, Raster):
             if unique:
                 return d2lin if dim_idx else d1lin
             else:
-                X, Y = np.meshgrid(d1lin, d2lin)
+                Y, X = np.meshgrid(d2lin, d1lin)
                 return Y.flatten() if dim_idx else X.flatten()
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
