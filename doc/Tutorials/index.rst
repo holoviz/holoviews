@@ -27,8 +27,8 @@ in this order:
   animating.
 
 * `Sampling Data: <Sampling_Data>`_
-  How to select data in multiple dimensions and begin transforming
-  it into different types.
+  How to select data in multiple dimensions, returning a specific
+  (potentially lower dimensional) region of the available space.
 
 
 Supplementary Tutorials
@@ -96,7 +96,7 @@ extend HoloViews and apply it to real world data see the `Examples
    Showcase
    Introduction
    Exploring Data <Exploring_Data>
-   Transforming Data <Transforming_Data>
+   Sampling Data <Sampling_Data>
    Options
    Exporting
    Continuous Coordinates <Continuous_Coordinates>
