@@ -65,10 +65,12 @@ class RegressionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        label = view.label if self.overlaid == 1 else ''
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['label'] = label
         sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=axis, label=label,
-                    **self.style[self.cyclic_index])
+                    ax=axis, **kwargs)
 
 
 
@@ -93,7 +95,6 @@ class BivariatePlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         kdeview = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(axis, kdeview)
@@ -108,9 +109,11 @@ class BivariatePlot(FullRedrawPlot):
                                                 view.data[:,1],
                                                 **self.style).fig
         else:
-            label = view.label if self.overlaid == 1 else ''
-            sns.kdeplot(view.data, ax=axis, label=label,
-                        zorder=self.zorder, **self.style)
+            kwargs = self.style[self.cyclic_index]
+            label = view.label if self.overlaid >= 1 else ''
+            if label:
+                kwargs['label'] = label
+            sns.kdeplot(view.data, ax=axis, zorder=self.zorder, **kwargs)
 
 
 
@@ -135,14 +138,16 @@ class TimeSeriesPlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, element)
 
         return self._finalize_axis(self.keys[-1])
 
     def _update_plot(self, axis, view):
-        sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
-                   zorder=self.zorder, **self.style)
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['condition'] = label
+        sns.tsplot(view.data, view.xdata, ax=axis, zorder=self.zorder, **kwargs)
 
     def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xlabel = xlabel if xlabel else str(view.kdims[0])
@@ -169,7 +174,6 @@ class DistributionPlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, element)
         dim = element.get_dimension(0)
 
@@ -177,8 +181,11 @@ class DistributionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        label = view.label if self.overlaid == 1 else ''
-        sns.distplot(view.dimension_values(0), ax=axis, label=label, **self.style)
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['label'] = label
+        sns.distplot(view.dimension_values(0), ax=axis, label=label, **kwargs)
 
 
 
