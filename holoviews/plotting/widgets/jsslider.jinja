@@ -95,8 +95,8 @@
                                 dim_vals: vals,
                                 next_vals: next_vals,
                                 slide: _.throttle(function(event, ui) {
-                                    var vals = $(this).slider("option", "dim_vals");
-                                    var next_vals = $(this).slider("option", "next_vals");
+                                    var vals = slider.slider("option", "dim_vals");
+                                    var next_vals = slider.slider("option", "next_vals");
                                     if ({{ dynamic }} && vals.constructor === Array) {
                                         var dim_val = ui.value;
                                     } else {
