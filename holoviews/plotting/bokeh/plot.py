@@ -120,7 +120,7 @@ class BokehPlot(DimensionedPlot):
                                not isinstance(x.current_frame.data, np.ndarray)
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
-        grouped_sources = groupby(sorted(data_sources), lambda x: x[0])
+        grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
         for gid, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
