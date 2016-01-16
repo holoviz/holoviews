@@ -53,12 +53,15 @@ using pip::
 
   pip install holoviews
 
-
-For plotting, HoloViews uses `Matplotlib <http://matplotlib.org/>`_,
+For plotting, HoloViews uses `Matplotlib <http://matplotlib.org>`_,
 as its default backend, which most scientists and engineers
-using Python will already have installed.  HoloViews is pure Python,
-but it also provides optional extensions enabled with ``%load_ext``
-above that make it integrate well with `IPython Notebook
+using Python will already have installed.  HoloViews also has full
+support for the `Bokeh <http://bokeh.pydata.org>`_ library, which
+provides additional interactivity in web browsers.  
+
+HoloViews is pure Python,
+but it also provides optional extensions enabled with ``hv.notebook_extension()``
+above that make it integrate well with `Jupyter/IPython Notebook
 <http://ipython.org/notebook>`_ 2 and 3.
 
 The quickest and easiest way to get the latest version of all the
@@ -66,18 +69,19 @@ packages recommended for working with HoloViews in the IPython
 Notebook is via `conda <http://conda.pydata.org/docs/>`_ (e.g using
 `miniconda <http://conda.pydata.org/miniconda.html>`_)::
 
-  conda install -c ioam holoviews
+  conda install -c ioam holoviews bokeh
 
 Alternatively, you can also use pip::
 
   pip install 'holoviews[recommended]'
 
-This will install Matplotlib and IPython Notebook if they are not
+This will install Matplotlib, Bokeh, and IPython Notebook if they are not
 already available as part of a scientific Python distribution such as
-`Anaconda <http://continuum.io/downloads>`_ (particularly convenient
-on systems shipped without pip, such as Windows or Mac).
+`Anaconda <http://continuum.io/downloads>`_.  Such distributions are
+particularly convenient on systems shipped without pip, such as
+Windows or Mac.
 
-We also support the following install option::
+We also support the following pip install option::
 
   pip install 'holoviews[extras]'
 
@@ -100,12 +104,12 @@ repositories::
   git clone git://github.com/ioam/holoviews.git
 
 Once you've installed HoloViews, you can get started by launching
-IPython Notebook::
+Jupyter Notebook::
 
-  ipython notebook
+  jupyter notebook
 
 Now you can download the `tutorial notebooks`_.  unzip them somewhere
-IPython Notebook can find them, and then open the Homepage.ipynb
+Jupyter Notebook can find them, and then open the Homepage.ipynb
 tutorial or any of the others in the Notebook.  Enjoy exploring your
 data!
 

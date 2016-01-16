@@ -27,8 +27,8 @@ in this order:
   animating.
 
 * `Sampling Data: <Sampling_Data>`_
-  How to select data in multiple dimensions and begin transforming
-  it into different types.
+  How to select data in multiple dimensions, returning a specific
+  (potentially lower dimensional) region of the available space.
 
 
 Supplementary Tutorials
@@ -52,8 +52,13 @@ There are additional tutorials detailing other features of HoloViews:
   Complete example of the full range of hierarchical, multidimensional
   discrete and continuous data structures supported by HoloViews.
 
+* `Bokeh Backend: <Bokeh_Backend>`_
+  Additional interactivity available via the
+  `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming
+  and panning linked automatically between plots.
+
 * `Pandas Conversion: <Pandas_Conversion>`_
-  Using HoloViews the DFrame conversion wrapper to convert pandas
+  Using the DFrame conversion wrapper of HoloViews to convert pandas
   dataframes into HoloViews components.
 
 * `Pandas and Seaborn: <Pandas_Seaborn>`_
@@ -71,7 +76,9 @@ visualization options for that object type:
 
 * `Elements: <Elements>`_
   Overview and examples of all HoloViews element types, the atomic items
-  that can be combined together.
+  that can be combined together, available for either the
+  `Matplotlib <Elements>`_ or `Bokeh <Bokeh_Elements>`_ plotting
+  library backends. 
 
 * `Containers: <Containers>`_
   Overview and examples of all the HoloViews container types.
@@ -89,7 +96,7 @@ extend HoloViews and apply it to real world data see the `Examples
    Showcase
    Introduction
    Exploring Data <Exploring_Data>
-   Transforming Data <Transforming_Data>
+   Sampling Data <Sampling_Data>
    Options
    Exporting
    Continuous Coordinates <Continuous_Coordinates>

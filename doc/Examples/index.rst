@@ -4,7 +4,7 @@ Examples
 
 This collection of examples demonstrate interesting uses of HoloViews
 that go beyond the tutorial material. Suitable material includes
-application of HoloViews to real-world data, examples of advanced
+application of HoloViews to real-world data, and examples of advanced
 usage and demonstrations of how HoloViews may be extended, including
 third-party libraries that feature HoloViews integration.
 
@@ -36,8 +36,7 @@ HoloViews may be used:
   Visualizing the marking results of an undergraduate assignment with
   HoloViews.
 
-* `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of
-`Jake Vanderplas' blog post
+* `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
 <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
 about dynamic systems and modeling of conformity.
 
@@ -53,10 +52,16 @@ extended in new (and unexpected!) directions:
   Example usage of the mpld3 rendering backend allowing you to
   generate D3.js-based plots with interactive widgets.
 
-* `Interfacing HoloViews with Julia
-  <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_: A
-  prototype of a basic interface to the Julia programming language.
+* `Using HoloViews from Julia
+  <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_: 
+  A prototype interface to allow HoloViews to be used from the Julia
+  programming language.  (Contributions welcome!)
 
+* `Experimental Plotly backend
+  <http://philippjfr.com/work/work-in-progress/plotly/>`_: A
+  prototype of a `Plotly`<https://plot.ly/python>`_-based backend for HoloViews,
+  with progress summarized in an ongoing `pull request <https://github.com/ioam/holoviews/pull/398>`_.
+  (Contributions welcome!)
 
 External Projects
 -----------------
