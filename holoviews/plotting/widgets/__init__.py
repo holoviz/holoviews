@@ -19,15 +19,25 @@ def isnumeric(val):
     except:
         return False
 
-
-def escape_list(vals):
+def escape_vals(vals):
     """
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    vals = ["'"+safe_unicode(v)+"'" if isinstance(v, basestring) else str(v)
-            for v in vals if v is not None]
+    return ["'"+safe_unicode(v)+"'" if isinstance(v, basestring) else
+            (("'%.1f'" % v if v % 1 == 0 else "'%.10f'" % v)
+             if isnumeric(v) else safe_unicode(v)) for v in vals]
+
+def escape_tuple(vals):
+    return "(" + ", ".join(vals) + (",)" if len(vals) == 1 else ")")
+
+def escape_list(vals):
     return "[" + ", ".join(vals) + "]"
+
+def escape_dict(vals):
+    vals = [': '.join([k, escape_list(v)]) for k, v in
+            zip(escape_vals(vals.keys()), vals.values())]
+    return "{" + ", ".join(vals) + "}"
 
 
 subdirs = [p[0] for p in os.walk(os.path.join(os.path.split(__file__)[0], '..'))]
@@ -235,18 +245,18 @@ class SelectionWidget(NdWidget):
         dimensions = []
         init_dim_vals = []
         hierarchy = hierarchical(list(self.mock_obj.data.keys()))
-        next_vals = {}
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
             next_dim = ''
             visible = True
+            next_vals = {}
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                     else:
-                        dim_vals = escape_list(dim.values)
+                        dim_vals = escape_list(escape_vals(dim.values))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
@@ -257,7 +267,7 @@ class SelectionWidget(NdWidget):
                     if not isinstance(dim_range, int) or int_type:
                         step = 10**(round(math.log10(dim_range))-3)
                     init_dim_vals.append(dim_vals[0])
-                    dim_vals = escape_list(dim_vals)
+                    dim_vals = escape_list(escape_vals(dim_vals))
             else:
                 if next_vals:
                     dim_vals = next_vals[init_dim_vals[idx-1]]
@@ -280,7 +290,8 @@ class SelectionWidget(NdWidget):
                     widget_type = 'dropdown'
                 visible = len(dim_vals) > 1
                 init_dim_vals.append(dim_vals[0])
-                dim_vals = escape_list(dim_vals)
+                dim_vals = escape_list(escape_vals(dim_vals))
+            next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
             dim_str = safe_unicode(dim.name)
             visibility = 'visibility: visible' if visible else 'visibility: hidden; height: 0;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
@@ -289,7 +300,7 @@ class SelectionWidget(NdWidget):
                                next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
-        init_dim_vals = escape_list(init_dim_vals)
+        init_dim_vals = escape_list(escape_vals(init_dim_vals))
         return widgets, dimensions, init_dim_vals
 
 
@@ -297,9 +308,7 @@ class SelectionWidget(NdWidget):
         # Generate key data
         key_data = OrderedDict()
         for i, k in enumerate(self.mock_obj.data.keys()):
-            key = [("%.1f" % v if v % 1 == 0 else "%.10f" % v)
-                   if isnumeric(v) else safe_unicode(v) for v in k]
-            key = "('" + "', '".join(key) + ("',)" if len(key) == 1 else "')")
+            key = escape_tuple(escape_vals(k))
             key_data[key] = i
         return json.dumps(key_data)
 
