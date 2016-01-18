@@ -30,6 +30,11 @@ in this order:
   How to select data in multiple dimensions, returning a specific
   (potentially lower dimensional) region of the available space.
 
+* `Columnar Data: <Columnar_Data>`_
+  How to work with table-like data, introducing the basics on how
+  the data is stored, how to apply operations to the data and
+  transform into complex visualization easily.
+
 
 Supplementary Tutorials
 ------------------------
