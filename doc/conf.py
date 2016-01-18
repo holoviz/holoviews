@@ -90,12 +90,17 @@ intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ipython.org/ipython-doc/2/': None,
                        'http://ioam.github.io/param/': None}
 
+js_includes = ['require.js', 'bootstrap.js', 'custom.js', 'js/theme.js']
+
 from builder.paramdoc import param_formatter
 from nbpublisher import nbbuild
 
 
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
+    for js in js_includes:
+        app.add_javascript('_static/'+js)
+
     try:
         import runipy # noqa (Warning import)
         nbbuild.setup(app)
