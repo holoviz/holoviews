@@ -102,10 +102,12 @@ extend HoloViews and apply it to real world data see the `Examples
    Introduction
    Exploring Data <Exploring_Data>
    Sampling Data <Sampling_Data>
+   Columnar Data <Columnar_Data>
    Options
    Exporting
    Continuous Coordinates <Continuous_Coordinates>
    Composing Data <Composing_Data>
+   Bokeh Backend <Bokeh_Backend>
    Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
    Elements
