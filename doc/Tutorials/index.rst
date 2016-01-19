@@ -31,9 +31,9 @@ in this order:
   (potentially lower dimensional) region of the available space.
 
 * `Columnar Data: <Columnar_Data>`_
-  How to work with table-like data, introducing the basics on how
-  the data is stored, how to apply operations to the data and
-  transform into complex visualization easily.
+  How to work with table-like data, including options for storing the
+  data, and how to apply operations to transform the data into 
+  complex visualizations easily.
 
 
 Supplementary Tutorials
@@ -59,8 +59,8 @@ There are additional tutorials detailing other features of HoloViews:
 
 * `Bokeh Backend: <Bokeh_Backend>`_
   Additional interactivity available via the
-  `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming
-  and panning linked automatically between plots.
+  `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming,
+  panning, and selection linked automatically between plots.
 
 * `Pandas Conversion: <Pandas_Conversion>`_
   Using the DFrame conversion wrapper of HoloViews to convert pandas
