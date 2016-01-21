@@ -45,4 +45,8 @@ script:
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
   - coverage combine
 
+addons:
+  artifacts: true
+  s3_region: "eu-west-1"
+
 after_success: coveralls
