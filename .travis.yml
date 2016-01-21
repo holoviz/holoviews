@@ -46,11 +46,12 @@ script:
   - coverage combine
 
 addons:
-  artifacts:
-	debug: true
-	target_paths: $TRAVIS_BUILD_NUMBER
-	paths:
-		- ./doc/test_data
-	s3_region: eu-west-1
+	artifacts:
+		debug: true
+		target_paths: $TRAVIS_BUILD_NUMBER
+		working_dir: WORKING_DIR
+		paths:
+			- ./doc/test_data
+		s3_region: eu-west-1
 
 after_success: coveralls
