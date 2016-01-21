@@ -39,69 +39,28 @@ ____________
 Installation
 ____________
 
-HoloViews is compatible with Python `2.7, 3.3, and 3.4 <https://travis-ci.org/ioam/holoviews>`_.
-
-HoloViews requires `Param <http://ioam.github.com/param/>`_ and `Numpy
-<http://numpy.org>`_, neither of which has any required dependencies,
-and so it should be very easy to integrate HoloViews into your
-workflow or as part of another project.
-
-For a minimal install, you can obtain HoloViews along with the latest
-public releases of its core dependencies (`Param
-<http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_)
-using pip::
-
-  pip install holoviews
-
-For plotting, HoloViews uses `Matplotlib <http://matplotlib.org>`_,
-as its default backend, which most scientists and engineers
-using Python will already have installed.  HoloViews also has full
-support for the `Bokeh <http://bokeh.pydata.org>`_ library, which
-provides additional interactivity in web browsers.  
-
-HoloViews is pure Python,
-but it also provides optional extensions enabled with ``hv.notebook_extension()``
-above that make it integrate well with `Jupyter/IPython Notebook
-<http://ipython.org/notebook>`_ 2 and 3.
+HoloViews works with Python `2.7, 3.3, and 3.4 <https://travis-ci.org/ioam/holoviews>`_.
+HoloViews is pure Python, but it also provides optional extensions
+enabled with ``hv.notebook_extension()`` above that make it integrate
+well with `Jupyter/IPython Notebook <http://ipython.org/notebook>`_ 2
+and 3.
 
 The quickest and easiest way to get the latest version of all the
-packages recommended for working with HoloViews in the IPython
-Notebook is via `conda <http://conda.pydata.org/docs/>`_ (e.g using
-`miniconda <http://conda.pydata.org/miniconda.html>`_)::
+recommended packages for working with HoloViews on Linux, Windows, or
+Mac systems is via the
+`<code>conda</code> <http://conda.pydata.org/docs/>`_ command provided by 
+the `Anaconda <http://docs.continuum.io/anaconda/install>`_ or
+`Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
+Python distributions::
 
   conda install -c ioam holoviews bokeh
 
-Alternatively, you can also use pip::
-
-  pip install 'holoviews[recommended]'
-
-This will install Matplotlib, Bokeh, and IPython Notebook if they are not
-already available as part of a scientific Python distribution such as
-`Anaconda <http://continuum.io/downloads>`_.  Such distributions are
-particularly convenient on systems shipped without pip, such as
-Windows or Mac.
-
-We also support the following pip install option::
-
-  pip install 'holoviews[extras]'
-
-In addition to the required and recommended packages, this command also
-installs the optional `bokeh <http://bokeh.pydata.org/en/latest/>`_, `mpld3
-<http://mpld3.github.io/>`_, `pandas <http://pandas.pydata.org/>`_ and `Seaborn
-<http://stanford.edu/~mwaskom/software/seaborn/index.html>`_ libraries.
-
-Lastly, to get everything including `cyordereddict
-<https://pypi.python.org/pypi/cyordereddict>`_ to enable optional
-speed optimizations and `nose <https://pypi.python.org/pypi/nose/>`_
-for running unit tests, you can use::
-
-  pip install 'holoviews[all]'
-
-To get the latest development version you can instead clone our git
-repositories::
-
-  git clone git://github.com/ioam/param.git
-  git clone git://github.com/ioam/holoviews.git
+See our `installation page <install>`_ if you need other options,
+including ``pip`` installations, additional packages, development
+versions, and minimal installations.  Minimal installations include only
+`Param <http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_ 
+as dependencies, neither of which has any required dependencies,
+making it simple to generate HoloViews objects from within your own code.
 
 Once you've installed HoloViews, you can get started by launching
 Jupyter Notebook::
@@ -122,7 +81,8 @@ ____________
 
 HoloViews is developed by `Jean-Luc R. Stevens <https://github.com/jlstevens>`_
 and `Philipp Rudiger <https://github.com/philippjfr>`_,
-in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_.
+in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_,
+with support from `Continuum Analytics <https://continuum.io>`_.
 
 HoloViews is completely `open source
 <https://github.com/ioam/holoviews>`_, available under a BSD license
