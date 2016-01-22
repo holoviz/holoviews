@@ -118,7 +118,7 @@ class BokehRenderer(Renderer):
         return (plot.state.height, plot.state.height)
 
     @classmethod
-    def load_nb(cls, inline=False):
+    def load_nb(cls, inline=True):
         """
         Loads the bokeh notebook resources.
         """
