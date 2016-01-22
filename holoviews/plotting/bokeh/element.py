@@ -82,6 +82,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -333,6 +336,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  for axis in ['x', 'y']}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
+
+        if not self.show_grid:
+            plot.xgrid.grid_line_color = None
+            plot.ygrid.grid_line_color = None
 
 
     def _update_ranges(self, element, ranges):
