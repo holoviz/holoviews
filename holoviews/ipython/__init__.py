@@ -108,6 +108,9 @@ class notebook_extension(param.ParameterizedFunction):
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
+    inline = param.Boolean(default=True, doc="""Whether to inline JS and CSS resources,
+        if disabled resources are loaded from CDN if one is available.""")
+
     width = param.Number(default=None, bounds=(0, 100), doc="""
         Width of the notebook as a percentage of the browser screen window width.""")
 
@@ -165,8 +168,7 @@ class notebook_extension(param.ParameterizedFunction):
                   JS=('holoviews' in resources),
                   message = '%s successfully loaded in this cell.' % loaded)
         for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb()
-
+            Store.renderers[r].load_nb(inline=p.inline)
 
         if resources[-1] != 'holoviews':
             get_ipython().magic(u"output backend=%r" % resources[-1]) # noqa (get_ipython))

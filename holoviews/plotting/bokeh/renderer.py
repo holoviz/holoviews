@@ -9,7 +9,7 @@ from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document
-from bokeh.resources import CDN
+from bokeh.resources import CDN, INLINE
 
 try:
     from bokeh.protocol import serialize_json
@@ -115,8 +115,8 @@ class BokehRenderer(Renderer):
         return (plot.state.height, plot.state.height)
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=False):
         """
         Loads the bokeh notebook resources.
         """
-        load_notebook(hide_banner=True)
+        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)

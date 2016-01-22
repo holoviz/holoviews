@@ -435,7 +435,7 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=True):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook
