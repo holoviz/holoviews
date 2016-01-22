@@ -251,7 +251,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
         if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
-            properties['webgl'] = True
+            properties['webgl'] = self.renderer.webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
                                      tools=tools, **properties)
