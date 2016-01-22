@@ -104,7 +104,7 @@ class RasterPlot(ColorbarPlot):
     def _compute_ticks(self, element, ranges):
         if isinstance(element, HeatMap):
             xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = [np.unique(element.dimension_values(i))
+            dim1_keys, dim2_keys = [element.dimension_values(i, True)
                                     for i in range(2)]
             num_x, num_y = len(dim1_keys), len(dim2_keys)
             x0, y0, x1, y1 = element.extents
