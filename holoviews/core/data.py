@@ -343,8 +343,11 @@ class Columns(Element):
         """
         dim = self.get_dimension(dim).name
         dim_vals = self.interface.values(self, dim)
-        if unique:
-            return np.unique(dim_vals)
+        if unique and pd:
+            return pd.unique(dim_vals)
+        elif unique:
+            _, uniq_inds = np.unique(dim_vals, return_index=True)
+            return dim_vals[np.sort(uniq_inds)]
         else:
             return dim_vals
 
