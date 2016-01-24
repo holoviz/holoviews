@@ -51,7 +51,7 @@ addons:
     debug: true
     paths:
       - ./doc/test_html
-    target_paths: $TRAVIS_BUILD_NUMBER
+    target_paths: build_$TRAVIS_BUILD_NUMBER
     working_dir: WORKING_DIR
     s3_region: eu-west-1
 
