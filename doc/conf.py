@@ -99,7 +99,7 @@ from nbpublisher import nbbuild
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
     for js in js_includes:
-        app.add_javascript('_static/'+js)
+        app.add_javascript(js)
 
     try:
         import runipy # noqa (Warning import)
