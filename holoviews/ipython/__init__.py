@@ -17,6 +17,8 @@ from .display_hooks import set_display_hooks, OutputMagic
 from .parser import Parser
 from .widgets import RunProgress
 
+
+from ..plotting import * # noqa (API import - register plotting backends)
 from param import ipython as param_ext
 
 Collector.interval_hook = RunProgress
