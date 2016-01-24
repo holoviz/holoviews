@@ -192,6 +192,11 @@ class DistributionPlot(FullRedrawPlot):
         sns.distplot(view.dimension_values(0), ax=axis, **kwargs)
 
 
+class SideDistributionPlot(AdjoinedPlot, DistributionPlot):
+
+    border_size = param.Number(default=0.2, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
+
 
 class SNSFramePlot(DFrameViewPlot):
     """
@@ -352,3 +357,5 @@ Store.register({TimeSeries: TimeSeriesPlot,
                 SNSFrame: SNSFramePlot,
                 DFrame: SNSFramePlot,
                 DataFrameView: SNSFramePlot}, 'matplotlib')
+
+MPLPlot.sideplots.update({Distribution: SideDistributionPlot})
