@@ -15,6 +15,7 @@ from ...interface.seaborn import DFrame as SNSFrame
 from ...core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
+from .plot import MPLPlot, AdjoinedPlot
 
 
 class FullRedrawPlot(ElementPlot):
@@ -103,11 +104,12 @@ class BivariatePlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
+        kwargs = self.style[self.cyclic_index]
         if self.joint:
-            self.style.pop('cmap', None)
+            kwargs.pop('cmap', None)
             self.handles['fig'] = sns.jointplot(view.data[:,0],
                                                 view.data[:,1],
-                                                **self.style).fig
+                                                **kwargs).fig
         else:
             kwargs = self.style[self.cyclic_index]
             label = view.label if self.overlaid >= 1 else ''
@@ -185,7 +187,9 @@ class DistributionPlot(FullRedrawPlot):
         label = view.label if self.overlaid >= 1 else ''
         if label:
             kwargs['label'] = label
-        sns.distplot(view.dimension_values(0), ax=axis, label=label, **kwargs)
+        if self.invert_axes:
+            kwargs['vertical'] = True
+        sns.distplot(view.dimension_values(0), ax=axis, **kwargs)
 
 
 
