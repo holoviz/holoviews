@@ -49,10 +49,8 @@ script:
 addons:
   artifacts:
     debug: true
-    paths:
-      - ./doc/test_html
     target_paths: $TRAVIS_BUILD_NUMBER
-    working_dir: WORKING_DIR
+    working_dir: ./doc/test_html
     s3_region: eu-west-1
 
 after_success: coveralls
