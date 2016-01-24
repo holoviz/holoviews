@@ -176,6 +176,10 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     # Test literal formats
 
+    def test_columns_uniq_dimvals_ht(self):
+        self.assertEqual(self.table.dimension_values('Gender', unique=True),
+                         np.array(['M', 'F']))
+
     def test_columns_implicit_indexing_init(self):
         columns = Columns(self.ys, kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(columns.data, self.data_instance_type))

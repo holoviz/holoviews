@@ -11,6 +11,7 @@ from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
+from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, toarray
@@ -390,11 +391,12 @@ class HeatMap(Columns, Element2D):
         d1keys = self.dimension_values(0, True)
         d2keys = self.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
-        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=['dictionary'])
-        concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
+        dtype = 'dataframe' if pd else 'dictionary'
+        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
+        concat_data = self.interface.concatenate([dense_data, Columns(self)], datatype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'Mean of empty slice')
-            data = concat_data.aggregate(self.kdims, np.nanmean).sort()
+            data = concat_data.aggregate(self.kdims, np.nanmean)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
         return data, np.flipud(array.T)
 

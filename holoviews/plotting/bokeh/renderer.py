@@ -9,7 +9,7 @@ from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, Document
-from bokeh.resources import CDN
+from bokeh.resources import CDN, INLINE
 
 try:
     from bokeh.protocol import serialize_json
@@ -30,6 +30,9 @@ class BokehRenderer(Renderer):
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
+
+    webgl = param.Boolean(default=True, doc="""Whether to render plots with WebGL
+        if bokeh version >=0.10""")
 
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
@@ -115,8 +118,8 @@ class BokehRenderer(Renderer):
         return (plot.state.height, plot.state.height)
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=True):
         """
         Loads the bokeh notebook resources.
         """
-        load_notebook(hide_banner=True)
+        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)

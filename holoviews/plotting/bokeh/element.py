@@ -82,6 +82,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -251,7 +254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
         if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
-            properties['webgl'] = True
+            properties['webgl'] = self.renderer.webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
                                      tools=tools, **properties)
@@ -333,6 +336,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  for axis in ['x', 'y']}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
+
+        if not self.show_grid:
+            plot.xgrid.grid_line_color = None
+            plot.ygrid.grid_line_color = None
 
 
     def _update_ranges(self, element, ranges):
