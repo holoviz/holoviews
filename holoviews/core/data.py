@@ -761,7 +761,11 @@ class DFColumns(DataColumns):
     @classmethod
     def range(cls, columns, dimension):
         column = columns.data[columns.get_dimension(dimension).name]
-        return (column.min(), column.max())
+        if column.dtype.kind == 'O':
+            column = column.sort_values()
+            return column.iloc[0], column.iloc[-1]
+        else:
+            return (column.min(), column.max())
 
 
     @classmethod
