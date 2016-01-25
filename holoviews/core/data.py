@@ -27,7 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple, basestring
+from .util import wrap_tuple, basestring, unique_array
 
 
 class Columns(Element):
@@ -343,11 +343,8 @@ class Columns(Element):
         """
         dim = self.get_dimension(dim).name
         dim_vals = self.interface.values(self, dim)
-        if unique and pd:
-            return pd.unique(dim_vals)
-        elif unique:
-            _, uniq_inds = np.unique(dim_vals, return_index=True)
-            return dim_vals[np.sort(uniq_inds)]
+        if unique:
+            return unique_array(dim_vals)
         else:
             return dim_vals
 

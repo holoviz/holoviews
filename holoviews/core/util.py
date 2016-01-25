@@ -470,6 +470,17 @@ def unique_iterator(seq):
             yield item
 
 
+def unique_array(arr):
+    """
+    Returns an array of unique values in the input order
+    """
+    if pd:
+        return pd.unique(arr)
+    else:
+        _, uniq_inds = np.unique(arr, return_index=True)
+        return arr[np.sort(uniq_inds)]
+
+
 def match_spec(element, specification):
     """
     Matches the group.label specification of the supplied
@@ -829,3 +840,5 @@ class ndmapping_groupby(param.ParameterizedFunction):
                                   else [((), (v,))]), **kwargs))
                   for k, v in iterative_select(ndmapping, dim_names, selects)]
         return container_type(groups, kdims=dimensions)
+
+

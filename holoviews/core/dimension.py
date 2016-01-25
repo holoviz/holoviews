@@ -736,7 +736,7 @@ class Dimensioned(LabelledData):
         return selection
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, unique=False):
         """
         Returns the values along the specified dimension. This method
         must be implemented for all Dimensioned type.
