@@ -718,7 +718,7 @@ class DFColumns(DataColumns):
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
             columns = data.columns
-            ndim = len(kdim_param.default) if kdim_param.bounds else None
+            ndim = len(kdim_param.default) if kdim_param.default else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and kdims is None:
