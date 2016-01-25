@@ -764,7 +764,7 @@ class DFColumns(DataColumns):
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
                 LooseVersion(pd.__version__) < '0.17.0'):
-                column = column.sort()
+                column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
             return column.iloc[0], column.iloc[-1]
