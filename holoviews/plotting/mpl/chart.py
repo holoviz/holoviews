@@ -523,13 +523,15 @@ class PointPlot(ChartPlot, ColorbarPlot):
     size_index = param.Integer(default=2, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
@@ -559,7 +561,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims and self.scaling_factor > 1:
+        if self.size_index < ndims:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
@@ -584,7 +586,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_size(self, element, opts):
         sizes = element.dimension_values(self.size_index)
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
