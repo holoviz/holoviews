@@ -189,7 +189,14 @@ class TableConversion(object):
     def __init__(self, table):
         self._table = table
 
-    def _conversion(self, kdims=None, vdims=None, mdims=None, new_type=None, sort=False, **kwargs):
+    def __call__(self, new_type, kdims=None, vdims=None, mdims=None, sort=False, **kwargs):
+        """
+        Generic conversion method for Column based types. Supply the
+        Columns based type to convert to and optionally the
+        key dimensions (kdims), value dimensions (vdims) and HoloMap
+        key dimensions (mdims). Converted Columns can be automatically
+        sorted via the sort option and kwargs can be passed through.
+        """
         if kdims is None:
             kdims = self._table.kdims
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
@@ -217,23 +224,23 @@ class TableConversion(object):
 
     def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Bars
-        return self._conversion(kdims, vdims, mdims, Bars, **kwargs)
+        return self(Bars, kdims, vdims, mdims, **kwargs)
 
     def box(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import BoxWhisker
-        return self._conversion(kdims, vdims, mdims, BoxWhisker, **kwargs)
+        return self(BoxWhisker, kdims, vdims, mdims, **kwargs)
 
     def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from ..interface.seaborn import Bivariate
-        return self._convert(kdims, vdims, mdims, Bivariate, **kwargs)
+        return self(Bivariate, kdims, vdims, mdims, **kwargs)
 
     def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Curve
-        return self._conversion(kdims, vdims, mdims, Curve, sort=True, **kwargs)
+        return self(Curve, kdims, vdims, mdims, sort=True, **kwargs)
 
     def errorbars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import ErrorBars
-        return self._conversion(kdims, vdims, mdims, ErrorBars, sort=True, **kwargs)
+        return self(ErrorBars, kdims, vdims, mdims, sort=True, **kwargs)
 
     def distribution(self, dim, mdims=[], **kwargs):
         from ..interface.seaborn import Distribution
@@ -251,11 +258,11 @@ class TableConversion(object):
 
     def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import HeatMap
-        return self._conversion(kdims, vdims, mdims, HeatMap, **kwargs)
+        return self(HeatMap, kdims, vdims, mdims, **kwargs)
 
     def points(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Points
-        return self._conversion(kdims, vdims, mdims, Points, **kwargs)
+        return self(Points, kdims, vdims, mdims, **kwargs)
 
     def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .raster import Raster
@@ -264,19 +271,23 @@ class TableConversion(object):
 
     def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from ..interface.seaborn import Regression
-        return self._convert(kdims, vdims, mdims, Regression, **kwargs)
+        return self(Regression, kdims, vdims, mdims, **kwargs)
 
     def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Scatter
-        return self._conversion(kdims, vdims, mdims, Scatter, **kwargs)
+        return self(Scatter, kdims, vdims, mdims, **kwargs)
 
     def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Scatter3D
-        return self._conversion(kdims, vdims, mdims, Scatter3D, **kwargs)
+        return self(Scatter3D, kdims, vdims, mdims, **kwargs)
+
+    def spikes(self, kdims=None, vdims=None, mdims=None, **kwargs):
+        from .chart import Spikes
+        return self(Spikes, kdims, vdims, mdims, **kwargs)
 
     def spread(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import Spread
-        return self._conversion(kdims, vdims, mdims, Spread, sort=True, **kwargs)
+        return self(Spread, kdims, vdims, mdims, sort=True, **kwargs)
 
     def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Surface
@@ -285,9 +296,9 @@ class TableConversion(object):
 
     def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart3d import Trisurface
-        return self._conversion(kdims, vdims, mdims, Trisurface, **kwargs)
+        return self(Trisurface, kdims, vdims, mdims, **kwargs)
 
     def vectorfield(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from .chart import VectorField
-        return self._conversion(kdims, vdims, VectorField, **kwargs)
+        return self(VectorField, kdims, vdims, mdims, **kwargs)
 
