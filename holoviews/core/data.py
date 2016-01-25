@@ -762,7 +762,11 @@ class DFColumns(DataColumns):
     def range(cls, columns, dimension):
         column = columns.data[columns.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
-            column = column.sort_values()
+            if (not isinstance(columns.data, pd.DataFrame) or
+                LooseVersion(pd.__version__) < '0.17.0'):
+                column = column.sort()
+            else:
+                column = column.sort_values()
             return column.iloc[0], column.iloc[-1]
         else:
             return (column.min(), column.max())
