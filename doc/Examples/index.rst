@@ -40,6 +40,13 @@ HoloViews may be used:
   <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
 about dynamic systems and modeling of conformity.
 
+* `t-SNE machine learning Tutorial
+  <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
+  Adapted version of a `tutorial
+  <https://www.oreilly.com/learning/an-illustrated-introduction-to-the-t-sne-algorithm>`_
+  by Cyrille Rossant for O'Reilly on the t-SNE machine learning
+  visualization algorithm.
+
 
 Extensions
 ----------
