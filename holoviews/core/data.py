@@ -27,7 +27,7 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple, basestring
+from .util import wrap_tuple, basestring, unique_array
 
 
 class Columns(Element):
@@ -343,11 +343,8 @@ class Columns(Element):
         """
         dim = self.get_dimension(dim).name
         dim_vals = self.interface.values(self, dim)
-        if unique and pd:
-            return pd.unique(dim_vals)
-        elif unique:
-            _, uniq_inds = np.unique(dim_vals, return_index=True)
-            return dim_vals[np.sort(uniq_inds)]
+        if unique:
+            return unique_array(dim_vals)
         else:
             return dim_vals
 
@@ -718,7 +715,7 @@ class DFColumns(DataColumns):
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
             columns = data.columns
-            ndim = len(kdim_param.default) if kdim_param.bounds else None
+            ndim = len(kdim_param.default) if kdim_param.default else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and kdims is None:
@@ -761,7 +758,15 @@ class DFColumns(DataColumns):
     @classmethod
     def range(cls, columns, dimension):
         column = columns.data[columns.get_dimension(dimension).name]
-        return (column.min(), column.max())
+        if column.dtype.kind == 'O':
+            if (not isinstance(columns.data, pd.DataFrame) or
+                LooseVersion(pd.__version__) < '0.17.0'):
+                column = column.sort(inplace=False)
+            else:
+                column = column.sort_values()
+            return column.iloc[0], column.iloc[-1]
+        else:
+            return (column.min(), column.max())
 
 
     @classmethod

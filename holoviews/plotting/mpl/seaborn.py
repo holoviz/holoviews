@@ -70,7 +70,7 @@ class RegressionPlot(FullRedrawPlot):
         label = view.label if self.overlaid >= 1 else ''
         if label:
             kwargs['label'] = label
-        sns.regplot(view.data[:, 0], view.data[:, 1],
+        sns.regplot(view.dimension_values(0), view.dimension_values(1),
                     ax=axis, **kwargs)
 
 

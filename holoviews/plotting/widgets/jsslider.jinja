@@ -113,31 +113,31 @@
                             });
                             slider.keypress(function(event) {
                                 if (event.which == 80 || event.which == 112) {
-                                    var start = $(this).slider("option", "value");
-                                    var stop =  $(this).slider("option", "max");
+                                    var start = slider.slider("option", "value");
+                                    var stop =  slider.slider("option", "max");
                                     for (var i=start; i<=stop; i++) {
                                         var delay = i*{{ delay }};
                                         $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
                                             var val = {value:i};
-                                            $(this).slider('value',i);
-                                            $(this).slider("option", "slide")(null, val);
-                                        }, $(this)), delay);
-                                        }, $(this))(i);
+                                            slider.slider('value',i);
+                                            slider.slider("option", "slide")(null, val);
+                                        }, slider), delay);
+                                        }, slider)(i);
                                     }
                                 }
                                 if (event.which == 82 || event.which == 114) {
-                                    var start = $(this).slider("option", "value");
-                                    var stop =  $(this).slider("option", "min");
+                                    var start = slider.slider("option", "value");
+                                    var stop =  slider.slider("option", "min");
                                     var count = 0;
                                     for (var i=start; i>=stop; i--) {
                                         var delay = count*{{ delay }};
                                         count = count + 1;
                                         $.proxy(function doSetTimeout(i) { setTimeout($.proxy(function() {
                                             var val = {value:i};
-                                            $(this).slider('value',i);
-                                            $(this).slider("option", "slide")(null, val);
-                                        }, $(this)), delay);
-                                        }, $(this))(i);
+                                            slider.slider('value',i);
+                                            slider.slider("option", "slide")(null, val);
+                                        }, slider), delay);
+                                        }, slider)(i);
                                     }
                                 }
                             });

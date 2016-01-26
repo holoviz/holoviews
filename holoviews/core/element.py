@@ -10,7 +10,8 @@ from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import dimension_sort, get_param_values, dimension_sanitizer
+from .util import (dimension_sort, get_param_values, dimension_sanitizer,
+                   unique_array)
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -481,14 +482,15 @@ class NdElement(NdMapping, Tabular):
         return self.clone(rows, kdims=grouped.kdims)
 
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, unique=False):
         dim = self.get_dimension(dim)
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
-            return np.array([v[index] for v in self.data.values()])
+            vals = np.array([v[index] for v in self.data.values()])
+            return unique_array(vals) if unique else vals
         else:
-            return NdMapping.dimension_values(self, dim.name)
+            return NdMapping.dimension_values(self, dim.name, unique)
 
 
     def values(self):

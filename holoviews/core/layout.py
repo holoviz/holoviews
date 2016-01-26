@@ -15,7 +15,8 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import int_to_roman, sanitize_identifier, group_sanitizer, label_sanitizer
+from .util import (int_to_roman, sanitize_identifier, group_sanitizer,
+                   label_sanitizer, unique_array)
 from . import traversal
 
 
@@ -125,12 +126,9 @@ class AdjointLayout(Dimensioned):
         return self.data[key] if key in self.data else default
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, unique=False):
         dimension = self.get_dimension(dimension).name
-        if dimension in self.kdims:
-            return self.layout_order[:len(self.data)]
-        else:
-            return self.main.dimension_values(dimension)
+        return self.main.dimension_values(dimension, unique)
 
 
     def __getitem__(self, key):
@@ -433,16 +431,17 @@ class Layout(AttrTree, Dimensioned):
         return clone
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, unique=False):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
         if dimension in chain.from_iterable(all_dims):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions(label=True)]
-            return np.concatenate(values)
+            vals = np.concatenate(values)
+            return unique_array(vals) if unique else vals
         else:
-            return super(Layout, self).dimension_values(dimension)
+            return super(Layout, self).dimension_values(dimension, unique)
 
 
     def cols(self, ncols):
