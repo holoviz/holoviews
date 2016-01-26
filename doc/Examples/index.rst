@@ -38,7 +38,7 @@ HoloViews may be used:
 
 * `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
   <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
-about dynamic systems and modeling of conformity.
+  about dynamic systems and modeling of conformity.
 
 * `t-SNE machine learning Tutorial
   <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
