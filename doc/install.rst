@@ -4,7 +4,7 @@ Installing HoloViews
 The quickest and easiest way to get the latest version of all the
 recommended packages for working with HoloViews on Linux, Windows, or
 Mac systems is via the
-`<code>conda</code> <http://conda.pydata.org/docs/>`_ command provided by 
+`conda <http://conda.pydata.org/docs/>`_ command provided by 
 the
 `Anaconda <http://docs.continuum.io/anaconda/install>`_ or
 `Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
