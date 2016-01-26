@@ -813,7 +813,7 @@ class FileArchive(Archive):
             self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
             self._tar_archive(export_name, files, root)
-        if self.flush_achive:
+        if self.flush_archive:
             self._files = OrderedDict()
 
     def _format(self, formatter, info):
