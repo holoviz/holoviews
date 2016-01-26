@@ -56,7 +56,8 @@ Python distributions::
   conda install -c ioam holoviews bokeh
 
 See our `installation page <install.html>`_ if you need other options,
-including ``pip`` installations, additional packages, development
+including `pip <https://pip.pypa.io/en/stable/installing>`_
+installations, additional packages, development
 versions, and minimal installations.  Minimal installations include only
 `Param <http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_ 
 as dependencies, neither of which has any required dependencies,
