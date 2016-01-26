@@ -12,6 +12,7 @@ each collection of paths.
 """
 
 import numpy as np
+from geopandas import GeoDataFrame
 
 import param
 from ..core import Dimension, Element2D
@@ -128,6 +129,40 @@ class Polygons(Contours):
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""", bounds=(1,1))
 
+
+
+class GeoMap(Contours):
+    """
+    GeoMap is a Path Element which represents a geographical map consisting
+    of a collection of polygons representing geographical regions which can
+    optionally be associated with an additional value (e.g. population size,
+    region area, etc.).
+    """
+
+    group = param.String(default="GeoMap", constant=True)
+
+    vdims = param.List(default=[Dimension('Value')], doc="""
+        GeoMaps optionally accept a value dimension, corresponding
+        to the supplied value.""", bounds=(1,1))
+
+    def __init__(self, data, **params):
+        assert isinstance(data, GeoDataFrame)
+
+        def get_array_for_poly(poly):
+            xs, ys = poly.exterior.xy
+            return np.array([xs, ys]).T
+
+        geoms = []
+
+        for poly in data.geometry:
+            try:
+                geoms.append(get_array_for_poly(poly))
+            except AttributeError:
+                for subpoly in poly.geoms:
+                    geoms.append(get_array_for_poly(subpoly))
+
+        data = geoms
+        super(GeoMap, self).__init__(data, **params)
 
 
 class BaseShape(Path):

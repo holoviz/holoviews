@@ -2,7 +2,7 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
-                        Box, Bounds, Ellipse, Polygons, BoxWhisker,
+                        Box, Bounds, Ellipse, Polygons, GeoMap, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface)
 from ...core.options import Options, Cycle
@@ -15,7 +15,7 @@ from .callbacks import Callbacks # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)
-from .path import PathPlot, PolygonPlot
+from .path import PathPlot, PolygonPlot, GeoMapPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
 from .renderer import BokehRenderer
@@ -56,6 +56,7 @@ Store.register({Overlay: OverlayPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
                 Polygons: PolygonPlot,
+                GeoMap:   GeoMapPlot,
 
                 # Annotations
                 HLine: LineAnnotationPlot,
@@ -126,6 +127,7 @@ options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle())
+options.GeoMap = Options('style', fill_color='white', line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap='hot')

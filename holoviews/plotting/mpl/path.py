@@ -103,3 +103,45 @@ class PolygonPlot(ColorbarPlot):
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])
+
+
+class GeoMapPlot(PolygonPlot):
+    """
+    GeoMapPlot draws paths representing the region boundaries in the
+    supplied GeoMap. If the GeoMap has an associated value the color of
+    regions will be drawn from the supplied cmap, otherwise the supplied
+    facecolor will apply.
+    """
+
+    aspect = param.Parameter(default='equal', doc="""
+        GeoMap elements use an 'equal' aspect ratio by default but
+        may be set to an explicit aspect ratio or to 'square'.""")
+
+    bgcolor = param.Parameter(default='white', doc="""
+        Background color of the map.""")
+
+    frame = param.Boolean(default=False, doc="""
+        Whether to show the frame around the plot.""")
+
+    def initialize_plot(self, ranges=None):
+        # TODO: Most of this is copied & pasted from PolygonPlot.
+        #       How can we avoid the code duplication?!?
+        element = self.hmap.last
+        key = self.keys[-1]
+        axis = self.handles['axis']
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = match_spec(element, ranges)
+        collection, polys = self._create_polygons(element, ranges)
+        axis.add_collection(collection)
+        self.handles['polys'] = polys
+
+        axis.xaxis.set_visible(False)
+        axis.yaxis.set_visible(False)
+        axis.set_frame_on(self.frame)
+
+        if self.colorbar:
+            self._draw_colorbar(collection, element)
+
+        self.handles['artist'] = collection
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges)
