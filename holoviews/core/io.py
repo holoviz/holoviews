@@ -584,6 +584,10 @@ class FileArchive(Archive):
        practical maximum for zip and tar file generation, but you may
        wish to use a lower value to avoid long filenames.""")
 
+    flush_archive = param.Boolean(default=True, doc="""
+       Flushed the contents of the archive after export.
+       """)
+
 
     ffields = {'type', 'group', 'label', 'obj', 'SHA', 'timestamp', 'dimensions'}
     efields = {'timestamp'}
@@ -809,7 +813,8 @@ class FileArchive(Archive):
             self._zip_archive(export_name, files, root)
         elif self.archive_format == 'tar':
             self._tar_archive(export_name, files, root)
-        self._files = OrderedDict()
+        if self.flush_achive:
+            self._files = OrderedDict()
 
     def _format(self, formatter, info):
         filtered = {k:v for k,v in info.items()
