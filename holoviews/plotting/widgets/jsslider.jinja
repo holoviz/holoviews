@@ -24,53 +24,7 @@
                         </div>
                     </div>
                     <script>
-                        /* Load JQuery UI CSS */
-                        function loadcssfile(filename){
-                            var fileref=document.createElement("link")
-                            fileref.setAttribute("rel", "stylesheet")
-                            fileref.setAttribute("type", "text/css")
-                            fileref.setAttribute("href", filename)
-                            document.getElementsByTagName("head")[0].appendChild(fileref)
-                        }
-                        loadcssfile("https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css");
-                        /* Check if jQuery and jQueryUI have been loaded
-                         otherwise load with require.js */
-                        var jQuery = window.jQuery,
-                        // check for old versions of jQuery
-                                oldjQuery = jQuery && !!jQuery.fn.jquery.match(/^1\.[0-4](\.|$)/),
-                                jquery_path = '',
-                                paths = {},
-                                noConflict;
-                        var jQueryUI = jQuery.ui;
-                        // check for jQuery
-                        if (!jQuery || oldjQuery) {
-                            // load if it's not available or doesn't meet min standards
-                            paths.jQuery = jQuery;
-                            noConflict = !!oldjQuery;
-                        } else {
-                            // register the current jQuery
-                            define('jquery', [], function() { return jQuery; });
-                        }
-                        if (!jQueryUI) {
-                            paths.jQueryUI = "{{ CDN['jQueryUI'] }}"
-                        } else {
-                            define('jQueryUI', [], function() { return jQuery.ui; });
-                        }
-                        paths.underscore = "{{ CDN['underscore'] }}";
-                        var jquery_require = {paths: paths,
-                            shim: {
-                                "jQueryUI": {
-                                    exports:"$",
-                                    deps: ['jquery']
-                                },
-                                "underscore": {
-                                    exports: '_'
-                                }
-                            }}
-                        require.config(jquery_require);
-                        require(["jQueryUI", "underscore"], function(jUI, _){
-                            if (noConflict) $.noConflict(true);
-                            var vals = {{ widget_data['vals'] }};
+							var vals = {{ widget_data['vals'] }};
                             var next_vals = {{ widget_data['next_vals'] }};
                             if ({{ dynamic }} && vals.constructor === Array) {
                                 var min = vals[0];
@@ -142,8 +96,7 @@
                                 }
                             });
                             $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(vals[0]);
-                        });
-                    </script>
+							</script>
                 {% elif widget_data['type']=='dropdown' %}
                     <div class="form-group control-group" style='{{ widget_data['visibility'] }}'>
                         <label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim_label'] }}:</strong></label>
