@@ -55,6 +55,9 @@ deploy:
   provider: s3
   bucket: "travis.holoviews.org"
   region: eu-west-1
+  local_dir: ./doc/test_html
+  upload-dir: build_$TRAVIS_BUILD_NUMBER
+  skip_cleanup: true
   
 
 after_success: coveralls
