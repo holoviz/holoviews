@@ -2,16 +2,17 @@ from __future__ import unicode_literals
 
 import os, uuid, json, math
 
+import numpy as np
 import param
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
-                          unique_iterator)
+                          unique_iterator, unicode)
 from ...core.traversal import hierarchical
 
 def isnumeric(val):
-    if isinstance(val, basestring):
+    if isinstance(val, (basestring, bool, np.bool_)):
         return False
     try:
         float(val)
@@ -24,9 +25,8 @@ def escape_vals(vals):
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    return ["'"+safe_unicode(v)+"'" if isinstance(v, basestring) else
-            (("'%.1f'" % v if v % 1 == 0 else "'%.10f'" % v)
-             if isnumeric(v) else safe_unicode(v)) for v in vals]
+    return ["'"+unicode(safe_unicode(v))+"'" if not isnumeric(v) else
+            ("'%.1f'" % v if v % 1 == 0 else "'%.10f'" % v) for v in vals]
 
 def escape_tuple(vals):
     return "(" + ", ".join(vals) + (",)" if len(vals) == 1 else ")")

@@ -29,8 +29,12 @@ except ImportError:
     bz = None
 
 # Python3 compatibility
-basestring = str if sys.version_info.major == 3 else basestring
-
+if sys.version_info.major == 3:
+    basestring = str
+    unicode = str
+else:
+    basestring = basestring
+    unicode = unicode
 
 
 def process_ellipses(obj, key, vdim_selection=False):
