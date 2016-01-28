@@ -61,3 +61,6 @@ deploy:
   
 
 after_success: coveralls
+
+after_deploy:
+  - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-index"
