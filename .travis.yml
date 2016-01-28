@@ -34,7 +34,7 @@ install:
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
-  - pip install coveralls
+  - pip install coveralls awscli
 
 before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
@@ -66,9 +66,11 @@ deploy:
     region: eu-west-1
     bucket: "preview.holoviews.org"
     local_dir: ./doc/test_data
+    upload-dir: $TRAVIS_BUILD_NUMBER
     skip_cleanup: true
 
 after_success: coveralls
 
 after_deploy:
   - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-index"
+  - aws s3 rm --recursive --region eu-west-1 s3://preview.holoviews.org/$(($TRAVIS_BUILD_NUMBER - 4))
