@@ -239,9 +239,6 @@ class SNSFramePlot(DFrameViewPlot):
                                            'inner', 'join_rm', 'bw', 'cut', 'split'],
                              'lmplot':    ['hue', 'col', 'row', 'palette',
                                            'sharex', 'dropna', 'legend'],
-                             'corrplot':  ['annot', 'sig_stars', 'sig_tail',
-                                           'sig_corr', 'cmap', 'cmap_range',
-                                           'cbar'],
                              'interact':  ['filled', 'cmap', 'colorbar',
                                            'levels', 'logistic', 'contour_kws',
                                            'scatter_kws'],
@@ -326,8 +323,6 @@ class SNSFramePlot(DFrameViewPlot):
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
                              data=view.data, ax=axis, **style)
-        elif self.plot_type == 'corrplot':
-            sns.corrplot(view.data, ax=axis, **style)
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=view.x, y=view.y, data=view.data,
                        ax=axis, **style)
