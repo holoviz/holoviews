@@ -37,8 +37,15 @@ HoloViews may be used:
   HoloViews.
 
 * `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
-<https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
-about dynamic systems and modeling of conformity.
+  <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
+  about dynamic systems and modeling of conformity.
+
+* `t-SNE machine learning Tutorial
+  <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
+  Adapted version of a `tutorial
+  <https://www.oreilly.com/learning/an-illustrated-introduction-to-the-t-sne-algorithm>`_
+  by Cyrille Rossant for O'Reilly on the t-SNE machine learning
+  visualization algorithm.
 
 
 Extensions
@@ -59,7 +66,7 @@ extended in new (and unexpected!) directions:
 
 * `Experimental Plotly backend
   <http://philippjfr.com/work/work-in-progress/plotly/>`_: A
-  prototype of a `Plotly`<https://plot.ly/python>`_-based backend for HoloViews,
+  prototype of a `Plotly-based backend <https://plot.ly/python>`_ for HoloViews,
   with progress summarized in an ongoing `pull request <https://github.com/ioam/holoviews/pull/398>`_.
   (Contributions welcome!)
 
@@ -70,9 +77,9 @@ Third party libraries, simulators and toolkits that make use of
 HoloViews for easier visualization and analysis:
 
 * `ImaGen library <http://ioam.github.io/imagen>`_: Generate
-  HoloViews `Image <https://ioam.github.io/holoviews/Tutorials/Elements.html#Image>`_
+  HoloViews `Image <https://holoviews/Tutorials/Elements.html#Image>`_
   and 
-  `RGB <https://ioam.github.io/holoviews/Tutorials/Elements.html#RGB>`_ 
+  `RGB <https://holoviews.org/Tutorials/Elements.html#RGB>`_ 
   patterns from mathematical functions.
 
 * `Topographica tutorials <http://topographica.org/Tutorials/>`_:

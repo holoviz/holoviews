@@ -15,25 +15,25 @@ Introductory Tutorials
 These explanatory tutorials are meant to be viewed and worked through
 in this order:
 
-* `Showcase: <Showcase>`_
+* `Showcase: <Showcase.html>`_
   Brief demonstration of what HoloViews can do for you and your data.
 
-* `Introduction: <Introduction>`_
+* `Introduction: <Introduction.html>`_
   How to use HoloViews -- basic concepts and getting started.
 
-* `Exploring Data: <Exploring_Data>`_
+* `Exploring Data: <Exploring_Data.html>`_
   How to use HoloViews containers to flexibly hold all your data
   ready for selecting, sampling, slicing, viewing, combining, and
   animating.
 
-* `Sampling Data: <Sampling_Data>`_
+* `Sampling Data: <Sampling_Data.html>`_
   How to select data in multiple dimensions, returning a specific
   (potentially lower dimensional) region of the available space.
 
-* `Columnar Data: <Columnar_Data>`_
-  How to work with table-like data, introducing the basics on how
-  the data is stored, how to apply operations to the data and
-  transform into complex visualization easily.
+* `Columnar Data: <Columnar_Data.html>`_
+  How to work with table-like data, including options for storing the
+  data, and how to apply operations to transform the data into 
+  complex visualizations easily.
 
 
 Supplementary Tutorials
@@ -41,32 +41,32 @@ Supplementary Tutorials
 
 There are additional tutorials detailing other features of HoloViews:
 
-* `Options: <Options>`_
+* `Options: <Options.html>`_
   Listing and changing the many options that control how HoloViews
   visualizes your objects, from Python or IPython.
 
-* `Exporting: <Exporting>`_
+* `Exporting: <Exporting.html>`_
   How to save HoloViews output for use in reports and publications,
   as part of a reproducible yet interactive scientific workflow.
 
-* `Continuous Coordinates: <Continuous_Coordinates>`_
+* `Continuous Coordinates: <Continuous_Coordinates.html>`_
   How to use continuous coordinates to work with real-world data or
   smooth functions.
 
-* `Composing Data: <Composing_Data>`_
+* `Composing Data: <Composing_Data.html>`_
   Complete example of the full range of hierarchical, multidimensional
   discrete and continuous data structures supported by HoloViews.
 
-* `Bokeh Backend: <Bokeh_Backend>`_
+* `Bokeh Backend: <Bokeh_Backend.html>`_
   Additional interactivity available via the
-  `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming
-  and panning linked automatically between plots.
+  `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming,
+  panning, and selection linked automatically between plots.
 
-* `Pandas Conversion: <Pandas_Conversion>`_
+* `Pandas Conversion: <Pandas_Conversion.html>`_
   Using the DFrame conversion wrapper of HoloViews to convert pandas
   dataframes into HoloViews components.
 
-* `Pandas and Seaborn: <Pandas_Seaborn>`_
+* `Pandas and Seaborn: <Pandas_Seaborn.html>`_
   Specialized visualizations provided by pandas and seaborn.
 
 
@@ -79,20 +79,20 @@ available, these tutorials show how to create it, how the objects are
 plotted by default, and show how to list and change all of the
 visualization options for that object type:
 
-* `Elements: <Elements>`_
+* `Elements: <Elements.html>`_
   Overview and examples of all HoloViews element types, the atomic items
   that can be combined together, available for either the
-  `Matplotlib <Elements>`_ or `Bokeh <Bokeh_Elements>`_ plotting
+  `Matplotlib <Elements.html>`_ or `Bokeh <Bokeh_Elements.html>`_ plotting
   library backends. 
 
-* `Containers: <Containers>`_
+* `Containers: <Containers.html>`_
   Overview and examples of all the HoloViews container types.
 
 For more detailed (but less readable!) information on any component
 described in these tutorials, please refer to the `Reference Manual
-<../Reference_Manual>`_. For further notebooks demonstrating how to
+<../Reference_Manual.html>`_. For further notebooks demonstrating how to
 extend HoloViews and apply it to real world data see the `Examples
-<../Examples>`_ page.
+<../Examples.html>`_ page.
 
 .. toctree::
    :maxdepth: 2

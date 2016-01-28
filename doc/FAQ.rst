@@ -20,7 +20,7 @@ directly to disk, with custom options, like this:
   renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
 
 This process is described in detail in the 
-`Options tutorial <Tutorials/Options>`_.
+`Options tutorial <Tutorials/Options.html>`_.
 Of course, notebook-specific functionality like capturing the data in
 notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 
@@ -57,7 +57,7 @@ see the structure of your object.
 
 In any Python session, you can look at ``print repr(obj)``. For
 an explanation of how this information helps you index into your
-object, see our `Composing Data tutorial <Tutorials/Composing_Data>`_.
+object, see our `Composing Data tutorial <Tutorials/Composing_Data.html>`_.
 
 
 **Q: Help! How do I find out the options for customizing the
@@ -70,7 +70,7 @@ present the available style and plotting options for that object.
 The same information is also available in any Python session using
 ``holoviews.help(obj)``. For more
 information on customizing the display of an object,
-see our `Options Tutorial <Tutorials/Options>`_.
+see our `Options Tutorial <Tutorials/Options.html>`_.
 
 
 **Q: Why don't you let me pass** *matplotlib_option* **as a style
