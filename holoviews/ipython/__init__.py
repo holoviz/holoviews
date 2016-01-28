@@ -81,7 +81,7 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
     # Evaluate load_notebook.html template with widgetjs code
     if JS:
-        widgetjs, widgetcss = Renderer.embed_assets(extras=False, backends=[])
+        widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
     else:
         widgetjs, widgetcss = '', ''
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))

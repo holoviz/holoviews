@@ -243,10 +243,8 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        css_html, js_html = '', ''
-        js, css = self.embed_assets(jQuery=True)
+        js_html, css_html = self.html_assets(jQuery=True)
         if template is None: template = static_template
-        js_html, css_html = self.embed_assets()
         html = self.html(obj, fmt)
         return template.format(js=js_html, css=css_html, html=html)
 
@@ -337,7 +335,7 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def embed_assets(cls, core=True, extras=True, jQuery=False, backends=None):
+    def html_assets(cls, core=True, extras=True, jQuery=False, backends=None):
         """
         Returns JS and CSS and for embedding of widgets.
         """
