@@ -123,10 +123,15 @@ class Renderer(Exporter):
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
 
-    js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
-                       'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
+    core_dependencies = {'jQueryUI': {'js': ['https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'],
+                                      'css': ['https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css']}}
 
-    css_dependencies = ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css']
+    extra_dependencies = {'jQuery': {'js': ['https://code.jquery.com/jquery-2.1.4.min.js']},
+                          'underscore': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js']},
+                          'bootstrap': {'css': ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css']}}
+
+    # Any additional JS and CSS dependencies required by a specific backend
+    backend_dependencies = {}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
@@ -239,17 +244,9 @@ class Renderer(Exporter):
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
         css_html, js_html = '', ''
-        js, css = self.embed_assets()
-        for url in self.js_dependencies:
-            js_html += '<script src="%s" type="text/javascript"></script>' % url
-        js_html += '<script type="text/javascript">%s</script>' % js
-
-        for url in self.css_dependencies:
-            css_html += '<link rel="stylesheet" href="%s">' % url
-        css_html += '<style>%s</style>' % css
-
+        js, css = self.embed_assets(jQuery=True)
         if template is None: template = static_template
-
+        js_html, css_html = self.embed_assets()
         html = self.html(obj, fmt)
         return template.format(js=js_html, css=css_html, html=html)
 
@@ -340,10 +337,13 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def embed_assets(cls):
+    def embed_assets(cls, core=True, extras=True, jQuery=False, backends=None):
         """
         Returns JS and CSS and for embedding of widgets.
         """
+        if backends is None:
+            backends = [cls.backend] if cls.backend else []
+
         # Get all the widgets and find the set of required js widget files
         widgets = [wdgt for r in Renderer.__subclasses__()
                    for wdgt in r.widgets.values()]
@@ -358,7 +358,28 @@ class Renderer(Exporter):
                              if f is not None )
         widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
                               for f in css if f is not None)
-        return widgetjs, widgetcss
+
+        dependencies = {}
+        if core:
+            dependencies.update(cls.core_dependencies)
+        if extras:
+            dependencies.update(cls.extra_dependencies)
+        if not jQuery:
+            dependencies.pop('jQuery', None)
+        for backend in backends:
+            dependencies['backend'] = Store.renderers[backend].backend_dependencies
+
+        js_html, css_html = '', ''
+        for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
+            for js in dep.get('js', []):
+                js_html += '\n<script src="%s" type="text/javascript"></script>' % js
+            for css in dep.get('css', []):
+                css_html += '\n<link rel="stylesheet" href="%s">' % css
+
+        js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
+        css_html += '\n<style>%s</style>' % widgetcss
+
+        return js_html, css_html
 
 
     @classmethod
