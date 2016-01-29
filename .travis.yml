@@ -34,7 +34,7 @@ install:
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
-  - pip install coveralls
+  - pip install coveralls awscli
 
 before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
@@ -46,13 +46,31 @@ script:
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
   - coverage combine
 
-addons:
-  artifacts:
-    debug: true
-    paths:
-      - ./doc/test_html
-    target_paths: build_$TRAVIS_BUILD_NUMBER
-    working_dir: WORKING_DIR
-    s3_region: eu-west-1
+
+deploy:
+  - provider: s3
+    secret_access_key:
+      secure: "AvY9ZM+loU+l1RPAgqEc+dtY4yEaXh43k9JeikO5W+gKUdV8fBIoVSyx/DRHYeYtTeA+MoZLPH5+dMCwoAjtGMgWvkfO5DTSKvNHC1QW/K/f9dH5vxcA71gzQ8gWkSJhxMBQqmsHlz84AR9gCl69zeKPQWJbsiMRjK0oCcZZYqE="
+    access_key_id:
+      secure: "dXHfNrlgDMYb/7Gzw6gniA8NE3yL/YDPOtW+A7Ne6J+dbS4LjpZl4p8m6ljt8IROOdnUOwt5hftXxz4Gcah85O2TEVYGegjNyJsWTphrfm4R36Uk7M8AE9SJ2ZMX2JdD49piZd5ZoyKWsMTA8nxlYc3S6QR/VxMnQaA8nDrdbmI="
+    region: eu-west-1
+    bucket: "travis.holoviews.org"
+    local_dir: ./doc/test_html
+    upload-dir: build_$TRAVIS_BUILD_NUMBER
+    skip_cleanup: true
+  - provider: s3
+    secret_access_key:
+      secure: "AvY9ZM+loU+l1RPAgqEc+dtY4yEaXh43k9JeikO5W+gKUdV8fBIoVSyx/DRHYeYtTeA+MoZLPH5+dMCwoAjtGMgWvkfO5DTSKvNHC1QW/K/f9dH5vxcA71gzQ8gWkSJhxMBQqmsHlz84AR9gCl69zeKPQWJbsiMRjK0oCcZZYqE="
+    access_key_id:
+      secure: "dXHfNrlgDMYb/7Gzw6gniA8NE3yL/YDPOtW+A7Ne6J+dbS4LjpZl4p8m6ljt8IROOdnUOwt5hftXxz4Gcah85O2TEVYGegjNyJsWTphrfm4R36Uk7M8AE9SJ2ZMX2JdD49piZd5ZoyKWsMTA8nxlYc3S6QR/VxMnQaA8nDrdbmI="
+    region: eu-west-1
+    bucket: "preview.holoviews.org"
+    local_dir: ./doc/test_data
+    upload-dir: $TRAVIS_BUILD_NUMBER
+    skip_cleanup: true
 
 after_success: coveralls
+
+after_deploy:
+  - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-index"
+  - aws s3 rm --recursive --region eu-west-1 s3://preview.holoviews.org/$(($TRAVIS_BUILD_NUMBER - 4))
