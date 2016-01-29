@@ -391,4 +391,4 @@ class Area(Curve):
     the region between the curves.
     """
 
-    group = param.String(default='Area')
+    group = param.String(default='Area', constant=True)
