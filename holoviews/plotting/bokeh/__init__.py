@@ -4,7 +4,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Surface, Scatter3D, Trisurface)
+                        Table, ItemTable, Surface, Scatter3D, Trisurface,
+                        Area)
 from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
@@ -14,7 +15,8 @@ from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)
+                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
+                    SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot
@@ -40,6 +42,7 @@ Store.register({Overlay: OverlayPlot,
                 Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Bars: BarPlot,
+                Area: AreaPlot,
 
                 # Rasters
                 Image: RasterPlot,
@@ -118,6 +121,7 @@ options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 options.Points = Options('style', color=Cycle())
 options.Spikes = Options('style', color='black')
+options.Area = Options('style', color=Cycle(), line_color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
