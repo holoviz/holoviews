@@ -16,6 +16,7 @@ try:
     bokeh_lt_011 = True
 except ImportError:
     from bokeh.core.json_encoder import serialize_json
+    from bokeh.model import _ModelInDocument as add_to_document
     bokeh_lt_011 = False
 
 
@@ -70,11 +71,12 @@ class BokehRenderer(Renderer):
 
     def figure_data(self, plot, fmt='html', **kwargs):
         if not bokeh_lt_011:
-            doc = Document()
-            doc.add_root(plot.state)
-            comms_target = str(uuid.uuid4())
-            doc.last_comms_target = comms_target
-            div = notebook_div(plot.state, comms_target)
+            doc_handler = add_to_document(plot.state)
+            with doc_handler:
+                doc = doc_handler._doc
+                comms_target = str(uuid.uuid4())
+                doc.last_comms_target = comms_target
+                div = notebook_div(plot.state, comms_target)
             return div
         else:
             return notebook_div(plot.state)
