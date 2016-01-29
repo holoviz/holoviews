@@ -5,7 +5,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Surface, Scatter3D, Trisurface,
-                        Area)
+                        Area, HSV)
 from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
@@ -19,7 +19,7 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot
+from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
@@ -88,6 +88,12 @@ Store.register({Overlay: OverlayPlot,
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
+
+try:
+    import matplotlib
+    Store.register({HSV: HSVPlot}, 'bokeh')
+except ImportError:
+    pass
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
