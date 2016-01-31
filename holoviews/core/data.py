@@ -722,7 +722,7 @@ class DFColumns(DataColumns):
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
             elif kdims is None and vdims is None:
                 kdims = list(data.columns[:ndim])
-                vdims = list(data.columns[ndim:])
+                vdims = [] if ndim is None else list(data.columns[ndim:])
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
