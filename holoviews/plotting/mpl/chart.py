@@ -11,7 +11,7 @@ import param
 from ...core import OrderedDict
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range)
-from ...element import Points, Raster, Polygons
+from ...element import Points, Raster, Polygons, HeatMap
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -478,7 +478,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         y0, y1 = element.range(1)
         offset = self.offset * y1
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        if isinstance(range_item, (Raster, Points, Polygons)):
+        if isinstance(range_item, (Raster, Points, Polygons, HeatMap)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
