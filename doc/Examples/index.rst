@@ -40,9 +40,9 @@ HoloViews may be used:
   <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
   about dynamic systems and modeling of conformity.
 
-* `Interactively exploring earthquake data with the bokeh backend<http://examples.holoviews.org/Earthquake_Visualization.html>`_: Demonstrates how a large dataset of earthquakes can be interactively explored through animation and linked brushing.
+* `Interactively exploring earthquake data with the bokeh backend <http://examples.holoviews.org/Earthquake_Visualization.html>`_: Demonstrates how a large dataset of earthquakes can be interactively explored through animation and linked brushing.
 
-* `Exploring herd immunity with agent based models using HoloViews and NetworkX<http://examples.holoviews.org/SRI_Model.html>`_: A small demo demonstrating how HoloViews can be integrated with a simple agent based model to explore and analyze how it evolves over time.
+* `Exploring herd immunity with agent based models using HoloViews and NetworkX <http://examples.holoviews.org/SRI_Model.html>`_: A small demo demonstrating how HoloViews can be integrated with a simple agent based model to explore and analyze how it evolves over time.
 
 * `t-SNE machine learning Tutorial
   <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
