@@ -18,11 +18,11 @@ Notebooks
 This collection of IPython notebooks shows real-world examples of how
 HoloViews may be used:
 
-* `Simulating a simple reaction-diffusion system <Reaction-diffusion.html>`_:
+* `Simulating a simple reaction-diffusion system <http://examples.holoviews.org/Reaction-diffusion.html>`_:
   Demonstration of how HoloViews may be used for viewing simulated data, adapted from
   this free recipe from the `IPython Cookbook <https://ipython-books.github.io/featured-05/>`_.
 
-* `Chaos Theory and the Logistic Map <Logistic_Map.html>`_: Adaptation
+* `Chaos Theory and the Logistic Map <http://examples.holoviews.org/Logistic_Map.html>`_: Adaptation
   of a `blog post <http://geoffboeing.com/2015/03/chaos-theory-logistic-map/>`_
   by Geoff Boeing that shows how HoloViews makes exploration of this fascinating
   subject easier and more succinct.
@@ -36,9 +36,13 @@ HoloViews may be used:
   Visualizing the marking results of an undergraduate assignment with
   HoloViews.
 
-* `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
+* `The Hipster Effect <http://examples.holoviews.org/HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
   <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
   about dynamic systems and modeling of conformity.
+
+* `Interactively exploring earthquake data with the bokeh backend <http://examples.holoviews.org/Earthquake_Visualization.html>`_: Demonstrates how a large dataset of earthquakes can be interactively explored through animation and linked brushing.
+
+* `Exploring herd immunity with agent based models using HoloViews and NetworkX <http://examples.holoviews.org/SRI_Model.html>`_: A small demo demonstrating how HoloViews can be integrated with a simple agent based model to explore and analyze how it evolves over time.
 
 * `t-SNE machine learning Tutorial
   <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
