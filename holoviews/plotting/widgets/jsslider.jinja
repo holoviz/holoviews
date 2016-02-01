@@ -102,7 +102,8 @@
                                     } else {
                                         var dim_val = vals[ui.value];
                                     }
-                                    $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
+									console.log((dim_val*1).toString())
+                                    $('#textInput{{ id }}_{{ widget_data['dim'] }}').val((dim_val*1).toString());
                                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                                     if (Object.keys(next_vals).length > 0) {
                                         var new_vals = next_vals[dim_val];
@@ -141,7 +142,7 @@
                                     }
                                 }
                             });
-                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(vals[0]);
+                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val((vals[0]*1).toString());
                         });
 						// Slider JS Block END
                     </script>
