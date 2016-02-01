@@ -805,10 +805,6 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
-
-        if not traversal.uniform(NdMapping([(0, self), (1, data)])):
-            raise ValueError("HoloMaps dimensions must be consistent in %s." %
-                             type(self).__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
 
 

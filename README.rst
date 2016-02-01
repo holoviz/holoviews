@@ -91,7 +91,7 @@ Features
 .. |BuildStatus| image:: https://travis-ci.org/ioam/holoviews.svg?branch=master
 .. _BuildStatus: https://travis-ci.org/ioam/holoviews
 
-.. |holoviewsDocs| image:: http://doozy.inf.ed.ac.uk:8010/png?builder=holoviews_docs
+.. |holoviewsDocs| image:: http://buildbot.holoviews.org:8010/png?builder=website
 .. _holoviewsDocs: http://doozy.inf.ed.ac.uk:8010/waterfall
 
 .. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
