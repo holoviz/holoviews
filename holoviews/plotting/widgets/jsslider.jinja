@@ -24,7 +24,7 @@
                         </div>
                     </div>
                     <script>
-                        /* Load JQuery UI CSS */
+                        // Slider JS Block START
                         function loadcssfile(filename){
                             var fileref=document.createElement("link")
                             fileref.setAttribute("rel", "stylesheet")
@@ -32,7 +32,7 @@
                             fileref.setAttribute("href", filename)
                             document.getElementsByTagName("head")[0].appendChild(fileref)
                         }
-                        loadcssfile("https://code.jquery.com/ui/1.10.4/themes/ui-lightness/jquery-ui.css");
+                        loadcssfile("https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css");
                         /* Check if jQuery and jQueryUI have been loaded
                          otherwise load with require.js */
                         var jQuery = window.jQuery,
@@ -102,7 +102,7 @@
                                     } else {
                                         var dim_val = vals[ui.value];
                                     }
-                                    $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(dim_val);
+									$('#textInput{{ id }}_{{ widget_data['dim'] }}').val((dim_val*1).toString());
                                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                                     if (Object.keys(next_vals).length > 0) {
                                         var new_vals = next_vals[dim_val];
@@ -141,8 +141,9 @@
                                     }
                                 }
                             });
-                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(vals[0]);
+                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val((vals[0]*1).toString());
                         });
+						// Slider JS Block END
                     </script>
                 {% elif widget_data['type']=='dropdown' %}
                     <div class="form-group control-group" style='{{ widget_data['visibility'] }}'>
