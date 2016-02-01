@@ -128,6 +128,7 @@ class Renderer(Exporter):
 
     extra_dependencies = {'jQuery': {'js': ['https://code.jquery.com/jquery-2.1.4.min.js']},
                           'underscore': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js']},
+                          'require': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']},
                           'bootstrap': {'css': ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css']}}
 
     # Any additional JS and CSS dependencies required by a specific backend
