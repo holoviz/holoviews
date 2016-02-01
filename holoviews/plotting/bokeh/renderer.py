@@ -38,9 +38,7 @@ class BokehRenderer(Renderer):
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
 
-    js_dependencies = Renderer.js_dependencies + CDN.js_files
-
-    css_dependencies = Renderer.css_dependencies + CDN.css_files
+    backend_dependencies = {'js': CDN.js_files, 'css': CDN.css_files}
 
     _loaded = False
 

@@ -11,6 +11,10 @@ form.holoform {
     padding: 0.8em;
 }
 
+div.holowidgets {
+    padding-right: 0;
+}
+
 div.holoslider {
     min-height: 0 !important;
     height: 0.8em;
@@ -24,7 +28,7 @@ div.holoformgroup {
 
 div.hologroup {
     padding-left: 0;
-    padding-right: 0.6em;
+    padding-right: 0;
 }
 
 .holoselect {
