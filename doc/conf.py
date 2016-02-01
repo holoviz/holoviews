@@ -26,11 +26,11 @@ version = setup_args['version']
 # The full version, including alpha/beta/rc tags.
 release = setup_args['version']
 
+ASSETS_URL = 'http://assets.holoviews.org'
 
 rst_epilog = """
-.. _zip archive: notebooks-{version}.zip
-.. _tutorial notebooks: Tutorials/notebooks-{version}.zip
-""".format(version=version)
+.. _tutorial notebooks: {url}/Tutorials/notebooks-{version}.zip
+""".format(url=ASSETS_URL, version=version)
 
 # Override IOAM theme
 import sphinx_rtd_theme
