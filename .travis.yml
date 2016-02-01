@@ -37,10 +37,10 @@ install:
   - pip install coveralls awscli
   - git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
   - cd ./doc/reference_data
-  - REF_BRANCH=${TRAVIS_PULL_REQUEST//false/master}
-  - echo "Attempting to checkout $REF_BRANCH branch"
-  - if [ $(git branch -a --list *origin/$REF_BRANCH | wc -l) -eq 1 ] ; then
-      git checkout $REF_BRANCH;
+  - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/master}
+  - echo "Attempting to checkout $REF_DATA_BRANCH branch"
+  - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
+      git checkout $REF_DATA_BRANCH;
     else
       echo "Using the master branch reference data";
     fi
