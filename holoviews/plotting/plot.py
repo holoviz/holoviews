@@ -21,6 +21,14 @@ from ..element import Table
 from .util import get_dynamic_mode, initialize_sampled
 
 
+class BackendError(Exception):
+
+    def __init__(self, backend):
+        msg = "%s backend could not plot supplied object." % backend
+        super(BackendError, self).__init__(msg)
+        self.backend = backend
+
+
 class Plot(param.Parameterized):
     """
     Base class of all Plot classes in HoloViews, designed to be
@@ -685,6 +693,8 @@ class GenericOverlayPlot(GenericElementPlot):
             subplots[key] = plottype(vmap, **plotopts)
             if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
+        if not subplots:
+            raise BackendError(self.renderer.backend)
 
         return subplots
 
