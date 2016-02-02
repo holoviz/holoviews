@@ -916,7 +916,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
         # Create title handle
         if self.show_title and len(self.coords) > 1:
-            title = self.handles['fig'].suptitle('', **self._fontsize('title'))
+            title = self.handles['fig'].suptitle('', y=1.05, **self._fontsize('title'))
             self.handles['title'] = title
 
         return layout_subplots, layout_axes, collapsed_layout
