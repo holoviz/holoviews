@@ -32,6 +32,26 @@ install:
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
   - pip install coveralls awscli
+  - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
+      CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
+      NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
+      MSG1=$(echo $CURRENT_BUILD | jq '.[].message' );
+      MSG2=$(echo $NEXT_BUILD | jq '.[].message' );
+      if [ "$MSG1" == "$MSG2" ] ; then
+        BUILD_ID=$(echo $NEXT_BUILD | jq .[].id);
+        TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
+      fi
+    fi
+  - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/reference_data}
+  - git clone https://github.com/ioam/holoviews-data.git -b reference_data ./doc/reference_data
+  - cd ./doc/reference_data
+  - echo "Attempting to checkout $REF_DATA_BRANCH branch"
+  - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
+      git checkout $REF_DATA_BRANCH;
+    else
+      echo "Using the master branch reference data";
+    fi
+  - cd ../..
 
 before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
