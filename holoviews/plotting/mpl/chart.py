@@ -20,6 +20,9 @@ from .plot import AdjoinedPlot
 
 class ChartPlot(ElementPlot):
 
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
         key_dim = self.hmap.last.get_dimension(0)
