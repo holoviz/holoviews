@@ -35,8 +35,6 @@ install:
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
   - pip install coveralls awscli
-  - sudo apt-get -qq update
-  - sudo apt-get install -y jq
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
       NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
