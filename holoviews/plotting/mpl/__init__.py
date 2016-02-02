@@ -205,6 +205,7 @@ options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle())
+options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color=Cycle())
 options.Bounds = Options('style', color=Cycle())
