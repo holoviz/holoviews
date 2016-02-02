@@ -145,8 +145,9 @@ class DimensionedPlot(Plot):
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
-    title_format = param.String(default="{label} {group}", doc="""
-        The formatting string for the title of this plot.""")
+    title_format = param.String(default="{label} {group}{separator}{dimensions}", doc="""
+        The formatting string for the title of this plot, allows defining
+        a label group separator and dimension labels.""")
 
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
@@ -558,20 +559,18 @@ class GenericElementPlot(DimensionedPlot):
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
+
+        dim_title = self._frame_title(key, separator=separator)
         if self.layout_dimensions:
-            title = ''
+            title = dim_title
         else:
             title_format = util.safe_unicode(self.title_format)
             title = title_format.format(label=util.safe_unicode(label),
                                         group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, separator=separator)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return separator.join([title, dim_title])
+                                        type=type_name,
+                                        dimensions=dim_title,
+                                        separator=separator)
+        return title.rstrip(' \n')
 
 
     def update_frame(self, key, ranges=None):
@@ -711,29 +710,6 @@ class GenericOverlayPlot(GenericElementPlot):
         return util.max_extents(extents, self.projection == '3d')
 
 
-    def _format_title(self, key, separator='\n'):
-        frame = self._get_frame(key)
-        if frame is None: return None
-
-        type_name = type(frame).__name__
-        group = frame.group if frame.group != type_name else ''
-        label = frame.label
-        if self.layout_dimensions:
-            title = ''
-        else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, 2)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return separator.join([title, dim_title])
-
-
 
 class GenericCompositePlot(DimensionedPlot):
 
@@ -793,15 +769,10 @@ class GenericCompositePlot(DimensionedPlot):
         label = util.safe_unicode(layout.label)
         title = util.safe_unicode(self.title_format).format(label=label,
                                                             group=group,
-                                                            type=type_name)
-        title = '' if title.isspace() else title
-        if not title:
-            return dim_title
-        elif not dim_title:
-            return title
-        else:
-            return separator.join([title, dim_title])
-
+                                                            type=type_name,
+                                                            dimensions=dim_title,
+                                                            separator=separator)
+        return title.rstrip(' \n')
 
 
 class GenericLayoutPlot(GenericCompositePlot):
