@@ -665,9 +665,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for plot in self.subplots.values():
             plot.initialize_plot(ranges=ranges)
 
-        if not self.show_legend:
-            return
-        self._adjust_legend(element, axis)
+        if self.show_legend:
+            self._adjust_legend(element, axis)
 
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
