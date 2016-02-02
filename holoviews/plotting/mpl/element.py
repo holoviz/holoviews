@@ -625,7 +625,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             else:
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
-                elif element and element.label and handle:
+                if element and element.label and handle:
                     legend_data.append((handle, element.label))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
