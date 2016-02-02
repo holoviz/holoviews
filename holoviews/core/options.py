@@ -838,13 +838,13 @@ class Store(object):
         return val
 
     @classmethod
-    def dump(cls, obj, filename, protocol=0):
+    def dump(cls, obj, file, protocol=0):
         """
         Equivalent to pickle.dump except that the HoloViews option
         tree is saved appropriately.
         """
         cls.save_option_state = True
-        pickle.dump(obj, filename, protocol=protocol)
+        pickle.dump(obj, file, protocol=protocol)
         cls.save_option_state = False
 
     @classmethod
