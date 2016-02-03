@@ -772,7 +772,7 @@ class GenericCompositePlot(DimensionedPlot):
                                                             group=group,
                                                             type=type_name,
                                                             dimensions=dim_title)
-        return title.rstrip(' \n')
+        return title.strip(' \n')
 
 
 class GenericLayoutPlot(GenericCompositePlot):
