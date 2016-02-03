@@ -569,7 +569,7 @@ class GenericElementPlot(DimensionedPlot):
                                         group=util.safe_unicode(group),
                                         type=type_name,
                                         dimensions=dim_title)
-        return title.rstrip(' \n')
+        return title.strip(' \n')
 
 
     def update_frame(self, key, ranges=None):
