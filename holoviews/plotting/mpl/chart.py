@@ -133,10 +133,11 @@ class CurvePlot(ChartPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        xs, ys, xticks = self.get_data(element)
+        style = self.style[self.cyclic_index]
+        (xs, ys), style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_xdata(xs)
         artist.set_ydata(ys)
-        return {'xticks': xticks}
+        return axis_kwargs
 
 
 
