@@ -145,7 +145,7 @@ class DimensionedPlot(Plot):
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
-    title_format = param.String(default="{label} {group}{separator}{dimensions}", doc="""
+    title_format = param.String(default="{label} {group}\n{dimensions}", doc="""
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
@@ -568,8 +568,7 @@ class GenericElementPlot(DimensionedPlot):
             title = title_format.format(label=util.safe_unicode(label),
                                         group=util.safe_unicode(group),
                                         type=type_name,
-                                        dimensions=dim_title,
-                                        separator=separator)
+                                        dimensions=dim_title)
         return title.rstrip(' \n')
 
 
@@ -770,8 +769,7 @@ class GenericCompositePlot(DimensionedPlot):
         title = util.safe_unicode(self.title_format).format(label=label,
                                                             group=group,
                                                             type=type_name,
-                                                            dimensions=dim_title,
-                                                            separator=separator)
+                                                            dimensions=dim_title)
         return title.rstrip(' \n')
 
 
