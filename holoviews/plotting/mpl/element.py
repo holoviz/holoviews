@@ -431,7 +431,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         element = self.hmap.last
         ax = self.handles['axis']
         dim_map = dict(zip((d.name for d in self.hmap.kdims), self.hmap.data.keys()[-1]))
-        key = tuple(dim_map[d.name] for d in self.dimensions)
+        key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
