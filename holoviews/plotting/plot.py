@@ -671,12 +671,14 @@ class GenericOverlayPlot(GenericElementPlot):
             opts = {}
             if overlay_type == 2:
                 opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
+            if issubclass(plottype, GenericOverlayPlot):
+                opts['show_legend'] = self.show_legend
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform, show_legend=self.show_legend,
+                            uniform=self.uniform,
                             **{k: v for k, v in self.handles.items() if k in self._passed_handles})
 
             if not isinstance(key, tuple): key = (key,)
