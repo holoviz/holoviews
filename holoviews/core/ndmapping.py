@@ -730,7 +730,7 @@ class UniformNdMapping(NdMapping):
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
@@ -743,11 +743,24 @@ class UniformNdMapping(NdMapping):
             settings.pop('group')
         if settings.get('label', None) != self._label:
             settings.pop('label')
-        settings.update(overrides)
+        if new_type is None:
+            clone_type = self.__class__
+        else:
+            clone_type = new_type
+            new_params = new_type.params()
+            settings = {k: v for k, v in settings.items()
+                      if k in new_params}
+        settings = dict(settings, **overrides)
+        if 'id' not in settings:
+            settings['id'] = self.id
+
         if data is None and shared_data:
             data = self.data
+        # Apply name mangling for __ attribute
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         with item_check(not shared_data and self._check_items):
-            return self.__class__(data, *args, **settings)
+            return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                              if k not in pos_args})
 
 
     @property
