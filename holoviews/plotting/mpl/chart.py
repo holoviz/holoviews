@@ -380,10 +380,6 @@ class HistogramPlot(ChartPlot):
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        """
-        Update the plot for an animation.
-        :param axis:
-        """
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(element)
 
@@ -680,23 +676,22 @@ class VectorFieldPlot(ElementPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        artist.set_offsets(element.array()[:,0:2])
+        style = self.style[self.cyclic_index]
+        
         input_scale = self.handles['input_scale']
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(element, ranges)
-
-        xs, ys, angles, lens, colors, scale = self._get_info(element, input_scale, ranges)
-
+        args, style, axis_kwargs = self.get_data(element, ranges, style)
+        artist.set_offsets(np.column_stack(args[:2]))
+        
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['artist']
-        quiver.U = lens
-        quiver.angles = angles
-        if self.color_dim is not None:
-            quiver.set_array(colors)
+        quiver.U = args[2]
+        quiver.angles = args[3]
+        if self.color_dim:
+            quiver.set_array(args[-1])
 
         if self.color_dim == 'magnitude':
-            magnitude_dim = element.get_dimension(3).name
-            quiver.set_clim(ranges[magnitude_dim])
+            quiver.set_clim(style['clim'])
+        return axis_kwargs
 
 
 class BarPlot(LegendPlot):
