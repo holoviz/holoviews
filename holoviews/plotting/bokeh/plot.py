@@ -34,6 +34,10 @@ class BokehPlot(DimensionedPlot):
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
 
+    title_format = param.String(default="{label} {group} - {dimensions}", doc="""
+        The formatting string for the title of this plot, allows defining
+        a label group separator and dimension labels.""")
+
     renderer = BokehRenderer
 
     def __init__(self, *args, **params):
