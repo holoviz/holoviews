@@ -9,8 +9,9 @@ from matplotlib.collections import LineCollection
 import param
 
 from ...core import OrderedDict
-from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
-from ...element import Points, Raster, Polygons
+from ...core.util import (match_spec, unique_iterator, safe_unicode,
+                          basestring, max_range)
+from ...element import Points, Raster, Polygons, HeatMap
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -18,6 +19,9 @@ from .plot import AdjoinedPlot
 
 
 class ChartPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
@@ -228,18 +232,12 @@ class ErrorPlot(ChartPlot):
                                           [xvals[i], tdata[i]]])
 
 
-class SpreadPlot(ChartPlot):
-    """
-    SpreadPlot plots the Spread Element type.
-    """
 
-    style_opts = ['alpha', 'color', 'linestyle', 'linewidth',
-                  'edgecolor', 'facecolor', 'hatch']
+class AreaPlot(ChartPlot):
 
-    def __init__(self, *args, **kwargs):
-        super(SpreadPlot, self).__init__(*args, **kwargs)
-        self._extent = None
-
+    style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
+                  'hatch', 'linestyle', 'joinstyle',
+                  'fill', 'capstyle', 'interpolate']
 
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
@@ -248,27 +246,54 @@ class SpreadPlot(ChartPlot):
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
+
         self.update_handles(axis, element, key, ranges)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        ylabel = str(element.vdims[0])
+        return self._finalize_axis(self.keys[-1], ranges=ranges, ylabel=ylabel)
 
+    def get_data(self, element):
+        xs = element.dimension_values(0)
+        ys = [element.dimension_values(vdim) for vdim in element.vdims]
+        return tuple([xs]+ys)
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        return super(AreaPlot, self).get_extents(element, ranges)
 
     def update_handles(self, axis, element, key, ranges=None):
-        if 'paths' in self.handles:
-            self.handles['paths'].remove()
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
 
-        xvals = element.dimension_values(0)
+        # Create line segments and apply style
+        style = self.style[self.cyclic_index]
+        data = self.get_data(element)
+        fill_fn = axis.fill_betweenx if self.invert_axes else axis.fill_between
+        stack = fill_fn(*data, zorder=self.zorder, **style)
+        self.handles['artist'] = stack
+
+
+
+class SpreadPlot(AreaPlot):
+    """
+    SpreadPlot plots the Spread Element type.
+    """
+
+
+    def __init__(self, element, **params):
+        self.table = element.table()
+        super(SpreadPlot, self).__init__(element, **params)
+        self._extents = None
+
+    def get_data(self, element):
+        xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
-
-        paths = axis.fill_between(xvals, mean-neg_error,
-                                  mean+pos_error, zorder=self.zorder,
-                                  label=element.label if self.show_legend else None,
-                                  **self.style[self.cyclic_index])
-        self.handles['paths'] = paths
-
+        return xs, mean-neg_error, mean+pos_error
 
 
 class HistogramPlot(ChartPlot):
@@ -456,7 +481,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         y0, y1 = element.range(1)
         offset = self.offset * y1
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        if isinstance(range_item, (Raster, Points, Polygons)):
+        if isinstance(range_item, (Raster, Points, Polygons, HeatMap)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)

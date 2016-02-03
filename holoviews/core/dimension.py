@@ -276,6 +276,9 @@ class LabelledData(param.Parameterized):
             params = {k: v for k, v in params.items()
                       if k in new_params}
         settings = dict(params, **overrides)
+        if 'id' not in settings:
+            settings['id'] = self.id
+
         if data is None and shared_data:
             data = self.data
         # Apply name mangling for __ attribute

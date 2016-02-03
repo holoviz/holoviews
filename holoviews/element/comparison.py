@@ -149,6 +149,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Curve] =        cls.compare_curve
         cls.equality_type_funcs[ErrorBars] =    cls.compare_errorbars
         cls.equality_type_funcs[Spread] =       cls.compare_spread
+        cls.equality_type_funcs[Area] =         cls.compare_area
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
         cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
@@ -469,6 +470,10 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_spread(cls, el1, el2, msg='Spread'):
+        cls.compare_columns(el1, el2, msg)
+
+    @classmethod
+    def compare_area(cls, el1, el2, msg='Area'):
         cls.compare_columns(el1, el2, msg)
 
     @classmethod

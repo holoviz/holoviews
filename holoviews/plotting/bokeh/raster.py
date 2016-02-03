@@ -1,4 +1,5 @@
 import numpy as np
+import param
 
 from bokeh.models.mappers import LinearColorMapper
 
@@ -8,6 +9,9 @@ from .util import mplcmap_to_palette, map_colors, get_cmap
 
 
 class RasterPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['cmap']
     _plot_method = 'image'
@@ -96,6 +100,9 @@ class RGBPlot(RasterPlot):
 
 
 class HeatmapPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     _plot_method = 'rect'
     style_opts = ['cmap', 'color'] + line_properties + fill_properties

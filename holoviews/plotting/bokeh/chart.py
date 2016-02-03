@@ -4,6 +4,7 @@ from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...element import Raster, Points, Polygons, Spikes
+from ...core.util import max_range
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -111,12 +112,37 @@ class CurvePlot(ElementPlot):
                 dict(x=x, y=y))
 
 
+class AreaPlot(PolygonPlot):
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        if len(vdims) > 1:
+            ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        else:
+            vdim = vdims[0].name
+            ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
+        return super(AreaPlot, self).get_extents(element, ranges)
+
+    def get_data(self, element, ranges=None, empty=False):
+        mapping = dict(self._mapping)
+        if empty: return {'xs': [], 'ys': []}
+        xs = element.dimension_values(0)
+        x2 = np.hstack((xs[::-1], xs))
+
+        if len(element.vdims) > 1:
+            bottom = element.dimension_values(2)
+        else:
+            bottom = np.zeros(len(element))
+        ys = np.hstack((bottom[::-1], element.dimension_values(1)))
+
+        data = dict(xs=[x2], ys=[ys])
+        return data, mapping
+
+
 class SpreadPlot(PolygonPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
-
-    def __init__(self, *args, **kwargs):
-        super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
@@ -237,6 +263,9 @@ class SpikesPlot(PathPlot):
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = (['color', 'cmap', 'palette'] + line_properties)
 
@@ -477,4 +506,3 @@ class BarPlot(ChartPlot):
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
         return plot
-

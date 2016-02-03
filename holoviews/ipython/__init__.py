@@ -81,7 +81,7 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
     # Evaluate load_notebook.html template with widgetjs code
     if JS:
-        widgetjs, widgetcss = Renderer.embed_assets()
+        widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
     else:
         widgetjs, widgetcss = '', ''
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
@@ -165,8 +165,7 @@ class notebook_extension(param.ParameterizedFunction):
         loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
                            for r in resources)
 
-        load_hvjs(logo=p.logo,
-                  JS=('holoviews' in resources),
+        load_hvjs(logo=p.logo, JS=('holoviews' in resources),
                   message = '%s successfully loaded in this cell.' % loaded)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
