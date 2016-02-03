@@ -159,7 +159,7 @@ class HeatMapPlot(RasterPlot):
         cmap.set_bad('w', 1.)
         style['cmap'] = cmap
         style['annotations'] = self._annotate_values(element)
-        return data, style, axis_kwargs
+        return [data], style, axis_kwargs
 
 
     def update_handles(self, axis, element, key, ranges=None):
