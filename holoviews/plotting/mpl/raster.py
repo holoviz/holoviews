@@ -27,9 +27,6 @@ class RasterPlot(ColorbarPlot):
     situate_axes = param.Boolean(default=False, doc="""
         Whether to situate the image relative to other plots. """)
 
-    show_values = param.Boolean(default=False, doc="""
-        Whether to annotate each pixel with its value.""")
-
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
@@ -54,18 +51,11 @@ class RasterPlot(ColorbarPlot):
                 return element.extents
 
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
-
+    def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
 
-        opts = self.style[self.cyclic_index]
         if element.depth != 1:
-            opts.pop('cmap', None)
+            style.pop('cmap', None)
 
         data = element.data
         if isinstance(element, Image):
@@ -77,28 +67,15 @@ class RasterPlot(ColorbarPlot):
 
         if isinstance(element, RGB):
             data = element.rgb.data
-        elif isinstance(element, HeatMap):
-            data = element.raster
-            data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-            cmap_name = opts.pop('cmap', None)
-            cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-            cmap.set_bad('w', 1.)
-            opts['cmap'] = cmap
+        self._norm_kwargs(element, ranges, style)
+        style['extent'] = [l, r, b, t]
 
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder,
-                         clim=clim, norm=norm, **opts)
-        self.handles['artist'] = im
+        return [data], style, {'xticks': xticks, 'yticks': yticks}
 
-        if isinstance(element, HeatMap):
-            self.handles['axis'].set_aspect(float(r - l)/(t-b))
-            self.handles['annotations'] = {}
 
-            if self.show_values:
-                self._annotate_values(element)
-
-        return self._finalize_axis(self.keys[-1], ranges=ranges,
-                                   xticks=xticks, yticks=yticks)
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        im = ax.imshow(*plot_args, **plot_kwargs)
+        return {'artist': im}
 
 
     def _compute_ticks(self, element, ranges):
@@ -118,8 +95,35 @@ class RasterPlot(ColorbarPlot):
             return None, None
 
 
+    def update_handles(self, axis, element, key, ranges=None):
+        im = self.handles['artist']
+        style = self.style[self.cyclic_index]
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        im.set_data(data[0])
+        im.set_extent((l, r, b, t))
+        im.set_clim(style['clim'])
+        if 'norm' in style:
+            im.norm = style['norm']
+
+        return axis_kwargs
+
+
+class HeatMapPlot(RasterPlot):
+
+    show_values = param.Boolean(default=False, doc="""
+        Whether to annotate each pixel with its value.""")
+
+    def _annotate_plot(self, ax, annotations):
+        handles = {}
+        for plot_coord, text in annotations.items():
+            handles[plot_coord] = ax.annotate(text, xy=plot_coord,
+                                              xycoords='axes fraction',
+                                              horizontalalignment='center',
+                                              verticalalignment='center')
+        return handles
+
+
     def _annotate_values(self, element):
-        axis = self.handles['axis']
         val_dim = element.vdims[0]
         d1keys, d2keys = element.dense_keys()
         vals = np.rot90(element.raster, 3).flatten()
@@ -129,49 +133,52 @@ class RasterPlot(ColorbarPlot):
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
         ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
         plot_coords = product(xpos, ypos)
+        annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
             text = val_dim.pprint_value(v)
             text = '' if v is np.nan else text
-            if plot_coord not in self.handles['annotations']:
-                annotation = axis.annotate(text, xy=plot_coord,
-                                           xycoords='axes fraction',
-                                           horizontalalignment='center',
-                                           verticalalignment='center')
-                self.handles['annotations'][plot_coord] = annotation
-            else:
-                self.handles['annotations'][plot_coord].set_text(text)
-        old_coords = set(self.handles['annotations'].keys()) - set(product(xpos, ypos))
-        for plot_coord in old_coords:
-            annotation = self.handles['annotations'].pop(plot_coord)
-            annotation.remove()
+            annotations[plot_coord] = text
+        return annotations
+
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        if isinstance(element, HeatMap):
+            l, r, b, t = plot_kwargs['extent']
+            ax.set_aspect(float(r - l)/(t-b))
+            annotations = plot_kwargs.pop('annotations', None)
+            if self.show_values and annotations:
+                annotation_handles = self._annotate_plot(ax, annotations)
+        im = ax.imshow(*plot_args, **plot_kwargs)
+        return {'artist': im}
+
+    def get_data(self, element, ranges, style):
+        _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
+        data = element.raster
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        cmap_name = style.pop('cmap', None)
+        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
+        cmap.set_bad('w', 1.)
+        style['cmap'] = cmap
+        style['annotations'] = self._annotate_values(element)
+        return data, style, axis_kwargs
 
 
     def update_handles(self, axis, element, key, ranges=None):
-        im = self.handles.get('artist', None)
-        data = np.ma.array(element.data,
-                           mask=np.logical_not(np.isfinite(element.data)))
-        im.set_data(data)
-
-        if isinstance(element, HeatMap) and self.show_values:
-           self._annotate_values(element)
-
-        xdim, ydim = element.kdims
-        if isinstance(element, Image):
-            l, b, r, t = element.bounds.lbrt()
-        else:
-            l, b, r, t = element.extents
-            if type(element) == Raster:
-                b, t = t, b
-
-        opts = self.style[self.cyclic_index]
-
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        im.set_clim(clim)
-        if norm:
-            im.norm = norm
+        im = self.handles['artist']
+        style = self.style[self.cyclic_index]
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        im.set_data(data[0])
         im.set_extent((l, r, b, t))
-        xticks, yticks = self._compute_ticks(element, ranges)
-        return {'xticks': xticks, 'yticks': yticks}
+        im.set_clim(style['clim'])
+        if 'norm' in style:
+            im.norm = style['norm']
+
+        if self.show_values:
+            annotations = self.handles['annotations']
+            for annotation in annotations.values():
+                annotation.remove()
+            self._annotate_plot(axis, style['annotations'])
+
+
 
 
 class QuadMeshPlot(ColorbarPlot):
@@ -182,45 +189,34 @@ class QuadMeshPlot(ColorbarPlot):
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
-    def initialize_plot(self, ranges=None):
-        key = self.hmap.keys()[-1]
-        element = self.hmap.last
-        axis = self.handles['axis']
-
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
-        self._init_cmesh(axis, element, ranges)
-
-        return self._finalize_axis(key, ranges)
-
-    def _init_cmesh(self, axis, element, ranges):
-        opts = self.style[self.cyclic_index]
-        if 'cmesh' in self.handles:
-            self.handles['cmesh'].remove()
+    def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        self.handles['artist'] = axis.pcolormesh(*cmesh_data, zorder=self.zorder,
-                                                 vmin=clim[0], vmax=clim[1], norm=norm,
-                                                 **opts)
-        self.handles['locs'] = np.concatenate(element.data[:2])
+        self._norm_kwargs(element, ranges, style)
+        return cmesh_data, style, {}
+
+
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        artist = ax.pcolormesh(*plot_args, **plot_kwargs)
+        locs = np.concatenate(element.data[:2])
+        return {'artist': artist, 'locs': locs}
 
 
     def update_handles(self, axis, element, key, ranges=None):
         cmesh = self.handles['artist']
-        opts = self.style[self.cyclic_index]
+        style = self.style[self.cyclic_index]
         locs = np.concatenate(element.data[:2])
+
         if (locs != self.handles['locs']).any():
-            self._init_cmesh(axis, element, ranges)
+            return super(QuadMeshPlot, self).update_handles(axis, element, key, ranges)
         else:
-            mask_array = np.logical_not(np.isfinite(element.data[2]))
-            data = np.ma.array(element.data[2], mask=mask_array)
-            cmesh.set_array(data.ravel())
-            clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-            cmesh.set_clim(clim)
+            data, style, axis_kwargs = self.get_data(element, ranges, style)
+            cmesh.set_array(data[-1])
+            cmesh.set_clim(style['clim'])
             if norm:
-                cmesh.norm = norm
+                cmesh.norm = style['norm']
+            return axis_kwargs
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):

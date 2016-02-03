@@ -138,7 +138,7 @@ Store.register({Curve: CurvePlot,
                 # Raster plots
                 QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
-                HeatMap: RasterPlot,
+                HeatMap: HeatMapPlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,

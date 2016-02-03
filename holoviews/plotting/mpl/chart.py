@@ -112,26 +112,11 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(element, ranges)
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        return {'artist': ax.plot(*plot_data, **plot_kwargs)[0]}
 
-        xs, ys, xticks = self.get_data(element)
-        # Create line segments and apply style
-        style = self.style[self.cyclic_index]
-        legend = element.label if self.show_legend else ''
-        line_segment = axis.plot(xs, ys, label=legend,
-                                 zorder=self.zorder, **style)[0]
-
-        self.handles['artist'] = line_segment
-        return self._finalize_axis(self.keys[-1], ranges=ranges, xticks=xticks)
-
-
-    def get_data(self, element):
+    def get_data(self, element, ranges, style):
         # Create xticks and reorder data if cyclic
         xticks = None
         if self.cyclic_range and all(v is not None for v in self.cyclic_range):
@@ -143,17 +128,15 @@ class CurvePlot(ChartPlot):
         else:
             xs = element.dimension_values(0)
             ys = element.dimension_values(1)
-        return xs, ys, xticks
+        return (xs, ys), style, {'xticks': xticks}
 
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
         xs, ys, xticks = self.get_data(element)
-
         artist.set_xdata(xs)
         artist.set_ydata(ys)
         return {'xticks': xticks}
-
 
 
 
@@ -171,28 +154,19 @@ class ErrorPlot(ChartPlot):
                   'markerfacecolor', 'markersize', 'solid_capstyle',
                   'solid_joinstyle', 'dashes', 'color']
 
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        _, (bottoms, tops), verts = ax.errorbar(*plot_data, **plot_kwargs)
+        return {'bottoms': bottoms, 'tops': tops, 'verts': verts}
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(element, ranges)
+    def get_data(self, element, ranges, style):
+        style['fmt'] = 'none'
 
         dims = element.dimensions()
-        error_kwargs = dict(self.style[self.cyclic_index], fmt='none',
-                            zorder=self.zorder)
+        xs, ys = (element.dimension_values(i) for i in range(2))
         yerr = element.array(dimensions=dims[2:4])
-        error_kwargs['yerr'] = yerr.T if len(dims) > 3 else yerr
-        _, (bottoms, tops), verts = axis.errorbar(element.dimension_values(0),
-                                                  element.dimension_values(1),
-                                                  **error_kwargs)
-        self.handles['bottoms'] = bottoms
-        self.handles['tops'] = tops
-        self.handles['verts'] = verts[0]
-
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        style['yerr'] = yerr.T if len(dims) > 3 else yerr
+        return (xs, ys), style, {}
 
 
     def update_handles(self, axis, element, key, ranges=None):
@@ -236,23 +210,15 @@ class AreaPlot(ChartPlot):
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        key = self.keys[-1]
-
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(element, ranges)
-
-        self.update_handles(axis, element, key, ranges)
-
-        ylabel = str(element.vdims[0])
-        return self._finalize_axis(self.keys[-1], ranges=ranges, ylabel=ylabel)
-
-    def get_data(self, element):
+    def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
-        return tuple([xs]+ys)
+        return tuple([xs]+ys), style, {}
+
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between
+        stack = fill_fn(*plot_data, **plot_kwargs)
+        return {'artist': stack}
 
     def get_extents(self, element, ranges):
         vdims = element.vdims
@@ -260,16 +226,6 @@ class AreaPlot(ChartPlot):
         ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
         return super(AreaPlot, self).get_extents(element, ranges)
 
-    def update_handles(self, axis, element, key, ranges=None):
-        if 'artist' in self.handles:
-            self.handles['artist'].remove()
-
-        # Create line segments and apply style
-        style = self.style[self.cyclic_index]
-        data = self.get_data(element)
-        fill_fn = axis.fill_betweenx if self.invert_axes else axis.fill_between
-        stack = fill_fn(*data, zorder=self.zorder, **style)
-        self.handles['artist'] = stack
 
 
 
@@ -278,19 +234,17 @@ class SpreadPlot(AreaPlot):
     SpreadPlot plots the Spread Element type.
     """
 
-
     def __init__(self, element, **params):
-        self.table = element.table()
         super(SpreadPlot, self).__init__(element, **params)
         self._extents = None
 
-    def get_data(self, element):
+    def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
-        return xs, mean-neg_error, mean+pos_error
+        return (xs, mean-neg_error, mean+pos_error), style, {}
 
 
 class HistogramPlot(ChartPlot):
@@ -566,41 +520,33 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     _disabled_opts = ['size']
 
-    def initialize_plot(self, ranges=None):
-        points = self.hmap.last
-        axis = self.handles['axis']
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        return {'artist': ax.scatter(*plot_args, **plot_kwargs)}
 
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(points, ranges)
 
-        ndims = len(points.dimensions())
-        xs = points.dimension_values(0) if len(points.data) else []
-        ys = points.dimension_values(1) if len(points.data) else []
+    def get_data(self, element, ranges, style):
+        ndims = len(element.dimensions())
+        xs = element.dimension_values(0) if element else []
+        ys = element.dimension_values(1) if element else []
         cs = None
-        if self.color_index is not None and self.color_index < ndims:
-            cs = points.dimension_values(self.color_index)
 
-        style = self.style[self.cyclic_index]
+        if self.color_index is not None and self.color_index < ndims:
+            cs = element.dimension_values(self.color_index)
+
         if self.size_index < ndims and self.scaling_factor > 1:
-            style['s'] = self._compute_size(points, style)
+            style['s'] = self._compute_size(element, style)
 
         color = style.pop('color', None)
         if cs is None:
             style['c'] = color
         else:
             style['c'] = cs
-        edgecolor = style.pop('edgecolors', 'none')
-        legend = points.label if self.show_legend else ''
-        scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
-                                   edgecolors=edgecolor, **style)
-        self.handles['artist'] = scatterplot
-
-        if cs is not None:
-            val_dim = points.dimensions(label=True)[self.color_index]
+            val_dim = element.dimensions(label=True)[self.color_index]
             clims = ranges.get(val_dim)
-            scatterplot.set_clim(clims)
+            style['clim'] = clims
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        style['edgecolors'] = style.pop('edgecolors', 'none')
+        return (xs, ys), style, {}
 
 
     def _compute_size(self, element, opts):
@@ -676,27 +622,46 @@ class VectorFieldPlot(ElementPlot):
         return min(dists)
 
 
-    def _get_info(self, vfield, input_scale, ranges):
-        ndims = len(vfield.dimensions())
-        xs = vfield.dimension_values(0) if len(vfield.data) else []
-        ys = vfield.dimension_values(1) if len(vfield.data) else []
-        radians = vfield.dimension_values(2) if len(vfield.data) else []
-        magnitudes = vfield.dimension_values(3) if ndims>=4 else np.array([1.0] * len(xs))
-        colors = magnitudes if self.color_dim == 'magnitude' else radians
+    def get_data(self, element, ranges, style):
+        input_scale = style.pop('scale', 1.0)
+
+        ndims = len(element.dimensions())
+        xs = element.dimension_values(0) if len(element.data) else []
+        ys = element.dimension_values(1) if len(element.data) else []
+        radians = element.dimension_values(2) if len(element.data) else []
+        magnitudes = element.dimension_values(3) if ndims>=4 else np.array([1.0] * len(xs))
 
         if ndims >= 4:
-            magnitude_dim = vfield.get_dimension(3).name
+            magnitude_dim = element.get_dimension(3).name
             _, max_magnitude = ranges[magnitude_dim]
         else:
             max_magnitude = 1.0
 
-        min_dist =      self._min_dist if self._min_dist else self._get_min_dist(vfield)
+        min_dist = self._min_dist if self._min_dist else self._get_min_dist(element)
 
         if self.normalize_lengths and max_magnitude != 0:
             magnitudes =  magnitudes / max_magnitude
 
-        return (xs, ys, list((radians / np.pi) * 180),
-                magnitudes, colors, input_scale / min_dist)
+        angles = list(np.array(radians) / np.pi * 180)
+        scale = input_scale / min_dist
+        args = (xs, ys, magnitudes,  [0.0] * len(element))
+        if self.color_dim:
+            colors = magnitudes if self.color_dim == 'magnitude' else radians
+            args = args + (colors,)
+            if self.color_dim == 'angle':
+                style['clim'] = element.get_dimension(2).range
+            elif self.color_dim == 'magnitude':
+                magnitude_dim = element.get_dimension(3).name
+                style['clim'] = ranges[magnitude_dim]
+            style.pop('color', None)
+
+        if 'pivot' not in style: style['pivot'] = 'mid'
+        if not self.arrow_heads:
+            style['headaxislength'] = 0
+
+        style = dict(units='x', scale_units='x', scale=scale, angles=angles)
+
+        return args, style, {}
 
 
     def _get_min_dist(self, vfield):
@@ -708,46 +673,9 @@ class VectorFieldPlot(ElementPlot):
         np.fill_diagonal(distances, np.inf)
         return  distances.min()
 
-
-    def initialize_plot(self, ranges=None):
-        vfield = self.hmap.last
-        axis = self.handles['axis']
-
-        colorized = self.color_dim is not None
-        kwargs = self.style[self.cyclic_index]
-        input_scale = kwargs.pop('scale', 1.0)
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(vfield, ranges)
-        xs, ys, angles, lens, colors, scale = self._get_info(vfield, input_scale, ranges)
-
-        args = (xs, ys, lens,  [0.0] * len(vfield))
-        args = args + (colors,) if colorized else args
-
-        if not self.arrow_heads:
-            kwargs['headaxislength'] = 0
-
-        if 'pivot' not in kwargs: kwargs['pivot'] = 'mid'
-
-        legend = vfield.label if self.show_legend else ''
-        quiver = axis.quiver(*args, zorder=self.zorder, units='x', label=legend,
-                              scale_units='x', scale = scale, angles = angles ,
-                              **({k:v for k,v in kwargs.items() if k!='color'}
-                                 if colorized else kwargs))
-
-
-        if self.color_dim == 'angle':
-            clims = vfield.get_dimension(2).range
-            quiver.set_clim(clims)
-        elif self.color_dim == 'magnitude':
-            magnitude_dim = vfield.get_dimension(3).name
-            quiver.set_clim(ranges[magnitude_dim])
-
-        self.handles['axis'].add_collection(quiver)
-        self.handles['artist'] = quiver
-        self.handles['input_scale'] = input_scale
-
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
-
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        quiver = ax.quiver(*plot_args, **plot_kwargs)
+        return {'artist': quiver, 'input_scale': plot_kwargs['scale']}
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
@@ -1015,32 +943,14 @@ class SpikesPlot(PathPlot):
 
     style_opts = PathPlot.style_opts + ['cmap']
 
-    def initialize_plot(self, ranges=None):
-        lines = self.hmap.last
-        key = self.keys[-1]
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        line_segments = LineCollection(*plot_args, **plot_kwargs)
+        ax.add_collection(line_segments)
+        return {'artist': line_segments}
 
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(lines, ranges)
-        style = self.style[self.cyclic_index]
-        label = lines.label if self.show_legend else ''
-
-        data, array, clim = self.get_data(lines, ranges)
-        if array is not None:
-            style['array'] = array
-            style['clim'] = clim
-
-        line_segments = LineCollection(data, label=label,
-                                       zorder=self.zorder, **style)
-        self.handles['artist'] = line_segments
-        self.handles['axis'].add_collection(line_segments)
-
-        return self._finalize_axis(key, ranges=ranges)
-
-
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
-
         pos = self.position
         if ndims > 1:
             data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
@@ -1056,18 +966,21 @@ class SpikesPlot(PathPlot):
             cdim = dimensions[self.color_index]
             array = element.dimension_values(cdim)
             clim = ranges[cdim]
-        return data, array, clim
+        style['array'] = array
+        style['clim'] = clim
+        return [data], style, {}
 
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        data, array, clim = self.get_data(element, ranges)
+        data, kwargs, axis_kwargs = self.get_data(element, ranges)
         artist.set_paths(data)
         visible = self.style[self.cyclic_index].get('visible', True)
         artist.set_visible(visible)
         if array is not None:
-            artist.set_clim(clim)
-            artist.set_array(array)
+            artist.set_clim(kwargs['clim'])
+            artist.set_array(kwargs['array'])
+        return axis_kwargs
 
 
 class SideSpikesPlot(AdjoinedPlot, SpikesPlot):
@@ -1116,23 +1029,8 @@ class BoxPlot(ChartPlot):
     def get_extents(self, element, ranges):
         return (np.NaN,)*4
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        key = self.keys[-1]
 
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = match_spec(element, ranges)
-
-        xlabel = ','.join([str(d) for d in element.kdims])
-        ylabel = str(element.vdims[0])
-
-        self.handles['artist'] = self.get_artist(element, axis)
-
-        return self._finalize_axis(self.keys[-1], ranges=ranges, xlabel=xlabel,
-                                   ylabel=ylabel)
-
-    def get_artist(self, element, axis):
+    def get_data(self, element, ranges, style):
         groups = element.groupby(element.kdims)
 
         data, labels = [], []
@@ -1147,16 +1045,32 @@ class BoxPlot(ChartPlot):
                 label = key
             data.append(group[group.vdims[0]])
             labels.append(label)
-        return axis.boxplot(data, labels=labels, vert=not self.invert_axes,
-                            **self.style[self.cyclic_index])
+        style['labels'] = labels
+        style.pop('zorder')
+        style.pop('label')
+        style['vert'] = not self.invert_axes
+
+        xlabel = ','.join([str(d) for d in element.kdims])
+        ylabel = str(element.vdims[0])
+
+        return [data], style, {'xlabel': xlabel, 'ylabel': ylabel}
+
+
+    def init_artist(self, ax, element, plot_args, plot_kwargs):
+        boxplot =  ax.boxplot(*plot_args, **plot_kwargs)
+        return {'artist': boxplot}
 
 
     def update_handles(self, axis, element, key, ranges=None):
         for k, group in self.handles['artist'].items():
             for v in group:
                 v.remove()
-        self.handles['artist'] = self.get_artist(element, axis)
 
+        plot_data, axis_data = self.get_data(element, ranges)
+        plot_kwargs = self.get_style(element, ranges)
+
+        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        self.handles.update(handles)
 
 
 class SideBoxPlot(AdjoinedPlot, BoxPlot):

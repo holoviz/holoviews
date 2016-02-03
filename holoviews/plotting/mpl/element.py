@@ -427,12 +427,37 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        ax = self.handles['axis']
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), self.hmap.data.keys()[-1]))
+        key = tuple(dim_map[d.name] for d in self.dimensions)
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = util.match_spec(element, ranges)
+
+        label = element.label if self.show_legend else ''
+        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        self.handles.update(handles)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
+
+
     def update_handles(self, axis, view, key, ranges=None):
         """
         Update the elements of the plot.
-        :param axis:
         """
-        raise NotImplementedError
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
+
+        plot_data, axis_data = self.get_data(element, ranges)
+        plot_kwargs = self.get_style(element, ranges)
+
+        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        self.handles.update(handles)
 
 
 
@@ -544,7 +569,8 @@ class ColorbarPlot(ElementPlot):
                                          linthresh=clim[1]/np.e)
             else:
                 norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
-        return clim, norm, opts
+            opts['norm'] = norm
+        opts['clim'] = clim
 
 
 
