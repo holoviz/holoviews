@@ -99,6 +99,7 @@ class RasterPlot(ColorbarPlot):
         im = self.handles['artist']
         style = self.style[self.cyclic_index]
         data, style, axis_kwargs = self.get_data(element, ranges, style)
+        l, r, b, t = style['extent']
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
         im.set_clim(style['clim'])
@@ -166,6 +167,7 @@ class HeatMapPlot(RasterPlot):
         im = self.handles['artist']
         style = self.style[self.cyclic_index]
         data, style, axis_kwargs = self.get_data(element, ranges, style)
+        l, r, b, t = style['extent']
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
         im.set_clim(style['clim'])
