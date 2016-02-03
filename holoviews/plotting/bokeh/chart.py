@@ -264,6 +264,9 @@ class SpikesPlot(PathPlot):
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
 
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     style_opts = (['color', 'cmap', 'palette'] + line_properties)
 
     def get_extents(self, element, ranges):
