@@ -73,8 +73,9 @@ after_script:
       cd -;
     fi
   - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
-  - aws s3 rm --recursive --region eu-west-1 s3://preview.holoviews.org/$(($TRAVIS_BUILD_NUMBER - 4))
   - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
-  - curl -X POST -d "$TRAVIS_PULL_REQUEST" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status"
+  - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
+      curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
+    fi
 
 after_success: coveralls
