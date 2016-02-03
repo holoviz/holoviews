@@ -758,9 +758,9 @@ class UniformNdMapping(NdMapping):
             data = self.data
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
-        return clone_type(data, *args, **{k:v for k,v in settings.items()
-                                          if k not in pos_args})
-
+        with item_check(not shared_data and self._check_items):
+            return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                              if k not in pos_args})
 
 
     @property
