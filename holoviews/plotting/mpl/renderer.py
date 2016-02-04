@@ -55,6 +55,11 @@ class MPLRenderer(Renderer):
          The 'mpld3' mode uses the mpld3 library whereas the 'nbagg' uses
          matplotlib's the experimental nbagg backend. """)
 
+    before_display_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called before displaying a plot.
+        The hook is passed renderer, the plot object, the binary plotted object
+        and the fmt. It can be used to alter the raw data.""")
+
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
@@ -96,6 +101,12 @@ class MPLRenderer(Renderer):
                 raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
             anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
+
+        for hook in self.before_display_hooks:
+            try:
+                data = hook(self, obj, data, fmt)
+            except Exception as e:
+                self.warning("Displaying hook %r could not be applied:\n\n %s" % (hook, e))
 
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
