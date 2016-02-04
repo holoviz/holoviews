@@ -85,7 +85,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     show_grid = param.Boolean(default=True, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
-    show_legend = param.Boolean(default=False, doc="""
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     shared_axes = param.Boolean(default=True, doc="""
@@ -368,7 +368,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Disables legends if show_legend is disabled.
         """
-        if not self.overlaid and not self.show_legend:
+        if not self.overlaid:
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
@@ -387,12 +387,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
 
-        if self.overlay_dims:
-            legend = ', '.join([d.pprint_value_string(v) for d, v in
-                                self.overlay_dims.items()])
-        else:
-            legend = element.label
-        properties['legend'] = legend
+        if self.show_legend:
+            if self.overlay_dims:
+                legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                    self.overlay_dims.items()])
+            else:
+                legend = element.label
+            properties['legend'] = legend
         properties['source'] = source
         return properties
 
