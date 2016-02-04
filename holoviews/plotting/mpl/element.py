@@ -261,8 +261,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             disabled_spines = []
             if self.xaxis is not None:
                 if 'bare' in self.xaxis:
-                    axis.set_xticklabels([])
-                    axis.xaxis.set_ticks_position('none')
+                    axis.xaxis.set_ticklabels([])
+                    axis.xaxis.set_ticks([])
                     axis.set_xlabel('')
                 if 'top' in self.xaxis:
                     axis.xaxis.set_ticks_position("top")
@@ -275,8 +275,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if self.yaxis is not None:
                 if 'bare' in self.yaxis:
-                    axis.set_yticklabels([])
-                    axis.yaxis.set_ticks_position('none')
+                    axis.yaxis.set_ticklabels([])
+                    axis.yaxis.set_ticks([])
                     axis.set_ylabel('')
                 if 'left' in self.yaxis:
                     axis.yaxis.set_ticks_position("left")
