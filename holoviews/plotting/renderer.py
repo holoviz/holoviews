@@ -116,6 +116,14 @@ class Renderer(Exporter):
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
+    post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""
+       Optional dictionary of hooks that are applied to the rendered
+       data (according to the output format) before it is returned.
+
+       Each hook is passed the rendered data and the object that is
+       being rendered. These hooks allow post-processing of renderered
+       data before output is saved to file or displayed.""")
+
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
@@ -204,10 +212,27 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
-        # [Backend specific code goes here]
+        # [Backend specific code goes here to generate data]
+        data = None
 
+        # Example of how post_render_hooks are applied
+        data = self._apply_post_render_hooks(data, obj, fmt)
         # Example of the return format where the first value is the rendered data.
-        return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+        return data, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+
+
+    def _apply_post_render_hooks(self, data, obj, fmt):
+        """
+        Apply the post-render hooks to the data.
+        """
+        hooks = self.post_render_hooks.get(fmt,[])
+        for hook in hooks:
+            try:
+                data = hook(data, obj)
+            except Exception as e:
+                self.warning("The post_render_hook %r could not be applied:\n\n %s"
+                             % (hook, e))
+        return data
 
 
     def html(self, obj, fmt=None, css=None):
