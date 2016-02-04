@@ -178,7 +178,8 @@ class MPLPlot(DimensionedPlot):
             return self.handles['axis']
         else:
             fig = self.handles['fig']
-            if self._close_figures: plt.close(fig)
+            if not self.overlaid:
+                if self._close_figures: plt.close(fig)
             return fig
 
 
