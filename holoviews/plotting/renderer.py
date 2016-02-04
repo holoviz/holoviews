@@ -225,7 +225,7 @@ class Renderer(Exporter):
         """
         Apply the post-render hooks to the data.
         """
-        hooks = self.post_render_hooks.get(fmt)
+        hooks = self.post_render_hooks.get(fmt,[])
         for hook in hooks:
             try:
                 data = hook(data, obj)
