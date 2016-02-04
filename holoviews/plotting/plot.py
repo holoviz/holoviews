@@ -150,6 +150,10 @@ class DimensionedPlot(Plot):
        You can set the fontsize of both 'ylabel' and 'xlabel' together
        using the 'labels' key.""")
 
+    #Allowed fontsize keys
+    _fontsize_keys = ['xlabel','ylabel', 'labels', 'ticks',
+                      'title', 'legend', 'legend_title']
+
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
@@ -265,11 +269,13 @@ class DimensionedPlot(Plot):
 
 
     def _fontsize(self, key, label='fontsize', common=True):
-        """
-        To be used as kwargs e.g: **self._fontsize('title')
-        """
-        if not self.fontsize:
-            return {}
+        if not self.fontsize: return {}
+        unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
+        if unknown_keys:
+            msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
+            self.warning(msg %  (list(unknown_keys), self._fontsize_keys))
+            for key in unknown_keys: self.fontsize.pop(key, None)
+
         if isinstance(self.fontsize, dict):
             if key in self.fontsize:
                 return {label:self.fontsize[key]}
