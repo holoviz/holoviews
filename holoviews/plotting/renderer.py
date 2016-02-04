@@ -228,7 +228,7 @@ class Renderer(Exporter):
         hooks = self.post_render_hooks.get(fmt)
         for hook in hooks:
             try:
-                data = hook(data, obj, fmt, self.backend)
+                data = hook(data, obj)
             except Exception as e:
                 self.warning("The post_render_hook %r could not be applied:\n\n %s"
                              % (hook, e))
