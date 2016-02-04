@@ -336,9 +336,11 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    height = param.Integer(default=80, doc="Height of plot")
+    border = param.Integer(default=30, doc="Default borders on plot")
 
-    width = param.Integer(default=80, doc="Width of plot")
+    height = param.Integer(default=100, doc="Height of plot")
+
+    width = param.Integer(default=100, doc="Width of plot")
 
 
 
@@ -481,10 +483,6 @@ class BarPlot(ChartPlot):
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
-    category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
     stack_index = param.Integer(default=2, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
@@ -498,8 +496,6 @@ class BarPlot(ChartPlot):
         kwargs = self.style[self.cyclic_index]
         if self.group_index < element.ndims:
             kwargs['label'] = kdims[self.group_index]
-        if self.category_index < element.ndims:
-            kwargs['group'] = kdims[self.category_index]
         if self.stack_index < element.ndims:
             kwargs['stack'] = kdims[self.stack_index]
         crange = Range1d(*ranges.get(vdim))

@@ -3,7 +3,7 @@ import param
 
 from bokeh.models.mappers import LinearColorMapper
 
-from ...element import Image, Raster
+from ...element import Image, Raster, RGB
 from .element import ElementPlot, line_properties, fill_properties
 from .util import mplcmap_to_palette, map_colors, get_cmap
 
@@ -97,6 +97,13 @@ class RGBPlot(RasterPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         return ElementPlot._glyph_properties(self, plot, element,
                                              source, ranges)
+
+class HSVPlot(RGBPlot):
+
+    def get_data(self, element, ranges=None, empty=False):
+        from matplotlib import colors
+        rgb = RGB(colors.hsv_to_rgb(element.data))
+        return super(HSVPlot, self).get_data(rgb, ranges, empty)
 
 
 class HeatmapPlot(ElementPlot):

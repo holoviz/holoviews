@@ -654,9 +654,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for key, subplot in self.subplots.items():
             try:
                 el = element[key]
+                tools.extend(subplot._init_tools(el))
             except:
                 el = None
-            tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 
