@@ -56,7 +56,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, info
+            return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
@@ -64,7 +64,7 @@ class BokehRenderer(Renderer):
             if not bokeh_lt_011:
                 data['root'] = plot.state._id
             data['data'] = models_to_json(plotobjects)
-            return serialize_json(data), info
+            return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
