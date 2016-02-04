@@ -820,8 +820,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         # Compute and set the plot size if not explicitly supplied
         col_ars = [ar for ars in col_aspect_ratios for ar in ars]
         row_ars = [ar for ars in row_aspect_ratios for ar in ars]
-        col_ars = [ar/max(col_ars) if ar else 0 for ar in col_ars]
-
         width = len(col_ars[::2]) + sum(col_ars[1::2])
         yscale = sum(col_ars)/sum(row_ars)
         xinches, yinches = None, None
