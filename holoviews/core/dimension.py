@@ -3,6 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+from __future__ import unicode_literals
 import re
 from operator import itemgetter
 
@@ -782,6 +783,17 @@ class Dimensioned(LabelledData):
 
     def __repr__(self):
         return PrettyPrinter.pprint(self)
+
+    def __repr__(self):
+        reprval = PrettyPrinter.pprint(self)
+        if isinstance(reprval, unicode):
+            return str(reprval.encode("utf8"))
+        else:
+            return str(reprval)
+
+    def __unicode__(self):
+        return unicode(PrettyPrinter.pprint(self))
+
 
 
     def __call__(self, options=None, **kwargs):
