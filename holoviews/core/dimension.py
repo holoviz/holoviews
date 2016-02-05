@@ -12,7 +12,7 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict)
+                         find_range, dimension_sanitizer, OrderedDict, unicode)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
