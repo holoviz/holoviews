@@ -256,7 +256,7 @@ class NotebookArchive(FileArchive):
                                              {'src':truncated,
                                               'mime_type':info['mime_type'],
                                               'css':''})
-                    substitutions[html_key] = (link_html, fpath)
+                    substitutions[html_key] = (link_html, truncated)
 
             node = self._get_notebook_node()
             html = self._generate_html(node, substitutions)
