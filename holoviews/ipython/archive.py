@@ -161,6 +161,8 @@ class NotebookArchive(FileArchive):
         """
         Get the current notebook data and export.
         """
+        if self._timestamp is None:
+            raise Exception("No timestamp set. Has the archive been initialized?")
         if self.skip_notebook_export:
             super(NotebookArchive, self).export(timestamp=self._timestamp,
                                                 info={'notebook':self.notebook_name})
