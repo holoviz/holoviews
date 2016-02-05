@@ -250,8 +250,10 @@ class NotebookArchive(FileArchive):
                 # Not displayable in an HTML tag
                 elif info['mime_type'] not in self._tags: pass
                 else:
+                    basename, ext = os.path.splitext(fpath)
+                    truncated = self._truncate_name(basename, ext[1:])
                     link_html = self._format(self._tags[info['mime_type']],
-                                             {'src':fpath,
+                                             {'src':truncated,
                                               'mime_type':info['mime_type'],
                                               'css':''})
                     substitutions[html_key] = (link_html, fpath)
