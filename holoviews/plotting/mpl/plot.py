@@ -17,6 +17,7 @@ from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import MPLRenderer
+from .util import compute_ratios
 
 
 class MPLPlot(DimensionedPlot):
@@ -681,6 +682,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
+    absolute_scaling = param.ObjectSelector(default=False, doc="""
+      If aspect_weight is enabled absolute_scaling determines whether
+      axes are scaled relative to the widest plot or whether the
+      aspect scales the axes in absolute terms.""")
+
     aspect_weight = param.Number(default=0, doc="""
       Weighting of the individual aspects when computing the Layout
       grid aspects and overall figure size.""")
@@ -727,8 +733,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
 
         layouts = {}
-        row_heightratios, col_widthratios = {}, {}
-        col_aspects, row_aspects = defaultdict(lambda: [0, 0]), defaultdict(lambda: [0, 0])
+        col_widthratios, row_heightratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             _, view = layout_items.get((r, c), (None, None))
@@ -744,7 +749,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             main = main.last if isinstance(main, HoloMap) else main
             main_options = self.lookup_options(main, 'plot').options if main else {}
             if main and not isinstance(main_options.get('aspect', 1), basestring):
-                main_aspect = main_options.get('aspect', 1)
+                main_aspect = np.nan if isinstance(main, Empty) else main_options.get('aspect', 1)
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
                 main_aspect = 1
@@ -754,76 +759,63 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 eltype = type(el)
                 if el and eltype in MPLPlot.sideplots:
                     plot_type = MPLPlot.sideplots[type(el)]
-                    ratio = plot_type.border_size + plot_type.subplot_size
+                    ratio = 0.6*(plot_type.subplot_size+plot_type.border_size)
                     width_ratios = [4, 4*ratio]
                 else:
                     width_ratios = [4, 1]
-                col_aspect = [main_aspect, 1/(4/width_ratios[1])]
             else:
                 width_ratios = [4]
-                col_aspect = [main_aspect, 0]
 
+            inv_aspect = 1./main_aspect if main_aspect else np.NaN
             if layout_type in ['Embedded Dual', 'Triple']:
                 el = layout_view.get('top', None)
                 eltype = type(el)
                 if el and eltype in MPLPlot.sideplots:
                     plot_type = MPLPlot.sideplots[type(el)]
-                    ratio = plot_type.border_size + plot_type.subplot_size
+                    ratio = 0.6*(plot_type.subplot_size+plot_type.border_size)
                     height_ratios = [4*ratio, 4]
                 else:
                     height_ratios = [1, 4]
-                row_aspect = [1/(4/height_ratios[0]), 1./main_aspect]
-                hidx = 1
             else:
                 height_ratios = [4]
-                row_aspect = [0, 1./main_aspect]
-                hidx = 0
 
             if not isinstance(main_aspect, (basestring, type(None))):
-                width_ratios[0] = (width_ratios[0] * main_aspect)
-                height_ratios[-1] = (height_ratios[-1] * 1./main_aspect)
+                width_ratios = [ratio * main_aspect for ratio in width_ratios]
+                height_ratios = [ratio * inv_aspect for ratio in height_ratios]
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
             # of the LayoutPlot with the most horizontal or vertical splits
             # and largest aspect
-            if layout_shape[1] > row_heightratios.get(r, (0, None))[0]:
-                row_heightratios[r] = [layout_shape[1], height_ratios]
-            if height_ratios[hidx] > row_heightratios[r][1][hidx]:
-                row_heightratios[r][1][-1] = height_ratios[hidx]
+            prev_heights = row_heightratios.get(r, (0, []))
+            if layout_shape[1] > prev_heights[0]:
+                row_heightratios[r] = [layout_shape[1], prev_heights[1]]
+            row_heightratios[r][1].append(height_ratios)
 
-            if layout_shape[0] > col_widthratios.get(c, (0, None))[0]:
-                col_widthratios[c] = (layout_shape[0], width_ratios)
-            if width_ratios[0] > col_widthratios[c][1][0]:
-                col_widthratios[c][1][0] = width_ratios[0]
+            prev_widths = col_widthratios.get(c, (0, []))
+            if layout_shape[0] > prev_widths[0]:
+                col_widthratios[c] = (layout_shape[0], prev_widths[1])
+            col_widthratios[c][1].append(width_ratios)
 
-            for i in range(2):
-                if col_aspect[i] > col_aspects.get(c, [0,0])[i]:
-                    col_aspects[c][i] = col_aspect[i]
-                if row_aspect[i] > row_aspects.get(r, [0,0])[i]:
-                    row_aspects[r][i] = row_aspect[i]
 
-        # In order of row/column collect the largest width and height ratios
-        height_ratios = [v[1] for k, v in sorted(row_heightratios.items())]
-        width_ratios = [v[1] for k, v in sorted(col_widthratios.items())]
-        col_aspect_ratios = [v for k, v in sorted(col_aspects.items())]
-        row_aspect_ratios = [v for k, v in sorted(row_aspects.items())]
+        col_splits = [v[0] for _, v in sorted(col_widthratios.items())]
+        row_splits = [v[0] for _, v in sorted(row_heightratios.items())]
+
+        widths = np.array([r for col in col_widthratios.values()
+                           for ratios in col[1] for r in ratios])/4
+
+        wr_unnormalized = compute_ratios(col_widthratios, False)
+        hr_list = compute_ratios(row_heightratios)
+        wr_list = compute_ratios(col_widthratios)
 
         # Compute the number of rows and cols
-        cols = np.sum([len(wr) for wr in width_ratios])
-        rows = np.sum([len(hr) for hr in height_ratios])
+        cols, rows = len(wr_list), len(hr_list)
 
-        # Flatten the width and height ratio lists
-        wr_list = [wr for wrs in width_ratios for wr in wrs]
-        hr_list = [hr for hrs in height_ratios for hr in hrs]
+        width = sum(wr_list)
+        yscale = width/sum([(1/v)*4 for v in wr_unnormalized])
+        if self.absolute_scaling:
+            width = width*np.nanmax(widths)
 
-        # Compute and set the plot size if not explicitly supplied
-        col_ars = [ar for ars in col_aspect_ratios for ar in ars]
-        row_ars = [ar for ars in row_aspect_ratios for ar in ars]
-        col_ars = [ar/max(col_ars) if ar else 0 for ar in col_ars]
-
-        width = len(col_ars[::2]) + sum(col_ars[1::2])
-        yscale = sum(col_ars)/sum(row_ars)
         xinches, yinches = None, None
         if not isinstance(self.fig_inches, (tuple, list)):
             xinches = self.fig_inches * width
@@ -855,8 +847,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         layout_subplots, layout_axes = {}, {}
         for r, c in self.coords:
             # Compute the layout type from shape
-            wsplits = len(width_ratios[c])
-            hsplits = len(height_ratios[r])
+            wsplits = col_splits[c]
+            hsplits = row_splits[r]
             if (wsplits, hsplits) == (1,1):
                 layout_type = 'Single'
             elif (wsplits, hsplits) == (2,1):
