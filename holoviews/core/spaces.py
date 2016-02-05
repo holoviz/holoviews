@@ -197,12 +197,15 @@ class HoloMap(UniformNdMapping):
         from .operation import MapOperation
         if not dimensions:
             dimensions = self.kdims
+        if not isinstance(dimensions, list): dimensions = [dimensions]
         if self.ndims > 1 and len(dimensions) != self.ndims:
             groups = self.groupby([dim for dim in self.kdims
                                    if dim not in dimensions])
-        else:
-            [self.get_dimension(dim) for dim in dimensions]
+        elif all(d in self.kdims for d in dimensions):
             groups = HoloMap([(0, self)])
+        else:
+            raise KeyError("Supplied dimensions not found.")
+
         collapsed = groups.clone(shared_data=False)
         for key, group in groups.items():
             if isinstance(function, MapOperation):
