@@ -559,11 +559,11 @@ class GenericElementPlot(DimensionedPlot):
         else:
             dims = view.dimensions()
         if dims and xlabel is None:
-            xlabel = util.safe_unicode(dims[0].name)
+            xlabel = util.safe_unicode(dims[0].pprint_label)
         if len(dims) >= 2 and ylabel is None:
-            ylabel = util.safe_unicode(dims[1].name)
+            ylabel = util.safe_unicode(dims[1].pprint_label)
         if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = util.safe_unicode(dims[2].name)
+            zlabel = util.safe_unicode(dims[2].pprint_label)
         return xlabel, ylabel, zlabel
 
 
