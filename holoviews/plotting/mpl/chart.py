@@ -542,19 +542,21 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.Integer(default=3, allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
+    size_index = param.Integer(default=2, allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
@@ -584,7 +586,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims and self.scaling_factor > 1:
+        if self.size_index is not None and self.size_index < ndims:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
@@ -609,7 +611,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_size(self, element, opts):
         sizes = element.dimension_values(self.size_index)
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
@@ -617,10 +619,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
         paths.set_offsets(element.array(dimensions=[0, 1]))
         dims = element.dimensions(label=True)
         ndims = len(dims)
-        if self.size_index < ndims:
+        if self.size_index is not None and self.size_index < ndims:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
-        if self.color_index < ndims:
+        if self.color_index is not None and self.color_index < ndims:
             cs = element.dimension_values(self.color_index)
             val_dim = dims[self.color_index]
             paths.set_clim(ranges[val_dim])

@@ -1,3 +1,4 @@
+import math
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
@@ -74,14 +75,22 @@ def undisplayable_info(obj, html=False):
             ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
 
 
-def compute_sizes(sizes, size_fn, scaling, base_size):
+def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     """
     Scales point sizes according to a scaling factor,
     base size and size_fn, which will be applied before
     scaling.
     """
+    if scaling_method == 'area':
+        pass
+    elif scaling_method == 'width':
+        scaling_factor = scaling_factor**2
+    else:
+        raise ValueError(
+            'Invalid value for argument "scaling_method": "{}". '
+            'Valid values are: "width", "area".'.format(scaling_method))
     sizes = size_fn(sizes)
-    return (base_size*scaling**sizes)
+    return (base_size*scaling_factor*sizes)
 
 
 def get_sideplot_ranges(plot, element, main, ranges):
