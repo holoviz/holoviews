@@ -82,9 +82,9 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     scaling.
     """
     if scaling_method == 'area':
-        scaling_factor = math.sqrt(scaling_factor)
+        pass
     elif scaling_method == 'width':
-        pass  # can use scaling factor unchanged in this case
+        scaling_factor = scaling_factor**2
     else:
         raise ValueError(
             'Invalid value for argument "scaling_method": "{}". '

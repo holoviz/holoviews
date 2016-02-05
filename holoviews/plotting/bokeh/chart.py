@@ -61,7 +61,7 @@ class PointPlot(ElementPlot):
                 colors = element.dimension_values(self.color_index)
                 crange = ranges.get(dims[self.color_index], None)
                 data[map_key] = map_colors(colors, crange, cmap)
-        if self.size_index < len(dims) and self.scaling_factor != 1:
+        if self.size_index < len(dims):
             map_key = 'size_' + dims[self.size_index]
             mapping['size'] = map_key
             if empty:
@@ -69,8 +69,9 @@ class PointPlot(ElementPlot):
             else:
                 ms = style.get('size', 1)
                 sizes = element.dimension_values(self.size_index)
-                data[map_key] = compute_sizes(sizes, self.size_fn,
-                                    self.scaling_factor, self.scaling_method, ms)
+                data[map_key] = np.sqrt(compute_sizes(sizes, self.size_fn,
+                                                      self.scaling_factor,
+                                                      self.scaling_method, ms))
 
         data[dims[0]] = [] if empty else element.dimension_values(0)
         data[dims[1]] = [] if empty else element.dimension_values(1)
