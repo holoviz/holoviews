@@ -13,13 +13,10 @@ from .util import map_colors, get_cmap, mpl_to_bokeh
 
 class PointPlot(ElementPlot):
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.Integer(default=3, allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
-
-    radius_index = param.Integer(default=None, doc="""
+    size_index = param.Integer(default=2, allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     scaling_method = param.ObjectSelector(default="area",
@@ -51,7 +48,7 @@ class PointPlot(ElementPlot):
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
-        if self.color_index < len(dims) and cmap:
+        if self.color_index is not None and self.color_index < len(dims) and cmap:
             map_key = 'color_' + dims[self.color_index]
             mapping['color'] = map_key
             if empty:
@@ -61,7 +58,7 @@ class PointPlot(ElementPlot):
                 colors = element.dimension_values(self.color_index)
                 crange = ranges.get(dims[self.color_index], None)
                 data[map_key] = map_colors(colors, crange, cmap)
-        if self.size_index < len(dims):
+        if self.size_index is not None and self.size_index < len(dims):
             map_key = 'size_' + dims[self.size_index]
             mapping['size'] = map_key
             if empty:

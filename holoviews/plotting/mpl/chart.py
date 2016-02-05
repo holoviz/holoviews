@@ -542,10 +542,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.Integer(default=3, allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
+    size_index = param.Integer(default=2, allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     scaling_method = param.ObjectSelector(default="area",
@@ -586,7 +586,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims:
+        if self.size_index is not None and self.size_index < ndims:
             style['s'] = self._compute_size(points, style)
 
         color = style.pop('color', None)
@@ -619,10 +619,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
         paths.set_offsets(element.array(dimensions=[0, 1]))
         dims = element.dimensions(label=True)
         ndims = len(dims)
-        if self.size_index < ndims:
+        if self.size_index is not None and self.size_index < ndims:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
-        if self.color_index < ndims:
+        if self.color_index is not None and self.color_index < ndims:
             cs = element.dimension_values(self.color_index)
             val_dim = dims[self.color_index]
             paths.set_clim(ranges[val_dim])
