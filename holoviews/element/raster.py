@@ -752,7 +752,8 @@ class RGB(Image):
         coords = util.process_ellipses(self, coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
             values = coords[self.ndims:]
-            channels = [el for el in values if isinstance(el, (str, Dimension))]
+            channels = [el for el in values
+                        if isinstance(el, (str, util.unicode, Dimension))]
             if len(channels) == 1:
                 sliced = super(RGB, self).__getitem__(coords[:self.ndims])
                 if channels[0] not in self.vdims:
