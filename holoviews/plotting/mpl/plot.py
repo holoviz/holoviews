@@ -752,7 +752,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 main_aspect = np.nan if isinstance(main, Empty) else main_options.get('aspect', 1)
                 main_aspect = self.aspect_weight*main_aspect + 1-self.aspect_weight
             else:
-                main_aspect = 1
+                main_aspect = np.nan
 
             if layout_type in ['Dual', 'Triple']:
                 el = layout_view.get('right', None)
@@ -804,6 +804,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         widths = np.array([r for col in col_widthratios.values()
                            for ratios in col[1] for r in ratios])/4
 
+        hr_unnormalized = compute_ratios(row_heightratios, False)
         wr_unnormalized = compute_ratios(col_widthratios, False)
         hr_list = compute_ratios(row_heightratios)
         wr_list = compute_ratios(col_widthratios)
