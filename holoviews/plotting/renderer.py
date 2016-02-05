@@ -187,10 +187,12 @@ class Renderer(Exporter):
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
-        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
-            fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt is None:
-            fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+        if fmt in ['auto', None]:
+            if ((len(plot) == 1 and not plot.dynamic)
+                or (len(plot) > 1 and self.holomap is None)):
+                fmt = fig_formats[0] if self.fig=='auto' else self.fig
+            else:
+                fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt in self.widgets:
             plot = self.get_widget(plot, fmt)
