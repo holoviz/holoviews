@@ -2,7 +2,7 @@ import numpy as np
 import param
 
 from ...core import Dimension
-from ...core.util import match_spec
+from ...core.util import match_spec, basestring
 from .element import ColorbarPlot
 from .chart import PointPlot
 
@@ -109,10 +109,10 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.Integer(default=4, doc="""
+    color_index = param.ClassSelector(default=4, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=3, doc="""
+    size_index = param.ClassSelector(default=3, class_=(basestring, int), doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     def initialize_plot(self, ranges=None):
@@ -126,26 +126,23 @@ class Scatter3DPlot(Plot3D, PointPlot):
         return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
-        ndims = len(points.dimensions())
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
-        cs = points.dimension_values(self.color_index) if self.color_index < ndims else None
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims and self.scaling_factor > 1:
-            style['s'] = self._compute_size(points, style)
-        if cs is not None:
+        cdim = points.get_dimension(self.color_index)
+        if cdim:
+            cs = points.dimension_values(self.color_index)
             style['c'] = cs
-            style.pop('color', None)
+            if 'clim' not in style:
+                clims = ranges[cdim.name]
+                style.update(vmin=clims[0], vmax=clims[1])
+        if points.get_dimension(self.size_index):
+            style['s'] = self._compute_size(points, style)
+
         scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
 
         self.handles['axis'].add_collection(scatterplot)
         self.handles['artist'] = scatterplot
-
-        if cs is not None:
-            val_dim = points.dimensions(label=True)[self.color_index]
-            ranges = self.compute_ranges(self.hmap, key, ranges)
-            ranges = match_spec(points, ranges)
-            scatterplot.set_clim(ranges[val_dim])
 
 
 

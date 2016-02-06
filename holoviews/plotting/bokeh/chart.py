@@ -4,7 +4,7 @@ from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core.util import max_range
+from ...core.util import max_range, basestring
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -13,10 +13,12 @@ from .util import map_colors, get_cmap, mpl_to_bokeh
 
 class PointPlot(ElementPlot):
 
-    color_index = param.Integer(default=3, allow_None=True, doc="""
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                      allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, allow_None=True, doc="""
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                     allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     scaling_method = param.ObjectSelector(default="area",
@@ -48,18 +50,21 @@ class PointPlot(ElementPlot):
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
-        if self.color_index is not None and self.color_index < len(dims) and cmap:
-            map_key = 'color_' + dims[self.color_index]
+        cdim = points.get_dimension(self.color_index)
+        if cdim and cmap:
+            map_key = 'color_' + cddim.name
             mapping['color'] = map_key
             if empty:
                 data[map_key] = []
             else:
                 cmap = get_cmap(cmap)
                 colors = element.dimension_values(self.color_index)
-                crange = ranges.get(dims[self.color_index], None)
+                crange = ranges.get(cdim.name, None)
                 data[map_key] = map_colors(colors, crange, cmap)
-        if self.size_index is not None and self.size_index < len(dims):
-            map_key = 'size_' + dims[self.size_index]
+
+        sdim = points.get_dimension(self.size_index)
+        if sdim:
+            map_key = 'size_' + sdim.name
             mapping['size'] = map_key
             if empty:
                 data[map_key] = []
@@ -255,7 +260,7 @@ class ErrorPlot(PathPlot):
 
 class SpikesPlot(PathPlot):
 
-    color_index = param.Integer(default=1, doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.5, doc="""
@@ -299,17 +304,17 @@ class SpikesPlot(PathPlot):
         if not empty and self.invert_axes: keys = keys[::-1]
         data = dict(zip(keys, (xs, ys)))
 
-        cmap = style.get('palette', style.get('cmap', None))        
-        if self.color_index < len(dims) and cmap:
-            cdim = dims[self.color_index]
-            map_key = 'color_' + cdim
+        cmap = style.get('palette', style.get('cmap', None))
+        cdim = self.get_dimension(self.color_index)
+        if cdim and cmap:
+            map_key = 'color_' + cdim.name
             mapping['color'] = map_key
             if empty:
                 colors = []
             else:
                 cmap = get_cmap(cmap)
                 cvals = element.dimension_values(cdim)
-                crange = ranges.get(cdim, None)
+                crange = ranges.get(cdim.name, None)
                 colors = map_colors(cvals, crange, cmap)
             data[map_key] = colors
 

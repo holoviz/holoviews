@@ -50,6 +50,9 @@ class PolygonPlot(ColorbarPlot):
     for non-finite values.
     """
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     style_opts = ['alpha', 'cmap', 'facecolor', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle', 'fill', 'capstyle']
 
