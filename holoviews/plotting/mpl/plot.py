@@ -812,8 +812,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         # Compute the number of rows and cols
         cols, rows = len(wr_list), len(hr_list)
 
-        width = sum(wr_list)
-        yscale = width/sum([(1/v)*4 for v in wr_unnormalized])
+
+        wr_list = [r if np.isfinite(r) else 1 for r in wr_list]
+        hr_list = [r if np.isfinite(r) else 1 for r in hr_list]
+
+        width = sum([r if np.isfinite(r) else 1 for r in wr_list])
+        yscale = width/sum([(1/v)*4 if np.isfinite(v) else 4 for v in wr_unnormalized])
         if self.absolute_scaling:
             width = width*np.nanmax(widths)
 

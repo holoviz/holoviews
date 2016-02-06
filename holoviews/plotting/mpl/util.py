@@ -39,7 +39,7 @@ def normalize_ratios(ratios):
     normalized = {}
     for i, v in enumerate(zip(*ratios.values())):
         arr = np.array(v)
-        normalized[i] = arr/np.nanmax(v)
+        normalized[i] = arr/float(np.nanmax(arr))
     return normalized
 
 def compute_ratios(ratios, normalized=True):
