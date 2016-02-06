@@ -235,6 +235,9 @@ class ErrorPlot(ChartPlot):
 
 class AreaPlot(ChartPlot):
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
@@ -281,6 +284,8 @@ class SpreadPlot(AreaPlot):
     SpreadPlot plots the Spread Element type.
     """
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, element, **params):
         self.table = element.table()
