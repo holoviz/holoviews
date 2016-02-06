@@ -126,7 +126,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
         return self._finalize_axis(key, ranges=ranges)
 
     def update_handles(self, axis, points, key, ranges=None):
-        ndims = len(points.dimensions())
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
 
         style = self.style[self.cyclic_index]
@@ -137,7 +136,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
             style['facecolors'] = cs
             if 'clim' not in style:
                 style['clim'] = ranges[cdim.name]
-        if points.get_dimension(self.size_indx):
+        if points.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
         scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
