@@ -794,10 +794,6 @@ class Dimensioned(LabelledData):
         drange = max_range(ranges)
         return drange
 
-
-    def __repr__(self):
-        return PrettyPrinter.pprint(self)
-
     def __repr__(self):
         reprval = PrettyPrinter.pprint(self)
         if isinstance(reprval, unicode):

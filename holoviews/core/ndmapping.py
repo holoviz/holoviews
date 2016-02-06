@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from . import traversal, util
+from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label, pd)
@@ -352,7 +352,7 @@ class MultiDimensionalMapping(Dimensioned):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)
-            return unique_array(vals) if unique else vals
+            return util.unique_array(vals) if unique else vals
         else:
             return super(MultiDimensionalMapping, self).dimension_values(dimension, unique)
 

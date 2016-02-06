@@ -90,7 +90,7 @@ AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
 try:
-    import matplotlib
+    import matplotlib   # noqa (API import )
     Store.register({HSV: HSVPlot}, 'bokeh')
 except ImportError:
     pass

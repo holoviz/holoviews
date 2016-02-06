@@ -1,4 +1,3 @@
-import math
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,

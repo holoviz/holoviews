@@ -7,7 +7,7 @@ from bokeh.io import Document
 
 if LooseVersion(bokeh.__version__) >= LooseVersion('0.11'):
     bokeh_lt_011 = False
-    from bokeh.io import push_notebook, _CommsHandle
+    from bokeh.io import _CommsHandle
     from bokeh.util.notebook import get_comms
 else:
     bokeh_lt_011 = True

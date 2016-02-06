@@ -4,11 +4,9 @@ import numpy as np
 from bokeh.models import CustomJS, TapTool, ColumnDataSource
 
 try:
-    from bokeh.models import PlotObject
     from bokeh.protocol import serialize_json
     bokeh_lt_011 = True
 except ImportError:
-    from bokeh.models import Component as PlotObject
     from bokeh.core.json_encoder import serialize_json
     bokeh_lt_011 = False
 
