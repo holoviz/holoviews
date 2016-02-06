@@ -593,7 +593,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         if cdim:
             cs = points.dimension_values(self.color_index)
             color = style.pop('color', None)
-            style['facecolors'] = cs
+            style['c'] = cs
             style['clim'] = ranges.get(cdim.name)
 
         if points.get_dimension(self.size_index):

@@ -132,10 +132,10 @@ class Scatter3DPlot(Plot3D, PointPlot):
         cdim = points.get_dimension(self.color_index)
         if cdim:
             cs = points.dimension_values(self.color_index)
-            style.pop('color', None)
-            style['facecolors'] = cs
+            style['c'] = cs
             if 'clim' not in style:
-                style['clim'] = ranges[cdim.name]
+                clims = ranges[cdim.name]
+                style.update(vmin=clims[0], vmax=clims[1])
         if points.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
