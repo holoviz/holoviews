@@ -126,16 +126,14 @@ set the plot title directly, using the plot option
 ``title_format="my new title"``.
 
 For frequent cases you can define a dictionary of aliases, with short,
-Pythonic names for complicated typeset strings:
+Pythonic names for complicated typeset strings:::
 
-```
-al = hv.util.Aliases(Spectrum='Frequency spectrum', 
-                     Water='$H_2O$',
-                     Glucose='$C_6H_{12}O_6$')
+  al = hv.util.Aliases(Spectrum='Frequency spectrum',
+  Water='$H_2O$',
+  Glucose='$C_6H_{12}O_6$')
 
-(hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Glucose) +
- hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Water))
-```
+  (hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Glucose) +
+  hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Water))
 
 See this `pull request <https://github.com/ioam/holoviews/pull/312>`_
 for more details.
