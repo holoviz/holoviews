@@ -590,11 +590,13 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         style = self.style[self.cyclic_index]
         cdim = points.get_dimension(self.color_index)
+        color = style.pop('color', None)
         if cdim:
             cs = points.dimension_values(self.color_index)
-            color = style.pop('color', None)
             style['c'] = cs
             style['clim'] = ranges.get(cdim.name)
+        else:
+            style['c'] = color
         edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         if points.get_dimension(self.size_index):
