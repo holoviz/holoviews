@@ -13,12 +13,12 @@ from .util import map_colors, get_cmap, mpl_to_bokeh
 
 class PointPlot(ElementPlot):
 
-    color_index = param.Parameter(default=3, class_=(basestring, int),
-                                  allow_None=True, doc="""
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                      allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Parameter(default=2, class_=(basestring, int),
-                                 allow_None=True, doc="""
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                     allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     scaling_method = param.ObjectSelector(default="area",
@@ -260,7 +260,7 @@ class ErrorPlot(PathPlot):
 
 class SpikesPlot(PathPlot):
 
-    color_index = param.Parameter(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.5, doc="""

@@ -547,11 +547,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Parameter(default=3, class_=(basestring, int),
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
                                   allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Parameter(default=2, class_=(basestring, int),
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
                                  allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -1008,7 +1008,7 @@ class SpikesPlot(PathPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.Parameter(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
