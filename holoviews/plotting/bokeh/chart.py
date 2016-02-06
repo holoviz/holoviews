@@ -305,7 +305,7 @@ class SpikesPlot(PathPlot):
         data = dict(zip(keys, (xs, ys)))
 
         cmap = style.get('palette', style.get('cmap', None))
-        cdim = self.get_dimension(self.color_index)
+        cdim = element.get_dimension(self.color_index)
         if cdim and cmap:
             map_key = 'color_' + cdim.name
             mapping['color'] = map_key
