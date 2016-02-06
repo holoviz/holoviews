@@ -341,7 +341,7 @@ class Columns(Element):
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
-        dim = self.get_dimension(dim).name
+        dim = self.get_dimension(dim, strict=True).name
         dim_vals = self.interface.values(self, dim)
         if unique:
             return unique_array(dim_vals)
