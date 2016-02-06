@@ -130,7 +130,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         style = self.style[self.cyclic_index]
         cdim = points.get_dimension(self.color_index)
-        if cdim.name:
+        if cdim:
             cs = points.dimension_values(self.color_index)
             style.pop('color', None)
             style['facecolors'] = cs
