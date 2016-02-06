@@ -609,15 +609,28 @@ class Dimensioned(LabelledData):
         return [dim.name if label else dim for dim in dims]
 
 
-    def get_dimension(self, dimension, default=None):
-        "Access a Dimension object by name or index."
+    def get_dimension(self, dimension, default=None, strict=False):
+        """
+        Access a Dimension object by name or index.
+        Returns the default value if the dimension is not found and
+        strict is False. If strict is True, a KeyError is raised
+        instead.
+        """
         all_dims = self.dimensions()
         if isinstance(dimension, Dimension):
             dimension = dimension.name
-        if isinstance(dimension, int) and dimension < len(all_dims):
-            return all_dims[dimension]
+        if isinstance(dimension, int):
+            if 0 <= dimension < len(all_dims):
+                return all_dims[dimension]
+            elif strict:
+                raise KeyError("Dimension %s not found" % dimension)
+            else:
+                return default
+        name_map = {dim.name: dim for dim in all_dims}
+        if strict and dimension not in name_map:
+            raise KeyError("Dimension %s not found" % dimension)
         else:
-            return {dim.name: dim for dim in all_dims}.get(dimension, default)
+            return name_map.get(dimension, default)
 
 
     def get_dimension_index(self, dim):

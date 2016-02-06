@@ -345,7 +345,7 @@ class MultiDimensionalMapping(Dimensioned):
 
     def dimension_values(self, dimension, unique=False):
         "Returns the values along the specified dimension."
-        dimension = self.get_dimension(dimension).name
+        dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
         if dimension in self.dimensions(label=True):
