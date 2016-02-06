@@ -483,7 +483,7 @@ class NdElement(NdMapping, Tabular):
 
 
     def dimension_values(self, dim, unique=False):
-        dim = self.get_dimension(dim)
+        dim = self.get_dimension(dim, strict=True)
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)

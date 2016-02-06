@@ -258,7 +258,7 @@ class Histogram(Element2D):
 
 
     def dimension_values(self, dim):
-        dim = self.get_dimension(dim).name
+        dim = self.get_dimension(dim, strict=True).name
         if dim in self.vdims:
             return self.values
         elif dim in self.kdims:
