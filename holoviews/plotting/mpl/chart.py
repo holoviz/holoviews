@@ -542,10 +542,12 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=3, allow_None=True, doc="""
+    color_index = param.Parameter(default=3, class_=(basestring, int),
+                                  allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, allow_None=True, doc="""
+    size_index = param.Parameter(default=2, class_=(basestring, int),
+                                 allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     scaling_method = param.ObjectSelector(default="area",
@@ -578,30 +580,24 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
-        ndims = len(points.dimensions())
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
-        cs = None
-        if self.color_index is not None and self.color_index < ndims:
-            cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index is not None and self.size_index < ndims:
-            style['s'] = self._compute_size(points, style)
-
-        if cs is not None:
+        cdim = points.get_dimension(self.color_index)
+        if cdim:
+            cs = points.dimension_values(self.color_index)
             color = style.pop('color', None)
             style['facecolors'] = cs
+            style['clim'] = ranges.get(cdim.name)
+
+        if points.get_dimension(self.size_index):
+            style['s'] = self._compute_size(points, style)
 
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
                                    **style)
         self.handles['artist'] = scatterplot
-
-        if cs is not None:
-            val_dim = points.dimensions(label=True)[self.color_index]
-            clims = ranges.get(val_dim)
-            scatterplot.set_clim(clims)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -615,15 +611,15 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
-        dims = element.dimensions(label=True)
-        ndims = len(dims)
-        if self.size_index is not None and self.size_index < ndims:
+        sdim = points.get_dimension(self.size_index)
+        if sdim:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
-        if self.color_index is not None and self.color_index < ndims:
+
+        cdim = points.get_dimension(self.color_index)
+        if cdim:
             cs = element.dimension_values(self.color_index)
-            val_dim = dims[self.color_index]
-            paths.set_clim(ranges[val_dim])
+            paths.set_clim(ranges[cdim.name])
             paths.set_array(cs)
 
 
@@ -1007,7 +1003,7 @@ class SpikesPlot(PathPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.Integer(default=1, doc="""
+    color_index = param.Parameter(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -1055,10 +1051,10 @@ class SpikesPlot(PathPlot):
             data = [(line[0][::-1], line[1][::-1]) for line in data]
 
         array, clim = None, None
-        if self.color_index < ndims:
-            cdim = dimensions[self.color_index]
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
             array = element.dimension_values(cdim)
-            clim = ranges[cdim]
+            clim = ranges[cdim.name]
         return data, array, clim
 
 
