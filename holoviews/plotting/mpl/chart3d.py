@@ -2,7 +2,7 @@ import numpy as np
 import param
 
 from ...core import Dimension
-from ...core.util import match_spec
+from ...core.util import match_spec, basestring
 from .element import ColorbarPlot
 from .chart import PointPlot
 
