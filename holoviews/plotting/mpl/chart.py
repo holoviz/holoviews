@@ -595,13 +595,14 @@ class PointPlot(ChartPlot, ColorbarPlot):
             color = style.pop('color', None)
             style['c'] = cs
             style['clim'] = ranges.get(cdim.name)
+        edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         if points.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
-                                   **style)
+                                   edgecolors=edgecolor, **style)
         self.handles['artist'] = scatterplot
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
