@@ -589,15 +589,13 @@ class PointPlot(ChartPlot, ColorbarPlot):
         if self.size_index is not None and self.size_index < ndims:
             style['s'] = self._compute_size(points, style)
 
-        color = style.pop('color', None)
-        if cs is None:
-            style['c'] = color
-        else:
-            style['c'] = cs
-        edgecolor = style.pop('edgecolors', 'none')
+        if cs is not None:
+            color = style.pop('color', None)
+            style['facecolors'] = cs
+
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
-                                   edgecolors=edgecolor, **style)
+                                   **style)
         self.handles['artist'] = scatterplot
 
         if cs is not None:
