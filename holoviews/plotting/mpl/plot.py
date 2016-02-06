@@ -1,7 +1,5 @@
 from __future__ import division
 
-from collections import defaultdict
-
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
@@ -780,8 +778,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 height_ratios = [4]
 
             if not isinstance(main_aspect, (basestring, type(None))):
-                width_ratios = [ratio * main_aspect for ratio in width_ratios]
-                height_ratios = [ratio * inv_aspect for ratio in height_ratios]
+                width_ratios = [wratio * main_aspect for wratio in width_ratios]
+                height_ratios = [hratio * inv_aspect for hratio in height_ratios]
             layout_shape = (len(width_ratios), len(height_ratios))
 
             # For each row and column record the width and height ratios
@@ -798,13 +796,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             col_widthratios[c][1].append(width_ratios)
 
 
-        col_splits = [v[0] for _, v in sorted(col_widthratios.items())]
-        row_splits = [v[0] for _, v in sorted(row_heightratios.items())]
+        col_splits = [v[0] for _c, v in sorted(col_widthratios.items())]
+        row_splits = [v[0] for _r, v in sorted(row_heightratios.items())]
 
         widths = np.array([r for col in col_widthratios.values()
                            for ratios in col[1] for r in ratios])/4
 
-        hr_unnormalized = compute_ratios(row_heightratios, False)
         wr_unnormalized = compute_ratios(col_widthratios, False)
         hr_list = compute_ratios(row_heightratios)
         wr_list = compute_ratios(col_widthratios)

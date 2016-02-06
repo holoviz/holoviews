@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout
-from .util import sanitize_identifier
+from .util import sanitize_identifier, unique_array
 
 class Overlayable(object):
     """

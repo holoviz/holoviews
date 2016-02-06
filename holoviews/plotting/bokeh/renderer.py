@@ -8,7 +8,7 @@ import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, Document
+from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
 try:

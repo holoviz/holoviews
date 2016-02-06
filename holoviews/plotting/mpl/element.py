@@ -9,7 +9,7 @@ import param
 from ...core import util
 from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement)
-from ...element import Table, ItemTable, Raster
+from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import MPLPlot
