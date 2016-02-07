@@ -5,7 +5,7 @@ from bokeh.models.mappers import LinearColorMapper
 
 from ...element import Image, Raster, RGB
 from .element import ElementPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, map_colors, get_cmap
+from .util import mplcmap_to_palette, map_colors, get_cmap, hsv_to_rgb
 
 
 class RasterPlot(ElementPlot):
@@ -101,8 +101,7 @@ class RGBPlot(RasterPlot):
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges=None, empty=False):
-        from matplotlib import colors
-        rgb = RGB(colors.hsv_to_rgb(element.data))
+        rgb = RGB(hsv_to_rgb(element.data))
         return super(HSVPlot, self).get_data(rgb, ranges, empty)
 
 

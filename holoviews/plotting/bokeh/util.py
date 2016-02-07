@@ -147,3 +147,33 @@ def models_to_json(models):
                               'type': plotobj.ref['type'],
                               'data': json})
     return json_data
+
+
+def hsv_to_rgb(hsv):
+    """
+    Vectorized HSV to RGB conversion, adapted from:
+    http://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+    """
+    h, s, v = (hsv[..., i] for i in range(3))
+    shape = h.shape
+    i = np.int_(h*6.)
+    f = h*6.-i
+
+    q = f
+    t = 1.-f
+    i = np.ravel(i)
+    f = np.ravel(f)
+    i%=6
+
+    t = np.ravel(t)
+    q = np.ravel(q)
+    s = np.ravel(s)
+    v = np.ravel(v)
+
+    clist = (1-s*np.vstack([np.zeros_like(f),np.ones_like(f),q,t]))*v
+
+    #0:v 1:p 2:q 3:t
+    order = np.array([[0,3,1],[2,0,1],[1,0,3],[1,2,0],[3,1,0],[0,1,2]])
+    rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
+
+    return rgb.reshape(shape+(3,))

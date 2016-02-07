@@ -47,6 +47,7 @@ Store.register({Overlay: OverlayPlot,
                 # Rasters
                 Image: RasterPlot,
                 RGB: RGBPlot,
+                HSV: HSVPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
@@ -88,12 +89,6 @@ Store.register({Overlay: OverlayPlot,
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
-
-try:
-    import matplotlib   # noqa (API import )
-    Store.register({HSV: HSVPlot}, 'bokeh')
-except ImportError:
-    pass
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
