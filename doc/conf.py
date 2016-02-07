@@ -29,7 +29,7 @@ release = setup_args['version']
 ASSETS_URL = 'http://assets.holoviews.org'
 
 rst_epilog = """
-.. _tutorial notebooks: {url}/Tutorials/notebooks-{version}.zip
+.. _tutorial notebooks: {url}/notebooks-{version}.zip
 """.format(url=ASSETS_URL, version=version)
 
 # Override IOAM theme
