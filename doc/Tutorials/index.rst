@@ -109,5 +109,6 @@ extend HoloViews and apply it to real world data see the `Examples
    Bokeh Backend <Bokeh_Backend>
    Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
-   Elements
+   Matplotlib Elements <Elements>
+   Bokeh Elements <Bokeh_Elements>
    Containers
