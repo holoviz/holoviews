@@ -73,8 +73,8 @@
                             var vals = {{ widget_data['vals'] }};
                             var next_vals = {{ widget_data['next_vals'] }};
                             if ({{ dynamic }} && vals.constructor === Array) {
-                                var min = vals[0];
-                                var max = vals[vals.length-1];
+                                var min = parseFloat(vals[0]);
+                                var max = parseFloat(vals[vals.length-1]);
                                 var step = {{ widget_data['step'] }};
                             } else {
                                 var min = 0;
