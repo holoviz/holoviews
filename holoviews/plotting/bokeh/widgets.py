@@ -62,7 +62,6 @@ class BokehWidget(NdWidget):
             else:
                 msg = Document._compute_patch_between_json(handle.json, to_json)
             handle._json = to_json
-            print msg
             handle.comms.send(json.dumps(msg))
 
 
