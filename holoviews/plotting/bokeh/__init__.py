@@ -74,18 +74,8 @@ Store.register({Overlay: OverlayPlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
                 NdElement: TablePlot,
-                Columns: TablePlot,
+                Columns: TablePlot},
 
-                # Wrapped mpl 3d plots
-                Surface: PlotSelector(lambda x: 'bokeh',
-                                      [('mpl', SurfacePlot),
-                                       ('bokeh', BokehMPLRawWrapper)], True),
-                Scatter3D: PlotSelector(lambda x: 'bokeh',
-                                        [('mpl', Scatter3DPlot),
-                                         ('bokeh', BokehMPLRawWrapper)], True),
-                Trisurface: PlotSelector(lambda x: 'bokeh',
-                                         [('mpl', TrisurfacePlot),
-                                          ('bokeh', BokehMPLRawWrapper)], True)},
                'bokeh')
 
 
