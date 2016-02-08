@@ -312,6 +312,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     def sanitize(self, name, valid_fn):
         "Accumulate blocks of hex and separate blocks by underscores"
+        invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
+        for cc in filter(lambda el: el in name, invalid.keys()):
+            raise Exception("Please use a raw string or escape control code '\%s'"
+                            % invalid[cc])
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
