@@ -14,7 +14,7 @@
                         <label for="textInput{{ id }}_{{ widget_data['dim'] }}">
                             <strong>{{ widget_data['dim_label'] }}:</strong>
                         </label>
-                        <div class="hololayout">
+                        <div class="holowell row row-fluid">
                             <div class="hologroup col-xs-4 span4">
                                 <input type="text" class="holotext form-control input-small"
                                        id="textInput{{ id }}_{{ widget_data['dim'] }}" value="" disabled>
@@ -146,7 +146,7 @@
 						// Slider JS Block END
                     </script>
                 {% elif widget_data['type']=='dropdown' %}
-                    <div class="form-group control-group" style='{{ widget_data['visibility'] }}'>
+                    <div class="form-group control-group holoformgroup" style='{{ widget_data['visibility'] }}'>
                         <label for="textInput{{ id }}_{{ widget_data['dim'] }}"><strong>{{ widget_data['dim_label'] }}:</strong></label>
                         <select class="holoselect form-control" id="_anim_widget{{ id }}_{{ widget_data['dim'] }}" >
                         </select>
