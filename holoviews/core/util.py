@@ -246,7 +246,6 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
-        ccmap = {'\a':unicodedata.name(u'a')}
         if unicodedata.category(c) == 'Cc': # Handle control codes
             invalid = {'\a':'a','\b':'b','\v':'v','\f':'f','\r':'r'}
             if c in invalid:
