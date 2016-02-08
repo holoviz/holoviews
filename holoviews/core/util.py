@@ -247,7 +247,9 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         substitutions and transforms.
         """
         if unicodedata.category(c) == 'Cc': # Handle control codes
-            invalid = {'\a':'a','\b':'b','\v':'v','\f':'f','\r':'r'}
+            # Note, \v, \f and \r already removed by split call in sanitize.
+            # Splitting without losing escape codes is non-trivial
+            invalid = {'\a':'a','\b':'b'}
             if c in invalid:
                 raise Exception("Please use a raw string or escape control code '\%s'"
                                 % invalid[c])
