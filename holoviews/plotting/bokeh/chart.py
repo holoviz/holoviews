@@ -8,7 +8,7 @@ from ...core.util import max_range, basestring
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap, mpl_to_bokeh
+from .util import map_colors, get_cmap, mpl_to_bokeh, update_plot
 
 
 class PointPlot(ElementPlot):
@@ -416,28 +416,7 @@ class ChartPlot(ElementPlot):
     def _update_chart(self, key, element, ranges):
         new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
-        old_renderers = old_chart.select(type=GlyphRenderer)
-        new_renderers = new_chart.select(type=GlyphRenderer)
-
-        old_chart.y_range.update(**new_chart.y_range.properties_with_values())
-        updated = []
-        for new_r in new_renderers:
-            for old_r in old_renderers:
-                if type(old_r.glyph) == type(new_r.glyph):
-                    old_renderers.pop(old_renderers.index(old_r))
-                    new_props = new_r.properties_with_values()
-                    source = new_props.pop('data_source')
-                    old_r.glyph.update(**new_r.glyph.properties_with_values())
-                    old_r.update(**new_props)
-                    old_r.data_source.data.update(source.data)
-                    updated.append(old_r)
-                    break
-
-        for old_r in old_renderers:
-            if old_r not in updated:
-                emptied = {k: [] for k in old_r.data_source.data}
-                old_r.data_source.data.update(emptied)
-
+        update_plot(old_chart, new_chart)
         properties = self._plot_properties(key, old_chart, element)
         old_chart.update(**properties)
 

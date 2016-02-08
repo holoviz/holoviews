@@ -22,7 +22,7 @@ from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
 from .renderer import bokeh_lt_011
-from .util import mpl_to_bokeh, convert_datetime
+from .util import mpl_to_bokeh, convert_datetime, update_plot
 
 
 # Define shared style properties for bokeh plots
@@ -538,16 +538,43 @@ class BokehMPLWrapper(ElementPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         self.mplplot.initialize_plot(ranges)
-        plot = mpl.to_bokeh(self.mplplot.state)
+
+        plot = plot if plot else self.handles.get('plot')
+        new_plot = mpl.to_bokeh(self.mplplot.state)
+        if plot:
+            update_plot(plot, new_plot)
+        else:
+            plot = new_plot
+
         self.handles['plot'] = plot
+        if not self.overlaid:
+            self._update_plot(self.keys[-1], plot, self.hmap.last)
         return plot
 
 
-    def update_frame(self, key, ranges=None):
-        if key in self.hmap:
-            self.mplplot.update_frame(key, ranges)
-            self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
+    def _update_plot(self, key, plot, element=None):
+        """
+        Updates plot parameters on every frame
+        """
+        plot.set(**self._plot_properties(key, plot, element))
+        props = {axis: self._axis_properties(axis, key, plot, element)
+                 for axis in ['x', 'y']}
 
+
+    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
+        self.mplplot.update_frame(key, ranges)
+
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        plot = mpl.to_bokeh(self.mplplot.state)
+        update_plot(self.handles['plot'], plot)
+        if not self.overlaid:
+            self._update_plot(key, self.handles['plot'], element)
 
 
 class BokehMPLRawWrapper(BokehMPLWrapper):
