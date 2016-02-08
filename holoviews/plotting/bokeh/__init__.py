@@ -1,3 +1,5 @@
+import numpy as np
+
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
