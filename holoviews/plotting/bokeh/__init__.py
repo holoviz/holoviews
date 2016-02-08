@@ -1,3 +1,5 @@
+import numpy as np
+
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
@@ -72,18 +74,8 @@ Store.register({Overlay: OverlayPlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
                 NdElement: TablePlot,
-                Columns: TablePlot,
+                Columns: TablePlot},
 
-                # Wrapped mpl 3d plots
-                Surface: PlotSelector(lambda x: 'bokeh',
-                                      [('mpl', SurfacePlot),
-                                       ('bokeh', BokehMPLRawWrapper)], True),
-                Scatter3D: PlotSelector(lambda x: 'bokeh',
-                                        [('mpl', Scatter3DPlot),
-                                         ('bokeh', BokehMPLRawWrapper)], True),
-                Trisurface: PlotSelector(lambda x: 'bokeh',
-                                         [('mpl', TrisurfacePlot),
-                                          ('bokeh', BokehMPLRawWrapper)], True)},
                'bokeh')
 
 
@@ -109,6 +101,7 @@ except ImportError:
     pass
 
 
+point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
@@ -116,11 +109,12 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), size=point_size)
+options.Points = Options('style', color=Cycle(), size=point_size)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
-options.Points = Options('style', color=Cycle())
+
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')
 

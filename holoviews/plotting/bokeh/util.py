@@ -15,6 +15,8 @@ except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
     bokeh_lt_011 = False
+
+from bokeh.models import GlyphRenderer
 from bokeh.plotting import Figure
 
 # Conversion between matplotlib and bokeh markers
@@ -177,3 +179,35 @@ def hsv_to_rgb(hsv):
     rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
 
     return rgb.reshape(shape+(3,))
+
+
+def update_plot(old, new):
+    """
+    Updates an existing plot or figure with a new plot,
+    useful for bokeh charts and mpl conversions, which do
+    not allow updating an existing plot easily.
+
+    ALERT: Should be replaced once bokeh supports it directly
+    """
+    old_renderers = old.select(type=GlyphRenderer)
+    new_renderers = new.select(type=GlyphRenderer)
+
+    old.x_range.update(**new.x_range.properties_with_values())
+    old.y_range.update(**new.y_range.properties_with_values())
+    updated = []
+    for new_r in new_renderers:
+        for old_r in old_renderers:
+            if type(old_r.glyph) == type(new_r.glyph):
+                old_renderers.pop(old_renderers.index(old_r))
+                new_props = new_r.properties_with_values()
+                source = new_props.pop('data_source')
+                old_r.glyph.update(**new_r.glyph.properties_with_values())
+                old_r.update(**new_props)
+                old_r.data_source.data.update(source.data)
+                updated.append(old_r)
+                break
+
+    for old_r in old_renderers:
+        if old_r not in updated:
+            emptied = {k: [] for k in old_r.data_source.data}
+            old_r.data_source.data.update(emptied)
