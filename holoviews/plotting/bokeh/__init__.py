@@ -101,6 +101,7 @@ except ImportError:
     pass
 
 
+point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
@@ -108,11 +109,12 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle(), size=np.sqrt(6))
+options.Scatter = Options('style', color=Cycle(), size=point_size)
+options.Points = Options('style', color=Cycle(), size=point_size)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
-options.Points = Options('style', color=Cycle(), size=np.sqrt(6))
+
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')
 

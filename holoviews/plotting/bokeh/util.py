@@ -186,6 +186,8 @@ def update_plot(old, new):
     Updates an existing plot or figure with a new plot,
     useful for bokeh charts and mpl conversions, which do
     not allow updating an existing plot easily.
+
+    ALERT: Should be replaced once bokeh supports it directly
     """
     old_renderers = old.select(type=GlyphRenderer)
     new_renderers = new.select(type=GlyphRenderer)
