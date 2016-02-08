@@ -69,7 +69,7 @@ class PointPlot(ElementPlot):
             if empty:
                 data[map_key] = []
             else:
-                ms = style.get('size', 1)
+                ms = style.get('size', np.sqrt(6))**2
                 sizes = element.dimension_values(self.size_index)
                 data[map_key] = np.sqrt(compute_sizes(sizes, self.size_fn,
                                                       self.scaling_factor,
