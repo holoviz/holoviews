@@ -246,7 +246,14 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
-        name = unicodedata.name(c).lower()
+        ccmap = {'\a':unicodedata.name(u'a')}
+        if unicodedata.category(c) == 'Cc': # Handle control codes
+            invalid = {'\a':'a','\b':'b','\v':'v','\f':'f','\r':'r'}
+            if c in invalid:
+                raise Exception("Please use a raw string or escape control code '\%s'"
+                                % invalid[c])
+        else:
+            name = unicodedata.name(c).lower()
         # Filtering
         for elim in eliminations:
             name = name.replace(elim, '')
