@@ -246,15 +246,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         (as a list of tokens) by applying the eliminations,
         substitutions and transforms.
         """
-        if unicodedata.category(c) == 'Cc': # Handle control codes
-            # Note, \v, \f and \r already removed by split call in sanitize.
-            # Splitting without losing escape codes is non-trivial
-            invalid = {'\a':'a','\b':'b'}
-            if c in invalid:
-                raise Exception("Please use a raw string or escape control code '\%s'"
-                                % invalid[c])
-        else:
-            name = unicodedata.name(c).lower()
+        name = unicodedata.name(c).lower()
         # Filtering
         for elim in eliminations:
             name = name.replace(elim, '')
@@ -320,6 +312,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     def sanitize(self, name, valid_fn):
         "Accumulate blocks of hex and separate blocks by underscores"
+        invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
+        for cc in filter(lambda el: el in name, invalid.keys()):
+            raise Exception("Please use a raw string or escape control code '\%s'"
+                            % invalid[cc])
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
