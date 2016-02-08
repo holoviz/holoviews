@@ -46,11 +46,12 @@ class BokehWidget(NdWidget):
         if self.embed or fig_format == 'html' or bokeh_lt_011:
             return self.renderer.html(self.plot, fig_format)
         else:
-            doc = state.document
+            doc = self.plot.document
 
             if hasattr(doc, 'last_comms_handle'):
                 handle = doc.last_comms_handle
             else:
+                doc.add_root(self.plot.state)
                 handle = _CommsHandle(get_comms(doc.last_comms_target),
                                       doc, doc.to_json())
                 doc.last_comms_handle = handle
@@ -61,6 +62,7 @@ class BokehWidget(NdWidget):
             else:
                 msg = Document._compute_patch_between_json(handle.json, to_json)
             handle._json = to_json
+            print msg
             handle.comms.send(json.dumps(msg))
 
 

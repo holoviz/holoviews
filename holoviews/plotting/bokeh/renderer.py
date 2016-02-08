@@ -75,6 +75,7 @@ class BokehRenderer(Renderer):
                 comms_target = str(uuid.uuid4())
                 doc.last_comms_target = comms_target
                 div = notebook_div(plot.state, comms_target)
+            plot.document = doc
             return div
         else:
             return notebook_div(plot.state)
