@@ -241,14 +241,14 @@ class SelectionWidget(NdWidget):
 
     def get_widgets(self):
         # Generate widget data
-        widgets = []
-        dimensions = []
-        init_dim_vals = []
+        widgets, dimensions, init_dim_vals = [], [], []
         hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
             step = 1
             next_dim = ''
-            visible = True
+            visible = False
+            if not idx or any(len(v) > 1 for v in hierarchy[idx-1].values()):
+                visible = True
             next_vals = {}
             if self.plot.dynamic:
                 if dim.values:
@@ -288,12 +288,12 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-                visible = len(dim_vals) > 1
+                visible = visible and len(dim_vals) > 1
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
             next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
             dim_str = safe_unicode(dim.name)
-            visibility = 'height: visible' if visible else 'visibility: hidden; height: 0px;'
+            visibility = '' if visible else 'display: none'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
