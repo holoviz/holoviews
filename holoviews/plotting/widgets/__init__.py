@@ -20,13 +20,26 @@ def isnumeric(val):
     except:
         return False
 
-def escape_vals(vals):
+def escape_vals(vals, escape_numerics=True):
     """
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    return ["'"+unicode(safe_unicode(v))+"'" if not isnumeric(v) else
-            ("'%.1f'" % v if v % 1 == 0 else "'%.10f'" % v) for v in vals]
+    if escape_numerics:
+        ints, floats = "'%.1f'", "'%.10f'"
+    else:
+        ints, floats = "%.1f", "%.10f"
+
+    escaped = []
+    for v in vals:
+        if not isnumeric(v):
+            v = "'"+unicode(safe_unicode(v))+"'"
+        elif v % 1 == 0:
+            v = ints % v
+        else:
+            v = floats % v
+        escaped.append(v)
+    return escaped
 
 def escape_tuple(vals):
     return "(" + ", ".join(vals) + (",)" if len(vals) == 1 else ")")
@@ -300,7 +313,7 @@ class SelectionWidget(NdWidget):
                                next_vals=next_vals)
             widgets.append(widget_data)
             dimensions.append(dim_str)
-        init_dim_vals = escape_list(escape_vals(init_dim_vals))
+        init_dim_vals = escape_list(escape_vals(init_dim_vals, self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
 
