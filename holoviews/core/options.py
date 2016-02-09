@@ -54,6 +54,14 @@ class BackendError(Exception):
     """
     pass
 
+class SkipRendering(Exception):
+    """
+    A SkipRendering exception in the plotting code will make the display
+    hooks fall back to a text repr. Used to skip rendering of
+    DynamicMaps with exhausted element generators.
+    """
+    pass
+
 class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
