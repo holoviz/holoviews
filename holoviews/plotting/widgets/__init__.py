@@ -254,15 +254,20 @@ class SelectionWidget(NdWidget):
 
     def get_widgets(self):
         # Generate widget data
+        step = 1
         widgets, dimensions, init_dim_vals = [], [], []
         hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
-            step = 1
             next_dim = ''
-            visible = False
-            if not idx or any(len(v) > 1 for v in hierarchy[idx-1].values()):
-                visible = True
             next_vals = {}
+
+            # Hide widget if it has 1-to-1 mapping to next widget
+            visible = False
+            dim_nesting = hierarchy[idx-1].values()
+            many_to_one = any(len(v) > 1 for v in dim_nesting)
+            if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
+                visible = True
+
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
@@ -273,11 +278,13 @@ class SelectionWidget(NdWidget):
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
-                    dim_vals = list(dim.range)
-                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     widget_type = 'slider'
+                    dim_vals = list(dim.range)
                     dim_range = dim_vals[1] - dim_vals[0]
-                    if not isinstance(dim_range, int) or int_type:
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
+                    if isinstance(dim_range, int) or int_type:
+                        step = 1
+                    else:
                         step = 10**(round(math.log10(dim_range))-3)
                     init_dim_vals.append(dim_vals[0])
                     dim_vals = escape_list(escape_vals(dim_vals))
@@ -292,28 +299,33 @@ class SelectionWidget(NdWidget):
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
+
                 if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
-                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v for v in vals]
+                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
+                                                    for v in vals]
                                      for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
                 visible = visible and len(dim_vals) > 1
+
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
-            next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
-            dim_str = safe_unicode(dim.name)
+                next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
+
             visibility = '' if visible else 'display: none'
+            dim_str = safe_unicode(dim.name)
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
                                next_vals=next_vals)
+
             widgets.append(widget_data)
             dimensions.append(dim_str)
-        init_dim_vals = escape_list(escape_vals(init_dim_vals, self.plot.dynamic))
+        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
 
