@@ -34,6 +34,11 @@ in this order:
   data, and how to apply operations to transform the data into 
   complex visualizations easily.
 
+* `Dynamic Map: <Dynamic_Map.html>`_
+  How to work with datasets larger than the available memory by
+  computing elements on-the-fly. Using DynamicMap you can immediately
+  begin exploring huge volumes of data while keeping interaction
+  responsive and without running out of memory.
 
 Supplementary Tutorials
 ------------------------
