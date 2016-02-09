@@ -2,7 +2,8 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store)
-from ..core.util import match_spec, is_number, wrap_tuple, get_overlay_spec
+from ..core.util import (match_spec, is_number, wrap_tuple,
+                         get_overlay_spec, unique_iterator)
 
 
 def displayable(obj):
@@ -133,6 +134,10 @@ def get_dynamic_mode(composite):
     "Returns the common mode of the dynamic maps in given composite object"
     dynmaps = composite.traverse(lambda x: x, [DynamicMap])
     holomaps = composite.traverse(lambda x: x, ['HoloMap'])
+    holomap_kdims = unique_iterator([kd for dm in holomaps for kd in dm.kdims])
+    if holomaps and any(not set(dm.kdims) < set(holomap_kdims) for dm in dynmaps):
+        raise Exception('In sampled mode DynamicMap key dimensions must be a '
+                        'subset of dimensions of the HoloMap(s) defining the sampling.')
     dynamic_modes = [m.call_mode for m in dynmaps]
     dynamic_sampled = any(m.sampled for m in dynmaps)
     if len(set(dynamic_modes)) > 1:
