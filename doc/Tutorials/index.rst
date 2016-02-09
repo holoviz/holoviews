@@ -102,6 +102,7 @@ extend HoloViews and apply it to real world data see the `Examples
    Exploring Data <Exploring_Data>
    Sampling Data <Sampling_Data>
    Columnar Data <Columnar_Data>
+   Dynamic Map <Dynamic_Map>
    Options
    Exporting
    Continuous Coordinates <Continuous_Coordinates>
