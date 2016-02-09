@@ -7,7 +7,7 @@ import sys, traceback, inspect, io
 import IPython
 from IPython.core.ultratb import AutoFormattedTB
 
-from ..core.options import Store, StoreOptions, BackendError
+from ..core.options import Store, StoreOptions, BackendError, SkipRendering
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -109,6 +109,9 @@ def display_hook(fn):
                 Store.renderers[Store.current_backend].save(element, filename)
 
             return html
+        except SkipRendering as e:
+            sys.stderr.write("Rendering process skipped: %s" % str(e))
+            return None
         except Exception as e:
             try:
                 StoreOptions.state(element, state=optstate)

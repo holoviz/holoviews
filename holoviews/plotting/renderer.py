@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, SkipRendering
 from ..core.util import find_file
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
@@ -163,7 +163,10 @@ class Renderer(Exporter):
             if dmap.call_mode == 'key':
                 dmap[dmap._initial_key()]
             else:
-                next(dmap)
+                try:
+                    next(dmap)
+                except StopIteration: # Exhausted DynamicMap
+                    raise SkipRendering("DynamicMap generator exhausted.")
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
