@@ -53,27 +53,27 @@ class DynamicTestCallableOpen(ComparisonTestCase):
 
 
 
-class DynamicTestCallableClosed(ComparisonTestCase):
+class DynamicTestCallableBounded(ComparisonTestCase):
 
-    def test_callable_closed_init(self):
+    def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertEqual(dmap.mode, 'closed')
+        self.assertEqual(dmap.mode, 'bounded')
 
-    def test_generator_closed_clone(self):
+    def test_generator_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
 
 
-class DynamicTestSampledClosed(ComparisonTestCase):
+class DynamicTestSampledBounded(ComparisonTestCase):
 
-    def test_sampled_closed_init(self):
+    def test_sampled_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
-        self.assertEqual(dmap.mode, 'closed')
+        self.assertEqual(dmap.mode, 'bounded')
 
-    def test_sampled_closed_resample(self):
+    def test_sampled_bounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
         self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])

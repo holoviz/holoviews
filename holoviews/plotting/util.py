@@ -163,9 +163,9 @@ def get_dynamic_mode(composite):
                         "a HoloMap to define the sampling.")
     if len(set(dynamic_modes)) > 1:
         raise Exception("Cannot display composites of DynamicMap objects "
-                        "with different interval modes (i.e open or closed mode).")
+                        "with different interval modes (i.e open or bounded mode).")
     elif dynamic_modes and not holomaps:
-        return 'closed' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
+        return 'bounded' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
     else:
         return None, dynamic_sampled
 
