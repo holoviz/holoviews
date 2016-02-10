@@ -6,6 +6,9 @@ in the recent 1.4.2 release.
 
 Fixes and improvements:
 
+* Fixed plotting bokeh plots using widgets in live mode, after changes
+  introduced in latest bokeh version (commit `1b87c91e9
+  <https://github.com/ioam/holoviews/commit/1b87c91e9e7cf35b267344ccd4a2fa91dd052890>`_).
 * Added a DynamicMap Tutorial to explain how to explore very large or
   continuous parameter spaces in HoloViews (`PR #470
   <https://github.com/ioam/holoviews/issues/470>`_).
@@ -18,7 +21,7 @@ Fixes and improvements:
   (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_)
 * Widgets containing matplotlib plots now display the first frame from
   cache providing at least the initial frame when exporting DynamicMaps
-  (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_, )
+  (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_)
 
 Backwards compatility:
 
