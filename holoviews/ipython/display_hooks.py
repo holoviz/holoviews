@@ -130,13 +130,12 @@ def display_hook(fn):
                                 message=str(e).replace('\n','<br>'))
                     msg ='<i> [Call ipython.show_traceback() for details]</i>'
                     return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
-                else:
-                    traceback.print_exc()
             except:
                 FULL_TRACEBACK = traceback.format_exc()
                 msg = ('<i>Error catching exception:</i> %r <br>'
                        'Call ipython.show_traceback() for details')
                 return msg % e
+            raise e
 
     return wrapped
 
