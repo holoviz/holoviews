@@ -1,3 +1,36 @@
+Version 1.4.3
+-------------
+
+A minor bugfix release to patch a number of small but important issues
+in the recent 1.4.2 release.
+
+Fixes and improvements:
+
+* Added a DynamicMap Tutorial to explain how to explore very large or
+  continuous parameter spaces in HoloViews (`PR #470
+  <https://github.com/ioam/holoviews/issues/470>`_).
+* Fixed issue in coloring Point/Scatter objects by values (`Issue #467
+  <https://github.com/ioam/holoviews/issues/467>`_).
+* Various fixes and improvements for DynamicMaps including slicing
+  (`PR #488 <https://github.com/ioam/holoviews/issues/488>`_) and
+  validation (`PR #483
+  <https://github.com/ioam/holoviews/issues/478>`_) and serialization
+  (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_)
+* Widgets containing matplotlib plots now display the first frame from
+  cache providing at least the initial frame when exporting DynamicMaps
+  (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_, )
+
+Backwards compatility:
+
+* The behavior of the ``scaling_factor`` on Point and Scatter plots has
+  changed now simply multiplying ``area`` or ``width`` (as defined by
+  the ``scaling_method``). To disable scaling points by a dimension
+  set ``size_index=None``.
+* Removed hooks to display 3D Elements using the ``BokehMPLRawWrapper``
+  in bokeh (`PR #477 <https://github.com/ioam/holoviews/pull/477>`_)
+* Renamed the DynamicMap mode ``closed`` to ``bounded`` (`PR #477 <https://github.com/ioam/holoviews/pull/485>`_)
+
+
 Version 1.4.2
 -------------
 
