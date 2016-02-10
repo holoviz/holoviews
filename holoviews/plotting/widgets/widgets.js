@@ -2,28 +2,17 @@ function HoloViewsWidget(){
 }
 
 HoloViewsWidget.prototype.init_slider = function(init_val){
-    if(this.cached) {
-        this.update_cache();
-        this.update(0);
-    } else {
-        this.dynamic_update(0);
-    }
+	if(this.load_json) {
+		this.from_json()
+	} else {
+		this.update_cache();
+	}
 }
 
 HoloViewsWidget.prototype.populate_cache = function(idx){
-    if(this.load_json) {
-		var data_url = "./" + this.id + '.json';
-		$.getJSON(data_url, $.proxy(function(json_data) {
-			this.frames = json_data;
-			$.each(this.frames, $.proxy(function(index, frame) {
-				this.cache[index].html(frame);
-			}, this));
-		}, this));
-    } else {
-        this.cache[idx].html(this.frames[idx]);
-        if (this.embed) {
-            delete this.frames[idx];
-        }
+    this.cache[idx].html(this.frames[idx]);
+    if (this.embed) {
+        delete this.frames[idx];
     }
 }
 
@@ -31,7 +20,14 @@ HoloViewsWidget.prototype.process_error = function(msg){
 
 }
 
-
+HoloViewsWidget.prototype.from_json = function() {
+	var data_url = this.json_path + this.id + '.json';
+	$.getJSON(data_url, $.proxy(function(json_data) {
+		this.frames = json_data;
+		this.update_cache();
+		this.update(0);
+	}, this));
+}
 
 HoloViewsWidget.prototype.dynamic_update = function(current){
     function callback(msg){
@@ -54,7 +50,7 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 
 HoloViewsWidget.prototype.update_cache = function(){
     if(this.load_json) {
-        var frame_len = Object.keys(this.keyMap).length;
+	    var frame_len = Object.keys(this.keyMap).length;
     } else {
         var frame_len = Object.keys(this.frames).length;
     }

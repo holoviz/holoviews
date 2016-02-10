@@ -14,7 +14,11 @@ MPLScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 // Define methods to override on widgets
 var MPLMethods = {
 	init_slider : function(init_val){
-		this.update_cache();
+		if(this.load_json) {
+			this.from_json()
+		} else {
+			this.update_cache();
+		}
 		this.update(0);
 		if(this.mode == 'nbagg') {
 			this.set_frame(init_val, 0);
@@ -22,21 +26,13 @@ var MPLMethods = {
 	},
 	populate_cache : function(idx){
 		var cache_id = this.img_id+"_"+idx;
-		if(this.load_json) {
-			var data_url = this.json_path + '/' + this.id + '.json';
-			$.getJSON(data_url, $.proxy(function(json_data) {
-				if(this.mode == 'mpld3') {
-					mpld3.draw_figure(cache_id, json_data[idx]);
-				} else {
-					this.cache[idx].html(json_data[idx]);
-				}
-			}, this));
+		if(this.mode == 'mpld3') {
+			mpld3.draw_figure(cache_id, this.frames[idx]);
 		} else {
-			if(this.mode == 'mpld3') {
-				mpld3.draw_figure(cache_id, this.frames[idx]);
-			} else {
-				this.cache[idx].html(this.frames[idx]);
-			}
+			this.cache[idx].html(this.frames[idx]);
+		}
+		if (this.embed) {
+			delete this.frames[idx];
 		}
 	},
 	dynamic_update : function(current){

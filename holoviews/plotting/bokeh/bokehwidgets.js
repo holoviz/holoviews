@@ -13,20 +13,10 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 
 // Define methods to override on widgets
 var BokehMethods = {
-	init_slider : function(init_val){
-		if(this.load_json) {
-			var data_url = this.json_path + '/' + this.id + '.json';
-			$.getJSON(data_url, $.proxy(function(json_data) {
-				this.frames = json_data;
-				$.each(this.frames, $.proxy(function(index, frame) {
-					this.frames[index] = JSON.parse(frame);
-				}, this));
-			}, this));
-		} else {
-			$.each(this.frames, $.proxy(function(index, frame) {
-				this.frames[index] = JSON.parse(frame);
-			}, this));
-		}
+	update_cache : function(){
+		$.each(this.frames, $.proxy(function(index, frame) {
+			this.frames[index] = JSON.parse(frame);
+		}, this));
 	},
 	update : function(current){
 		if (current === undefined) {
