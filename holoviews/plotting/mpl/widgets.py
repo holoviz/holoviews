@@ -94,7 +94,7 @@ class MPLWidget(NdWidget):
             self.manager.display_js()
             frames = {0: self.comm.html}
         elif self.embed:
-            frames = super(MPLWidget, self).get_frames()
+            return super(MPLWidget, self).get_frames()
         else:
             frames = {0: self._plot_figure(0)}
         return self.encode_frames(frames)
