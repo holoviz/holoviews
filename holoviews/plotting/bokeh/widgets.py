@@ -42,7 +42,7 @@ class BokehWidget(NdWidget):
         Returns the figure in html format on the
         first call and
         """
-        state = self.plot.update(idx)
+        self.plot.update(idx)
         if self.embed or fig_format == 'html' or bokeh_lt_011:
             return self.renderer.html(self.plot, fig_format)
         else:

@@ -557,9 +557,6 @@ class BokehMPLWrapper(ElementPlot):
         Updates plot parameters on every frame
         """
         plot.set(**self._plot_properties(key, plot, element))
-        props = {axis: self._axis_properties(axis, key, plot, element)
-                 for axis in ['x', 'y']}
-
 
     def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
         self.mplplot.update_frame(key, ranges)

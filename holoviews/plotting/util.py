@@ -1,7 +1,7 @@
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, Store, NdMapping)
+                    GridSpace, NdLayout, Store)
 from ..core.util import (match_spec, is_number, wrap_tuple,
                          get_overlay_spec, unique_iterator)
 
