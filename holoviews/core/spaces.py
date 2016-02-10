@@ -558,9 +558,9 @@ class DynamicMap(HoloMap):
         cloned = self.clone(self)
         for i, slc in enumerate(tuple_key):
             (start, stop) = slc.start, slc.stop
-            if start and start < cloned.kdims[i].range[0]:
+            if start is not None and start < cloned.kdims[i].range[0]:
                 raise Exception("Requested slice below defined dimension range.")
-            if stop and stop > cloned.kdims[i].range[1]:
+            if stop is not None and stop > cloned.kdims[i].range[1]:
                 raise Exception("Requested slice above defined dimension range.")
             cloned.kdims[i].soft_range = (start, stop)
         return cloned
