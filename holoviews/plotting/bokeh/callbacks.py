@@ -4,11 +4,9 @@ import numpy as np
 from bokeh.models import CustomJS, TapTool, ColumnDataSource
 
 try:
-    from bokeh.models import PlotObject
     from bokeh.protocol import serialize_json
     bokeh_lt_011 = True
 except ImportError:
-    from bokeh.models import Component as PlotObject
     from bokeh.core.json_encoder import serialize_json
     bokeh_lt_011 = False
 
@@ -38,7 +36,7 @@ class Callback(param.ParameterizedFunction):
     apply_on_update = param.Boolean(default=False, doc="""
         Whether the callback is applied when the plot is updated""")
 
-    callback_obj = param.ClassSelector(class_=(PlotObject,), doc="""
+    callback_obj = param.Parameter(doc="""
         Bokeh PlotObject the callback is applied to.""")
 
     cb_attributes = param.List(default=[], doc="""
@@ -153,11 +151,11 @@ class Callback(param.ParameterizedFunction):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
-        data = dict(data=[])
+        data = dict(data=models_to_json(objects))
         if not bokeh_lt_011:
-            plot = self.plot[0]
+            plot = self.plots[0]
             data['root'] = plot.state._id
-        return serialize_json(models_to_json(objects))
+        return serialize_json(data)
 
 
 
@@ -365,15 +363,17 @@ class Callbacks(param.Parameterized):
 
     def _get_data(self, pycallback, plot):
         data = {}
+        plot_data = models_to_json([plot.state])[0]
         for k, v in pycallback.plot_attributes.items():
             if v is None:
-                data[k] = plot.state.vm_props().get(k)
+                data[k] = plot_data.get(k)
             else:
-                data[k] = [plot.state.vm_props().get(k).vm_props().get(attr)
-                           for attr in v]
+                obj = getattr(plot.state, k)
+                obj_data = models_to_json([obj])[0]
+                data[k] = [obj_data.get(attr) for attr in v]
         if pycallback.cb_attributes:
-            data['cb_obj'] = [pycallback.callback_obj.vm_props().get(attr)
-                              for attr in pycallback.cb_attributes]
+            cb_data = models_to_json([pycallback.callback_obj])[0]
+            data['cb_obj'] = [cb_data.get(attr) for attr in pycallback.cb_attributes]
         return data
 
     def _chain_callbacks(self, plot, cb_obj, callbacks):

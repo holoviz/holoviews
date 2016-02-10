@@ -15,7 +15,7 @@ project = u'HoloViews'
 authors = u'IOAM: Jean-Luc R. Stevens, Philipp Rudiger, and James A. Bednar'
 copyright = u'2015 ' + authors
 ioam_module = 'holoviews'
-description = 'Composable, declarative data structures for building even complex visualizations easily'
+description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -26,11 +26,11 @@ version = setup_args['version']
 # The full version, including alpha/beta/rc tags.
 release = setup_args['version']
 
+ASSETS_URL = 'http://assets.holoviews.org'
 
 rst_epilog = """
-.. _zip archive: notebooks-{version}.zip
-.. _tutorial notebooks: Tutorials/notebooks-{version}.zip
-""".format(version=version)
+.. _tutorial notebooks: {url}/notebooks-{version}.zip
+""".format(url=ASSETS_URL, version=version)
 
 # Override IOAM theme
 import sphinx_rtd_theme
@@ -90,12 +90,17 @@ intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ipython.org/ipython-doc/2/': None,
                        'http://ioam.github.io/param/': None}
 
+js_includes = ['require.js', 'bootstrap.js', 'custom.js', 'js/theme.js']
+
 from builder.paramdoc import param_formatter
 from nbpublisher import nbbuild
 
 
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
+    for js in js_includes:
+        app.add_javascript(js)
+
     try:
         import runipy # noqa (Warning import)
         nbbuild.setup(app)

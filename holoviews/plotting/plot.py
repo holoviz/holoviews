@@ -21,6 +21,14 @@ from ..element import Table
 from .util import get_dynamic_mode, initialize_sampled
 
 
+class BackendError(Exception):
+
+    def __init__(self, backend):
+        msg = "%s backend could not plot supplied object." % backend
+        super(BackendError, self).__init__(msg)
+        self.backend = backend
+
+
 class Plot(param.Parameterized):
     """
     Base class of all Plot classes in HoloViews, designed to be
@@ -142,11 +150,16 @@ class DimensionedPlot(Plot):
        You can set the fontsize of both 'ylabel' and 'xlabel' together
        using the 'labels' key.""")
 
+    #Allowed fontsize keys
+    _fontsize_keys = ['xlabel','ylabel', 'labels', 'ticks',
+                      'title', 'legend', 'legend_title']
+
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
 
-    title_format = param.String(default="{label} {group}", doc="""
-        The formatting string for the title of this plot.""")
+    title_format = param.String(default="{label} {group}\n{dimensions}", doc="""
+        The formatting string for the title of this plot, allows defining
+        a label group separator and dimension labels.""")
 
     normalize = param.Boolean(default=True, doc="""
         Whether to compute ranges across all Elements at this level
@@ -256,11 +269,13 @@ class DimensionedPlot(Plot):
 
 
     def _fontsize(self, key, label='fontsize', common=True):
-        """
-        To be used as kwargs e.g: **self._fontsize('title')
-        """
-        if not self.fontsize:
-            return {}
+        if not self.fontsize: return {}
+        unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
+        if unknown_keys:
+            msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
+            self.warning(msg %  (list(unknown_keys), self._fontsize_keys))
+            for key in unknown_keys: self.fontsize.pop(key, None)
+
         if isinstance(self.fontsize, dict):
             if key in self.fontsize:
                 return {label:self.fontsize[key]}
@@ -502,7 +517,9 @@ class GenericElementPlot(DimensionedPlot):
             return self.current_frame
         elif self.dynamic:
             if isinstance(key, tuple):
-                frame = self.hmap[key]
+                dims = {d.name: k for d, k in zip(self.dimensions, key)
+                        if d in self.hmap.kdims}
+                frame = self.hmap.select(**dims)
             elif key < self.hmap.counter:
                 key = self.hmap.keys()[key]
                 frame = self.hmap[key]
@@ -600,11 +617,11 @@ class GenericElementPlot(DimensionedPlot):
         else:
             dims = view.dimensions()
         if dims and xlabel is None:
-            xlabel = util.safe_unicode(str(dims[0]))
+            xlabel = util.safe_unicode(dims[0].pprint_label)
         if len(dims) >= 2 and ylabel is None:
-            ylabel = util.safe_unicode(str(dims[1]))
+            ylabel = util.safe_unicode(dims[1].pprint_label)
         if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = util.safe_unicode(str(dims[2]))
+            zlabel = util.safe_unicode(dims[2].pprint_label)
         return xlabel, ylabel, zlabel
 
 
@@ -614,20 +631,17 @@ class GenericElementPlot(DimensionedPlot):
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
+
+        dim_title = self._frame_title(key, separator=separator)
         if self.layout_dimensions:
-            title = ''
+            title = dim_title
         else:
             title_format = util.safe_unicode(self.title_format)
             title = title_format.format(label=util.safe_unicode(label),
                                         group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, separator=separator)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return separator.join([title, dim_title])
+                                        type=type_name,
+                                        dimensions=dim_title)
+        return title.strip(' \n')
 
 
     def update_frame(self, key, ranges=None):
@@ -729,18 +743,22 @@ class GenericOverlayPlot(GenericElementPlot):
             opts = {}
             if overlay_type == 2:
                 opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
+            if issubclass(plottype, GenericOverlayPlot):
+                opts['show_legend'] = self.show_legend
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform, show_legend=self.show_legend,
+                            uniform=self.uniform,
                             **{k: v for k, v in self.handles.items() if k in self._passed_handles})
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
             if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
+        if not subplots:
+            raise BackendError(self.renderer.backend)
 
         return subplots
 
@@ -765,29 +783,6 @@ class GenericOverlayPlot(GenericElementPlot):
                     sp_ranges = util.match_spec(layer, ranges) if ranges else {}
                 extents.append(subplot.get_extents(layer, sp_ranges))
         return util.max_extents(extents, self.projection == '3d')
-
-
-    def _format_title(self, key, separator='\n'):
-        frame = self._get_frame(key)
-        if frame is None: return None
-
-        type_name = type(frame).__name__
-        group = frame.group if frame.group != type_name else ''
-        label = frame.label
-        if self.layout_dimensions:
-            title = ''
-        else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
-                                        type=type_name)
-        dim_title = self._frame_title(key, 2)
-        if not title or title.isspace():
-            return dim_title
-        elif not dim_title or dim_title.isspace():
-            return title
-        else:
-            return separator.join([title, dim_title])
 
 
 
@@ -849,15 +844,9 @@ class GenericCompositePlot(DimensionedPlot):
         label = util.safe_unicode(layout.label)
         title = util.safe_unicode(self.title_format).format(label=label,
                                                             group=group,
-                                                            type=type_name)
-        title = '' if title.isspace() else title
-        if not title:
-            return dim_title
-        elif not dim_title:
-            return title
-        else:
-            return separator.join([title, dim_title])
-
+                                                            type=type_name,
+                                                            dimensions=dim_title)
+        return title.strip(' \n')
 
 
 class GenericLayoutPlot(GenericCompositePlot):

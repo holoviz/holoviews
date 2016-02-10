@@ -1,23 +1,25 @@
+import numpy as np
+
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, NdElement, Columns, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Surface, Scatter3D, Trisurface)
+                        Table, ItemTable, Area, HSV)
 from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
-from ..mpl import SurfacePlot, Scatter3DPlot, TrisurfacePlot
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callbacks # noqa (API import)
-from .element import OverlayPlot, BokehMPLWrapper, BokehMPLRawWrapper
+from .element import OverlayPlot, BokehMPLWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot, SideSpikesPlot)
+                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
+                    SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot
+from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
@@ -40,10 +42,12 @@ Store.register({Overlay: OverlayPlot,
                 Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Bars: BarPlot,
+                Area: AreaPlot,
 
                 # Rasters
                 Image: RasterPlot,
                 RGB: RGBPlot,
+                HSV: HSVPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
@@ -68,18 +72,8 @@ Store.register({Overlay: OverlayPlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
                 NdElement: TablePlot,
-                Columns: TablePlot,
+                Columns: TablePlot},
 
-                # Wrapped mpl 3d plots
-                Surface: PlotSelector(lambda x: 'bokeh',
-                                      [('mpl', SurfacePlot),
-                                       ('bokeh', BokehMPLRawWrapper)], True),
-                Scatter3D: PlotSelector(lambda x: 'bokeh',
-                                        [('mpl', Scatter3DPlot),
-                                         ('bokeh', BokehMPLRawWrapper)], True),
-                Trisurface: PlotSelector(lambda x: 'bokeh',
-                                         [('mpl', TrisurfacePlot),
-                                          ('bokeh', BokehMPLRawWrapper)], True)},
                'bokeh')
 
 
@@ -105,6 +99,7 @@ except ImportError:
     pass
 
 
+point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
@@ -112,12 +107,14 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle())
+options.Scatter = Options('style', color=Cycle(), size=point_size)
+options.Points = Options('style', color=Cycle(), size=point_size)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
 options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
-options.Points = Options('style', color=Cycle())
+
 options.Spikes = Options('style', color='black')
+options.Area = Options('style', color=Cycle(), line_color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())

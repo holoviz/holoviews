@@ -34,6 +34,10 @@ class BokehPlot(DimensionedPlot):
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
 
+    title_format = param.String(default="{label} {group} {dimensions}", doc="""
+        The formatting string for the title of this plot, allows defining
+        a label group separator and dimension labels.""")
+
     renderer = BokehRenderer
 
     def __init__(self, *args, **params):
@@ -120,7 +124,7 @@ class BokehPlot(DimensionedPlot):
                                not isinstance(x.current_frame.data, np.ndarray)
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
-        grouped_sources = groupby(sorted(data_sources), lambda x: x[0])
+        grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
         for gid, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
@@ -196,21 +200,23 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             kwargs = {}
             if c == 0 and r != 0:
                 kwargs['xaxis'] = 'bottom-bare'
-                kwargs['width'] = 175
+                kwargs['width'] = 150
             if c != 0 and r == 0 and not layout.ndims == 1:
                 kwargs['yaxis'] = 'left-bare'
-                kwargs['height'] = 175
+                kwargs['height'] = 150
             if c == 0 and r == 0:
-                kwargs['width'] = 175
-                kwargs['height'] = 175
+                kwargs['width'] = 150
+                kwargs['height'] = 150
             if r != 0 and c != 0:
                 kwargs['xaxis'] = 'bottom-bare'
                 kwargs['yaxis'] = 'left-bare'
 
             if 'width' not in kwargs:
-                kwargs['width'] = 125
+                kwargs['width'] = 105
             if 'height' not in kwargs:
-                kwargs['height'] = 125
+                kwargs['height'] = 105
+            if 'border' not in kwargs:
+                kwargs['border'] = 0
 
             if isinstance(layout, GridMatrix):
                 if view.traverse(lambda x: x, [Histogram]):

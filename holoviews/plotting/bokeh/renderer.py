@@ -8,14 +8,15 @@ import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, Document
-from bokeh.resources import CDN
+from bokeh.io import load_notebook
+from bokeh.resources import CDN, INLINE
 
 try:
     from bokeh.protocol import serialize_json
     bokeh_lt_011 = True
 except ImportError:
     from bokeh.core.json_encoder import serialize_json
+    from bokeh.model import _ModelInDocument as add_to_document
     bokeh_lt_011 = False
 
 
@@ -31,12 +32,13 @@ class BokehRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
 
+    webgl = param.Boolean(default=True, doc="""Whether to render plots with WebGL
+        if bokeh version >=0.10""")
+
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
 
-    js_dependencies = Renderer.js_dependencies + CDN.js_files
-
-    css_dependencies = Renderer.css_dependencies + CDN.css_files
+    backend_dependencies = {'js': CDN.js_files, 'css': CDN.css_files}
 
     _loaded = False
 
@@ -54,7 +56,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, info
+            return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
@@ -62,16 +64,18 @@ class BokehRenderer(Renderer):
             if not bokeh_lt_011:
                 data['root'] = plot.state._id
             data['data'] = models_to_json(plotobjects)
-            return serialize_json(data), info
+            return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
         if not bokeh_lt_011:
-            doc = Document()
-            doc.add_root(plot.state)
-            comms_target = str(uuid.uuid4())
-            doc.last_comms_target = comms_target
-            div = notebook_div(plot.state, comms_target)
+            doc_handler = add_to_document(plot.state)
+            with doc_handler:
+                doc = doc_handler._doc
+                comms_target = str(uuid.uuid4())
+                doc.last_comms_target = comms_target
+                div = notebook_div(plot.state, comms_target)
+            plot.document = doc
             return div
         else:
             return notebook_div(plot.state)
@@ -115,8 +119,8 @@ class BokehRenderer(Renderer):
         return (plot.state.height, plot.state.height)
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=True):
         """
         Loads the bokeh notebook resources.
         """
-        load_notebook(hide_banner=True)
+        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)

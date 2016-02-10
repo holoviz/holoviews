@@ -14,7 +14,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import UniformNdMapping
 from .layout import Composable, Layout
-from .util import sanitize_identifier
+from .util import sanitize_identifier, unique_array
 
 class Overlayable(object):
     """
@@ -65,7 +65,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return layout
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, unique=False):
         values = []
         found = False
         for el in self:
@@ -73,10 +73,12 @@ class CompositeOverlay(ViewableElement, Composable):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:
-            return super(CompositeOverlay, self).dimension_values(dimension)
+            return super(CompositeOverlay, self).dimension_values(dimension, unique)
         values = [v for v in values if v is not None and len(v)]
-        return np.concatenate(values) if len(values) else np.array()
-
+        if not values:
+            return np.array()
+        vals = np.concatenate(values)
+        return unique_array(vals) if unique else vals
 
 
 class Overlay(Layout, CompositeOverlay):

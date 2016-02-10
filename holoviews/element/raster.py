@@ -11,6 +11,7 @@ from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Columns, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
+from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, toarray
@@ -390,11 +391,12 @@ class HeatMap(Columns, Element2D):
         d1keys = self.dimension_values(0, True)
         d2keys = self.dimension_values(1, True)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
-        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=['dictionary'])
-        concat_data = self.interface.concatenate([Columns(self), dense_data], datatype='dictionary')
+        dtype = 'dataframe' if pd else 'dictionary'
+        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
+        concat_data = self.interface.concatenate([dense_data, Columns(self)], datatype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'Mean of empty slice')
-            data = concat_data.aggregate(self.kdims, np.nanmean).sort()
+            data = concat_data.aggregate(self.kdims, np.nanmean)
         array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
         return data, np.flipud(array.T)
 
@@ -616,7 +618,7 @@ class Image(SheetCoordinateSystem, Raster):
             if unique:
                 return d2lin if dim_idx else d1lin
             else:
-                X, Y = np.meshgrid(d1lin, d2lin)
+                Y, X = np.meshgrid(d2lin, d1lin)
                 return Y.flatten() if dim_idx else X.flatten()
         elif dim_idx == 2:
             return np.flipud(self.data).T.flatten()
@@ -750,7 +752,8 @@ class RGB(Image):
         coords = util.process_ellipses(self, coords)
         if not isinstance(coords, slice) and len(coords) > self.ndims:
             values = coords[self.ndims:]
-            channels = [el for el in values if isinstance(el, (str, Dimension))]
+            channels = [el for el in values
+                        if isinstance(el, (str, util.unicode, Dimension))]
             if len(channels) == 1:
                 sliced = super(RGB, self).__getitem__(coords[:self.ndims])
                 if channels[0] not in self.vdims:

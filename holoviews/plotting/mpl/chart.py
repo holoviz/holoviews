@@ -9,8 +9,9 @@ from matplotlib.collections import LineCollection
 import param
 
 from ...core import OrderedDict
-from ...core.util import match_spec, unique_iterator, safe_unicode, basestring
-from ...element import Points, Raster, Polygons
+from ...core.util import (match_spec, unique_iterator, safe_unicode,
+                          basestring, max_range)
+from ...element import Points, Raster, Polygons, HeatMap
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -18,6 +19,9 @@ from .plot import AdjoinedPlot
 
 
 class ChartPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
@@ -228,18 +232,15 @@ class ErrorPlot(ChartPlot):
                                           [xvals[i], tdata[i]]])
 
 
-class SpreadPlot(ChartPlot):
-    """
-    SpreadPlot plots the Spread Element type.
-    """
 
-    style_opts = ['alpha', 'color', 'linestyle', 'linewidth',
-                  'edgecolor', 'facecolor', 'hatch']
+class AreaPlot(ChartPlot):
 
-    def __init__(self, *args, **kwargs):
-        super(SpreadPlot, self).__init__(*args, **kwargs)
-        self._extent = None
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
+    style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
+                  'hatch', 'linestyle', 'joinstyle',
+                  'fill', 'capstyle', 'interpolate']
 
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
@@ -248,27 +249,56 @@ class SpreadPlot(ChartPlot):
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
+
         self.update_handles(axis, element, key, ranges)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
+        ylabel = str(element.vdims[0])
+        return self._finalize_axis(self.keys[-1], ranges=ranges, ylabel=ylabel)
 
+    def get_data(self, element):
+        xs = element.dimension_values(0)
+        ys = [element.dimension_values(vdim) for vdim in element.vdims]
+        return tuple([xs]+ys)
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        return super(AreaPlot, self).get_extents(element, ranges)
 
     def update_handles(self, axis, element, key, ranges=None):
-        if 'paths' in self.handles:
-            self.handles['paths'].remove()
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
 
-        xvals = element.dimension_values(0)
+        # Create line segments and apply style
+        style = self.style[self.cyclic_index]
+        data = self.get_data(element)
+        fill_fn = axis.fill_betweenx if self.invert_axes else axis.fill_between
+        stack = fill_fn(*data, zorder=self.zorder, **style)
+        self.handles['artist'] = stack
+
+
+
+class SpreadPlot(AreaPlot):
+    """
+    SpreadPlot plots the Spread Element type.
+    """
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    def __init__(self, element, **params):
+        self.table = element.table()
+        super(SpreadPlot, self).__init__(element, **params)
+        self._extents = None
+
+    def get_data(self, element):
+        xs = element.dimension_values(0)
         mean = element.dimension_values(1)
         neg_error = element.dimension_values(2)
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
-
-        paths = axis.fill_between(xvals, mean-neg_error,
-                                  mean+pos_error, zorder=self.zorder,
-                                  label=element.label if self.show_legend else None,
-                                  **self.style[self.cyclic_index])
-        self.handles['paths'] = paths
-
+        return xs, mean-neg_error, mean+pos_error
 
 
 class HistogramPlot(ChartPlot):
@@ -456,7 +486,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         y0, y1 = element.range(1)
         offset = self.offset * y1
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        if isinstance(range_item, (Raster, Points, Polygons)):
+        if isinstance(range_item, (Raster, Points, Polygons, HeatMap)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
@@ -517,19 +547,23 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                  allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                 allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
@@ -551,32 +585,29 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
 
-        ndims = points.shape[1]
         xs = points.dimension_values(0) if len(points.data) else []
         ys = points.dimension_values(1) if len(points.data) else []
-        cs = None
-        if self.color_index is not None and self.color_index < ndims:
-            cs = points.dimension_values(self.color_index)
 
         style = self.style[self.cyclic_index]
-        if self.size_index < ndims and self.scaling_factor > 1:
+        cdim = points.get_dimension(self.color_index)
+        color = style.pop('color', None)
+        if cdim:
+            cs = points.dimension_values(self.color_index)
+            style['c'] = cs
+            if 'clim' not in style:
+                clims = ranges[cdim.name]
+                style.update(vmin=clims[0], vmax=clims[1])
+        else:
+            style['c'] = color
+        edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
+
+        if points.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
-        color = style.pop('color', None)
-        if cs is None:
-            style['c'] = color
-        else:
-            style['c'] = cs
-        edgecolor = style.pop('edgecolors', 'none')
         legend = points.label if self.show_legend else ''
         scatterplot = axis.scatter(xs, ys, zorder=self.zorder, label=legend,
                                    edgecolors=edgecolor, **style)
         self.handles['artist'] = scatterplot
-
-        if cs is not None:
-            val_dim = points.dimensions(label=True)[self.color_index]
-            clims = ranges.get(val_dim)
-            scatterplot.set_clim(clims)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges)
 
@@ -584,21 +615,21 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_size(self, element, opts):
         sizes = element.dimension_values(self.size_index)
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
-        ndims = element.shape[1]
-        dims = element.dimensions(label=True)
-        if self.size_index < ndims:
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
-        if self.color_index < ndims:
+
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
             cs = element.dimension_values(self.color_index)
-            val_dim = dims[self.color_index]
-            paths.set_clim(ranges[val_dim])
+            paths.set_clim(ranges[cdim.name])
             paths.set_array(cs)
 
 
@@ -655,13 +686,14 @@ class VectorFieldPlot(ElementPlot):
 
 
     def _get_info(self, vfield, input_scale, ranges):
+        ndims = len(vfield.dimensions())
         xs = vfield.dimension_values(0) if len(vfield.data) else []
         ys = vfield.dimension_values(1) if len(vfield.data) else []
         radians = vfield.dimension_values(2) if len(vfield.data) else []
-        magnitudes = vfield.dimension_values(3) if vfield.data.shape[1]>=4 else np.array([1.0] * len(xs))
+        magnitudes = vfield.dimension_values(3) if ndims>=4 else np.array([1.0] * len(xs))
         colors = magnitudes if self.color_dim == 'magnitude' else radians
 
-        if vfield.data.shape[1] >= 4:
+        if ndims >= 4:
             magnitude_dim = vfield.get_dimension(3).name
             _, max_magnitude = ranges[magnitude_dim]
         else:
@@ -678,8 +710,8 @@ class VectorFieldPlot(ElementPlot):
 
     def _get_min_dist(self, vfield):
         "Get the minimum sampling distance."
-        xys = np.array([complex(x,y) for x,y in zip(vfield.data[:,0],
-                                                    vfield.data[:,1])])
+        xys = np.array([complex(x,y) for x,y in zip(vfield.dimension_values(0),
+                                                    vfield.dimension_values(1))])
         m, n = np.meshgrid(xys, xys)
         distances = abs(m-n)
         np.fill_diagonal(distances, np.inf)
@@ -728,7 +760,7 @@ class VectorFieldPlot(ElementPlot):
 
     def update_handles(self, axis, element, key, ranges=None):
         artist = self.handles['artist']
-        artist.set_offsets(element.data[:,0:2])
+        artist.set_offsets(element.array()[:,0:2])
         input_scale = self.handles['input_scale']
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
@@ -981,7 +1013,7 @@ class SpikesPlot(PathPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.Integer(default=1, doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -1029,10 +1061,10 @@ class SpikesPlot(PathPlot):
             data = [(line[0][::-1], line[1][::-1]) for line in data]
 
         array, clim = None, None
-        if self.color_index < ndims:
-            cdim = dimensions[self.color_index]
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
             array = element.dimension_values(cdim)
-            clim = ranges[cdim]
+            clim = ranges[cdim.name]
         return data, array, clim
 
 

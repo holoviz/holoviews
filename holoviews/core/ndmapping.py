@@ -10,7 +10,7 @@ import numpy as np
 
 import param
 
-from . import traversal, util
+from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
                    basestring, wrap_tuple, process_ellipses, get_ndmapping_label, pd)
@@ -343,17 +343,18 @@ class MultiDimensionalMapping(Dimensioned):
                           kdims=dims)
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, unique=False):
         "Returns the values along the specified dimension."
-        dimension = self.get_dimension(dimension).name
+        dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
         if dimension in self.dimensions(label=True):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
-            return np.concatenate(values)
+            vals = np.concatenate(values)
+            return util.unique_array(vals) if unique else vals
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension)
+            return super(MultiDimensionalMapping, self).dimension_values(dimension, unique)
 
 
     def reindex(self, kdims=[], force=False):
@@ -729,7 +730,7 @@ class UniformNdMapping(NdMapping):
         super(UniformNdMapping, self).__init__(initial_items, **params)
 
 
-    def clone(self, data=None, shared_data=True, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
         containing the specified args and kwargs.
@@ -742,11 +743,24 @@ class UniformNdMapping(NdMapping):
             settings.pop('group')
         if settings.get('label', None) != self._label:
             settings.pop('label')
-        settings.update(overrides)
+        if new_type is None:
+            clone_type = self.__class__
+        else:
+            clone_type = new_type
+            new_params = new_type.params()
+            settings = {k: v for k, v in settings.items()
+                      if k in new_params}
+        settings = dict(settings, **overrides)
+        if 'id' not in settings:
+            settings['id'] = self.id
+
         if data is None and shared_data:
             data = self.data
+        # Apply name mangling for __ attribute
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         with item_check(not shared_data and self._check_items):
-            return self.__class__(data, *args, **settings)
+            return clone_type(data, *args, **{k:v for k,v in settings.items()
+                                              if k not in pos_args})
 
 
     @property
@@ -804,10 +818,6 @@ class UniformNdMapping(NdMapping):
         if self.type is not None and (type(data) != self.type):
             raise AssertionError("%s must only contain one type of object, not both %s and %s." %
                                  (self.__class__.__name__, type(data).__name__, self.type.__name__))
-
-        if not traversal.uniform(NdMapping([(0, self), (1, data)])):
-            raise ValueError("HoloMaps dimensions must be consistent in %s." %
-                             type(self).__name__)
         super(UniformNdMapping, self)._item_check(dim_vals, data)
 
 

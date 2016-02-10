@@ -4,7 +4,7 @@ Examples
 
 This collection of examples demonstrate interesting uses of HoloViews
 that go beyond the tutorial material. Suitable material includes
-application of HoloViews to real-world data, examples of advanced
+application of HoloViews to real-world data, and examples of advanced
 usage and demonstrations of how HoloViews may be extended, including
 third-party libraries that feature HoloViews integration.
 
@@ -18,11 +18,11 @@ Notebooks
 This collection of IPython notebooks shows real-world examples of how
 HoloViews may be used:
 
-* `Simulating a simple reaction-diffusion system <Reaction-diffusion.html>`_:
+* `Simulating a simple reaction-diffusion system <http://examples.holoviews.org/Reaction-diffusion.html>`_:
   Demonstration of how HoloViews may be used for viewing simulated data, adapted from
   this free recipe from the `IPython Cookbook <https://ipython-books.github.io/featured-05/>`_.
 
-* `Chaos Theory and the Logistic Map <Logistic_Map.html>`_: Adaptation
+* `Chaos Theory and the Logistic Map <http://examples.holoviews.org/Logistic_Map.html>`_: Adaptation
   of a `blog post <http://geoffboeing.com/2015/03/chaos-theory-logistic-map/>`_
   by Geoff Boeing that shows how HoloViews makes exploration of this fascinating
   subject easier and more succinct.
@@ -36,10 +36,20 @@ HoloViews may be used:
   Visualizing the marking results of an undergraduate assignment with
   HoloViews.
 
-* `The Hipster Effect <HipsterDynamics.html>`_: Adapted version of
-`Jake Vanderplas' blog post
-<https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
-about dynamic systems and modeling of conformity.
+* `The Hipster Effect <http://examples.holoviews.org/HipsterDynamics.html>`_: Adapted version of `post from Jake Vanderplas
+  <https://jakevdp.github.io/blog/2014/11/11/the-hipster-effect-interactive>`_
+  about dynamic systems and modeling of conformity.
+
+* `Interactively exploring earthquake data with the bokeh backend <http://examples.holoviews.org/Earthquake_Visualization.html>`_: Demonstrates how a large dataset of earthquakes can be interactively explored through animation and linked brushing.
+
+* `Exploring herd immunity with agent based models using HoloViews and NetworkX <http://examples.holoviews.org/SRI_Model.html>`_: A small demo demonstrating how HoloViews can be integrated with a simple agent based model to explore and analyze how it evolves over time.
+
+* `t-SNE machine learning Tutorial
+  <http://philippjfr.com/work/work-in-progress/t-sne-tutorial/>`_:
+  Adapted version of a `tutorial
+  <https://www.oreilly.com/learning/an-illustrated-introduction-to-the-t-sne-algorithm>`_
+  by Cyrille Rossant for O'Reilly on the t-SNE machine learning
+  visualization algorithm.
 
 
 Extensions
@@ -53,10 +63,16 @@ extended in new (and unexpected!) directions:
   Example usage of the mpld3 rendering backend allowing you to
   generate D3.js-based plots with interactive widgets.
 
-* `Interfacing HoloViews with Julia
-  <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_: A
-  prototype of a basic interface to the Julia programming language.
+* `Using HoloViews from Julia
+  <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_: 
+  A prototype interface to allow HoloViews to be used from the Julia
+  programming language.  (Contributions welcome!)
 
+* `Experimental Plotly backend
+  <http://philippjfr.com/work/work-in-progress/plotly/>`_: A
+  prototype of a `Plotly-based backend <https://plot.ly/python>`_ for HoloViews,
+  with progress summarized in an ongoing `pull request <https://github.com/ioam/holoviews/pull/398>`_.
+  (Contributions welcome!)
 
 External Projects
 -----------------
@@ -65,9 +81,9 @@ Third party libraries, simulators and toolkits that make use of
 HoloViews for easier visualization and analysis:
 
 * `ImaGen library <http://ioam.github.io/imagen>`_: Generate
-  HoloViews `Image <https://ioam.github.io/holoviews/Tutorials/Elements.html#Image>`_
+  HoloViews `Image <https://holoviews/Tutorials/Elements.html#Image>`_
   and 
-  `RGB <https://ioam.github.io/holoviews/Tutorials/Elements.html#RGB>`_ 
+  `RGB <https://holoviews.org/Tutorials/Elements.html#RGB>`_ 
   patterns from mathematical functions.
 
 * `Topographica tutorials <http://topographica.org/Tutorials/>`_:

@@ -15,6 +15,7 @@ from ...interface.seaborn import DFrame as SNSFrame
 from ...core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
+from .plot import MPLPlot, AdjoinedPlot
 
 
 class FullRedrawPlot(ElementPlot):
@@ -65,10 +66,12 @@ class RegressionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        label = view.label if self.overlaid == 1 else ''
-        sns.regplot(view.data[:, 0], view.data[:, 1],
-                    ax=axis, label=label,
-                    **self.style[self.cyclic_index])
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['label'] = label
+        sns.regplot(view.dimension_values(0), view.dimension_values(1),
+                    ax=axis, **kwargs)
 
 
 
@@ -93,7 +96,6 @@ class BivariatePlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         kdeview = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         if self.joint and self.subplot:
             raise Exception("Joint plots can't be animated or laid out in a grid.")
         self._update_plot(axis, kdeview)
@@ -102,15 +104,18 @@ class BivariatePlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
+        kwargs = self.style[self.cyclic_index]
         if self.joint:
-            self.style.pop('cmap', None)
+            kwargs.pop('cmap', None)
             self.handles['fig'] = sns.jointplot(view.data[:,0],
                                                 view.data[:,1],
-                                                **self.style).fig
+                                                **kwargs).fig
         else:
-            label = view.label if self.overlaid == 1 else ''
-            sns.kdeplot(view.data, ax=axis, label=label,
-                        zorder=self.zorder, **self.style)
+            kwargs = self.style[self.cyclic_index]
+            label = view.label if self.overlaid >= 1 else ''
+            if label:
+                kwargs['label'] = label
+            sns.kdeplot(view.data, ax=axis, zorder=self.zorder, **kwargs)
 
 
 
@@ -135,14 +140,16 @@ class TimeSeriesPlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, element)
 
         return self._finalize_axis(self.keys[-1])
 
     def _update_plot(self, axis, view):
-        sns.tsplot(view.data, view.xdata, ax=axis, condition=view.label,
-                   zorder=self.zorder, **self.style)
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['condition'] = label
+        sns.tsplot(view.data, view.xdata, ax=axis, zorder=self.zorder, **kwargs)
 
     def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
         xlabel = xlabel if xlabel else str(view.kdims[0])
@@ -169,7 +176,6 @@ class DistributionPlot(FullRedrawPlot):
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         axis = self.handles['axis']
-        self.style = self.style[self.cyclic_index]
         self._update_plot(axis, element)
         dim = element.get_dimension(0)
 
@@ -177,9 +183,19 @@ class DistributionPlot(FullRedrawPlot):
 
 
     def _update_plot(self, axis, view):
-        label = view.label if self.overlaid == 1 else ''
-        sns.distplot(view.dimension_values(0), ax=axis, label=label, **self.style)
+        kwargs = self.style[self.cyclic_index]
+        label = view.label if self.overlaid >= 1 else ''
+        if label:
+            kwargs['label'] = label
+        if self.invert_axes:
+            kwargs['vertical'] = True
+        sns.distplot(view.dimension_values(0), ax=axis, **kwargs)
 
+
+class SideDistributionPlot(AdjoinedPlot, DistributionPlot):
+
+    border_size = param.Number(default=0.2, doc="""
+        The size of the border expressed as a fraction of the main plot.""")
 
 
 class SNSFramePlot(DFrameViewPlot):
@@ -223,9 +239,6 @@ class SNSFramePlot(DFrameViewPlot):
                                            'inner', 'join_rm', 'bw', 'cut', 'split'],
                              'lmplot':    ['hue', 'col', 'row', 'palette',
                                            'sharex', 'dropna', 'legend'],
-                             'corrplot':  ['annot', 'sig_stars', 'sig_tail',
-                                           'sig_corr', 'cmap', 'cmap_range',
-                                           'cbar'],
                              'interact':  ['filled', 'cmap', 'colorbar',
                                            'levels', 'logistic', 'contour_kws',
                                            'scatter_kws'],
@@ -310,8 +323,6 @@ class SNSFramePlot(DFrameViewPlot):
         elif self.plot_type == 'interact':
             sns.interactplot(view.x, view.x2, view.y,
                              data=view.data, ax=axis, **style)
-        elif self.plot_type == 'corrplot':
-            sns.corrplot(view.data, ax=axis, **style)
         elif self.plot_type == 'lmplot':
             sns.lmplot(x=view.x, y=view.y, data=view.data,
                        ax=axis, **style)
@@ -341,3 +352,5 @@ Store.register({TimeSeries: TimeSeriesPlot,
                 SNSFrame: SNSFramePlot,
                 DFrame: SNSFramePlot,
                 DataFrameView: SNSFramePlot}, 'matplotlib')
+
+MPLPlot.sideplots.update({Distribution: SideDistributionPlot})

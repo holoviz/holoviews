@@ -4,11 +4,21 @@ div.hololayout {
     margin: 0;
 }
 
+div.holowell {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
 form.holoform {
     background-color: #fafafa;
     border-radius: 5px;
     overflow: hidden;
     padding: 0.8em;
+}
+
+div.holowidgets {
+    padding-right: 0;
 }
 
 div.holoslider {
@@ -24,7 +34,7 @@ div.holoformgroup {
 
 div.hologroup {
     padding-left: 0;
-    padding-right: 0.6em;
+    padding-right: 0;
 }
 
 .holoselect {

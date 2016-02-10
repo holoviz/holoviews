@@ -29,8 +29,12 @@ except ImportError:
     bz = None
 
 # Python3 compatibility
-basestring = str if sys.version_info.major == 3 else basestring
-
+if sys.version_info.major == 3:
+    basestring = str
+    unicode = str
+else:
+    basestring = basestring
+    unicode = unicode
 
 
 def process_ellipses(obj, key, vdim_selection=False):
@@ -185,7 +189,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     def add_aliases(self_or_cls, **kwargs):
         """
         Conveniently add new aliases as keyword arguments. For instance
-        you can add one new alias with add_aliases(short='Longer string')
+        you can add a new alias with add_aliases(short='Longer string')
         """
         self_or_cls.aliases.update({v:k for k,v in kwargs.items()})
 
@@ -308,6 +312,10 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     def sanitize(self, name, valid_fn):
         "Accumulate blocks of hex and separate blocks by underscores"
+        invalid = {'\a':'a','\b':'b', '\v':'v','\f':'f','\r':'r'}
+        for cc in filter(lambda el: el in name, invalid.keys()):
+            raise Exception("Please use a raw string or escape control code '\%s'"
+                            % invalid[cc])
         sanitized, chars = [], ''
         for split in name.split():
             for c in split:
@@ -468,6 +476,17 @@ def unique_iterator(seq):
         if item not in seen:
             seen.add(item)
             yield item
+
+
+def unique_array(arr):
+    """
+    Returns an array of unique values in the input order
+    """
+    if pd:
+        return pd.unique(arr)
+    else:
+        _, uniq_inds = np.unique(arr, return_index=True)
+        return arr[np.sort(uniq_inds)]
 
 
 def match_spec(element, specification):
@@ -829,3 +848,5 @@ class ndmapping_groupby(param.ParameterizedFunction):
                                   else [((), (v,))]), **kwargs))
                   for k, v in iterative_select(ndmapping, dim_names, selects)]
         return container_type(groups, kdims=dimensions)
+
+

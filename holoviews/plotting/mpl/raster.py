@@ -104,7 +104,7 @@ class RasterPlot(ColorbarPlot):
     def _compute_ticks(self, element, ranges):
         if isinstance(element, HeatMap):
             xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = [np.unique(element.dimension_values(i))
+            dim1_keys, dim2_keys = [element.dimension_values(i, True)
                                     for i in range(2)]
             num_x, num_y = len(dim1_keys), len(dim2_keys)
             x0, y0, x1, y1 = element.extents
@@ -121,7 +121,6 @@ class RasterPlot(ColorbarPlot):
     def _annotate_values(self, element):
         axis = self.handles['axis']
         val_dim = element.vdims[0]
-        d1keys, d2keys = element.dense_keys()
         vals = np.rot90(element.raster, 3).flatten()
         d1uniq, d2uniq = [np.unique(element.dimension_values(i)) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
@@ -155,7 +154,6 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, HeatMap) and self.show_values:
            self._annotate_values(element)
 
-        xdim, ydim = element.kdims
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
@@ -296,7 +294,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
 
     def initialize_plot(self, ranges=None):
-        width, height, b_w, b_h, widths, heights = self.border_extents
+        _, _, b_w, b_h, widths, heights = self.border_extents
 
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, ranges)

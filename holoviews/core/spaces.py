@@ -197,12 +197,15 @@ class HoloMap(UniformNdMapping):
         from .operation import MapOperation
         if not dimensions:
             dimensions = self.kdims
+        if not isinstance(dimensions, list): dimensions = [dimensions]
         if self.ndims > 1 and len(dimensions) != self.ndims:
             groups = self.groupby([dim for dim in self.kdims
                                    if dim not in dimensions])
-        else:
-            [self.get_dimension(dim) for dim in dimensions]
+        elif all(d in self.kdims for d in dimensions):
             groups = HoloMap([(0, self)])
+        else:
+            raise KeyError("Supplied dimensions not found.")
+
         collapsed = groups.clone(shared_data=False)
         for key, group in groups.items():
             if isinstance(function, MapOperation):
@@ -255,13 +258,13 @@ class HoloMap(UniformNdMapping):
                 xsamples = [(lx+ux)/2.0 for lx,ux in zip(xedges[:-1], xedges[1:])]
                 ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
 
-                X,Y = np.meshgrid(xsamples, ysamples)
+                Y,X = np.meshgrid(ysamples, xsamples)
                 linsamples = zip(X.flat, Y.flat)
             else:
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
 
-            samples = set(self.last.closest(linsamples))
+            samples = util.unique_array(self.last.closest(linsamples))
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.data.items()])
@@ -336,15 +339,15 @@ class DynamicMap(HoloMap):
     generator. A DynamicMap supports two different modes depending on
     the type of callable supplied and the dimension declarations.
 
-    The 'closed' mode is used when the limits of the parameter space are
-    known upon declaration (as specified by the ranges on the key
+    The 'bounded' mode is used when the limits of the parameter space
+    are known upon declaration (as specified by the ranges on the key
     dimensions) or 'open' which allows the continual generation of
     elements (e.g as data output by a simulator over an unbounded
     simulated time dimension).
 
     Generators always imply open mode but a callable that has any key
     dimension unbounded in any direction will also be in open
-    mode. Closed mode only applied to callables where all the key
+    mode. Bounded mode only applied to callables where all the key
     dimensions are fully bounded.
     """
     _sorted = False
@@ -382,7 +385,7 @@ class DynamicMap(HoloMap):
        HoloMap.  Applicable in open mode only.""")
 
     sampled = param.Boolean(default=False, doc="""
-       Allows defining a DynamicMap in closed mode without defining the
+       Allows defining a DynamicMap in bounded mode without defining the
        dimension bounds or values. The DynamicMap may then be explicitly
        sampled via getitem or the sampling is determined during plotting
        by a HoloMap with fixed sampling.
@@ -396,12 +399,12 @@ class DynamicMap(HoloMap):
                             "declared to create a DynamicMap")
 
         self.call_mode = self._validate_mode()
-        self.mode = 'closed' if self.call_mode == 'key' else 'open'
+        self.mode = 'bounded' if self.call_mode == 'key' else 'open'
 
 
     def _initial_key(self):
         """
-        Construct an initial key for closed mode based on the lower
+        Construct an initial key for bounded mode based on the lower
         range bounds or values on the key dimensions.
         """
         key = []
@@ -527,7 +530,7 @@ class DynamicMap(HoloMap):
         (self.data) to check if the appropriate element is
         available. Oherwise the element is computed accordingly.
         """
-        if self.mode != 'closed': return None
+        if self.mode != 'bounded': return None
         if not any(isinstance(el, (list, set)) for el in tuple_key):
             return None
         if len(tuple_key)==1:
@@ -548,23 +551,43 @@ class DynamicMap(HoloMap):
         return self.clone(data)
 
 
+    def _slice_bounded(self, tuple_key):
+        """
+        Slices bounded DynamicMaps by setting the soft_ranges on key dimensions.
+        """
+        cloned = self.clone(self)
+        for i, slc in enumerate(tuple_key):
+            (start, stop) = slc.start, slc.stop
+            if start is not None and start < cloned.kdims[i].range[0]:
+                raise Exception("Requested slice below defined dimension range.")
+            if stop is not None and stop > cloned.kdims[i].range[1]:
+                raise Exception("Requested slice above defined dimension range.")
+            cloned.kdims[i].soft_range = (start, stop)
+        return cloned
+
+
     def __getitem__(self, key):
         """
-        Return an element for any key chosen key (in'closed mode') or
+        Return an element for any key chosen key (in'bounded mode') or
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
         tuple_key = util.wrap_tuple(key)
 
-        # Validation for closed mode
-        if self.mode == 'closed':
+        # Validation for bounded mode
+        if self.mode == 'bounded':
             # DynamicMap(...)[:] returns a new DynamicMap with the same cache
             if key == slice(None, None, None):
                 return self.clone(self)
 
-            if any(isinstance(el, slice) for el in tuple_key):
-                raise Exception("Slices not supported by DynamicMap in closed mode "
-                                "except for the global slice [:] to create a clone.")
+            slices = [el for el in tuple_key if isinstance(el, slice)]
+            if any(el.step for el in slices):
+                raise Exception("Slices cannot have a step argument "
+                                "in DynamicMap bounded mode ")
+            if len(slices) not in [0, len(tuple_key)]:
+                raise Exception("Slices must be used exclusively or not at all")
+            if slices:
+                return  self._slice_bounded(tuple_key)
 
         # Cache lookup
         try:
@@ -611,7 +634,7 @@ class DynamicMap(HoloMap):
         next() method. For callables callback, the counter is supplied
         as a single argument.
         """
-        if self.mode == 'closed':
+        if self.mode == 'bounded':
             raise Exception("The next() method should only be called in "
                             "one of the open modes.")
 

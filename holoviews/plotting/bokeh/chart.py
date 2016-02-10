@@ -4,30 +4,32 @@ from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...element import Raster, Points, Polygons, Spikes
+from ...core.util import max_range, basestring
 from ..util import compute_sizes, get_sideplot_ranges, match_spec
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap, mpl_to_bokeh
+from .util import map_colors, get_cmap, mpl_to_bokeh, update_plot
 
 
 class PointPlot(ElementPlot):
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                      allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                     allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    radius_index = param.Integer(default=None, doc="""
-      Index of the dimension from which the sizes will the drawn.""")
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
 
     scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     size_fn = param.Callable(default=np.abs, doc="""
       Function applied to size values before applying scaling,
@@ -48,26 +50,30 @@ class PointPlot(ElementPlot):
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
-        if self.color_index < len(dims) and cmap:
-            map_key = 'color_' + dims[self.color_index]
+        cdim = element.get_dimension(self.color_index)
+        if cdim and cmap:
+            map_key = 'color_' + cdim.name
             mapping['color'] = map_key
             if empty:
                 data[map_key] = []
             else:
                 cmap = get_cmap(cmap)
                 colors = element.dimension_values(self.color_index)
-                crange = ranges.get(dims[self.color_index], None)
+                crange = ranges.get(cdim.name, None)
                 data[map_key] = map_colors(colors, crange, cmap)
-        if self.size_index < len(dims) and self.scaling_factor != 1:
-            map_key = 'size_' + dims[self.size_index]
+
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
+            map_key = 'size_' + sdim.name
             mapping['size'] = map_key
             if empty:
                 data[map_key] = []
             else:
-                ms = style.get('size', 1)
+                ms = style.get('size', np.sqrt(6))**2
                 sizes = element.dimension_values(self.size_index)
-                data[map_key] = compute_sizes(sizes, self.size_fn,
-                                              self.scaling_factor, ms)
+                data[map_key] = np.sqrt(compute_sizes(sizes, self.size_fn,
+                                                      self.scaling_factor,
+                                                      self.scaling_method, ms))
 
         data[dims[0]] = [] if empty else element.dimension_values(0)
         data[dims[1]] = [] if empty else element.dimension_values(1)
@@ -111,12 +117,37 @@ class CurvePlot(ElementPlot):
                 dict(x=x, y=y))
 
 
+class AreaPlot(PolygonPlot):
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        if len(vdims) > 1:
+            ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        else:
+            vdim = vdims[0].name
+            ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
+        return super(AreaPlot, self).get_extents(element, ranges)
+
+    def get_data(self, element, ranges=None, empty=False):
+        mapping = dict(self._mapping)
+        if empty: return {'xs': [], 'ys': []}
+        xs = element.dimension_values(0)
+        x2 = np.hstack((xs[::-1], xs))
+
+        if len(element.vdims) > 1:
+            bottom = element.dimension_values(2)
+        else:
+            bottom = np.zeros(len(element))
+        ys = np.hstack((bottom[::-1], element.dimension_values(1)))
+
+        data = dict(xs=[x2], ys=[ys])
+        return data, mapping
+
+
 class SpreadPlot(PolygonPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
-
-    def __init__(self, *args, **kwargs):
-        super(SpreadPlot, self).__init__(*args, **kwargs)
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
@@ -229,7 +260,7 @@ class ErrorPlot(PathPlot):
 
 class SpikesPlot(PathPlot):
 
-    color_index = param.Integer(default=1, doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.5, doc="""
@@ -237,6 +268,9 @@ class SpikesPlot(PathPlot):
 
     position = param.Number(default=0., doc="""
       The position of the lower end of each spike.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = (['color', 'cmap', 'palette'] + line_properties)
 
@@ -270,17 +304,17 @@ class SpikesPlot(PathPlot):
         if not empty and self.invert_axes: keys = keys[::-1]
         data = dict(zip(keys, (xs, ys)))
 
-        cmap = style.get('palette', style.get('cmap', None))        
-        if self.color_index < len(dims) and cmap:
-            cdim = dims[self.color_index]
-            map_key = 'color_' + cdim
+        cmap = style.get('palette', style.get('cmap', None))
+        cdim = element.get_dimension(self.color_index)
+        if cdim and cmap:
+            map_key = 'color_' + cdim.name
             mapping['color'] = map_key
             if empty:
                 colors = []
             else:
                 cmap = get_cmap(cmap)
                 cvals = element.dimension_values(cdim)
-                crange = ranges.get(cdim, None)
+                crange = ranges.get(cdim.name, None)
                 colors = map_colors(cvals, crange, cmap)
             data[map_key] = colors
 
@@ -307,9 +341,11 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    height = param.Integer(default=80, doc="Height of plot")
+    border = param.Integer(default=30, doc="Default borders on plot")
 
-    width = param.Integer(default=80, doc="Width of plot")
+    height = param.Integer(default=100, doc="Height of plot")
+
+    width = param.Integer(default=100, doc="Width of plot")
 
 
 
@@ -380,28 +416,7 @@ class ChartPlot(ElementPlot):
     def _update_chart(self, key, element, ranges):
         new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
-        old_renderers = old_chart.select(type=GlyphRenderer)
-        new_renderers = new_chart.select(type=GlyphRenderer)
-
-        old_chart.y_range.update(**new_chart.y_range.properties_with_values())
-        updated = []
-        for new_r in new_renderers:
-            for old_r in old_renderers:
-                if type(old_r.glyph) == type(new_r.glyph):
-                    old_renderers.pop(old_renderers.index(old_r))
-                    new_props = new_r.properties_with_values()
-                    source = new_props.pop('data_source')
-                    old_r.glyph.update(**new_r.glyph.properties_with_values())
-                    old_r.update(**new_props)
-                    old_r.data_source.data.update(source.data)
-                    updated.append(old_r)
-                    break
-
-        for old_r in old_renderers:
-            if old_r not in updated:
-                emptied = {k: [] for k in old_r.data_source.data}
-                old_r.data_source.data.update(emptied)
-
+        update_plot(old_chart, new_chart)
         properties = self._plot_properties(key, old_chart, element)
         old_chart.update(**properties)
 
@@ -452,10 +467,6 @@ class BarPlot(ChartPlot):
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
-    category_index = param.Integer(default=1, doc="""
-       Index of the dimension in the supplied Bars
-       Element, which will be laid out into categories.""")
-
     stack_index = param.Integer(default=2, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
@@ -469,12 +480,9 @@ class BarPlot(ChartPlot):
         kwargs = self.style[self.cyclic_index]
         if self.group_index < element.ndims:
             kwargs['label'] = kdims[self.group_index]
-        if self.category_index < element.ndims:
-            kwargs['group'] = kdims[self.category_index]
         if self.stack_index < element.ndims:
             kwargs['stack'] = kdims[self.stack_index]
         crange = Range1d(*ranges.get(vdim))
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
         return plot
-

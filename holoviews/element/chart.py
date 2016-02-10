@@ -258,7 +258,7 @@ class Histogram(Element2D):
 
 
     def dimension_values(self, dim):
-        dim = self.get_dimension(dim).name
+        dim = self.get_dimension(dim, strict=True).name
         if dim in self.vdims:
             return self.values
         elif dim in self.kdims:
@@ -379,3 +379,16 @@ class Spikes(Chart):
 
     _1d = True
 
+
+class Area(Curve):
+    """
+    An Area Element represents the area under a Curve
+    and is specified in the same format as a regular
+    Curve, with the key dimension corresponding to a
+    column of x-values and the value dimension
+    corresponding to a column of y-values. Optionally
+    a second value dimension may be supplied to shade
+    the region between the curves.
+    """
+
+    group = param.String(default='Area', constant=True)

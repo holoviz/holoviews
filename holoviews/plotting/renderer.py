@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, SkipRendering
 from ..core.util import find_file
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
@@ -116,6 +116,14 @@ class Renderer(Exporter):
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
+    post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""
+       Optional dictionary of hooks that are applied to the rendered
+       data (according to the output format) before it is returned.
+
+       Each hook is passed the rendered data and the object that is
+       being rendered. These hooks allow post-processing of renderered
+       data before output is saved to file or displayed.""")
+
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
@@ -123,10 +131,16 @@ class Renderer(Exporter):
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
 
-    js_dependencies = ['https://code.jquery.com/jquery-2.1.4.min.js',
-                       'https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']
+    core_dependencies = {'jQueryUI': {'js': ['https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'],
+                                      'css': ['https://code.jquery.com/ui/1.10.4/themes/smoothness/jquery-ui.css']}}
 
-    css_dependencies = ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.5/css/bootstrap.min.css']
+    extra_dependencies = {'jQuery': {'js': ['https://code.jquery.com/jquery-2.1.4.min.js']},
+                          'underscore': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js']},
+                          'require': {'js': ['https://cdnjs.cloudflare.com/ajax/libs/require.js/2.1.20/require.min.js']},
+                          'bootstrap': {'css': ['https://maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css']}}
+
+    # Any additional JS and CSS dependencies required by a specific backend
+    backend_dependencies = {}
 
     def __init__(self, **params):
         super(Renderer, self).__init__(**params)
@@ -149,7 +163,10 @@ class Renderer(Exporter):
             if dmap.call_mode == 'key':
                 dmap[dmap._initial_key()]
             else:
-                next(dmap)
+                try:
+                    next(dmap)
+                except StopIteration: # Exhausted DynamicMap
+                    raise SkipRendering("DynamicMap generator exhausted.")
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
@@ -173,10 +190,12 @@ class Renderer(Exporter):
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
-        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
-            fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt is None:
-            fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+        if fmt in ['auto', None]:
+            if ((len(plot) == 1 and not plot.dynamic)
+                or (len(plot) > 1 and self.holomap is None)):
+                fmt = fig_formats[0] if self.fig=='auto' else self.fig
+            else:
+                fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt in self.widgets:
             plot = self.get_widget(plot, fmt)
@@ -198,10 +217,27 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
-        # [Backend specific code goes here]
+        # [Backend specific code goes here to generate data]
+        data = None
 
+        # Example of how post_render_hooks are applied
+        data = self._apply_post_render_hooks(data, obj, fmt)
         # Example of the return format where the first value is the rendered data.
-        return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+        return data, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+
+
+    def _apply_post_render_hooks(self, data, obj, fmt):
+        """
+        Apply the post-render hooks to the data.
+        """
+        hooks = self.post_render_hooks.get(fmt,[])
+        for hook in hooks:
+            try:
+                data = hook(data, obj)
+            except Exception as e:
+                self.warning("The post_render_hook %r could not be applied:\n\n %s"
+                             % (hook, e))
+        return data
 
 
     def html(self, obj, fmt=None, css=None, **kwargs):
@@ -238,18 +274,8 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        css_html, js_html = '', ''
-        js, css = self.embed_assets()
-        for url in self.js_dependencies:
-            js_html += '<script src="%s" type="text/javascript"></script>' % url
-        js_html += '<script type="text/javascript">%s</script>' % js
-
-        for url in self.css_dependencies:
-            css_html += '<link rel="stylesheet" href="%s">' % url
-        css_html += '<style>%s</style>' % css
-
+        js_html, css_html = self.html_assets()
         if template is None: template = static_template
-
         html = self.html(obj, fmt)
         return template.format(js=js_html, css=css_html, html=html)
 
@@ -266,11 +292,11 @@ class Renderer(Exporter):
             else:
                 widget_type = 'widgets'
         elif dynamic == 'open': widget_type = 'scrubber'
-        elif dynamic == 'closed': widget_type = 'widgets'
+        elif dynamic == 'bounded': widget_type = 'widgets'
         elif widget_type == 'widgets' and dynamic == 'open':
             raise ValueError('Selection widgets not supported in dynamic open mode')
-        elif widget_type == 'scrubber' and dynamic == 'closed':
-            raise ValueError('Scrubber widget not supported in dynamic closed mode')
+        elif widget_type == 'scrubber' and dynamic == 'bounded':
+            raise ValueError('Scrubber widget not supported in dynamic bounded mode')
 
         if widget_type in [None, 'auto']:
             holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]
@@ -340,10 +366,13 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def embed_assets(cls):
+    def html_assets(cls, core=True, extras=True, backends=None):
         """
         Returns JS and CSS and for embedding of widgets.
         """
+        if backends is None:
+            backends = [cls.backend] if cls.backend else []
+
         # Get all the widgets and find the set of required js widget files
         widgets = [wdgt for r in Renderer.__subclasses__()
                    for wdgt in r.widgets.values()]
@@ -358,7 +387,26 @@ class Renderer(Exporter):
                              if f is not None )
         widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
                               for f in css if f is not None)
-        return widgetjs, widgetcss
+
+        dependencies = {}
+        if core:
+            dependencies.update(cls.core_dependencies)
+        if extras:
+            dependencies.update(cls.extra_dependencies)
+        for backend in backends:
+            dependencies['backend'] = Store.renderers[backend].backend_dependencies
+
+        js_html, css_html = '', ''
+        for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
+            for js in dep.get('js', []):
+                js_html += '\n<script src="%s" type="text/javascript"></script>' % js
+            for css in dep.get('css', []):
+                css_html += '\n<link rel="stylesheet" href="%s">' % css
+
+        js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
+        css_html += '\n<style>%s</style>' % widgetcss
+
+        return js_html, css_html
 
 
     @classmethod
@@ -435,7 +483,7 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=True):
         """
         Loads any resources required for display of plots
         in the Jupyter notebook

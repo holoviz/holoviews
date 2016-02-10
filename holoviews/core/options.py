@@ -54,6 +54,14 @@ class BackendError(Exception):
     """
     pass
 
+class SkipRendering(Exception):
+    """
+    A SkipRendering exception in the plotting code will make the display
+    hooks fall back to a text repr. Used to skip rendering of
+    DynamicMaps with exhausted element generators.
+    """
+    pass
+
 class OptionError(Exception):
     """
     Custom exception raised when there is an attempt to apply invalid
@@ -838,13 +846,13 @@ class Store(object):
         return val
 
     @classmethod
-    def dump(cls, obj, filename, protocol=0):
+    def dump(cls, obj, file, protocol=0):
         """
         Equivalent to pickle.dump except that the HoloViews option
         tree is saved appropriately.
         """
         cls.save_option_state = True
-        pickle.dump(obj, filename, protocol=protocol)
+        pickle.dump(obj, file, protocol=protocol)
         cls.save_option_state = False
 
     @classmethod

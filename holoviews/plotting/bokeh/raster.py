@@ -1,13 +1,17 @@
 import numpy as np
+import param
 
 from bokeh.models.mappers import LinearColorMapper
 
-from ...element import Image, Raster
+from ...element import Image, Raster, RGB
 from .element import ElementPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, map_colors, get_cmap
+from .util import mplcmap_to_palette, map_colors, get_cmap, hsv_to_rgb
 
 
 class RasterPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['cmap']
     _plot_method = 'image'
@@ -94,15 +98,25 @@ class RGBPlot(RasterPlot):
         return ElementPlot._glyph_properties(self, plot, element,
                                              source, ranges)
 
+class HSVPlot(RGBPlot):
+
+    def get_data(self, element, ranges=None, empty=False):
+        rgb = RGB(hsv_to_rgb(element.data))
+        return super(HSVPlot, self).get_data(rgb, ranges, empty)
+
 
 class HeatmapPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     _plot_method = 'rect'
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def _axes_props(self, plots, subplots, element, ranges):
         labels = self._axis_labels(element, plots)
-        xvals, yvals = [np.unique(element.dimension_values(i)) for i in range(2)]
+        xvals, yvals = [element.dimension_values(i, True)
+                        for i in range(2)]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges

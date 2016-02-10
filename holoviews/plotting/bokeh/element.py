@@ -22,7 +22,7 @@ from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
 from .renderer import bokeh_lt_011
-from .util import mpl_to_bokeh, convert_datetime
+from .util import mpl_to_bokeh, convert_datetime, update_plot
 
 
 # Define shared style properties for bokeh plots
@@ -82,6 +82,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     shared_axes = param.Boolean(default=True, doc="""
         Whether to invert the share axes across plots
         for linked panning and zooming.""")
@@ -93,11 +99,41 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    logx = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
+
     xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
 
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
+
+    yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    logy = param.Boolean(default=False, doc="""
+        Whether the y-axis of the plot will be a log axis.""")
+
     yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
+
+    yticks = param.Parameter(default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations or bokeh Ticker object. If set to None
+        default bokeh ticking behavior is applied.""")
 
     # A string corresponding to the glyph being drawn by the
     # ElementPlot
@@ -218,7 +254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
         if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
-            properties['webgl'] = True
+            properties['webgl'] = self.renderer.webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type,
                                      tools=tools, **properties)
@@ -301,6 +337,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
 
+        if not self.show_grid:
+            plot.xgrid.grid_line_color = None
+            plot.ygrid.grid_line_color = None
+
 
     def _update_ranges(self, element, ranges):
         framewise = self.lookup_options(element, 'norm').options.get('framewise')
@@ -328,7 +368,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Disables legends if show_legend is disabled.
         """
-        if not self.overlaid and not self.show_legend:
+        if not self.overlaid:
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
@@ -347,12 +387,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
 
-        if self.overlay_dims:
-            legend = ', '.join([d.pprint_value_string(v) for d, v in
-                                self.overlay_dims.items()])
-        else:
-            legend = element.label
-        properties['legend'] = legend
+        if self.show_legend:
+            if self.overlay_dims:
+                legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                    self.overlay_dims.items()])
+            else:
+                legend = element.label
+            properties['legend'] = legend
         properties['source'] = source
         return properties
 
@@ -497,16 +538,40 @@ class BokehMPLWrapper(ElementPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         self.mplplot.initialize_plot(ranges)
-        plot = mpl.to_bokeh(self.mplplot.state)
+
+        plot = plot if plot else self.handles.get('plot')
+        new_plot = mpl.to_bokeh(self.mplplot.state)
+        if plot:
+            update_plot(plot, new_plot)
+        else:
+            plot = new_plot
+
         self.handles['plot'] = plot
+        if not self.overlaid:
+            self._update_plot(self.keys[-1], plot, self.hmap.last)
         return plot
 
 
-    def update_frame(self, key, ranges=None):
-        if key in self.hmap:
-            self.mplplot.update_frame(key, ranges)
-            self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
+    def _update_plot(self, key, plot, element=None):
+        """
+        Updates plot parameters on every frame
+        """
+        plot.set(**self._plot_properties(key, plot, element))
 
+    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
+        self.mplplot.update_frame(key, ranges)
+
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        plot = mpl.to_bokeh(self.mplplot.state)
+        update_plot(self.handles['plot'], plot)
+        if not self.overlaid:
+            self._update_plot(key, self.handles['plot'], element)
 
 
 class BokehMPLRawWrapper(BokehMPLWrapper):
@@ -613,9 +678,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for key, subplot in self.subplots.items():
             try:
                 el = element[key]
+                tools.extend(subplot._init_tools(el))
             except:
                 el = None
-            tools.extend(subplot._init_tools(el))
         return list(set(tools))
 
 
@@ -651,7 +716,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None, element=None):
+    def update_frame(self, key, ranges=None, element=None, empty=False):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
@@ -669,6 +734,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         else:
             range_obj = self.hmap
             items = element.items()
+
+        all_empty = empty
         ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
@@ -677,7 +744,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                 empty = idx is None
                 if not empty:
                     _, el = items.pop(idx)
-            subplot.update_frame(key, ranges, element=el, empty=empty)
+            subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
         if isinstance(self.hmap, DynamicMap) and items:
             raise Exception("Some Elements returned by the dynamic callback "

@@ -14,15 +14,10 @@ MPLScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 // Define methods to override on widgets
 var MPLMethods = {
 	init_slider : function(init_val){
+		this.update_cache();
+		this.update(0);
 		if(this.mode == 'nbagg') {
-			this.update_cache();
-			this.update(0);
 			this.set_frame(init_val, 0);
-		} else if(this.cached) {
-			this.update_cache();
-			this.update(0);
-		} else {
-			this.dynamic_update(0);
 		}
 	},
 	populate_cache : function(idx){

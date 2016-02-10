@@ -2,7 +2,8 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store)
-from ..core.util import match_spec, is_number, wrap_tuple, get_overlay_spec
+from ..core.util import (match_spec, is_number, wrap_tuple,
+                         get_overlay_spec, unique_iterator)
 
 
 def displayable(obj):
@@ -74,14 +75,22 @@ def undisplayable_info(obj, html=False):
             ['<b>%s</b>' % error, remedy, '<i>%s</i>' % info])))
 
 
-def compute_sizes(sizes, size_fn, scaling, base_size):
+def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     """
     Scales point sizes according to a scaling factor,
     base size and size_fn, which will be applied before
     scaling.
     """
+    if scaling_method == 'area':
+        pass
+    elif scaling_method == 'width':
+        scaling_factor = scaling_factor**2
+    else:
+        raise ValueError(
+            'Invalid value for argument "scaling_method": "{}". '
+            'Valid values are: "width", "area".'.format(scaling_method))
     sizes = size_fn(sizes)
-    return (base_size*scaling**sizes)
+    return (base_size*scaling_factor*sizes)
 
 
 def get_sideplot_ranges(plot, element, main, ranges):
@@ -121,17 +130,42 @@ def get_sideplot_ranges(plot, element, main, ranges):
     return range_item, main_range, dim
 
 
+def within_range(range1, range2):
+    """Checks whether range1 is within the range specified by range2."""
+    return ((range1[0] is None or range2[0] is None or range1[0] >= range2[0]) and
+            (range1[1] is None or range2[1] is None or range1[1] <= range2[1]))
+
+
+def validate_sampled_mode(holomaps, dynmaps):
+    composite = HoloMap(enumerate(holomaps), kdims=['testing_kdim'])
+    holomap_kdims = set(unique_iterator([kd.name for dm in holomaps for kd in dm.kdims]))
+    hmranges = {d: composite.range(d) for d in holomap_kdims}
+    if any(not set(d.name for d in dm.kdims) <= holomap_kdims
+                        for dm in dynmaps):
+        raise Exception('In sampled mode DynamicMap key dimensions must be a '
+                        'subset of dimensions of the HoloMap(s) defining the sampling.')
+    elif not all(within_range(hmrange, dm.range(d)) for dm in dynmaps
+                              for d, hmrange in hmranges.items() if d in dm.kdims):
+        raise Exception('HoloMap(s) have keys outside the ranges specified on '
+                        'the DynamicMap(s).')
+
+
 def get_dynamic_mode(composite):
     "Returns the common mode of the dynamic maps in given composite object"
     dynmaps = composite.traverse(lambda x: x, [DynamicMap])
     holomaps = composite.traverse(lambda x: x, ['HoloMap'])
     dynamic_modes = [m.call_mode for m in dynmaps]
     dynamic_sampled = any(m.sampled for m in dynmaps)
+    if holomaps:
+        validate_sampled_mode(holomaps, dynmaps)
+    elif dynamic_sampled and not holomaps:
+        raise Exception("DynamicMaps in sampled mode must be displayed alongside "
+                        "a HoloMap to define the sampling.")
     if len(set(dynamic_modes)) > 1:
         raise Exception("Cannot display composites of DynamicMap objects "
-                        "with different interval modes (i.e open or closed mode).")
+                        "with different interval modes (i.e open or bounded mode).")
     elif dynamic_modes and not holomaps:
-        return 'closed' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
+        return 'bounded' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
     else:
         return None, dynamic_sampled
 

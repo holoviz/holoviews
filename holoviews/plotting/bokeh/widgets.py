@@ -7,7 +7,7 @@ from bokeh.io import Document
 
 if LooseVersion(bokeh.__version__) >= LooseVersion('0.11'):
     bokeh_lt_011 = False
-    from bokeh.io import push_notebook, _CommsHandle
+    from bokeh.io import _CommsHandle
     from bokeh.util.notebook import get_comms
 else:
     bokeh_lt_011 = True
@@ -42,15 +42,16 @@ class BokehWidget(NdWidget):
         Returns the figure in html format on the
         first call and
         """
-        state = self.plot.update(idx)
+        self.plot.update(idx)
         if self.embed or fig_format == 'html' or bokeh_lt_011:
             return self.renderer.html(self.plot, fig_format)
         else:
-            doc = state.document
+            doc = self.plot.document
 
             if hasattr(doc, 'last_comms_handle'):
                 handle = doc.last_comms_handle
             else:
+                doc.add_root(self.plot.state)
                 handle = _CommsHandle(get_comms(doc.last_comms_target),
                                       doc, doc.to_json())
                 doc.last_comms_handle = handle

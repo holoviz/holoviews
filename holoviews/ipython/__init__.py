@@ -10,6 +10,7 @@ from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
+from ..plotting import * # noqa (API import - register plotting backends)
 from .archive import notebook_archive
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
@@ -80,7 +81,7 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
     # Evaluate load_notebook.html template with widgetjs code
     if JS:
-        widgetjs, widgetcss = Renderer.embed_assets()
+        widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
     else:
         widgetjs, widgetcss = '', ''
     templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
@@ -107,6 +108,9 @@ class notebook_extension(param.ParameterizedFunction):
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
+
+    inline = param.Boolean(default=True, doc="""Whether to inline JS and CSS resources,
+        if disabled resources are loaded from CDN if one is available.""")
 
     width = param.Number(default=None, bounds=(0, 100), doc="""
         Width of the notebook as a percentage of the browser screen window width.""")
@@ -161,12 +165,10 @@ class notebook_extension(param.ParameterizedFunction):
         loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
                            for r in resources)
 
-        load_hvjs(logo=p.logo,
-                  JS=('holoviews' in resources),
+        load_hvjs(logo=p.logo, JS=('holoviews' in resources),
                   message = '%s successfully loaded in this cell.' % loaded)
         for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb()
-
+            Store.renderers[r].load_nb(inline=p.inline)
 
         if resources[-1] != 'holoviews':
             get_ipython().magic(u"output backend=%r" % resources[-1]) # noqa (get_ipython))

@@ -1,10 +1,14 @@
 import numpy as np
+import param
 
 from .element import ElementPlot, line_properties, fill_properties
 from .util import get_cmap, map_colors
 
 
 class PathPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['color'] + line_properties
     _plot_method = 'multi_line'

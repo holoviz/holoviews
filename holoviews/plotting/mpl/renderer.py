@@ -97,6 +97,7 @@ class MPLRenderer(Renderer):
             anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
 
+        data = self._apply_post_render_hooks(data, obj, fmt)
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
 
