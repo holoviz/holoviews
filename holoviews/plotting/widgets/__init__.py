@@ -279,7 +279,8 @@ class SelectionWidget(NdWidget):
                     init_dim_vals.append(dim_vals[0])
                 else:
                     widget_type = 'slider'
-                    dim_vals = list(dim.range)
+                    dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
+                                dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
                     int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     if isinstance(dim_range, int) or int_type:

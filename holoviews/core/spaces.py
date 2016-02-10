@@ -551,6 +551,21 @@ class DynamicMap(HoloMap):
         return self.clone(data)
 
 
+    def _slice_bounded(self, tuple_key):
+        """
+        Slices bounded DynamicMaps by setting the soft_ranges on key dimensions.
+        """
+        cloned = self.clone(self)
+        for i, slc in enumerate(tuple_key):
+            (start, stop) = slc.start, slc.stop
+            if start is not None and start < cloned.kdims[i].range[0]:
+                raise Exception("Requested slice below defined dimension range.")
+            if stop is not None and stop > cloned.kdims[i].range[1]:
+                raise Exception("Requested slice above defined dimension range.")
+            cloned.kdims[i].soft_range = (start, stop)
+        return cloned
+
+
     def __getitem__(self, key):
         """
         Return an element for any key chosen key (in'bounded mode') or
@@ -565,9 +580,14 @@ class DynamicMap(HoloMap):
             if key == slice(None, None, None):
                 return self.clone(self)
 
-            if any(isinstance(el, slice) for el in tuple_key):
-                raise Exception("Slices not supported by DynamicMap in bounded mode "
-                                "except for the global slice [:] to create a clone.")
+            slices = [el for el in tuple_key if isinstance(el, slice)]
+            if any(el.step for el in slices):
+                raise Exception("Slices cannot have a step argument "
+                                "in DynamicMap bounded mode ")
+            if len(slices) not in [0, len(tuple_key)]:
+                raise Exception("Slices must be used exclusively or not at all")
+            if slices:
+                return  self._slice_bounded(tuple_key)
 
         # Cache lookup
         try:
