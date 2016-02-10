@@ -84,7 +84,7 @@ class PlotlyRenderer(Renderer):
 
 
     @classmethod
-    def load_nb(cls):
+    def load_nb(cls, inline=True):
         """
         Loads the plotly notebook resources.
         """
