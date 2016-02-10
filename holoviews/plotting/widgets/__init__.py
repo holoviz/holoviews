@@ -263,7 +263,7 @@ class SelectionWidget(NdWidget):
 
             # Hide widget if it has 1-to-1 mapping to next widget
             visible = False
-            dim_nesting = hierarchy[idx-1].values() if isinstance(hierarchy, dict) else []
+            dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
             many_to_one = any(len(v) > 1 for v in dim_nesting)
             if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
                 visible = True
