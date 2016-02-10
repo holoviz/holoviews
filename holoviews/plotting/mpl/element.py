@@ -662,8 +662,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         element = self._get_frame(key)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        for plot in self.subplots.values():
-            plot.initialize_plot(ranges=ranges)
+        for k, subplot in self.subplots.items():
+            subplot.initialize_plot(ranges=ranges)
+            if isinstance(element, CompositeOverlay):
+                frame = element.get(k, None)
+                subplot.current_frame = frame
 
         if self.show_legend:
             self._adjust_legend(element, axis)
