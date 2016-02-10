@@ -14,7 +14,7 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay, DynamicMap
+from ...core import Store, HoloMap, Overlay, DynamicMap, CompositeOverlay
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -686,6 +686,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
+        element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
@@ -705,6 +706,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                     title = ', '.join([d.pprint_value_string(k) for d, k in
                                        zip(self.hmap.last.kdims, key)])
                 panels.append(Panel(child=child, title=title))
+            if isinstance(element, CompositeOverlay):
+                frame = element.get(key, None)
+                subplot.current_frame = frame
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)
