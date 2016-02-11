@@ -25,7 +25,7 @@ Fixes and improvements:
   <https://github.com/ioam/holoviews/issues/467>`_).
 
 
-Backwards compatility:
+Backwards compatibility:
 
 * The behavior of the ``scaling_factor`` on Point and Scatter plots has
   changed now simply multiplying ``area`` or ``width`` (as defined by
