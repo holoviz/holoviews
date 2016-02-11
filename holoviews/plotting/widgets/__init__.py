@@ -85,7 +85,10 @@ class NdWidget(param.Parameterized):
 
     json_load_path = param.String(default=None, doc="""
          If export_json is enabled the widget JS code will load the data
-         from this relative path, if None defaults to json_save_path.""")
+         from this path, if None defaults to json_save_path. For loading
+         the data from within the notebook the path must be relative,
+         when exporting the notebook the path can be set to another
+         location like a webserver where the json files can be uploaded to.""")
 
     ##############################
     # Javascript include options #
@@ -146,6 +149,7 @@ class NdWidget(param.Parameterized):
         mode = repr(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
+        json_path = (json_path + '/') if json_path[-1] != '/' else json_path
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
