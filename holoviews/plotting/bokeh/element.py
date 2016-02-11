@@ -677,10 +677,11 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         tools = []
         for key, subplot in self.subplots.items():
             try:
-                el = element[key]
-                tools.extend(subplot._init_tools(el))
+                el = element.get(key)
+                if el:
+                    tools.extend(subplot._init_tools(el))
             except:
-                el = None
+                pass
         return list(set(tools))
 
 
