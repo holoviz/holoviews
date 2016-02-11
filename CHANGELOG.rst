@@ -1,27 +1,29 @@
 Version 1.4.3
 -------------
 
-A minor bugfix release to patch a number of small but important issues
-in the recent 1.4.2 release.
+A minor bugfix release to patch a number of small but important issues.
 
 Fixes and improvements:
 
-* Fixed plotting bokeh plots using widgets in live mode, after changes
-  introduced in latest bokeh version (commit `1b87c91e9
-  <https://github.com/ioam/holoviews/commit/1b87c91e9e7cf35b267344ccd4a2fa91dd052890>`_).
-* Added a DynamicMap Tutorial to explain how to explore very large or
-  continuous parameter spaces in HoloViews (`PR #470
-  <https://github.com/ioam/holoviews/issues/470>`_).
-* Fixed issue in coloring Point/Scatter objects by values (`Issue #467
-  <https://github.com/ioam/holoviews/issues/467>`_).
-* Various fixes and improvements for DynamicMaps including slicing
-  (`PR #488 <https://github.com/ioam/holoviews/issues/488>`_) and
-  validation (`PR #483
-  <https://github.com/ioam/holoviews/issues/478>`_) and serialization
-  (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_)
+
+* Added a `DynamicMap Tutorial
+  <http://holoviews.org/Tutorials/Dynamic_Map.html>`_ to explain how to
+  explore very large or continuous parameter spaces in HoloViews (`PR
+  #470 <https://github.com/ioam/holoviews/issues/470>`_).
+* Various fixes and improvements for DynamicMaps including slicing (`PR
+  #488 <https://github.com/ioam/holoviews/issues/488>`_) and validation
+  (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_) and
+  serialization (`PR #483
+  <https://github.com/ioam/holoviews/issues/478>`_)
 * Widgets containing matplotlib plots now display the first frame from
   cache providing at least the initial frame when exporting DynamicMaps
   (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_)
+* Fixed plotting bokeh plots using widgets in live mode, after changes
+  introduced in latest bokeh version (commit `1b87c91e9
+  <https://github.com/ioam/holoviews/commit/1b87c91e9e7cf35b267344ccd4a2fa91dd052890>`_).
+* Fixed issue in coloring Point/Scatter objects by values (`Issue #467
+  <https://github.com/ioam/holoviews/issues/467>`_).
+
 
 Backwards compatility:
 
