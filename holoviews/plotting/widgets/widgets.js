@@ -49,11 +49,7 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 }
 
 HoloViewsWidget.prototype.update_cache = function(){
-    if(this.load_json) {
-	    var frame_len = Object.keys(this.keyMap).length;
-    } else {
-        var frame_len = Object.keys(this.frames).length;
-    }
+    var frame_len = Object.keys(this.frames).length;
     for (var i=0; i<frame_len; i++) {
         if(!this.load_json || this.dynamic)  {
             frame = Object.keys(this.frames)[i];
