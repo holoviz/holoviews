@@ -149,7 +149,8 @@ class NdWidget(param.Parameterized):
         mode = repr(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
-        json_path = (json_path + '/') if json_path[-1] != '/' else json_path
+        if json_path and json_path[-1] != '/':
+            json_path = json_path + '/'
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
