@@ -680,9 +680,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
-        if self.projection == '3d':
-            axis.clear()
-
         if element is None:
             element = self._get_frame(key)
         else:

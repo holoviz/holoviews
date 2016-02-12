@@ -76,16 +76,6 @@ class Plot3D(ColorbarPlot):
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
-    def update_frame(self, *args, **kwargs):
-        """
-        If on the bottom Layer, clear plot before drawing each frame.
-        """
-        if not self.subplot or self.zorder == 0:
-            self.handles['axis'].cla()
-
-        super(Plot3D, self).update_frame(*args, **kwargs)
-
-
     def _draw_colorbar(self, artist, element, dim=None):
         fig = self.handles['fig']
         ax = self.handles['axis']
@@ -180,6 +170,8 @@ class SurfacePlot(Plot3D):
 
 
     def update_handles(self, axis, element, key, ranges=None):
+        if 'artist' in self.handles:
+            self.handles['axis'].collections.remove(self.handles['artist'])
         mat = element.data
         rn, cn = mat.shape
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
@@ -221,6 +213,8 @@ class TrisurfacePlot(Plot3D):
 
 
     def update_handles(self, axis, element, key, ranges=None):
+        if 'artist' in self.handles:
+            self.handles['axis'].collections.remove(self.handles['artist'])
         style_opts = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
         vrange = ranges[dims[2]]
