@@ -119,7 +119,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         style = self.style[self.cyclic_index]
         cdim = points.get_dimension(self.color_index)
-        if cdim:
+        if cdim and 'cmap' in style:
             cs = points.dimension_values(self.color_index)
             style['c'] = cs
             if 'clim' not in style:
