@@ -4,8 +4,8 @@ from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core.util import max_range, basestring, map_colors
-from ..util import compute_sizes, get_sideplot_ranges, match_spec
+from ...core.util import max_range, basestring
+from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot
