@@ -186,9 +186,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if self.apply_ticks:
                 self._finalize_ticks(axis, element, xticks, yticks, zticks)
 
+
             if self.show_title and title is not None:
-                self.handles['title'] = axis.set_title(title,
-                                                **self._fontsize('title'))
+                if 'title' in self.handles:
+                    self.handles['title'].set_text(title)
+                else:
+                    self.handles['title'] = axis.set_title(title,
+                                                           **self._fontsize('title'))
         # Always called to ensure log and inverted axes are applied
         self._finalize_axes(axis)
         if not self.overlaid and not self.drawn:
