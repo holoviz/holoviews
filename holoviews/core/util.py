@@ -403,7 +403,7 @@ def max_extents(extents, zrange=False):
     """
     if zrange:
         num = 6
-        inds = [(0, 2), (1, 3)]
+        inds = [(0, 3), (1, 4), (2, 5)]
         extents = [e if len(e) == 6 else (e[0], e[1], None,
                                           e[2], e[3], None)
                    for e in extents]

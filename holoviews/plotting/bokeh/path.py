@@ -1,8 +1,9 @@
 import numpy as np
 import param
 
+from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
-from .util import get_cmap, map_colors
+from .util import get_cmap
 
 
 class PathPlot(ElementPlot):

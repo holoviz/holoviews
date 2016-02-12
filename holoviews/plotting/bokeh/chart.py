@@ -5,10 +5,10 @@ import param
 
 from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring
-from ..util import compute_sizes, get_sideplot_ranges, match_spec
+from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap, mpl_to_bokeh, update_plot
+from .util import get_cmap, mpl_to_bokeh, update_plot
 
 
 class PointPlot(ElementPlot):

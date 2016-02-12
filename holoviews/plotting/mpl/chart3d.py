@@ -1,8 +1,10 @@
 import numpy as np
 import param
+import matplotlib.cm as cm
 
 from ...core import Dimension
 from ...core.util import match_spec, basestring
+from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
 
@@ -49,7 +51,7 @@ class Plot3D(ColorbarPlot):
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
-    def _finalize_axis(self, key, zlabel=None, zticks=None, **kwargs):
+    def _finalize_axis(self, key, **kwargs):
         """
         Extends the ElementPlot _finalize_axis method to set appropriate
         labels, and axes options for 3D Plots.
@@ -74,16 +76,6 @@ class Plot3D(ColorbarPlot):
 
         axis.set_axis_bgcolor(self.bgcolor)
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
-
-
-    def update_frame(self, *args, **kwargs):
-        """
-        If on the bottom Layer, clear plot before drawing each frame.
-        """
-        if not self.subplot or self.zorder == 0:
-            self.handles['axis'].cla()
-
-        super(Plot3D, self).update_frame(*args, **kwargs)
 
 
     def _draw_colorbar(self, artist, element, dim=None):
@@ -123,16 +115,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
         key = self.keys[-1]
-        self.update_handles(axis, points, key, ranges)
-
-        return self._finalize_axis(key, ranges=ranges)
-
-    def update_handles(self, axis, points, key, ranges=None):
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
 
         style = self.style[self.cyclic_index]
         cdim = points.get_dimension(self.color_index)
-        if cdim:
+        if cdim and 'cmap' in style:
             cs = points.dimension_values(self.color_index)
             style['c'] = cs
             if 'clim' not in style:
@@ -145,6 +132,22 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         self.handles['axis'].add_collection(scatterplot)
         self.handles['artist'] = scatterplot
+
+        return self._finalize_axis(key, ranges=ranges)
+
+    def update_handles(self, axis, points, key, ranges=None):
+        artist = self.handles['artist']
+        artist._offsets3d = tuple(points[d] for d in points.dimensions())
+        cdim = points.get_dimension(self.color_index)
+        style = self.style[self.cyclic_index]
+        if cdim and 'cmap' in style:
+            cs = points.dimension_values(self.color_index)
+            clim = style['clim'] if 'clim' in style else ranges[cdim.name]
+            cmap = cm.get_cmap(style['cmap'])
+            artist._facecolor3d = map_colors(cs, clim, cmap, False)
+        if points.get_dimension(self.size_index):
+            artist.set_sizes(self._compute_size(points, style))
+
 
 
 
@@ -180,6 +183,8 @@ class SurfacePlot(Plot3D):
 
 
     def update_handles(self, axis, element, key, ranges=None):
+        if 'artist' in self.handles:
+            self.handles['axis'].collections.remove(self.handles['artist'])
         mat = element.data
         rn, cn = mat.shape
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
@@ -221,6 +226,8 @@ class TrisurfacePlot(Plot3D):
 
 
     def update_handles(self, axis, element, key, ranges=None):
+        if 'artist' in self.handles:
+            self.handles['axis'].collections.remove(self.handles['artist'])
         style_opts = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
         vrange = ranges[dims[2]]
