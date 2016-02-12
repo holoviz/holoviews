@@ -4,8 +4,9 @@ import param
 from bokeh.models.mappers import LinearColorMapper
 
 from ...element import Image, Raster, RGB
+from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, map_colors, get_cmap, hsv_to_rgb
+from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb
 
 
 class RasterPlot(ElementPlot):
