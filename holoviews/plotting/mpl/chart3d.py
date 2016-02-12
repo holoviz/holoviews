@@ -49,7 +49,7 @@ class Plot3D(ColorbarPlot):
                                  objects=['fixed', None], doc="""
         Whether and where to display the yaxis.""")
 
-    def _finalize_axis(self, key, zlabel=None, zticks=None, **kwargs):
+    def _finalize_axis(self, key, **kwargs):
         """
         Extends the ElementPlot _finalize_axis method to set appropriate
         labels, and axes options for 3D Plots.
