@@ -14,7 +14,8 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay, DynamicMap, CompositeOverlay
+from ...core import (Store, HoloMap, Overlay, DynamicMap,
+                     CompositeOverlay, Element)
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -149,6 +150,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
+        element_ids = self.hmap.traverse(lambda x: id(x), [Element])
+        self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
 
 
     def _init_tools(self, element):
@@ -499,6 +502,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a list of the plot objects to update.
         """
         handles = []
+        if self.static and not self.dynamic:
+            return handles
         for handle in self._update_handles:
             if handle in self.handles:
                 handles.append(self.handles[handle])
