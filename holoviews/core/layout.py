@@ -428,6 +428,8 @@ class Layout(AttrTree, Dimensioned):
         """
         clone = super(Layout, self).clone(*args, **overrides)
         clone._display = self._display
+        clone._cols = self._cols
+        clone.id = self.id
         return clone
 
 
