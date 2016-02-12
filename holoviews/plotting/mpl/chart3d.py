@@ -1,8 +1,10 @@
 import numpy as np
 import param
+import matplotlib.cm as cm
 
 from ...core import Dimension
 from ...core.util import match_spec, basestring
+from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot
 
@@ -113,11 +115,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
         ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
         ranges = match_spec(points, ranges)
         key = self.keys[-1]
-        self.update_handles(axis, points, key, ranges)
-
-        return self._finalize_axis(key, ranges=ranges)
-
-    def update_handles(self, axis, points, key, ranges=None):
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
 
         style = self.style[self.cyclic_index]
@@ -135,6 +132,22 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         self.handles['axis'].add_collection(scatterplot)
         self.handles['artist'] = scatterplot
+
+        return self._finalize_axis(key, ranges=ranges)
+
+    def update_handles(self, axis, points, key, ranges=None):
+        artist = self.handles['artist']
+        artist._offsets3d = tuple(points[d] for d in points.dimensions())
+        cdim = points.get_dimension(self.color_index)
+        style = self.style[self.cyclic_index]
+        if cdim and 'cmap' in style:
+            cs = points.dimension_values(self.color_index)
+            clim = style['clim'] if 'clim' in style else ranges[cdim.name]
+            cmap = cm.get_cmap(style['cmap'])
+            artist._facecolor3d = map_colors(cs, clim, cmap, False)
+        if points.get_dimension(self.size_index):
+            artist.set_sizes(self._compute_size(points, style))
+
 
 
 
