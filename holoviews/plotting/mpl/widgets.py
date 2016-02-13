@@ -72,7 +72,7 @@ class MPLWidget(NdWidget):
 
 
     def update(self, key):
-        if self.plot.dynamic == 'closed' and not isinstance(key, int):
+        if self.plot.dynamic == 'bounded' and not isinstance(key, int):
             key = tuple(key)
 
         if self.renderer.mode == 'nbagg':
@@ -94,7 +94,7 @@ class MPLWidget(NdWidget):
             self.manager.display_js()
             frames = {0: self.comm.html}
         elif self.embed:
-            frames = super(MPLWidget, self).get_frames()
+            return super(MPLWidget, self).get_frames()
         else:
             frames = {0: self._plot_figure(0)}
         return self.encode_frames(frames)

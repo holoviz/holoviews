@@ -161,6 +161,8 @@ class NotebookArchive(FileArchive):
         """
         Get the current notebook data and export.
         """
+        if self._timestamp is None:
+            raise Exception("No timestamp set. Has the archive been initialized?")
         if self.skip_notebook_export:
             super(NotebookArchive, self).export(timestamp=self._timestamp,
                                                 info={'notebook':self.notebook_name})
@@ -248,11 +250,13 @@ class NotebookArchive(FileArchive):
                 # Not displayable in an HTML tag
                 elif info['mime_type'] not in self._tags: pass
                 else:
+                    basename, ext = os.path.splitext(fpath)
+                    truncated = self._truncate_name(basename, ext[1:])
                     link_html = self._format(self._tags[info['mime_type']],
-                                             {'src':fpath,
+                                             {'src':truncated,
                                               'mime_type':info['mime_type'],
                                               'css':''})
-                    substitutions[html_key] = (link_html, fpath)
+                    substitutions[html_key] = (link_html, truncated)
 
             node = self._get_notebook_node()
             html = self._generate_html(node, substitutions)

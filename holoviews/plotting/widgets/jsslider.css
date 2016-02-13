@@ -4,6 +4,12 @@ div.hololayout {
     margin: 0;
 }
 
+div.holowell {
+    display: flex;
+    align-items: center;
+    margin: 0;
+}
+
 form.holoform {
     background-color: #fafafa;
     border-radius: 5px;

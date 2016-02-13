@@ -27,15 +27,15 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.4.1",
+    version="1.4.3",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
     long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
-    author_email= "holoviews@googlegroups.com",
+    author_email= "holoviews@gmail.com",
     maintainer= "IOAM",
-    maintainer_email= "holoviews@googlegroups.com",
+    maintainer_email= "holoviews@gmail.com",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://ioam.github.com/holoviews/',

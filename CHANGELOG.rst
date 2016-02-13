@@ -1,3 +1,97 @@
+Version 1.4.3
+-------------
+
+A minor bugfix release to patch a number of small but important issues.
+
+Fixes and improvements:
+
+
+* Added a `DynamicMap Tutorial
+  <http://holoviews.org/Tutorials/Dynamic_Map.html>`_ to explain how to
+  explore very large or continuous parameter spaces in HoloViews (`PR
+  #470 <https://github.com/ioam/holoviews/issues/470>`_).
+* Various fixes and improvements for DynamicMaps including slicing (`PR
+  #488 <https://github.com/ioam/holoviews/issues/488>`_) and validation
+  (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_) and
+  serialization (`PR #483
+  <https://github.com/ioam/holoviews/issues/478>`_)
+* Widgets containing matplotlib plots now display the first frame from
+  cache providing at least the initial frame when exporting DynamicMaps
+  (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_)
+* Fixed plotting bokeh plots using widgets in live mode, after changes
+  introduced in latest bokeh version (commit `1b87c91e9
+  <https://github.com/ioam/holoviews/commit/1b87c91e9e7cf35b267344ccd4a2fa91dd052890>`_).
+* Fixed issue in coloring Point/Scatter objects by values (`Issue #467
+  <https://github.com/ioam/holoviews/issues/467>`_).
+
+
+Backwards compatibility:
+
+* The behavior of the ``scaling_factor`` on Point and Scatter plots has
+  changed now simply multiplying ``area`` or ``width`` (as defined by
+  the ``scaling_method``). To disable scaling points by a dimension
+  set ``size_index=None``.
+* Removed hooks to display 3D Elements using the ``BokehMPLRawWrapper``
+  in bokeh (`PR #477 <https://github.com/ioam/holoviews/pull/477>`_)
+* Renamed the DynamicMap mode ``closed`` to ``bounded`` (`PR #477 <https://github.com/ioam/holoviews/pull/485>`_)
+
+
+Version 1.4.2
+-------------
+
+Over the past month since the 1.4.1 release, we have improved our
+infrastructure for building documentation, updated the main website and
+made several additional usability improvements.
+
+Documentation changes:
+
+* Major overhaul of website and notebook building making it much easier
+  to test user contributions (`Issue #180
+  <https://github.com/ioam/holoviews/issues/180>`_, `PR #429
+  <https://github.com/ioam/holoviews/pull/429>`_)
+
+* Major rewrite of the documentation (`PR #401
+  <https://github.com/ioam/holoviews/pull/401>`_, `PR #411
+  <https://github.com/ioam/holoviews/pull/411>`_)
+
+* Added Columnar Data Tutorial and removed most of Pandas
+  Conversions as it is now supported by the core.
+
+Fixes and improvements:
+
+* Major improvement for grid based layouts with varying aspects (`PR
+  #457 <https://github.com/ioam/holoviews/pull/457>`_)
+
+* Fix for interleaving %matplotline inline and holoviews
+  plots (`Issue #179 <https://github.com/ioam/holoviews/issues/179>`_)
+
+* Matplotlib legend z-orders and updating fixed (`Issue #304
+  <https://github.com/ioam/holoviews/issues/304>`_, `Issue #305
+  <https://github.com/ioam/holoviews/issues/305>`_)
+
+* ``color_index`` and ``size_index`` plot options support specifying
+  dimension by name (`Issue #391
+  <https://github.com/ioam/holoviews/issues/391>`_)
+
+* Added ``Area`` Element type for drawing area under or between
+  Curves. (`PR #427 <https://github.com/ioam/holoviews/pull/427>`_)
+
+* Fixed issues where slicing would remove styles applied to an
+  Element. (`Issue #423
+  <https://github.com/ioam/holoviews/issues/423>`_, `PR #439
+  <https://github.com/ioam/holoviews/pull/439>`_)
+
+* Updated the ``title_format`` plot option to support a ``{dimensions}``
+  formatter (`PR #436 <https://github.com/ioam/holoviews/pull/436>`_)
+
+* Improvements to Renderer API to allow JS and CSS requirements for
+  exporting standalone widgets (`PR #426
+  <https://github.com/ioam/holoviews/pull/426>`_)
+
+* Compatibility with the latest Bokeh 0.11 release (`PR #393
+  <https://github.com/ioam/holoviews/pull/393>`_)
+
+
 Version 1.4.1
 -------------
 

@@ -20,6 +20,9 @@ from .plot import AdjoinedPlot
 
 class ChartPlot(ElementPlot):
 
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
     def __init__(self, data, **params):
         super(ChartPlot, self).__init__(data, **params)
         key_dim = self.hmap.last.get_dimension(0)
@@ -207,6 +210,9 @@ class ErrorPlot(ChartPlot):
 
 class AreaPlot(ChartPlot):
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
@@ -234,6 +240,9 @@ class SpreadPlot(AreaPlot):
     """
     SpreadPlot plots the Spread Element type.
     """
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, element, **params):
         super(SpreadPlot, self).__init__(element, **params)
@@ -490,19 +499,23 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.Integer(default=3, doc="""
+    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                  allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.Integer(default=2, doc="""
+    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                 allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
-      If values are supplied the area of the points is computed relative
-      to the marker size. It is then multiplied by scaling_factor to the power
-      of the ratio between the smallest point and all other points.
-      For values of 1 scaling by the values is disabled, a factor of 2
-      allows for linear scaling of the area and a factor of 4 linear
-      scaling of the point width.""")
+    scaling_method = param.ObjectSelector(default="area",
+                                          objects=["width", "area"],
+                                          doc="""
+      Determines whether the `scaling_factor` should be applied to
+      the width or area of each point (default: "area").""")
+
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
+      Scaling factor which is applied to either the width or area
+      of each point, depending on the value of `scaling_method`.""")
 
     show_grid = param.Boolean(default=True, doc="""
       Whether to draw grid lines at the tick positions.""")
@@ -527,20 +540,22 @@ class PointPlot(ChartPlot, ColorbarPlot):
         ys = element.dimension_values(1) if element else []
         cs = None
 
-        if self.color_index is not None and self.color_index < ndims:
-            cs = element.dimension_values(self.color_index)
-
-        if self.size_index < ndims and self.scaling_factor > 1:
-            style['s'] = self._compute_size(element, style)
-
+        style = self.style[self.cyclic_index]
+        cdim = points.get_dimension(self.color_index)
         color = style.pop('color', None)
-        if cs is None:
-            style['c'] = color
-        else:
+        if cdim:
+            cs = points.dimension_values(self.color_index)
             style['c'] = cs
-            val_dim = element.dimensions(label=True)[self.color_index]
-            clims = ranges.get(val_dim)
-            style['clim'] = clims
+            if 'clim' not in style:
+                clims = ranges[cdim.name]
+                style.update(vmin=clims[0], vmax=clims[1])
+        else:
+            style['c'] = color
+        edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
+
+        if points.get_dimension(self.size_index):
+            style['s'] = self._compute_size(points, style)
+
 
         style['edgecolors'] = style.pop('edgecolors', 'none')
         return (xs, ys), style, {}
@@ -549,21 +564,21 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_size(self, element, opts):
         sizes = element.dimension_values(self.size_index)
         ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor, ms)
+        return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
     def update_handles(self, axis, element, key, ranges=None):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
-        dims = element.dimensions(label=True)
-        ndims = len(dims)
-        if self.size_index < ndims:
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
             opts = self.style[self.cyclic_index]
             paths.set_sizes(self._compute_size(element, opts))
-        if self.color_index < ndims:
+
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
             cs = element.dimension_values(self.color_index)
-            val_dim = dims[self.color_index]
-            paths.set_clim(ranges[val_dim])
+            paths.set_clim(ranges[cdim.name])
             paths.set_array(cs)
 
 
@@ -928,7 +943,7 @@ class SpikesPlot(PathPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.Integer(default=1, doc="""
+    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -947,6 +962,7 @@ class SpikesPlot(PathPlot):
     def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
+
         pos = self.position
         if ndims > 1:
             data = [[(x, pos), (x, pos+y)] for x, y in element.array()]
@@ -958,8 +974,8 @@ class SpikesPlot(PathPlot):
             data = [(line[0][::-1], line[1][::-1]) for line in data]
 
         array, clim = None, None
-        if self.color_index < ndims:
-            cdim = dimensions[self.color_index]
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
             array = element.dimension_values(cdim)
             clim = ranges[cdim]
         style['array'] = array

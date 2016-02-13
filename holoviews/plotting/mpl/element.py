@@ -9,7 +9,7 @@ import param
 from ...core import util
 from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement)
-from ...element import Table, ItemTable, Raster
+from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import MPLPlot
@@ -186,9 +186,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if self.apply_ticks:
                 self._finalize_ticks(axis, element, xticks, yticks, zticks)
 
+
             if self.show_title and title is not None:
-                self.handles['title'] = axis.set_title(title,
-                                                **self._fontsize('title'))
+                if 'title' in self.handles:
+                    self.handles['title'].set_text(title)
+                else:
+                    self.handles['title'] = axis.set_title(title,
+                                                           **self._fontsize('title'))
         # Always called to ensure log and inverted axes are applied
         self._finalize_axes(axis)
         if not self.overlaid and not self.drawn:
@@ -261,8 +265,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             disabled_spines = []
             if self.xaxis is not None:
                 if 'bare' in self.xaxis:
-                    axis.set_xticklabels([])
-                    axis.xaxis.set_ticks_position('none')
+                    axis.xaxis.set_ticklabels([])
+                    axis.xaxis.set_ticks([])
                     axis.set_xlabel('')
                 if 'top' in self.xaxis:
                     axis.xaxis.set_ticks_position("top")
@@ -275,8 +279,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
             if self.yaxis is not None:
                 if 'bare' in self.yaxis:
-                    axis.set_yticklabels([])
-                    axis.yaxis.set_ticks_position('none')
+                    axis.yaxis.set_ticklabels([])
+                    axis.yaxis.set_ticks([])
                     axis.set_ylabel('')
                 if 'left' in self.yaxis:
                     axis.yaxis.set_ticks_position("left")
@@ -628,46 +632,39 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for subplot in self.subplots.values():
             subplot._finalize_artist(key)
 
-    def _adjust_legend(self, axis):
+    def _adjust_legend(self, overlay, axis):
         """
         Accumulate the legend handles and labels for all subplots
         and set up the legend
         """
-
         title = ''
         legend_data = []
-        if issubclass(self.hmap.type, NdOverlay):
-            dimensions = self.hmap.last.kdims
-            for key in self.hmap.last.data.keys():
-                subplot = self.subplots[key]
+        dimensions = overlay.kdims
+        title = ', '.join([d.name for d in dimensions])
+        for key, subplot in self.subplots.items():
+            element = overlay.data.get(key, False)
+            if not subplot.show_legend or not element: continue
+            title = ', '.join([d.name for d in dimensions])
+            handle = subplot.handles.get('artist', False)
+            if isinstance(overlay, NdOverlay):
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
                                   zip(dimensions, key)])
-                handle = subplot.handles.get('artist', False)
                 if handle:
                     legend_data.append((handle, label))
-            title = ', '.join([d.name for d in dimensions])
-        else:
-            for key, subplot in self.subplots.items():
+            else:
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
-                else:
-                    layer = self.hmap.last.data.get(key, False)
-                    handle = subplot.handles.get('artist', False)
-                    if layer and not isinstance(layer, Raster) and layer.label and handle:
-                        legend_data.append((handle, layer.label))
-        autohandles, autolabels = axis.get_legend_handles_labels()
-        legends = list(zip(*legend_data)) if legend_data else ([], [])
-        all_handles = list(legends[0]) + list(autohandles)
-        all_labels = list(legends[1]) + list(autolabels)
+                if element.label and handle:
+                    legend_data.append((handle, element.label))
+        all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
-        show_legend = self.lookup_options(self.hmap.last, 'plot').options.get('show_legend', None)
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
             if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
                 used_labels.append(label)
-        if (not len(set(data.values())) > 1 and not show_legend) or not self.show_legend:
+        if (not len(set(data.values())) > 0) or not self.show_legend:
             legend = axis.get_legend()
             if legend:
                 legend.set_visible(False)
@@ -684,6 +681,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             frame.set_facecolor('1.0')
             frame.set_edgecolor('0.0')
             frame.set_linewidth('1.0')
+            leg.set_zorder(10e6)
             self.handles['legend'] = leg
         self.handles['legend_data'] = data
 
@@ -691,19 +689,23 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
         key = self.keys[-1]
+        element = self._get_frame(key)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        for plot in self.subplots.values():
-            plot.initialize_plot(ranges=ranges)
-        self._adjust_legend(axis)
+        for k, subplot in self.subplots.items():
+            subplot.initialize_plot(ranges=ranges)
+            if isinstance(element, CompositeOverlay):
+                frame = element.get(k, None)
+                subplot.current_frame = frame
+
+        if self.show_legend:
+            self._adjust_legend(element, axis)
 
         return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
 
 
     def update_frame(self, key, ranges=None, element=None):
-        if self.projection == '3d':
-            self.handles['axis'].clear()
-
+        axis = self.handles['axis']
         if element is None:
             element = self._get_frame(key)
         else:
@@ -730,6 +732,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             raise Exception("Some Elements returned by the dynamic callback "
                             "were not initialized correctly and could not be "
                             "rendered.")
+
+        if self.show_legend:
+            self._adjust_legend(element, axis)
 
         self._finalize_axis(key, ranges=ranges)
 

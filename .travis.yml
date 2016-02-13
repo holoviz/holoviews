@@ -33,6 +33,7 @@ install:
   - pip install path.py
   - pip install coveralls awscli
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
+      echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
       NEXT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$((TRAVIS_BUILD_NUMBER + 1))");
       MSG1=$(echo $CURRENT_BUILD | jq '.[].message' );
@@ -40,6 +41,7 @@ install:
       if [ "$MSG1" == "$MSG2" ] ; then
         BUILD_ID=$(echo $NEXT_BUILD | jq .[].id);
         TRAVIS_PULL_REQUEST=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds/$BUILD_ID" | jq .compare_url | cut -d '/' -f7 | cut -d \" -f1);
+        echo "Associated pull request found - PR $TRAVIS_PULL_REQUEST";
       fi
     fi
   - REF_DATA_BRANCH=${TRAVIS_PULL_REQUEST//false/reference_data}
@@ -64,15 +66,16 @@ script:
   - coverage combine
 
 after_script:
-  - if [ "$TRAVIS_BRANCH" != 'master' ]; then
+  - if [ "$TRAVIS_BRANCH" == 'master' ]; then
       cd doc/test_data;
       zip -r test_data.zip *;
       aws s3 cp --region eu-west-1 ./test_data.zip "s3://preview.holoviews.org/$TRAVIS_BUILD_NUMBER/test_data_py${TRAVIS_PYTHON_VERSION:0:1}.zip";
       cd -;
     fi
   - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
-  - aws s3 rm --recursive --region eu-west-1 s3://preview.holoviews.org/$(($TRAVIS_BUILD_NUMBER - 4))
   - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
-  - curl -X POST -d "$TRAVIS_PULL_REQUEST" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status"
+  - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
+      curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
+    fi
 
 after_success: coveralls

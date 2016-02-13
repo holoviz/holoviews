@@ -34,6 +34,10 @@ class BokehPlot(DimensionedPlot):
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
 
+    title_format = param.String(default="{label} {group} {dimensions}", doc="""
+        The formatting string for the title of this plot, allows defining
+        a label group separator and dimension labels.""")
+
     renderer = BokehRenderer
 
     def __init__(self, *args, **params):
@@ -196,21 +200,23 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             kwargs = {}
             if c == 0 and r != 0:
                 kwargs['xaxis'] = 'bottom-bare'
-                kwargs['width'] = 175
+                kwargs['width'] = 150
             if c != 0 and r == 0 and not layout.ndims == 1:
                 kwargs['yaxis'] = 'left-bare'
-                kwargs['height'] = 175
+                kwargs['height'] = 150
             if c == 0 and r == 0:
-                kwargs['width'] = 175
-                kwargs['height'] = 175
+                kwargs['width'] = 150
+                kwargs['height'] = 150
             if r != 0 and c != 0:
                 kwargs['xaxis'] = 'bottom-bare'
                 kwargs['yaxis'] = 'left-bare'
 
             if 'width' not in kwargs:
-                kwargs['width'] = 125
+                kwargs['width'] = 105
             if 'height' not in kwargs:
-                kwargs['height'] = 125
+                kwargs['height'] = 105
+            if 'border' not in kwargs:
+                kwargs['border'] = 0
 
             if isinstance(layout, GridMatrix):
                 if view.traverse(lambda x: x, [Histogram]):

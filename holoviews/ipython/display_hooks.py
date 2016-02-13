@@ -7,7 +7,7 @@ import sys, traceback, inspect, io
 import IPython
 from IPython.core.ultratb import AutoFormattedTB
 
-from ..core.options import Store, StoreOptions, BackendError
+from ..core.options import Store, StoreOptions, BackendError, SkipRendering
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -109,6 +109,9 @@ def display_hook(fn):
                 Store.renderers[Store.current_backend].save(element, filename)
 
             return html
+        except SkipRendering as e:
+            sys.stderr.write("Rendering process skipped: %s" % str(e))
+            return None
         except Exception as e:
             try:
                 StoreOptions.state(element, state=optstate)
@@ -127,13 +130,12 @@ def display_hook(fn):
                                 message=str(e).replace('\n','<br>'))
                     msg ='<i> [Call ipython.show_traceback() for details]</i>'
                     return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
-                else:
-                    traceback.print_exc()
             except:
                 FULL_TRACEBACK = traceback.format_exc()
                 msg = ('<i>Error catching exception:</i> %r <br>'
                        'Call ipython.show_traceback() for details')
                 return msg % e
+            raise e
 
     return wrapped
 

@@ -3,6 +3,7 @@ Provides Dimension objects for tracking the properties of a value,
 axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
+from __future__ import unicode_literals
 import re
 from operator import itemgetter
 
@@ -11,7 +12,7 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict)
+                         find_range, dimension_sanitizer, OrderedDict, unicode)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -122,7 +123,8 @@ class Dimension(param.Parameterized):
     @property
     def pprint_label(self):
         "The pretty-printed label string for the Dimension"
-        unit = '' if self.unit is None else self.unit_format.format(unit=self.unit)
+        unit = ('' if self.unit is None
+                else type(self.unit)(self.unit_format).format(unit=self.unit))
         return self.name + unit
 
 
@@ -276,6 +278,9 @@ class LabelledData(param.Parameterized):
             params = {k: v for k, v in params.items()
                       if k in new_params}
         settings = dict(params, **overrides)
+        if 'id' not in settings:
+            settings['id'] = self.id
+
         if data is None and shared_data:
             data = self.data
         # Apply name mangling for __ attribute
@@ -604,15 +609,28 @@ class Dimensioned(LabelledData):
         return [dim.name if label else dim for dim in dims]
 
 
-    def get_dimension(self, dimension, default=None):
-        "Access a Dimension object by name or index."
+    def get_dimension(self, dimension, default=None, strict=False):
+        """
+        Access a Dimension object by name or index.
+        Returns the default value if the dimension is not found and
+        strict is False. If strict is True, a KeyError is raised
+        instead.
+        """
         all_dims = self.dimensions()
         if isinstance(dimension, Dimension):
             dimension = dimension.name
-        if isinstance(dimension, int) and dimension < len(all_dims):
-            return all_dims[dimension]
+        if isinstance(dimension, int):
+            if 0 <= dimension < len(all_dims):
+                return all_dims[dimension]
+            elif strict:
+                raise KeyError("Dimension %s not found" % dimension)
+            else:
+                return default
+        name_map = {dim.name: dim for dim in all_dims}
+        if strict and dimension not in name_map:
+            raise KeyError("Dimension %s not found" % dimension)
         else:
-            return {dim.name: dim for dim in all_dims}.get(dimension, default)
+            return name_map.get(dimension, default)
 
 
     def get_dimension_index(self, dim):
@@ -776,9 +794,16 @@ class Dimensioned(LabelledData):
         drange = max_range(ranges)
         return drange
 
-
     def __repr__(self):
-        return PrettyPrinter.pprint(self)
+        reprval = PrettyPrinter.pprint(self)
+        if isinstance(reprval, unicode):
+            return str(reprval.encode("utf8"))
+        else:
+            return str(reprval)
+
+    def __unicode__(self):
+        return unicode(PrettyPrinter.pprint(self))
+
 
 
     def __call__(self, options=None, **kwargs):

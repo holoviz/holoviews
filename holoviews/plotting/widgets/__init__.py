@@ -20,13 +20,26 @@ def isnumeric(val):
     except:
         return False
 
-def escape_vals(vals):
+def escape_vals(vals, escape_numerics=True):
     """
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    return ["'"+unicode(safe_unicode(v))+"'" if not isnumeric(v) else
-            ("'%.1f'" % v if v % 1 == 0 else "'%.10f'" % v) for v in vals]
+    if escape_numerics:
+        ints, floats = "'%.1f'", "'%.10f'"
+    else:
+        ints, floats = "%.1f", "%.10f"
+
+    escaped = []
+    for v in vals:
+        if not isnumeric(v):
+            v = "'"+unicode(safe_unicode(v))+"'"
+        elif v % 1 == 0:
+            v = ints % v
+        else:
+            v = floats % v
+        escaped.append(v)
+    return escaped
 
 def escape_tuple(vals):
     return "(" + ", ".join(vals) + (",)" if len(vals) == 1 else ")")
@@ -72,7 +85,10 @@ class NdWidget(param.Parameterized):
 
     json_load_path = param.String(default=None, doc="""
          If export_json is enabled the widget JS code will load the data
-         from this relative path, if None defaults to json_save_path.""")
+         from this path, if None defaults to json_save_path. For loading
+         the data from within the notebook the path must be relative,
+         when exporting the notebook the path can be set to another
+         location like a webserver where the json files can be uploaded to.""")
 
     ##############################
     # Javascript include options #
@@ -133,6 +149,8 @@ class NdWidget(param.Parameterized):
         mode = repr(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
+        if json_path and json_path[-1] != '/':
+            json_path = json_path + '/'
         dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
@@ -241,15 +259,20 @@ class SelectionWidget(NdWidget):
 
     def get_widgets(self):
         # Generate widget data
-        widgets = []
-        dimensions = []
-        init_dim_vals = []
+        step = 1
+        widgets, dimensions, init_dim_vals = [], [], []
         hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
-            step = 1
             next_dim = ''
-            visible = True
             next_vals = {}
+
+            # Hide widget if it has 1-to-1 mapping to next widget
+            visible = False
+            dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
+            many_to_one = any(len(v) > 1 for v in dim_nesting)
+            if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
+                visible = True
+
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
@@ -260,11 +283,14 @@ class SelectionWidget(NdWidget):
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
-                    dim_vals = list(dim.range)
-                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     widget_type = 'slider'
+                    dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
+                                dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
-                    if not isinstance(dim_range, int) or int_type:
+                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
+                    if isinstance(dim_range, int) or int_type:
+                        step = 1
+                    else:
                         step = 10**(round(math.log10(dim_range))-3)
                     init_dim_vals.append(dim_vals[0])
                     dim_vals = escape_list(escape_vals(dim_vals))
@@ -279,28 +305,33 @@ class SelectionWidget(NdWidget):
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
+
                 if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
-                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v for v in vals]
+                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
+                                                    for v in vals]
                                      for k, vals in next_vals.items()}
                     widget_type = 'slider'
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-                visible = len(dim_vals) > 1
+                visible = visible and len(dim_vals) > 1
+
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
-            next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
+                next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
+
+            visibility = '' if visible else 'display: none'
             dim_str = safe_unicode(dim.name)
-            visibility = 'height: visible' if visible else 'visibility: hidden; height: 0px;'
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
                                next_vals=next_vals)
+
             widgets.append(widget_data)
             dimensions.append(dim_str)
-        init_dim_vals = escape_list(escape_vals(init_dim_vals))
+        init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
 

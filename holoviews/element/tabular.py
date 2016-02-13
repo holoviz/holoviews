@@ -72,7 +72,7 @@ class ItemTable(Element):
 
 
     def dimension_values(self, dimension):
-        dimension = self.get_dimension(dimension).name
+        dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
             return np.array([self.data.get(dimension, np.NaN)])
         else:

@@ -15,6 +15,8 @@ except:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
     bokeh_lt_011 = False
+
+from bokeh.models import GlyphRenderer
 from bokeh.plotting import Figure
 
 # Conversion between matplotlib and bokeh markers
@@ -49,22 +51,6 @@ def get_cmap(cmap):
     if rgb_vals:
         return colors.ListedColormap(rgb_vals, name=cmap)
     return cm.get_cmap(cmap)
-
-
-def map_colors(arr, crange, cmap):
-    """
-    Maps an array of values to RGB hex strings, given
-    a color range and colormap.
-    """
-    if crange:
-        cmin, cmax = crange
-    else:
-        cmin, cmax = np.nanmin(arr), np.nanmax(arr)
-    arr = (arr - cmin) / (cmax-cmin)
-    arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
-    arr = cmap(arr)*255
-    return ["#{0:02x}{1:02x}{2:02x}".format(*(int(v) for v in c[:-1]))
-            for c in arr]
 
 
 def mpl_to_bokeh(properties):
@@ -147,3 +133,65 @@ def models_to_json(models):
                               'type': plotobj.ref['type'],
                               'data': json})
     return json_data
+
+
+def hsv_to_rgb(hsv):
+    """
+    Vectorized HSV to RGB conversion, adapted from:
+    http://stackoverflow.com/questions/24852345/hsv-to-rgb-color-conversion
+    """
+    h, s, v = (hsv[..., i] for i in range(3))
+    shape = h.shape
+    i = np.int_(h*6.)
+    f = h*6.-i
+
+    q = f
+    t = 1.-f
+    i = np.ravel(i)
+    f = np.ravel(f)
+    i%=6
+
+    t = np.ravel(t)
+    q = np.ravel(q)
+    s = np.ravel(s)
+    v = np.ravel(v)
+
+    clist = (1-s*np.vstack([np.zeros_like(f),np.ones_like(f),q,t]))*v
+
+    #0:v 1:p 2:q 3:t
+    order = np.array([[0,3,1],[2,0,1],[1,0,3],[1,2,0],[3,1,0],[0,1,2]])
+    rgb = clist[order[i], np.arange(np.prod(shape))[:,None]]
+
+    return rgb.reshape(shape+(3,))
+
+
+def update_plot(old, new):
+    """
+    Updates an existing plot or figure with a new plot,
+    useful for bokeh charts and mpl conversions, which do
+    not allow updating an existing plot easily.
+
+    ALERT: Should be replaced once bokeh supports it directly
+    """
+    old_renderers = old.select(type=GlyphRenderer)
+    new_renderers = new.select(type=GlyphRenderer)
+
+    old.x_range.update(**new.x_range.properties_with_values())
+    old.y_range.update(**new.y_range.properties_with_values())
+    updated = []
+    for new_r in new_renderers:
+        for old_r in old_renderers:
+            if type(old_r.glyph) == type(new_r.glyph):
+                old_renderers.pop(old_renderers.index(old_r))
+                new_props = new_r.properties_with_values()
+                source = new_props.pop('data_source')
+                old_r.glyph.update(**new_r.glyph.properties_with_values())
+                old_r.update(**new_props)
+                old_r.data_source.data.update(source.data)
+                updated.append(old_r)
+                break
+
+    for old_r in old_renderers:
+        if old_r not in updated:
+            emptied = {k: [] for k in old_r.data_source.data}
+            old_r.data_source.data.update(emptied)

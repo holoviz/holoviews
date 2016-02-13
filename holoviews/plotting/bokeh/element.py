@@ -14,7 +14,8 @@ except ImportError:
     mpl = None
 import param
 
-from ...core import Store, HoloMap, Overlay, DynamicMap
+from ...core import (Store, HoloMap, Overlay, DynamicMap,
+                     CompositeOverlay, Element)
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -22,7 +23,7 @@ from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
 from .renderer import bokeh_lt_011
-from .util import mpl_to_bokeh, convert_datetime
+from .util import mpl_to_bokeh, convert_datetime, update_plot
 
 
 # Define shared style properties for bokeh plots
@@ -85,7 +86,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     show_grid = param.Boolean(default=True, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
-    show_legend = param.Boolean(default=False, doc="""
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     shared_axes = param.Boolean(default=True, doc="""
@@ -149,6 +150,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
+        element_ids = self.hmap.traverse(lambda x: id(x), [Element])
+        self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
 
 
     def _init_tools(self, element):
@@ -368,7 +371,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Disables legends if show_legend is disabled.
         """
-        if not self.overlaid and not self.show_legend:
+        if not self.overlaid:
             for l in self.handles['plot'].legend:
                 l.legends[:] = []
                 l.border_line_alpha = 0
@@ -387,12 +390,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _glyph_properties(self, plot, element, source, ranges):
         properties = self.style[self.cyclic_index]
 
-        if self.overlay_dims:
-            legend = ', '.join([d.pprint_value_string(v) for d, v in
-                                self.overlay_dims.items()])
-        else:
-            legend = element.label
-        properties['legend'] = legend
+        if self.show_legend:
+            if self.overlay_dims:
+                legend = ', '.join([d.pprint_value_string(v) for d, v in
+                                    self.overlay_dims.items()])
+            else:
+                legend = element.label
+            properties['legend'] = legend
         properties['source'] = source
         return properties
 
@@ -498,6 +502,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a list of the plot objects to update.
         """
         handles = []
+        if self.static and not self.dynamic:
+            return handles
         for handle in self._update_handles:
             if handle in self.handles:
                 handles.append(self.handles[handle])
@@ -537,16 +543,40 @@ class BokehMPLWrapper(ElementPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         self.mplplot.initialize_plot(ranges)
-        plot = mpl.to_bokeh(self.mplplot.state)
+
+        plot = plot if plot else self.handles.get('plot')
+        new_plot = mpl.to_bokeh(self.mplplot.state)
+        if plot:
+            update_plot(plot, new_plot)
+        else:
+            plot = new_plot
+
         self.handles['plot'] = plot
+        if not self.overlaid:
+            self._update_plot(self.keys[-1], plot, self.hmap.last)
         return plot
 
 
-    def update_frame(self, key, ranges=None):
-        if key in self.hmap:
-            self.mplplot.update_frame(key, ranges)
-            self.handles['plot'] = mpl.to_bokeh(self.mplplot.state)
+    def _update_plot(self, key, plot, element=None):
+        """
+        Updates plot parameters on every frame
+        """
+        plot.set(**self._plot_properties(key, plot, element))
 
+    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
+        self.mplplot.update_frame(key, ranges)
+
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
+            element = self._get_frame(key)
+        else:
+            self.current_key = key
+            self.current_frame = element
+
+        plot = mpl.to_bokeh(self.mplplot.state)
+        update_plot(self.handles['plot'], plot)
+        if not self.overlaid:
+            self._update_plot(key, self.handles['plot'], element)
 
 
 class BokehMPLRawWrapper(BokehMPLWrapper):
@@ -652,15 +682,17 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         tools = []
         for key, subplot in self.subplots.items():
             try:
-                el = element[key]
+                el = element.get(key)
+                if el:
+                    tools.extend(subplot._init_tools(el))
             except:
-                el = None
-            tools.extend(subplot._init_tools(el))
+                pass
         return list(set(tools))
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
+        element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs:
             plot = self._init_plot(key, ranges=ranges, plots=plots)
@@ -680,6 +712,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                     title = ', '.join([d.pprint_value_string(k) for d, k in
                                        zip(self.hmap.last.kdims, key)])
                 panels.append(Panel(child=child, title=title))
+            if isinstance(element, CompositeOverlay):
+                frame = element.get(key, None)
+                subplot.current_frame = frame
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)

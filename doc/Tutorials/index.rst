@@ -34,6 +34,11 @@ in this order:
   data, and how to apply operations to transform the data into 
   complex visualizations easily.
 
+* `Dynamic Map: <Dynamic_Map.html>`_
+  How to work with datasets larger than the available memory by
+  computing elements on-the-fly. Using DynamicMap you can immediately
+  begin exploring huge volumes of data while keeping interaction
+  responsive and without running out of memory.
 
 Supplementary Tutorials
 ------------------------
@@ -102,6 +107,7 @@ extend HoloViews and apply it to real world data see the `Examples
    Exploring Data <Exploring_Data>
    Sampling Data <Sampling_Data>
    Columnar Data <Columnar_Data>
+   Dynamic Map <Dynamic_Map>
    Options
    Exporting
    Continuous Coordinates <Continuous_Coordinates>
@@ -109,5 +115,6 @@ extend HoloViews and apply it to real world data see the `Examples
    Bokeh Backend <Bokeh_Backend>
    Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
-   Elements
+   Matplotlib Elements <Elements>
+   Bokeh Elements <Bokeh_Elements>
    Containers

@@ -8,7 +8,7 @@ import param
 from param.parameterized import bothmethod
 
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, Document
+from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
 try:
@@ -16,6 +16,7 @@ try:
     bokeh_lt_011 = True
 except ImportError:
     from bokeh.core.json_encoder import serialize_json
+    from bokeh.model import _ModelInDocument as add_to_document
     bokeh_lt_011 = False
 
 
@@ -55,7 +56,7 @@ class BokehRenderer(Renderer):
         elif fmt == 'html':
             html = self.figure_data(plot)
             html = '<center>%s</center>' % html
-            return html, info
+            return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
@@ -63,16 +64,18 @@ class BokehRenderer(Renderer):
             if not bokeh_lt_011:
                 data['root'] = plot.state._id
             data['data'] = models_to_json(plotobjects)
-            return serialize_json(data), info
+            return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
         if not bokeh_lt_011:
-            doc = Document()
-            doc.add_root(plot.state)
-            comms_target = str(uuid.uuid4())
-            doc.last_comms_target = comms_target
-            div = notebook_div(plot.state, comms_target)
+            doc_handler = add_to_document(plot.state)
+            with doc_handler:
+                doc = doc_handler._doc
+                comms_target = str(uuid.uuid4())
+                doc.last_comms_target = comms_target
+                div = notebook_div(plot.state, comms_target)
+            plot.document = doc
             return div
         else:
             return notebook_div(plot.state)

@@ -9,7 +9,7 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
-from ..core.options import Store, StoreOptions
+from ..core.options import Store, StoreOptions, SkipRendering
 from ..core.util import find_file
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
@@ -116,6 +116,14 @@ class Renderer(Exporter):
     key_fn = param.Callable(None, allow_None=True, constant=True,  doc="""
         Renderers do not support the saving of object key metadata""")
 
+    post_render_hooks = param.Dict(default={'svg':[], 'png':[]}, doc="""
+       Optional dictionary of hooks that are applied to the rendered
+       data (according to the output format) before it is returned.
+
+       Each hook is passed the rendered data and the object that is
+       being rendered. These hooks allow post-processing of renderered
+       data before output is saved to file or displayed.""")
+
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
@@ -155,7 +163,10 @@ class Renderer(Exporter):
             if dmap.call_mode == 'key':
                 dmap[dmap._initial_key()]
             else:
-                next(dmap)
+                try:
+                    next(dmap)
+                except StopIteration: # Exhausted DynamicMap
+                    raise SkipRendering("DynamicMap generator exhausted.")
 
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
@@ -179,10 +190,12 @@ class Renderer(Exporter):
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
-        if fmt in ['auto', None] and len(plot) == 1 and not plot.dynamic:
-            fmt = fig_formats[0] if self.fig=='auto' else self.fig
-        elif fmt is None:
-            fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
+        if fmt in ['auto', None]:
+            if ((len(plot) == 1 and not plot.dynamic)
+                or (len(plot) > 1 and self.holomap is None)):
+                fmt = fig_formats[0] if self.fig=='auto' else self.fig
+            else:
+                fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt in self.widgets:
             plot = self.get_widget(plot, fmt)
@@ -204,10 +217,27 @@ class Renderer(Exporter):
         """
         plot, fmt =  self._validate(obj, fmt)
         if plot is None: return
-        # [Backend specific code goes here]
+        # [Backend specific code goes here to generate data]
+        data = None
 
+        # Example of how post_render_hooks are applied
+        data = self._apply_post_render_hooks(data, obj, fmt)
         # Example of the return format where the first value is the rendered data.
-        return None, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+        return data, {'file-ext':fmt, 'mime_type':MIME_TYPES[fmt]}
+
+
+    def _apply_post_render_hooks(self, data, obj, fmt):
+        """
+        Apply the post-render hooks to the data.
+        """
+        hooks = self.post_render_hooks.get(fmt,[])
+        for hook in hooks:
+            try:
+                data = hook(data, obj)
+            except Exception as e:
+                self.warning("The post_render_hook %r could not be applied:\n\n %s"
+                             % (hook, e))
+        return data
 
 
     def html(self, obj, fmt=None, css=None):
@@ -262,11 +292,11 @@ class Renderer(Exporter):
             else:
                 widget_type = 'widgets'
         elif dynamic == 'open': widget_type = 'scrubber'
-        elif dynamic == 'closed': widget_type = 'widgets'
+        elif dynamic == 'bounded': widget_type = 'widgets'
         elif widget_type == 'widgets' and dynamic == 'open':
             raise ValueError('Selection widgets not supported in dynamic open mode')
-        elif widget_type == 'scrubber' and dynamic == 'closed':
-            raise ValueError('Scrubber widget not supported in dynamic closed mode')
+        elif widget_type == 'scrubber' and dynamic == 'bounded':
+            raise ValueError('Scrubber widget not supported in dynamic bounded mode')
 
         if widget_type in [None, 'auto']:
             holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]

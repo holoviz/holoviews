@@ -182,8 +182,8 @@ options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
-options.BoxWhisker = Options('style', boxprops=dict(color='k'),
-                             whiskerprops=dict(color='k'))
+options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
+                             whiskerprops=dict(color='k', linewidth=1.5))
 
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
@@ -205,6 +205,7 @@ options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle())
+options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color=Cycle())
 options.Bounds = Options('style', color=Cycle())
