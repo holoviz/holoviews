@@ -125,7 +125,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
         return (xs, ys, zs), style, {}
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         scatterplot = ax.scatter(*plot_data, **plot_kwargs)
         ax.add_collection(scatterplot)
         return {'artist': scatterplot}
@@ -166,13 +166,14 @@ class SurfacePlot(Plot3D):
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
             artist = ax.plot_wireframe(*plot_data, **plot_kwargs)
         elif self.plot_type == "surface":
             artist = ax.plot_surface(*plot_data, **plot_kwargs)
         elif self.plot_type == "contour":
             artist = ax.contour3D(*plot_data, **plot_kwargs)
+        return {'artist': artist}
 
     def get_data(self, element, ranges, style):
         mat = element.data
@@ -204,6 +205,5 @@ class TrisurfacePlot(Plot3D):
         x, y, z = [element.dimension_values(d) for d in dims]
         return (x, y, z), style, {}
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
-        return ax.plot_trisurf(*plot_data, **plot_kwargs)
-        
+    def init_artist(self, ax, plot_data, plot_kwargs):
+        return {'artist': ax.plot_trisurf(*plot_data, **plot_kwargs)}

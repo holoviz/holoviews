@@ -445,7 +445,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
 
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        handles = self.init_artist(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
@@ -457,7 +457,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         self.teardown_handles()
         plot_data, axis_data = self.get_data(element, ranges, style)
-        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        handles = self.init_artist(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
     def teardown_handles(self):

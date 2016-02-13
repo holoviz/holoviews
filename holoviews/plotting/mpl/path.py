@@ -18,7 +18,7 @@ class PathPlot(ElementPlot):
     def get_data(self, element, ranges, style):
         return [element.data], style, {}
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
@@ -59,7 +59,7 @@ class PolygonPlot(ColorbarPlot):
             style['array'] = np.array([value]*len(polys))
         return [polys], style, {}
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         collection = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(collection)
         if self.colorbar:

@@ -73,7 +73,7 @@ class RasterPlot(ColorbarPlot):
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         im = ax.imshow(*plot_args, **plot_kwargs)
         return {'artist': im}
 
@@ -139,15 +139,14 @@ class HeatMapPlot(RasterPlot):
             annotations[plot_coord] = text
         return annotations
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
-        if isinstance(element, HeatMap):
-            l, r, b, t = plot_kwargs['extent']
-            ax.set_aspect(float(r - l)/(t-b))
-            annotations = plot_kwargs.pop('annotations', None)
-            if self.show_values and annotations:
-                annotation_handles = self._annotate_plot(ax, annotations)
+    def init_artist(self, ax, plot_args, plot_kwargs):
+        l, r, b, t = plot_kwargs['extent']
+        ax.set_aspect(float(r - l)/(t-b))
+        annotations = plot_kwargs.pop('annotations', None)
+        if self.show_values and annotations:
+            annotation_handles = self._annotate_plot(ax, annotations)
         im = ax.imshow(*plot_args, **plot_kwargs)
-        return {'artist': im}
+        return {'artist': im, 'annotations': annotation_handles}
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
@@ -193,13 +192,14 @@ class QuadMeshPlot(ColorbarPlot):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
+        style['locs'] = np.concatenate(element.data[:2])
         self._norm_kwargs(element, ranges, style)
         return cmesh_data, style, {}
 
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
+        locs = plot_kwargs.pop('locs')
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
-        locs = np.concatenate(element.data[:2])
         return {'artist': artist, 'locs': locs}
 
 

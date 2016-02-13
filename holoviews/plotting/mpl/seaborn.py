@@ -58,7 +58,7 @@ class RegressionPlot(FullRedrawPlot):
                   'scatter_kws', 'line_kws', 'ci', 'dropna',
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         return {'axis': sns.regplot(*plot_data, ax=ax, **plot_kwargs)}
 
     def get_data(self, element, ranges, style):
@@ -84,7 +84,7 @@ class BivariatePlot(FullRedrawPlot):
                   'ci', 'kind', 'bw', 'kernel', 'cumulative',
                   'shade', 'vertical', 'cmap']
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         if self.joint:
             if self.joint and self.subplot:
                 raise Exception("Joint plots can't be animated or laid out in a grid.")
@@ -125,7 +125,7 @@ class TimeSeriesPlot(FullRedrawPlot):
                        'ylabel': str(view.vdims[0])}
         return (element.data, element.xdata), style, axis_kwargs
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         return {'axis': sns.tsplot(*plot_data, ax=ax, **plot_kwargs)}
 
 
@@ -152,7 +152,7 @@ class DistributionPlot(FullRedrawPlot):
         axis_kwargs = dict(xlabel='', ylabel=str(dim))
         return (element.dimension_values(0),), style, axis_kwargs
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         return {'axis': sns.distplot(*plot_data, ax=ax, **plot_kwargs)}
 
 

@@ -115,7 +115,7 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         return {'artist': ax.plot(*plot_data, **plot_kwargs)[0]}
 
     def get_data(self, element, ranges, style):
@@ -156,7 +156,7 @@ class ErrorPlot(ChartPlot):
                   'markerfacecolor', 'markersize', 'solid_capstyle',
                   'solid_joinstyle', 'dashes', 'color']
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         _, (bottoms, tops), verts = ax.errorbar(*plot_data, **plot_kwargs)
         return {'bottoms': bottoms, 'tops': tops, 'verts': verts}
 
@@ -217,7 +217,7 @@ class AreaPlot(ChartPlot):
         ys = [element.dimension_values(vdim) for vdim in element.vdims]
         return tuple([xs]+ys), style, {}
 
-    def init_artist(self, ax, element, plot_data, plot_kwargs):
+    def init_artist(self, ax, plot_data, plot_kwargs):
         fill_fn = ax.fill_betweenx if self.invert_axes else ax.fill_between
         stack = fill_fn(*plot_data, **plot_kwargs)
         return {'artist': stack}
@@ -525,7 +525,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     _disabled_opts = ['size']
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         return {'artist': ax.scatter(*plot_args, **plot_kwargs)}
 
 
@@ -680,7 +680,7 @@ class VectorFieldPlot(ElementPlot):
         np.fill_diagonal(distances, np.inf)
         return  distances.min()
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         quiver = ax.quiver(*plot_args, **plot_kwargs)
         return {'artist': quiver, 'input_scale': plot_kwargs['scale']}
 
@@ -948,7 +948,7 @@ class SpikesPlot(PathPlot):
 
     style_opts = PathPlot.style_opts + ['cmap']
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
         ax.add_collection(line_segments)
         return {'artist': line_segments}
@@ -1061,7 +1061,7 @@ class BoxPlot(ChartPlot):
         return [data], style, {'xlabel': xlabel, 'ylabel': ylabel}
 
 
-    def init_artist(self, ax, element, plot_args, plot_kwargs):
+    def init_artist(self, ax, plot_args, plot_kwargs):
         boxplot =  ax.boxplot(*plot_args, **plot_kwargs)
         return {'artist': boxplot}
 
@@ -1072,7 +1072,7 @@ class BoxPlot(ChartPlot):
                 v.remove()
 
         plot_data, style, axis_data = self.get_data(element, ranges, style)
-        handles = self.init_artist(ax, element, plot_data, plot_kwargs)
+        handles = self.init_artist(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
 
