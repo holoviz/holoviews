@@ -123,8 +123,8 @@ class DFrameViewPlot(ElementPlot):
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
-    def _update_plot(self, axis, view):
-        style = self._process_style(self.style[self.cyclic_index])
+    def _update_plot(self, axis, view, style):
+        style = self._process_style(style)
         if self.plot_type == 'scatter_matrix':
             pd.scatter_matrix(view.data, ax=axis, **style)
         elif self.plot_type == 'autocorrelation_plot':
@@ -136,14 +136,14 @@ class DFrameViewPlot(ElementPlot):
             getattr(view.data, self.plot_type)(ax=axis, **style)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges, style):
         """
         Update the plot for an animation.
         """
         if not self.plot_type in ['hist', 'scatter_matrix']:
             if self.zorder == 0 and axis:
                 axis.cla()
-        self._update_plot(axis, view)
+        self._update_plot(axis, view, style)
 
 
 Store.register({DataFrameView: DFrameViewPlot,

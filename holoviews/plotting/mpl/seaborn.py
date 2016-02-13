@@ -39,7 +39,7 @@ class FullRedrawPlot(ElementPlot):
 
     _abstract = True
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, axis, view, key, ranges, style):
         if self.zorder == 0 and axis:
             axis.cla()
         self._update_plot(axis, view)
@@ -296,7 +296,9 @@ class SNSFramePlot(DFrameViewPlot):
         axis = self.handles['axis']
         if axis:
             axis.set_visible(view is not None)
-        axis_kwargs = self.update_handles(axis, view, key, ranges)
+
+        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        axis_kwargs = self.update_handles(axis, view, key, ranges, style)
         if axis:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 

@@ -26,15 +26,12 @@ class AnnotationPlot(ElementPlot):
         self.handles['annotations'] = handles
         return self._finalize_axis(key, ranges=ranges)
 
-
-    def update_handles(self, axis, annotation, key, ranges=None):
+    def update_handles(self, axis, annotation, key, ranges, style):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations']=[]
-        opts = self.style[self.cyclic_index]
-        self.handles['annotations'] = self.draw_annotation(axis, annotation.data, opts)
+        self.handles['annotations'] = self.draw_annotation(axis, annotation.data, style)
 
 
 class VLinePlot(AnnotationPlot):

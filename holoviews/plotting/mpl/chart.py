@@ -134,9 +134,8 @@ class CurvePlot(ChartPlot):
         return (xs, ys), style, {'xticks': xticks}
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         artist = self.handles['artist']
-        style = self.style[self.cyclic_index]
         (xs, ys), style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_xdata(xs)
         artist.set_ydata(ys)
@@ -165,7 +164,6 @@ class ErrorPlot(ChartPlot):
 
     def get_data(self, element, ranges, style):
         style['fmt'] = 'none'
-
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
         yerr = element.array(dimensions=dims[2:4])
@@ -173,38 +171,36 @@ class ErrorPlot(ChartPlot):
         return (xs, ys), style, {}
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         bottoms = self.handles['bottoms']
         tops = self.handles['tops']
         verts = self.handles['verts']
         paths = verts.get_paths()
 
-        xvals = element.dimension_values(0)
-        mean = element.dimension_values(1)
-        neg_error = element.dimension_values(2)
-        pos_idx = 3 if len(element.dimensions()) > 3 else 2
-        pos_error = element.dimension_values(pos_idx)
+        (xs, ys), style, {} = self.get_data(element, ranges, style)
 
+        neg_error = element.dimension_values(2)
+        pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
         if self.invert_axes:
-            bdata = xvals - neg_error
-            tdata = xvals + pos_error
+            bdata = xs - neg_error
+            tdata = xs + pos_error
             tops.set_xdata(bdata)
-            tops.set_ydata(mean)
+            tops.set_ydata(ys)
             bottoms.set_xdata(tdata)
-            bottoms.set_ydata(mean)
+            bottoms.set_ydata(ys)
             for i, path in enumerate(paths):
-                path.vertices = np.array([[bdata[i], mean[i]],
-                                          [tdata[i], mean[i]]])
+                path.vertices = np.array([[bdata[i], ys[i]],
+                                          [tdata[i], ys[i]]])
         else:
-            bdata = mean - neg_error
-            tdata = mean + pos_error
-            bottoms.set_xdata(xvals)
+            bdata = ys - neg_error
+            tdata = ys + pos_error
+            bottoms.set_xdata(xs)
             bottoms.set_ydata(bdata)
-            tops.set_xdata(xvals)
+            tops.set_xdata(xs)
             tops.set_ydata(tdata)
             for i, path in enumerate(paths):
-                path.vertices = np.array([[xvals[i], bdata[i]],
-                                          [xvals[i], tdata[i]]])
+                path.vertices = np.array([[xs[i], bdata[i]],
+                                          [xs[i], tdata[i]]])
 
 
 
@@ -388,7 +384,7 @@ class HistogramPlot(ChartPlot):
                 bar.set_width(width)
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(element)
 
@@ -541,7 +537,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         cs = None
 
         style = self.style[self.cyclic_index]
-        cdim = points.get_dimension(self.color_index)
+        cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
         if cdim:
             cs = points.dimension_values(self.color_index)
@@ -553,7 +549,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             style['c'] = color
         edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
-        if points.get_dimension(self.size_index):
+        if element.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
 
@@ -567,13 +563,13 @@ class PointPlot(ChartPlot, ColorbarPlot):
         return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
+
         sdim = element.get_dimension(self.size_index)
         if sdim:
-            opts = self.style[self.cyclic_index]
-            paths.set_sizes(self._compute_size(element, opts))
+            paths.set_sizes(self._compute_size(element, style))
 
         cdim = element.get_dimension(self.color_index)
         if cdim:
@@ -689,10 +685,9 @@ class VectorFieldPlot(ElementPlot):
         quiver = ax.quiver(*plot_args, **plot_kwargs)
         return {'artist': quiver, 'input_scale': plot_kwargs['scale']}
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         artist = self.handles['artist']
-        style = self.style[self.cyclic_index]
-        
+
         input_scale = self.handles['input_scale']
         args, style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_offsets(np.column_stack(args[:2]))
@@ -914,7 +909,7 @@ class BarPlot(LegendPlot):
         return bars, xticks, xlabel
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
         ci, gi, si = self.category_index, self.group_index, self.stack_index
@@ -983,12 +978,11 @@ class SpikesPlot(PathPlot):
         return [data], style, {}
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         artist = self.handles['artist']
         data, kwargs, axis_kwargs = self.get_data(element, ranges)
         artist.set_paths(data)
-        visible = self.style[self.cyclic_index].get('visible', True)
-        artist.set_visible(visible)
+        artist.set_visible(style.get('visible', True))
         if array is not None:
             artist.set_clim(kwargs['clim'])
             artist.set_array(kwargs['array'])
@@ -1073,14 +1067,12 @@ class BoxPlot(ChartPlot):
         return {'artist': boxplot}
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def update_handles(self, axis, element, key, ranges, style):
         for k, group in self.handles['artist'].items():
             for v in group:
                 v.remove()
 
-        plot_data, axis_data = self.get_data(element, ranges)
-        plot_kwargs = self.get_style(element, ranges)
-
+        plot_data, style, axis_data = self.get_data(element, ranges, style)
         handles = self.init_artist(ax, element, plot_data, plot_kwargs)
         self.handles.update(handles)
 
