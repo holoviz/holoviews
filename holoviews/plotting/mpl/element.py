@@ -455,12 +455,20 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Update the elements of the plot.
         """
-        if 'artist' in self.handles:
-            self.handles['artist'].remove()
-
+        self.teardown_handles()
         plot_data, axis_data = self.get_data(element, ranges, style)
         handles = self.init_artist(ax, element, plot_data, plot_kwargs)
         self.handles.update(handles)
+
+    def teardown_handles(self):
+        """
+        If no custom update_handles method is supplied this method
+        is called to tear down any previous handles before replacing
+        them.
+        """
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
+
 
 
 
