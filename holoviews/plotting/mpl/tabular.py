@@ -132,7 +132,7 @@ class TablePlot(ElementPlot):
         return self._finalize_axis(self.keys[-1])
 
 
-    def update_handles(self, axis, view, key, ranges, style):
+    def update_handles(self, axis, view, ranges, style):
         table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():
