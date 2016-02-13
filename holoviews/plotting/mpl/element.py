@@ -428,7 +428,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not self.adjoined:
             ranges = util.match_spec(element, ranges)
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
-        axis_kwargs = self.update_handles(axis, element, key if element is not None else {}, ranges, style)
+        axis_kwargs = self.update_handles(axis, element, ranges, style)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
@@ -451,7 +451,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
 
 
-    def update_handles(self, axis, view, key, ranges, style):
+    def update_handles(self, axis, view, ranges, style):
         """
         Update the elements of the plot.
         """

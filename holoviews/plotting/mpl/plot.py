@@ -221,7 +221,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
-        self.update_handles(axis, self.layout, key, ranges, style)
+        self.update_handles(axis, self.layout, ranges, style)
 
 
 
@@ -441,7 +441,7 @@ class GridPlot(CompositePlot):
             self._adjust_subplots(self.handles['axis'], self.subaxes)
 
 
-    def update_handles(self, axis, view, key, ranges, style):
+    def update_handles(self, axis, view, ranges, style):
         """
         Should be called by the update_frame class to update
         any handles on the plot.
@@ -1036,7 +1036,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return subplots, adjoint_clone, projections
 
 
-    def update_handles(self, axis, view, key, ranges, style):
+    def update_handles(self, axis, view, ranges, style):
         """
         Should be called by the update_frame class to update
         any handles on the plot.
@@ -1047,7 +1047,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
     def initialize_plot(self):
         axis = self.handles['axis']
-        self.update_handles(axis, None, self.keys[-1], None)
+        self.update_handles(axis, None, None, None)
 
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         for subplot in self.subplots.values():

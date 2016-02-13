@@ -26,7 +26,7 @@ class AnnotationPlot(ElementPlot):
         self.handles['annotations'] = handles
         return self._finalize_axis(key, ranges=ranges)
 
-    def update_handles(self, axis, annotation, key, ranges, style):
+    def update_handles(self, axis, annotation, ranges, style):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()

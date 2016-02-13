@@ -115,7 +115,6 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
-
     def init_artist(self, ax, element, plot_data, plot_kwargs):
         return {'artist': ax.plot(*plot_data, **plot_kwargs)[0]}
 
@@ -134,7 +133,7 @@ class CurvePlot(ChartPlot):
         return (xs, ys), style, {'xticks': xticks}
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         artist = self.handles['artist']
         (xs, ys), style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_xdata(xs)
@@ -171,7 +170,7 @@ class ErrorPlot(ChartPlot):
         return (xs, ys), style, {}
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         bottoms = self.handles['bottoms']
         tops = self.handles['tops']
         verts = self.handles['verts']
@@ -384,7 +383,7 @@ class HistogramPlot(ChartPlot):
                 bar.set_width(width)
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         # Process values, axes and style
         edges, hvals, widths, lims = self._process_hist(element)
 
@@ -563,7 +562,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         paths = self.handles['artist']
         paths.set_offsets(element.array(dimensions=[0, 1]))
 
@@ -685,7 +684,7 @@ class VectorFieldPlot(ElementPlot):
         quiver = ax.quiver(*plot_args, **plot_kwargs)
         return {'artist': quiver, 'input_scale': plot_kwargs['scale']}
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         artist = self.handles['artist']
 
         input_scale = self.handles['input_scale']
@@ -909,7 +908,7 @@ class BarPlot(LegendPlot):
         return bars, xticks, xlabel
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
         ci, gi, si = self.category_index, self.group_index, self.stack_index
@@ -978,7 +977,7 @@ class SpikesPlot(PathPlot):
         return [data], style, {}
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         artist = self.handles['artist']
         data, kwargs, axis_kwargs = self.get_data(element, ranges)
         artist.set_paths(data)
@@ -1067,7 +1066,7 @@ class BoxPlot(ChartPlot):
         return {'artist': boxplot}
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         for k, group in self.handles['artist'].items():
             for v in group:
                 v.remove()

@@ -95,7 +95,7 @@ class RasterPlot(ColorbarPlot):
             return None, None
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         l, r, b, t = style['extent']
@@ -161,7 +161,7 @@ class HeatMapPlot(RasterPlot):
         return [data], style, axis_kwargs
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         l, r, b, t = style['extent']
@@ -203,12 +203,12 @@ class QuadMeshPlot(ColorbarPlot):
         return {'artist': artist, 'locs': locs}
 
 
-    def update_handles(self, axis, element, key, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         cmesh = self.handles['artist']
         locs = np.concatenate(element.data[:2])
 
         if (locs != self.handles['locs']).any():
-            return super(QuadMeshPlot, self).update_handles(axis, element, key,
+            return super(QuadMeshPlot, self).update_handles(axis, element,
                                                             ranges, style)
         else:
             data, style, axis_kwargs = self.get_data(element, ranges, style)
