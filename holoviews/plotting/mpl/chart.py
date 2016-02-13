@@ -176,7 +176,7 @@ class ErrorPlot(ChartPlot):
         verts = self.handles['verts']
         paths = verts.get_paths()
 
-        (xs, ys), style, {} = self.get_data(element, ranges, style)
+        (xs, ys), style, axis_kwargs = self.get_data(element, ranges, style)
 
         neg_error = element.dimension_values(2)
         pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
@@ -200,7 +200,7 @@ class ErrorPlot(ChartPlot):
             for i, path in enumerate(paths):
                 path.vertices = np.array([[xs[i], bdata[i]],
                                           [xs[i], tdata[i]]])
-
+        return axis_kwargs
 
 
 class AreaPlot(ChartPlot):
