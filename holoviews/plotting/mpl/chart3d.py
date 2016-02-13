@@ -110,18 +110,18 @@ class Scatter3DPlot(Plot3D, PointPlot):
       Index of the dimension from which the sizes will the drawn.""")
 
     def get_data(self, element, ranges, style):
-        xs, ys, zs = (points.dimension_values(i) for i in range(3))
+        xs, ys, zs = (element.dimension_values(i) for i in range(3))
 
         style = self.style[self.cyclic_index]
-        cdim = points.get_dimension(self.color_index)
+        cdim = element.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
-            cs = points.dimension_values(self.color_index)
+            cs = element.dimension_values(self.color_index)
             style['c'] = cs
             if 'clim' not in style:
                 clims = ranges[cdim.name]
                 style.update(vmin=clims[0], vmax=clims[1])
-        if points.get_dimension(self.size_index):
-            style['s'] = self._compute_size(points, style)
+        if element.get_dimension(self.size_index):
+            style['s'] = self._compute_size(element, style)
 
         return (xs, ys, zs), style, {}
 
@@ -130,18 +130,18 @@ class Scatter3DPlot(Plot3D, PointPlot):
         ax.add_collection(scatterplot)
         return {'artist': scatterplot}
 
-    def update_handles(self, axis, points, ranges, style):
+    def update_handles(self, axis, element, ranges, style):
         artist = self.handles['artist']
-        offsets, style, plot_kwargs = self.get_data(points, ranges, style)
+        offsets, style, plot_kwargs = self.get_data(element, ranges, style)
         artist._offsets3d = offsets
-        cdim = points.get_dimension(self.color_index)
+        cdim = element.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
-            cs = points.dimension_values(cdim)
+            cs = element.dimension_values(cdim)
             clim = style['clim'] if 'clim' in style else ranges[cdim.name]
             cmap = cm.get_cmap(style['cmap'])
             artist._facecolor3d = map_colors(cs, clim, cmap, False)
-        if points.get_dimension(self.size_index):
-            artist.set_sizes(self._compute_size(points, style))
+        if element.get_dimension(self.size_index):
+            artist.set_sizes(self._compute_size(element, style))
         return plot_kwargs
 
 

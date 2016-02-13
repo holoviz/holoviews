@@ -424,9 +424,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 handle.set_visible(element is not None)
         if element is None:
             return
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
             ranges = util.match_spec(element, ranges)
+
+        label = element.label if self.show_legend else ''
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
         axis_kwargs = self.update_handles(axis, element, ranges, style)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))

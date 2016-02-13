@@ -221,7 +221,13 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges=ranges)
         axis = self.handles['axis']
-        self.update_handles(axis, self.layout, ranges, style)
+        if self.show_title:
+            title = self._format_title(key)
+            if 'title' in self.handles:
+                self.handles['title'].set_text(title)
+            else:
+                title = axis.set_title(title, **self._fontsize('title'))
+                self.handles['title'] = title
 
 
 
@@ -439,20 +445,6 @@ class GridPlot(CompositePlot):
                 axis.set_aspect(float(self.rows)/self.cols)
             self.handles['fig'].canvas.draw()
             self._adjust_subplots(self.handles['axis'], self.subaxes)
-
-
-    def update_handles(self, axis, view, ranges, style):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        if self.show_title:
-            title = self._format_title(key)
-            if 'title' in self.handles:
-                self.handles['title'].set_text(title)
-            else:
-                title = axis.set_title(title, **self._fontsize('title'))
-                self.handles['title'] = title
 
 
     def _layout_axis(self, layout, axis):
@@ -1036,19 +1028,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return subplots, adjoint_clone, projections
 
 
-    def update_handles(self, axis, view, ranges, style):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        if self.show_title and 'title' in self.handles and len(self.coords) > 1:
-            self.handles['title'].set_text(self._format_title(key))
-
-
     def initialize_plot(self):
         axis = self.handles['axis']
-        self.update_handles(axis, None, None, None)
-
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges=ranges)

@@ -51,6 +51,10 @@ class RasterPlot(ColorbarPlot):
                 return element.extents
 
 
+    def _compute_ticks(self, element, ranges):
+        return None, None
+
+
     def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
 
@@ -76,23 +80,6 @@ class RasterPlot(ColorbarPlot):
     def init_artist(self, ax, plot_args, plot_kwargs):
         im = ax.imshow(*plot_args, **plot_kwargs)
         return {'artist': im}
-
-
-    def _compute_ticks(self, element, ranges):
-        if isinstance(element, HeatMap):
-            xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = [element.dimension_values(i, True)
-                                    for i in range(2)]
-            num_x, num_y = len(dim1_keys), len(dim2_keys)
-            x0, y0, x1, y1 = element.extents
-            xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
-            xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
-            ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
-            xlabels = [xdim.pprint_value(k) for k in dim1_keys]
-            ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-            return (xpos, xlabels), (ypos, ylabels)
-        else:
-            return None, None
 
 
     def update_handles(self, axis, element, ranges, style):
@@ -139,14 +126,32 @@ class HeatMapPlot(RasterPlot):
             annotations[plot_coord] = text
         return annotations
 
+
+    def _compute_ticks(self, element, ranges):
+        xdim, ydim = element.kdims
+        dim1_keys, dim2_keys = [element.dimension_values(i, True)
+                                for i in range(2)]
+        num_x, num_y = len(dim1_keys), len(dim2_keys)
+        x0, y0, x1, y1 = element.extents
+        xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
+        xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
+        ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
+        xlabels = [xdim.pprint_value(k) for k in dim1_keys]
+        ylabels = [ydim.pprint_value(k) for k in dim2_keys]
+        return (xpos, xlabels), (ypos, ylabels)
+
+
     def init_artist(self, ax, plot_args, plot_kwargs):
         l, r, b, t = plot_kwargs['extent']
         ax.set_aspect(float(r - l)/(t-b))
+
+        handles = {}
         annotations = plot_kwargs.pop('annotations', None)
+        handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
         if self.show_values and annotations:
-            annotation_handles = self._annotate_plot(ax, annotations)
-        im = ax.imshow(*plot_args, **plot_kwargs)
-        return {'artist': im, 'annotations': annotation_handles}
+            handles['annotations'] = self._annotate_plot(ax, annotations)
+        return handles
+
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)

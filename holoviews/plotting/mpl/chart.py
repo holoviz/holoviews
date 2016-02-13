@@ -539,7 +539,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
         if cdim:
-            cs = points.dimension_values(self.color_index)
+            cs = element.dimension_values(self.color_index)
             style['c'] = cs
             if 'clim' not in style:
                 clims = ranges[cdim.name]
@@ -549,8 +549,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         if element.get_dimension(self.size_index):
-            style['s'] = self._compute_size(points, style)
-
+            style['s'] = self._compute_size(element, style)
 
         style['edgecolors'] = style.pop('edgecolors', 'none')
         return (xs, ys), style, {}
@@ -971,7 +970,7 @@ class SpikesPlot(PathPlot):
         cdim = element.get_dimension(self.color_index)
         if cdim:
             array = element.dimension_values(cdim)
-            clim = ranges[cdim]
+            clim = ranges[cdim.name]
         style['array'] = array
         style['clim'] = clim
         return [data], style, {}
