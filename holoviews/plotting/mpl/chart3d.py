@@ -109,12 +109,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
-    def initialize_plot(self, ranges=None):
-        axis = self.handles['axis']
-        points = self.hmap.last
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(points, ranges)
-        key = self.keys[-1]
+    def get_data(self, element, ranges, style):
         xs, ys, zs = (points.dimension_values(i) for i in range(3))
 
         style = self.style[self.cyclic_index]
@@ -128,26 +123,27 @@ class Scatter3DPlot(Plot3D, PointPlot):
         if points.get_dimension(self.size_index):
             style['s'] = self._compute_size(points, style)
 
-        scatterplot = axis.scatter(xs, ys, zs, zorder=self.zorder, **style)
+        return (xs, ys, zs), style, {}
 
-        self.handles['axis'].add_collection(scatterplot)
-        self.handles['artist'] = scatterplot
-
-        return self._finalize_axis(key, ranges=ranges)
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        scatterplot = ax.scatter(*plot_data, **plot_kwargs)
+        ax.add_collection(scatterplot)
+        return {'artist': scatterplot}
 
     def update_handles(self, axis, points, key, ranges=None):
         artist = self.handles['artist']
-        artist._offsets3d = tuple(points[d] for d in points.dimensions())
-        cdim = points.get_dimension(self.color_index)
         style = self.style[self.cyclic_index]
+        offsets, style, plot_kwargs = self.get_data(points, ranges, style)
+        artist._offsets3d = offsets
+        cdim = points.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
-            cs = points.dimension_values(self.color_index)
+            cs = points.dimension_values(cdim)
             clim = style['clim'] if 'clim' in style else ranges[cdim.name]
             cmap = cm.get_cmap(style['cmap'])
             artist._facecolor3d = map_colors(cs, clim, cmap, False)
         if points.get_dimension(self.size_index):
             artist.set_sizes(self._compute_size(points, style))
-
+        return plot_kwargs
 
 
 
@@ -171,36 +167,23 @@ class SurfacePlot(Plot3D):
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        key = self.keys[-1]
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        if self.plot_type == "wireframe":
+            artist = ax.plot_wireframe(*plot_data, **plot_kwargs)
+        elif self.plot_type == "surface":
+            artist = ax.plot_surface(*plot_data, **plot_kwargs)
+        elif self.plot_type == "contour":
+            artist = ax.contour3D(*plot_data, **plot_kwargs)
 
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
-
-        self.update_handles(self.handles['axis'], element, key, ranges)
-        return self._finalize_axis(key, ranges=ranges)
-
-
-    def update_handles(self, axis, element, key, ranges=None):
-        if 'artist' in self.handles:
-            self.handles['axis'].collections.remove(self.handles['artist'])
+    def get_data(self, element, ranges, style):
         mat = element.data
         rn, cn = mat.shape
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
-
-        style_opts = self.style[self.cyclic_index]
-
-        if self.plot_type == "wireframe":
-            self.handles['artist'] = self.handles['axis'].plot_wireframe(r, c, mat, **style_opts)
-        elif self.plot_type == "surface":
-            style_opts['vmin'] = zmin
-            style_opts['vmax'] = zmax
-            self.handles['artist'] = self.handles['axis'].plot_surface(r, c, mat, **style_opts)
-        elif self.plot_type == "contour":
-            self.handles['artist'] = self.handles['axis'].contour3D(r, c, mat, **style_opts)
-
+        style['vmin'] = zmin
+        style['vmax'] = zmax
+        return (r, c, mat), style, {}
+            
 
 
 class TrisurfacePlot(Plot3D):
@@ -214,24 +197,14 @@ class TrisurfacePlot(Plot3D):
 
     style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        key = self.keys[-1]
-
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
-
-        self.update_handles(self.handles['axis'], element, key, ranges)
-        return self._finalize_axis(key, ranges=ranges)
-
-
-    def update_handles(self, axis, element, key, ranges=None):
-        if 'artist' in self.handles:
-            self.handles['axis'].collections.remove(self.handles['artist'])
-        style_opts = self.style[self.cyclic_index]
+    def get_data(self, element, ranges, style):
         dims = element.dimensions(label=True)
         vrange = ranges[dims[2]]
+        style['vmin'] = vrange[0]
+        style['vmax'] = vrange[1]
         x, y, z = [element.dimension_values(d) for d in dims]
-        artist = axis.plot_trisurf(x, y, z, vmax=vrange[1],
-                                   vmin=vrange[0], **style_opts)
-        self.handles['artist'] = artist
+        return (x, y, z), style, {}
+
+    def init_artist(self, ax, element, plot_data, plot_kwargs):
+        return ax.plot_trisurf(*plot_data, **plot_kwargs)
+        
