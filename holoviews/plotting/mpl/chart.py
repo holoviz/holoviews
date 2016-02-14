@@ -675,17 +675,14 @@ class VectorFieldPlot(ElementPlot):
 
     def init_artist(self, ax, plot_args, plot_kwargs):
         quiver = ax.quiver(*plot_args, **plot_kwargs)
-        return {'artist': quiver, 'input_scale': plot_kwargs['scale']}
+        return {'artist': quiver}
 
     def update_handles(self, key, axis, element, ranges, style):
-        artist = self.handles['artist']
-
-        input_scale = self.handles['input_scale']
         args, style, axis_kwargs = self.get_data(element, ranges, style)
-        artist.set_offsets(np.column_stack(args[:2]))
-        
+
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['artist']
+        quiver.set_offsets(np.column_stack(args[:2]))
         quiver.U = args[2]
         quiver.angles = style['angles']
         if self.color_dim:
