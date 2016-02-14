@@ -263,7 +263,7 @@ class SNSFramePlot(DFrameViewPlot):
             axis.set_visible(view is not None)
 
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
-        axis_kwargs = self.update_handles(axis, view, key, ranges, style)
+        axis_kwargs = self.update_handles(key, axis, view, key, ranges, style)
         if axis:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 

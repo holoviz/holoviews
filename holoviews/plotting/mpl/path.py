@@ -23,7 +23,7 @@ class PathPlot(ElementPlot):
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
-    def update_handles(self, axis, element, ranges, style):
+    def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data[0])
@@ -67,11 +67,11 @@ class PolygonPlot(ColorbarPlot):
         return {'artist': collection, 'polys': plot_args[0]}
 
 
-    def update_handles(self, axis, element, ranges, style):
+    def update_handles(self, key, axis, element, ranges, style):
         collection = self.handles['artist']
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
                zip(element.data, self.handles['polys'])):
-            return super(PolygonPlot, self).update_handles(axis, element, ranges, style)
+            return super(PolygonPlot, self).update_handles(key, axis, element, ranges, style)
         elif value is not None and np.isfinite(value):
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim(ranges[vdim.name])

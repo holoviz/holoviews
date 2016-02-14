@@ -136,7 +136,7 @@ class DFrameViewPlot(ElementPlot):
             getattr(view.data, self.plot_type)(ax=axis, **style)
 
 
-    def update_handles(self, axis, view, ranges, style):
+    def update_handles(self, key, axis, view, ranges, style):
         """
         Update the plot for an animation.
         """

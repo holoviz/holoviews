@@ -130,7 +130,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         ax.add_collection(scatterplot)
         return {'artist': scatterplot}
 
-    def update_handles(self, axis, element, ranges, style):
+    def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
         offsets, style, plot_kwargs = self.get_data(element, ranges, style)
         artist._offsets3d = offsets
