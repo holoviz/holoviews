@@ -111,18 +111,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
-
-        style = self.style[self.cyclic_index]
-        cdim = element.get_dimension(self.color_index)
-        if cdim and 'cmap' in style:
-            cs = element.dimension_values(self.color_index)
-            style['c'] = cs
-            if 'clim' not in style:
-                clims = ranges[cdim.name]
-                style.update(vmin=clims[0], vmax=clims[1])
-        if element.get_dimension(self.size_index):
-            style['s'] = self._compute_size(element, style)
-
+        self._compute_styles(element, ranges, style)
         return (xs, ys, zs), style, {}
 
     def init_artist(self, ax, plot_data, plot_kwargs):
@@ -132,17 +121,15 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
-        offsets, style, plot_kwargs = self.get_data(element, ranges, style)
+        offsets, style, _ = self.get_data(element, ranges, style)
         artist._offsets3d = offsets
         cdim = element.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
-            cs = element.dimension_values(cdim)
             clim = style['clim'] if 'clim' in style else ranges[cdim.name]
             cmap = cm.get_cmap(style['cmap'])
-            artist._facecolor3d = map_colors(cs, clim, cmap, False)
+            artist._facecolor3d = map_colors(style['c'], clim, cmap, hex=False)
         if element.get_dimension(self.size_index):
-            artist.set_sizes(self._compute_size(element, style))
-        return plot_kwargs
+            artist.set_sizes(style['s'])
 
 
 

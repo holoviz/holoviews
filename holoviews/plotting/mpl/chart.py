@@ -530,12 +530,12 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
 
     def get_data(self, element, ranges, style):
-        ndims = len(element.dimensions())
-        xs = element.dimension_values(0) if element else []
-        ys = element.dimension_values(1) if element else []
-        cs = None
+        xs, ys = (element.dimension_values(i) for i in range(2))
+        self._compute_styles(element, ranges, style)
+        return (xs, ys), style, {}
 
-        style = self.style[self.cyclic_index]
+
+    def _compute_styles(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
         if cdim:
@@ -545,35 +545,29 @@ class PointPlot(ChartPlot, ColorbarPlot):
                 clims = ranges[cdim.name]
                 style.update(vmin=clims[0], vmax=clims[1])
         else:
-            style['c'] = color
-        edgecolor = style.pop('edgecolors', style.pop('edgecolor', 'none'))
+            style['color'] = color
+        style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
         if element.get_dimension(self.size_index):
-            style['s'] = self._compute_size(element, style)
-
+            sizes = element.dimension_values(self.size_index)
+            ms = style.pop('s') if 's' in style else plt.rcParams['lines.markersize']
+            style['s'] = compute_sizes(sizes, self.size_fn, self.scaling_factor,
+                                       self.scaling_method, ms)
         style['edgecolors'] = style.pop('edgecolors', 'none')
-        return (xs, ys), style, {}
-
-
-    def _compute_size(self, element, opts):
-        sizes = element.dimension_values(self.size_index)
-        ms = opts.pop('s') if 's' in opts else plt.rcParams['lines.markersize']
-        return compute_sizes(sizes, self.size_fn, self.scaling_factor, self.scaling_method, ms)
 
 
     def update_handles(self, key, axis, element, ranges, style):
         paths = self.handles['artist']
-        paths.set_offsets(element.array(dimensions=[0, 1]))
-
+        (xs, ys), style, _ = self.get_data(element, ranges, style)
+        paths.set_offsets(np.column_stack([xs, ys]))
         sdim = element.get_dimension(self.size_index)
         if sdim:
-            paths.set_sizes(self._compute_size(element, style))
+            paths.set_sizes(style['s'])
 
         cdim = element.get_dimension(self.color_index)
         if cdim:
-            cs = element.dimension_values(self.color_index)
-            paths.set_clim(ranges[cdim.name])
-            paths.set_array(cs)
+            paths.set_clim(style['vmin'], style['vmax'])
+            paths.set_array(style['c'])
 
 
 
