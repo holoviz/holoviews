@@ -112,6 +112,9 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
+        # Temporary fix until color handling is deterministic in py3
+        if not element.get_dimension(self.color_index):
+            style['color'] = style['c']
         return (xs, ys, zs), style, {}
 
     def init_artist(self, ax, plot_data, plot_kwargs):
