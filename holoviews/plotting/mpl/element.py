@@ -438,7 +438,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         ax = self.handles['axis']
-        dim_map = dict(zip((d.name for d in self.hmap.kdims), self.hmap.data.keys()[-1]))
+        key = list(self.hmap.data.keys())[-1]
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
         key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
