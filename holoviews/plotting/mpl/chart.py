@@ -642,7 +642,7 @@ class VectorFieldPlot(ElementPlot):
         if self.normalize_lengths and max_magnitude != 0:
             magnitudes =  magnitudes / max_magnitude
 
-        angles = (np.array(radians) / np.pi) * 180
+        angles = list((np.array(radians) / np.pi) * 180)
         scale = input_scale / min_dist
         args = (xs, ys, magnitudes,  [0.0] * len(element))
         if self.color_dim:
