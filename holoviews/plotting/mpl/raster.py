@@ -178,7 +178,10 @@ class HeatMapPlot(RasterPlot):
         if self.show_values:
             annotations = self.handles['annotations']
             for annotation in annotations.values():
-                annotation.remove()
+                try:
+                    annotation.remove()
+                except:
+                    pass
             self._annotate_plot(axis, style['annotations'])
         return axis_kwargs
 
@@ -219,7 +222,7 @@ class QuadMeshPlot(ColorbarPlot):
             data, style, axis_kwargs = self.get_data(element, ranges, style)
             cmesh.set_array(data[-1])
             cmesh.set_clim(style['clim'])
-            if norm:
+            if 'norm' in style:
                 cmesh.norm = style['norm']
             return axis_kwargs
 

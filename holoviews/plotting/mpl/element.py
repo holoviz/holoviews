@@ -454,14 +454,15 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
 
 
-    def update_handles(self, key, axis, view, ranges, style):
+    def update_handles(self, key, axis, element, ranges, style):
         """
         Update the elements of the plot.
         """
         self.teardown_handles()
-        plot_data, axis_data = self.get_data(element, ranges, style)
-        handles = self.init_artist(ax, plot_data, plot_kwargs)
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        handles = self.init_artist(axis, plot_data, plot_kwargs)
         self.handles.update(handles)
+        return axis_kwargs
 
     def teardown_handles(self):
         """

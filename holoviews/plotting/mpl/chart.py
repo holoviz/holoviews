@@ -158,7 +158,7 @@ class ErrorPlot(ChartPlot):
 
     def init_artist(self, ax, plot_data, plot_kwargs):
         _, (bottoms, tops), verts = ax.errorbar(*plot_data, **plot_kwargs)
-        return {'bottoms': bottoms, 'tops': tops, 'verts': verts}
+        return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0]}
 
 
     def get_data(self, element, ranges, style):
@@ -967,15 +967,15 @@ class SpikesPlot(PathPlot):
             clim = ranges[cdim.name]
         style['array'] = array
         style['clim'] = clim
-        return [data], style, {}
+        return [np.array(data)], style, {}
 
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
-        data, kwargs, axis_kwargs = self.get_data(element, ranges)
+        (data,), kwargs, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data)
         artist.set_visible(style.get('visible', True))
-        if array is not None:
+        if 'array' not in kwargs:
             artist.set_clim(kwargs['clim'])
             artist.set_array(kwargs['array'])
         return axis_kwargs
@@ -1059,14 +1059,10 @@ class BoxPlot(ChartPlot):
         return {'artist': boxplot}
 
 
-    def update_handles(self, key, axis, element, ranges, style):
+    def teardown_handles(self):
         for k, group in self.handles['artist'].items():
             for v in group:
                 v.remove()
-
-        plot_data, style, axis_data = self.get_data(element, ranges, style)
-        handles = self.init_artist(ax, plot_data, plot_kwargs)
-        self.handles.update(handles)
 
 
 class SideBoxPlot(AdjoinedPlot, BoxPlot):
