@@ -220,14 +220,13 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges=ranges)
-        axis = self.handles['axis']
-        if self.show_title:
-            title = self._format_title(key)
-            if 'title' in self.handles:
-                self.handles['title'].set_text(title)
-            else:
-                title = axis.set_title(title, **self._fontsize('title'))
-                self.handles['title'] = title
+
+        title = self._format_title(key) if self.show_title else ''
+        if 'title' in self.handles:
+            self.handles['title'].set_text(title)
+        else:
+            title = axis.set_title(title, **self._fontsize('title'))
+            self.handles['title'] = title
 
 
 
@@ -906,11 +905,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 padding = dict(w_pad=self.tight_padding, h_pad=self.tight_padding)
             self.gs.tight_layout(self.handles['fig'], rect=self.fig_bounds, **padding)
 
-        # Create title handle
-        if self.show_title and len(self.coords) > 1:
-            title = self.handles['fig'].suptitle('', **self._fontsize('title'))
-            self.handles['title'] = title
-
         return layout_subplots, layout_axes, collapsed_layout
 
 
@@ -1030,9 +1024,16 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
     def initialize_plot(self):
         axis = self.handles['axis']
-        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.layout, key, None)
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges=ranges)
+
+        # Create title handle
+        if self.show_title and len(self.coords) > 1:
+            title = self._format_title(key)
+            title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            self.handles['title'] = title
 
         return self._finalize_axis(None)
 
