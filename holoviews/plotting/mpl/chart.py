@@ -642,7 +642,7 @@ class VectorFieldPlot(ElementPlot):
         if self.normalize_lengths and max_magnitude != 0:
             magnitudes =  magnitudes / max_magnitude
 
-        angles = list(np.array(radians) / np.pi * 180)
+        angles = (np.array(radians) / np.pi) * 180
         scale = input_scale / min_dist
         args = (xs, ys, magnitudes,  [0.0] * len(element))
         if self.color_dim:
@@ -659,7 +659,7 @@ class VectorFieldPlot(ElementPlot):
         if not self.arrow_heads:
             style['headaxislength'] = 0
 
-        style = dict(units='x', scale_units='x', scale=scale, angles=angles)
+        style.update(dict(units='x', scale_units='x', scale=scale, angles=angles))
 
         return args, style, {}
 
@@ -687,7 +687,7 @@ class VectorFieldPlot(ElementPlot):
         # Set magnitudes, angles and colors if supplied.
         quiver = self.handles['artist']
         quiver.U = args[2]
-        quiver.angles = args[3]
+        quiver.angles = style['angles']
         if self.color_dim:
             quiver.set_array(args[-1])
 
