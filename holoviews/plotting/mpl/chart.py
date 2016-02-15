@@ -616,34 +616,35 @@ class VectorFieldPlot(ElementPlot):
         """
         Get the minimum sample distance and maximum magnitude
         """
-        dists = []
-        for vfield in vmap:
-            dists.append(self._get_min_dist(vfield))
-        return min(dists)
+        return np.min([self._get_min_dist(vfield) for vfield in vmap])
+
+
+    def _get_min_dist(self, vfield):
+        "Get the minimum sampling distance."
+        xys = vfield.array([0, 1]).view(dtype=np.complex128)
+        m, n = np.meshgrid(xys, xys)
+        distances = np.abs(m-n)
+        np.fill_diagonal(distances, np.inf)
+        return distances.min()
 
 
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
-
-        ndims = len(element.dimensions())
+        mag_dim = element.get_dimension(3)
         xs = element.dimension_values(0) if len(element.data) else []
         ys = element.dimension_values(1) if len(element.data) else []
         radians = element.dimension_values(2) if len(element.data) else []
-        magnitudes = element.dimension_values(3) if ndims>=4 else np.array([1.0] * len(xs))
+        angles = list(np.rad2deg(radians))
+        scale = input_scale / self._min_dist
 
-        if ndims >= 4:
-            magnitude_dim = element.get_dimension(3).name
-            _, max_magnitude = ranges[magnitude_dim]
+        if mag_dim:
+            magnitudes = element.dimension_values(3)
+            _, max_magnitude = ranges[mag_dim.name]
+            if self.normalize_lengths and max_magnitude != 0:
+                magnitudes = magnitudes / max_magnitude
         else:
-            max_magnitude = 1.0
+            magnitudes = np.ones(len(xs))
 
-        min_dist = self._min_dist if self._min_dist else self._get_min_dist(element)
-
-        if self.normalize_lengths and max_magnitude != 0:
-            magnitudes =  magnitudes / max_magnitude
-
-        angles = list((np.array(radians) / np.pi) * 180)
-        scale = input_scale / min_dist
         args = (xs, ys, magnitudes,  [0.0] * len(element))
         if self.color_dim:
             colors = magnitudes if self.color_dim == 'magnitude' else radians
@@ -658,24 +659,15 @@ class VectorFieldPlot(ElementPlot):
         if 'pivot' not in style: style['pivot'] = 'mid'
         if not self.arrow_heads:
             style['headaxislength'] = 0
-
-        style.update(dict(units='x', scale_units='x', scale=scale, angles=angles))
+        style.update(dict(scale=scale, angles=angles))
 
         return args, style, {}
 
 
-    def _get_min_dist(self, vfield):
-        "Get the minimum sampling distance."
-        xys = np.array([complex(x,y) for x,y in zip(vfield.dimension_values(0),
-                                                    vfield.dimension_values(1))])
-        m, n = np.meshgrid(xys, xys)
-        distances = abs(m-n)
-        np.fill_diagonal(distances, np.inf)
-        return  distances.min()
-
     def init_artist(self, ax, plot_args, plot_kwargs):
-        quiver = ax.quiver(*plot_args, **plot_kwargs)
+        quiver = ax.quiver(*plot_args, units='x', scale_units='x', **plot_kwargs)
         return {'artist': quiver}
+
 
     def update_handles(self, key, axis, element, ranges, style):
         args, style, axis_kwargs = self.get_data(element, ranges, style)
