@@ -424,19 +424,57 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 handle.set_visible(element is not None)
         if element is None:
             return
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
             ranges = util.match_spec(element, ranges)
-        axis_kwargs = self.update_handles(axis, element, key if element is not None else {}, ranges)
+
+        label = element.label if self.show_legend else ''
+        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        axis_kwargs = self.update_handles(key, axis, element, ranges, style)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        ax = self.handles['axis']
+        key = list(self.hmap.data.keys())[-1]
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
+        key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = util.match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        if self.show_legend:
+            style['label'] = element.label
+
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        handles = self.init_artists(ax, plot_data, plot_kwargs)
+        self.handles.update(handles)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
+
+
+    def update_handles(self, key, axis, element, ranges, style):
         """
         Update the elements of the plot.
-        :param axis:
         """
-        raise NotImplementedError
+        self.teardown_handles()
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        handles = self.init_artists(axis, plot_data, plot_kwargs)
+        self.handles.update(handles)
+        return axis_kwargs
+
+    def teardown_handles(self):
+        """
+        If no custom update_handles method is supplied this method
+        is called to tear down any previous handles before replacing
+        them.
+        """
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
+
 
 
 
@@ -548,7 +586,8 @@ class ColorbarPlot(ElementPlot):
                                          linthresh=clim[1]/np.e)
             else:
                 norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
-        return clim, norm, opts
+            opts['norm'] = norm
+        opts['clim'] = clim
 
 
 
@@ -711,40 +750,3 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             self._adjust_legend(element, axis)
 
         self._finalize_axis(key, ranges=ranges)
-
-
-
-class DrawPlot(ElementPlot):
-    """
-    A DrawPlot is an ElementPlot that uses a draw method for
-    rendering. The draw method is also called per update such that a
-    full redraw is triggered per frame.
-
-    Although not optimized for HoloMaps (due to the full redraw),
-    DrawPlot is very easy to subclass to interface HoloViews with any
-    third-party libraries offering matplotlib plotting functionality.
-    """
-
-    _abstract = True
-
-    def draw(self, axis, element, ranges=None):
-        """
-        The only method that needs to be overridden in subclasses.
-
-        The current axis and element are supplied as arguments. The
-        job of this function is to apply the appropriate matplotlib
-        commands to render the element to the supplied axis.
-        """
-        raise NotImplementedError
-
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        key = self.keys[-1]
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = util.match_spec(element, ranges)
-        self.draw(self.handles['axis'], self.hmap.last, ranges)
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
-
-    def update_handles(self, axis, element, key, ranges=None):
-        if self.zorder == 0 and axis: axis.cla()
-        self.draw(axis, element, ranges)
