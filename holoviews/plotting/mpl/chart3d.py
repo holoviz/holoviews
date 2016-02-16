@@ -112,7 +112,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
-        # Temporary fix until color handling is deterministic in py3
+        # Temporary fix until color handling is deterministic in mpl+py3
         if not element.get_dimension(self.color_index):
             style['color'] = style['c']
         return (xs, ys, zs), style, {}
@@ -124,8 +124,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
-        offsets, style, _ = self.get_data(element, ranges, style)
-        artist._offsets3d = offsets
+        artist._offsets3d, style, _ = self.get_data(element, ranges, style)
         cdim = element.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
             clim = style['clim'] if 'clim' in style else ranges[cdim.name]
