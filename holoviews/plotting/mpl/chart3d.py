@@ -1,5 +1,8 @@
+from distutils.version import LooseVersion
+
 import numpy as np
 import param
+import matplotlib as mpl
 import matplotlib.cm as cm
 
 from ...core import Dimension
@@ -114,7 +117,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
         self._compute_styles(element, ranges, style)
         # Temporary fix until color handling is deterministic in mpl+py3
         if not element.get_dimension(self.color_index) and 'c' in style:
-            style['color'] = style['c']
+            color = style.pop('c')
+            if LooseVersion(mpl.__version__) >= '1.5':
+                style['color'] = color
+            else:
+                style['facecolors'] = color
         return (xs, ys, zs), style, {}
 
     def init_artists(self, ax, plot_data, plot_kwargs):
