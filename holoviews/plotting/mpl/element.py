@@ -234,22 +234,25 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
             if isinstance(view, Element3D) or self.projection == '3d':
                 l, b, zmin, r, t, zmax = coords
-                zmin, zmax = (c if np.isfinite(c) else None for c in (zmin, zmax))
+                zmin, zmax = (c if util.isnumeric(c) and not np.isnan(c) else None
+                              for c in (zmin, zmax))
                 if not zmin == zmax:
                     axis.set_zlim((zmin, zmax))
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            l, r = (c if np.isfinite(c) else None for c in (l, r))
+            l, r = (c if util.isnumeric(c) and not np.isnan(c) else None
+                    for c in (l, r))
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
-            if not l == r:
+            if not (l is None and r is None) and not l == r:
                 axis.set_xlim((l, r))
-            b, t = (c if np.isfinite(c) else None for c in (b, t))
+            b, t = (c if util.isnumeric(c) and not np.isnan(c) else None
+                    for c in (b, t))
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
-            if not b == t:
+            if not (b is None and t is None) and not b == t:
                 axis.set_ylim((b, t))
 
 
