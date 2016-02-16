@@ -113,7 +113,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
         # Temporary fix until color handling is deterministic in mpl+py3
-        if not element.get_dimension(self.color_index):
+        if not element.get_dimension(self.color_index) and 'c' in style:
             style['color'] = style['c']
         return (xs, ys, zs), style, {}
 

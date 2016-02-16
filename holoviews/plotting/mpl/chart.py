@@ -544,7 +544,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if 'clim' not in style:
                 clims = ranges[cdim.name]
                 style.update(vmin=clims[0], vmax=clims[1])
-        else:
+        elif color:
             style['c'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 

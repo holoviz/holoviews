@@ -177,7 +177,7 @@ options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', l
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')
-options.Scatter3D = Options('style', facecolors=Cycle(), marker='o')
+options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Spikes = Options('style', color='black')
