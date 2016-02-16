@@ -956,7 +956,7 @@ class SpikesPlot(PathPlot):
             clim = ranges[cdim.name]
         style['array'] = array
         style['clim'] = clim
-        return [np.array(data)], style, {}
+        return (np.array(data),), style, {}
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -1040,7 +1040,7 @@ class BoxPlot(ChartPlot):
         xlabel = ','.join([str(d) for d in element.kdims])
         ylabel = str(element.vdims[0])
 
-        return [data], style, {'xlabel': xlabel, 'ylabel': ylabel}
+        return (data,), style, {'xlabel': xlabel, 'ylabel': ylabel}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):

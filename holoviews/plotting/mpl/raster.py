@@ -202,7 +202,7 @@ class QuadMeshPlot(ColorbarPlot):
         cmesh_data = list(element.data[:2]) + [data]
         style['locs'] = np.concatenate(element.data[:2])
         self._norm_kwargs(element, ranges, style)
-        return cmesh_data, style, {}
+        return tuple(cmesh_data), style, {}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):

@@ -16,7 +16,7 @@ class PathPlot(ElementPlot):
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def get_data(self, element, ranges, style):
-        return [element.data], style, {}
+        return (element.data,), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
@@ -57,7 +57,7 @@ class PolygonPlot(ColorbarPlot):
         style['clim'] = ranges[vdim.name]
         if value is not None and np.isfinite(value):
             style['array'] = np.array([value]*len(polys))
-        return [polys], style, {}
+        return (polys,), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         collection = PatchCollection(*plot_args, **plot_kwargs)
