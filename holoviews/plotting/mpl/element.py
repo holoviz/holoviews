@@ -445,8 +445,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
-        label = element.label if self.show_legend else ''
-        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        if self.show_legend:
+            style['label'] = element.label
 
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
         handles = self.init_artists(ax, plot_data, plot_kwargs)
