@@ -352,7 +352,9 @@ class GridPlot(CompositePlot):
             # Create axes
             kwargs = {}
             if create_axes:
-                opts = self._deep_options(view, 'plot', ['projection'], [Element])
+                opts = self._deep_options(view, 'plot', ['projection'], [CompositeOverlay])
+                if not opts:
+                    opts = self._deep_options(view, 'plot', ['projection'], [Element])
                 if len(set(opts['projection'])) > 1:
                     raise Exception("A single axis may only be assigned one projection type")
                 subax = plt.subplot(self._layoutspec[r, c], projection=opts['projection'][0])
@@ -963,7 +965,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
             # Determine projection type for plot
             projs = self._deep_options(view, 'plot', ['projection'],
-                                       [Element])['projection']
+                                      [CompositeOverlay])['projection']
+            if projs:
+                projs = self._deep_options(view, 'plot', ['projection'],
+                                           [Element])['projection']
             if len(set(projs)) > 1:
                 raise Exception("A single axis may only be assigned one projection type")
             elif projs:
