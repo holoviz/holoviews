@@ -8,7 +8,7 @@ import param
 
 from ...core import util
 from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
-                     CompositeOverlay, Element3D, Columns, NdElement)
+                     CompositeOverlay, Element3D, Columns, NdElement, Element)
 from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update

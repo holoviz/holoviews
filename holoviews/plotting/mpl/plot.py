@@ -82,8 +82,7 @@ class MPLPlot(DimensionedPlot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    projection = param.ObjectSelector(default=None,
-                                      objects=['3d', 'polar', None], doc="""
+    projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
         2D plot, '3d' and 'polar' are also supported.""")
 

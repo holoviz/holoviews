@@ -166,7 +166,9 @@ class DimensionedPlot(Plot):
         of plotting. Allows selecting normalization at different levels
         for nested data containers.""")
 
-    projection = param.ObjectSelector(default=None)
+    projection = param.Parameter(default=None, doc="""
+        Allows supplying a custom projection to transform the axis
+        coordinates during display""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,

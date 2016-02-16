@@ -30,7 +30,7 @@ class Plot3D(ColorbarPlot):
     bgcolor = param.String(default='white', doc="""
         Background color of the axis.""")
 
-    projection = param.ObjectSelector(default='3d', doc="""
+    projection = param.ObjectSelector(default='3d', objects=['3d'], doc="""
         The projection of the matplotlib axis.""")
 
     show_frame = param.Boolean(default=False, doc="""
