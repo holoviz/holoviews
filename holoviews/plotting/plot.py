@@ -5,7 +5,7 @@ of this Plot baseclass.
 """
 
 from itertools import groupby, product
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import param
@@ -400,10 +400,15 @@ class DimensionedPlot(Plot):
         Traverses the supplied object getting all options
         in opts for the specified opt_type and specs
         """
-        lookup = lambda x: ((type(x).__name__, x.group, x.label),
-                            {o: cls.lookup_options(x, opt_type).options.get(o, None)
-                             for o in opts})
-        return dict(obj.traverse(lookup, specs))
+        def lookup(x):
+            options = cls.lookup_options(x, opt_type)
+            return {o: options.options.get(o, None)
+                    for o in opts}
+        options = defaultdict(list)
+        for opts in obj.traverse(lookup, specs):
+            for opt, v in opts.items():
+                options[opt].append(v)
+        return options
 
 
     def update(self, key):
