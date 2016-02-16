@@ -352,9 +352,10 @@ class GridPlot(CompositePlot):
             # Create axes
             kwargs = {}
             if create_axes:
-                threed = issubclass(vtype, Element3D)
-                subax = plt.subplot(self._layoutspec[r, c],
-                                    projection='3d' if threed else None)
+                opts = self._deep_options(view, 'plot', ['projection'], [Element])
+                if len(set(opts['projection'])) > 1:
+                    raise Exception("A single axis may only be assigned one projection type")
+                subax = plt.subplot(self._layoutspec[r, c], projection=opts['projection'][0])
 
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
@@ -961,11 +962,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 continue
 
             # Determine projection type for plot
-            components = view.traverse(lambda x: x)
-            projs = ['3d' if isinstance(c, Element3D) else
-                     self.lookup_options(c, 'plot').options.get('projection', None)
-                     for c in components]
-            projs = [p for p in projs if p is not None]
+            projs = self._deep_options(view, 'plot', ['projection'],
+                                       [Element])['projection']
             if len(set(projs)) > 1:
                 raise Exception("A single axis may only be assigned one projection type")
             elif projs:

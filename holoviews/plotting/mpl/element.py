@@ -640,8 +640,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     _passed_handles = ['fig', 'axis']
 
     def __init__(self, overlay, ranges=None, **params):
-        if overlay.traverse(lambda x: x, (Element3D,)):
-            params['projection'] = '3d'
+        if 'projection' not in params:
+            projs = self._deep_options(overlay, 'plot', ['projection'],
+                                       [Element])['projection']
+            if len(set(projs)) > 1:
+                raise Exception("A single axis may only be assigned one projection type")
+            else:
+                params['projection'] = projs[0]
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
 
     def _finalize_artist(self, key):
