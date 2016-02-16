@@ -77,7 +77,7 @@ class RasterPlot(ColorbarPlot):
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
 
-    def init_artist(self, ax, plot_args, plot_kwargs):
+    def init_artists(self, ax, plot_args, plot_kwargs):
         im = ax.imshow(*plot_args, **plot_kwargs)
         return {'artist': im}
 
@@ -141,7 +141,7 @@ class HeatMapPlot(RasterPlot):
         return (xpos, xlabels), (ypos, ylabels)
 
 
-    def init_artist(self, ax, plot_args, plot_kwargs):
+    def init_artists(self, ax, plot_args, plot_kwargs):
         l, r, b, t = plot_kwargs['extent']
         ax.set_aspect(float(r - l)/(t-b))
 
@@ -205,7 +205,7 @@ class QuadMeshPlot(ColorbarPlot):
         return cmesh_data, style, {}
 
 
-    def init_artist(self, ax, plot_args, plot_kwargs):
+    def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop('locs')
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         return {'artist': artist, 'locs': locs}
