@@ -18,9 +18,9 @@ from .pandas import DFrameViewPlot
 from .plot import MPLPlot, AdjoinedPlot
 
 
-class FullRedrawPlot(ElementPlot):
+class SeabornPlot(ElementPlot):
     """
-    FullRedrawPlot provides an abstract baseclass, defining an
+    SeabornPlot provides an abstract baseclass, defining an
     update_frame method, which completely wipes the axis and
     redraws the plot.
     """
@@ -40,11 +40,11 @@ class FullRedrawPlot(ElementPlot):
     _abstract = True
 
     def teardown_handles(self):
-        if self.zorder == 0 and axis:
-            axis.cla()
+        if self.zorder == 0:
+            self.handles['axis'].cla()
 
 
-class RegressionPlot(FullRedrawPlot):
+class RegressionPlot(SeabornPlot):
     """
     RegressionPlot visualizes Regression Views using the Seaborn
     regplot interface, allowing the user to perform and plot
@@ -66,7 +66,7 @@ class RegressionPlot(FullRedrawPlot):
         return (xs, ys), style, {}
 
 
-class BivariatePlot(FullRedrawPlot):
+class BivariatePlot(SeabornPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density
     estimates using the Seaborn kdeplot function. Additionally,
@@ -93,14 +93,15 @@ class BivariatePlot(FullRedrawPlot):
             return {'axis': sns.kdeplot(*plot_data, ax=ax, **plot_kwargs)}
 
     def get_data(self, element, ranges, style):
-        xs, ys = (element[d] for d in self.dimensions()[:1])
+        xs, ys = (element[d] for d in element.dimensions()[:2])
         if self.joint:
             style.pop('cmap', None)
+        style.pop('zorder', None)
         return (xs, ys), style, {}
 
 
 
-class TimeSeriesPlot(FullRedrawPlot):
+class TimeSeriesPlot(SeabornPlot):
     """
     TimeSeries visualizes sets of curves using the Seaborn
     tsplot function. This provides functionality to plot
@@ -119,10 +120,11 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'estimator', 'kwargs']
 
     def get_data(self, element, ranges, style):
-        if label in style:
+        style.pop('zorder', None)
+        if 'label' in style:
             style['condition'] = style.pop('label')
-        axis_kwargs = {'xlabel': str(view.kdims[0]),
-                       'ylabel': str(view.vdims[0])}
+        axis_kwargs = {'xlabel': str(element.kdims[0]),
+                       'ylabel': str(element.vdims[0])}
         return (element.data, element.xdata), style, axis_kwargs
 
     def init_artists(self, ax, plot_data, plot_kwargs):
@@ -130,7 +132,7 @@ class TimeSeriesPlot(FullRedrawPlot):
 
 
 
-class DistributionPlot(FullRedrawPlot):
+class DistributionPlot(SeabornPlot):
     """
     DistributionPlot visualizes Distribution Views using the
     Seaborn distplot function. This allows visualizing a 1D
@@ -147,9 +149,10 @@ class DistributionPlot(FullRedrawPlot):
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
     def get_data(self, element, ranges, style):
+        style.pop('zorder', None)
         if self.invert_axes:
             style['vertical'] = True
-        axis_kwargs = dict(xlabel='', ylabel=str(dim))
+        axis_kwargs = dict(xlabel='', ylabel=str(element.get_dimension(0)))
         return (element.dimension_values(0),), style, axis_kwargs
 
     def init_artists(self, ax, plot_data, plot_kwargs):
