@@ -395,20 +395,52 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _deep_options(cls, obj, opt_type, opts, specs=None):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None):
         """
         Traverses the supplied object getting all options
         in opts for the specified opt_type and specs
         """
         def lookup(x):
             options = cls.lookup_options(x, opt_type)
-            return {o: options.options.get(o, None)
-                    for o in opts}
-        options = defaultdict(list)
-        for opts in obj.traverse(lookup, specs):
-            for opt, v in opts.items():
-                options[opt].append(v)
+            selected = {o: options.options[o]
+                        for o in opts if o in options.options}
+            if keyfn:
+                key = keyfn(x)
+                return (key, selected)
+            else:
+                return selected
+
+        traversed = obj.traverse(lookup, specs)
+        if keyfn:
+            options = defaultdict(lambda: defaultdict(list))
+            for key, opts in traversed:
+                for opt, v in opts.items():
+                    options[key][opt].append(v)
+        else:
+            options = defaultdict(list)
+            for opts in traversed:
+                for opt, v in opts.items():
+                    options[opt].append(v)
         return options
+
+
+    def _get_projection(cls, obj):
+        """
+        Uses traversal to find the appropriate projection
+        for a nested object. Respects projections set on
+        Overlays before considering Element based settings.
+        If more than one non-None projection type is found
+        an exception is raised.
+        """
+        isoverlay = lambda x: isinstance(x, CompositeOverlay)
+        opts = cls._traverse_options(obj, 'plot', ['projection'],
+                                     [CompositeOverlay, Element],
+                                     keyfn=isoverlay)
+        projections = opts[bool(opts[True])]['projection']
+        custom_projs = [p for p in projections if p is not None]
+        if len(set(custom_projs)) > 1:
+            raise Exception("An axis may only be assigned one projection type")
+        return custom_projs[0] if custom_projs else None
 
 
     def update(self, key):

@@ -329,7 +329,7 @@ class GridPlot(CompositePlot):
     def _create_subplots(self, layout, axis, ranges, create_axes):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
                             clone=False)
-        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
+        norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
         axiswise = all(norm_opts['axiswise'])
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
@@ -352,12 +352,8 @@ class GridPlot(CompositePlot):
             # Create axes
             kwargs = {}
             if create_axes:
-                opts = self._deep_options(view, 'plot', ['projection'], [CompositeOverlay])
-                if not opts:
-                    opts = self._deep_options(view, 'plot', ['projection'], [Element])
-                if len(set(opts['projection'])) > 1:
-                    raise Exception("A single axis may only be assigned one projection type")
-                subax = plt.subplot(self._layoutspec[r, c], projection=opts['projection'][0])
+                projection = self._get_projection(view)
+                subax = plt.subplot(self._layoutspec[r, c], projection=projection)
 
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
@@ -964,17 +960,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 continue
 
             # Determine projection type for plot
-            projs = self._deep_options(view, 'plot', ['projection'],
-                                      [CompositeOverlay])['projection']
-            if projs:
-                projs = self._deep_options(view, 'plot', ['projection'],
-                                           [Element])['projection']
-            if len(set(projs)) > 1:
-                raise Exception("A single axis may only be assigned one projection type")
-            elif projs:
-                projections.append(projs[0])
-            else:
-                projections.append(None)
+            projections.append(self._get_projection(view))
 
             if not create:
                 continue
