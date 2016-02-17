@@ -641,13 +641,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
-            projs = self._traverse_options(overlay, 'plot', ['projection'],
-                                           [Element])['projection']
-            if len(set(projs)) > 1:
-                raise Exception("A single axis may only be assigned one projection type")
-            elif len(projs):
-                params['projection'] = projs[0]
+            params['projection'] = self._get_projection(overlay)
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+
 
     def _finalize_artist(self, key):
         for subplot in self.subplots.values():

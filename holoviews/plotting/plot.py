@@ -395,7 +395,7 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=False):
         """
         Traverses the supplied object getting all options
         in opts for the specified opt_type and specs
@@ -404,6 +404,10 @@ class DimensionedPlot(Plot):
             options = cls.lookup_options(x, opt_type)
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
+            if defaults and opt_type == 'plot':
+                plot = Store.registry['matplotlib'].get(type(x))
+                selected.update({o+'_default': getattr(plot, o) for o in opts
+                                 if o not in selected and hasattr(plot, o)})
             if keyfn:
                 key = keyfn(x)
                 return (key, selected)
@@ -435,9 +439,12 @@ class DimensionedPlot(Plot):
         isoverlay = lambda x: isinstance(x, CompositeOverlay)
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
-                                     keyfn=isoverlay)
-        projections = opts[bool(opts[True])]['projection']
+                                     keyfn=isoverlay, defaults=True)
+        from_overlay = not all(p is None for p in opts[True]['projection'])
+        projections = opts[from_overlay]['projection']
         custom_projs = [p for p in projections if p is not None]
+        if not custom_projs:
+            custom_projs = [p for p in opts[False]['projection_default']]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
         return custom_projs[0] if custom_projs else None
