@@ -27,9 +27,6 @@ class RasterPlot(ColorbarPlot):
     situate_axes = param.Boolean(default=False, doc="""
         Whether to situate the image relative to other plots. """)
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
@@ -71,7 +68,8 @@ class RasterPlot(ColorbarPlot):
 
         if isinstance(element, RGB):
             data = element.rgb.data
-        self._norm_kwargs(element, ranges, style)
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
 
         return [data], style, {'xticks': xticks, 'yticks': yticks}
@@ -88,7 +86,7 @@ class RasterPlot(ColorbarPlot):
         l, r, b, t = style['extent']
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
-        im.set_clim(style['clim'])
+        im.set_clim((style['vmin'], style['vmax']))
         if 'norm' in style:
             im.norm = style['norm']
 
@@ -171,7 +169,7 @@ class HeatMapPlot(RasterPlot):
         l, r, b, t = style['extent']
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
-        im.set_clim(style['clim'])
+        im.set_clim((style['vmin'], style['vmax']))
         if 'norm' in style:
             im.norm = style['norm']
 
@@ -190,9 +188,6 @@ class HeatMapPlot(RasterPlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
@@ -201,7 +196,8 @@ class QuadMeshPlot(ColorbarPlot):
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
         style['locs'] = np.concatenate(element.data[:2])
-        self._norm_kwargs(element, ranges, style)
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}
 
 
@@ -221,7 +217,7 @@ class QuadMeshPlot(ColorbarPlot):
         else:
             data, style, axis_kwargs = self.get_data(element, ranges, style)
             cmesh.set_array(data[-1])
-            cmesh.set_clim(style['clim'])
+            im.set_clim((style['vmin'], style['vmax']))
             if 'norm' in style:
                 cmesh.norm = style['norm']
             return axis_kwargs
