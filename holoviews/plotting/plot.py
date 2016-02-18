@@ -580,7 +580,10 @@ class GenericElementPlot(DimensionedPlot):
                 else:
                     y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
-                    z0, z1 = ranges[dims[2].name]
+                    if len(dims) > 2:
+                        z0, z1 = ranges[dims[2].name]
+                    else:
+                        z0, z1 = np.NaN, np.NaN
             else:
                 x0, x1 = view.range(0)
                 y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
