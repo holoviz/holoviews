@@ -232,28 +232,36 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
             if isinstance(view, Element3D) or self.projection == '3d':
                 l, b, zmin, r, t, zmax = coords
                 zmin, zmax = (c if util.isnumeric(c) and not np.isnan(c) else None
                               for c in (zmin, zmax))
-                if not zmin == zmax:
-                    axis.set_zlim((zmin, zmax))
+                if zmin != zmax:
+                    if valid_lim(zmin):
+                        axis.set_zlim(bottom=zmin)
+                    if valid_lim(zmax):
+                        axis.set_zlim(top=zmax)
             else:
                 l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            l, r = (c if util.isnumeric(c) and not np.isnan(c) else None
-                    for c in (l, r))
+
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
-            if not (l is None and r is None) and not l == r:
-                axis.set_xlim((l, r))
-            b, t = (c if util.isnumeric(c) and not np.isnan(c) else None
-                    for c in (b, t))
+            if l != r:
+                if valid_lim(l):
+                    axis.set_xlim(left=l)
+                if valid_lim(r):
+                    axis.set_xlim(right=r)
+
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
-            if not (b is None and t is None) and not b == t:
-                axis.set_ylim((b, t))
+            if b != t:
+                if valid_lim(b):
+                    axis.set_ylim(bottom=b)
+                if valid_lim(t):
+                    axis.set_ylim(top=t)
 
 
     def _finalize_axes(self, axis):
