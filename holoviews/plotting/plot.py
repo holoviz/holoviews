@@ -397,43 +397,46 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _traverse_options(cls, obj, opt_type, opts,
-                          specs=None, keyfn=None, defaults=False):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None):
         """
-        Traverses the supplied object getting all options
-        in opts for the specified opt_type and specs. If
-        a keyfn is supplied the returned options will be
-        nested by the returned key. If defaults is True
-        it will also look up the default plot options
-        specified on the matching plot type, appending
-        the default values with ``_default``.
+        Traverses the supplied object getting all options in opts for
+        the specified opt_type and specs. Also takes into account the
+        plotting class defaults for plot options. If a keyfn is
+        supplied the returned options will be grouped by the returned
+        keys.
         """
         def lookup(x):
+            """
+            Looks up options for object, including plot defaults,
+            keyfn determines returned key otherwise None key is used.
+            """
             options = cls.lookup_options(x, opt_type)
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
-            if defaults and opt_type == 'plot':
-                plot = Store.registry['matplotlib'].get(type(x))
-                selected.update({o+'_default': getattr(plot, o) for o in opts
-                                 if o not in selected and hasattr(plot, o)})
-            if keyfn:
-                key = keyfn(x)
-                return (key, selected)
-            else:
-                return selected
+            if opt_type == 'plot':
+                plot = Store.registry[cls.renderer.backend].get(type(x))
+                selected['defaults'] = {o: getattr(plot, o) for o in opts
+                                        if o not in selected and hasattr(plot, o)}
+            key = keyfn(x) if keyfn else None
+            return (key, selected)
 
+        # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
-        if keyfn:
-            options = defaultdict(lambda: defaultdict(list))
-            for key, opts in traversed:
-                for opt, v in opts.items():
-                    options[key][opt].append(v)
-        else:
-            options = defaultdict(list)
-            for opts in traversed:
-                for opt, v in opts.items():
-                    options[opt].append(v)
-        return options
+        options = defaultdict(lambda: defaultdict(list))
+        default_opts = defaultdict(lambda: defaultdict(list)) 
+        for key, opts in traversed:
+            defaults = opts.pop('defaults', {})
+            for opt, v in opts.items():
+                options[key][opt].append(v)
+            for opt, v in defaults.items():
+                default_opts[key][opt].append(v)
+
+        # Merge defaults into dictionary if not explicitly specified
+        for key, opts in default_opts.items():
+            for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = v
+        return options if keyfn else options[None]
 
 
     def _get_projection(cls, obj):
@@ -448,12 +451,10 @@ class DimensionedPlot(Plot):
         isoverlay = lambda x: isinstance(x, CompositeOverlay)
         opts = cls._traverse_options(obj, 'plot', ['projection'],
                                      [CompositeOverlay, Element],
-                                     keyfn=isoverlay, defaults=True)
+                                     keyfn=isoverlay)
         from_overlay = not all(p is None for p in opts[True]['projection'])
         projections = opts[from_overlay]['projection']
         custom_projs = [p for p in projections if p is not None]
-        if not custom_projs:
-            custom_projs = [p for p in opts[False]['projection_default']]
         if len(set(custom_projs)) > 1:
             raise Exception("An axis may only be assigned one projection type")
         return custom_projs[0] if custom_projs else None
