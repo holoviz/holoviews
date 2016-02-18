@@ -54,8 +54,10 @@ class PolygonPlot(ColorbarPlot):
         for segments in element.data:
             if segments.shape[0]:
                 polys.append(Polygon(segments))
-        style['clim'] = ranges[vdim.name]
+
         if value is not None and np.isfinite(value):
+            self._norm_kwargs(element, ranges, style, vdim)
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
             style['array'] = np.array([value]*len(polys))
         return (polys,), style, {}
 
@@ -68,10 +70,15 @@ class PolygonPlot(ColorbarPlot):
 
 
     def update_handles(self, key, axis, element, ranges, style):
+        value = element.level
+        vdim = element.vdims[0]
         collection = self.handles['artist']
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
                zip(element.data, self.handles['polys'])):
             return super(PolygonPlot, self).update_handles(key, axis, element, ranges, style)
         elif value is not None and np.isfinite(value):
+            self._norm_kwargs(element, ranges, style, vdim)
             collection.set_array(np.array([value]*len(element.data)))
-            collection.set_clim(ranges[vdim.name])
+            collection.set_clim((style['vmin'], style['vmax']))
+            if 'norm' in style:
+                collection.norm = style['norm']

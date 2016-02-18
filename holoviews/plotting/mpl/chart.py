@@ -541,9 +541,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         if cdim:
             cs = element.dimension_values(self.color_index)
             style['c'] = cs
-            if 'clim' not in style:
-                clims = ranges[cdim.name]
-                style.update(vmin=clims[0], vmax=clims[1])
+            self._norm_kwargs(element, ranges, style, cdim)
         elif color:
             style['c'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
@@ -566,8 +564,10 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
         cdim = element.get_dimension(self.color_index)
         if cdim:
-            paths.set_clim(style['vmin'], style['vmax'])
+            paths.set_clim((style['vmin'], style['vmax']))
             paths.set_array(style['c'])
+            if 'norm' in style:
+                paths.norm = style['norm']
 
 
 
@@ -912,7 +912,7 @@ class BarPlot(LegendPlot):
         return {'xticks': self.handles['xticks']}
 
 
-class SpikesPlot(PathPlot):
+class SpikesPlot(PathPlot, ColorbarPlot):
 
     aspect = param.Parameter(default='square', doc="""
         The aspect ratio mode of the plot. Allows setting an
@@ -949,13 +949,11 @@ class SpikesPlot(PathPlot):
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]
 
-        array, clim = None, None
         cdim = element.get_dimension(self.color_index)
         if cdim:
-            array = element.dimension_values(cdim)
-            clim = ranges[cdim.name]
-        style['array'] = array
-        style['clim'] = clim
+            style['array'] = element.dimension_values(cdim)
+            self._norm_kwargs(element, ranges, style, cdim)
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (np.array(data),), style, {}
 
 
@@ -964,9 +962,11 @@ class SpikesPlot(PathPlot):
         (data,), kwargs, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data)
         artist.set_visible(style.get('visible', True))
-        if 'array' not in kwargs:
-            artist.set_clim(kwargs['clim'])
+        if 'array' in kwargs:
+            artist.set_clim((kwargs['vmin'], kwargs['vmax']))
             artist.set_array(kwargs['array'])
+            if 'norm' in kwargs:
+                artist.norm = kwargs['norm']
         return axis_kwargs
 
 

@@ -571,16 +571,14 @@ class ColorbarPlot(ElementPlot):
 
 
 
-    def _norm_kwargs(self, element, ranges, opts):
+    def _norm_kwargs(self, element, ranges, opts, vdim):
         """
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
-        norm = None
         clim = opts.pop('clims', None)
         if clim is None:
-            val_dim = [d.name for d in element.vdims][0]
-            clim = ranges.get(val_dim)
+            clim = ranges.get(vdim.name)
             if self.symmetric:
                 clim = -np.abs(clim).max(), np.abs(clim).max()
         if self.logz:
@@ -590,8 +588,8 @@ class ColorbarPlot(ElementPlot):
             else:
                 norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
             opts['norm'] = norm
-        opts['clim'] = clim
-
+        opts['vmin'] = clim[0]
+        opts['vmax'] = clim[1]
 
 
 class LegendPlot(ElementPlot):
