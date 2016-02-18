@@ -82,7 +82,7 @@ class MPLPlot(DimensionedPlot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    projection = param.ClassSelector(default=None, doc="""
+    projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
         2D plot, '3d' and 'polar' are also supported by matplotlib by default.
         May also supply a custom projection that is either a matplotlib
