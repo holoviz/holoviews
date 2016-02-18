@@ -395,10 +395,16 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=False):
+    def _traverse_options(cls, obj, opt_type, opts,
+                          specs=None, keyfn=None, defaults=False):
         """
         Traverses the supplied object getting all options
-        in opts for the specified opt_type and specs
+        in opts for the specified opt_type and specs. If
+        a keyfn is supplied the returned options will be
+        nested by the returned key. If defaults is True
+        it will also look up the default plot options
+        specified on the matching plot type, appending
+        the default values with ``_default``.
         """
         def lookup(x):
             options = cls.lookup_options(x, opt_type)
@@ -432,9 +438,10 @@ class DimensionedPlot(Plot):
         """
         Uses traversal to find the appropriate projection
         for a nested object. Respects projections set on
-        Overlays before considering Element based settings.
-        If more than one non-None projection type is found
-        an exception is raised.
+        Overlays before considering Element based settings,
+        before finally looking up the default projection on
+        the plot type. If more than one non-None projection
+        type is found an exception is raised.
         """
         isoverlay = lambda x: isinstance(x, CompositeOverlay)
         opts = cls._traverse_options(obj, 'plot', ['projection'],
