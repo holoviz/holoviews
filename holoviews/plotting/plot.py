@@ -168,7 +168,9 @@ class DimensionedPlot(Plot):
 
     projection = param.Parameter(default=None, doc="""
         Allows supplying a custom projection to transform the axis
-        coordinates during display""")
+        coordinates during display. Example projections include '3d'
+        and 'polar' projections supported by some backends. Depending
+        on the backend custom projection objects may be supplied.""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
