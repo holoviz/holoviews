@@ -349,15 +349,14 @@ class GridPlot(CompositePlot):
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
             else:
-                continue
+                vtype = None
 
             # Create axes
             kwargs = {}
             if create_axes:
-                threed = issubclass(vtype, Element3D)
+                threed = issubclass(vtype, Element3D) if vtype else None
                 subax = plt.subplot(self._layoutspec[r, c],
                                     projection='3d' if threed else None)
-
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
                 if not axiswise and self.shared_yaxis and self.yaxis is not None:
@@ -386,8 +385,8 @@ class GridPlot(CompositePlot):
                 subaxes[(r, c)] = subax
             else:
                 subax = None
-            if issubclass(vtype, CompositeOverlay) and (c == self.cols - 1 and
-                                                        r == self.rows//2):
+            if vtype and issubclass(vtype, CompositeOverlay) and (c == self.cols - 1 and
+                                                                  r == self.rows//2):
                 kwargs['show_legend'] = self.show_legend
                 kwargs['legend_position'] = 'right'
 
