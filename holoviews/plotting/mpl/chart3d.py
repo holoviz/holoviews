@@ -134,7 +134,7 @@ class Scatter3DPlot(Plot3D, PointPlot):
         artist._offsets3d, style, _ = self.get_data(element, ranges, style)
         cdim = element.get_dimension(self.color_index)
         if cdim and 'cmap' in style:
-            clim = style['clim'] if 'clim' in style else ranges[cdim.name]
+            clim = style['vmin'], style['vmax']
             cmap = cm.get_cmap(style['cmap'])
             artist._facecolor3d = map_colors(style['c'], clim, cmap, hex=False)
         if element.get_dimension(self.size_index):
@@ -176,8 +176,7 @@ class SurfacePlot(Plot3D):
         rn, cn = mat.shape
         l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
-        style['vmin'] = zmin
-        style['vmax'] = zmax
+        self._norm_kwargs(element, ranges, style, element.vdims[0])
         return (r, c, mat), style, {}
             
 
@@ -194,10 +193,8 @@ class TrisurfacePlot(Plot3D):
     style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
 
     def get_data(self, element, ranges, style):
-        dims = element.dimensions(label=True)
-        vrange = ranges[dims[2]]
-        style['vmin'] = vrange[0]
-        style['vmax'] = vrange[1]
+        dims = element.dimensions()
+        self._norm_kwargs(element, ranges, style, dims[2])
         x, y, z = [element.dimension_values(d) for d in dims]
         return (x, y, z), style, {}
 
