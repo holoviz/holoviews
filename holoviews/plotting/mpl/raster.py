@@ -27,9 +27,6 @@ class RasterPlot(ColorbarPlot):
     situate_axes = param.Boolean(default=False, doc="""
         Whether to situate the image relative to other plots. """)
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
@@ -189,9 +186,6 @@ class HeatMapPlot(RasterPlot):
 
 
 class QuadMeshPlot(ColorbarPlot):
-
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
 
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']

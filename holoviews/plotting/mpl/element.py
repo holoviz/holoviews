@@ -496,6 +496,9 @@ class ColorbarPlot(ElementPlot):
         set to None default matplotlib ticking behavior is
         applied.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     _colorbars = {}
 
     def _adjust_cbar(self, cbar, label, dim):
