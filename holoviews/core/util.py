@@ -340,6 +340,17 @@ group_sanitizer = sanitize_identifier_fn.instance()
 label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
+
+def isnumeric(val):
+    if isinstance(val, (basestring, bool, np.bool_)):
+        return False
+    try:
+        float(val)
+        return True
+    except:
+        return False
+
+
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns

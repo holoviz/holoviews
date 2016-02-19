@@ -82,10 +82,11 @@ class MPLPlot(DimensionedPlot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    projection = param.ObjectSelector(default=None,
-                                      objects=['3d', 'polar', None], doc="""
+    projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
-        2D plot, '3d' and 'polar' are also supported.""")
+        2D plot, '3d' and 'polar' are also supported by matplotlib by default.
+        May also supply a custom projection that is either a matplotlib
+        projection type or implements the `_as_mpl_axes` method.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -330,9 +331,8 @@ class GridPlot(CompositePlot):
     def _create_subplots(self, layout, axis, ranges, create_axes):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
                             clone=False)
-        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = all(v.get('axiswise', False) for v in norm_opts.values())
-
+        norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
+        axiswise = all(norm_opts['axiswise'])
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
@@ -354,9 +354,8 @@ class GridPlot(CompositePlot):
             # Create axes
             kwargs = {}
             if create_axes:
-                threed = issubclass(vtype, Element3D) if vtype else None
-                subax = plt.subplot(self._layoutspec[r, c],
-                                    projection='3d' if threed else None)
+                projection = self._get_projection(view) if vtype else None
+                subax = plt.subplot(self._layoutspec[r, c], projection=projection)
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
                 if not axiswise and self.shared_yaxis and self.yaxis is not None:
@@ -962,17 +961,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 continue
 
             # Determine projection type for plot
-            components = view.traverse(lambda x: x)
-            projs = ['3d' if isinstance(c, Element3D) else
-                     self.lookup_options(c, 'plot').options.get('projection', None)
-                     for c in components]
-            projs = [p for p in projs if p is not None]
-            if len(set(projs)) > 1:
-                raise Exception("A single axis may only be assigned one projection type")
-            elif projs:
-                projections.append(projs[0])
-            else:
-                projections.append(None)
+            projections.append(self._get_projection(view))
 
             if not create:
                 continue

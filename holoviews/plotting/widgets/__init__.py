@@ -8,17 +8,8 @@ import param
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
-                          unique_iterator, unicode)
+                          unique_iterator, unicode, isnumeric)
 from ...core.traversal import hierarchical
-
-def isnumeric(val):
-    if isinstance(val, (basestring, bool, np.bool_)):
-        return False
-    try:
-        float(val)
-        return True
-    except:
-        return False
 
 def escape_vals(vals, escape_numerics=True):
     """

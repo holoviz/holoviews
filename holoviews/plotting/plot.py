@@ -5,7 +5,7 @@ of this Plot baseclass.
 """
 
 from itertools import groupby, product
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import param
@@ -166,7 +166,11 @@ class DimensionedPlot(Plot):
         of plotting. Allows selecting normalization at different levels
         for nested data containers.""")
 
-    projection = param.ObjectSelector(default=None)
+    projection = param.Parameter(default=None, doc="""
+        Allows supplying a custom projection to transform the axis
+        coordinates during display. Example projections include '3d'
+        and 'polar' projections supported by some backends. Depending
+        on the backend custom projection objects may be supplied.""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
@@ -393,15 +397,67 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _deep_options(cls, obj, opt_type, opts, specs=None):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None):
         """
-        Traverses the supplied object getting all options
-        in opts for the specified opt_type and specs
+        Traverses the supplied object getting all options in opts for
+        the specified opt_type and specs. Also takes into account the
+        plotting class defaults for plot options. If a keyfn is
+        supplied the returned options will be grouped by the returned
+        keys.
         """
-        lookup = lambda x: ((type(x).__name__, x.group, x.label),
-                            {o: cls.lookup_options(x, opt_type).options.get(o, None)
-                             for o in opts})
-        return dict(obj.traverse(lookup, specs))
+        def lookup(x):
+            """
+            Looks up options for object, including plot defaults,
+            keyfn determines returned key otherwise None key is used.
+            """
+            options = cls.lookup_options(x, opt_type)
+            selected = {o: options.options[o]
+                        for o in opts if o in options.options}
+            if opt_type == 'plot':
+                plot = Store.registry[cls.renderer.backend].get(type(x))
+                selected['defaults'] = {o: getattr(plot, o) for o in opts
+                                        if o not in selected and hasattr(plot, o)}
+            key = keyfn(x) if keyfn else None
+            return (key, selected)
+
+        # Traverse object and accumulate options by key
+        traversed = obj.traverse(lookup, specs)
+        options = defaultdict(lambda: defaultdict(list))
+        default_opts = defaultdict(lambda: defaultdict(list)) 
+        for key, opts in traversed:
+            defaults = opts.pop('defaults', {})
+            for opt, v in opts.items():
+                options[key][opt].append(v)
+            for opt, v in defaults.items():
+                default_opts[key][opt].append(v)
+
+        # Merge defaults into dictionary if not explicitly specified
+        for key, opts in default_opts.items():
+            for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = v
+        return options if keyfn else options[None]
+
+
+    def _get_projection(cls, obj):
+        """
+        Uses traversal to find the appropriate projection
+        for a nested object. Respects projections set on
+        Overlays before considering Element based settings,
+        before finally looking up the default projection on
+        the plot type. If more than one non-None projection
+        type is found an exception is raised.
+        """
+        isoverlay = lambda x: isinstance(x, CompositeOverlay)
+        opts = cls._traverse_options(obj, 'plot', ['projection'],
+                                     [CompositeOverlay, Element],
+                                     keyfn=isoverlay)
+        from_overlay = not all(p is None for p in opts[True]['projection'])
+        projections = opts[from_overlay]['projection']
+        custom_projs = [p for p in projections if p is not None]
+        if len(set(custom_projs)) > 1:
+            raise Exception("An axis may only be assigned one projection type")
+        return custom_projs[0] if custom_projs else None
 
 
     def update(self, key):
@@ -525,7 +581,10 @@ class GenericElementPlot(DimensionedPlot):
                 else:
                     y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
-                    z0, z1 = ranges[dims[2].name]
+                    if len(dims) > 2:
+                        z0, z1 = ranges[dims[2].name]
+                    else:
+                        z0, z1 = np.NaN, np.NaN
             else:
                 x0, x1 = view.range(0)
                 y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
