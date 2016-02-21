@@ -803,7 +803,7 @@ class BarPlot(LegendPlot):
         yalignments = None
         if xticks is not None:
             ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-            xticks = [ticks, labels]
+            xticks = (list(ticks), list(labels))
         super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
         if yalignments:
             for t, y in zip(axis.get_xticklabels(), yalignments):

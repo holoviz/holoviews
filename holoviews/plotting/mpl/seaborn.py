@@ -25,11 +25,6 @@ class SeabornPlot(ElementPlot):
     redraws the plot.
     """
 
-    apply_databounds = param.Boolean(default=False, doc="""
-        Enables computing the plot bounds from the data itself.
-        Disabled by default since data is often preprocessed,
-        before display, changing the bounds.""")
-
     aspect = param.Parameter(default='square', doc="""
         Aspect ratio defaults to square, 'equal' or numeric values
         are also supported.""")
