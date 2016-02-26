@@ -226,7 +226,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         if 'title' in self.handles:
             self.handles['title'].set_text(title)
         else:
-            title = axis.set_title(title, **self._fontsize('title'))
+            title = self.handles['axis'].set_title(title, **self._fontsize('title'))
             self.handles['title'] = title
 
 
@@ -478,7 +478,7 @@ class GridPlot(CompositePlot):
 
         # Process ticks
         plot_width = (1.0 - self.padding) / self.cols
-        border_width = self.padding / (self.cols-1)
+        border_width = self.padding / (self.cols-1) if self.cols > 1 else 0
         xticks = [(plot_width/2)+(r*(plot_width+border_width)) for r in range(self.cols)]
         plot_height = (1.0 - self.padding) / self.rows
         border_height = self.padding / (self.rows-1) if layout.ndims > 1 else 0
