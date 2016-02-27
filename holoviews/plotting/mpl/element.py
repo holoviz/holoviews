@@ -11,7 +11,7 @@ from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
                      CompositeOverlay, Element3D, Columns, NdElement, Element)
 from ...element import Table, ItemTable
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update
+from ..util import dynamic_update, dim_axis_label
 from .plot import MPLPlot
 from .util import wrap_formatter
 
@@ -208,11 +208,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         and Elements. Sets the axes position as well as tick positions,
         labels and fontsize.
         """
+        ndims = len(dimensions)
+        xdim = dimensions[0] if ndims else None
+        ydim = dimensions[1] if ndims > 1 else None
+
         # Tick formatting
-        self._set_axis_formatter(axis.xaxis, dimensions[0])
-        self._set_axis_formatter(axis.yaxis, dimensions[1])
+        if xdim:
+            self._set_axis_formatter(axis.xaxis, xdim)
+        if ydim:
+            self._set_axis_formatter(axis.yaxis, ydim)
         if self.projection == '3d':
-            self._set_axis_formatter(axis.zaxis, dimensions[2])
+            zdim = dimensions[2] if ndims > 2 else None
+            if zdim:
+                self._set_axis_formatter(axis.zaxis, zdim)
 
         xticks = xticks if xticks else self.xticks
         self._set_axis_ticks(axis.xaxis, xticks, log=self.logx,
@@ -246,11 +254,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         label.
         """
         if dimensions and xlabel is None:
-            xlabel = util.safe_unicode(dimensions[0].pprint_label)
+            xlabel = dim_axis_label(dimensions[0])
         if len(dimensions) >= 2 and ylabel is None:
-            ylabel = util.safe_unicode(dimensions[1].pprint_label)
+            ylabel = dim_axis_label(dimensions[1])
         if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
-            zlabel = util.safe_unicode(dimensions[2].pprint_label)
+            zlabel = dim_axis_label(dimensions[2])
 
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
@@ -263,6 +271,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set axis formatter based on dimension formatter.
         """
+        if isinstance(dim, list): dim = dim[0]
         formatter = None
         if dim.value_format:
             formatter = dim.value_format
@@ -340,8 +349,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         disabled_spine = []
         if option is None:
             axis.set_visible(False)
-            for pos in positions[axis]:
-                axis.spines[pos].set_visible(False)
+            for pos in positions:
+                axes.spines[pos].set_visible(False)
         else:
             if 'bare' in option:
                 axis.set_ticklabels([])
@@ -351,7 +360,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 axis.set_ticks_position(option)
                 axis.set_label_position(option)
         if not self.show_frame and self.projection != 'polar':
-            pos = (positions[1] if (option == 'bare' or positions[0] in option)
+            pos = (positions[1] if (option and (option == 'bare' or positions[0] in option))
                    else positions[0])
             axes.spines[pos].set_visible(False)
 

@@ -1036,11 +1036,8 @@ class BoxPlot(ChartPlot):
         style.pop('zorder')
         style.pop('label')
         style['vert'] = not self.invert_axes
-
-        xlabel = ','.join([str(d) for d in element.kdims])
-        ylabel = str(element.vdims[0])
-
-        return (data,), style, {'xlabel': xlabel, 'ylabel': ylabel}
+        return (data,), style, {'dimensions': [element.kdims,
+                                               element.vdims[0]]}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):

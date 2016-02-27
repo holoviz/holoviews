@@ -1,10 +1,12 @@
+from __future__ import unicode_literals
+
 import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store)
 from ..core.util import (match_spec, is_number, wrap_tuple,
-                         get_overlay_spec, unique_iterator)
+                         get_overlay_spec, unique_iterator, safe_unicode)
 
 
 def displayable(obj):
@@ -259,3 +261,12 @@ def map_colors(arr, crange, cmap, hex=True):
                 for c in arr]
     else:
         return arr
+
+
+def dim_axis_label(dimensions, separator=', '):
+    """
+    Returns an axis label for one or more dimensions.
+    """
+    if not isinstance(dimensions, list): dimensions = [dimensions]
+    return separator.join([safe_unicode(d.pprint_label)
+                           for d in dimensions])
