@@ -116,6 +116,7 @@ showing how to fix the bug or implement the feature!
    Features <features>
    Tutorials <Tutorials/index>
    Examples <Examples/index>
+   Developer Manual <Developer_Manual/index>
    Reference Manual <Reference_Manual/index>
    FAQ
    Github source <http://github.com/ioam/holoviews>
