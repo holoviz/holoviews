@@ -77,9 +77,7 @@ class PointPlot(ElementPlot):
 
         data[dims[0]] = [] if empty else element.dimension_values(0)
         data[dims[1]] = [] if empty else element.dimension_values(1)
-        if 'hover' in self.tools+self.default_tools:
-            for d in dims:
-                data[d] = [] if empty else element.dimension_values(d)
+        self._get_hover_data(data, element, empty)
         return data, mapping
 
 
@@ -178,10 +176,7 @@ class HistogramPlot(ElementPlot):
         else:
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
-
-        if 'hover' in self.default_tools + self.tools:
-            data.update({d: [] if empty else element.dimension_values(d)
-                         for d in element.dimensions(label=True)})
+        self._get_hover_data(data, element, empty)
         return (data, mapping)
 
 
@@ -221,10 +216,7 @@ class SideHistogramPlot(HistogramPlot):
             cmap = get_cmap(style.get('cmap', style.get('palette', None)))
             data['color'] = [] if empty else map_colors(vals, main_range, cmap)
             mapping['fill_color'] = 'color'
-
-        if 'hover' in self.default_tools + self.tools:
-            data.update({d: [] if empty else element.dimension_values(d)
-                         for d in element.dimensions(label=True)})
+        self._get_hover_data(data, element, empty)
         return (data, mapping)
 
 
