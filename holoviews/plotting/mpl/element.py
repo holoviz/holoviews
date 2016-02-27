@@ -155,11 +155,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     fontsize = self._fontsize('title')
                     self.handles['title'] = axis.set_title(title, **fontsize)
 
+            # Apply subplot label
+            self._subplot_label(axis)
+
             # Apply axis options if axes are enabled
             if not any(not sp._axes for sp in [self] + subplots):
-                # Apply subplot label
-                self._subplot_label(axis)
-
                 # Set axis labels
                 self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
 
