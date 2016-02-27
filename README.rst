@@ -5,6 +5,9 @@ holoviews
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
 
+.. image:: http://assets.holoviews.org/demo.gif
+   :target: http://www.holoviews.org
+
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
 `Numpy <http://www.numpy.org/>`_ and is designed to work 
 together with `Matplotlib <http://matplotlib.org/>`_ and 
