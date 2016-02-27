@@ -136,7 +136,7 @@ class HeatMapPlot(RasterPlot):
         ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
         xlabels = [xdim.pprint_value(k) for k in dim1_keys]
         ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-        return (xpos, xlabels), (ypos, ylabels)
+        return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
