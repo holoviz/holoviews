@@ -160,9 +160,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         tools = self.default_tools + self.tools
         if 'hover' in tools:
-            tooltips = [(d, '@'+d) for d in element.dimensions(label=True)]
+            tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
+                        for d in element.dimensions()]
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
         return tools
+
+
+    def _get_hover_data(self, data, element, empty=False):
+        """
+        Initializes hover data based on Element dimension values.
+        If empty initializes with no data.
+        """
+        if 'hover' in self.default_tools + self.tools:
+            for d in element.dimensions(label=True):
+                sanitized = dimension_sanitizer(d)
+                data[sanitized] = [] if empty else element.dimension_values(d)
 
 
     def _axes_props(self, plots, subplots, element, ranges):
