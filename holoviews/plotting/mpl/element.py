@@ -137,7 +137,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         element = self._get_frame(key)
         self.current_frame = element
         if not dimensions and element:
-            dimensions = element.dimensions()
+            el = element.last if isinstance(element, NdOverlay) else element
+            dimensions = el.dimensions()
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
