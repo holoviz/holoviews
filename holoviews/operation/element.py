@@ -9,7 +9,7 @@ import param
 from param import _is_number
 
 from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Dataset, Element)
+                    HoloMap, Dataset, Element, Collator)
 from ..core.util import find_minmax, group_sanitizer, label_sanitizer
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
@@ -590,10 +590,11 @@ class gridmatrix(param.ParameterizedFunction):
     def __call__(self, data, **params):
         p = param.ParamOverrides(self, params)
 
-        if isinstance(data, HoloMap):
+        if isinstance(data, (HoloMap, NdOverlay)):
             ranges = {d.name: data.range(d) for d in data.dimensions()}
             data = data.clone({k: GridMatrix(self._process(p, v, ranges))
-                               for k, v in data.items()}).collate()
+                               for k, v in data.items()})
+            data = Collator(data, merge_type=type(data))()
             if p.overlay_dims:
                 data = data.map(lambda x: x.overlay(p.overlay_dims), (HoloMap,))
             return data
@@ -609,8 +610,9 @@ class gridmatrix(param.ParameterizedFunction):
             if 'dataframe' in Dataset.datatype:
                 el_data = element.table('dataframe')
             else:
-                el_data = element.table('ndelement')
-        el_data = element.data
+                el_data = element.table('dictionary')
+        else:
+            el_data = element.data
 
         # Get dimensions to plot against each other
         dims = [d for d in element.dimensions()
@@ -625,13 +627,13 @@ class gridmatrix(param.ParameterizedFunction):
                     bin_range = ranges.get(d1.name, element.range(d1))
                     el = element.hist(dimension=d1.name,
                                       bin_range=bin_range,
-                                      adjoin=False)
+                                      adjoin=False)(norm=dict(axiswise=True, framewise=True))
                 else:
                     values = element.dimension_values(d1)
                     el = p.diagonal_type(values, kdims=[d1])
             else:
                 el = p.chart_type(el_data, kdims=[d1],
-                                  vdims=[d2])
+                                  vdims=[d2], datatype=['dataframe', 'dictionary'])
             data[(d1.name, d2.name)] = el
         return data
 
