@@ -226,7 +226,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._set_axis_ticks(axis.xaxis, xticks, log=self.logx,
                              rotation=self.xrotation)
 
-        zticks = yticks if yticks else self.yticks
+        yticks = yticks if yticks else self.yticks
         self._set_axis_ticks(axis.yaxis, yticks, log=self.logy,
                              rotation=self.yrotation)
 
