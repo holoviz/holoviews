@@ -7,9 +7,8 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
-                     CompositeOverlay, Element3D, Columns, NdElement, Element)
-from ...element import Table, ItemTable
+from ...core import (OrderedDict, NdOverlay, DynamicMap,
+                     CompositeOverlay, Element3D)
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, dim_axis_label
 from .plot import MPLPlot
@@ -346,7 +345,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         positions = {'x': ['bottom', 'top'], 'y': ['left', 'right']}[axis]
         axis = axes.xaxis if axis == 'x' else axes.yaxis
-        disabled_spine = []
         if option is None:
             axis.set_visible(False)
             for pos in positions:

@@ -313,7 +313,6 @@ class DimensionedPlot(Plot):
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
-        elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
             elements = []
