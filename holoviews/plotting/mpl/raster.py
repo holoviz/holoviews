@@ -9,7 +9,7 @@ import param
 from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range
-from ...element.raster import HeatMap, Image, Raster, RGB
+from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
@@ -136,7 +136,7 @@ class HeatMapPlot(RasterPlot):
         ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
         xlabels = [xdim.pprint_value(k) for k in dim1_keys]
         ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-        return (xpos, xlabels), (ypos, ylabels)
+        return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
@@ -217,7 +217,7 @@ class QuadMeshPlot(ColorbarPlot):
         else:
             data, style, axis_kwargs = self.get_data(element, ranges, style)
             cmesh.set_array(data[-1])
-            im.set_clim((style['vmin'], style['vmax']))
+            cmesh.set_clim((style['vmin'], style['vmax']))
             if 'norm' in style:
                 cmesh.norm = style['norm']
             return axis_kwargs
@@ -242,6 +242,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
+    invert_zaxis = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
@@ -333,17 +334,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             self._xticks.append(x-b_w-w/2.)
 
-        grid_dims = self.layout.kdims
-        ydim = grid_dims[1] if self.layout.ndims > 1 else None
-        xticks = (self._xticks, self._process_ticklabels(self._xkeys, grid_dims[0]))
-        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
-        ylabel = str(self.layout.kdims[1]) if self.layout.ndims > 1 else ''
-
-        return self._finalize_axis(key, ranges=ranges,
-                                   title=self._format_title(key),
-                                   xticks=xticks, yticks=yticks,
-                                   xlabel=str(self.layout.get_dimension(0)),
-                                   ylabel=ylabel)
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
 
 
     def update_frame(self, key, ranges=None):
@@ -361,18 +353,17 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 else:
                     plot.set_visible(False)
 
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
+
+
+    def _get_axis_kwargs(self):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-
-        self._finalize_axis(key, ranges=ranges, title=self._format_title(key),
-                            xticks=(self._xticks, self._process_ticklabels(self._xkeys, xdim)),
-                            yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
-
-
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        xdim = self.layout.kdims[0]
-        ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-        return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel
+        xticks = (self._xticks, self._process_ticklabels(self._xkeys, xdim))
+        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
+        return dict(xlabel=xdim.pprint_label, ylabel=ydim.pprint_label if ydim else '',
+                    xticks=xticks, yticks=yticks)
 
 
     def _compute_borders(self):

@@ -7,8 +7,8 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
-                     GridSpace, Element, CompositeOverlay, Element3D,
-                     Empty, Collator)
+                     GridSpace, Element, CompositeOverlay, Empty,
+                     Collator)
 from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
@@ -1011,7 +1011,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
 
     def initialize_plot(self):
-        axis = self.handles['axis']
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, None)
         for subplot in self.subplots.values():

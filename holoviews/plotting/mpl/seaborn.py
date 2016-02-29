@@ -25,11 +25,6 @@ class SeabornPlot(ElementPlot):
     redraws the plot.
     """
 
-    apply_databounds = param.Boolean(default=False, doc="""
-        Enables computing the plot bounds from the data itself.
-        Disabled by default since data is often preprocessed,
-        before display, changing the bounds.""")
-
     aspect = param.Parameter(default='square', doc="""
         Aspect ratio defaults to square, 'equal' or numeric values
         are also supported.""")
@@ -260,13 +255,16 @@ class SNSFramePlot(DFrameViewPlot):
                             % self.plot_type)
 
     def update_frame(self, key, ranges=None):
-        view = self.hmap.get(key, None)
+        element = self.hmap.get(key, None)
         axis = self.handles['axis']
         if axis:
-            axis.set_visible(view is not None)
+            axis.set_visible(element is not None)
 
-        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
-        axis_kwargs = self.update_handles(key, axis, view, key, ranges, style)
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        if self.show_legend:
+            style['label'] = element.label
+
+        axis_kwargs = self.update_handles(key, axis, element, key, ranges, style)
         if axis:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 

@@ -178,8 +178,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _axes_props(self, plots, subplots, element, ranges):
-        dims = element.dimensions()
-        xlabel, ylabel, zlabel = self._axis_labels(element, subplots)
+        el = element.traverse(lambda x: x, [Element])
+        el = el[0] if el else element
+        dims = el.dimensions()
+        xlabel, ylabel, zlabel = self._get_axis_labels(dims)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
 

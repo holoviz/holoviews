@@ -792,8 +792,9 @@ class BarPlot(LegendPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
 
-        self.handles['artist'], self.handles['xticks'], xlabel = self._create_bars(axis, element)
-        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'], xlabel=xlabel, ylabel=str(vdim))
+        self.handles['artist'], self.handles['xticks'], xdims = self._create_bars(axis, element)
+        return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'],
+                                   dimensions=[xdims, vdim])
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):
@@ -803,7 +804,7 @@ class BarPlot(LegendPlot):
         yalignments = None
         if xticks is not None:
             ticks, labels, yalignments = zip(*sorted(xticks, key=lambda x: x[0]))
-            xticks = [ticks, labels]
+            xticks = (list(ticks), list(labels))
         super(BarPlot, self)._finalize_ticks(axis, element, xticks, yticks, zticks)
         if yalignments:
             for t, y in zip(axis.get_xticklabels(), yalignments):
@@ -821,7 +822,7 @@ class BarPlot(LegendPlot):
         style_opts, color_groups, sopts = self._compute_styles(element, style_groups)
         dims = element.dimensions('key', label=True)
         ndims = len(dims)
-        xlabel = ' / '.join([str(d) for d in [cdim, gdim] if d is not None])
+        xdims = [d for d in [cdim, gdim] if d is not None]
 
         # Compute widths
         width = (1-(2.*self.padding)) / len(values['category'])
@@ -887,7 +888,7 @@ class BarPlot(LegendPlot):
             leg_spec = self.legend_specs[self.legend_position]
             if self.legend_cols: leg_spec['ncol'] = self.legend_cols
             axis.legend(title=', '.join(title), **leg_spec)
-        return bars, xticks, xlabel
+        return bars, xticks, xdims
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -1036,11 +1037,8 @@ class BoxPlot(ChartPlot):
         style.pop('zorder')
         style.pop('label')
         style['vert'] = not self.invert_axes
-
-        xlabel = ','.join([str(d) for d in element.kdims])
-        ylabel = str(element.vdims[0])
-
-        return (data,), style, {'xlabel': xlabel, 'ylabel': ylabel}
+        return (data,), style, {'dimensions': [element.kdims,
+                                               element.vdims[0]]}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):

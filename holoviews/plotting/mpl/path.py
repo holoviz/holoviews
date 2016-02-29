@@ -3,7 +3,6 @@ from matplotlib.collections import PatchCollection, LineCollection
 import numpy as np
 import param
 
-from ...core.util import match_spec
 from .element import ElementPlot, ColorbarPlot
 
 
@@ -65,7 +64,7 @@ class PolygonPlot(ColorbarPlot):
         collection = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(collection)
         if self.colorbar:
-            self._draw_colorbar(collection, element)
+            self._draw_colorbar(collection, self.current_frame)
         return {'artist': collection, 'polys': plot_args[0]}
 
 

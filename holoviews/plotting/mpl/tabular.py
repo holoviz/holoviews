@@ -42,8 +42,8 @@ class TablePlot(ElementPlot):
 
     style_opts = ['alpha', 'sketch_params']
 
-    # Disable computing plot bounds from data.
-    apply_databounds = False
+    # Disable axes handling for Table plots
+    _has_axes = False
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
