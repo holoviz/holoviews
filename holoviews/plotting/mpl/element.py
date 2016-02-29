@@ -8,7 +8,7 @@ import param
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
-                     CompositeOverlay, Element3D)
+                     CompositeOverlay, Element3D, Element)
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, dim_axis_label
 from .plot import MPLPlot
@@ -137,8 +137,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         element = self._get_frame(key)
         self.current_frame = element
         if not dimensions and element:
-            el = element.last if isinstance(element, NdOverlay) else element
-            dimensions = el.dimensions()
+            el = element.traverse(lambda x: x, [Element])
+            if el: dimensions = el[0].dimensions()
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
@@ -253,13 +253,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Optionally explicit labels may be supplied to override the dimension
         label.
         """
-        if dimensions and xlabel is None:
-            xlabel = dim_axis_label(dimensions[0])
-        if len(dimensions) >= 2 and ylabel is None:
-            ylabel = dim_axis_label(dimensions[1])
-        if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
-            zlabel = dim_axis_label(dimensions[2])
-
+        xlabel, ylabel, zlabel = self._get_axis_labels(dimensions, xlabel, ylabel, zlabel)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
         if xlabel and self.xaxis: axes.set_xlabel(xlabel, **self._fontsize('xlabel'))
@@ -658,7 +652,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         Accumulate the legend handles and labels for all subplots
         and set up the legend
         """
-        title = ''
         legend_data = []
         dimensions = overlay.kdims
         title = ', '.join([d.name for d in dimensions])

@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
-from .util import get_dynamic_mode, initialize_sampled
+from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
 
 
 class BackendError(Exception):
@@ -609,21 +609,13 @@ class GenericElementPlot(DimensionedPlot):
                      l2 for l1, l2 in zip(range_extents, extents))
 
 
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        # Axis labels
-        if isinstance(view, CompositeOverlay):
-            bottom = view.values()[0]
-            dims = bottom.dimensions()
-            if isinstance(bottom, CompositeOverlay):
-                dims = dims[bottom.ndims:]
-        else:
-            dims = view.dimensions()
-        if dims and xlabel is None:
-            xlabel = util.safe_unicode(dims[0].pprint_label)
-        if len(dims) >= 2 and ylabel is None:
-            ylabel = util.safe_unicode(dims[1].pprint_label)
-        if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = util.safe_unicode(dims[2].pprint_label)
+    def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
+        if dimensions and xlabel is None:
+            xlabel = dim_axis_label(dimensions[0])
+        if len(dimensions) >= 2 and ylabel is None:
+            ylabel = dim_axis_label(dimensions[1])
+        if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
+            zlabel = dim_axis_label(dimensions[2])
         return xlabel, ylabel, zlabel
 
 
