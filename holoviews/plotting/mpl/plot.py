@@ -164,6 +164,7 @@ class MPLPlot(DimensionedPlot):
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
             axis.add_artist(at)
+            self.handles['sublabel'] = at.txt.get_children()[0]
 
 
     def _finalize_axis(self, key):
