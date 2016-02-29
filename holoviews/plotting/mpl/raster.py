@@ -9,7 +9,7 @@ import param
 from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range
-from ...element.raster import HeatMap, Image, Raster, RGB
+from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
@@ -217,7 +217,7 @@ class QuadMeshPlot(ColorbarPlot):
         else:
             data, style, axis_kwargs = self.get_data(element, ranges, style)
             cmesh.set_array(data[-1])
-            im.set_clim((style['vmin'], style['vmax']))
+            cmesh.set_clim((style['vmin'], style['vmax']))
             if 'norm' in style:
                 cmesh.norm = style['norm']
             return axis_kwargs

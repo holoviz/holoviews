@@ -6,7 +6,7 @@ import matplotlib as mpl
 import matplotlib.cm as cm
 
 from ...core import Dimension
-from ...core.util import match_spec, basestring
+from ...core.util import basestring
 from ..util import map_colors
 from .element import ColorbarPlot
 from .chart import PointPlot

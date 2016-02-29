@@ -10,7 +10,7 @@ from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, dim_axis_label
+from ..util import dynamic_update
 from .plot import MPLPlot
 from .util import wrap_formatter
 
