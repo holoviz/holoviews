@@ -108,7 +108,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     style_opts = []
 
     # Whether plot has axes, disables setting axis limits, labels and ticks
-    _axes = True
+    _has_axes = True
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -159,7 +159,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._subplot_label(axis)
 
             # Apply axis options if axes are enabled
-            if element and not any(not sp._axes for sp in [self] + subplots):
+            if element and not any(not sp._has_axes for sp in [self] + subplots):
                 # Set axis labels
                 self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
 

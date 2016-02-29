@@ -43,7 +43,7 @@ class TablePlot(ElementPlot):
     style_opts = ['alpha', 'sketch_params']
 
     # Disable axes handling for Table plots
-    _axes = False
+    _has_axes = False
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
