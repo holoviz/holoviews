@@ -7,6 +7,7 @@ import sys, traceback, inspect, io
 import IPython
 from IPython.core.ultratb import AutoFormattedTB
 
+import holoviews
 from ..core.options import Store, StoreOptions, BackendError, SkipRendering
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
@@ -14,7 +15,6 @@ from ..core import (ViewableElement, UniformNdMapping,
 from ..core.traversal import unique_dimkeys
 from .magics import OutputMagic, OptsMagic
 
-from .archive import notebook_archive
 # To assist with debugging of display hooks
 FULL_TRACEBACK = None
 ABBREVIATE_TRACEBACKS = True
@@ -103,7 +103,7 @@ def display_hook(fn):
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                notebook_archive.add(element, html=html)
+                holoviews.archive.add(element, html=html)
             filename = OutputMagic.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)

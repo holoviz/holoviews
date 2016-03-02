@@ -2,7 +2,7 @@ import os
 from unittest import SkipTest
 
 import param
-import jinja2
+from IPython import version_info
 from IPython.display import HTML
 
 import holoviews
@@ -11,17 +11,33 @@ from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
 from ..plotting import * # noqa (API import - register plotting backends)
-from .archive import notebook_archive
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
-from .parser import Parser
 from .widgets import RunProgress
 
 from param import ipython as param_ext
 
+try:
+    if version_info[0] >= 4:
+        import nbformat # noqa (ensures availability)
+    else:
+        from IPython import nbformat # noqa (ensures availability)
+    from .archive import notebook_archive
+    holoviews.archive = notebook_archive
+except ImportError:
+    pass
+
+try:
+    import pyparsing
+except ImportError:
+    pyparsing = None
+    # Populating the namespace for keyword evaluation
+    from ..core.options import Cycle, Palette # noqa (namespace import)
+    import numpy as np                        # noqa (namespace import)
+    Parser.namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
+
 Collector.interval_hook = RunProgress
-holoviews.archive = notebook_archive
 
 
 def show_traceback():
@@ -79,6 +95,7 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
     """
     Displays javascript and CSS to initialize HoloViews widgets.
     """
+    import jinja2
     # Evaluate load_notebook.html template with widgetjs code
     if JS:
         widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
@@ -92,12 +109,6 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
                                   'logo': logo,
                                   'message':message})))
 
-
-# Populating the namespace for keyword evaluation
-from ..core.options import Cycle, Palette # noqa (namespace import)
-import numpy as np                        # noqa (namespace import)
-
-Parser.namespace = {'np':np, 'Cycle':Cycle, 'Palette': Palette}
 
 class notebook_extension(param.ParameterizedFunction):
     """
