@@ -173,7 +173,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         if 'hover' in self.default_tools + self.tools:
             for d in element.dimensions(label=True):
-                sanitized = dimension_sanitizer(d)
+                sanitized = util.dimension_sanitizer(d)
                 data[sanitized] = [] if empty else element.dimension_values(d)
 
 
