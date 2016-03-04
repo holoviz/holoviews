@@ -6,7 +6,7 @@ backends.
 import sys
 from distutils.version import LooseVersion
 from collections import OrderedDict
-from itertools import compress
+from itertools import compress, cycle
 
 try:
     import itertools.izip as zip
@@ -1253,12 +1253,14 @@ class DictColumns(DataColumns):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        keys = [tuple(columns.data[d.name][i] for d in dimensions)
-                for i in range(len(columns))]
+        key_data = []
+        for d in dimensions:
+            data = columns.data[d.name]
+            key_data.append(cycle([data[0]]) if len(data) == 1 else data)
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in util.unique_iterator(keys):
+        for unique_key in util.unique_iterator(zip(key_data)):
             mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
             group_data = OrderedDict(((d.name, columns[d.name][mask]) for d in kdims+vdims))
             group_data = group_type(group_data, **group_kwargs)
