@@ -173,7 +173,7 @@ class Columns(Element):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
-        if selection_specs and not self.matches(selection_specs):
+        if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
         data = self.interface.select(self, **selection)
