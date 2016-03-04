@@ -253,13 +253,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
-    def _init_plot(self, key, plots, ranges=None):
+    def _init_plot(self, key, element, plots, ranges=None):
         """
         Initializes Bokeh figure to draw Element into and sets basic
         figure and axis attributes including axes types, labels,
         titles and plot height and width.
         """
-        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
@@ -437,7 +436,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Initialize plot, source and glyph
         if plot is None:
-            plot = self._init_plot(key, ranges=ranges, plots=plots)
+            plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         self.handles['plot'] = plot
 
@@ -710,7 +709,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs:
-            plot = self._init_plot(key, ranges=ranges, plots=plots)
+            plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         if plot and not self.overlaid:
             self._update_plot(key, plot, self.hmap.last)
