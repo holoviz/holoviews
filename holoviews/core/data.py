@@ -1159,6 +1159,17 @@ class DictColumns(DataColumns):
 
 
     @classmethod
+    def validate(cls, columns):
+        dimensions = columns.dimensions(label=True)
+        not_found = [d for d in dimensions if d not in columns.data]
+        if not_found:
+            raise ValueError('Following dimensions not found in data: %s' % not_found)
+        lengths = [len(columns.data[dim]) for dim in dimensions]
+        if len({l for l in lengths if l > 1}) > 1:
+            raise ValueError('Length of columns do not match')
+
+
+    @classmethod
     def unpack_scalar(cls, columns, data):
         """
         Given a columns object and data in the appropriate format for
