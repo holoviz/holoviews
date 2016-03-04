@@ -149,11 +149,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             # Apply title
             title = None if self.zorder > 0 else self._format_title(key)
             if self.show_title and title is not None:
-                if 'title' in self.handles:
-                    self.handles['title'].set_text(title)
-                else:
-                    fontsize = self._fontsize('title')
-                    self.handles['title'] = axis.set_title(title, **fontsize)
+                fontsize = self._fontsize('title')
+                self.handles['title'] = axis.set_title(title, **fontsize)
 
             # Apply subplot label
             self._subplot_label(axis)

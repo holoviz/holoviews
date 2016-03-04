@@ -115,7 +115,8 @@ class HeatmapPlot(ElementPlot):
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def _axes_props(self, plots, subplots, element, ranges):
-        labels = self._axis_labels(element, plots)
+        dims = element.dimensions()
+        labels = self._get_axis_labels(dims)
         xvals, yvals = [element.dimension_values(i, True)
                         for i in range(2)]
         plot_ranges = {'x_range': [str(x) for x in xvals],

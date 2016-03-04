@@ -173,7 +173,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         if 'hover' in self.default_tools + self.tools:
             for d in element.dimensions(label=True):
-                sanitized = dimension_sanitizer(d)
+                sanitized = util.dimension_sanitizer(d)
                 data[sanitized] = [] if empty else element.dimension_values(d)
 
 
@@ -199,12 +199,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
-        if element.get_dimension_type(0) is np.datetime64:
+        if el.get_dimension_type(0) is np.datetime64:
             x_axis_type = 'datetime'
         else:
             x_axis_type = 'log' if self.logx else 'auto'
 
-        if len(dims) > 1 and element.get_dimension_type(1) is np.datetime64:
+        if len(dims) > 1 and el.get_dimension_type(1) is np.datetime64:
             y_axis_type = 'datetime'
         else:
             y_axis_type = 'log' if self.logy else 'auto'
@@ -253,13 +253,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
-    def _init_plot(self, key, plots, ranges=None):
+    def _init_plot(self, key, element, plots, ranges=None):
         """
         Initializes Bokeh figure to draw Element into and sets basic
         figure and axis attributes including axes types, labels,
         titles and plot height and width.
         """
-        element = self._get_frame(key)
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
@@ -437,7 +436,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Initialize plot, source and glyph
         if plot is None:
-            plot = self._init_plot(key, ranges=ranges, plots=plots)
+            plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         self.handles['plot'] = plot
 
@@ -479,9 +478,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_key = key
             self.current_frame = element
 
+        glyph = self.handles['glyph']
+        if hasattr(glyph, 'visible'):
+            glyph.visible = bool(element)
         if not element:
-            source = self.handles['source']
-            source.data = {k: [] for k in source.data}
             return
 
         if isinstance(self.hmap, DynamicMap):
@@ -709,7 +709,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs:
-            plot = self._init_plot(key, ranges=ranges, plots=plots)
+            plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         if plot and not self.overlaid:
             self._update_plot(key, plot, self.hmap.last)
