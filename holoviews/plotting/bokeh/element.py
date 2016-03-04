@@ -479,9 +479,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_key = key
             self.current_frame = element
 
+        glyph = self.handles['glyph']
+        if hasattr(glyph, 'visible'):
+            glyph.visible = bool(element)
         if not element:
-            source = self.handles['source']
-            source.data = {k: [] for k in source.data}
             return
 
         if isinstance(self.hmap, DynamicMap):
