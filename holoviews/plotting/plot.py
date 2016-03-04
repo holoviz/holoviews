@@ -518,7 +518,7 @@ class GenericElementPlot(DimensionedPlot):
             if isinstance(key, tuple):
                 dims = {d.name: k for d, k in zip(self.dimensions, key)
                         if d in self.hmap.kdims}
-                frame = self.hmap.select(**dims)
+                frame = self.hmap.select([DynamicMap], **dims)
             elif key < self.hmap.counter:
                 key = self.hmap.keys()[key]
                 frame = self.hmap[key]
