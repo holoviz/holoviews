@@ -199,12 +199,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
-        if element.get_dimension_type(0) is np.datetime64:
+        if el.get_dimension_type(0) is np.datetime64:
             x_axis_type = 'datetime'
         else:
             x_axis_type = 'log' if self.logx else 'auto'
 
-        if len(dims) > 1 and element.get_dimension_type(1) is np.datetime64:
+        if len(dims) > 1 and el.get_dimension_type(1) is np.datetime64:
             y_axis_type = 'datetime'
         else:
             y_axis_type = 'log' if self.logy else 'auto'
