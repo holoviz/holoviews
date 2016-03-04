@@ -2,12 +2,11 @@ from __future__ import unicode_literals
 
 import os, uuid, json, math
 
-import numpy as np
 import param
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
-from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
+from ...core.util import (dimension_sanitizer, safe_unicode,
                           unique_iterator, unicode, isnumeric)
 from ...core.traversal import hierarchical
 
@@ -142,7 +141,7 @@ class NdWidget(param.Parameterized):
                      else self.json_load_path)
         if json_path and json_path[-1] != '/':
             json_path = json_path + '/'
-        dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
+        dynamic = json.dumps(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
