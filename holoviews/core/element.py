@@ -285,13 +285,12 @@ class NdElement(NdMapping, Tabular):
 
         if isinstance(data, Element):
             params = dict(get_param_values(data), **params)
-            if isinstance(data, NdElement):
-                mapping = data.mapping()
-                data = mapping.data
-            else:
-                data = data.data
+            mapping = data if isinstance(data, NdElement) else data.mapping()
+            data = mapping.data
             if 'kdims' not in params:
                 params['kdims'] = mapping.kdims
+            elif 'Index' not in params['kdims']:
+                params['kdims'] = ['Index'] + params['kdims']
             if 'vdims' not in params:
                 params['vdims'] = mapping.vdims
 
