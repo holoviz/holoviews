@@ -478,7 +478,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_key = key
             self.current_frame = element
 
-        glyph = self.handles['glyph']
+        glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
             glyph.visible = bool(element)
         if not element:
@@ -500,7 +500,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._update_datasource(source, data)
 
         self.style = self.lookup_options(element, 'style')
-        if 'glyph' in self.handles:
+        if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
             self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
