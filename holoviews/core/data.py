@@ -1268,14 +1268,12 @@ class DictColumns(DataColumns):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        key_data = []
-        for d in dimensions:
-            data = columns.data[d.name]
-            key_data.append(cycle([data[0]]) if len(data) == 1 else data)
+        keys = [tuple(columns.data[d.name][i] for d in dimensions)
+                for i in range(len(columns))]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in util.unique_iterator(zip(key_data)):
+        for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(columns, dict(zip(dimensions, unique_key)))
             group_data = OrderedDict(((d.name, columns[d.name][mask]) for d in kdims+vdims))
             group_data = group_type(group_data, **group_kwargs)
