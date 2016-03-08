@@ -3,7 +3,7 @@ The data module provides utility classes to interface with various data
 backends.
 """
 
-import sys, warnings
+import sys
 from distutils.version import LooseVersion
 from collections import OrderedDict, defaultdict
 from itertools import compress, cycle
@@ -254,7 +254,7 @@ class Columns(Element):
         matching the key dimensions, returning a new object containing
         just the selected samples.
         """
-        return self.clone(self.interface.sample(self, samples))
+        return self.clone(self.interface.sample(self, samples), dense=False)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
@@ -715,7 +715,6 @@ class DFColumns(DataColumns):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
-            columns = data.columns
             ndim = len(kdim_param.default) if kdim_param.default else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
@@ -761,7 +760,7 @@ class DFColumns(DataColumns):
         column = columns.data[columns.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
-                LooseVersion(pd.__version__) < '0.17.0'):
+                        LooseVersion(pd.__version__) < '0.17.0'):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
@@ -1459,7 +1458,7 @@ class GridColumns(DictColumns):
                 mask &= arr < ind.stop
         elif isinstance(ind, (set, list)):
             iter_slcs = []
-            for ik in k:
+            for ik in ind:
                 iter_slcs.append(arr == ik)
             mask = np.logical_or.reduce(iter_slcs)
         elif ind is None:
