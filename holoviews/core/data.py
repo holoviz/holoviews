@@ -1330,7 +1330,7 @@ class DictColumns(DataColumns):
 
 
 
-class NdArrayColumns(DictColumns):
+class GridColumns(DictColumns):
     """
     Interface for simple dictionary-based columns format. The dictionary
     keys correspond to the column (i.e dimension) names and the values
@@ -1339,9 +1339,7 @@ class NdArrayColumns(DictColumns):
 
     types = (dict, OrderedDict, cyODict)
 
-    datatype = 'ndarray'
-
-    dense = True
+    datatype = 'grid'
 
     @classmethod
     def reshape(cls, eltype, data, kdims, vdims):
@@ -1573,6 +1571,6 @@ class NdArrayColumns(DictColumns):
 DataColumns.register(DictColumns)
 DataColumns.register(ArrayColumns)
 DataColumns.register(NdColumns)
-DataColumns.register(NdArrayColumns)
+DataColumns.register(GridColumns)
 if pd:
     DataColumns.register(DFColumns)
