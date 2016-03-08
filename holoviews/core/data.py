@@ -654,8 +654,8 @@ class NdColumns(DataColumns):
         return columns.data.sort(by)
 
     @classmethod
-    def values(cls, columns, dim, expanded, flat):
-        values = columns.data.dimension_values(dim)
+    def values(cls, columns, dim, expanded=True, flat=True):
+        values = columns.data.dimension_values(dim, expanded, flat)
         if not expanded:
             return util.unique_array(values)
         return values

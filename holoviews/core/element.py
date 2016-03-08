@@ -488,7 +488,7 @@ class NdElement(NdMapping, Tabular):
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
             vals = np.array([v[index] for v in self.data.values()])
-            return vals if not expanded else unique_array(vals)
+            return vals if expanded else unique_array(vals)
         else:
             return NdMapping.dimension_values(self, dim.name,
                                               expanded, flat)
