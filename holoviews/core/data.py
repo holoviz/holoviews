@@ -51,9 +51,6 @@ class Columns(Element):
         format listed will be used until a suitable format is found (or
         the data fails to be understood).""")
 
-    dense = param.Boolean(default=False, doc="""Whether the supplied data
-        is in a dense format.""")
-
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
     _1d = False
@@ -254,7 +251,7 @@ class Columns(Element):
         matching the key dimensions, returning a new object containing
         just the selected samples.
         """
-        return self.clone(self.interface.sample(self, samples), dense=False)
+        return self.clone(self.interface.sample(self, samples))
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
@@ -464,6 +461,11 @@ class DataColumns(param.Parameterized):
             raise ValueError("Supplied data does not contain specified "
                              "dimensions, the following dimensions were "
                              "not found: %s" % repr(not_found))
+
+
+    @classmethod
+    def check_dense(cls, arrays):
+        return any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
 
     @classmethod
@@ -748,6 +750,9 @@ class DFColumns(DataColumns):
                     data = tuple(data[:, i]  for i in range(data.shape[1]))
 
             if isinstance(data, tuple):
+                data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
+                if cls.check_dense(data):
+                    raise ValueError('Dimension values must all be the same shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
             else:
@@ -1156,6 +1161,8 @@ class DictColumns(DataColumns):
             raise ValueError("DictColumns interface couldn't convert data.""")
         elif isinstance(data, dict):
             unpacked = [(d, np.array(data[d])) for d in data]
+            if cls.check_dense([d[1] for d in unpacked]):
+                raise ValueError('Dimension values must all be the same shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
             else:
