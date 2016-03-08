@@ -71,7 +71,7 @@ class ItemTable(Element):
         return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
             return np.array([self.data.get(dimension, np.NaN)])

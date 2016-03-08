@@ -482,15 +482,16 @@ class NdElement(NdMapping, Tabular):
         return self.clone(rows, kdims=grouped.kdims)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         dim = self.get_dimension(dim, strict=True)
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
             vals = np.array([v[index] for v in self.data.values()])
-            return unique_array(vals) if unique else vals
+            return vals if not expanded else unique_array(vals)
         else:
-            return NdMapping.dimension_values(self, dim.name, unique)
+            return NdMapping.dimension_values(self, dim.name,
+                                              expanded, flat)
 
 
     def values(self):

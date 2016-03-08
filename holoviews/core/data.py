@@ -338,17 +338,13 @@ class Columns(Element):
         return self.interface.shape(self)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         """
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
         dim = self.get_dimension(dim, strict=True).name
-        dim_vals = self.interface.values(self, dim)
-        if unique:
-            return util.unique_array(dim_vals)
-        else:
-            return dim_vals
+        return self.interface.values(self, dim, expanded, flat)
 
 
     def get_dimension_type(self, dim):
@@ -656,8 +652,11 @@ class NdColumns(DataColumns):
         return columns.data.sort(by)
 
     @classmethod
-    def values(cls, columns, dim):
-        return columns.data.dimension_values(dim)
+    def values(cls, columns, dim, expanded, flat):
+        values = columns.data.dimension_values(dim)
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
     @classmethod
     def reindex(cls, columns, kdims=None, vdims=None):
@@ -855,10 +854,12 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim):
+    def values(cls, columns, dim, expanded, flat):
         data = columns.data[dim]
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
+        if not expanded:
+            return util.unique_array(data)
         return np.array(data)
 
 
@@ -981,12 +982,15 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim):
+    def values(cls, columns, dim, expanded, flat):
         data = columns.data
         dim_idx = columns.get_dimension_index(dim)
         if data.ndim == 1:
             data = np.atleast_2d(data).T
-        return data[:, dim_idx]
+        values = data[:, dim_idx]
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
 
     @classmethod
@@ -1228,8 +1232,11 @@ class DictColumns(DataColumns):
         return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
 
     @classmethod
-    def values(cls, columns, dim):
-        return np.array(columns.data.get(columns.get_dimension(dim).name))
+    def values(cls, columns, dim, expanded, flat):
+        values = np.array(columns.data.get(columns.get_dimension(dim).name))
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
 
     @classmethod
@@ -1393,9 +1400,9 @@ class NdArrayColumns(DictColumns):
 
 
     @classmethod
-    def values(cls, columns, dim, dense=False, flat=True):
+    def values(cls, columns, dim, expanded=True, flat=True):
         if dim in columns.kdims:
-            if dense:
+            if not expanded:
                 return columns.data[dim]
             prod = util.cartesian_product([columns.data[d.name] for d in columns.kdims])
             idx = columns.get_dimension_index(dim)
@@ -1477,7 +1484,7 @@ class NdArrayColumns(DictColumns):
         data = {}
         value_select = []
         for dim, ind in selection:
-            arr = cls.values(columns, dim, True)
+            arr = cls.values(columns, dim, False)
             mask = cls.coord_mask(columns, arr, ind)
             if mask is None:
                 mask = np.ones(arr.shape, dtype=bool)
