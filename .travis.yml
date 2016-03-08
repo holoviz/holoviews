@@ -10,6 +10,11 @@ notifications:
   email:
     on_failure: change # [always|never|change] default: always
 
+addons:
+  apt:
+    packages:
+    - gfortran
+    
 install:
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
