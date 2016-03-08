@@ -858,7 +858,7 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim, expanded, flat):
+    def values(cls, columns, dim, expanded=True, flat=True):
         data = columns.data[dim]
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
@@ -986,7 +986,7 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim, expanded, flat):
+    def values(cls, columns, dim, expanded=True, flat=True):
         data = columns.data
         dim_idx = columns.get_dimension_index(dim)
         if data.ndim == 1:
@@ -1238,7 +1238,7 @@ class DictColumns(DataColumns):
         return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
 
     @classmethod
-    def values(cls, columns, dim, expanded, flat):
+    def values(cls, columns, dim, expanded=True, flat=True):
         values = np.array(columns.data.get(columns.get_dimension(dim).name))
         if not expanded:
             return util.unique_array(values)
