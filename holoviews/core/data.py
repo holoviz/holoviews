@@ -1352,6 +1352,18 @@ class GridColumns(DictColumns):
         if vdims is None:
             vdims = eltype.vdims
 
+        if not vdims:
+            raise ValueError('GridColumns interface requires at least '
+                             'one value dimension.')
+
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if isinstance(data, tuple):
+            data = {d: v for d, v in zip(dimensions, data)}
+        elif not isinstance(data, dict):
+            raise ValueError('GridColumns must be instantiated as a '
+                             'dictionary or tuple')
+
         if 'vdims' in data:
             vdim_array = data.pop('vdims')
             for i, vdim in enumerate(vdims):
@@ -1365,21 +1377,21 @@ class GridColumns(DictColumns):
             if not isinstance(data[name], np.ndarray):
                 data[name] = np.array(data[name])
 
+        kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
+        vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
+        expected = [len(data[kd]) for kd in kdim_names]
+        for vdim in vdim_names:
+            shape = data[vdim].shape
+            if shape != tuple(expected):
+                raise ValueError('Key dimension values and value array %s'
+                                 'shape do not match. Expected shape %s, '
+                                 'actual shape: %s' % (expected, vdim, shape))
         return data, kdims, vdims
 
 
     @classmethod
     def validate(cls, columns):
-        if not columns.vdims:
-            return
-        expected = [len(columns.data[kd.name])
-                    for kd in columns.kdims]
-        for vdim in columns.vdims:
-            shape = columns.data[vdim.name].shape
-            if shape != tuple(expected):
-                raise ValueError('Key dimension values and value array %s'
-                                 'shape do not match. Expected shape %s, '
-                                 'actual shape: %s' % (expected, vdim, shape))
+        DataColumns.validate(columns)
 
 
     @classmethod
@@ -1483,6 +1495,10 @@ class GridColumns(DictColumns):
     @classmethod
     def select(cls, columns, selection_mask=None, **selection):
         dimensions = columns.dimensions('key', label=True)
+        val_dims = [vdim for vdim in columns.vdims if vdim in selection]
+        if val_dims:
+            raise IndexError('Cannot slice value dimensions on dense '
+                             'data, convert to sparse format first')
         selection = [(d, selection.get(d)) for d in dimensions]
         data = {}
         value_select = []
