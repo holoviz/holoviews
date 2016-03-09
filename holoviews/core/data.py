@@ -6,7 +6,7 @@ backends.
 import sys
 from distutils.version import LooseVersion
 from collections import OrderedDict, defaultdict
-from itertools import compress, cycle
+from itertools import compress
 
 try:
     import itertools.izip as zip
@@ -1351,14 +1351,19 @@ class GridColumns(DictColumns):
             kdims = eltype.kdims
         if vdims is None:
             vdims = eltype.vdims
-        for kdim in kdims:
-            name = kdim.name if isinstance(kdim, Dimension) else kdim
+
+        if 'vdims' in data:
+            vdim_array = data.pop('vdims')
+            for i, vdim in enumerate(vdims):
+                name = vdim.name if isinstance(vdim, Dimension) else vdim
+                data[name] = vdim_array[..., i]
+
+        for dim in kdims+vdims:
+            name = dim.name if isinstance(dim, Dimension) else dim
+            if name not in data:
+                raise ValueError("Values for dimension %s not found" % dim)
             if not isinstance(data[name], np.ndarray):
                 data[name] = np.array(data[name])
-        if vdims and 'array' not in data:
-            raise Exception
-        if len(vdims) == 1 and data['array'].ndim > len(kdims):
-            data['array'] = data['array'][..., 0]
 
         return data, kdims, vdims
 
@@ -1367,17 +1372,14 @@ class GridColumns(DictColumns):
     def validate(cls, columns):
         if not columns.vdims:
             return
-        shape = columns.data['array'].shape
-        expected = []
-        for kd in columns.kdims:
-            expected.append(len(columns.data[kd.name]))
-        if len(columns.vdims) > 1:
-            expected.append(len(columns.vdims))
-        expected = tuple(expected)
-        if shape != expected:
-            raise ValueError('Key dimension values and value array '
-                             'shapes do not match. Expected shape %s, '
-                             'actual shape: %s' % (expected, shape))
+        expected = [len(columns.data[kd.name])
+                    for kd in columns.kdims]
+        for vdim in columns.vdims:
+            shape = columns.data[vdim.name].shape
+            if shape != tuple(expected):
+                raise ValueError('Key dimension values and value array %s'
+                                 'shape do not match. Expected shape %s, '
+                                 'actual shape: %s' % (expected, vdim, shape))
 
 
     @classmethod
@@ -1385,7 +1387,7 @@ class GridColumns(DictColumns):
         if dim in columns.kdims:
             arr = columns.data[dim.name]
         elif dim in columns.vdims:
-            arr = columns.data['array']
+            arr = columns.data[dim.name]
         else:
             return None
         return arr.dtype.type
@@ -1410,10 +1412,8 @@ class GridColumns(DictColumns):
             idx = columns.get_dimension_index(dim)
             return prod[:, idx]
         else:
-            values = columns.data.get('array')
-            if len(columns.vdims) > 1:
-                idx = columns.vdims.index(dim)
-                values = values[..., idx]
+            dim = columns.get_dimension(dim)
+            values = columns.data.get(dim.name)
             return values.flatten() if flat else values
 
 
@@ -1438,7 +1438,8 @@ class GridColumns(DictColumns):
         grouped_data = []
         for unique_key in util.cartesian_product(keys):
             group_data = cls.select(columns, **dict(zip(dim_names, unique_key)))
-            group_data['array'] = np.squeeze(group_data['array'])
+            for vdim in columns.vdims:
+                group_data[vdim.name] = np.squeeze(group_data[vdim.name])
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
 
@@ -1497,8 +1498,8 @@ class GridColumns(DictColumns):
         int_inds = [np.argwhere(v) for v in value_select]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
-        sliced = columns.data['array'][index]
-        data['array'] = sliced
+        for vdim in columns.vdims:
+            data[vdim.name] = columns.data[vdim.name][index]
         return data
 
 
@@ -1508,9 +1509,8 @@ class GridColumns(DictColumns):
         Samples the gridded data into columns of samples.
         """
         ndims = columns.ndims
-        deep = len(columns.vdims) > 1
         dimensions = columns.dimensions(label=True)
-        array = columns.data['array']
+        arrays = [columns.data[vdim.name] for vdim in columns.vdims]
         data = defaultdict(list)
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
@@ -1526,9 +1526,8 @@ class GridColumns(DictColumns):
                 sampled.append(cdata[mask])
             for d, arr in zip(dimensions, np.meshgrid(*sampled)):
                 data[d].append(arr)
-            for i, vdim in enumerate(columns.vdims):
-                val_ind = tuple(int_inds) + ((i,) if deep else ())
-                flat_index = np.ravel_multi_index(val_ind, array.shape)
+            for vdim, array in zip(columns.vdims, arrays):
+                flat_index = np.ravel_multi_index(tuple(int_inds), array.shape)
                 data[vdim.name].append(array.flat[flat_index])
         concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
         return concatenated
@@ -1540,7 +1539,9 @@ class GridColumns(DictColumns):
         data = {kdim: columns.data[kdim] for kdim in kdims}
         axes = tuple(columns.get_dimension_index(kdim) for kdim in columns.kdims
                     if kdim not in kdims)
-        data['array'] = function(columns.data['array'], axis=axes, **kwargs)
+        for vdim in columns.vdims:
+            data[vdim.name] = function(columns.data[vdim.name],
+                                       axis=axes, **kwargs)
         return data
 
 
@@ -1552,11 +1553,16 @@ class GridColumns(DictColumns):
             any(vd for vd in vdims if vd not in columns.vdims)):
             return columns.clone(columns.columns()).reindex(kdims, vdims)
         data = dict(columns.data)
-        if len(vdims) != len(columns.vdims):
-            data['array'] = data['array'][..., [columns.vdims.index(d) for d in vdims]]
+
+        dropped_vdims = ([vdim for vdim in columns.vdims
+                          if vdim not in vdims] if vdims else [])
+        for vdim in dropped_vdims:
+            del data[vdim.name]
+
         if kdims != columns.kdims:
-            axes = [columns.kdims.index(d) for d in kdims]+[data['array'].ndim-1]
-            data['array'] = np.transpose(data['array'], axes)
+            axes = [columns.kdims.index(d) for d in kdims]
+            for vdim in vdims:
+                data[vdim.name] = np.transpose(data[vdim.name], axes)
         return data
 
 
