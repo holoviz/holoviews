@@ -1562,8 +1562,9 @@ class GridColumns(DictColumns):
         axes = tuple(columns.get_dimension_index(kdim) for kdim in columns.kdims
                     if kdim not in kdims)
         for vdim in columns.vdims:
-            data[vdim.name] = function(columns.data[vdim.name],
-                                       axis=axes, **kwargs)
+            data[vdim.name] = np.atleast_1d(function(columns.data[vdim.name],
+                                                     axis=axes, **kwargs))
+
         return data
 
 
