@@ -1595,8 +1595,20 @@ class GridColumns(DictColumns):
 
 
     @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        if not vdim:
+            raise Exception("Cannot add key dimension to a dense representation.")
+        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        return dict(columns.data, **{dim: values})
+
+
+    @classmethod
     def sort(cls, columns, by=[]):
-        return columns.data
+        if not by or by in [columns.kdims, columns.dimensions()]:
+            return columns.data
+        else:
+            raise Exception('Dense representation cannot be sorted, either instantiate '
+                            'in the desired order or use a sparse format.')
 
 
 
