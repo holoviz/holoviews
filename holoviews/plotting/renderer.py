@@ -143,6 +143,7 @@ class Renderer(Exporter):
     backend_dependencies = {}
 
     def __init__(self, **params):
+        self.last_plot = None
         super(Renderer, self).__init__(**params)
 
 
@@ -205,6 +206,7 @@ class Renderer(Exporter):
         if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
                             % (fmt, self.mode, fig_formats + holomap_formats))
+        self.last_plot = plot
         return plot, fmt
 
 
