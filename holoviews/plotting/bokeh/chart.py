@@ -59,7 +59,7 @@ class PointPlot(ElementPlot):
             else:
                 cmap = get_cmap(cmap)
                 colors = element.dimension_values(self.color_index)
-                crange = ranges.get(cdim.name, None)
+                crange = ranges.get(cdim.name, element.range(cdim.name))
                 data[map_key] = map_colors(colors, crange, cmap)
 
         sdim = element.get_dimension(self.size_index)
