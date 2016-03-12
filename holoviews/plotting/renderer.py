@@ -88,7 +88,7 @@ class Renderer(Exporter):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps=param.Integer(20, doc="""
+    fps=param.Number(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
