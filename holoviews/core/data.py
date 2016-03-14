@@ -1497,8 +1497,8 @@ class GridColumns(DictColumns):
         dimensions = columns.dimensions('key', label=True)
         val_dims = [vdim for vdim in columns.vdims if vdim in selection]
         if val_dims:
-            raise IndexError('Cannot slice value dimensions on dense '
-                             'data, convert to sparse format first')
+            raise IndexError('Cannot slice value dimensions in compressed format, '
+                             'convert to expanded format before slicing.')
 
         indexed = cls.indexed(columns, selection)
         selection = [(d, selection.get(d)) for d in dimensions]
