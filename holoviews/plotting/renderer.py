@@ -88,7 +88,7 @@ class Renderer(Exporter):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps=param.Integer(20, doc="""
+    fps=param.Number(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -199,7 +199,7 @@ class Renderer(Exporter):
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt in self.widgets:
-            plot = self.get_widget(plot, fmt)
+            plot = self.get_widget(plot, fmt, display_options={'fps': self.fps})
             fmt = 'html'
 
         all_formats = set(fig_formats + holomap_formats)
