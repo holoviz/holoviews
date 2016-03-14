@@ -621,6 +621,8 @@ class Image(SheetCoordinateSystem, Raster):
             else:
                 return d2lin if dim_idx else d1lin
         elif dim_idx == 2:
+            # Raster arrays are stored with different orientation
+            # than expanded column format, reorient before expanding
             data = np.flipud(self.data).T
             return data.flatten() if flat else data
         else:
