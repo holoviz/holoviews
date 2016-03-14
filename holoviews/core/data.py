@@ -424,8 +424,7 @@ class DataColumns(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
-        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, np.ndarray, list)))
-              and sys.version_info.major >= 3):
+        elif isinstance(data, util.generator_types):
             data = list(data)
 
         # Set interface priority order
