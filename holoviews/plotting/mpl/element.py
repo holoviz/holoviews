@@ -172,7 +172,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Apply log axes
                 if self.logx:
                     axis.set_xscale('log')
-                elif self.logy:
+                if self.logy:
                     axis.set_yscale('log')
 
                 if not self.projection == '3d':
