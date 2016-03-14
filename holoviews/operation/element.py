@@ -428,8 +428,8 @@ class contours(ElementOperation):
             data = [element.data]
         
         elif isinstance(element, QuadMesh):
-            data = (element.dimension_values(0, True),
-                    element.dimension_values(1, True),
+            data = (element.dimension_values(0, False),
+                    element.dimension_values(1, False),
                     element.data[2])
         contour_set = contour_fn(*data, extent=extent,
                                  levels=self.p.levels)

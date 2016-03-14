@@ -176,8 +176,8 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     # Test literal formats
 
-    def test_columns_uniq_dimvals_ht(self):
-        self.assertEqual(self.table.dimension_values('Gender', unique=True),
+    def test_columns_expanded_dimvals_ht(self):
+        self.assertEqual(self.table.dimension_values('Gender', expanded=False),
                          np.array(['M', 'F']))
 
     def test_columns_implicit_indexing_init(self):
@@ -398,4 +398,80 @@ class NdColumnsTest(HeterogeneousColumnTypes, ComparisonTestCase):
                               zip(self.weight, self.height)),
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(columns.data, NdElement))
+
+
+class GridColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
+    """
+    Test of the NdColumns interface (mostly for backwards compatibility)
+    """
+
+    def setUp(self):
+        self.restore_datatype = Columns.datatype
+        Columns.datatype = ['grid']
+        self.data_instance_type = dict
+        self.init_data()
+
+    def init_data(self):
+        self.xs = range(11)
+        self.xs_2 = [el**2 for el in self.xs]
+
+        self.y_ints = [i*2 for i in range(11)]
+        self.columns_hm = Columns((self.xs, self.y_ints),
+                                  kdims=['x'], vdims=['y'])
+
+    def test_columns_array_init_hm(self):
+        "Tests support for arrays (homogeneous)"
+        exception = "None of the available storage backends "\
+         "were able to support the supplied data format."
+        with self.assertRaisesRegexp(Exception, exception):
+            Columns(np.column_stack([self.xs, self.xs_2]),
+                    kdims=['x'], vdims=['x2'])
+
+    def test_columns_dataframe_init_hm(self):
+        "Tests support for homogeneous DataFrames"
+        if pd is None:
+            raise SkipTest("Pandas not available")
+        exception = "None of the available storage backends "\
+         "were able to support the supplied data format."
+        with self.assertRaisesRegexp(Exception, exception):
+            Columns(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+                    kdims=['x'], vdims=['x2'])
+
+    def test_columns_ndelement_init_hm(self):
+        "Tests support for homogeneous NdElement (backwards compatibility)"
+        exception = "None of the available storage backends "\
+         "were able to support the supplied data format."
+        with self.assertRaisesRegexp(Exception, exception):
+            Columns(NdElement(zip(self.xs, self.xs_2),
+                              kdims=['x'], vdims=['x2']))
+
+    def test_columns_2D_aggregate_partial_hm(self):
+        array = np.random.rand(11, 11)
+        columns = Columns({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(columns.aggregate(['x'], np.mean),
+                         Columns({'x':self.xs, 'z': np.mean(array, axis=1)},
+                                 kdims=['x'], vdims=['z']))
+
+    def test_columns_2D_reduce_hm(self):
+        array = np.random.rand(11, 11)
+        columns = Columns({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(np.array(columns.reduce(['x', 'y'], np.mean)),
+                         np.mean(array))
+
+    def test_columns_add_dimensions_value_hm(self):
+        with self.assertRaisesRegexp(Exception, 'Cannot add key dimension to a dense representation.'):
+            self.columns_hm.add_dimension('z', 1, 0)
+
+    def test_columns_add_dimensions_values_hm(self):
+        table =  self.columns_hm.add_dimension('z', 1, range(1,12), vdim=True)
+        self.assertEqual(table.vdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_columns_sort_vdim_hm(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.columns_hm.sort('y')
 

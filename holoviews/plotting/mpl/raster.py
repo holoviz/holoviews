@@ -111,7 +111,7 @@ class HeatMapPlot(RasterPlot):
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
         vals = np.rot90(element.raster, 3).flatten()
-        d1uniq, d2uniq = [np.unique(element.dimension_values(i)) for i in range(2)]
+        d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
         xstep, ystep = 1.0/num_x, 1.0/num_y
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
@@ -127,7 +127,7 @@ class HeatMapPlot(RasterPlot):
 
     def _compute_ticks(self, element, ranges):
         xdim, ydim = element.kdims
-        dim1_keys, dim2_keys = [element.dimension_values(i, True)
+        dim1_keys, dim2_keys = [element.dimension_values(i, False)
                                 for i in range(2)]
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         x0, y0, x1, y1 = element.extents

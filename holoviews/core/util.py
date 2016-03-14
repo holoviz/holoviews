@@ -4,6 +4,7 @@ import itertools
 import string, fnmatch
 import unicodedata
 from collections import defaultdict
+from functools import reduce
 
 import numpy as np
 import param
@@ -861,3 +862,16 @@ class ndmapping_groupby(param.ParameterizedFunction):
         return container_type(groups, kdims=dimensions)
 
 
+def cartesian_product(arrays):
+    """
+    Computes the cartesian product of a list of arrays.
+    """
+    broadcastable = np.ix_(*arrays)
+    broadcasted = np.broadcast_arrays(*broadcastable)
+    rows, cols = reduce(np.multiply, broadcasted[0].shape), len(broadcasted)
+    out = np.empty(rows * cols, dtype=broadcasted[0].dtype)
+    start, end = 0, rows
+    for a in broadcasted:
+        out[start:end] = a.reshape(-1)
+        start, end = end, end + rows
+    return out.reshape(cols, rows).T
