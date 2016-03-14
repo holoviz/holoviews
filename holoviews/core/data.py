@@ -464,7 +464,7 @@ class DataColumns(param.Parameterized):
 
 
     @classmethod
-    def expanded_format(cls, arrays):
+    def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
 
@@ -615,7 +615,7 @@ class NdColumns(DataColumns):
             else:
                 if isinstance(data, tuple):
                     data = tuple(np.array(d) if not isinstance(d, np.ndarray) else d for d in data)
-                    if not cls.expanded_format(data):
+                    if not cls.expanded(data):
                         raise ValueError('NdColumns expects data to be of uniform shape')
                     data = zip(*data)
                 ndims = len(kdims)
@@ -755,7 +755,7 @@ class DFColumns(DataColumns):
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if not cls.expanded_format(data):
+                if not cls.expanded(data):
                     raise ValueError('DFColumns expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
@@ -930,7 +930,7 @@ class ArrayColumns(DataColumns):
             data = np.column_stack(columns)
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.array(d) for d in data]
-            if cls.expanded_format(data):
+            if cls.expanded(data):
                 data = np.column_stack(data)
             else:
                 raise ValueError('ArrayColumns expects data to be of uniform shape.')
@@ -1166,7 +1166,7 @@ class DictColumns(DataColumns):
             raise ValueError("DictColumns interface couldn't convert data.""")
         elif isinstance(data, dict):
             unpacked = [(d, np.array(data[d])) for d in data]
-            if not cls.expanded_format([d[1] for d in unpacked]):
+            if not cls.expanded([d[1] for d in unpacked]):
                 raise ValueError('DictColumns expects data to be of uniform shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
