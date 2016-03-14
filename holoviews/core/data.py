@@ -464,8 +464,8 @@ class DataColumns(param.Parameterized):
 
 
     @classmethod
-    def check_dense(cls, arrays):
-        return any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
+    def expanded_format(cls, arrays):
+        return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
 
     @classmethod
@@ -612,6 +612,9 @@ class NdColumns(DataColumns):
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
                 pass
             else:
+                data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
+                if not self.expanded_format(data):
+                    raise ValueError('NdColumns expects data to be of uniform shape')
                 if isinstance(data, tuple):
                     data = zip(*data)
                 ndims = len(kdims)
@@ -751,8 +754,8 @@ class DFColumns(DataColumns):
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if cls.check_dense(data):
-                    raise ValueError('Dimension values must all be the same shape.')
+                if cls.expanded_format(data):
+                    raise ValueError('DFColumns expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
             else:
@@ -925,10 +928,10 @@ class ArrayColumns(DataColumns):
                             for k, v in data.items()))
             data = np.column_stack(columns)
         elif isinstance(data, tuple):
-            try:
+            if cls.expanded_format(data):
                 data = np.column_stack(data)
-            except:
-                data = None
+            else:
+                raise ValueError('ArrayColumns expects data to be of uniform shape.')
         elif not isinstance(data, np.ndarray):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
@@ -1161,8 +1164,8 @@ class DictColumns(DataColumns):
             raise ValueError("DictColumns interface couldn't convert data.""")
         elif isinstance(data, dict):
             unpacked = [(d, np.array(data[d])) for d in data]
-            if cls.check_dense([d[1] for d in unpacked]):
-                raise ValueError('Dimension values must all be the same shape.')
+            if not cls.expanded_format([d[1] for d in unpacked]):
+                raise ValueError('DictColumns expects data to be of uniform shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
             else:
