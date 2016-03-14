@@ -609,13 +609,14 @@ class NdColumns(DataColumns):
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
+
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
                 pass
             else:
-                data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if not self.expanded_format(data):
-                    raise ValueError('NdColumns expects data to be of uniform shape')
                 if isinstance(data, tuple):
+                    data = tuple(np.array(d) if not isinstance(d, np.ndarray) else d for d in data)
+                    if not cls.expanded_format(data):
+                        raise ValueError('NdColumns expects data to be of uniform shape')
                     data = zip(*data)
                 ndims = len(kdims)
                 data = [(tuple(row[:ndims]), tuple(row[ndims:]))
@@ -750,11 +751,11 @@ class DFColumns(DataColumns):
                     else:
                         data = (range(len(data)), data)
                 else:
-                    data = tuple(data[:, i]  for i in range(data.shape[1]))
+                    data = tuple(data[:, i] for i in range(data.shape[1]))
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
-                if cls.expanded_format(data):
+                if not cls.expanded_format(data):
                     raise ValueError('DFColumns expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
