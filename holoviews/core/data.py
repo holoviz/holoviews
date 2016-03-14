@@ -1580,22 +1580,27 @@ class GridColumns(DictColumns):
 
     @classmethod
     def reindex(cls, columns, kdims, vdims):
-        if len(kdims) != columns.ndims:
-            raise ValueError('Cannot drop dimension varying dimension.')
+        dropped_kdims = [kd for kd in columns.kdims if kd not in kdims]
+        if dropped_kdims and any(len(columns.data[kd.name]) > 1 for kd in dropped_kdims):
+            raise ValueError('Compressed format does not allow dropping key dimensions '
+                             'which are not constant.')
         if (any(kd for kd in kdims if kd not in columns.kdims) or
             any(vd for vd in vdims if vd not in columns.vdims)):
             return columns.clone(columns.columns()).reindex(kdims, vdims)
-        data = dict(columns.data)
-
         dropped_vdims = ([vdim for vdim in columns.vdims
                           if vdim not in vdims] if vdims else [])
-        for vdim in dropped_vdims:
-            del data[vdim.name]
+        data = {k: values for k, values in columns.data.items()
+                if k not in dropped_kdims+dropped_vdims}
 
         if kdims != columns.kdims:
-            axes = [columns.kdims.index(d) for d in kdims]
+            dropped_axes = tuple(columns.kdims.index(d) for d in dropped_kdims)
+            old_kdims = [d for d in columns.kdims if not d in dropped_kdims]
+            axes = tuple(old_kdims.index(d) for d in kdims)
             for vdim in vdims:
-                data[vdim.name] = np.transpose(data[vdim.name], axes)
+                vdata = data[vdim.name]
+                if dropped_axes:
+                    vdata = vdata.squeeze(axis=dropped_axes)
+                data[vdim.name] = np.transpose(vdata, axes)
         return data
 
 
