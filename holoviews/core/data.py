@@ -1466,7 +1466,7 @@ class GridColumns(DictColumns):
 
 
     @classmethod
-    def coord_mask(cls, columns, arr, ind):
+    def key_select_mask(cls, columns, values, ind):
         if isinstance(ind, tuple):
             ind = slice(*ind)
         if isinstance(ind, np.ndarray):
@@ -1474,20 +1474,20 @@ class GridColumns(DictColumns):
         elif isinstance(ind, slice):
             mask = True
             if ind.start is not None:
-                mask &= ind.start <= arr
+                mask &= ind.start <= values
             if ind.stop is not None:
-                mask &= arr < ind.stop
+                mask &= values < ind.stop
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
-                iter_slcs.append(arr == ik)
+                iter_slcs.append(values == ik)
             mask = np.logical_or.reduce(iter_slcs)
         elif ind is None:
             mask = None
         else:
-            index_mask = arr == ind
+            index_mask = values == ind
             if columns.ndims == 1 and np.sum(index_mask) == 0:
-                data_index = np.argmin(np.abs(arr - ind))
+                data_index = np.argmin(np.abs(values - ind))
                 mask = np.zeros(len(columns), dtype=np.bool)
                 mask[data_index] = True
             else:
@@ -1508,14 +1508,14 @@ class GridColumns(DictColumns):
         data = {}
         value_select = []
         for dim, ind in selection:
-            arr = cls.values(columns, dim, False)
-            mask = cls.coord_mask(columns, arr, ind)
+            values = cls.values(columns, dim, False)
+            mask = cls.key_select_mask(columns, values, ind)
             if mask is None:
-                mask = np.ones(arr.shape, dtype=bool)
+                mask = np.ones(values.shape, dtype=bool)
             else:
-                arr = arr[mask]
+                values = values[mask]
             value_select.append(mask)
-            data[dim] = arr
+            data[dim] = values
         int_inds = [np.argwhere(v) for v in value_select]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
@@ -1545,7 +1545,7 @@ class GridColumns(DictColumns):
             sampled, int_inds = [], []
             for d, ind in zip(dimensions, sample):
                 cdata = columns.data[d]
-                mask = cls.coord_mask(columns, cdata, ind)
+                mask = cls.key_select_mask(columns, cdata, ind)
                 inds = np.arange(len(cdata)) if mask is None else np.argwhere(mask)
                 int_inds.append(inds)
                 sampled.append(cdata[mask])
