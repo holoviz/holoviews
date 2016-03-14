@@ -1537,6 +1537,11 @@ class GridColumns(DictColumns):
         dimensions = columns.dimensions(label=True)
         arrays = [columns.data[vdim.name] for vdim in columns.vdims]
         data = defaultdict(list)
+
+        first_sample = util.wrap_tuple(samples[0])
+        if any(len(util.wrap_tuple(s)) != len(first_sample) for s in samples):
+            raise IndexError('Sample coordinates must all be of the same length.')
+
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
             if len(sample) != ndims:
