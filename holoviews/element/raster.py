@@ -616,7 +616,7 @@ class Image(SheetCoordinateSystem, Raster):
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
             if expanded:
-                values = np.meshgrid(d2lin, d1lin)[dim_idx]
+                values = np.meshgrid(d2lin, d1lin)[abs(dim_idx-1)]
                 return values.flatten() if flat else values
             else:
                 return d2lin if dim_idx else d1lin
