@@ -1425,7 +1425,9 @@ class GridColumns(DictColumns):
                 return columns.data[dim]
             prod = util.cartesian_product([columns.data[d.name] for d in columns.kdims])
             idx = columns.get_dimension_index(dim)
-            return prod[:, idx]
+            values = prod[:, idx]
+            shape = tuple(len(columns.data[d]) for d in columns.dimensions('key', True))
+            return values if flat else values.reshape(shape)
         else:
             dim = columns.get_dimension(dim)
             values = columns.data.get(dim.name)

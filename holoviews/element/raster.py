@@ -174,8 +174,8 @@ class Raster(Element2D):
         elif not expanded and dim_idx == 1:
             return np.array(range(self.data.shape[0]))
         elif dim_idx in [0, 1]:
-            D1, D2 = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]]
-            return D1.flatten() if dim_idx == 0 else D2.flatten()
+            values = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]][dim_idx]
+            return values.flatten() if flat else values
         elif dim_idx == 2:
             return toarray(self.data.T).flatten()
         else:
@@ -616,8 +616,8 @@ class Image(SheetCoordinateSystem, Raster):
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
             if expanded:
-                Y, X = np.meshgrid(d2lin, d1lin)
-                return Y.flatten() if dim_idx else X.flatten()
+                values = np.meshgrid(d2lin, d1lin)[dim_idx]
+                return values.flatten() if flat else values
             else:
                 return d2lin if dim_idx else d1lin
         elif dim_idx == 2:
