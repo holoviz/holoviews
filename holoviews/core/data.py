@@ -929,6 +929,7 @@ class ArrayColumns(DataColumns):
                             for k, v in data.items()))
             data = np.column_stack(columns)
         elif isinstance(data, tuple):
+            data = [d if isinstance(d, np.ndarray) else np.array(d) for d in data]
             if cls.expanded_format(data):
                 data = np.column_stack(data)
             else:
