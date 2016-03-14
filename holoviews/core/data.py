@@ -1617,8 +1617,8 @@ class GridColumns(DictColumns):
         if not by or by in [columns.kdims, columns.dimensions()]:
             return columns.data
         else:
-            raise Exception('Dense representation cannot be sorted, either instantiate '
-                            'in the desired order or use a sparse format.')
+            raise Exception('Compressed format cannot be sorted, either instantiate '
+                            'in the desired order or use the expanded format.')
 
 
 
