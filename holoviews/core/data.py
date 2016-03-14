@@ -1591,11 +1591,6 @@ class GridColumns(DictColumns):
 
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
-        raise NotImplementedError
-
-
-    @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
