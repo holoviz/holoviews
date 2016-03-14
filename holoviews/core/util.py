@@ -868,14 +868,8 @@ class ndmapping_groupby(param.ParameterizedFunction):
 
 def cartesian_product(arrays):
     """
-    Computes the cartesian product of a list of arrays.
+    Computes the cartesian product of a list of 1D arrays
+    returning arrays matching the shape defined by all
+    supplied dimensions.
     """
-    broadcastable = np.ix_(*arrays)
-    broadcasted = np.broadcast_arrays(*broadcastable)
-    rows, cols = reduce(np.multiply, broadcasted[0].shape), len(broadcasted)
-    out = np.empty(rows * cols, dtype=broadcasted[0].dtype)
-    start, end = 0, rows
-    for a in broadcasted:
-        out[start:end] = a.reshape(-1)
-        start, end = end, end + rows
-    return out.reshape(cols, rows).T
+    return np.broadcast_arrays(*np.ix_(*arrays))
