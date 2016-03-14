@@ -442,7 +442,7 @@ class DataColumns(param.Parameterized):
         # Iterate over interfaces until one can interpret the input
         for interface in prioritized:
             try:
-                (data, kdims, vdims) = interface.reshape(eltype, data, kdims, vdims)
+                (data, kdims, vdims) = interface.init(eltype, data, kdims, vdims)
                 break
             except:
                 pass
@@ -583,7 +583,7 @@ class NdColumns(DataColumns):
     datatype = 'ndelement'
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         if isinstance(data, NdElement):
             kdims = [d for d in kdims if d != 'Index']
         else:
@@ -712,7 +712,7 @@ class DFColumns(DataColumns):
         return columns.data.dtypes[idx].type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
@@ -908,7 +908,7 @@ class ArrayColumns(DataColumns):
         return columns.data.dtype.type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
@@ -1127,7 +1127,7 @@ class DictColumns(DataColumns):
         return columns.data[name].dtype.type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         odict_types = (OrderedDict, cyODict)
         if kdims is None:
             kdims = eltype.kdims
@@ -1346,7 +1346,7 @@ class GridColumns(DictColumns):
     datatype = 'grid'
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
