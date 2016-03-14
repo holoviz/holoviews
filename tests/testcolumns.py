@@ -470,7 +470,8 @@ class GridColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
 
     def test_columns_sort_vdim_hm(self):
-        exception = 'Dense representation cannot be sorted, either instantiate '\
-                    'in the desired order or use a sparse format.'
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
         with self.assertRaisesRegexp(Exception, exception):
             self.columns_hm.sort('y')
+
