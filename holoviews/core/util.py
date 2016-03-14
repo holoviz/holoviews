@@ -30,12 +30,16 @@ except ImportError:
     bz = None
 
 # Python3 compatibility
+import types
 if sys.version_info.major == 3:
     basestring = str
     unicode = str
+    generator_types = (zip, range, types.GeneratorType)
 else:
     basestring = basestring
     unicode = unicode
+    from itertools import izip
+    generator_types = (izip, xrange, types.GeneratorType)
 
 
 def process_ellipses(obj, key, vdim_selection=False):
