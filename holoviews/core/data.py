@@ -1367,12 +1367,6 @@ class GridColumns(DictColumns):
             raise ValueError('GridColumns must be instantiated as a '
                              'dictionary or tuple')
 
-        if 'vdims' in data:
-            vdim_array = data.pop('vdims')
-            for i, vdim in enumerate(vdims):
-                name = vdim.name if isinstance(vdim, Dimension) else vdim
-                data[name] = vdim_array[..., i]
-
         for dim in kdims+vdims:
             name = dim.name if isinstance(dim, Dimension) else dim
             if name not in data:
