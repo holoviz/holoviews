@@ -1341,9 +1341,18 @@ class DictColumns(DataColumns):
 
 class GridColumns(DictColumns):
     """
-    Interface for simple dictionary-based columns format. The dictionary
-    keys correspond to the column (i.e dimension) names and the values
-    are collections representing the values in that column.
+    Interface for simple dictionary-based columns format using a
+    compressed representation that uses the cartesian product between
+    key dimensions. As with DictColumns, the dictionary keys correspond
+    to the column (i.e dimension) names and the values are NumPy arrays
+    representing the values in that column.
+
+    To use this compressed format, the key dimensions must be orthogonal
+    to one another with each key dimension specifiying an axis of the
+    multidimensional space occupied by the value dimension data. For
+    instance, given an temperature recordings sampled regularly across
+    the earth surface, a list of N unique latitudes and M unique
+    longitudes can specify the position of NxM temperature samples.
     """
 
     types = (dict, OrderedDict, cyODict)
