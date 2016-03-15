@@ -1429,9 +1429,8 @@ class GridColumns(DictColumns):
                 return columns.data[dim]
             prod = util.cartesian_product([columns.data[d.name] for d in columns.kdims])
             idx = columns.get_dimension_index(dim)
-            values = prod[:, idx]
-            shape = tuple(len(columns.data[d]) for d in columns.dimensions('key', True))
-            return values if flat else values.reshape(shape)
+            values = prod[idx]
+            return values.flatten() if flat else values
         else:
             dim = columns.get_dimension(dim)
             values = columns.data.get(dim.name)
@@ -1457,7 +1456,7 @@ class GridColumns(DictColumns):
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in util.cartesian_product(keys):
+        for unique_key in zip(util.cartesian_product(keys)):
             group_data = cls.select(columns, **dict(zip(dim_names, unique_key)))
             for vdim in columns.vdims:
                 group_data[vdim.name] = np.squeeze(group_data[vdim.name])
