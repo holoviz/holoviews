@@ -475,3 +475,6 @@ class GridColumnsTest(HomogeneousColumnTypes, ComparisonTestCase):
         with self.assertRaisesRegexp(Exception, exception):
             self.columns_hm.sort('y')
 
+
+    def test_columns_groupby(self):
+        self.assertEqual(self.columns_hm.groupby('x').keys(), list(self.xs))
