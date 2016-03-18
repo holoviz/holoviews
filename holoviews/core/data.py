@@ -1386,10 +1386,10 @@ class GridColumns(DictColumns):
 
         kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
         vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
-        expected = [len(data[kd]) for kd in kdim_names]
+        expected = tuple([len(data[kd]) for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
-            if shape != tuple(expected):
+            if shape != expected and not (not expected and shape == (1,)):
                 raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
                                  'actual shape: %s' % (vdim, expected, shape))
@@ -1458,8 +1458,13 @@ class GridColumns(DictColumns):
         grouped_data = []
         for unique_key in zip(*util.cartesian_product(keys)):
             group_data = cls.select(columns, **dict(zip(dim_names, unique_key)))
-            for vdim in columns.vdims:
-                group_data[vdim.name] = np.squeeze(group_data[vdim.name])
+            if np.isscalar(group_data):
+                group_data = {columns.vdims[0].name: np.atleast_1d(group_data)}
+                for dim, v in zip(dim_names, unique_key):
+                    group_data[dim] = np.atleast_1d(v)
+            else:
+                for vdim in columns.vdims:
+                    group_data[vdim.name] = np.squeeze(group_data[vdim.name])
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
 
