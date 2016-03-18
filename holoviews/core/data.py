@@ -1390,9 +1390,9 @@ class GridColumns(DictColumns):
         for vdim in vdim_names:
             shape = data[vdim].shape
             if shape != tuple(expected):
-                raise ValueError('Key dimension values and value array %s'
+                raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
-                                 'actual shape: %s' % (expected, vdim, shape))
+                                 'actual shape: %s' % (vdim, expected, shape))
         return data, kdims, vdims
 
 
