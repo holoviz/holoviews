@@ -1456,7 +1456,7 @@ class GridColumns(DictColumns):
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in zip(util.cartesian_product(keys)):
+        for unique_key in zip(*util.cartesian_product(keys)):
             group_data = cls.select(columns, **dict(zip(dim_names, unique_key)))
             for vdim in columns.vdims:
                 group_data[vdim.name] = np.squeeze(group_data[vdim.name])
