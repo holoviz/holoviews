@@ -71,6 +71,7 @@
                         require(["jQueryUI", "underscore"], function(jUI, _){
                             if (noConflict) $.noConflict(true);
                             var vals = {{ widget_data['vals'] }};
+                            var labels = {{ widget_data['labels'] }};
                             var next_vals = {{ widget_data['next_vals'] }};
                             if ({{ dynamic }} && vals.constructor === Array) {
                                 var min = parseFloat(vals[0]);
@@ -93,16 +94,18 @@
                                 step: step,
                                 value: min,
                                 dim_vals: vals,
+                                dim_labels: labels,
                                 next_vals: next_vals,
                                 slide: _.throttle(function(event, ui) {
                                     var vals = slider.slider("option", "dim_vals");
                                     var next_vals = slider.slider("option", "next_vals");
+                                    var labels = slider.slider("option", "dim_labels");
                                     if ({{ dynamic }} && vals.constructor === Array) {
                                         var dim_val = ui.value;
                                     } else {
                                         var dim_val = vals[ui.value];
                                     }
-									$('#textInput{{ id }}_{{ widget_data['dim'] }}').val((dim_val*1).toString());
+									$('#textInput{{ id }}_{{ widget_data['dim'] }}').val(labels[ui.value]);
                                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                                     if (Object.keys(next_vals).length > 0) {
                                         var new_vals = next_vals[dim_val];
@@ -141,7 +144,7 @@
                                     }
                                 }
                             });
-                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val((vals[0]*1).toString());
+                            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(labels[0]);
                         });
 						// Slider JS Block END
                     </script>
@@ -153,16 +156,18 @@
                     </div>
                     <script>
                         var vals = {{ widget_data['vals'] }};
+                        var labels = {{ widget_data['labels'] }};
                         var widget = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
+                        widget.data('values', vals)
                         for (var i=0; i<vals.length; i++){
                             widget.append($("<option>", {
                                 value: i,
-                                text: vals[i]
+                                text: labels[i]
                             }));
                         };
                         widget.data("next_vals", {{ widget_data['next_vals'] }});
                         widget.on('change', function(event, ui) {
-                            var dim_val = this.options[this.value].text;
+                            var dim_val = $.data(this, 'values')[this.value];
                             if(anim{{ id }}) {
                                 anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                             }

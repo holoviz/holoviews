@@ -296,6 +296,9 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = {}
 
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim_vals]))
+
                 if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
@@ -317,7 +320,7 @@ class SelectionWidget(NdWidget):
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
-                               next_vals=next_vals)
+                               next_vals=next_vals, labels=value_labels)
 
             widgets.append(widget_data)
             dimensions.append(dim_str)
