@@ -88,6 +88,11 @@
                 }
                 var step = 1;
             }
+			function adjustFontSize(text) {
+				if (text.val().length > 10) {
+					text.css('font-size', 100-Math.min(text.val().length*2.4, 50)+'%');
+				}
+			}
             var slider = $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}');
             slider.slider({
                 animate: "fast",
@@ -107,7 +112,9 @@
                     } else {
                         var dim_val = vals[ui.value];
                     }
-                    $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(labels[ui.value]);
+					var text = $('#textInput{{ id }}_{{ widget_data['dim'] }}');
+					text.val(labels[ui.value]);
+					adjustFontSize(text);
                     anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
                     if (Object.keys(next_vals).length > 0) {
                         var new_vals = next_vals[dim_val];
@@ -144,7 +151,9 @@
                     }
                 }
             });
-            $('#textInput{{ id }}_{{ widget_data['dim'] }}').val(labels[0]);
+			var textInput = $('#textInput{{ id }}_{{ widget_data['dim'] }}')
+			textInput.val(labels[0]);
+			adjustFontSize(textInput);
         });
         // Slider JS Block END
         </script>
