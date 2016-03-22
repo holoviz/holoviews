@@ -1,13 +1,13 @@
 <div class="hololayout row row-fluid">
-  <div class="holoframe span9 col-xs-8 col-md-9">
+  <div class="holoframe" id="display_area{{ id }}">
     <div id="_anim_img{{ id }}">
       {% block init_frame %}
       {{ init_frame }}
       {% endblock %}
     </div>
   </div>
-  <div class="span3 col-xs-4 col-md-3">
-    <form class="holoform well">
+  <div id="widget_area{{ id }}">
+    <form class="holoform well" id="form{{ id }}">
       {% for widget_data in widgets %}
       {% if widget_data['type'] == 'slider' %}
       <div class="form-group control-group holoformgroup" style='{{ widget_data['visibility'] }}'>
@@ -24,6 +24,12 @@
         </div>
       </div>
 	  <script>
+        $("#display_area{{ id }}").resizable({
+		    resize: function(event, ui) {
+			    $("#widget_area{{ id }}").width($(this).parent().width()-ui.size.width);
+		    }
+	    });
+        $("#widget_area{{ id }}").resizable()
         // Slider JS Block START
         function loadcssfile(filename){
             var fileref=document.createElement("link")

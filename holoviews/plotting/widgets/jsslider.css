@@ -4,6 +4,10 @@ div.hololayout {
     margin: 0;
 }
 
+div.holoframe {
+	width: 75%;
+}
+
 div.holowell {
     display: flex;
     align-items: center;
@@ -49,4 +53,8 @@ div.hologroup {
     width: 100%;
     padding-left:  0.5em;
     padding-right: 0;
+}
+
+.ui-resizable-se {
+	visibility: hidden
 }
