@@ -89,9 +89,12 @@
                 var step = 1;
             }
 			function adjustFontSize(text) {
-				if (text.val().length > 10) {
-					text.css('font-size', 100-Math.min(text.val().length*2.4, 50)+'%');
+				if (text.val().length > 8) {
+				    size = 100-Math.min(text.val().length*2.5, 50)+'%';
+				} else {
+				    size= '100%';
 				}
+				text.css('font-size', size);
 			}
             var slider = $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}');
             slider.slider({
