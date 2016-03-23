@@ -24,12 +24,6 @@
         </div>
       </div>
 	  <script>
-        $("#display_area{{ id }}").resizable({
-		    resize: function(event, ui) {
-			    $("#widget_area{{ id }}").width($(this).parent().width()-ui.size.width);
-		    }
-	    });
-        $("#widget_area{{ id }}").resizable()
         // Slider JS Block START
         function loadcssfile(filename){
             var fileref=document.createElement("link")
@@ -205,6 +199,14 @@
 /* Instantiate the {{ widget_name }} class. */
 /* The IDs given should match those used in the template above. */
 (function() {
+	if (jQuery.ui !== undefined) {
+		$("#display_area{{ id }}").resizable({
+			resize: function(event, ui) {
+				$("#widget_area{{ id }}").width($(this).parent().width()-ui.size.width);
+			}
+		});
+		$("#widget_area{{ id }}").resizable();
+	}
     var widget_ids = new Array({{ Nwidget }});
     {% for dim in dimensions %}
     widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
