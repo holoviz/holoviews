@@ -3,10 +3,12 @@ from unittest import SkipTest
 
 import param
 from IPython import version_info
+import numpy as np
+import holoviews
+from param import ipython as param_ext
 from IPython.display import HTML
 
-import holoviews
-from ..core.options import Store
+from ..core.options import Store, Cycle, Palette
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
@@ -15,8 +17,6 @@ from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .widgets import RunProgress
-
-from param import ipython as param_ext
 
 try:
     if version_info[0] >= 4:
@@ -30,12 +30,11 @@ except ImportError:
 
 try:
     import pyparsing
+    from .parser import Parser
+    Parser.namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
 except ImportError:
     pyparsing = None
-    # Populating the namespace for keyword evaluation
-    from ..core.options import Cycle, Palette # noqa (namespace import)
-    import numpy as np                        # noqa (namespace import)
-    Parser.namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
+
 
 Collector.interval_hook = RunProgress
 
