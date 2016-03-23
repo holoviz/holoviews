@@ -95,11 +95,8 @@
                 var step = 1;
             }
 			function adjustFontSize(text) {
-				if (text.val().length > 8) {
-				    size = 100-Math.min(text.val().length*2.5, 50)+'%';
-				} else {
-				    size= '100%';
-				}
+				var width_ratio = (text.parent().width()/8)/text.val().length;
+				var size = Math.min(0.9, Math.max(0.6, width_ratio))+'em';
 				text.css('font-size', size);
 			}
             var slider = $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}');
