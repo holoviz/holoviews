@@ -23,60 +23,6 @@ class ChartPlot(ElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    def __init__(self, data, **params):
-        super(ChartPlot, self).__init__(data, **params)
-        key_dim = self.hmap.last.get_dimension(0)
-        self.cyclic_range = key_dim.range if key_dim.cyclic else None
-
-
-    def _cyclic_format_x_tick_label(self, x):
-        if self.relative_labels:
-            return str(int(x))
-        return str(int(np.rad2deg(x)))
-
-
-    def _rotate(self, seq, n=1):
-        n = n % len(seq) # n=hop interval
-        return seq[n:-1] + seq[:n]
-
-
-    def _cyclic_reduce_ticks(self, x_values, ticks):
-        values = []
-        labels = []
-        crange = self.cyclic_range[1] - self.cyclic_range[0]
-        step = crange / (self.xticks - 1)
-
-        values.append(x_values[0])
-        if self.relative_labels:
-            labels.append(-np.rad2deg(crange/2))
-            label_step = np.rad2deg(crange) / (self.xticks - 1)
-        else:
-            labels.append(ticks[0])
-            label_step = step
-        for i in range(0, self.xticks - 1):
-            labels.append(labels[-1] + label_step)
-            values.append(values[-1] + step)
-        return values, [self._cyclic_format_x_tick_label(x) for x in labels]
-
-
-    def _cyclic_curves(self, curveview):
-        """
-        Mutate the lines object to generate a rotated cyclic curves.
-        """
-        x_values = list(curveview.dimension_values(0))
-        y_values = list(curveview.dimension_values(1))
-        crange = self.cyclic_range[1] - self.cyclic_range[0]
-        if self.center_cyclic:
-            rotate_n = self.peak_argmax+len(x_values)/2
-            y_values = self._rotate(y_values, n=rotate_n)
-            ticks = self._rotate(x_values, n=rotate_n)
-            ticks = np.array(ticks) - crange
-            ticks = list(ticks) + [ticks[0]]
-            y_values = list(y_values) + [y_values[0]]
-        else:
-            ticks = x_values
-        return x_values, y_values, ticks
-
 
 class CurvePlot(ChartPlot):
     """
@@ -92,13 +38,6 @@ class CurvePlot(ChartPlot):
     autotick = param.Boolean(default=False, doc="""
         Whether to let matplotlib automatically compute tick marks
         or to allow the user to control tick marks.""")
-
-    center_cyclic = param.Boolean(default=True, doc="""
-        If enabled and plotted quantity is cyclic will center the
-        plot around the peak.""")
-
-    num_ticks = param.Integer(default=5, doc="""
-        If autotick is disabled, this number of tickmarks will be drawn.""")
 
     relative_labels = param.Boolean(default=False, doc="""
         If plotted quantity is cyclic and center_cyclic is enabled,
@@ -118,19 +57,11 @@ class CurvePlot(ChartPlot):
     def init_artists(self, ax, plot_data, plot_kwargs):
         return {'artist': ax.plot(*plot_data, **plot_kwargs)[0]}
 
+
     def get_data(self, element, ranges, style):
-        # Create xticks and reorder data if cyclic
-        xticks = None
-        if self.cyclic_range and all(v is not None for v in self.cyclic_range):
-            if self.center_cyclic:
-                self.peak_argmax = np.argmax(element.dimension_values(1))
-            xs, ys, ticks = self._cyclic_curves(element)
-            if self.xticks is not None and not isinstance(self.xticks, (list, tuple)):
-                xticks = self._cyclic_reduce_ticks(xs, ticks)
-        else:
-            xs = element.dimension_values(0)
-            ys = element.dimension_values(1)
-        return (xs, ys), style, {'xticks': xticks}
+        xs = element.dimension_values(0)
+        ys = element.dimension_values(1)
+        return (xs, ys), style, {}
 
 
     def update_handles(self, key, axis, element, ranges, style):

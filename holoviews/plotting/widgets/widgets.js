@@ -153,7 +153,12 @@ ScrubberWidget.prototype = new HoloViewsWidget;
 
 ScrubberWidget.prototype.set_frame = function(frame){
     this.current_frame = frame;
-    document.getElementById(this.slider_id).value = this.current_frame;
+    widget = document.getElementById(this.slider_id);
+    if (widget === null) {
+        this.pause_animation();
+        return
+    }
+    widget.value = this.current_frame;
     if(this.cached) {
         this.update(frame)
     } else {

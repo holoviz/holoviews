@@ -149,11 +149,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             # Apply title
             title = None if self.zorder > 0 else self._format_title(key)
             if self.show_title and title is not None:
-                if 'title' in self.handles:
-                    self.handles['title'].set_text(title)
-                else:
-                    fontsize = self._fontsize('title')
-                    self.handles['title'] = axis.set_title(title, **fontsize)
+                fontsize = self._fontsize('title')
+                self.handles['title'] = axis.set_title(title, **fontsize)
 
             # Apply subplot label
             self._subplot_label(axis)
@@ -175,7 +172,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Apply log axes
                 if self.logx:
                     axis.set_xscale('log')
-                elif self.logy:
+                if self.logy:
                     axis.set_yscale('log')
 
                 if not self.projection == '3d':
@@ -578,7 +575,7 @@ class ColorbarPlot(ElementPlot):
         """
         clim = opts.pop('clims', None)
         if clim is None:
-            clim = ranges.get(vdim.name)
+            clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
             if self.symmetric:
                 clim = -np.abs(clim).max(), np.abs(clim).max()
         if self.logz:

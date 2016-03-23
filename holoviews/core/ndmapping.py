@@ -343,7 +343,7 @@ class MultiDimensionalMapping(Dimensioned):
                           kdims=dims)
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.kdims:
@@ -352,9 +352,9 @@ class MultiDimensionalMapping(Dimensioned):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)
-            return util.unique_array(vals) if unique else vals
+            return vals if expanded else util.unique_array(vals)
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension, unique)
+            return super(MultiDimensionalMapping, self).dimension_values(dimension, expanded, flat)
 
 
     def reindex(self, kdims=[], force=False):

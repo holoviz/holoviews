@@ -4,6 +4,7 @@ import itertools
 import string, fnmatch
 import unicodedata
 from collections import defaultdict
+from functools import reduce
 
 import numpy as np
 import param
@@ -29,12 +30,16 @@ except ImportError:
     bz = None
 
 # Python3 compatibility
+import types
 if sys.version_info.major == 3:
     basestring = str
     unicode = str
+    generator_types = (zip, range, types.GeneratorType)
 else:
     basestring = basestring
     unicode = unicode
+    from itertools import izip
+    generator_types = (izip, xrange, types.GeneratorType)
 
 
 def process_ellipses(obj, key, vdim_selection=False):
@@ -861,3 +866,10 @@ class ndmapping_groupby(param.ParameterizedFunction):
         return container_type(groups, kdims=dimensions)
 
 
+def cartesian_product(arrays):
+    """
+    Computes the cartesian product of a list of 1D arrays
+    returning arrays matching the shape defined by all
+    supplied dimensions.
+    """
+    return np.broadcast_arrays(*np.ix_(*arrays))

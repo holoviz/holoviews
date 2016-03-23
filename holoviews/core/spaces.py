@@ -488,7 +488,7 @@ class DynamicMap(HoloMap):
 
         if isinstance(retval, tuple):
             self._validate_key(retval[0]) # Validated output key
-            return self._style(retval)
+            return (retval[0], self._style(retval[1]))
         else:
             self._validate_key((self.counter,))
             return (self.counter, self._style(retval))

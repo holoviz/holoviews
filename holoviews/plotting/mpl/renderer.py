@@ -204,7 +204,7 @@ class MPLRenderer(Renderer):
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
-        if self.fps is not None: anim_kwargs['fps'] = self.fps
+        if self.fps is not None: anim_kwargs['fps'] = max([int(self.fps), 1])
         if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
         if not hasattr(anim, '_encoded_video'):
             with NamedTemporaryFile(suffix='.%s' % fmt) as f:

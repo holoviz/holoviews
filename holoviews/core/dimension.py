@@ -639,14 +639,15 @@ class Dimensioned(LabelledData):
         """
         if isinstance(dim, Dimension): dim = dim.name
         if isinstance(dim, int):
-            if dim < len(self.dimensions()):
+            if (dim < (self.ndims + len(self.vdims)) or
+                dim < len(self.dimensions())):
                 return dim
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            sanitized = {dimension_sanitizer(kd): kd
-                         for kd in self.dimensions('key', True)}
-            return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
+            if dim in self.kdims+self.vdims:
+                return (self.kdims+self.vdims).index(dim)
+            return self.dimensions().index(dim)
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
@@ -754,7 +755,7 @@ class Dimensioned(LabelledData):
         return selection
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         """
         Returns the values along the specified dimension. This method
         must be implemented for all Dimensioned type.

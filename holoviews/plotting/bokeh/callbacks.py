@@ -370,7 +370,8 @@ class Callbacks(param.Parameterized):
             else:
                 obj = getattr(plot.state, k)
                 obj_data = models_to_json([obj])[0]
-                data[k] = [obj_data.get(attr) for attr in v]
+                data[k] = [obj_data.get(attr, obj_data.get('data', {}).get(attr))
+                           for attr in v]
         if pycallback.cb_attributes:
             cb_data = models_to_json([pycallback.callback_obj])[0]
             data['cb_obj'] = [cb_data.get(attr) for attr in pycallback.cb_attributes]

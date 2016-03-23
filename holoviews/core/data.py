@@ -5,7 +5,7 @@ backends.
 
 import sys
 from distutils.version import LooseVersion
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 from itertools import compress
 
 try:
@@ -27,7 +27,6 @@ from .dimension import OrderedDict as cyODict
 from .ndmapping import NdMapping, item_check, sorted_context
 from .spaces import HoloMap
 from . import util
-from .util import wrap_tuple, basestring, unique_array
 
 
 class Columns(Element):
@@ -45,7 +44,7 @@ class Columns(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dataframe', 'dictionary', 'ndelement'],
+    datatype = param.List(['array', 'dataframe', 'dictionary', 'grid', 'ndelement'],
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
@@ -173,7 +172,7 @@ class Columns(Element):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
-        if selection_specs and not self.matches(selection_specs):
+        if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
         data = self.interface.select(self, **selection)
@@ -336,17 +335,13 @@ class Columns(Element):
         return self.interface.shape(self)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         """
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
         dim = self.get_dimension(dim, strict=True).name
-        dim_vals = self.interface.values(self, dim)
-        if unique:
-            return unique_array(dim_vals)
-        else:
-            return dim_vals
+        return self.interface.values(self, dim, expanded, flat)
 
 
     def get_dimension_type(self, dim):
@@ -429,8 +424,7 @@ class DataColumns(param.Parameterized):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
-        elif (not (util.is_dataframe(data) or isinstance(data, (tuple, dict, np.ndarray, list)))
-              and sys.version_info.major >= 3):
+        elif isinstance(data, util.generator_types):
             data = list(data)
 
         # Set interface priority order
@@ -447,7 +441,7 @@ class DataColumns(param.Parameterized):
         # Iterate over interfaces until one can interpret the input
         for interface in prioritized:
             try:
-                (data, kdims, vdims) = interface.reshape(eltype, data, kdims, vdims)
+                (data, kdims, vdims) = interface.init(eltype, data, kdims, vdims)
                 break
             except:
                 pass
@@ -466,6 +460,11 @@ class DataColumns(param.Parameterized):
             raise ValueError("Supplied data does not contain specified "
                              "dimensions, the following dimensions were "
                              "not found: %s" % repr(not_found))
+
+
+    @classmethod
+    def expanded(cls, arrays):
+        return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
 
 
     @classmethod
@@ -583,7 +582,7 @@ class NdColumns(DataColumns):
     datatype = 'ndelement'
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         if isinstance(data, NdElement):
             kdims = [d for d in kdims if d != 'Index']
         else:
@@ -609,10 +608,14 @@ class NdColumns(DataColumns):
 
         if not isinstance(data, (NdElement, dict)):
             # If ndim > 2 data is assumed to be a mapping
+
             if (isinstance(data[0], tuple) and any(isinstance(d, tuple) for d in data[0])):
                 pass
             else:
                 if isinstance(data, tuple):
+                    data = tuple(np.array(d) if not isinstance(d, np.ndarray) else d for d in data)
+                    if not cls.expanded(data):
+                        raise ValueError('NdColumns expects data to be of uniform shape')
                     data = zip(*data)
                 ndims = len(kdims)
                 data = [(tuple(row[:ndims]), tuple(row[ndims:]))
@@ -654,8 +657,11 @@ class NdColumns(DataColumns):
         return columns.data.sort(by)
 
     @classmethod
-    def values(cls, columns, dim):
-        return columns.data.dimension_values(dim)
+    def values(cls, columns, dim, expanded=True, flat=True):
+        values = columns.data.dimension_values(dim, expanded, flat)
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
     @classmethod
     def reindex(cls, columns, kdims=None, vdims=None):
@@ -709,12 +715,11 @@ class DFColumns(DataColumns):
         return columns.data.dtypes[idx].type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
-            columns = data.columns
             ndim = len(kdim_param.default) if kdim_param.default else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
@@ -735,7 +740,7 @@ class DFColumns(DataColumns):
                 (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
                 data = OrderedDict(((d, data[d]) for d in columns))
             elif isinstance(data, dict) and not all(d in data for d in columns):
-                column_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+                column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                                     for k, v in data.items()))
                 data = OrderedDict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
@@ -745,9 +750,12 @@ class DFColumns(DataColumns):
                     else:
                         data = (range(len(data)), data)
                 else:
-                    data = tuple(data[:, i]  for i in range(data.shape[1]))
+                    data = tuple(data[:, i] for i in range(data.shape[1]))
 
             if isinstance(data, tuple):
+                data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
+                if not cls.expanded(data):
+                    raise ValueError('DFColumns expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
             else:
@@ -760,7 +768,7 @@ class DFColumns(DataColumns):
         column = columns.data[columns.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
-                LooseVersion(pd.__version__) < '0.17.0'):
+                        LooseVersion(pd.__version__) < '0.17.0'):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
@@ -853,10 +861,12 @@ class DFColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim):
+    def values(cls, columns, dim, expanded=True, flat=True):
         data = columns.data[dim]
         if util.dd and isinstance(data, util.dd.Series):
             data = data.compute()
+        if not expanded:
+            return util.unique_array(data)
         return np.array(data)
 
 
@@ -901,7 +911,7 @@ class ArrayColumns(DataColumns):
         return columns.data.dtype.type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
@@ -914,14 +924,15 @@ class ArrayColumns(DataColumns):
             columns = [data[d] for d in dimensions]
             data = np.column_stack(columns)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
-            columns = zip(*((wrap_tuple(k)+wrap_tuple(v))
+            columns = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                             for k, v in data.items()))
             data = np.column_stack(columns)
         elif isinstance(data, tuple):
-            try:
+            data = [d if isinstance(d, np.ndarray) else np.array(d) for d in data]
+            if cls.expanded(data):
                 data = np.column_stack(data)
-            except:
-                data = None
+            else:
+                raise ValueError('ArrayColumns expects data to be of uniform shape.')
         elif not isinstance(data, np.ndarray):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
@@ -979,12 +990,15 @@ class ArrayColumns(DataColumns):
 
 
     @classmethod
-    def values(cls, columns, dim):
+    def values(cls, columns, dim, expanded=True, flat=True):
         data = columns.data
         dim_idx = columns.get_dimension_index(dim)
         if data.ndim == 1:
             data = np.atleast_2d(data).T
-        return data[:, dim_idx]
+        values = data[:, dim_idx]
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
 
     @classmethod
@@ -1117,7 +1131,7 @@ class DictColumns(DataColumns):
         return columns.data[name].dtype.type
 
     @classmethod
-    def reshape(cls, eltype, data, kdims, vdims):
+    def init(cls, eltype, data, kdims, vdims):
         odict_types = (OrderedDict, cyODict)
         if kdims is None:
             kdims = eltype.kdims
@@ -1143,7 +1157,7 @@ class DictColumns(DataColumns):
         elif not isinstance(data, dict):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
-            dict_data = zip(*((wrap_tuple(k)+wrap_tuple(v))
+            dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                               for k, v in data.items()))
             data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
 
@@ -1151,11 +1165,24 @@ class DictColumns(DataColumns):
             raise ValueError("DictColumns interface couldn't convert data.""")
         elif isinstance(data, dict):
             unpacked = [(d, np.array(data[d])) for d in data]
+            if not cls.expanded([d[1] for d in unpacked]):
+                raise ValueError('DictColumns expects data to be of uniform shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
             else:
                 data = OrderedDict([(d, np.array(data[d])) for d in dimensions])
         return data, kdims, vdims
+
+
+    @classmethod
+    def validate(cls, columns):
+        dimensions = columns.dimensions(label=True)
+        not_found = [d for d in dimensions if d not in columns.data]
+        if not_found:
+            raise ValueError('Following dimensions not found in data: %s' % not_found)
+        lengths = [len(columns.data[dim]) for dim in dimensions]
+        if len({l for l in lengths if l > 1}) > 1:
+            raise ValueError('Length of columns do not match')
 
 
     @classmethod
@@ -1188,7 +1215,7 @@ class DictColumns(DataColumns):
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
         data = list(columns.data.items())
-        if isinstance(values, basestring) or not hasattr(values, '__iter__'):
+        if isinstance(values, util.basestring) or not hasattr(values, '__iter__'):
             values = np.array([values]*len(columns))
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)
@@ -1215,8 +1242,11 @@ class DictColumns(DataColumns):
         return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
 
     @classmethod
-    def values(cls, columns, dim):
-        return np.array(columns.data.get(columns.get_dimension(dim).name))
+    def values(cls, columns, dim, expanded=True, flat=True):
+        values = np.array(columns.data.get(columns.get_dimension(dim).name))
+        if not expanded:
+            return util.unique_array(values)
+        return values
 
 
     @classmethod
@@ -1308,9 +1338,302 @@ class DictColumns(DataColumns):
 
 
 
+class GridColumns(DictColumns):
+    """
+    Interface for simple dictionary-based columns format using a
+    compressed representation that uses the cartesian product between
+    key dimensions. As with DictColumns, the dictionary keys correspond
+    to the column (i.e dimension) names and the values are NumPy arrays
+    representing the values in that column.
+
+    To use this compressed format, the key dimensions must be orthogonal
+    to one another with each key dimension specifiying an axis of the
+    multidimensional space occupied by the value dimension data. For
+    instance, given an temperature recordings sampled regularly across
+    the earth surface, a list of N unique latitudes and M unique
+    longitudes can specify the position of NxM temperature samples.
+    """
+
+    types = (dict, OrderedDict, cyODict)
+
+    datatype = 'grid'
+
+    @classmethod
+    def init(cls, eltype, data, kdims, vdims):
+        if kdims is None:
+            kdims = eltype.kdims
+        if vdims is None:
+            vdims = eltype.vdims
+
+        if not vdims:
+            raise ValueError('GridColumns interface requires at least '
+                             'one value dimension.')
+
+        dimensions = [d.name if isinstance(d, Dimension) else
+                      d for d in kdims + vdims]
+        if isinstance(data, tuple):
+            data = {d: v for d, v in zip(dimensions, data)}
+        elif not isinstance(data, dict):
+            raise ValueError('GridColumns must be instantiated as a '
+                             'dictionary or tuple')
+
+        for dim in kdims+vdims:
+            name = dim.name if isinstance(dim, Dimension) else dim
+            if name not in data:
+                raise ValueError("Values for dimension %s not found" % dim)
+            if not isinstance(data[name], np.ndarray):
+                data[name] = np.array(data[name])
+
+        kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
+        vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
+        expected = tuple([len(data[kd]) for kd in kdim_names])
+        for vdim in vdim_names:
+            shape = data[vdim].shape
+            if shape != expected and not (not expected and shape == (1,)):
+                raise ValueError('Key dimension values and value array %s '
+                                 'shape do not match. Expected shape %s, '
+                                 'actual shape: %s' % (vdim, expected, shape))
+        return data, kdims, vdims
+
+
+    @classmethod
+    def validate(cls, columns):
+        DataColumns.validate(columns)
+
+
+    @classmethod
+    def dimension_type(cls, columns, dim):
+        if dim in columns.kdims:
+            arr = columns.data[dim.name]
+        elif dim in columns.vdims:
+            arr = columns.data[dim.name]
+        else:
+            return None
+        return arr.dtype.type
+
+
+    @classmethod
+    def shape(cls, columns):
+        return cls.length(columns), len(columns.dimensions()),
+
+
+    @classmethod
+    def length(cls, columns):
+        return np.product([len(columns.data[d.name]) for d in columns.kdims])
+
+
+    @classmethod
+    def values(cls, columns, dim, expanded=True, flat=True):
+        if dim in columns.kdims:
+            if not expanded:
+                return columns.data[dim]
+            prod = util.cartesian_product([columns.data[d.name] for d in columns.kdims])
+            idx = columns.get_dimension_index(dim)
+            values = prod[idx]
+            return values.flatten() if flat else values
+        else:
+            dim = columns.get_dimension(dim)
+            values = columns.data.get(dim.name)
+            return values.flatten() if flat else values
+
+
+    @classmethod
+    def groupby(cls, columns, dim_names, container_type, group_type, **kwargs):
+        # Get dimensions information
+        dimensions = [columns.get_dimension(d) for d in dim_names]
+        kdims = [kdim for kdim in columns.kdims if kdim not in dimensions]
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(columns))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        # Find all the keys along supplied dimensions
+        keys = [columns.data[d.name] for d in dimensions]
+
+        # Iterate over the unique entries applying selection masks
+        grouped_data = []
+        for unique_key in zip(*util.cartesian_product(keys)):
+            group_data = cls.select(columns, **dict(zip(dim_names, unique_key)))
+            if np.isscalar(group_data):
+                group_data = {columns.vdims[0].name: np.atleast_1d(group_data)}
+                for dim, v in zip(dim_names, unique_key):
+                    group_data[dim] = np.atleast_1d(v)
+            else:
+                for vdim in columns.vdims:
+                    group_data[vdim.name] = np.squeeze(group_data[vdim.name])
+            group_data = group_type(group_data, **group_kwargs)
+            grouped_data.append((tuple(unique_key), group_data))
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False), sorted_context(False):
+                return container_type(grouped_data, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
+
+
+    @classmethod
+    def key_select_mask(cls, columns, values, ind):
+        if isinstance(ind, tuple):
+            ind = slice(*ind)
+        if isinstance(ind, np.ndarray):
+            mask = ind
+        elif isinstance(ind, slice):
+            mask = True
+            if ind.start is not None:
+                mask &= ind.start <= values
+            if ind.stop is not None:
+                mask &= values < ind.stop
+        elif isinstance(ind, (set, list)):
+            iter_slcs = []
+            for ik in ind:
+                iter_slcs.append(values == ik)
+            mask = np.logical_or.reduce(iter_slcs)
+        elif ind is None:
+            mask = None
+        else:
+            index_mask = values == ind
+            if columns.ndims == 1 and np.sum(index_mask) == 0:
+                data_index = np.argmin(np.abs(values - ind))
+                mask = np.zeros(len(columns), dtype=np.bool)
+                mask[data_index] = True
+            else:
+                mask = index_mask
+        return mask
+
+
+    @classmethod
+    def select(cls, columns, selection_mask=None, **selection):
+        dimensions = columns.dimensions('key', label=True)
+        val_dims = [vdim for vdim in columns.vdims if vdim in selection]
+        if val_dims:
+            raise IndexError('Cannot slice value dimensions in compressed format, '
+                             'convert to expanded format before slicing.')
+
+        indexed = cls.indexed(columns, selection)
+        selection = [(d, selection.get(d)) for d in dimensions]
+        data = {}
+        value_select = []
+        for dim, ind in selection:
+            values = cls.values(columns, dim, False)
+            mask = cls.key_select_mask(columns, values, ind)
+            if mask is None:
+                mask = np.ones(values.shape, dtype=bool)
+            else:
+                values = values[mask]
+            value_select.append(mask)
+            data[dim] = values
+        int_inds = [np.argwhere(v) for v in value_select]
+        index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
+                         for ind in int_inds])
+        for vdim in columns.vdims:
+            data[vdim.name] = columns.data[vdim.name][index]
+
+        if indexed and len(data[columns.vdims[0].name]) == 1:
+            return data[columns.vdims[0].name][0]
+
+        return data
+
+
+    @classmethod
+    def sample(cls, columns, samples=[]):
+        """
+        Samples the gridded data into columns of samples.
+        """
+        ndims = columns.ndims
+        dimensions = columns.dimensions(label=True)
+        arrays = [columns.data[vdim.name] for vdim in columns.vdims]
+        data = defaultdict(list)
+
+        first_sample = util.wrap_tuple(samples[0])
+        if any(len(util.wrap_tuple(s)) != len(first_sample) for s in samples):
+            raise IndexError('Sample coordinates must all be of the same length.')
+
+        for sample in samples:
+            if np.isscalar(sample): sample = [sample]
+            if len(sample) != ndims:
+                sample = [sample[i] if i < len(sample) else None
+                          for i in range(ndims)]
+            sampled, int_inds = [], []
+            for d, ind in zip(dimensions, sample):
+                cdata = columns.data[d]
+                mask = cls.key_select_mask(columns, cdata, ind)
+                inds = np.arange(len(cdata)) if mask is None else np.argwhere(mask)
+                int_inds.append(inds)
+                sampled.append(cdata[mask])
+            for d, arr in zip(dimensions, np.meshgrid(*sampled)):
+                data[d].append(arr)
+            for vdim, array in zip(columns.vdims, arrays):
+                flat_index = np.ravel_multi_index(tuple(int_inds), array.shape)
+                data[vdim.name].append(array.flat[flat_index])
+        concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
+        return concatenated
+
+
+    @classmethod
+    def aggregate(cls, columns, kdims, function, **kwargs):
+        kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+        data = {kdim: columns.data[kdim] for kdim in kdims}
+        axes = tuple(columns.get_dimension_index(kdim) for kdim in columns.kdims
+                    if kdim not in kdims)
+        for vdim in columns.vdims:
+            data[vdim.name] = np.atleast_1d(function(columns.data[vdim.name],
+                                                     axis=axes, **kwargs))
+
+        return data
+
+
+    @classmethod
+    def reindex(cls, columns, kdims, vdims):
+        dropped_kdims = [kd for kd in columns.kdims if kd not in kdims]
+        if dropped_kdims and any(len(columns.data[kd.name]) > 1 for kd in dropped_kdims):
+            raise ValueError('Compressed format does not allow dropping key dimensions '
+                             'which are not constant.')
+        if (any(kd for kd in kdims if kd not in columns.kdims) or
+            any(vd for vd in vdims if vd not in columns.vdims)):
+            return columns.clone(columns.columns()).reindex(kdims, vdims)
+        dropped_vdims = ([vdim for vdim in columns.vdims
+                          if vdim not in vdims] if vdims else [])
+        data = {k: values for k, values in columns.data.items()
+                if k not in dropped_kdims+dropped_vdims}
+
+        if kdims != columns.kdims:
+            dropped_axes = tuple(columns.kdims.index(d) for d in dropped_kdims)
+            old_kdims = [d for d in columns.kdims if not d in dropped_kdims]
+            axes = tuple(old_kdims.index(d) for d in kdims)
+            for vdim in vdims:
+                vdata = data[vdim.name]
+                if dropped_axes:
+                    vdata = vdata.squeeze(axis=dropped_axes)
+                data[vdim.name] = np.transpose(vdata, axes)
+        return data
+
+
+    @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        if not vdim:
+            raise Exception("Cannot add key dimension to a dense representation.")
+        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        return dict(columns.data, **{dim: values})
+
+
+    @classmethod
+    def sort(cls, columns, by=[]):
+        if not by or by in [columns.kdims, columns.dimensions()]:
+            return columns.data
+        else:
+            raise Exception('Compressed format cannot be sorted, either instantiate '
+                            'in the desired order or use the expanded format.')
+
+
+
 # Register available interfaces
 DataColumns.register(DictColumns)
 DataColumns.register(ArrayColumns)
 DataColumns.register(NdColumns)
+DataColumns.register(GridColumns)
 if pd:
     DataColumns.register(DFColumns)
