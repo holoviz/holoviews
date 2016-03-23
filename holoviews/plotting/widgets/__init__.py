@@ -7,7 +7,7 @@ import param
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode,
-                          unique_iterator, unicode, isnumeric)
+                          unique_array, unicode, isnumeric)
 from ...core.traversal import hierarchical
 
 def escape_vals(vals, escape_numerics=True):
@@ -289,12 +289,15 @@ class SelectionWidget(NdWidget):
                     dim_vals = next_vals[init_dim_vals[idx-1]]
                 else:
                     dim_vals = (dim.values if dim.values else
-                                list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
+                                list(unique_array(self.mock_obj.dimension_values(dim.name))))
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
+
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim_vals]))
 
                 if isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
@@ -317,7 +320,7 @@ class SelectionWidget(NdWidget):
             widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
-                               next_vals=next_vals)
+                               next_vals=next_vals, labels=value_labels)
 
             widgets.append(widget_data)
             dimensions.append(dim_str)
