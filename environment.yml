@@ -4,3 +4,17 @@ dependencies:
   - python=3.4
   - holoviews
   - numpy
+  - pyzmq
+  - jinja2
+  - tornado
+  - jsonschema
+  - pygments
+  - notebook
+  - matplotlib
+  - lancet-ioam
+  - pandas
+  - seaborn
+  - mpld3
+  - bokeh
+  - cyordereddict
+  - nose
