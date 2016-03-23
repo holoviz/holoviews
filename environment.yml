@@ -16,5 +16,6 @@ dependencies:
   - seaborn
   - mpld3
   - bokeh
-  - cyordereddict
   - nose
+  - pip:
+    -  cyordereddict
