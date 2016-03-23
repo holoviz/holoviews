@@ -545,11 +545,16 @@ class Collector(AttrTree):
             # computing results over the entire accumulated map
             attrtree_buffer = Layout()
             for task in self._scheduled_tasks:
-                if isinstance(task, Analyze) and task.mapwise:
-                    task(attrtree, self.time_fn(), times)
-                else:
-                    task(attrtree_buffer, self.time_fn(), times)
-                    attrtree.update(attrtree_buffer)
+                try:
+                    if isinstance(task, Analyze) and task.mapwise:
+                        task(attrtree, self.time_fn(), times)
+                    else:
+                        task(attrtree_buffer, self.time_fn(), times)
+                        attrtree.update(attrtree_buffer)
+                except Exception as e:
+                    param.main.warning("Task %s at time %s failed with following "
+                                       "exception and was skipped:\n%s",
+                                       task, self.time_fn(), e)
                 if update_progress:
                     interval_hook.percent_range = (completion[i],
                                                    completion[i+1])
