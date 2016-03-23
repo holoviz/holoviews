@@ -1,0 +1,6 @@
+name: holoviews
+
+dependencies:
+  - python=3.4
+  - holoviews
+  - numpy
