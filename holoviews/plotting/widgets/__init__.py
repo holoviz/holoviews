@@ -268,12 +268,17 @@ class SelectionWidget(NdWidget):
                     if all(isnumeric(v) for v in dim.values):
                         dim_vals = {i: v for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
+                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                                for v in dim.values]))
                     else:
                         dim_vals = escape_list(escape_vals(dim.values))
+                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                                for v in dim_vals]))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
                     widget_type = 'slider'
+                    value_labels = []
                     dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
                                 dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
