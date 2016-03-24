@@ -1,0 +1,21 @@
+name: holoviews
+
+dependencies:
+  - python=2.7
+  - holoviews
+  - numpy
+  - pyzmq
+  - jinja2
+  - tornado
+  - jsonschema
+  - pygments
+  - notebook
+  - matplotlib
+  - lancet-ioam
+  - pandas
+  - seaborn
+  - mpld3
+  - bokeh
+  - nose
+  - pip:
+    -  cyordereddict
