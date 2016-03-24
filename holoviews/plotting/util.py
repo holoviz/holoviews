@@ -5,7 +5,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store)
-from ..core.util import (match_spec, is_number, wrap_tuple,
+from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, safe_unicode)
 
 
