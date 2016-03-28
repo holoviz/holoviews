@@ -148,6 +148,8 @@ class MPLRenderer(Renderer):
         """
         fig = plot.state
         if self.mode == 'nbagg':
+            bbox = self._compute_bbox(fig, dict(bbox_inches=bbox_inches))
+            fig.set_size_inches(bbox['bbox_inches'].get_points()[1])
             manager = self.get_figure_manager(plot)
             if manager is None: return ''
             self.counter += 1
