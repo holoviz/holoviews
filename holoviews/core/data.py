@@ -24,7 +24,7 @@ import param
 from .dimension import Dimension, Dimensioned
 from .element import Element, NdElement
 from .dimension import OrderedDict as cyODict
-from .ndmapping import NdMapping, item_check, sorted_context
+from .ndmapping import NdMapping, item_check
 from .spaces import HoloMap
 from . import util
 
@@ -671,7 +671,7 @@ class NdColumns(DataColumns):
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
         if 'kdims' not in kwargs:
             kwargs['kdims'] = [d for d in columns.kdims if d not in dimensions]
-        with item_check(False), sorted_context(False):
+        with item_check(False):
             return columns.data.groupby(dimensions, container_type, group_type, **kwargs)
 
     @classmethod
@@ -798,7 +798,7 @@ class DFColumns(DataColumns):
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 columns.data.groupby(dimensions, sort=False)]
         if issubclass(container_type, NdMapping):
-            with item_check(False), sorted_context(False):
+            with item_check(False):
                 return container_type(data, kdims=index_dims)
         else:
             return container_type(data)
@@ -1054,7 +1054,7 @@ class ArrayColumns(DataColumns):
             grouped_data.append((tuple(group), group_data))
 
         if issubclass(container_type, NdMapping):
-            with item_check(False), sorted_context(False):
+            with item_check(False):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)
@@ -1284,7 +1284,7 @@ class DictColumns(DataColumns):
             grouped_data.append((unique_key, group_data))
 
         if issubclass(container_type, NdMapping):
-            with item_check(False), sorted_context(False):
+            with item_check(False):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)
@@ -1469,7 +1469,7 @@ class GridColumns(DictColumns):
             grouped_data.append((tuple(unique_key), group_data))
 
         if issubclass(container_type, NdMapping):
-            with item_check(False), sorted_context(False):
+            with item_check(False):
                 return container_type(grouped_data, kdims=dimensions)
         else:
             return container_type(grouped_data)
