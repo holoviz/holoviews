@@ -867,6 +867,14 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         ax.add_collection(line_segments)
         return {'artist': line_segments}
 
+
+    def get_extents(self, element, ranges):
+        l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
+        ndims = len(element.dimensions(label=True))
+        max_length = t if ndims > 1 else self.spike_length
+        return (l, self.position, r, self.position+max_length)
+
+
     def get_data(self, element, ranges, style):
         dimensions = element.dimensions(label=True)
         ndims = len(dimensions)
