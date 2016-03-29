@@ -290,6 +290,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Compute extents for current view and apply as axis limits
         """
         # Extents
+        scalex, scaley = True, True
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
@@ -314,16 +315,21 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if l != r:
                 if valid_lim(l):
                     axis.set_xlim(left=l)
+                    scalex = False
                 if valid_lim(r):
                     axis.set_xlim(right=r)
+                    scalex = False
 
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
             if b != t:
                 if valid_lim(b):
                     axis.set_ylim(bottom=b)
+                    scaley = False
                 if valid_lim(t):
                     axis.set_ylim(top=t)
+                    scaley = False
+        axis.autoscale_view(scalex=scalex, scaley=scaley)
 
 
     def _set_axis_position(self, axes, axis, option):
