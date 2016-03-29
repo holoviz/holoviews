@@ -985,8 +985,13 @@ class ArrayColumns(DataColumns):
     @classmethod
     def sort(cls, columns, by=[]):
         data = columns.data
-        idxs = [columns.get_dimension_index(dim) for dim in by]
-        return data[np.lexsort(np.flipud(data[:, idxs].T))]
+        if len(by) == 1:
+            sorting = cls.values(columns, by[0]).argsort()
+        else:
+            dtypes = (columns.data.dtype,)*columns.data.shape[1]
+            sort_fields = tuple('f%s' % columns.get_dimension_index(d) for d in by)
+            sorting = columns.data.T.view(dtypes).argsort(order=sort_fields)
+        return data[sorting]
 
 
     @classmethod
@@ -1236,10 +1241,14 @@ class DictColumns(DataColumns):
 
     @classmethod
     def sort(cls, columns, by=[]):
-        data = cls.array(columns, None)
-        idxs = [columns.get_dimension_index(dim) for dim in by]
-        sorting = np.lexsort(np.flipud(data[:, idxs].T))
+        data = columns.data
+        if len(by) == 1:
+            sorting = cls.values(columns, by[0]).argsort()
+        else:
+            arrays = [columns.dimension_values(d) for d in by]
+            sorting = util.arglexsort(arrays)
         return OrderedDict([(d, v[sorting]) for d, v in columns.data.items()])
+
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
