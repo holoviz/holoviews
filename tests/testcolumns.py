@@ -261,10 +261,9 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def test_columns_groupby(self):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
-        with sorted_context(False):
-            grouped = HoloMap([('M', Columns(group1, kdims=['Age'], vdims=self.vdims)),
-                               ('F', Columns(group2, kdims=['Age'], vdims=self.vdims))],
-                              kdims=['Gender'])
+        grouped = HoloMap([('M', Columns(group1, kdims=['Age'], vdims=self.vdims)),
+                           ('F', Columns(group2, kdims=['Age'], vdims=self.vdims))],
+                          kdims=['Gender'])
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
 
