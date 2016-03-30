@@ -551,6 +551,8 @@ class Image(SheetCoordinateSystem, Raster):
         if coords is () or coords == slice(None, None):
             return self
 
+        if not isinstance(coords, tuple):
+            coords = (coords, slice(None))
         if len(coords) > (2 + self.depth):
             raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
