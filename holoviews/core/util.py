@@ -873,3 +873,16 @@ def cartesian_product(arrays):
     supplied dimensions.
     """
     return np.broadcast_arrays(*np.ix_(*arrays))
+
+
+def arglexsort(arrays):
+    """
+    Returns the indices of the lexicographical sorting
+    order of the supplied arrays.
+    """
+    dtypes = ','.join(array.dtype.str for array in arrays)
+    recarray = np.empty(len(arrays[0]), dtype=dtypes)
+    for i, array in enumerate(arrays):
+        recarray['f%s' % i] = array
+    return recarray.argsort()
+
