@@ -233,7 +233,9 @@ class SNSFramePlot(DFrameViewPlot):
         axis = self.handles['axis']
         self._validate(dfview)
 
-        self._update_plot(axis, dfview)
+        style = self._process_style(self.style[self.cyclic_index])
+
+        self._update_plot(axis, dfview, style)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
@@ -269,8 +271,7 @@ class SNSFramePlot(DFrameViewPlot):
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def _update_plot(self, axis, view):
-        style = self._process_style(self.style[self.cyclic_index])
+    def _update_plot(self, axis, view, style):
         if self.plot_type == 'factorplot':
             opts = dict(style, **({'hue': view.x2} if view.x2 else {}))
             sns.factorplot(x=view.x, y=view.y, data=view.data, **opts)
@@ -310,7 +311,7 @@ class SNSFramePlot(DFrameViewPlot):
                 plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:
-            super(SNSFramePlot, self)._update_plot(axis, view)
+            super(SNSFramePlot, self)._update_plot(axis, view, style)
 
 
 Store.register({TimeSeries: TimeSeriesPlot,

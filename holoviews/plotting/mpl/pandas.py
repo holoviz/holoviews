@@ -70,7 +70,8 @@ class DFrameViewPlot(ElementPlot):
         element = self.hmap.last
         self._validate(element)
 
-        self._update_plot(element)
+        style = self._process_style(self.style[self.cyclic_index])
+        self._update_plot(axis, element, style)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
@@ -122,7 +123,6 @@ class DFrameViewPlot(ElementPlot):
 
 
     def _update_plot(self, axis, view, style):
-        style = self._process_style(style)
         if self.plot_type == 'scatter_matrix':
             pd.scatter_matrix(view.data, ax=axis, **style)
         elif self.plot_type == 'autocorrelation_plot':
