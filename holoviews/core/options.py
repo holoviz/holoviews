@@ -943,7 +943,7 @@ class Store(object):
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
                     plot_class.style_opts = sorted(plot_class.style_opts+[option])
-        cls._options[backend][type(component).__name__] = Options('style', merge_keywords=True, allowed_keywords=new_options)
+        cls._options[backend][component.name] = Options('style', merge_keywords=True, allowed_keywords=new_options)
 
 
     @classmethod
