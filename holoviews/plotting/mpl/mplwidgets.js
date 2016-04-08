@@ -62,10 +62,10 @@ var MPLMethods = {
 				this.update(current);
 			}
 			this.timed = (Date.now() - this.time) * 1.5;
-			if (this.wait !== undefined) {
-				this.wait = false;
-			} else if (this.queue.length > 0) {
-				this.dynamic_update(this.queue[this.queue.length-1]);
+			this.wait = false;
+			if (this.queue.length > 0) {
+				var current_vals = this.queue[this.queue.length-1];
+				this.dynamic_update(current_vals);
 				this.queue = [];
 			}
 		}

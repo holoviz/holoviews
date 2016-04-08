@@ -71,6 +71,7 @@ HoloViewsWidget.prototype.update = function(current){
             value.hide();
         });
         this.cache[current].show();
+		this.wait = false;
     }
 }
 
@@ -93,26 +94,14 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
 	this.json_path = json_path;
     this.init_slider(this.current_vals[0]);
 	this.queue = [];
+	this.wait = false;
 }
 
 SelectionWidget.prototype = new HoloViewsWidget;
 
-SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
-	if (this.time === undefined) {
-		// Do nothing the first time
-	} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
-		var current = this.current_vals.slice();
-		current[dim_idx] = dim_val;
-		this.queue.push(current);
-		return
-	}
-	this.time = Date.now()
-    this.current_vals[dim_idx] = dim_val;
-    if(this.dynamic) {
-        this.dynamic_update(this.current_vals)
-        return;
-    }
-    var key = "(";
+
+SelectionWidget.prototype.get_key = function(current_vals) {
+	var key = "(";
     for (var i=0; i<this.slider_ids.length; i++)
     {
         val = this.current_vals[i];
@@ -126,7 +115,27 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
         else if(this.slider_ids.length == 1) { key += ',';}
     }
     key += ")";
-    var current = this.keyMap[key];
+	return this.keyMap[key];
+}
+
+SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
+	this.current_vals[dim_idx] = dim_val;
+	if (this.time === undefined) {
+		// Do nothing the first time
+	} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
+		var key = this.current_vals;
+		if (!this.dynamic) {
+			key = this.get_key(key);
+		}
+		this.queue.push(key);
+		return
+	}
+	this.time = Date.now();
+    if(this.dynamic) {
+        this.dynamic_update(this.current_vals)
+        return;
+    }
+    var current = this.get_key(this.current_vals);
     this.current_frame = current;
     if(this.cached) {
         this.update(current)
@@ -158,6 +167,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
     document.getElementById(this.slider_id).max = this.length - 1;
     this.init_slider(0);
 	this.wait = false;
+	this.queue = [];
 }
 
 ScrubberWidget.prototype = new HoloViewsWidget;
@@ -204,11 +214,13 @@ ScrubberWidget.prototype.get_loop_state = function(){
 
 
 ScrubberWidget.prototype.next_frame = function() {
-	if (this.dynamic && this.current_frame + 1 >= this.length) {
+	if (this.dynamic || !this.cached) {
 		if (this.wait) {
 			return
 		}
 		this.wait = true;
+	}
+	if (this.dynamic && this.current_frame + 1 >= this.length) {
 		this.length += 1;
         document.getElementById(this.slider_id).max = this.length-1;
 	}

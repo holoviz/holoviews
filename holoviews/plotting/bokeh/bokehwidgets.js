@@ -45,7 +45,6 @@ var BokehMethods = {
 		if (current === undefined) {
 			return
 		}
-		this.time = Date.now()
 		if(this.dynamic) {
 			current = JSON.stringify(current);
 		}
@@ -64,9 +63,8 @@ var BokehMethods = {
 			this.timed = (Date.now() - this.time) * 1.1;
 			if (msg.msg_type == "execute_result") {
 				if (msg.content.data['text/plain'] === "'Complete'") {
-					if (this.wait !== undefined) {
-						this.wait = false;
-					} else if (this.queue.length > 0) {
+					this.wait = false;
+					if (this.queue.length > 0) {
 					   this.dynamic_update(this.queue[this.queue.length-1]);
 					   this.queue = [];
 					}
