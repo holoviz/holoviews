@@ -65,6 +65,7 @@ var MPLMethods = {
 			this.wait = false;
 			if (this.queue.length > 0) {
 				var current_vals = this.queue[this.queue.length-1];
+				this.time = Date.now();
 				this.dynamic_update(current_vals);
 				this.queue = [];
 			}

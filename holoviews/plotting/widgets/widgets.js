@@ -123,7 +123,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 	if (this.dynamic || !this.cached) {
 		if (this.time === undefined) {
 			// Do nothing the first time
-		} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
+		} else if ((this.timed === undefined) || ((this.time + this.timed) > Date.now())) {
 			var key = this.current_vals;
 			if (!this.dynamic) {
 				key = this.get_key(key);
@@ -132,6 +132,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 			return
 		}
 	}
+	this.queue = [];
 	this.time = Date.now();
     if(this.dynamic) {
         this.dynamic_update(this.current_vals)

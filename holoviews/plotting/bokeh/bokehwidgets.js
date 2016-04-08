@@ -65,8 +65,9 @@ var BokehMethods = {
 				if (msg.content.data['text/plain'] === "'Complete'") {
 					this.wait = false;
 					if (this.queue.length > 0) {
-					   this.dynamic_update(this.queue[this.queue.length-1]);
-					   this.queue = [];
+						this.time = Date.now();
+						this.dynamic_update(this.queue[this.queue.length-1]);
+						this.queue = [];
 					}
 					return
 			    }
