@@ -120,15 +120,17 @@ SelectionWidget.prototype.get_key = function(current_vals) {
 
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 	this.current_vals[dim_idx] = dim_val;
-	if (this.time === undefined) {
-		// Do nothing the first time
-	} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
-		var key = this.current_vals;
-		if (!this.dynamic) {
-			key = this.get_key(key);
+	if (this.dynamic || !this.cached) {
+		if (this.time === undefined) {
+			// Do nothing the first time
+		} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
+			var key = this.current_vals;
+			if (!this.dynamic) {
+				key = this.get_key(key);
+			}
+			this.queue.push(key);
+			return
 		}
-		this.queue.push(key);
-		return
 	}
 	this.time = Date.now();
     if(this.dynamic) {
