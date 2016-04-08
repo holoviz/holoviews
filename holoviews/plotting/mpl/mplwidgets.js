@@ -36,6 +36,13 @@ var MPLMethods = {
 		}
 	},
 	dynamic_update : function(current){
+		if (this.time === undefined) {
+			// Do nothing the first time
+		} else if (this.timer === undefined | ((this.time + this.timer) > Date.now())) {
+			this.queue.push(current);
+			return
+		}
+		this.time = Date.now()
 		if (this.dynamic) {
 			current = JSON.stringify(current);
 		}
@@ -47,8 +54,10 @@ var MPLMethods = {
 			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+				this.time = undefined;
 				return
 			}
+			this.timer = Date.now() - this.time;
 			if (!(this.mode == 'nbagg')) {
 				if(!(current in this.cache)) {
 					var data = msg.content.data['text/plain'].slice(1, -1);
@@ -59,6 +68,10 @@ var MPLMethods = {
 					this.update_cache();
 				}
 				this.update(current);
+			}
+			if (this.queue.length > 0) {
+				this.dynamic_update(this.queue[this.queue.length-1]);
+				this.queue = [];
 			}
 		}
 		var kernel = IPython.notebook.kernel;

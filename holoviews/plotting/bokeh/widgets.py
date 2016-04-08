@@ -66,6 +66,7 @@ class BokehWidget(NdWidget):
             else:
                 handle._json = to_json
             handle.comms.send(json.dumps(msg))
+            return 'Complete'
 
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):

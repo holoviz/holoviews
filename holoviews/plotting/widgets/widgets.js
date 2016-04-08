@@ -92,6 +92,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
     this.cache = {};
 	this.json_path = json_path;
     this.init_slider(this.current_vals[0]);
+	this.queue = [];
 }
 
 SelectionWidget.prototype = new HoloViewsWidget;
@@ -147,6 +148,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
 	this.json_path = json_path;
     document.getElementById(this.slider_id).max = this.length - 1;
     this.init_slider(0);
+	this.queue = [];
 }
 
 ScrubberWidget.prototype = new HoloViewsWidget;
