@@ -36,13 +36,6 @@ var MPLMethods = {
 		}
 	},
 	dynamic_update : function(current){
-		if (this.time === undefined) {
-			// Do nothing the first time
-		} else if (this.timer === undefined | ((this.time + this.timer) > Date.now())) {
-			this.queue.push(current);
-			return
-		}
-		this.time = Date.now()
 		if (this.dynamic) {
 			current = JSON.stringify(current);
 		}
@@ -57,7 +50,6 @@ var MPLMethods = {
 				this.time = undefined;
 				return
 			}
-			this.timer = Date.now() - this.time;
 			if (!(this.mode == 'nbagg')) {
 				if(!(current in this.cache)) {
 					var data = msg.content.data['text/plain'].slice(1, -1);
@@ -69,7 +61,10 @@ var MPLMethods = {
 				}
 				this.update(current);
 			}
-			if (this.queue.length > 0) {
+			this.timed = (Date.now() - this.time) * 1.5;
+			if (this.wait !== undefined) {
+				this.wait = false;
+			} else if (this.queue.length > 0) {
 				this.dynamic_update(this.queue[this.queue.length-1]);
 				this.queue = [];
 			}

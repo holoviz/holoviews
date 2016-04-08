@@ -98,6 +98,15 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
 SelectionWidget.prototype = new HoloViewsWidget;
 
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
+	if (this.time === undefined) {
+		// Do nothing the first time
+	} else if ((this.timed === undefined) | ((this.time + this.timed) > Date.now())) {
+		var current = this.current_vals.slice();
+		current[dim_idx] = dim_val;
+		this.queue.push(current);
+		return
+	}
+	this.time = Date.now()
     this.current_vals[dim_idx] = dim_val;
     if(this.dynamic) {
         this.dynamic_update(this.current_vals)
@@ -148,14 +157,14 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
 	this.json_path = json_path;
     document.getElementById(this.slider_id).max = this.length - 1;
     this.init_slider(0);
-	this.queue = [];
+	this.wait = false;
 }
 
 ScrubberWidget.prototype = new HoloViewsWidget;
 
 ScrubberWidget.prototype.set_frame = function(frame){
-    this.current_frame = frame;
-    widget = document.getElementById(this.slider_id);
+	this.current_frame = frame;
+	widget = document.getElementById(this.slider_id);
     if (widget === null) {
         this.pause_animation();
         return
@@ -172,6 +181,7 @@ ScrubberWidget.prototype.set_frame = function(frame){
 ScrubberWidget.prototype.process_error = function(msg){
 	if (msg.content.ename === 'StopIteration') {
 		this.pause_animation();
+		this.stopped = true;
 		var keys = Object.keys(this.frames)
 		this.length = keys.length;
 		document.getElementById(this.slider_id).max = this.length-1;
@@ -195,6 +205,10 @@ ScrubberWidget.prototype.get_loop_state = function(){
 
 ScrubberWidget.prototype.next_frame = function() {
 	if (this.dynamic && this.current_frame + 1 >= this.length) {
+		if (this.wait) {
+			return
+		}
+		this.wait = true;
 		this.length += 1;
         document.getElementById(this.slider_id).max = this.length-1;
 	}
@@ -226,7 +240,7 @@ ScrubberWidget.prototype.faster = function() {
 }
 
 ScrubberWidget.prototype.anim_step_forward = function() {
-    if(this.current_frame < this.length || this.dynamic){
+    if(this.current_frame < this.length || (this.dynamic && !this.stopped)){
         this.next_frame();
     }else{
         var loop_state = this.get_loop_state();
