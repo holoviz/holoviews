@@ -897,7 +897,8 @@ def get_dynamic_item(map_obj, dimensions, key):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)
-        el = map_obj.select([lambda x: hasattr(x, 'call_mode')], **dims)
+        el = map_obj.select([lambda x: type(x).__name__ == 'DynamicMap'],
+                            **dims)
     elif key < map_obj.counter:
         key_offset = max([key-map_obj.cache_size, 0])
         key = map_obj.keys()[min([key-key_offset,

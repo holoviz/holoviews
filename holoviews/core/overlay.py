@@ -23,7 +23,7 @@ class Overlayable(object):
     """
 
     def __mul__(self, other):
-        if hasattr(other, 'call_mode'):
+        if type(other).__name__ == 'DynamicMap':
             from .operation import DynamicOperation
             def dynamic_mul(element):
                 return self * element

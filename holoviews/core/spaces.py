@@ -112,12 +112,14 @@ class HoloMap(UniformNdMapping):
             layers = []
             try:
                 _, self_el = util.get_dynamic_item(self, dimensions, key)
-                layers.append(self_el)
+                if self_el is not None:
+                    layers.append(self_el)
             except KeyError:
                 pass
             try:
                 _, other_el = util.get_dynamic_item(other, dimensions, key)
-                layers.append(other_el)
+                if other_el is not None:
+                    layers.append(other_el)
             except KeyError:
                 pass
             return Overlay(layers)
@@ -145,6 +147,7 @@ class HoloMap(UniformNdMapping):
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
             dimensions = self.kdims
+
             if self_in_other and other_in_self: # superset of each other
                 super_keys = sorted(set(self._dimension_keys() + other._dimension_keys()))
             elif self_in_other: # self is superset
@@ -155,7 +158,7 @@ class HoloMap(UniformNdMapping):
             else: # neither is superset
                 raise Exception('One set of keys needs to be a strict subset of the other.')
 
-            if isinstance(self, DynamicMap) or (other, DynamicMap):
+            if isinstance(self, DynamicMap) or isinstance(other, DynamicMap):
                 return self._dynamic_mul(dimensions, other)
 
             items = []
