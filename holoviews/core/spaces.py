@@ -97,6 +97,57 @@ class HoloMap(UniformNdMapping):
                 for k in self.keys()]
 
 
+    def _dynamic_mul(self, dimensions, other):
+        """
+        Implements dynamic version of overlaying operation overlaying
+        DynamicMaps and HoloMaps where the key dimensions of one is
+        a strict superset of the other.
+        """
+        if (isinstance(self, DynamicMap) and (other, DynamicMap) and
+            self.mode != other.mode):
+            raise ValueEror("Cannot overlay DynamicMaps with mismatching mode.")
+        map_obj = self if isinstance(self, DynamicMap) else other
+        def dynamic_mul(*key):
+            key = key[0] if map_obj.mode == 'open' else key
+            if isinstance(key, tuple):
+                # Handles bounded or sampled case
+                self_key = tuple(k for p, k in sorted(
+                    [(self.get_dimension_index(dim), v) for dim, v in
+                     zip(dimensions, key) if dim in self.kdims]))
+                other_key = tuple(k for p, k in sorted(
+                    [(other.get_dimension_index(dim), v)
+                     for dim, v in zip(dimensions, key) if dim in other.kdims]))
+                layers = []
+                try:
+                    layers.append(self[self_key])
+                except:
+                    pass
+                try:
+                    layers.append(other[other_key])
+                except:
+                    pass
+                return Overlay(layers)
+            else:
+                # Handles open mode case
+                if key < self.counter:
+                    key_offset = max([key-self.cache_size, 0])
+                    key = self.keys()[min([key-key_offset,
+                                           len(self)-1])]
+                    self_el = self[key]
+                elif key >= self.counter:
+                    self_el = next(self)
+                if key < other.counter:
+                    key_offset = max([key-other.cache_size, 0])
+                    key = other.keys()[min([key-key_offset,
+                                            len(other)-1])]
+                    other_el = other[key]
+                elif key >= other.counter:
+                    other_el = next(other)
+                return Overlay([self_el, other_el])
+        return map_obj.clone(callback=dynamic_mul, shared_data=False,
+                             kdims=dimensions)
+
+
     def __mul__(self, other):
         """
         The mul (*) operator implements overlaying of different Views.
@@ -127,6 +178,9 @@ class HoloMap(UniformNdMapping):
             else: # neither is superset
                 raise Exception('One set of keys needs to be a strict subset of the other.')
 
+            if isinstance(self, DynamicMap) or (other, DynamicMap):
+                return self._dynamic_mul(dimensions, other)
+
             items = []
             for dim_keys in super_keys:
                 # Generate keys for both subset and superset and sort them by the dimension index.
@@ -146,6 +200,11 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, Overlay([other[other_key]])))
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
+            if isinstance(self, DynamicMap):
+                from .operation import DynamicOperation
+                def dynamic_mul(element):
+                    return element * other
+                return DynamicOperation(self, dynamic_mul)
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:

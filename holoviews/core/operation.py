@@ -106,7 +106,6 @@ class DynamicOperation(Operation):
                 el = map_obj[key]
             elif key >= map_obj.counter:
                 el = next(map_obj)
-                key = map_obj.keys()[-1]
             return function(el, **kwargs)
 
         return dynamic_operation
