@@ -70,6 +70,59 @@ class Operation(param.ParameterizedFunction):
             raise ValueError("Extents across the overlay are inconsistent")
 
 
+class DynamicOperation(Operation):
+    """
+    Dynamically applies a function to the elements of a HoloMap
+    or DynamicMap. Will return a DynamicMap wrapping the original
+    map object, which will lazily evaluate when a key is requested.
+    """
+
+    def __call__(self, map_obj, function, **kwargs):
+        callback = self._dynamic_operation(map_obj, function, **kwargs)
+        if isinstance(map_obj, DynamicMap):
+            return map_obj.clone(callback=callback, shared_data=False)
+        else:
+            return self._make_dynamic(map_obj, callback)
+
+
+    def _dynamic_operation(self, map_obj, function, **kwargs):
+        """
+        Generate function to dynamically apply the operation.
+        Wraps an existing HoloMap or DynamicMap.
+        """
+        if not isinstance(map_obj, DynamicMap):
+            def dynamic_operation(*key):
+                return function(map_obj[key], **kwargs)
+            return dynamic_operation
+
+        def dynamic_operation(*key):
+            key = key[0] if map_obj.mode == 'open' else key
+            if isinstance(key, tuple):
+                el = map_obj[key]
+            elif key < map_obj.counter:
+                key_offset = max([key-map_obj.cache_size, 0])
+                key = map_obj.keys()[min([key-key_offset,
+                                          len(map_obj)-1])]
+                el = map_obj[key]
+            elif key >= map_obj.counter:
+                el = next(map_obj)
+                key = map_obj.keys()[-1]
+            return function(el, **kwargs)
+
+        return dynamic_operation
+
+
+    def _make_dynamic(self, hmap, dynamic_fn):
+        """
+        Accepts a HoloMap and a dynamic callback function creating
+        an equivalent DynamicMap from the HoloMap.
+        """
+        dim_values = zip(*hmap.data.keys())
+        params = util.get_param_values(hmap)
+        kdims = [d(values=list(values)) for d, values in zip(hmap.kdims, dim_values)]
+        return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
+
+
 
 class ElementOperation(Operation):
     """
@@ -80,9 +133,12 @@ class ElementOperation(Operation):
     ElementOperation may turn overlays in new elements or vice versa.
     """
 
-    dynamic = param.Boolean(default=False, doc="""
-       Whether the operation should be applied dynamically
-       when a specific frame is requested.""")
+    dynamic = param.ObjectSelector(default='default',
+                                   objects=['default', True, False], doc="""
+       Whether the operation should be applied dynamically when a
+       specific frame is requested, specified as a Boolean. If set to
+       'default' the mode will be determined based on the input type,
+       i.e. if the data is a DynamicMap it will stay dynamic.""")
 
     input_ranges = param.ClassSelector(default={},
                                        class_=(dict, tuple), doc="""
@@ -116,48 +172,37 @@ class ElementOperation(Operation):
 
     def __call__(self, element, **params):
         self.p = param.ParamOverrides(self, params)
+        dynamic = ((self.p.dynamic == 'default' and
+                    isinstance(element, DynamicMap))
+                   or self.p.dynamic is True)
 
         if isinstance(element, ViewableElement):
             processed = self._process(element)
         elif isinstance(element, GridSpace):
             # Initialize an empty axis layout
-            processed = GridSpace(None, label=element.label,
+            grid_data = ((pos, self(cell, **params))
+                         for pos, cell in element.items())
+            processed = GridSpace(grid_data, label=element.label,
                                   kdims=element.kdims)
-            # Populate the axis layout
-            for pos, cell in element.items():
-                if self.p.dynamic and isinstance(cell, HoloMap):
-                    def dynamic_operation(key):
-                        return self(element[pos][key], **params)
-                    processed_cell = self._make_dynamic(cell, dynamic_operation)
-                else:
-                    processed_cell = self(cell, **params)
-                processed[pos] = processed_cell
+        elif dynamic:
+            processed = DynamicOperation(element, self, **params)
+        elif isinstance(element, DynamicMap):
+            if any((not d.values) for d in element.kdims):
+                raise ValueError('Applying a non-dynamic operation requires '
+                                 'all DynamicMap key dimensions to define '
+                                 'the sampling by specifying values.')
+            samples = tuple(d.values for d in element.kdims)
+            processed = self(element[samples], **params)
         elif isinstance(element, HoloMap):
-            if self.p.dynamic:
-                def dynamic_operation(key):
-                    return self(element[key], **params)
-                processed = self._make_dynamic(element, dynamic_operation)
-            else:
-                mapped_items = [(k, self._process(el, key=k))
-                                for k, el in element.items()]
-                refval = mapped_items[0][1]
-                processed = element.clone(mapped_items,
-                                          group=refval.group,
-                                          label=refval.label)
+            mapped_items = [(k, self._process(el, key=k))
+                            for k, el in element.items()]
+            refval = mapped_items[0][1]
+            processed = element.clone(mapped_items,
+                                      group=refval.group,
+                                      label=refval.label)
         else:
             raise ValueError("Cannot process type %r" % type(element).__name__)
         return processed
-
-
-    def _make_dynamic(self, hmap, dynamic_fn):
-        """
-        Accepts a HoloMap and a dynamic callback function creating
-        an equivalent DynamicMap from the HoloMap.
-        """
-        dim_values = zip(*hmap.data.keys())
-        params = util.get_param_values(hmap)
-        kdims = [d(values=list(values)) for d, values in zip(hmap.kdims, dim_values)]
-        return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
 
 
 
