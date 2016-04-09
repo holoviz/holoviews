@@ -109,41 +109,18 @@ class HoloMap(UniformNdMapping):
         map_obj = self if isinstance(self, DynamicMap) else other
         def dynamic_mul(*key):
             key = key[0] if map_obj.mode == 'open' else key
-            if isinstance(key, tuple):
-                # Handles bounded or sampled case
-                self_key = tuple(k for p, k in sorted(
-                    [(self.get_dimension_index(dim), v) for dim, v in
-                     zip(dimensions, key) if dim in self.kdims]))
-                other_key = tuple(k for p, k in sorted(
-                    [(other.get_dimension_index(dim), v)
-                     for dim, v in zip(dimensions, key) if dim in other.kdims]))
-                layers = []
-                try:
-                    layers.append(self[self_key])
-                except:
-                    pass
-                try:
-                    layers.append(other[other_key])
-                except:
-                    pass
-                return Overlay(layers)
-            else:
-                # Handles open mode case
-                if key < self.counter:
-                    key_offset = max([key-self.cache_size, 0])
-                    key = self.keys()[min([key-key_offset,
-                                           len(self)-1])]
-                    self_el = self[key]
-                elif key >= self.counter:
-                    self_el = next(self)
-                if key < other.counter:
-                    key_offset = max([key-other.cache_size, 0])
-                    key = other.keys()[min([key-key_offset,
-                                            len(other)-1])]
-                    other_el = other[key]
-                elif key >= other.counter:
-                    other_el = next(other)
-                return Overlay([self_el, other_el])
+            layers = []
+            try:
+                _, self_el = util.get_dynamic_item(self, dimensions, key)
+                layers.append(self_el)
+            except KeyError:
+                pass
+            try:
+                _, other_el = util.get_dynamic_item(other, dimensions, key)
+                layers.append(other_el)
+            except KeyError:
+                pass
+            return Overlay(layers)
         return map_obj.clone(callback=dynamic_mul, shared_data=False,
                              kdims=dimensions)
 

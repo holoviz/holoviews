@@ -97,15 +97,7 @@ class DynamicOperation(Operation):
 
         def dynamic_operation(*key):
             key = key[0] if map_obj.mode == 'open' else key
-            if isinstance(key, tuple):
-                el = map_obj[key]
-            elif key < map_obj.counter:
-                key_offset = max([key-map_obj.cache_size, 0])
-                key = map_obj.keys()[min([key-key_offset,
-                                          len(map_obj)-1])]
-                el = map_obj[key]
-            elif key >= map_obj.counter:
-                el = next(map_obj)
+            _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
             return function(el, **kwargs)
 
         return dynamic_operation
