@@ -1,5 +1,6 @@
 from numbers import Number
 import itertools
+from itertools import groupby
 import numpy as np
 
 import param
@@ -97,34 +98,54 @@ class HoloMap(UniformNdMapping):
                 for k in self.keys()]
 
 
-    def _dynamic_mul(self, dimensions, other):
+    def _dynamic_mul(self, dimensions, other, keys):
         """
         Implements dynamic version of overlaying operation overlaying
         DynamicMaps and HoloMaps where the key dimensions of one is
         a strict superset of the other.
         """
-        if (isinstance(self, DynamicMap) and (other, DynamicMap) and
+        # If either is a HoloMap compute Dimension values
+        if not isinstance(self, DynamicMap) or not isinstance(other, DynamicMap):
+            keys = sorted((d, v) for k in keys for d, v in k)
+            grouped =  dict([(g, [v for _, v in group])
+                             for g, group in groupby(keys, lambda x: x[0])])
+            dimensions = [d(values=grouped[d.name]) for d in dimensions]
+            mode = 'bounded'
+            map_obj = None
+        elif (isinstance(self, DynamicMap) and (other, DynamicMap) and
             self.mode != other.mode):
             raise ValueEror("Cannot overlay DynamicMaps with mismatching mode.")
-        map_obj = self if isinstance(self, DynamicMap) else other
+        else:
+            map_obj = self if isinstance(self, DynamicMap) else other
+            mode = map_obj.mode
+
         def dynamic_mul(*key):
-            key = key[0] if map_obj.mode == 'open' else key
+            key = key[0] if mode == 'open' else key
             layers = []
             try:
-                _, self_el = util.get_dynamic_item(self, dimensions, key)
-                if self_el is not None:
-                    layers.append(self_el)
+                if isinstance(self, DynamicMap):
+                    _, self_el = util.get_dynamic_item(self, dimensions, key)
+                    if self_el is not None:
+                        layers.append(self_el)
+                else:
+                    layers.append(self[key])
             except KeyError:
                 pass
             try:
-                _, other_el = util.get_dynamic_item(other, dimensions, key)
-                if other_el is not None:
-                    layers.append(other_el)
+                if isinstance(other, DynamicMap):
+                    _, other_el = util.get_dynamic_item(other, dimensions, key)
+                    if other_el is not None:
+                        layers.append(other_el)
+                else:
+                    layers.append(other[key])
             except KeyError:
                 pass
             return Overlay(layers)
-        return map_obj.clone(callback=dynamic_mul, shared_data=False,
-                             kdims=dimensions)
+        if map_obj:
+            return map_obj.clone(callback=dynamic_mul, shared_data=False,
+                                 kdims=dimensions)
+        else:
+            return DynamicMap(callback=dynamic_mul, kdims=dimensions)
 
 
     def __mul__(self, other):
@@ -138,7 +159,7 @@ class HoloMap(UniformNdMapping):
         will try to match up the dimensions, making sure that items
         with completely different dimensions aren't overlaid.
         """
-        if isinstance(other, self.__class__):
+        if isinstance(other, HoloMap):
             self_set = {d.name for d in self.kdims}
             other_set = {d.name for d in other.kdims}
 
@@ -149,7 +170,8 @@ class HoloMap(UniformNdMapping):
             dimensions = self.kdims
 
             if self_in_other and other_in_self: # superset of each other
-                super_keys = sorted(set(self._dimension_keys() + other._dimension_keys()))
+                keys = self._dimension_keys() + other._dimension_keys()
+                super_keys = util.unique_iterator(keys)
             elif self_in_other: # self is superset
                 dimensions = other.kdims
                 super_keys = other._dimension_keys()
@@ -159,7 +181,7 @@ class HoloMap(UniformNdMapping):
                 raise Exception('One set of keys needs to be a strict subset of the other.')
 
             if isinstance(self, DynamicMap) or isinstance(other, DynamicMap):
-                return self._dynamic_mul(dimensions, other)
+                return self._dynamic_mul(dimensions, other, super_keys)
 
             items = []
             for dim_keys in super_keys:
