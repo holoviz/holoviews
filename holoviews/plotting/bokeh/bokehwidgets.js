@@ -50,15 +50,27 @@ var BokehMethods = {
 		}
 		function callback(initialized, msg){
 			/* This callback receives data from Python as a string
-			 in order to parse it correctly quotes are sliced off*/
+			   in order to parse it correctly quotes are sliced off*/
 			if (msg.content.ename != undefined) {
 				this.process_error(msg);
 			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+				this.time = undefined;
+				this.wait = false;
 				return
 			}
+			this.timed = (Date.now() - this.time) * 1.1;
 			if (msg.msg_type == "execute_result") {
+				if (msg.content.data['text/plain'] === "'Complete'") {
+					this.wait = false;
+					if (this.queue.length > 0) {
+						this.time = Date.now();
+						this.dynamic_update(this.queue[this.queue.length-1]);
+						this.queue = [];
+					}
+					return
+			    }
 				var data = msg.content.data['text/plain'].slice(1, -1);
 				this.frames[current] = JSON.parse(data);
 				this.update(current);

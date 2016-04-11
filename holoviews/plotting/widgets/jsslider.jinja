@@ -104,7 +104,7 @@
                 dim_vals: vals,
                 dim_labels: labels,
                 next_vals: next_vals,
-                slide: _.throttle(function(event, ui) {
+                slide: function(event, ui) {
                     var vals = slider.slider("option", "dim_vals");
                     var next_vals = slider.slider("option", "next_vals");
                     var labels = slider.slider("option", "dim_labels");
@@ -124,7 +124,7 @@
                         var next_widget = $('#_anim_widget{{ id }}_{{ widget_data['next_dim'] }}');
                         update_widget(next_widget, new_vals);
                     }
-                }, {{ throttle }})
+                }
             });
             slider.keypress(function(event) {
                 if (event.which == 80 || event.which == 112) {

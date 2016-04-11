@@ -47,6 +47,7 @@ var MPLMethods = {
 			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+				this.time = undefined;
 				return
 			}
 			if (!(this.mode == 'nbagg')) {
@@ -59,6 +60,14 @@ var MPLMethods = {
 					this.update_cache();
 				}
 				this.update(current);
+			}
+			this.timed = (Date.now() - this.time) * 1.5;
+			this.wait = false;
+			if (this.queue.length > 0) {
+				var current_vals = this.queue[this.queue.length-1];
+				this.time = Date.now();
+				this.dynamic_update(current_vals);
+				this.queue = [];
 			}
 		}
 		var kernel = IPython.notebook.kernel;
