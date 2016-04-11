@@ -72,33 +72,42 @@ class Operation(param.ParameterizedFunction):
 
 class DynamicOperation(Operation):
     """
-    Dynamically applies a function to the elements of a HoloMap
+    Dynamically applies an operation to the elements of a HoloMap
     or DynamicMap. Will return a DynamicMap wrapping the original
     map object, which will lazily evaluate when a key is requested.
+    The _process method should be overridden in subclasses to apply
+    a specific operation, DynamicOperation itself applies a no-op,
+    making the DynamicOperation baseclass useful for converting
+    existing HoloMaps to a DynamicMap.
     """
 
-    def __call__(self, map_obj, function, **kwargs):
-        callback = self._dynamic_operation(map_obj, function, **kwargs)
+    def __call__(self, map_obj, **params):
+        self.p = param.ParamOverrides(self, params)
+        callback = self._dynamic_operation(map_obj)
         if isinstance(map_obj, DynamicMap):
             return map_obj.clone(callback=callback, shared_data=False)
         else:
             return self._make_dynamic(map_obj, callback)
 
 
-    def _dynamic_operation(self, map_obj, function, **kwargs):
+    def _process(self, element):
+        return element
+
+
+    def _dynamic_operation(self, map_obj):
         """
         Generate function to dynamically apply the operation.
         Wraps an existing HoloMap or DynamicMap.
         """
         if not isinstance(map_obj, DynamicMap):
             def dynamic_operation(*key):
-                return function(map_obj[key], **kwargs)
+                return self._process(map_obj[key])
             return dynamic_operation
 
         def dynamic_operation(*key):
             key = key[0] if map_obj.mode == 'open' else key
             _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
-            return function(el, **kwargs)
+            return self._process(el)
 
         return dynamic_operation
 
@@ -112,6 +121,26 @@ class DynamicOperation(Operation):
         params = util.get_param_values(hmap)
         kdims = [d(values=list(values)) for d, values in zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
+
+
+
+class DynamicFunction(DynamicOperation):
+    """
+    Dynamically applies a function to the Elements in a DynamicMap
+    or HoloMap. Must supply a HoloMap or DynamicMap type and will
+    return another DynamicMap type, which will apply the supplied
+    function with the supplied kwargs whenever a value is requested
+    from the map.
+    """
+
+    function = param.Callable(default=lambda x: x, doc="""
+        Function to apply to DynamicMap items dynamically.""")
+
+    kwargs = param.Dict(default={}, doc="""
+        Keyword arguments passed to the function.""")
+
+    def _process(self, element):
+        return self.p.function(element, **self.p.kwargs)
 
 
 
@@ -176,7 +205,7 @@ class ElementOperation(Operation):
             processed = GridSpace(grid_data, label=element.label,
                                   kdims=element.kdims)
         elif dynamic:
-            processed = DynamicOperation(element, self, **params)
+            processed = DynamicFunction(element, function=self, kwargs=params)
         elif isinstance(element, DynamicMap):
             if any((not d.values) for d in element.kdims):
                 raise ValueError('Applying a non-dynamic operation requires '
