@@ -396,7 +396,7 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=True):
         """
         Traverses the supplied object getting all options in opts for
         the specified opt_type and specs. Also takes into account the
@@ -412,7 +412,7 @@ class DimensionedPlot(Plot):
             options = cls.lookup_options(x, opt_type)
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
-            if opt_type == 'plot':
+            if opt_type == 'plot' and defaults:
                 plot = Store.registry[cls.renderer.backend].get(type(x))
                 selected['defaults'] = {o: getattr(plot, o) for o in opts
                                         if o not in selected and hasattr(plot, o)}
