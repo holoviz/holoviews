@@ -5,6 +5,7 @@ from functools import wraps
 import sys, traceback, inspect, io
 
 import IPython
+from IPython import get_ipython
 from IPython.core.ultratb import AutoFormattedTB
 
 import holoviews
