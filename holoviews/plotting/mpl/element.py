@@ -563,6 +563,8 @@ class ColorbarPlot(ElementPlot):
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
+            ylabel = cax.yaxis.get_label()
+            self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
         for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
@@ -700,6 +702,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             frame.set_linewidth('1.0')
             leg.set_zorder(10e6)
             self.handles['legend'] = leg
+            self.handles['bbox_extra_artists'].append(leg)
         self.handles['legend_data'] = data
 
 

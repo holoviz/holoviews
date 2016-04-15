@@ -118,7 +118,7 @@ class MPLWidget(NdWidget):
 
     def initialize_connection(self, plot):
         plot.update(0)
-        self.manager = self.renderer.get_figure_manager(plot)
+        self.manager = self.renderer.get_figure_manager(plot.state)
         self.comm = WidgetCommSocket(self.manager)
 
 
