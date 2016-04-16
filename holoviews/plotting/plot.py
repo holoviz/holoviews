@@ -274,21 +274,24 @@ class DimensionedPlot(Plot):
 
     def _fontsize(self, key, label='fontsize', common=True):
         if not self.fontsize: return {}
+
+        if not isinstance(self.fontsize, dict):
+            return {label:self.fontsize} if common else {}
+
         unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.warning(msg %  (list(unknown_keys), self._fontsize_keys))
             for key in unknown_keys: self.fontsize.pop(key, None)
 
-        if isinstance(self.fontsize, dict):
-            if key in self.fontsize:
-                return {label:self.fontsize[key]}
-            elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
-                return {label:self.fontsize['labels']}
-            else:
-                return {}
+        if key in self.fontsize:
+            return {label:self.fontsize[key]}
+        elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
+            return {label:self.fontsize['labels']}
+        else:
+            return {}
 
-        return {label:self.fontsize} if common else {}
+
 
 
     def compute_ranges(self, obj, key, ranges):
