@@ -391,9 +391,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             axis.set_ticks(ticks)
             if labels:
                 axis.set_ticklabels(labels)
-        if ticks:
-            for tick in axis.get_ticklabels():
-                tick.set_rotation(rotation)
+        for tick in axis.get_ticklabels():
+            tick.set_rotation(rotation)
 
 
     def update_frame(self, key, ranges=None, element=None):
