@@ -111,6 +111,7 @@ class MPLPlot(DimensionedPlot):
             self.warning('Set either final_hooks or deprecated '
                          'finalize_hooks, not both.')
         self.finalize_hooks = self.final_hooks
+        self.handles['bbox_extra_artists'] = []
 
 
     def _init_axis(self, fig, axis):
@@ -164,7 +165,10 @@ class MPLPlot(DimensionedPlot):
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
             axis.add_artist(at)
-            self.handles['sublabel'] = at.txt.get_children()[0]
+            sublabel = at.txt.get_children()[0]
+            self.handles['sublabel'] = sublabel
+            self.handles['bbox_extra_artists'] += [sublabel]
+
 
 
     def _finalize_axis(self, key):
@@ -401,7 +405,7 @@ class GridPlot(CompositePlot):
                 subplot = plotting_class(view,  **dict(opts, **dict(params, **kwargs)))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
                 subplots[(r, c)] = subplot
-            else:
+            elif subax is not None:
                 subax.set_visible(False)
             if r != self.rows-1:
                 r += 1
@@ -1022,6 +1026,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             title = self._format_title(key)
             title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
             self.handles['title'] = title
+            self.handles['bbox_extra_artists'] += [title]
 
         return self._finalize_axis(None)
 
