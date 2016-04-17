@@ -10,7 +10,7 @@ import param
 
 from ...core import OrderedDict
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
-                          basestring, max_range)
+                          basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
 from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
@@ -965,8 +965,7 @@ class BoxPlot(ChartPlot):
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         for key, group in groups:
             if element.kdims:
-                key = [k if isinstance(k, basestring) else str(k) for k in key]
-                label = ','.join([safe_unicode(d.pprint_value(v))
+                label = ','.join([unicode(safe_unicode(d.pprint_value(v)))
                                   for d, v in zip(element.kdims, key)])
             else:
                 label = key
@@ -976,12 +975,13 @@ class BoxPlot(ChartPlot):
         style.pop('zorder')
         style.pop('label')
         style['vert'] = not self.invert_axes
-        return (data,), style, {'dimensions': [element.kdims,
+        format_kdims = [kd(value_format=None) for kd in element.kdims]
+        return (data,), style, {'dimensions': [format_kdims,
                                                element.vdims[0]]}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        boxplot =  ax.boxplot(*plot_args, **plot_kwargs)
+        boxplot = ax.boxplot(*plot_args, **plot_kwargs)
         return {'artist': boxplot}
 
 
