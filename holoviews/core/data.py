@@ -1598,11 +1598,10 @@ class GridColumns(DictColumns):
     @classmethod
     def reindex(cls, columns, kdims, vdims):
         dropped_kdims = [kd for kd in columns.kdims if kd not in kdims]
-        if dropped_kdims and any(len(columns.data[kd.name]) > 1 for kd in dropped_kdims):
-            raise ValueError('Compressed format does not allow dropping key dimensions '
-                             'which are not constant.')
-        if (any(kd for kd in kdims if kd not in columns.kdims) or
-            any(vd for vd in vdims if vd not in columns.vdims)):
+        if dropped_kdims and all(len(columns.data[kd.name]) == 1 for kd in dropped_kdims):
+            pass
+        elif (any(kd for kd in kdims if kd not in columns.kdims) or
+            any(vd for vd in vdims if vd not in columns.vdims)) or dropped_kdims:
             return columns.clone(columns.columns()).reindex(kdims, vdims)
         dropped_vdims = ([vdim for vdim in columns.vdims
                           if vdim not in vdims] if vdims else [])
