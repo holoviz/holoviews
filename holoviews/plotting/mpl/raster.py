@@ -8,7 +8,7 @@ import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range
+from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
@@ -371,16 +371,15 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def _compute_borders(self):
         ndims = self.layout.ndims
-        xkey, ykey = self._xkeys[0], self._ykeys[0]
         width_fn = lambda x: x.range(0)
         height_fn = lambda x: x.range(1)
+        width_extents = [max_range(self.layout[x, :].traverse(width_fn, [Element]))
+                         for x in unique_iterator(self.layout.dimension_values(0))]
         if ndims > 1:
-            vert_section = self.layout[xkey, slice(None)]
+            height_extents = [max_range(self.layout[:, y].traverse(height_fn, [Element]))
+                              for y in unique_iterator(self.layout.dimension_values(1))]
         else:
-            vert_section = [self.layout[xkey]]
-        horz_section = self.layout[(slice(None), ykey) if ndims > 1 else slice(None)]
-        height_extents = [max_range(hm.traverse(height_fn, [Element])) for hm in vert_section]
-        width_extents = [max_range(hm.traverse(width_fn, [Element])) for hm in horz_section]
+            height_extents = [max_range(self.layout.traverse(height_fn, [Element]))]
         widths = [extent[0]-extent[1] for extent in width_extents]
         heights = [extent[0]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)
