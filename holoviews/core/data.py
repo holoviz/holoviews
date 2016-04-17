@@ -314,7 +314,7 @@ class Columns(Element):
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
 
-        dimensions = [self.get_dimension(d).name for d in dimensions]
+        dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         invalid_dims = list(set(dimensions) - set(self.dimensions('key', True)))
         if invalid_dims:
             raise Exception('Following dimensions could not be found:\n%s.'
