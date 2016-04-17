@@ -69,7 +69,7 @@
                 }
             }
         }
-        require.config(jquery_require);
+        requirejs.config(jquery_require);
         require(["jQueryUI", "underscore"], function(jUI, _){
             if (noConflict) $.noConflict(true);
             var vals = {{ widget_data['vals'] }};
