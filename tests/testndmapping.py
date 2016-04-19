@@ -142,7 +142,7 @@ class HoloMapTest(ComparisonTestCase):
                                         kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
         expected = Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
-        self.compare_columns(collapsed, expected)
+        self.compare_dataset(collapsed, expected)
 
 
     def test_columns_sample_homogeneous(self):
