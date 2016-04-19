@@ -1635,6 +1635,11 @@ class GridInterface(DictInterface):
                             'in the desired order or use the expanded format.')
 
 
+# Aliases for pickle backward compatibility
+ArrayColumns = ArrayInterface
+DictColumns  = DictInterface
+DFColumns    = PandasInterface
+NdColumns    = NdElementInterface
 
 # Register available interfaces
 Interface.register(DictInterface)
