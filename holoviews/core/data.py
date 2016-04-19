@@ -78,9 +78,9 @@ class Dataset(Element):
                                 label=self.label)
             self.interface = NdColumns
         elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayColumns
+            self.interface = ArrayInterface
         elif util.is_dataframe(self.data):
-            self.interface = DFColumns
+            self.interface = PandasInterface
 
         super(Dataset, self).__setstate__(state)
 
@@ -369,7 +369,7 @@ class Dataset(Element):
 
 
 
-class DataColumns(param.Parameterized):
+class Interface(param.Parameterized):
 
     interfaces = {}
 
@@ -572,7 +572,7 @@ class DataColumns(param.Parameterized):
 
 
 
-class NdColumns(DataColumns):
+class NdElementInterface(Interface):
 
     types = (NdElement,)
 
@@ -612,7 +612,7 @@ class NdColumns(DataColumns):
                 if isinstance(data, tuple):
                     data = tuple(np.array(d) if not isinstance(d, np.ndarray) else d for d in data)
                     if not cls.expanded(data):
-                        raise ValueError('NdColumns expects data to be of uniform shape')
+                        raise ValueError('NdElementInterface expects data to be of uniform shape')
                     data = zip(*data)
                 ndims = len(kdims)
                 data = [(tuple(row[:ndims]), tuple(row[ndims:]))
@@ -620,7 +620,7 @@ class NdColumns(DataColumns):
         if isinstance(data, (dict, list)):
             data = NdElement(data, kdims=kdims, vdims=vdims)
         elif not isinstance(data, NdElement):
-            raise ValueError("NdColumns interface couldn't convert data.""")
+            raise ValueError("NdElementInterface interface couldn't convert data.""")
         return data, kdims, vdims
 
 
@@ -699,7 +699,7 @@ class NdColumns(DataColumns):
 
 
 
-class DFColumns(DataColumns):
+class PandasInterface(Interface):
 
     types = (pd.DataFrame if pd else None,)
 
@@ -752,7 +752,7 @@ class DFColumns(DataColumns):
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
                 if not cls.expanded(data):
-                    raise ValueError('DFColumns expects data to be of uniform shape.')
+                    raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
             else:
@@ -897,7 +897,7 @@ class DFColumns(DataColumns):
 
 
 
-class ArrayColumns(DataColumns):
+class ArrayInterface(Interface):
 
     types = (np.ndarray,)
 
@@ -929,7 +929,7 @@ class ArrayColumns(DataColumns):
             if cls.expanded(data):
                 data = np.column_stack(data)
             else:
-                raise ValueError('ArrayColumns expects data to be of uniform shape.')
+                raise ValueError('ArrayInterface expects data to be of uniform shape.')
         elif not isinstance(data, np.ndarray):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:
@@ -938,7 +938,7 @@ class ArrayColumns(DataColumns):
                 data = None
 
         if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
-            raise ValueError("ArrayColumns interface could not handle input type.")
+            raise ValueError("ArrayInterface interface could not handle input type.")
         elif data.ndim == 1:
             if eltype._1d:
                 data = np.atleast_2d(data).T
@@ -1116,7 +1116,7 @@ class ArrayColumns(DataColumns):
 
 
 
-class DictColumns(DataColumns):
+class DictInterface(Interface):
     """
     Interface for simple dictionary-based columns format. The dictionary
     keys correspond to the column (i.e dimension) names and the values
@@ -1164,11 +1164,11 @@ class DictColumns(DataColumns):
             data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
 
         if not isinstance(data, cls.types):
-            raise ValueError("DictColumns interface couldn't convert data.""")
+            raise ValueError("DictInterface interface couldn't convert data.""")
         elif isinstance(data, dict):
             unpacked = [(d, np.array(data[d])) for d in data]
             if not cls.expanded([d[1] for d in unpacked]):
-                raise ValueError('DictColumns expects data to be of uniform shape.')
+                raise ValueError('DictInterface expects data to be of uniform shape.')
             if isinstance(data, odict_types):
                 data.update(unpacked)
             else:
@@ -1344,11 +1344,11 @@ class DictColumns(DataColumns):
 
 
 
-class GridColumns(DictColumns):
+class GridInterface(DictInterface):
     """
     Interface for simple dictionary-based columns format using a
     compressed representation that uses the cartesian product between
-    key dimensions. As with DictColumns, the dictionary keys correspond
+    key dimensions. As with DictInterface, the dictionary keys correspond
     to the column (i.e dimension) names and the values are NumPy arrays
     representing the values in that column.
 
@@ -1372,7 +1372,7 @@ class GridColumns(DictColumns):
             vdims = eltype.vdims
 
         if not vdims:
-            raise ValueError('GridColumns interface requires at least '
+            raise ValueError('GridInterface interface requires at least '
                              'one value dimension.')
 
         dimensions = [d.name if isinstance(d, Dimension) else
@@ -1380,7 +1380,7 @@ class GridColumns(DictColumns):
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif not isinstance(data, dict):
-            raise ValueError('GridColumns must be instantiated as a '
+            raise ValueError('GridInterface must be instantiated as a '
                              'dictionary or tuple')
 
         for dim in kdims+vdims:
@@ -1404,7 +1404,7 @@ class GridColumns(DictColumns):
 
     @classmethod
     def validate(cls, columns):
-        DataColumns.validate(columns)
+        Interface.validate(columns)
 
 
     @classmethod
@@ -1637,9 +1637,9 @@ class GridColumns(DictColumns):
 
 
 # Register available interfaces
-DataColumns.register(DictColumns)
-DataColumns.register(ArrayColumns)
-DataColumns.register(NdColumns)
-DataColumns.register(GridColumns)
+Interface.register(DictInterface)
+Interface.register(ArrayInterface)
+Interface.register(NdElementInterface)
+Interface.register(GridInterface)
 if pd:
-    DataColumns.register(DFColumns)
+    Interface.register(PandasInterface)
