@@ -9,7 +9,7 @@ import param
 from param import _is_number
 
 from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Columns, Element)
+                    HoloMap, Dataset, Element)
 from ..core.util import find_minmax, group_sanitizer, label_sanitizer
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
@@ -603,10 +603,10 @@ class gridmatrix(param.ParameterizedFunction):
 
 
     def _process(self, p, element, ranges={}):
-        # Creates a unified Columns.data attribute
+        # Creates a unified Dataset.data attribute
         # to draw the data from
         if isinstance(element.data, np.ndarray):
-            if 'dataframe' in Columns.datatype:
+            if 'dataframe' in Dataset.datatype:
                 el_data = element.table('dataframe')
             else:
                 el_data = element.table('ndelement')

@@ -29,16 +29,13 @@ from .spaces import HoloMap
 from . import util
 
 
-class Columns(Element):
+
+class Dataset(Element):
     """
-    Columns provides a general baseclass for column based Element types
-    that supports a range of data formats.
+    Dataset provides a general baseclass for Element types that
+    contain structured data and supports a range of data formats.
 
-    Currently numpy arrays are supported for data with a uniform
-    type. For storage of columns with heterogenous types, either a
-    dictionary format or a pandas DataFrame may be used for storage.
-
-    The Columns class supports various methods offering a consistent way
+    The Dataset class supports various methods offering a consistent way
     of working with the stored data regardless of the storage format
     used. These operations include indexing, selection and various ways
     of aggregating or collapsing the data with a supplied function.
@@ -65,18 +62,18 @@ class Columns(Element):
                                              kwargs.get('vdims'),
                                              datatype=kwargs.get('datatype'))
         (data, kdims, vdims, self.interface) = initialized
-        super(Columns, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
+        super(Dataset, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
         self.interface.validate(self)
 
 
     def __setstate__(self, state):
         """
-        Restores OrderedDict based Columns objects, converting them to
+        Restores OrderedDict based Dataset objects, converting them to
         the up-to-date NdElement format.
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
-            self.data = Columns(self.data, kdims=self.kdims,
+            self.data = Dataset(self.data, kdims=self.kdims,
                                 vdims=self.vdims, group=self.group,
                                 label=self.label)
             self.interface = NdColumns
@@ -85,7 +82,7 @@ class Columns(Element):
         elif util.is_dataframe(self.data):
             self.interface = DFColumns
 
-        super(Columns, self).__setstate__(state)
+        super(Dataset, self).__setstate__(state)
 
     def closest(self, coords):
         """
@@ -203,7 +200,7 @@ class Columns(Element):
 
     def __getitem__(self, slices):
         """
-        Allows slicing and selecting values in the Columns object.
+        Allows slicing and selecting values in the Dataset object.
         Supports multiple indexing modes:
 
            (1) Slicing and indexing along the values of each dimension
@@ -214,7 +211,7 @@ class Columns(Element):
                array.
            (3) Slicing of all key dimensions and selecting a single
                value dimension by name.
-           (4) A boolean array index matching the length of the Columns
+           (4) A boolean array index matching the length of the Dataset
                object.
         """
         slices = util.process_ellipses(self, slices, vdim_selection=True)
@@ -247,7 +244,7 @@ class Columns(Element):
 
     def sample(self, samples=[]):
         """
-        Allows sampling of Columns as an iterator of coordinates
+        Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
         just the selected samples.
         """
@@ -324,7 +321,7 @@ class Columns(Element):
 
     def __len__(self):
         """
-        Returns the number of rows in the Columns object.
+        Returns the number of rows in the Dataset object.
         """
         return self.interface.length(self)
 
@@ -386,7 +383,7 @@ class DataColumns(param.Parameterized):
     @classmethod
     def cast(cls, columns, datatype=None, cast_type=None):
         """
-        Given a list of Columns objects, cast them to the specified
+        Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
         """
@@ -420,7 +417,7 @@ class DataColumns(param.Parameterized):
         # Process Element data
         if isinstance(data, NdElement):
             kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif isinstance(data, Columns):
+        elif isinstance(data, Dataset):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
@@ -470,9 +467,9 @@ class DataColumns(param.Parameterized):
     @classmethod
     def select_mask(cls, columns, selection):
         """
-        Given a Columns object and a dictionary with dimension keys and
+        Given a Dataset object and a dictionary with dimension keys and
         selection keys (i.e tuple ranges, slices, sets, lists or literals)
-        return a boolean mask over the rows in the Columns object that
+        return a boolean mask over the rows in the Dataset object that
         have been selected.
         """
         mask = np.ones(len(columns), dtype=np.bool)
@@ -504,7 +501,7 @@ class DataColumns(param.Parameterized):
     @classmethod
     def indexed(cls, columns, selection):
         """
-        Given a Columns object and selection to be applied returns
+        Given a Dataset object and selection to be applied returns
         boolean to indicate whether a scalar value has been indexed.
         """
         selected = list(selection.keys())
@@ -530,7 +527,7 @@ class DataColumns(param.Parameterized):
     def concatenate(cls, columns, datatype=None):
         """
         Utility function to concatenate a list of Column objects,
-        returning a new Columns object. Note that this is unlike the
+        returning a new Dataset object. Note that this is unlike the
         .concat method which only concatenates the data.
         """
         if len(set(type(c) for c in columns)) != 1:

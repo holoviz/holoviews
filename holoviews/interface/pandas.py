@@ -18,14 +18,14 @@ except:
 
 import param
 
-from ..core import ViewableElement, NdMapping, Columns, NdOverlay,\
+from ..core import ViewableElement, NdMapping, Dataset, NdOverlay,\
     NdLayout, GridSpace, HoloMap
 from ..core.data import DFColumns
 from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
                        VectorField, HeatMap, Scatter3D, Surface)
 
 
-class DataFrameView(Columns):
+class DataFrameView(Dataset):
     """
     DataFrameView provides a convenient compatibility wrapper around
     Pandas DataFrames. It provides several core functions:
