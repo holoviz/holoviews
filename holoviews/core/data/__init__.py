@@ -28,6 +28,53 @@ from ..spaces import HoloMap
 from .. import util
 
 
+class DataConversion(object):
+    """
+    DataConversion is a very simple container object which can be
+    given an existing Dataset Element and provides methods to convert
+    the Dataset into most other Element types.
+    """
+
+    def __init__(self, element):
+        self._element = element
+
+    def __call__(self, new_type, kdims=None, vdims=None, mdims=None,
+                 sort=False, **kwargs):
+        """
+        Generic conversion method for Column based types. Supply the
+        Columns based type to convert to and optionally the
+        key dimensions (kdims), value dimensions (vdims) and HoloMap
+        key dimensions (mdims). Converted Columns can be automatically
+        sorted via the sort option and kwargs can be passed through.
+        """
+        if kdims is None:
+            kdims = self._element.kdims
+        elif kdims and not isinstance(kdims, list): kdims = [kdims]
+        if vdims is None:
+            vdims = self._element.vdims
+        if vdims and not isinstance(vdims, list): vdims = [vdims]
+        if mdims is None:
+            mdims = [d for d in self._element.kdims if d not in kdims+vdims]
+
+        selected = self._element.reindex(mdims+kdims, vdims)
+        params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
+                  'vdims': [selected.get_dimension(vd) for vd in vdims],
+                  'label': selected.label}
+        if selected.group != selected.params()['group'].default:
+            params['group'] = selected.group
+        params.update(kwargs)
+        if len(kdims) == selected.ndims:
+            element = new_type(selected, **params)
+            return element.sort() if sort else element
+        group = selected.groupby(mdims, container_type=HoloMap,
+                                 group_type=new_type, **params)
+        if sort:
+            return group.map(lambda x: x.sort(), [new_type])
+        else:
+            return group
+
+
+
 class Dataset(Element):
     """
     Dataset provides a general baseclass for Element types that
@@ -49,6 +96,9 @@ class Dataset(Element):
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
     _1d = False
+
+    # Define a class used to transform Datasets into other Element types
+    _conversion_interface = DataConversion
 
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
@@ -364,6 +414,16 @@ class Dataset(Element):
         if dimensions is None: dimensions = self.dimensions()
         dimensions = [self.get_dimension(d) for d in dimensions]
         return {d.name: self.dimension_values(d) for d in dimensions}
+
+    
+    @property
+    def to(self):
+        """
+        Property to create a conversion interface with methods to
+        convert to other Element types.
+        """
+        return self._conversion_interface(self)
+
 
 
 # Aliases for pickle backward compatibility
