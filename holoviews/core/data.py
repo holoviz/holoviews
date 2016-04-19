@@ -1636,6 +1636,7 @@ class GridInterface(DictInterface):
 
 
 # Aliases for pickle backward compatibility
+Columns      = Dataset
 ArrayColumns = ArrayInterface
 DictColumns  = DictInterface
 DFColumns    = PandasInterface
