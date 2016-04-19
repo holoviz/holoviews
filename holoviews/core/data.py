@@ -57,10 +57,10 @@ class Dataset(Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
-        initialized = DataColumns.initialize(type(self), data,
-                                             kwargs.get('kdims'),
-                                             kwargs.get('vdims'),
-                                             datatype=kwargs.get('datatype'))
+        initialized = Interface.initialize(type(self), data,
+                                           kwargs.get('kdims'),
+                                           kwargs.get('vdims'),
+                                           datatype=kwargs.get('datatype'))
         (data, kdims, vdims, self.interface) = initialized
         super(Dataset, self).__init__(data, **dict(kwargs, kdims=kdims, vdims=vdims))
         self.interface.validate(self)

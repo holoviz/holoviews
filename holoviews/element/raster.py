@@ -6,7 +6,8 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
+from ..core.data import (PandasInterface, ArrayInterface, NdElementInterface,
+                         DictInterface)
 from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -420,13 +421,13 @@ class HeatMap(Dataset, Element2D):
         self.__dict__ = state
 
         if isinstance(self.data, NdElement):
-            self.interface = NdColumns
+            self.interface = NdElementInterface
         elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayColumns
+            self.interface = ArrayInterface
         elif util.is_dataframe(self.data):
-            self.interface = DFColumns
+            self.interface = PandasInterface
         elif isinstance(self.data, dict):
-            self.interface = DictColumns
+            self.interface = DictInterface
         self.depth = 1
         data, self.raster = self._compute_raster()
         self.interface = data.interface
