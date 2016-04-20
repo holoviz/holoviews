@@ -34,8 +34,8 @@ class AttrTree(object):
 
     def __dir__(self):
         """
-        The _dir_mode may be 'default' or 'user' in which case only the
-        child nodes add by the user are listed.
+        The _dir_mode may be set to 'default' or 'user' in which case
+        only the child nodes added by the user are listed.
         """
         dict_keys = self.__dict__.keys()
         if self.__dict__['_dir_mode'] == 'user':
