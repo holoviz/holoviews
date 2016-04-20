@@ -8,6 +8,7 @@ import holoviews
 from param import ipython as param_ext
 from IPython.display import HTML
 
+from ..core.tree import AttrTree
 from ..core.options import Store, Cycle, Palette
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
@@ -37,7 +38,7 @@ except ImportError:
 
 
 Collector.interval_hook = RunProgress
-
+AttrTree._disabled_prefixes = ['_repr_']
 
 def show_traceback():
     """
