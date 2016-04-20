@@ -6,8 +6,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import (PandasInterface, ArrayInterface, NdElementInterface,
-                         DictInterface)
+from ..core.data import (ArrayInterface, NdElementInterface, DictInterface)
 from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -16,6 +15,12 @@ from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, toarray
+
+try:
+    from ..core.data import PandasInterface
+except ImportError:
+    PandasInterface = None
+
 
 class Raster(Element2D):
     """
