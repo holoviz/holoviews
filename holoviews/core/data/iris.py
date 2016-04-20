@@ -4,11 +4,8 @@ import datetime
 from itertools import product
 import unittest
 
-try:
-    import iris
-    from iris.util import guess_coord_axis
-except:
-    unittest.SkipTest('Skipping import of iris interface, iris not available.')
+import iris
+from iris.util import guess_coord_axis
 
 import numpy as np
 
