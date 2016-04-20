@@ -180,7 +180,8 @@ class HeatMapPlot(RasterPlot):
                     annotation.remove()
                 except:
                     pass
-            self._annotate_plot(axis, style['annotations'])
+            annotations = self._annotate_plot(axis, style['annotations'])
+            self.handles['annotations'] = annotations
         return axis_kwargs
 
 
