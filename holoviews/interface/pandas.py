@@ -13,14 +13,15 @@ import numpy as np
 
 try:
     import pandas as pd
+    from ..core.data import PandasInterface
 except:
     pd = None
+    PandasInterface = None
 
 import param
 
 from ..core import ViewableElement, NdMapping, Dataset, NdOverlay,\
     NdLayout, GridSpace, HoloMap
-from ..core.data import PandasInterface
 from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
                        VectorField, HeatMap, Scatter3D, Surface)
 
