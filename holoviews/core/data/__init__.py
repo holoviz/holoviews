@@ -15,10 +15,20 @@ from .dictionary import DictInterface
 from .grid import GridInterface
 from .ndelement import NdElementInterface
 
+datatypes = ['array', 'dictionary', 'grid', 'ndelement']
+
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
+    datatypes = ['array', 'dataframe', 'dictionary', 'grid', 'ndelement']
     DFColumns = PandasInterface
+except ImportError:
+    pass
+
+try:
+    import iris # noqa (Availability import)
+    from .iris import CubeInterface
+    datatypes.append('cube')
 except ImportError:
     pass
 
@@ -86,7 +96,7 @@ class Dataset(Element):
     of aggregating or collapsing the data with a supplied function.
     """
 
-    datatype = param.List(['array', 'dataframe', 'dictionary', 'grid', 'ndelement'],
+    datatype = param.List(datatypes,
         doc=""" A priority list of the data types to be used for storage
         on the .data attribute. If the input supplied to the element
         constructor cannot be put into the requested format, the next
