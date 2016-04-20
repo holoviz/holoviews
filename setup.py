@@ -41,6 +41,7 @@ setup_args.update(dict(
     url='http://ioam.github.com/holoviews/',
     packages = ["holoviews",
                 "holoviews.core",
+                "holoviews.core.data",
                 "holoviews.element",
                 "holoviews.interface",
                 "holoviews.ipython",
