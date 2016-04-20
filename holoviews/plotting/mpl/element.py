@@ -136,7 +136,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         element = self._get_frame(key)
         self.current_frame = element
-        if not dimensions and element:
+        if not dimensions and element and not self.subplots:
             el = element.traverse(lambda x: x, [Element])
             if el: dimensions = el[0].dimensions()
         axis = self.handles['axis']
@@ -158,7 +158,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             # Apply axis options if axes are enabled
             if element and not any(not sp._has_axes for sp in [self] + subplots):
                 # Set axis labels
-                self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
+                if dimensions:
+                    self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
 
                 # Set axes limits
                 self._set_axis_limits(axis, element, subplots, ranges)
@@ -205,7 +206,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         and Elements. Sets the axes position as well as tick positions,
         labels and fontsize.
         """
-        ndims = len(dimensions)
+        ndims = len(dimensions) if dimensions else 0
         xdim = dimensions[0] if ndims else None
         ydim = dimensions[1] if ndims > 1 else None
 
