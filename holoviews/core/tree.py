@@ -20,7 +20,7 @@ class AttrTree(object):
     1
     """
     _disabled_prefixes = [] # Underscore attributes that should be
-                            # ignored instead of escaped.
+    _sanitizer = util.sanitize_identifier
 
     @classmethod
     def merge(cls, trees):
@@ -54,7 +54,7 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = util.sanitize_identifier(identifier, escape=False)
+        self.__dict__['identifier'] = type(self)._sanitizer(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
         self.__dict__['_dir_mode'] = 'default'  # Either 'default' or 'user'
@@ -112,7 +112,7 @@ class AttrTree(object):
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
 
-        disallowed = [p for p in path if not util.sanitize_identifier.allowable(p)]
+        disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
                             "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
@@ -221,7 +221,7 @@ class AttrTree(object):
 
         if not any(identifier.startswith(prefix)
                    for prefix in type(self)._disabled_prefixes):
-            identifier = util.sanitize_identifier(identifier, escape=False)
+            identifier = type(self)._sanitizer(identifier, escape=False)
 
         if identifier in self.children:
             return self.__dict__[identifier]
