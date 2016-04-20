@@ -31,18 +31,24 @@ class ElementConversion(DataConversion):
     def errorbars(self, kdims=None, vdims=None, mdims=None, **kwargs):
         return self(ErrorBars, kdims, vdims, mdims, sort=True, **kwargs)
 
-    def distribution(self, dim, mdims=[], **kwargs):
+    def distribution(self, dim=None, mdims=[], **kwargs):
         from ..interface.seaborn import Distribution
+        if dim is None:
+            if self._element.vdims:
+                dim = self._element.vdims[0]
+            else:
+                raise Exception('Must supply an explicit value dimension '
+                                'if no value dimensions are defined ')
         if mdims:
-            reindexed = self._table.reindex(mdims+[dim])
+            reindexed = self._element.reindex(mdims, [dim])
             return reindexed.groupby(mdims, HoloMap, Distribution, **kwargs)
         else:
-            table = self._table
-            params = dict(kdims=[table.get_dimension(dim)],
-                          label=table.label)
-            if table.group != table.params()['group'].default:
-                params['group'] = table.group
-            return Distribution((table.dimension_values(dim),),
+            element = self._element
+            params = dict(vdims=[element.get_dimension(dim)],
+                          label=element.label)
+            if element.group != element.params()['group'].default:
+                params['group'] = element.group
+            return Distribution((element.dimension_values(dim),),
                                 **dict(params, **kwargs))
 
     def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):

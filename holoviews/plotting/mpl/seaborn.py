@@ -147,8 +147,9 @@ class DistributionPlot(SeabornPlot):
         style.pop('zorder', None)
         if self.invert_axes:
             style['vertical'] = True
-        axis_kwargs = dict(xlabel='', ylabel=str(element.get_dimension(0)))
-        return (element.dimension_values(0),), style, axis_kwargs
+        vdim = element.vdims[0]
+        axis_kwargs = dict(dimensions=[vdim])
+        return (element.dimension_values(vdim),), style, axis_kwargs
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         return {'axis': sns.distplot(*plot_data, ax=ax, **plot_kwargs)}
