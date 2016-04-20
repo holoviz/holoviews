@@ -51,7 +51,7 @@ class Interface(param.Parameterized):
         # Process Element data
         if isinstance(data, NdElement):
             kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif hasattr(data, 'interface') and isinstance(data.interface, Interface):
+        elif hasattr(data, 'interface') and issubclass(data.interface, Interface):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
