@@ -32,6 +32,17 @@ class AttrTree(object):
             first.update(tree)
         return first
 
+    def __dir__(self):
+        """
+        The _dir_mode may be 'default' or 'user' in which case only the
+        child nodes add by the user are listed.
+        """
+        dict_keys = self.__dict__.keys()
+        if self.__dict__['_dir_mode'] == 'user':
+            return self.__dict__['children']
+        else:
+            return dir(type(self)) + list(dict_keys)
+
     def __init__(self, items=None, identifier=None, parent=None):
         """
         identifier: A string identifier for the current node (if any)
@@ -46,6 +57,7 @@ class AttrTree(object):
         self.__dict__['identifier'] = util.sanitize_identifier(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
+        self.__dict__['_dir_mode'] = 'default'  # Either 'default' or 'user'
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
@@ -218,6 +230,7 @@ class AttrTree(object):
             self.children.append(identifier)
             child_tree = self.__class__(identifier=identifier, parent=self)
             self.__dict__[identifier] = child_tree
+            child_tree.__dict__['_dir_mode'] = self.__dict__['_dir_mode']
             return child_tree
         else:
             raise AttributeError
