@@ -19,6 +19,8 @@ class AttrTree(object):
     >>> t.Example.Path                             #doctest: +ELLIPSIS
     1
     """
+    _disabled_prefixes = [] # Underscore attributes that should be
+                            # ignored instead of escaped.
 
     @classmethod
     def merge(cls, trees):
@@ -201,8 +203,13 @@ class AttrTree(object):
         # Attributes starting with __ get name mangled
         if identifier.startswith('_' + type(self).__name__) or identifier.startswith('__'):
             raise AttributeError('Attribute %s not found.' % identifier)
-        elif self.fixed==True:           raise AttributeError(self._fixed_error % identifier)
-        identifier = util.sanitize_identifier(identifier, escape=False)
+        elif self.fixed==True:
+            raise AttributeError(self._fixed_error % identifier)
+
+
+        if not any(identifier.startswith(prefix)
+                   for prefix in type(self)._disabled_prefixes):
+            identifier = util.sanitize_identifier(identifier, escape=False)
 
         if identifier in self.children:
             return self.__dict__[identifier]
