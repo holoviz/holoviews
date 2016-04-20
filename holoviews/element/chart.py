@@ -3,10 +3,10 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import Dimension, Columns, Element2D
+from ..core import Dimension, Dataset, Element2D
 from .util import compute_edges
 
-class Chart(Columns, Element2D):
+class Chart(Dataset, Element2D):
     """
     The data held within Chart is a numpy array of shape (N, D),
     where N is the number of samples and D the number of dimensions.
@@ -118,7 +118,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Columns):
+class Bars(Dataset):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value

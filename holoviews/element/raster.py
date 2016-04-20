@@ -6,9 +6,10 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
+from ..core.data import (PandasInterface, ArrayInterface, NdElementInterface,
+                         DictInterface)
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Columns, NdElement)
+                    Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
@@ -357,7 +358,7 @@ class QuadMesh(Raster):
 
 
 
-class HeatMap(Columns, Element2D):
+class HeatMap(Dataset, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -392,8 +393,8 @@ class HeatMap(Columns, Element2D):
         d2keys = self.dimension_values(1, False)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
         dtype = 'dataframe' if pd else 'dictionary'
-        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
-        concat_data = self.interface.concatenate([dense_data, Columns(self)], datatype=dtype)
+        dense_data = Dataset(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
+        concat_data = self.interface.concatenate([dense_data, Dataset(self)], datatype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'Mean of empty slice')
             data = concat_data.aggregate(self.kdims, np.nanmean)
@@ -409,8 +410,8 @@ class HeatMap(Columns, Element2D):
                          for k, v in data.items()]
                 kdims = state['kdims'] if 'kdims' in state else self.kdims
                 vdims = state['vdims'] if 'vdims' in state else self.vdims
-                data = Columns(items, kdims=kdims, vdims=vdims).data
-            elif isinstance(data, Columns):
+                data = Dataset(items, kdims=kdims, vdims=vdims).data
+            elif isinstance(data, Dataset):
                 data = data.data
                 kdims = data.kdims
                 vdims = data.vdims
@@ -420,13 +421,13 @@ class HeatMap(Columns, Element2D):
         self.__dict__ = state
 
         if isinstance(self.data, NdElement):
-            self.interface = NdColumns
+            self.interface = NdElementInterface
         elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayColumns
+            self.interface = ArrayInterface
         elif util.is_dataframe(self.data):
-            self.interface = DFColumns
+            self.interface = PandasInterface
         elif isinstance(self.data, dict):
-            self.interface = DictColumns
+            self.interface = DictInterface
         self.depth = 1
         data, self.raster = self._compute_raster()
         self.interface = data.interface

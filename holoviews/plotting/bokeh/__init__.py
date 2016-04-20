@@ -1,7 +1,7 @@
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, Columns, GridMatrix, NdLayout)
+                     GridSpace, NdElement, Dataset, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
@@ -71,9 +71,7 @@ Store.register({Overlay: OverlayPlot,
                 Table: TablePlot,
                 ItemTable: TablePlot,
                 DFrame: TablePlot,
-                NdElement: TablePlot,
-                Columns: TablePlot},
-
+                NdElement: TablePlot},
                'bokeh')
 
 
