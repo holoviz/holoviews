@@ -40,8 +40,6 @@ Store.register({Overlay: OverlayPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
                 Spikes: SpikesPlot,
-                BoxWhisker: BoxPlot,
-                Bars: BarPlot,
                 Area: AreaPlot,
 
                 # Rasters
@@ -77,6 +75,13 @@ Store.register({Overlay: OverlayPlot,
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
+
+try:
+    import pandas
+    Store.register({BoxWhisker: BoxPlot,
+                    Bars: BarPlot}, 'bokeh')
+except ImportError:
+    pass
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot

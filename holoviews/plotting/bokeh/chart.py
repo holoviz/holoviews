@@ -1,5 +1,10 @@
 import numpy as np
-from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
+
+try:
+    from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
+except:
+    Bar, BokehBoxPlot = None, None
+
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
 
