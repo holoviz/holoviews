@@ -505,7 +505,8 @@ class ColorbarPlot(ElementPlot):
     _colorbars = {}
 
     def _adjust_cbar(self, cbar, label, dim):
-        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+        noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
+        if (cbar.solids and noalpha):
             cbar.solids.set_edgecolor("face")
         cbar.set_label(label)
         if isinstance(self.cbar_ticks, ticker.Locator):
