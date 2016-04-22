@@ -244,6 +244,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
     invert_zaxis = param.Parameter(precedence=-1)
+    labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)

@@ -33,6 +33,9 @@ class Plot3D(ColorbarPlot):
     bgcolor = param.String(default='white', doc="""
         Background color of the axis.""")
 
+    labelled = param.List(default=['x', 'y', 'z'], doc="""
+        Whether to plot the 'x', 'y' and 'z' labels.""")
+
     projection = param.ObjectSelector(default='3d', objects=['3d'], doc="""
         The projection of the matplotlib axis.""")
 
