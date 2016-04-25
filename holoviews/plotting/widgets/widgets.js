@@ -67,10 +67,11 @@ HoloViewsWidget.prototype.update_cache = function(){
 
 HoloViewsWidget.prototype.update = function(current){
     if(current in this.cache) {
-        $.each(this.cache, function(index, value) {
-            value.hide();
-        });
-        this.cache[current].show();
+		if (this.previous !== undefined) {
+			this.cache[this.previous].hide();
+        };
+		this.cache[current].show();
+		this.previous = current;
 		this.wait = false;
     }
 }
@@ -95,6 +96,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
     this.init_slider(this.current_vals[0]);
 	this.queue = [];
 	this.wait = false;
+	this.previous = 0;
 }
 
 SelectionWidget.prototype = new HoloViewsWidget;
@@ -171,6 +173,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
     this.init_slider(0);
 	this.wait = false;
 	this.queue = [];
+	this.previous = 0;
 }
 
 ScrubberWidget.prototype = new HoloViewsWidget;
