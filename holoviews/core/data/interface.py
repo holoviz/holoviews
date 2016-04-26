@@ -80,7 +80,7 @@ class Interface(param.Parameterized):
             raise ValueError("None of the available storage backends "
                              "were able to support the supplied data format.")
 
-        return data, kdims, vdims, interface
+        return data, interface, {'kdims':kdims, 'vdims':vdims}
 
 
     @classmethod
