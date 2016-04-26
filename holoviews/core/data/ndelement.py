@@ -61,7 +61,7 @@ class NdElementInterface(Interface):
             data = NdElement(data, kdims=kdims, vdims=vdims)
         elif not isinstance(data, NdElement):
             raise ValueError("NdElementInterface interface couldn't convert data.""")
-        return data, {'kdims':kdims, 'vdims':vdims}
+        return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
     @classmethod

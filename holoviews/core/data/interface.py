@@ -72,7 +72,7 @@ class Interface(param.Parameterized):
         # Iterate over interfaces until one can interpret the input
         for interface in prioritized:
             try:
-                (data, extra_kws) = interface.init(eltype, data, kdims, vdims)
+                (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
             except:
                 pass
@@ -80,7 +80,7 @@ class Interface(param.Parameterized):
             raise ValueError("None of the available storage backends "
                              "were able to support the supplied data format.")
 
-        return data, interface, extra_kws
+        return data, interface, dims, extra_kws
 
 
     @classmethod

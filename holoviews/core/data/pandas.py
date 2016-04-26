@@ -76,7 +76,7 @@ class PandasInterface(Interface):
                                                 zip(columns, data)])
             else:
                 data = pd.DataFrame(data, columns=columns)
-        return data, {'kdims':kdims, 'vdims':vdims}
+        return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
     @classmethod
