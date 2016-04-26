@@ -500,8 +500,8 @@ class OptionTree(AttrTree):
         object
         """
         components = (obj.__class__.__name__,
-                      group_sanitizer(obj.group),
-                      label_sanitizer(obj.label))
+                      group_sanitizer(obj.group.capitalize()),
+                      label_sanitizer(obj.label.capitalize()))
         return self.find(components).options(group)
 
 
