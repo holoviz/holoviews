@@ -104,6 +104,8 @@ class Dimension(param.Parameterized):
                 existing_params = dict(preset.get_param_values())
         elif name in self.presets.keys():
             existing_params = dict(self.presets[name].get_param_values())
+        elif (name,) in self.presets.keys():
+            existing_params = dict(self.presets[(name,)].get_param_values())
         else:
             existing_params = {'name': name}
 
