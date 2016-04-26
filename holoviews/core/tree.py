@@ -43,7 +43,7 @@ class AttrTree(object):
         else:
             return dir(type(self)) + list(dict_keys)
 
-    def __init__(self, items=None, identifier=None, parent=None):
+    def __init__(self, items=None, identifier=None, parent=None, dir_mode='default'):
         """
         identifier: A string identifier for the current node (if any)
         parent:     The parent node (if any)
@@ -57,7 +57,7 @@ class AttrTree(object):
         self.__dict__['identifier'] = type(self)._sanitizer(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
-        self.__dict__['_dir_mode'] = 'default'  # Either 'default' or 'user'
+        self.__dict__['_dir_mode'] = dir_mode  # Either 'default' or 'user'
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
@@ -228,9 +228,10 @@ class AttrTree(object):
 
         if not identifier.startswith('_'):
             self.children.append(identifier)
-            child_tree = self.__class__(identifier=identifier, parent=self)
+            dir_mode = self.__dict__['_dir_mode']
+            child_tree = self.__class__(identifier=identifier,
+                                        parent=self, dir_mode=dir_mode)
             self.__dict__[identifier] = child_tree
-            child_tree.__dict__['_dir_mode'] = self.__dict__['_dir_mode']
             return child_tree
         else:
             raise AttributeError
