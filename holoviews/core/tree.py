@@ -20,7 +20,7 @@ class AttrTree(object):
     1
     """
     _disabled_prefixes = [] # Underscore attributes that should be
-                            # ignored instead of escaped.
+    _sanitizer = util.sanitize_identifier
 
     @classmethod
     def merge(cls, trees):
@@ -32,7 +32,18 @@ class AttrTree(object):
             first.update(tree)
         return first
 
-    def __init__(self, items=None, identifier=None, parent=None):
+    def __dir__(self):
+        """
+        The _dir_mode may be set to 'default' or 'user' in which case
+        only the child nodes added by the user are listed.
+        """
+        dict_keys = self.__dict__.keys()
+        if self.__dict__['_dir_mode'] == 'user':
+            return self.__dict__['children']
+        else:
+            return dir(type(self)) + list(dict_keys)
+
+    def __init__(self, items=None, identifier=None, parent=None, dir_mode='default'):
         """
         identifier: A string identifier for the current node (if any)
         parent:     The parent node (if any)
@@ -43,9 +54,10 @@ class AttrTree(object):
         require an identifier.
         """
         self.__dict__['parent'] = parent
-        self.__dict__['identifier'] = util.sanitize_identifier(identifier, escape=False)
+        self.__dict__['identifier'] = type(self)._sanitizer(identifier, escape=False)
         self.__dict__['children'] = []
         self.__dict__['_fixed'] = False
+        self.__dict__['_dir_mode'] = dir_mode  # Either 'default' or 'user'
 
         fixed_error = 'No attribute %r in this AttrTree, and none can be added because fixed=True'
         self.__dict__['_fixed_error'] = fixed_error
@@ -100,7 +112,7 @@ class AttrTree(object):
         """
         path = tuple(path.split('.')) if isinstance(path , str) else tuple(path)
 
-        disallowed = [p for p in path if not util.sanitize_identifier.allowable(p)]
+        disallowed = [p for p in path if not type(self)._sanitizer.allowable(p)]
         if any(disallowed):
             raise Exception("Attribute strings in path elements cannot be "
                             "correctly escaped : %s" % ','.join(repr(el) for el in disallowed))
@@ -209,14 +221,16 @@ class AttrTree(object):
 
         if not any(identifier.startswith(prefix)
                    for prefix in type(self)._disabled_prefixes):
-            identifier = util.sanitize_identifier(identifier, escape=False)
+            identifier = type(self)._sanitizer(identifier, escape=False)
 
         if identifier in self.children:
             return self.__dict__[identifier]
 
         if not identifier.startswith('_'):
             self.children.append(identifier)
-            child_tree = self.__class__(identifier=identifier, parent=self)
+            dir_mode = self.__dict__['_dir_mode']
+            child_tree = self.__class__(identifier=identifier,
+                                        parent=self, dir_mode=dir_mode)
             self.__dict__[identifier] = child_tree
             return child_tree
         else:
