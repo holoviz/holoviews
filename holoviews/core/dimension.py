@@ -91,7 +91,8 @@ class Dimension(param.Parameterized):
     # Defines default formatting by type
     type_formatters = {}
     unit_format = ' ({unit})'
-    presets = {} # A dictionary-like mapping name or (name, unit) to a preset
+    presets = {} # A dictionary-like mapping name, (name,) or
+                 # (name, unit) to a preset Dimension object
 
     def __init__(self, name, **params):
         """
