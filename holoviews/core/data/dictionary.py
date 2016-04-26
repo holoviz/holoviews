@@ -243,4 +243,3 @@ class DictInterface(Interface):
 
 
 Interface.register(DictInterface)
-

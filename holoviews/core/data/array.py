@@ -230,4 +230,3 @@ class ArrayInterface(Interface):
 
 
 Interface.register(ArrayInterface)
-

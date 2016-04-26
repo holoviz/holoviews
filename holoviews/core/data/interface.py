@@ -202,4 +202,3 @@ class Interface(param.Parameterized):
     @classmethod
     def length(cls, dataset):
         return len(dataset.data)
-
