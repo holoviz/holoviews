@@ -120,7 +120,7 @@ class Dataset(Element):
                                            kwargs.get('vdims'),
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, extra_kws) = initialized
-        super(Dataset, self).__init__(data, **dict(kwargs, **extra_kws))
+        super(Dataset, self).__init__(data, **dict(extra_kws, **kwargs))
         self.interface.validate(self)
 
 
