@@ -187,7 +187,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     prefix = 'A_'
 
-    _lookup_table = {}
+    _lookup_table = param.Dict(default={}, doc="""
+       Cache of previously computed sanitizations""")
 
 
     @param.parameterized.bothmethod
