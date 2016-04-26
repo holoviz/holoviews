@@ -72,7 +72,7 @@ class GridInterface(DictInterface):
                 raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
                                  'actual shape: %s' % (vdim, expected, shape))
-        return data, kdims, vdims
+        return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
     @classmethod
