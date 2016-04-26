@@ -311,6 +311,8 @@ class PrettyPrinter(object):
             (lvl, lines) = cls.adjointlayout_info(node, siblings, level, value_dims)
         elif getattr(node, '_deep_indexable', False):
             (lvl, lines) = cls.ndmapping_info(node, siblings, level, value_dims)
+        elif hasattr(node, 'unit_format'):
+            (lvl, lines) = level, [(level, repr(node))]
         else:
             (lvl, lines) = cls.element_info(node, siblings, level, value_dims)
 
