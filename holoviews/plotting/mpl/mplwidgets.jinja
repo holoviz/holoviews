@@ -1,5 +1,10 @@
 {% extends widget_template %}
 
+{% block init_frame %}
+   <canvas id="_anim_canvas{{ id }}" class="mpl-canvas" width="200" height="200">
+   </canvas>
+{% endblock %}
+
 {% block create_widget %}
 {% if mode == "'mpld3'" %}
 var paths = {};

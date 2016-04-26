@@ -65,3 +65,9 @@ div.hologroup {
 .ui-resizable-s {
 	visibility: hidden
 }
+
+canvas.mpl-canvas {
+	display: table;
+	margin: auto;
+	max-width: 100%;
+}

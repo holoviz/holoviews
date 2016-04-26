@@ -67,10 +67,12 @@ HoloViewsWidget.prototype.update_cache = function(){
 
 HoloViewsWidget.prototype.update = function(current){
     if(current in this.cache) {
-        $.each(this.cache, function(index, value) {
-            value.hide();
-        });
-        this.cache[current].show();
+		var ctx = this.canvas.getContext("2d");
+		ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+		var img = this.cache[current][0].children[0];
+		this.canvas.width = img.width;
+		this.canvas.height = img.height;
+		ctx.drawImage(img, 0, 0);
 		this.wait = false;
     }
 }
@@ -80,6 +82,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
     this.frames = frames;
     this.fig_id = "fig_" + id;
     this.img_id = "_anim_img" + id;
+	this.canvas = document.getElementById("_anim_canvas" + id);
     this.id = id;
     this.slider_ids = slider_ids;
     this.keyMap = keyMap
@@ -152,6 +155,7 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, json_path, dynamic){
     this.img_id = "_anim_img" + id;
     this.slider_id = "_anim_slider" + id;
+	this.canvas = document.getElementById("_anim_canvas" + id);
     this.loop_select_id = "_anim_loop_select" + id;
     this.id = id;
     this.fig_id = "fig_" + id;
