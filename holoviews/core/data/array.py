@@ -64,7 +64,7 @@ class ArrayInterface(Interface):
             kdims = eltype.kdims
         if vdims is None:
             vdims = eltype.vdims
-        return data, kdims, vdims
+        return data, {'kdims':kdims, 'vdims':vdims}
 
     @classmethod
     def validate(cls, dataset):

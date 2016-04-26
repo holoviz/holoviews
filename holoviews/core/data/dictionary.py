@@ -73,7 +73,7 @@ class DictInterface(Interface):
                 data.update(unpacked)
             else:
                 data = OrderedDict([(d, np.array(data[d])) for d in dimensions])
-        return data, kdims, vdims
+        return data, {'kdims':kdims, 'vdims':vdims}
 
 
     @classmethod
