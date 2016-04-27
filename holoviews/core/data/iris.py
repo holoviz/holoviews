@@ -2,6 +2,7 @@ from __future__ import absolute_import
 
 import datetime
 from itertools import product
+from functools import partial
 import unittest
 
 import iris
@@ -53,6 +54,12 @@ def sort_coords(coord):
     axis = guess_coord_axis(coord)
     return (order.get(axis, 0), coord and coord.name())
 
+
+def isclose(cell, value=0, precision=1e-5):
+    """
+    Matches two float values with a specific precision
+    """
+    return value-precision < cell < value+precision
 
 
 class CubeInterface(GridInterface):
@@ -166,7 +173,10 @@ class CubeInterface(GridInterface):
 
         if dynamic:
             def load_subset(*args):
+                args = (partial(isclose, value=arg) if isinstance(arg, float) else arg
+                        for arg in args)
                 constraint = iris.Constraint(**dict(zip(constraints, args)))
+                extracted = dataset.data.extract(constraint)
                 return dataset.clone(dataset.data.extract(constraint),
                                       new_type=group_type,
                                       **dict(kwargs, kdims=slice_dims))
