@@ -266,14 +266,17 @@ class SelectionWidget(NdWidget):
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
-                        dim_vals = {i: v for i, v in enumerate(dim.values)}
+                        # Widgets currently detect dynamic mode by type
+                        # this value representation is now redundant
+                        # and should be removed in a refactor
+                        dim_vals = {i: i for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
                         value_labels = escape_list(escape_vals([dim.pprint_value(v)
                                                                 for v in dim.values]))
                     else:
-                        dim_vals = escape_list(escape_vals(dim.values))
+                        dim_vals = list(range(len(dim.values)))
                         value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                                for v in dim_vals]))
+                                                                for v in dim.values]))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
@@ -357,5 +360,7 @@ class SelectionWidget(NdWidget):
 
 
     def update(self, key):
-        if self.plot.dynamic: key = tuple(key)
+        if self.plot.dynamic:
+            key = tuple(dim.values[k] if dim.values else k
+                        for dim, k in zip(self.mock_obj.kdims, tuple(key)))
         return self._plot_figure(key)

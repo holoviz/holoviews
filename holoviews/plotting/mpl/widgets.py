@@ -73,7 +73,8 @@ class MPLWidget(NdWidget):
 
     def update(self, key):
         if self.plot.dynamic == 'bounded' and not isinstance(key, int):
-            key = tuple(key)
+            key = tuple(dim.values[k] if dim.values else k
+                        for dim, k in zip(self.mock_obj.kdims, tuple(key)))
 
         if self.renderer.mode == 'nbagg':
             if not self.manager._shown:

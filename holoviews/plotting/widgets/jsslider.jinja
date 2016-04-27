@@ -112,7 +112,7 @@
                         var dim_val = ui.value;
 						var label = ui.value;
                     } else {
-                        var dim_val = vals[ui.value];
+                        var dim_val = ui.value;
 						var label = labels[ui.value];
                     }
 					var text = $('#textInput{{ id }}_{{ widget_data['dim'] }}');
@@ -179,16 +179,21 @@
         };
         widget.data("next_vals", {{ widget_data['next_vals'] }});
         widget.on('change', function(event, ui) {
-            var dim_val = $.data(this, 'values')[this.value];
-            if(anim{{ id }}) {
-                anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
-            }
+		    if ({{ dynamic }}) {
+                var dim_val = parseInt(this.value);
+			} else {
+			    var dim_val = $.data(this, 'values')[this.value];
+			}
             var next_vals = $.data(this, "next_vals");
             if (Object.keys(next_vals).length > 0) {
                 var new_vals = next_vals[dim_val];
                 var next_widget = $('#_anim_widget{{ id }}_{{ widget_data['next_dim'] }}');
                 update_widget(next_widget, new_vals);
             }
+			if (anim{{ id }}) {
+                anim{{ id }}.set_frame(dim_val, {{ widget_data['dim_idx'] }});
+            }
+
         });
         </script>
         {% endif %}
