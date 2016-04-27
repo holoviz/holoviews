@@ -101,12 +101,12 @@ class Dimension(param.Parameterized):
         if isinstance(name, Dimension):
             existing_params = dict(name.get_param_values())
         elif (name, params.get('unit', None)) in self.presets.keys():
-                preset = self.presets[(name, params['unit'])]
+                preset = self.presets[(str(name), str(params['unit']))]
                 existing_params = dict(preset.get_param_values())
         elif name in self.presets.keys():
-            existing_params = dict(self.presets[name].get_param_values())
+            existing_params = dict(self.presets[str(name)].get_param_values())
         elif (name,) in self.presets.keys():
-            existing_params = dict(self.presets[(name,)].get_param_values())
+            existing_params = dict(self.presets[(str(name),)].get_param_values())
         else:
             existing_params = {'name': name}
 
