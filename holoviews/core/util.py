@@ -24,11 +24,6 @@ try:
 except ImportError:
     dd = None
 
-try:
-    from blaze import bz
-except ImportError:
-    bz = None
-
 # Python3 compatibility
 import types
 if sys.version_info.major == 3:
@@ -746,8 +741,7 @@ def is_dataframe(data):
     Checks whether the supplied data is DatFrame type.
     """
     return((pd is not None and isinstance(data, pd.DataFrame)) or
-          (dd is not None and isinstance(data, dd.DataFrame)) or
-          (bz is not None and isinstance(data, bz.Data)))
+          (dd is not None and isinstance(data, dd.DataFrame)))
 
 
 def get_param_values(data):
