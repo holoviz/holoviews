@@ -108,11 +108,15 @@
                     var vals = slider.slider("option", "dim_vals");
                     var next_vals = slider.slider("option", "next_vals");
                     var labels = slider.slider("option", "dim_labels");
-                    if ({{ dynamic }} && vals.constructor === Array) {
-                        var dim_val = ui.value;
-						var label = ui.value;
+                    if ({{ dynamic }}) {
+					    var dim_val = ui.value;
+					    if (vals.constructor === Array) {
+						   var label = ui.value;
+						} else {
+						   var label = labels[ui.value];
+						}
                     } else {
-                        var dim_val = ui.value;
+                        var dim_val = vals[ui.value];
 						var label = labels[ui.value];
                     }
 					var text = $('#textInput{{ id }}_{{ widget_data['dim'] }}');
@@ -172,8 +176,13 @@
         var widget = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
         widget.data('values', vals)
         for (var i=0; i<vals.length; i++){
+			if ({{ dynamic }}) {
+		       var val = vals[i];
+			} else {
+			   var val = i;
+			}
             widget.append($("<option>", {
-                value: i,
+                value: val,
                 text: labels[i]
             }));
         };
