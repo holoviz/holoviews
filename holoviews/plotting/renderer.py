@@ -305,7 +305,7 @@ class Renderer(Exporter):
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
-        return widget_cls(plot, renderer=self_or_cls,
+        return widget_cls(plot, renderer=self_or_cls.instance(),
                           embed=self_or_cls.widget_mode == 'embed', **kwargs)
 
 
