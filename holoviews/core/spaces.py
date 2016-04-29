@@ -32,7 +32,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return NdOverlay(self, **kwargs)
+                return NdOverlay(self, **kwargs).reindex(dimensions)
         else:
             dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
@@ -48,7 +48,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return GridSpace(self, **kwargs)
+                return GridSpace(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
@@ -62,7 +62,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return NdLayout(self, **kwargs)
+                return NdLayout(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
