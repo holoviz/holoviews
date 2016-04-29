@@ -630,7 +630,7 @@ class gridmatrix(param.ParameterizedFunction):
                                       adjoin=False)(norm=dict(axiswise=True, framewise=True))
                 else:
                     values = element.dimension_values(d1)
-                    el = p.diagonal_type(values, kdims=[d1])
+                    el = p.diagonal_type(values, vdims=[d1])
             else:
                 el = p.chart_type(el_data, kdims=[d1],
                                   vdims=[d2], datatype=['dataframe', 'dictionary'])
