@@ -6,7 +6,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV)
+                        Table, ItemTable, Area, HSV, QuadMesh)
 from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
@@ -19,7 +19,7 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot
+from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
@@ -49,6 +49,7 @@ Store.register({Overlay: OverlayPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
+                QuadMesh: QuadMeshPlot,
 
                 # Paths
                 Path: PathPlot,
