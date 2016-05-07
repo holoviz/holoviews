@@ -58,10 +58,14 @@ div.hologroup {
     padding-right: 0;
 }
 
-.ui-resizable-se {
+.holowidgets .ui-resizable-se {
 	visibility: hidden
 }
 
-.ui-resizable-s {
+.holoframe > .ui-resizable-se {
+	visibility: hidden
+}
+
+.holowidgets .ui-resizable-s {
 	visibility: hidden
 }
