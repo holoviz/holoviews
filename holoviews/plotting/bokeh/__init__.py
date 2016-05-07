@@ -131,7 +131,7 @@ options.Polygons = Options('style', color=Cycle())
 # Rasters
 options.Image = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
-options.QuadMesh = Options('style', cmap='hot')
+options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
