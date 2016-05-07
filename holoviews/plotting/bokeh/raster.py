@@ -117,7 +117,7 @@ class HeatmapPlot(ElementPlot):
     def _axes_props(self, plots, subplots, element, ranges):
         dims = element.dimensions()
         labels = self._get_axis_labels(dims)
-        xvals, yvals = [element.dimension_values(i, True)
+        xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
