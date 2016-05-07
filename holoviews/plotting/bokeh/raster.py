@@ -3,6 +3,7 @@ import param
 
 from bokeh.models.mappers import LinearColorMapper
 
+from ...core.util import cartesian_product
 from ...element import Image, Raster, RGB
 from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
@@ -139,3 +140,34 @@ class HeatmapPlot(ElementPlot):
             data = {x: xvals, y: yvals, z: zvals, 'color': colors}
 
         return (data, {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})
+
+
+class QuadMeshPlot(ElementPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    _plot_method = 'rect'
+    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+
+    def get_data(self, element, ranges=None, empty=False):
+        x, y, z = element.dimensions(label=True)
+        if empty:
+            data = {x: [], y: [], z: [], 'color': [], 'height': [], 'width': []}
+        else:
+            style = self.style[self.cyclic_index]
+            cmap = style.get('palette', style.get('cmap', None))
+            cmap = get_cmap(cmap)
+            zvals = element.data[2].T.flatten()
+            colors = map_colors(zvals, ranges[z], cmap)
+            xvals = element.dimension_values(0, False)
+            yvals = element.dimension_values(1, False)
+            widths = np.diff(element.data[0])
+            heights = np.diff(element.data[1])
+            xs, ys = cartesian_product([xvals, yvals])
+            ws, hs = cartesian_product([widths, heights])
+            data = {x: xs.flat, y: ys.flat, z: zvals, 'color': colors,
+                    'widths': ws.flat, 'heights': hs.flat}
+
+        return (data, {'x': x, 'y': y, 'fill_color': 'color',
+                       'height': 'heights', 'width': 'widths'})
