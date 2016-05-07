@@ -325,7 +325,7 @@ class HoloMap(UniformNdMapping):
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
 
-            samples = util.unique_array(self.last.closest(linsamples))
+            samples = list(util.unique_iterator(self.last.closest(linsamples)))
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.data.items()])
