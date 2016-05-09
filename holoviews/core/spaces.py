@@ -1,10 +1,11 @@
-from numbers import Number
 import itertools
-from itertools import groupby
-import numpy as np
-
-import param
 import types
+from numbers import Number
+from itertools import groupby
+from functools import partial
+
+import numpy as np
+import param
 
 from . import traversal, util
 from .dimension import OrderedDict, Dimension, ViewableElement
@@ -491,9 +492,7 @@ class DynamicMap(HoloMap):
             return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
-            if (kdim.values) and kdim.range != (None,None):
-                raise Exception('Dimension cannot have both values and ranges.')
-            elif kdim.values:
+            if kdim.values:
                 continue
             if None in kdim.range:
                 return 'counter'
@@ -712,6 +711,109 @@ class DynamicMap(HoloMap):
         self._cache(key, val)
         self.counter += 1
         return val
+
+
+    def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
+        """
+        Implements a dynamic version of a groupby, which will
+        intelligently expand either the inner or outer dimensions
+        depending on whether the container_type or group_type is dynamic.
+
+        To apply a groupby to a DynamicMap the dimensions, which are
+        expanded into a non-dynamic type must define a fixed sampling
+        via the values attribute.
+
+        Using the dynamic groupby makes it incredibly easy to generate
+        dynamic views into a high-dimensional space while taking
+        advantage of the capabilities of NdOverlay, GridSpace and
+        NdLayout types to visualize more than one Element at a time.
+        """
+        if dimensions is None:
+            dimensions = self.kdims
+        if not isinstance(dimensions, (list, tuple)):
+            dimensions = [dimensions]
+
+        container_type = container_type if container_type else type(self)
+        group_type = group_type if group_type else type(self)
+
+        outer_kdims = [self.get_dimension(d) for d in dimensions]
+        inner_kdims = [d for d in self.kdims if not d in outer_kdims]
+
+        outer_dynamic = issubclass(container_type, DynamicMap)
+        inner_dynamic = issubclass(group_type, DynamicMap)
+
+        if ((not outer_dynamic and any(not d.values for d in outer_kdims)) or
+            (not inner_dynamic and any(not d.values for d in inner_kdims))):
+            raise Exception('Dimensions must specify sampling via '
+                            'values to apply a groupby')
+
+        if outer_dynamic:
+            def outer_fn(*outer_key):
+                if inner_dynamic:
+                    def inner_fn(*inner_key):
+                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key))
+                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key))
+                        inner_sel = [(k, [v]) for k, v in inner_vals]
+                        outer_sel = [(k, [v]) for k, v in outer_vals]
+                        return self.select(**dict(inner_sel+outer_sel))
+                    return self.clone(inner_fn, kdims=inner_kdims)
+                else:
+                    dim_vals = [(d.name, d.values) for d in inner_kdims]
+                    dim_vals += [(d.name, [v]) for d, v in
+                                   zip(outer_kdims, util.wrap_tuple(outer_key))]
+                    return group_type(self.select(**dict(dim_vals))).reindex(inner_kdims)
+            if outer_kdims:
+                return self.clone(callback=outer_fn, kdims=outer_kdims)
+            else:
+                return outer_fn(())
+        else:
+            outer_product = itertools.product(*[self.get_dimension(d).values
+                                                for d in dimensions])
+            groups = []
+            for outer in outer_product:
+                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer)]
+                if inner_dynamic or not inner_kdims:
+                    def inner_fn(outer_vals, *key):
+                        inner_dims = zip(inner_kdims, util.wrap_tuple(key))
+                        inner_vals = [(d.name, k) for d, k in inner_dims]
+                        return self.select(**dict(outer_vals+inner_vals)).last
+                    if inner_kdims:
+                        group = self.clone(callback=partial(inner_fn, outer_vals),
+                                           kdims=inner_kdims)
+                    else:
+                        group = inner_fn(outer_vals, ())
+                    groups.append((outer, group))
+                else:
+                    inner_vals = [(d.name, self.get_dimension(d).values)
+                                     for d in inner_kdims]
+                    group = group_type(self.select(**dict(outer_vals+inner_vals)),
+                                       kdims=inner_dims)
+                    groups.append((outer, group))
+            return container_type(groups, kdims=outer_kdims)
+
+
+    def grid(self, dimensions=None, **kwargs):
+        return self.groupby(dimensions, container_type=GridSpace, **kwargs)
+
+
+    def layout(self, dimensions=None, **kwargs):
+        return self.groupby(dimensions, container_type=NdLayout, **kwargs)
+
+
+    def overlay(self, dimensions=None, **kwargs):
+        """
+        Splits the UniformNdMapping along a specified number of dimensions and
+        overlays items in the split out Maps.
+
+        Shows all HoloMap data When no dimensions are specified.
+        """
+        if dimensions is None:
+            dimensions = self.kdims
+        if not isinstance(dimensions, (list, tuple)):
+            dimensions = [dimensions]
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        dims = [d for d in self.kdims if d not in dimensions]
+        return self.groupby(dims, group_type=NdOverlay)
 
     # For Python 2 and 3 compatibility
     __next__ = next
