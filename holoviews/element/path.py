@@ -178,8 +178,8 @@ class Box(BaseShape):
 class Ellipse(BaseShape):
     """
     Draw an axis-aligned ellipse at the specified x,y position with
-    the given width and aspect ratio, with a given angle between the long axis
-    and the horizontal axis. By default draws a circle (aspect=1).
+    the given width, aspect ratio and orientation. By default 
+    draws a circle (aspect=1).
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
@@ -193,7 +193,7 @@ class Ellipse(BaseShape):
 
     aspect= param.Number(default=1.0, doc="The aspect ratio of the ellipse.")
 
-    angle = param.Number(default=0, doc="The angle in radian between the long axis and the horizontal.")
+    orientation = param.Number(default=0, doc="Orientation in the Cartesian coordinate system, the counterclockwise angle in radian between the first axis and the horizontal.")
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
@@ -208,8 +208,8 @@ class Ellipse(BaseShape):
             list(zip(radius*self.aspect*np.sin(angles),
             radius*np.cos(angles))))
         #rotate ellipse and add offset
-        rot = np.array([[np.cos(self.angle), -np.sin(self.angle)],
-               [np.sin(self.angle), np.cos(self.angle)]])
+        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
+               [np.sin(self.orientation), np.cos(self.orientation)]])
         self.data = [np.tensordot(rot, ellipse.T, axes=[1,0]).T+np.array([x,y])]
 
 
