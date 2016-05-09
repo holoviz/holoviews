@@ -753,17 +753,17 @@ class DynamicMap(HoloMap):
                     def inner_fn(*inner_key):
                         outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key))
                         inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key))
-                        inner_sel = [(k, [v]) for k, v in inner_vals]
-                        outer_sel = [(k, [v]) for k, v in outer_vals]
+                        inner_sel = [(k.name, v) for k, v in inner_vals]
+                        outer_sel = [(k.name, v) for k, v in outer_vals]
                         return self.select(**dict(inner_sel+outer_sel))
-                    return self.clone(inner_fn, kdims=inner_kdims)
+                    return self.clone([], callback=inner_fn, kdims=inner_kdims)
                 else:
                     dim_vals = [(d.name, d.values) for d in inner_kdims]
                     dim_vals += [(d.name, [v]) for d, v in
                                    zip(outer_kdims, util.wrap_tuple(outer_key))]
                     return group_type(self.select(**dict(dim_vals))).reindex(inner_kdims)
             if outer_kdims:
-                return self.clone(callback=outer_fn, kdims=outer_kdims)
+                return self.clone([], callback=outer_fn, kdims=outer_kdims)
             else:
                 return outer_fn(())
         else:
@@ -786,8 +786,7 @@ class DynamicMap(HoloMap):
                 else:
                     inner_vals = [(d.name, self.get_dimension(d).values)
                                      for d in inner_kdims]
-                    group = group_type(self.select(**dict(outer_vals+inner_vals)),
-                                       kdims=inner_dims)
+                    group = group_type(self.select(**dict(outer_vals+inner_vals)).reindex(inner_kdims))
                     groups.append((outer, group))
             return container_type(groups, kdims=outer_kdims)
 
@@ -801,12 +800,6 @@ class DynamicMap(HoloMap):
 
 
     def overlay(self, dimensions=None, **kwargs):
-        """
-        Splits the UniformNdMapping along a specified number of dimensions and
-        overlays items in the split out Maps.
-
-        Shows all HoloMap data When no dimensions are specified.
-        """
         if dimensions is None:
             dimensions = self.kdims
         if not isinstance(dimensions, (list, tuple)):
