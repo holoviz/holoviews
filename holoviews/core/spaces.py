@@ -115,7 +115,7 @@ class HoloMap(UniformNdMapping):
             map_obj = None
         elif (isinstance(self, DynamicMap) and (other, DynamicMap) and
             self.mode != other.mode):
-            raise ValueEror("Cannot overlay DynamicMaps with mismatching mode.")
+            raise ValueError("Cannot overlay DynamicMaps with mismatching mode.")
         else:
             map_obj = self if isinstance(self, DynamicMap) else other
             mode = map_obj.mode

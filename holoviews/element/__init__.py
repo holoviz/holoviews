@@ -59,7 +59,7 @@ class ElementConversion(DataConversion):
 
     def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
+        return Raster(heatmap.data, **dict(self._element.get_param_values(onlychanged=True)))
 
     def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
         from ..interface.seaborn import Regression
