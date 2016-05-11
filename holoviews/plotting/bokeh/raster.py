@@ -5,6 +5,7 @@ from bokeh.models.mappers import LinearColorMapper
 
 from ...core.util import cartesian_product
 from ...element import Image, Raster, RGB
+from ..renderer import SkipRendering
 from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb
@@ -158,6 +159,8 @@ class QuadMeshPlot(ElementPlot):
             style = self.style[self.cyclic_index]
             cmap = style.get('palette', style.get('cmap', None))
             cmap = get_cmap(cmap)
+            if len(set(v.shape for v in element.data)) == 1:
+                raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
             zvals = element.data[2].T.flatten()
             colors = map_colors(zvals, ranges[z], cmap)
             xvals = element.dimension_values(0, False)
