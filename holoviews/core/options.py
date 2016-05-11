@@ -33,6 +33,7 @@ Store:
 
 """
 import pickle
+import traceback
 from contextlib import contextmanager
 from collections import OrderedDict
 
@@ -109,8 +110,14 @@ class AbbreviatedException(Exception):
     def __str__(self):
         abbrev = '%s: %s' % (self.etype.__name__, self.msg)
         msg = ('To view the original traceback, catch this exception '
-               'and access the traceback attribute.')
+               'and call print_traceback() method.')
         return '%s\n\n%s' % (abbrev, msg)
+
+    def print_traceback(self):
+        """
+        Print the traceback of the exception wrapped by the AbbreviatedException.
+        """
+        traceback.print_exception(self.etype, self.value, self.traceback)
 
 
 class abbreviated_exception(object):
