@@ -68,7 +68,7 @@ class GridInterface(DictInterface):
         expected = tuple([len(data[kd]) for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
-            if shape != expected and not (not expected and shape == (1,)):
+            if shape != expected[::-1] and not (not expected and shape == (1,)):
                 raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
                                  'actual shape: %s' % (vdim, expected, shape))
@@ -113,7 +113,7 @@ class GridInterface(DictInterface):
         else:
             dim = dataset.get_dimension(dim)
             values = dataset.data.get(dim.name)
-            return values.flatten() if flat else values
+            return values.T.flatten() if flat else values
 
 
     @classmethod
@@ -205,7 +205,7 @@ class GridInterface(DictInterface):
                 values = values[mask]
             value_select.append(mask)
             data[dim] = values
-        int_inds = [np.argwhere(v) for v in value_select]
+        int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
         for vdim in dataset.vdims:
@@ -246,7 +246,7 @@ class GridInterface(DictInterface):
             for d, arr in zip(dimensions, np.meshgrid(*sampled)):
                 data[d].append(arr)
             for vdim, array in zip(dataset.vdims, arrays):
-                flat_index = np.ravel_multi_index(tuple(int_inds), array.shape)
+                flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 data[vdim.name].append(array.flat[flat_index])
         concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
         return concatenated
@@ -256,8 +256,8 @@ class GridInterface(DictInterface):
     def aggregate(cls, dataset, kdims, function, **kwargs):
         kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
         data = {kdim: dataset.data[kdim] for kdim in kdims}
-        axes = tuple(dataset.get_dimension_index(kdim) for kdim in dataset.kdims
-                    if kdim not in kdims)
+        axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
+                     for kdim in dataset.kdims if kdim not in kdims)
         for vdim in dataset.vdims:
             data[vdim.name] = np.atleast_1d(function(dataset.data[vdim.name],
                                                      axis=axes, **kwargs))
@@ -280,9 +280,11 @@ class GridInterface(DictInterface):
                 if k not in dropped_kdims+dropped_vdims}
 
         if kdims != dataset.kdims:
-            dropped_axes = tuple(dataset.kdims.index(d) for d in dropped_kdims)
+            dropped_axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
+                                 for d in dropped_kdims)
             old_kdims = [d for d in dataset.kdims if not d in dropped_kdims]
-            axes = tuple(old_kdims.index(d) for d in kdims)
+            axes = tuple(dataset.ndims-old_kdims.index(d)-1
+                         for d in kdims)
             for vdim in vdims:
                 vdata = data[vdim.name]
                 if dropped_axes:

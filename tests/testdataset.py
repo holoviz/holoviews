@@ -449,7 +449,7 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean),
-                         Dataset({'x':self.xs, 'z': np.mean(array, axis=1)},
+                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
                                  kdims=['x'], vdims=['z']))
 
     def test_dataset_2D_reduce_hm(self):
