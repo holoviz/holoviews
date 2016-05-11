@@ -232,6 +232,7 @@ class MPLRenderer(Renderer):
         if kw['bbox_inches'] == 'tight':
             if not fig_id in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
+                fig.canvas.draw()
                 renderer = fig._cachedRenderer
                 bbox_inches = fig.get_tightbbox(renderer)
                 bbox_artists = kw.pop("bbox_extra_artists", [])
