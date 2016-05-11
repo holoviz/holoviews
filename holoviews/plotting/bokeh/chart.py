@@ -10,6 +10,7 @@ import param
 
 from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring
+from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -372,7 +373,8 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        plot = self._init_chart(init_element, ranges)
+        with abbreviate_exception():
+            plot = self._init_chart(init_element, ranges)
 
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
@@ -411,7 +413,8 @@ class ChartPlot(ElementPlot):
 
 
     def _update_chart(self, key, element, ranges):
-        new_chart = self._init_chart(element, ranges)
+        with abbreviate_exception():
+            new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
         update_plot(old_chart, new_chart)
         properties = self._plot_properties(key, old_chart, element)

@@ -16,6 +16,7 @@ import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
                      CompositeOverlay, Element)
+from ...core.options import abbreviated_exception
 from ...core import util
 from ...element import RGB
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -448,13 +449,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, element, source, ranges)
-        renderer, glyph = self._init_glyph(plot, mapping, properties)
+        with abbreviated_exception():
+            renderer, glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph'] = glyph
         if isinstance(renderer, Renderer):
             self.handles['glyph_renderer'] = renderer
 
         # Update plot, source and glyph
-        self._update_glyph(glyph, properties, mapping)
+        with abbreviated_exception():
+            self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, element)
         if self.callbacks:
@@ -502,7 +505,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.style = self.lookup_options(element, 'style')
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
-            self._update_glyph(self.handles['glyph'], properties, mapping)
+            with abbreviated_exception():
+                self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
             self._update_ranges(element, ranges)
             self._update_plot(key, plot, element)
