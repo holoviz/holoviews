@@ -95,6 +95,8 @@ def display_hook(fn):
     @wraps(fn)
     def wrapped(element):
         global FULL_TRACEBACK
+        if Store.current_backend is None:
+            return
         optstate = StoreOptions.state(element)
         try:
             html = fn(element,

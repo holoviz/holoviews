@@ -385,10 +385,14 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def initialize(cls):
         backend = cls.options.get('backend', cls.defaults['backend'])
-        cls.options = dict(cls.defaults)
-        cls._set_render_options(cls.defaults)
-        cls.set_backend(backend)
-
+        if backend in Store.renderers:
+            cls.options = dict(cls.defaults)
+            cls._set_render_options(cls.defaults)
+            cls.set_backend(backend)
+        else:
+            cls.options['backend'] = None
+            cls.defaults['backend'] = None
+            cls.set_backend(None)
 
     @classmethod
     def set_backend(cls, backend):
