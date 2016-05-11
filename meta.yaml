@@ -1,0 +1,28 @@
+package:
+  name: holoviews
+  version: 1.4.3
+
+source:
+  path: .
+
+requirements:
+  build:
+    - python
+    - param
+    - numpy
+    - setuptools
+  run:
+    - python
+    - param
+    - numpy
+    - matplotlib
+    - bokeh
+    - jupyter
+    - notebook
+    - ipython
+    - lancet
+
+about:
+  home: www.holoviews.org
+  summary: Stop plotting your data - annotate your data and let it visualize itself.
+  license: BSD
