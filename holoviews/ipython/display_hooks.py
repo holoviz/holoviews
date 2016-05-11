@@ -2,11 +2,10 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
-import sys, traceback, inspect, io
+import sys, traceback
 
 import IPython
 from IPython import get_ipython
-from IPython.core.ultratb import AutoFormattedTB
 
 import holoviews
 from ..core.options import Store, StoreOptions, SkipRendering, AbbreviatedException
