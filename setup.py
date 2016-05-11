@@ -101,4 +101,22 @@ if __name__=="__main__":
             import holoviews
             holoviews.__version__.verify(setup_args['version'])
 
+
+    if 'install' in sys.argv:
+        header = "HOLOVIEWS INSTALLATION INFORMATION"
+        bars = "="*len(header)
+
+        extras = '\n'.join('holoviews[%s]' % e for e in setup_args['extras_require'])
+
+        print("%s\n%s\n%s" % (bars, header, bars))
+
+        print("\nHoloViews supports the following installation types:\n")
+        print("%s\n" % extras)
+        print("Users should consider using one of these options.\n")
+        print("By default only a core installation is performed and ")
+        print("only the minimal set of dependencies are fetched.\n\n")
+        print("For more information please visit http://holoviews.org/install.html\n")
+        print(bars+'\n')
+
+
     setup(**setup_args)
