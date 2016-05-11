@@ -155,6 +155,11 @@ class notebook_extension(param.ParameterizedFunction):
                 self.warning("HoloViews %s backend could not be imported, "
                              "ensure %s is installed." % (backend, backend))
             finally:
+                if backend == 'matplotlib' and not notebook_extension._loaded:
+                    svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,
+                                                                          fig='svg')
+                    holoviews.archive.exporters = [svg_exporter] +\
+                                                  holoviews.archive.exporters
                 OutputMagic.allowed['backend'] = list_backends()
                 OutputMagic.allowed['fig'] = list_formats('fig', backend)
                 OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
