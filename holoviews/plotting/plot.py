@@ -376,7 +376,7 @@ class DimensionedPlot(Plot):
                     if 'axiswise' in nopts or 'framewise' in nopts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
                                                  nopts.get('framewise', False))})
-        element_specs = [spec for eid, spec in element_specs]
+        element_specs = [spec for _, spec in element_specs]
         norm_opts.update({spec: (False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
@@ -758,7 +758,7 @@ class GenericOverlayPlot(GenericElementPlot):
             layer = overlay.data.get(key, None)
             found = False
             if isinstance(self.hmap, DynamicMap) and layer is None:
-                for i, (k, layer) in enumerate(items):
+                for _, layer in items:
                     if isinstance(layer, subplot.hmap.type):
                         found = True
                         break

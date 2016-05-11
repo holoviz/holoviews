@@ -31,7 +31,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.current_frame = element
         self.current_key = key
 
-        data, mapping = self.get_data(element, ranges)
+        data, _ = self.get_data(element, ranges)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
@@ -55,5 +55,5 @@ class TablePlot(BokehPlot, GenericElementPlot):
         """
         element = self._get_frame(key)
         source = self.handles['source']
-        data, mapping = self.get_data(element, ranges)
+        data, _ = self.get_data(element, ranges)
         self._update_datasource(source, data)

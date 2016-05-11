@@ -71,6 +71,7 @@ class DFrameViewPlot(ElementPlot):
         self._validate(element)
 
         style = self._process_style(self.style[self.cyclic_index])
+        axis = self.handles['axis']
         self._update_plot(axis, element, style)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()

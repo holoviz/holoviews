@@ -569,7 +569,7 @@ class Collector(AttrTree):
         Given a set of times this method checks that all
         scheduled measurements will actually be carried out.
         """
-        for path, task in self.items():
+        for _, task in self.items():
             if task.times:
                 self._verify_task_times(task, times, strict)
 
@@ -601,7 +601,6 @@ class Collector(AttrTree):
 
             if task is None:
                 raise Exception("Incorrect task definition for %r" % '.'.join(path))
-                continue
 
             if not isinstance(task, Collect):
                 self._scheduled_tasks = []

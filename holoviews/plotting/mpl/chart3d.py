@@ -177,7 +177,7 @@ class SurfacePlot(Plot3D):
     def get_data(self, element, ranges, style):
         mat = element.data
         rn, cn = mat.shape
-        l, b, zmin, r, t, zmax = self.get_extents(element, ranges)
+        l, b, _, r, t, _ = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
         self._norm_kwargs(element, ranges, style, element.vdims[0])
         return (r, c, mat), style, {}

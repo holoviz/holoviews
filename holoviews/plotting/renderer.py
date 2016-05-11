@@ -256,7 +256,7 @@ class Renderer(Exporter):
             if fmt == 'svg':
                 figdata = figdata.encode("utf-8")
             elif fmt == 'pdf' and 'height' not in css:
-                w,h = self.get_size(plot)
+                _, h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):

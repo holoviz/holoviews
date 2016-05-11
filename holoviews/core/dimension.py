@@ -176,7 +176,7 @@ class Dimension(param.Parameterized):
         hashes are equal, all the parameters of the Dimensions are
         also equal.
         """
-        return sum([hash(value) for name, value in self.get_param_values()
+        return sum([hash(value) for _, value in self.get_param_values()
                     if not isinstance(value, list)])
 
 
@@ -725,7 +725,7 @@ class Dimensioned(LabelledData):
         if local_kwargs and matches:
             ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
                      else self.ndims)
-            select = [slice(None) for i in range(ndims)]
+            select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
                     select += [val]

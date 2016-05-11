@@ -37,7 +37,7 @@ class Element(ViewableElement, Composable, Overlayable):
         from ..operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]
         hists = []
-        for idx, d in enumerate(dimension[::-1]):
+        for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
                              adjoin=False, individually=individually,
                              dimension=d, **kwargs)

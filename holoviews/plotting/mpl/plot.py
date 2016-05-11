@@ -797,8 +797,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             col_widthratios[c][1].append(width_ratios)
 
 
-        col_splits = [v[0] for _c, v in sorted(col_widthratios.items())]
-        row_splits = [v[0] for _r, v in sorted(row_heightratios.items())]
+        col_splits = [v[0] for _, v in sorted(col_widthratios.items())]
+        row_splits = [v[0] for _, v in sorted(row_heightratios.items())]
 
         widths = np.array([r for col in col_widthratios.values()
                            for ratios in col[1] for r in ratios])/4

@@ -109,7 +109,7 @@ class Raster(Element2D):
         params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
-                samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
+                samples = zip(*[c if isinstance(c, list) else [c] for _, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
             table_data = [c+(self._zdata[self._coord2matrix(c)],)
@@ -706,7 +706,7 @@ class RGB(Image):
         data = plt.imread(filename)
         if array:  return data
 
-        (h, w, channels) = data.shape
+        (h, w, _) = data.shape
         if bounds is None:
             f = float(height) / h
             xoffset, yoffset = w*f/2, h*f/2
