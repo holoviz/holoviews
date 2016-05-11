@@ -13,8 +13,7 @@ from ..core.options import Store, Cycle, Palette
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
-from ..plotting import * # noqa (API import - register plotting backends)
-from .magics import load_magics
+from .magics import load_magics, list_formats
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .widgets import RunProgress
@@ -140,8 +139,27 @@ class notebook_extension(param.ParameterizedFunction):
 
     _loaded = False
 
+    # Mapping between backend name and module name
+    _backends = {'matplotlib': 'mpl',
+                 'bokeh': 'bokeh'}
+
     def __call__(self, *args, **params):
+        imports = [(name, b) for name, b in self._backends.items()
+                   if name in args or params.get(name, False)]
+        if not imports:
+            imports.append(('matplotlib', 'mpl'))
+        for backend, imp in imports:
+            try:
+                __import__('holoviews.plotting.%s' % imp)
+            except ImportError:
+                self.warning("HoloViews %s backend could not be imported, "
+                             "ensure %s is installed." % (backend, backend))
+            finally:
+                OutputMagic.allowed['backend'].append(backend)
+                OutputMagic.allowed['fig'] = list_formats('fig', backend)
+                OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
         resources = self._get_resources(args, params)
+
         ip = params.pop('ip', None)
         p = param.ParamOverrides(self, params)
         Store.display_formats = p.display_formats

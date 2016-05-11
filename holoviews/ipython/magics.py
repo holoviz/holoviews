@@ -360,6 +360,7 @@ class OutputMagic(OptionsMagic):
         if not backend or backend == Store.current_backend:
             return options
 
+        cls._backend_options[Store.current_backend] = cls.options
         backend_options = cls._backend_options[backend]
         for p in ['fig', 'holomap']:
             opts = list_formats(p, backend)
