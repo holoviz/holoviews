@@ -171,6 +171,8 @@ class GridInterface(DictInterface):
             for ik in ind:
                 iter_slcs.append(values == ik)
             mask = np.logical_or.reduce(iter_slcs)
+        elif callable(ind):
+            mask = ind(values)
         elif ind is None:
             mask = None
         else:
