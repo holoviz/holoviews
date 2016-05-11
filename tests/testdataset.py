@@ -6,7 +6,6 @@ from unittest import SkipTest
 import numpy as np
 from holoviews import Dataset, NdElement, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.core.ndmapping import sorted_context
 
 from collections import OrderedDict
 from holoviews.core.dimension import OrderedDict as cyODict

@@ -2,7 +2,6 @@ from __future__ import absolute_import
 
 import datetime
 from itertools import product
-import unittest
 
 import iris
 from iris.util import guess_coord_axis
