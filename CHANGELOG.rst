@@ -1,3 +1,54 @@
+Version 1.5
+-----------
+
+A major release with a large number of new features including new data
+interfaces for grid based data, major improvements for DynamicMaps
+and a large number of bug fixes.
+
+Features and improvements:
+
+* Added a grid based data interface to explore n-dimensional gridded
+  data easily (PR `#562 <https://github.com/ioam/holoviews/pull/562>`_).
+* Added support for dynamic operations and overlaying of DynamicMaps
+  (PR `#588 <https://github.com/ioam/holoviews/pull/588>`_).
+* Added support for applying groupby operations to DynamicMaps (PR
+  `#667 <https://github.com/ioam/holoviews/pull/667>`_).
+* Added dimension value formatting in widgets (PR `#562
+  <https://github.com/ioam/holoviews/issues/562>`_).
+* Added support for indexing and slicing with a function (PR `#619q
+  <https://github.com/ioam/holoviews/pull/619>`_).
+* Improved throttling behavior on widgets (PR `#596
+  <https://github.com/ioam/holoviews/pull/596>`_).
+* Major refactor of matplotlib plotting classes to simplify
+  implementing new Element plots (PR `#438
+  <https://github.com/ioam/holoviews/pull/438>`_).
+* Added Renderer.last_plot attribute to allow easily debugging or
+  modifying the last displayed plot (PR `#538
+  <https://github.com/ioam/holoviews/pull/538>`_).
+* Added bokeh QuadMeshPlot (PR `#661
+  <https://github.com/ioam/holoviews/pull/661>`_).
+
+Bug fixes:
+
+* Fixed overlaying of 3D Element types (PR `#504
+  <https://github.com/ioam/holoviews/pull/504>`_).
+* Fix for bokeh hovertools with dimensions with special characters
+  (PR `#524 <https://github.com/ioam/holoviews/pull/524>`_).
+* Fixed bugs in seaborn Distribution Element (PR `#630
+  <https://github.com/ioam/holoviews/pull/630>`_).
+* Fix for inverted Raster.reduce method (PR `#672
+  <https://github.com/ioam/holoviews/pull/672>`_).
+* Fixed Store.add_style_opts method (PR `#587
+  <https://github.com/ioam/holoviews/pull/587>`_).
+* Fixed bug enabling both logx and logy plot options (PR `#554
+  <https://github.com/ioam/holoviews/pull/554>`_).
+
+Backwards compatibility:
+
+* Renamed ``Columns`` type to ``Dataset`` (PR `#620
+  <https://github.com/ioam/holoviews/issues/620`_).
+
+
 Version 1.4.3
 -------------
 
