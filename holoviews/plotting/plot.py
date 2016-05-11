@@ -16,18 +16,10 @@ from ..core.element import Element
 from ..core.options import abbreviated_exception
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor
+from ..core.options import Store, Compositor, SkipRendering
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
 from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
-
-
-class BackendError(Exception):
-
-    def __init__(self, backend):
-        msg = "%s backend could not plot supplied object." % backend
-        super(BackendError, self).__init__(msg)
-        self.backend = backend
 
 
 class Plot(param.Parameterized):
@@ -747,8 +739,8 @@ class GenericOverlayPlot(GenericElementPlot):
             if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
         if not subplots:
-            with abbreviated_exception():
-                raise BackendError(self.renderer.backend)
+            raise SkipRendering("%s backend could not plot any Elements "
+                                "in the Overlay." % self.backend)
 
         return subplots
 
