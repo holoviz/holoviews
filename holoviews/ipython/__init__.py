@@ -13,7 +13,7 @@ from ..core.options import Store, Cycle, Palette
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
-from .magics import load_magics, list_formats
+from .magics import load_magics, list_formats, list_backends
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks, OutputMagic
 from .widgets import RunProgress
@@ -155,7 +155,7 @@ class notebook_extension(param.ParameterizedFunction):
                 self.warning("HoloViews %s backend could not be imported, "
                              "ensure %s is installed." % (backend, backend))
             finally:
-                OutputMagic.allowed['backend'].append(backend)
+                OutputMagic.allowed['backend'] = list_backends()
                 OutputMagic.allowed['fig'] = list_formats('fig', backend)
                 OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
         resources = self._get_resources(args, params)
