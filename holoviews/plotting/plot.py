@@ -13,6 +13,7 @@ import param
 from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.element import Element
+from ..core.options import abbreviated_exception
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor
@@ -746,7 +747,8 @@ class GenericOverlayPlot(GenericElementPlot):
             if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
         if not subplots:
-            raise BackendError(self.renderer.backend)
+            with abbreviated_exception():
+                raise BackendError(self.renderer.backend)
 
         return subplots
 

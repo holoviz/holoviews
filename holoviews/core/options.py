@@ -33,6 +33,7 @@ Store:
 
 """
 import pickle
+import traceback
 from contextlib import contextmanager
 from collections import OrderedDict
 
@@ -54,6 +55,7 @@ class BackendError(Exception):
     """
     pass
 
+
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display
@@ -61,6 +63,7 @@ class SkipRendering(Exception):
     DynamicMaps with exhausted element generators.
     """
     pass
+
 
 class OptionError(Exception):
     """
@@ -87,6 +90,48 @@ class OptionError(Exception):
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
         return msg
+
+
+class AbbreviatedException(Exception):
+    """
+    Raised by the abbreviate_exception context manager when it is
+    appropriate to present an abbreviated the traceback and exception
+    message in the notebook.
+
+    Particularly useful when processing style options supplied by the
+    user which may not be valid.
+    """
+    def __init__(self, etype, value, traceback):
+        self.etype = etype
+        self.value = value
+        self.traceback = traceback
+        self.msg = str(value)
+
+    def __str__(self):
+        abbrev = '%s: %s' % (self.etype.__name__, self.msg)
+        msg = ('To view the original traceback, catch this exception '
+               'and call print_traceback() method.')
+        return '%s\n\n%s' % (abbrev, msg)
+
+    def print_traceback(self):
+        """
+        Print the traceback of the exception wrapped by the AbbreviatedException.
+        """
+        traceback.print_exception(self.etype, self.value, self.traceback)
+
+
+class abbreviated_exception(object):
+    """
+    Context manager used to to abbreviate tracebacks using an
+    AbbreviatedException when a backend may raise an error due to
+    incorrect style options.
+    """
+    def __enter__(self):
+        return self
+
+    def __exit__(self, etype, value, traceback):
+        if isinstance(value, Exception):
+            raise AbbreviatedException(etype, value, traceback)
 
 
 class Cycle(param.Parameterized):

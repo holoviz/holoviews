@@ -1,5 +1,6 @@
 from collections import defaultdict
 import numpy as np
+from ...core.options import abbreviated_exception
 
 try:
     from matplotlib import colors
@@ -38,8 +39,9 @@ def mplcmap_to_palette(cmap):
     """
     if colors is None:
         raise ValueError("Using cmaps on objects requires matplotlib.")
-    colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-    return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
+    with abbreviated_exception():
+        colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+        return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
 
 def get_cmap(cmap):
@@ -47,10 +49,11 @@ def get_cmap(cmap):
     Returns matplotlib cmap generated from bokeh palette or
     directly accessed from matplotlib.
     """
-    rgb_vals = getattr(Palette, cmap, None)
-    if rgb_vals:
-        return colors.ListedColormap(rgb_vals, name=cmap)
-    return cm.get_cmap(cmap)
+    with abbreviated_exception():
+        rgb_vals = getattr(Palette, cmap, None)
+        if rgb_vals:
+            return colors.ListedColormap(rgb_vals, name=cmap)
+        return cm.get_cmap(cmap)
 
 
 def mpl_to_bokeh(properties):
@@ -66,9 +69,11 @@ def mpl_to_bokeh(properties):
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
         elif k == 'color' or k.endswith('_color'):
-            v = colors.ColorConverter.colors.get(v, v)
+            with abbreviated_exception():
+                v = colors.ColorConverter.colors.get(v, v)
             if isinstance(v, tuple):
-                v = colors.rgb2hex(v)
+                with abbreviated_exception():
+                    v = colors.rgb2hex(v)
             new_properties[k] = v
         else:
             new_properties[k] = v

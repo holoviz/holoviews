@@ -9,6 +9,7 @@ import param
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
+from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import MPLPlot
@@ -459,7 +460,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             style['label'] = element.label
 
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-        handles = self.init_artists(ax, plot_data, plot_kwargs)
+
+        with abbreviated_exception():
+            handles = self.init_artists(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
         return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
@@ -471,7 +474,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         self.teardown_handles()
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
-        handles = self.init_artists(axis, plot_data, plot_kwargs)
+
+        with abbreviated_exception():
+            handles = self.init_artists(axis, plot_data, plot_kwargs)
         self.handles.update(handles)
         return axis_kwargs
 
