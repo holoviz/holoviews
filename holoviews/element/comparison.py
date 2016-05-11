@@ -23,8 +23,9 @@ from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from . import *    # noqa (All Elements need to support comparison)
-from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
-                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace, DynamicMap
+from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
+                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
+                    GridSpace, DynamicMap, GridMatrix)
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -180,6 +181,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
         cls.equality_type_funcs[GridSpace] =     cls.compare_grids
+        cls.equality_type_funcs[GridMatrix] =     cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
         cls.equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
 
