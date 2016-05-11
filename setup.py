@@ -13,7 +13,7 @@ extras_require={}
 
 # Notebook dependencies of IPython 3
 extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
-                                           'jsonschema',  'ipython', 'pygments']
+                                           'jsonschema',  'notebook', 'pygments']
 # IPython Notebook + matplotlib + Lancet
 extras_require['recommended'] = (extras_require['notebook-dependencies']
                                  + ['matplotlib', 'lancet-ioam'])
