@@ -9,7 +9,7 @@ from IPython import get_ipython
 from IPython.core.ultratb import AutoFormattedTB
 
 import holoviews
-from ..core.options import Store, StoreOptions, BackendError, SkipRendering, AbbreviatedException
+from ..core.options import Store, StoreOptions, SkipRendering, AbbreviatedException
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
