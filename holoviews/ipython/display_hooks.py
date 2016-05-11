@@ -127,7 +127,7 @@ def display_hook(fn):
         except Exception as e:
             try:    StoreOptions.state(element, state=optstate)
             except: pass
-            raise e
+            raise
     return wrapped
 
 
