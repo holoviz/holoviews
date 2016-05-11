@@ -54,6 +54,7 @@ class BackendError(Exception):
     """
     pass
 
+
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display
@@ -61,6 +62,7 @@ class SkipRendering(Exception):
     DynamicMaps with exhausted element generators.
     """
     pass
+
 
 class OptionError(Exception):
     """
@@ -87,6 +89,36 @@ class OptionError(Exception):
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
         return msg
+
+
+class AbbreviatedException(Exception):
+    """
+    Raised by the abbreviate_exception context manager when it is
+    appropriate to present an abbreviated the traceback and exception
+    message in the notebook.
+
+    Particularly useful when processing style options supplied by the
+    user which may not be valid.
+    """
+    def __init__(self, etype, value, traceback):
+        self.etype = etype
+        self.value = value
+        self.traceback = traceback
+        self.msg = str(value)
+
+
+class abbreviated_exception(object):
+    """
+    Context manager used to to abbreviate tracebacks using an
+    AbbreviatedException when a backend may raise an error due to
+    incorrect style options.
+    """
+    def __enter__(self):
+        return self
+
+    def __exit__(self, etype, value, traceback):
+        if isinstance(value, Exception):
+            raise AbbreviatedException(etype, value, traceback)
 
 
 class Cycle(param.Parameterized):
