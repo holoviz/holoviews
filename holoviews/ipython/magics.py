@@ -357,8 +357,13 @@ class OutputMagic(OptionsMagic):
         is supplied in items.
         """
         backend = items.get('backend', '')
-        if not backend or backend == Store.current_backend:
+        prev_backend = Store.current_backend
+        renderer = Store.renderers[Store.current_backend]
+        prev_backend += ':%s' % renderer.mode
+        if not backend or backend == prev_backend:
             return options
+
+        cls._backend_options[prev_backend] = cls.options
 
         backend_options = cls._backend_options[backend]
         for p in ['fig', 'holomap']:
@@ -377,18 +382,26 @@ class OutputMagic(OptionsMagic):
             else:
                 opt = cls.defaults[p]
                 backend_options[p] = opt
-            options[p] = opt
+
+        for opt in options:
+            if opt not in backend_options:
+                backend_options[opt] = options[opt]
+
         cls.set_backend(backend)
-        return options
+        return backend_options
 
 
     @classmethod
     def initialize(cls):
         backend = cls.options.get('backend', cls.defaults['backend'])
-        cls.options = dict(cls.defaults)
-        cls._set_render_options(cls.defaults)
-        cls.set_backend(backend)
-
+        if backend in Store.renderers:
+            cls.options = dict(cls.defaults)
+            cls._set_render_options(cls.defaults)
+            cls.set_backend(backend)
+        else:
+            cls.options['backend'] = None
+            cls.defaults['backend'] = None
+            cls.set_backend(None)
 
     @classmethod
     def set_backend(cls, backend):
