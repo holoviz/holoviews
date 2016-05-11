@@ -106,6 +106,12 @@ class AbbreviatedException(Exception):
         self.traceback = traceback
         self.msg = str(value)
 
+    def __str__(self):
+        abbrev = 'Abbreviated %s: %s' % (self.etype.__name__, self.msg)
+        msg = ('To view the original traceback, catch this exception '
+               'and access the traceback attribute.')
+        return '%s\n\n%s' % (abbrev, msg)
+
 
 class abbreviated_exception(object):
     """
