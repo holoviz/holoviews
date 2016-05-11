@@ -373,7 +373,7 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        with abbreviate_exception():
+        with abbreviated_exception():
             plot = self._init_chart(init_element, ranges)
 
         self.handles['plot'] = plot
@@ -413,7 +413,7 @@ class ChartPlot(ElementPlot):
 
 
     def _update_chart(self, key, element, ranges):
-        with abbreviate_exception():
+        with abbreviated_exception():
             new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
         update_plot(old_chart, new_chart)

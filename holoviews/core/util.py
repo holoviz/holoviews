@@ -4,7 +4,6 @@ import itertools
 import string, fnmatch
 import unicodedata
 from collections import defaultdict
-from functools import reduce
 
 import numpy as np
 import param

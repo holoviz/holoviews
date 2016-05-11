@@ -2,8 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import (OrderedDict, Dimension, Element, Dataset,
-                    Tabular, HoloMap)
+from ..core import OrderedDict, Dimension, Element, Dataset, Tabular
 
 
 class ItemTable(Element):

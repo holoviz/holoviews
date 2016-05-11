@@ -27,7 +27,7 @@ except ImportError:
 
 try:
     import iris # noqa (Availability import)
-    from .iris import CubeInterface
+    from .iris import CubeInterface # noqa (Conditional API import)
     datatypes.append('cube')
 except ImportError:
     pass

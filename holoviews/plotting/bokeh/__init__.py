@@ -1,7 +1,7 @@
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, Dataset, GridMatrix, NdLayout)
+                     GridSpace, NdElement, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
@@ -78,7 +78,7 @@ AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
 try:
-    import pandas
+    import pandas # noqa (Conditional import)
     Store.register({BoxWhisker: BoxPlot,
                     Bars: BarPlot}, 'bokeh')
 except ImportError:

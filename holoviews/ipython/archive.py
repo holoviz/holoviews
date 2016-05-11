@@ -47,7 +47,6 @@ else:
 
 import param
 from ..core.io import FileArchive, Pickler
-from ..core.options import Store
 from ..plotting.renderer import HTML_TAGS, MIME_TYPES
 
 
