@@ -121,7 +121,7 @@ def display_hook(fn):
                                                                   e.traceback))
             info = dict(name=e.etype.__name__,
                         message=str(e.value).replace('\n','<br>'))
-            msg =  '<i> [Call holoviews or hv.ipython.show_traceback() for details]</i>'
+            msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
