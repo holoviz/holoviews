@@ -8,14 +8,16 @@ and a large number of bug fixes.
 Features and improvements:
 
 * Added a grid based data interface to explore n-dimensional gridded
-  data easily (PR `#562 <https://github.com/ioam/holoviews/pull/562>`_).
+  data easily (PR `#562 <https://github.com/ioam/holoviews/pull/542>`_).
+* Added data interface based iris Cubes (PR `#624
+  <https://github.com/ioam/holoviews/pull/624>`_).
 * Added support for dynamic operations and overlaying of DynamicMaps
   (PR `#588 <https://github.com/ioam/holoviews/pull/588>`_).
 * Added support for applying groupby operations to DynamicMaps (PR
   `#667 <https://github.com/ioam/holoviews/pull/667>`_).
 * Added dimension value formatting in widgets (PR `#562
   <https://github.com/ioam/holoviews/issues/562>`_).
-* Added support for indexing and slicing with a function (PR `#619q
+* Added support for indexing and slicing with a function (PR `#619
   <https://github.com/ioam/holoviews/pull/619>`_).
 * Improved throttling behavior on widgets (PR `#596
   <https://github.com/ioam/holoviews/pull/596>`_).
