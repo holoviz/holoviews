@@ -120,6 +120,10 @@ SelectionWidget.prototype.get_key = function(current_vals) {
 
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 	this.current_vals[dim_idx] = dim_val;
+    var current = this.get_key(this.current_vals);
+    if(current === undefined) {
+        return
+    }
 	if (this.dynamic || !this.cached) {
 		if (this.time === undefined) {
 			// Do nothing the first time
@@ -138,7 +142,6 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
         this.dynamic_update(this.current_vals)
         return;
     }
-    var current = this.get_key(this.current_vals);
     this.current_frame = current;
     if(this.cached) {
         this.update(current)
@@ -324,7 +327,8 @@ function update_widget(widget, values) {
 	if (widget.hasClass("ui-slider")) {
 		widget.slider('option',
 					  {'min': 0, 'max': values.length-1,
-					   'dim_vals': values, 'value': 0})
+					   'dim_vals': values, 'value': 0,
+					   'dim_labels': values})
 		widget.slider('option', 'slide').call(widget, event, {'value': 0})
 	} else {
 		widget.empty();
@@ -333,6 +337,8 @@ function update_widget(widget, values) {
 				value: i,
 				text: values[i]
 			}))};
+		widget.data('values', values);
+		widget.data('value', 0);
 		widget.trigger("change");
 	};
 }
