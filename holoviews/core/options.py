@@ -45,17 +45,6 @@ from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
 
 
-class BackendError(Exception):
-    """
-    Custom exception used to generate abbreviated tracebacks when there
-    is an error in the backend. Use to suppress long tracebacks that can
-    easily be caused by the users (e.g a typo in the style options)
-    where the user would be better served by a short error message
-    rather than a long traceback.
-    """
-    pass
-
-
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display
