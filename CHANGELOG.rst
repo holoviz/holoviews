@@ -3,13 +3,18 @@ Version 1.5
 
 A major release with a large number of new features including new data
 interfaces for grid based data, major improvements for DynamicMaps
-and a large number of bug fixes.
+and a large number of bug fixes. 
+
+The `geoviews <http://geo.holoviews.org/>`_ project
+extending HoloViews for the purposes of exploring and 
+visualizing geographical,  meteorological, and oceanographic
+datasets is now live and nearing its first release.
 
 Features and improvements:
 
 * Added a grid based data interface to explore n-dimensional gridded
   data easily (PR `#562 <https://github.com/ioam/holoviews/pull/542>`_).
-* Added data interface based iris Cubes (PR `#624
+* Added data interface based on `iris Cubes <http://scitools.org.uk/iris/docs/v1.9.2/index.html>`_ (PR `#624
   <https://github.com/ioam/holoviews/pull/624>`_).
 * Added support for dynamic operations and overlaying of DynamicMaps
   (PR `#588 <https://github.com/ioam/holoviews/pull/588>`_).
