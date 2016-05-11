@@ -728,7 +728,6 @@ class FileArchive(Archive):
 
     def _single_file_archive(self, export_name, files, root):
         ((basename, ext), entry) = files[0]
-        (data, info) = entry
         full_fname = '%s_%s' % (export_name, basename)
         (unique_name, ext) = self._unique_name(full_fname, ext, root)
         filename = self._truncate_name(self._normalize_name(unique_name), ext=ext)
@@ -743,7 +742,6 @@ class FileArchive(Archive):
         os.makedirs(output_dir)
 
         for (basename, ext), entry in files:
-            (data, info) = entry
             filename = self._truncate_name(basename, ext)
             fpath = os.path.join(output_dir, filename)
             with open(fpath, 'wb') as f:

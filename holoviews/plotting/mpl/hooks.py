@@ -111,7 +111,7 @@ class BarPlugin(MplD3Plugin):
         if not self._applies(plot, view): return
         fig = plot.handles['fig']
 
-        for i, (key, bar) in enumerate(plot.handles['bars'].items()):
+        for key, bar in plot.handles['bars'].items():
             handle = bar.get_children()[0]
             selection = [(d.name,{k}) for d, k in zip(plot.bar_dimensions, key)
                          if d is not None]

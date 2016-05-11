@@ -262,7 +262,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
 
         axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
-        xlabel, ylabel, zlabel = labels
+        xlabel, ylabel, _ = labels
         x_axis_type, y_axis_type = axis_types
         tools = self._init_tools(element)
         properties = dict(plot_ranges)

@@ -361,7 +361,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         settings.
         """
         main = self.adjoined.main
-        y0, y1 = element.range(1)
+        _, y1 = element.range(1)
         offset = self.offset * y1
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
         if isinstance(range_item, (Raster, Points, Polygons, HeatMap)):
@@ -792,7 +792,7 @@ class BarPlot(LegendPlot):
                     val_key[ci] = cat_name
                     xticks.append((xpos+width/2., cat, 0))
                 prev = 0
-                for sidx, stk_name in enumerate(values['stack']):
+                for stk_name in values['stack']:
                     if stk_name is not None:
                         if 'stack' in style_groups:
                             idx = style_groups.index('stack')
@@ -986,7 +986,7 @@ class BoxPlot(ChartPlot):
 
 
     def teardown_handles(self):
-        for k, group in self.handles['artist'].items():
+        for group in self.handles['artist'].values():
             for v in group:
                 v.remove()
 

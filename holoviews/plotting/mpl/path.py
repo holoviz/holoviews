@@ -27,7 +27,7 @@ class PathPlot(ElementPlot):
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data[0])
         artist.set_visible(style.get('visible', True))
-
+        return axis_kwargs
 
 
 class PolygonPlot(ColorbarPlot):

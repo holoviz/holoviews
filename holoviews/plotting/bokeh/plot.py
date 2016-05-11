@@ -125,7 +125,7 @@ class BokehPlot(DimensionedPlot):
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
         grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
-        for gid, group in grouped_sources:
+        for _, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
                 source_data = {}
@@ -277,7 +277,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        for i, coord in enumerate(self.layout.keys(full_grid=True)):
+        for coord in self.layout.keys(full_grid=True):
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
@@ -423,7 +423,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
     def initialize_plot(self, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        plots = [[] for i in range(self.rows)]
+        plots = [[] for _ in range(self.rows)]
         passed_plots = []
         tab_titles = {}
         insert_rows, insert_cols = [], []

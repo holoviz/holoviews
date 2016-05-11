@@ -478,7 +478,7 @@ class OptionTree(AttrTree):
         path = path.split('.') if isinstance(path, str) else list(path)
         item = self
 
-        for idx, child in enumerate(path):
+        for child in path:
             escaped_child = sanitize_identifier(child, escape=False)
             matching_children = [c for c in item.children
                                  if child.endswith(c) or escaped_child.endswith(c)]
@@ -1137,7 +1137,7 @@ class StoreOptions(object):
                 id_mapping.append((tree_id, offset))
 
            # Nodes needed to ensure allowed_keywords is respected
-            for (k,v) in Store.options().items():
+            for k in Store.options():
                 if k in [(opt.split('.')[0],) for opt in options]:
                     group = {grp:Options(
                         allowed_keywords=opt.allowed_keywords)
@@ -1310,6 +1310,6 @@ class StoreOptions(object):
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees)
-        for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
+        for (match_id, new_id) in id_mapping:
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj

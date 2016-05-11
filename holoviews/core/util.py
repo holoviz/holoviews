@@ -450,7 +450,7 @@ def int_to_alpha(n, upper=True):
     if n == 0: return str(chr(n + casenum))
     while n >= 0:
         mod, div = n % 26, n
-        for i in range(count):
+        for _ in range(count):
             div //= 26
         div %= 26
         if count == 0:
@@ -730,7 +730,7 @@ def find_file(folder, filename):
     Find a file given folder and filename.
     """
     matches = []
-    for root, dirnames, filenames in os.walk(folder):
+    for root, _, filenames in os.walk(folder):
         for filename in fnmatch.filter(filenames, filename):
             matches.append(os.path.join(root, filename))
     return matches[-1]
