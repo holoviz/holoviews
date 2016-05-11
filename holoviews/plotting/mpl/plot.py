@@ -8,7 +8,7 @@ from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
-                     Collator)
+                     Collator, GridMatrix)
 from ...core.options import Store, Compositor
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
@@ -393,6 +393,10 @@ class GridPlot(CompositePlot):
                                                                   r == self.rows//2):
                 kwargs['show_legend'] = self.show_legend
                 kwargs['legend_position'] = 'right'
+            if (not isinstance(self.layout, GridMatrix) and not
+                ((c == self.cols//2 and r == 0) or
+                (c == 0 and r == self.rows//2))):
+                kwargs['labelled'] = []
 
             # Create subplot
             if view is not None:

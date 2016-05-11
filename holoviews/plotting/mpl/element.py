@@ -45,6 +45,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     invert_zaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot z-axis.""")
 
+    labelled = param.List(default=['x', 'y'], doc="""
+        Whether to plot the 'x' and 'y' labels.""")
+
     logx = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the x-axis of the Chart.""")
 
@@ -254,9 +257,12 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions, xlabel, ylabel, zlabel)
         if self.invert_axes:
             xlabel, ylabel = ylabel, xlabel
-        if xlabel and self.xaxis: axes.set_xlabel(xlabel, **self._fontsize('xlabel'))
-        if ylabel and self.yaxis: axes.set_ylabel(ylabel, **self._fontsize('ylabel'))
-        if zlabel and self.zaxis: axes.set_zlabel(zlabel, **self._fontsize('zlabel'))
+        if xlabel and self.xaxis and 'x' in self.labelled:
+            axes.set_xlabel(xlabel, **self._fontsize('xlabel'))
+        if ylabel and self.yaxis and 'y' in self.labelled:
+            axes.set_ylabel(ylabel, **self._fontsize('ylabel'))
+        if zlabel and self.zaxis and 'z' in self.labelled:
+            axes.set_zlabel(zlabel, **self._fontsize('zlabel'))
 
 
     def _set_axis_formatter(self, axis, dim):
