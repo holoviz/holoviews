@@ -48,7 +48,7 @@ Bug fixes:
 Backwards compatibility:
 
 * Renamed ``Columns`` type to ``Dataset`` (PR `#620
-  <https://github.com/ioam/holoviews/issues/620`_).
+  <https://github.com/ioam/holoviews/issues/620>`_).
 
 
 Version 1.4.3
