@@ -162,7 +162,9 @@ class Raster(Element2D):
             oidx = self.get_dimension_index(other_dimension[0])
             x_vals = self.dimension_values(other_dimension[0].name, False)
             reduced = function(self._zdata, axis=oidx)
-            data = zip(x_vals, reduced if not oidx else reduced[::-1])
+            if oidx and hasattr(self, 'bounds'):
+                reduced = reduced[::-1]
+            data = zip(x_vals, reduced)
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
