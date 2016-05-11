@@ -2,6 +2,7 @@ import matplotlib
 from matplotlib import patches as patches
 
 from ...core.util import match_spec
+from ...core.options import abbreviated_exception
 from .element import ElementPlot
 
 
@@ -22,7 +23,8 @@ class AnnotationPlot(ElementPlot):
         ranges = match_spec(annotation, ranges)
         axis = self.handles['axis']
         opts = self.style[self.cyclic_index]
-        handles = self.draw_annotation(axis, annotation.data, opts)
+        with abbreviated_exception():
+            handles = self.draw_annotation(axis, annotation.data, opts)
         self.handles['annotations'] = handles
         return self._finalize_axis(key, ranges=ranges)
 
@@ -31,7 +33,8 @@ class AnnotationPlot(ElementPlot):
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations'] = self.draw_annotation(axis, annotation.data, style)
+        with abbreviated_exception():
+            self.handles['annotations'] = self.draw_annotation(axis, annotation.data, style)
 
 
 class VLinePlot(AnnotationPlot):
