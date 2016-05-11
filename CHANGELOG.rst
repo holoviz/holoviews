@@ -5,11 +5,6 @@ A major release with a large number of new features including new data
 interfaces for grid based data, major improvements for DynamicMaps
 and a large number of bug fixes. 
 
-The `geoviews <http://geo.holoviews.org/>`_ project
-extending HoloViews for the purposes of exploring and 
-visualizing geographical,  meteorological, and oceanographic
-datasets is now live and nearing its first release.
-
 Features and improvements:
 
 * Added a grid based data interface to explore n-dimensional gridded
@@ -47,7 +42,7 @@ Bug fixes:
   <https://github.com/ioam/holoviews/pull/672>`_).
 * Fixed Store.add_style_opts method (PR `#587
   <https://github.com/ioam/holoviews/pull/587>`_).
-* Fixed bug enabling both logx and logy plot options (PR `#554
+* Fixed bug preventing simultaneous logx and logy plot options (PR `#554
   <https://github.com/ioam/holoviews/pull/554>`_).
 
 Backwards compatibility:
