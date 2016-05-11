@@ -102,11 +102,15 @@ class HomogeneousColumnTypes(object):
         self.assertEqual(table.kdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
 
-
     def test_dataset_slice_hm(self):
         dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
                                 kdims=['x'], vdims=['y'])
         self.assertEqual(self.dataset_hm[5:9], dataset_slice)
+
+    def test_dataset_slice_fn_hm(self):
+        dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
+                                kdims=['x'], vdims=['y'])
+        self.assertEqual(self.dataset_hm[lambda x: (x >= 5) & (x < 9)], dataset_slice)
 
     def test_dataset_1D_reduce_hm(self):
         dataset = Dataset({'x':self.xs, 'y':self.y_ints}, kdims=['x'], vdims=['y'])

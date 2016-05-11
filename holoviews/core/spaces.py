@@ -865,7 +865,7 @@ class GridSpace(UniformNdMapping):
         values are numeric, otherwise applies no transformation.
         """
         ndims = self.ndims
-        if all(not isinstance(el, slice) for el in key):
+        if all(not (isinstance(el, slice) or callable(el)) for el in key):
             dim_inds = []
             for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
@@ -884,7 +884,7 @@ class GridSpace(UniformNdMapping):
                 num_keys = iter(keys[idx])
             key = tuple(next(num_keys) if i in dim_inds else next(str_keys)
                         for i in range(self.ndims))
-        elif any(not isinstance(el, slice) for el in key):
+        elif any(not (isinstance(el, slice) or callable(el)) for el in key):
             index_inds = [idx for idx, el in enumerate(key)
                          if not isinstance(el, (slice, str))]
             if len(index_inds):

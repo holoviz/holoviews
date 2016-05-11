@@ -121,6 +121,8 @@ class Interface(param.Parameterized):
                 for ik in k:
                     iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
+            elif callable(k):
+                mask &= k(arr)
             else:
                 index_mask = arr == k
                 if dataset.ndims == 1 and np.sum(index_mask) == 0:
