@@ -121,7 +121,7 @@ SelectionWidget.prototype.get_key = function(current_vals) {
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 	this.current_vals[dim_idx] = dim_val;
     var current = this.get_key(this.current_vals);
-    if(current === undefined) {
+    if(current === undefined && !this.dynamic) {
         return
     }
 	if (this.dynamic || !this.cached) {
