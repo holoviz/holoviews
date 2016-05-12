@@ -148,12 +148,8 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        data = element.raster
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        cmap_name = style.pop('cmap', None)
-        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-        cmap.set_bad('w', 1.)
-        style['cmap'] = cmap
+        mask = np.logical_not(np.isfinite(element.raster))
+        data = np.ma.array(element.raster, mask=mask)
         style['annotations'] = self._annotate_values(element)
         return [data], style, axis_kwargs
 
