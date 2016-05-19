@@ -536,7 +536,8 @@ class VectorFieldPlot(ElementPlot):
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
-                  'scale', 'headlength', 'headaxislength', 'pivot']
+                  'scale', 'headlength', 'headaxislength', 'pivot',
+                  'width','headwidth']
 
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
