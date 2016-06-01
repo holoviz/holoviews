@@ -502,7 +502,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
 
 
-class VectorFieldPlot(ElementPlot):
+class VectorFieldPlot(ColorbarPlot):
     """
     Renders vector fields in sheet coordinates. The vectors are
     expressed in polar coordinates and may be displayed according to
@@ -519,10 +519,13 @@ class VectorFieldPlot(ElementPlot):
     arrow shown is no bigger than the smallest sampling distance.
     """
 
-    color_dim = param.ObjectSelector(default=None,
-                                     objects=['angle', 'magnitude', None], doc="""
-       Which of the polar vector components is mapped to the color
-       dimension (if any), valid values are 'angle' and 'magnitude'.""")
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    size_index = param.ClassSelector(default=3, class_=(basestring, int),
+                                     allow_None=True, doc="""
+      Index of the dimension from which the sizes will the drawn.""")
 
     arrow_heads = param.Boolean(default=True, doc="""
        Whether or not to draw arrow heads. If arrowheads are enabled,
@@ -533,6 +536,10 @@ class VectorFieldPlot(ElementPlot):
        Whether to normalize vector magnitudes automatically. If False,
        it will be assumed that the lengths have already been correctly
        normalized.""")
+
+    rescale_lengths = param.Boolean(default=True, doc="""
+       Whether the lengths will be rescaled to take into account the
+       smallest non-zero distance between two vectors.""")
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
@@ -557,20 +564,22 @@ class VectorFieldPlot(ElementPlot):
         m, n = np.meshgrid(xys, xys)
         distances = np.abs(m-n)
         np.fill_diagonal(distances, np.inf)
-        return distances.min()
+        return distances[distances>0].min()
 
 
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
-        mag_dim = element.get_dimension(3)
+
         xs = element.dimension_values(0) if len(element.data) else []
         ys = element.dimension_values(1) if len(element.data) else []
         radians = element.dimension_values(2) if len(element.data) else []
         angles = list(np.rad2deg(radians))
-        scale = input_scale / self._min_dist
+        if self.rescale_lengths:
+            input_scale = input_scale / self._min_dist
 
+        mag_dim = element.get_dimension(self.size_index)
         if mag_dim:
-            magnitudes = element.dimension_values(3)
+            magnitudes = element.dimension_values(mag_dim)
             _, max_magnitude = ranges[mag_dim.name]
             if self.normalize_lengths and max_magnitude != 0:
                 magnitudes = magnitudes / max_magnitude
@@ -578,20 +587,18 @@ class VectorFieldPlot(ElementPlot):
             magnitudes = np.ones(len(xs))
 
         args = (xs, ys, magnitudes,  [0.0] * len(element))
-        if self.color_dim:
-            colors = magnitudes if self.color_dim == 'magnitude' else radians
-            args = args + (colors,)
-            if self.color_dim == 'angle':
-                style['clim'] = element.get_dimension(2).range
-            elif self.color_dim == 'magnitude':
-                magnitude_dim = element.get_dimension(3).name
-                style['clim'] = ranges[magnitude_dim]
+        if self.color_index:
+            colors = element.dimension_values(self.color_index)
+            args += (colors,)
+            cdim = element.get_dimension(self.color_index)
+            self._norm_kwargs(element, ranges, style, cdim)
+            style['clim'] = (style.pop('vmin'), style.pop('vmax'))
             style.pop('color', None)
 
         if 'pivot' not in style: style['pivot'] = 'mid'
         if not self.arrow_heads:
             style['headaxislength'] = 0
-        style.update(dict(scale=scale, angles=angles))
+        style.update(dict(scale=input_scale, angles=angles))
 
         return args, style, {}
 
@@ -609,12 +616,11 @@ class VectorFieldPlot(ElementPlot):
         quiver.set_offsets(np.column_stack(args[:2]))
         quiver.U = args[2]
         quiver.angles = style['angles']
-        if self.color_dim:
+        if self.color_index:
             quiver.set_array(args[-1])
-
-        if self.color_dim == 'magnitude':
             quiver.set_clim(style['clim'])
         return axis_kwargs
+
 
 
 class BarPlot(LegendPlot):
