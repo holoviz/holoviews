@@ -48,7 +48,7 @@ except ImportError:
 
 from ..dimension import Dimension
 from ..element import Element
-from ..spaces import HoloMap
+from ..spaces import HoloMap, DynamicMap
 from .. import util
 
 
@@ -369,26 +369,38 @@ class Dataset(Element):
 
 
 
-    def groupby(self, dimensions=[], container_type=HoloMap, group_type=None, **kwargs):
-        """
-        Return the results of a groupby operation over the specified
+    def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
+                dynamic=False, **kwargs):
+        """Return the results of a groupby operation over the specified
         dimensions as an object of type container_type (expected to be
         dictionary-like).
 
         Keys vary over the columns (dimensions) and the corresponding
-        values are collections of group_type (e.g list, tuple)
+        values are collections of group_type (e.g an Element, list, tuple)
         constructed with kwargs (if supplied).
+
+        If dynamic is requested container_type is automatically set to
+        a DynamicMap, allowing dynamic exploration of large
+        datasets. If the data does not represent a full cartesian grid
+        of the requested dimensions some Elements will be empty.
         """
         if not isinstance(dimensions, list): dimensions = [dimensions]
         if not len(dimensions): dimensions = self.dimensions('key', True)
         if group_type is None: group_type = type(self)
 
-        dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
-        invalid_dims = list(set(dimensions) - set(self.dimensions('key', True)))
-        if invalid_dims:
-            raise Exception('Following dimensions could not be found:\n%s.'
-                            % invalid_dims)
-        return self.interface.groupby(self, dimensions, container_type,
+        dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
+        dim_names = [d.name for d in dimensions]
+
+        if dynamic:
+            group_dims = [d.name for d in self.kdims if d not in dimensions]
+            def load_subset(*args):
+                constraint = dict(zip(dim_names, args))
+                return group_type(self.select(**constraint).reindex(group_dims))
+            dynamic_dims = [d(values=list(self.interface.values(self, d.name, False)))
+                            for d in dimensions]
+            return DynamicMap(load_subset, kdims=dynamic_dims)
+
+        return self.interface.groupby(self, dim_names, container_type,
                                       group_type, **kwargs)
 
     def __len__(self):

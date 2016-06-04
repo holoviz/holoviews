@@ -165,15 +165,6 @@ class CubeInterface(GridInterface):
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
 
-        if dynamic:
-            def load_subset(*args):
-                constraint = iris.Constraint(**dict(zip(constraints, args)))
-                return dataset.clone(dataset.data.extract(constraint),
-                                      new_type=group_type,
-                                      **dict(kwargs, kdims=slice_dims))
-            dynamic_dims = [d(values=list(cls.values(dataset, d, False))) for d in dims]
-            return DynamicMap(load_subset, kdims=dynamic_dims)
-
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])
         data = []
