@@ -148,6 +148,14 @@ class CubeInterface(GridInterface):
         does not need to be reindexed, the Element can simply
         reorder its key dimensions.
         """
+        if kdims and len(kdims) != dataset.ndims:
+            drop_dims = [kd for kd in dataset.kdims if kd not in kdims]
+            constraints = {}
+            for d in drop_dims:
+                vals = cls.values(dataset, d, False)
+                if len(vals):
+                    constraints[d.name] = vals[0]
+            return dataset.data.extract(iris.Constraint(**constraints))
         return dataset.data
 
 
