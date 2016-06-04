@@ -395,7 +395,11 @@ class Dataset(Element):
             group_dims = [d.name for d in self.kdims if d not in dimensions]
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
-                return group_type(self.select(**constraint).reindex(group_dims))
+                group = self.select(**constraint)
+                if np.isscalar(group):
+                    return group_type(([group],), group=self.group,
+                                      label=self.label, vdims=self.vdims)
+                return group_type(group).reindex(group_dims)
             dynamic_dims = [d(values=list(self.interface.values(self, d.name, False)))
                             for d in dimensions]
             return DynamicMap(load_subset, kdims=dynamic_dims)
