@@ -404,7 +404,7 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
 
 class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
-    Test of the NdDataset interface (mostly for backwards compatibility)
+    Test of the Grid array interface
     """
 
     def setUp(self):
@@ -479,4 +479,36 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
 
     def test_dataset_groupby(self):
         self.assertEqual(self.dataset_hm.groupby('x').keys(), list(self.xs))
+
+
+
+class IrisDatasetTest(GridDatasetTest):
+    """
+    Tests for Iris interface
+    """
+
+    def setUp(self):
+        import iris
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['cube']
+        self.data_instance_type = iris.cube.Cube
+        self.init_data()
+
+    def test_dataset_add_dimensions_values_hm(self):
+        pass
+
+    def test_dataset_sort_vdim_hm(self):
+        pass
+
+    def test_dataset_1D_reduce_hm(self):
+        pass
+
+    def test_dataset_2D_reduce_hm(self):
+        pass
+
+    def test_dataset_2D_aggregate_partial_hm(self):
+        pass
+
+    def test_dataset_sample_hm(self):
+        pass
 

@@ -75,16 +75,18 @@ class CubeInterface(GridInterface):
             kdim_names = [kd.name for kd in eltype.kdims]
 
         if not isinstance(data, iris.cube.Cube):
+            ndims = len(kdim_names)
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kdims]
+            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
             if isinstance(data, tuple):
-                coords = [iris.coords.DimCoord(vals, long_name=kd)
-                          for kd, vals in zip(kdim_names, data)]
                 value_array = data[-1]
-                vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
             elif isinstance(data, dict):
-                vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
-                coords = [iris.coords.DimCoord(vals, long_name=kd)
-                          for kd, vals in data.items() if kd in kdims]
                 value_array = data[vdim]
+            coords = [(iris.coords.DimCoord(data[kd.name], long_name=kd.name,
+                                            units=kd.unit), ndims-n-1)
+                      for n, kd in enumerate(kdims)]
             try:
                 data = iris.cube.Cube(value_array, long_name=vdim,
                                       dim_coords_and_dims=coords)
@@ -223,6 +225,25 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def sample(cls, dataset, samples=[]):
+        """
+        Sampling currently not implemented.
+        """
+        raise NotImplementedError
+
+
+    @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        """
+        Adding value dimensions not currently supported by iris interface.
+        Adding key dimensions not possible on dense interfaces.
+        """
+        if not vdim:
+            raise Exception("Cannot add key dimension to a dense representation.")
+        raise NotImplementedError
+
+
+    @classmethod
     def select_to_constraint(cls, selection):
         """
         Transform a selection dictionary to an iris Constraint.
@@ -232,7 +253,7 @@ class CubeInterface(GridInterface):
             if isinstance(constraint, slice):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
-                constraint = iris.util.between(*constraint)
+                constraint = iris.util.between(*constraint, rh_inclusive=False)
             constraint_kwargs[dim] = constraint
         return iris.Constraint(**constraint_kwargs)
 
