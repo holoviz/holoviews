@@ -70,7 +70,7 @@ class TestCube(ComparisonTestCase):
 
     def test_select_slice(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1.01)).data.data,
                          np.array([[1,  2], [5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_set(self):
@@ -84,8 +84,8 @@ class TestCube(ComparisonTestCase):
 
     def test_select_multi_slice1(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1),
-                                     latitude=(0, 1)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1.01),
+                                     latitude=(0, 1.01)).data.data,
                          np.array([[5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_multi_slice2(self):
