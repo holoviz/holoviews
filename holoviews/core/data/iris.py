@@ -265,8 +265,9 @@ class CubeInterface(GridInterface):
         """
         constraint = cls.select_to_constraint(selection)
         pre_dim_coords = [c.name() for c in dataset.data.dim_coords]
+        indexed = cls.indexed(dataset, selection)
         extracted = dataset.data.extract(constraint)
-        if not extracted.dim_coords:
+        if indexed and not extracted.dim_coords:
             return extracted.data.item()
         post_dim_coords = [c.name() for c in extracted.dim_coords]
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]
