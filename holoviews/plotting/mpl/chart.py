@@ -509,14 +509,14 @@ class VectorFieldPlot(ColorbarPlot):
     angle alone (with some common, arbitrary arrow length) or may be
     true polar vectors.
 
-    Optionally, the arrows may be colored but this dimension is
-    redundant with either the specified angle or magnitudes. This
-    choice is made by setting the color_dim parameter.
+    The color or magnitude can be mapped onto any dimension using the
+    color_index and size_index.
 
-    Note that the 'cmap' style argument controls the color map used to
-    color the arrows. The length of the arrows is controlled by the
-    'scale' style option where a value of 1.0 is such that the largest
-    arrow shown is no bigger than the smallest sampling distance.
+    The length of the arrows is controlled by the 'scale' style
+    option. The scaling of the arrows may also be controlled via the
+    normalize_lengths and rescale_lengths plot option, which will
+    normalize the lengths to a maximum of 1 and scale them according
+    to the minimum distance respectively.
     """
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
