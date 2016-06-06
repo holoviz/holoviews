@@ -11,6 +11,7 @@ notifications:
     on_failure: change # [always|never|change] default: always
     
 install:
+  - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
@@ -23,12 +24,12 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy=1.9.3 freetype=2.5.2 nose matplotlib bokeh pandas jupyter ipython param
+  - conda create -q -c scitools -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose matplotlib bokeh pandas jupyter ipython param iris
   - source activate test-environment
-  - conda install -c scitools iris numpy=1.9.3 freetype=2.5.2
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
+  - rm -r $SITE_PACKAGES/numpy*
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
