@@ -399,7 +399,7 @@ class Dataset(Element):
                 if np.isscalar(group):
                     return group_type(([group],), group=self.group,
                                       label=self.label, vdims=self.vdims)
-                return group_type(group).reindex(group_dims)
+                return group_type(group.reindex(group_dims))
             dynamic_dims = [d(values=list(self.interface.values(self, d.name, False)))
                             for d in dimensions]
             return DynamicMap(load_subset, kdims=dynamic_dims)
