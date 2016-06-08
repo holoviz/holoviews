@@ -39,6 +39,35 @@ def param_aliases(d):
     return d
 
 
+def replace_dimensions(dimensions, overrides):
+    """
+    Replaces dimensions in a list with a dictionary of overrides.
+    Overrides should be indexed by the dimension name with values that
+    is either a Dimension object, a string name or a dictionary
+    specifying the dimension parameters to override.
+    """
+    replaced = []
+    for d in dimensions:
+        if d.name in overrides:
+            override = overrides[d.name]
+        else:
+            override = None
+
+        if override is None:
+            replaced.append(d)
+        elif isinstance(override, basestring):
+            replaced.append(d(override))
+        elif isinstance(override, Dimension):
+            replaced.append(override)
+        elif isinstance(override, dict):
+            replaced.append(d(**override))
+        else:
+            raise ValueError('Dimension can only be overridden '
+                             'with another dimension or a dictionary '
+                             'of attributes')
+    return replaced
+
+
 class Dimension(param.Parameterized):
     """
     Dimension objects are used to specify some important general
@@ -764,6 +793,35 @@ class Dimensioned(LabelledData):
                     items.append((k, v))
             selection = selection.clone(items)
         return selection
+
+
+    def redim(self, specs=None, **dimensions):
+        """
+        Replaces existing dimensions in an object with new dimensions
+        or changing specific attributes of a dimensions. Dimension
+        mapping should map between the old dimension name and either a
+        dictionary of the new attributes or a completely new dimension
+        to replace it with.
+        """
+        if specs is None:
+            applies = True
+        else:
+            if not isinstance(specs, list):
+                specs = [specs]
+            applies = any(self.matches(spec) for spec in specs)
+
+        redimmed = self
+        if self._deep_indexable:
+            deep_mapped = [(k, v.redim(specs, **dimensions))
+                           for k, v in self.items()]
+            redimmed = self.clone(deep_mapped)
+
+        if applies:
+            kdims = replace_dimensions(self.kdims, dimensions)
+            vdims = replace_dimensions(self.vdims, dimensions)
+            return redimmed.clone(kdims=kdims, vdims=vdims)
+        else:
+            return redimmed
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):

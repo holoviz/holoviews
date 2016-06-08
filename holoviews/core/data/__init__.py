@@ -32,7 +32,7 @@ try:
 except ImportError:
     pass
 
-from ..dimension import Dimension
+from ..dimension import Dimension, replace_dimensions
 from ..element import Element
 from ..spaces import HoloMap
 from .. import util
@@ -388,6 +388,30 @@ class Dataset(Element):
     def shape(self):
         "Returns the shape of the data."
         return self.interface.shape(self)
+
+
+    def redim(self, specs=None, **dimensions):
+        """
+        Replace dimensions on the dataset and allows renaming
+        dimensions in the dataset. Dimension mapping should map
+        between the old dimension name and either a dictionary of the
+        new attributes or a completely new dimension to replace it
+        with.
+        """
+        if specs is not None:
+            if not isinstance(specs, list):
+                specs = [specs]
+            if not any(self.matches(spec) for spec in specs):
+                return self
+
+        kdims = replace_dimensions(self.kdims, dimensions)
+        vdims = replace_dimensions(self.vdims, dimensions)
+        zipped_dims = zip(self.kdims+self.vdims, kdims+vdims)
+        renames = {pk.name: nk.name for pk, nk in zipped_dims if pk != nk}
+        renamed = self.data
+        if renames:
+            renamed = self.interface.rename(self, renames)
+        return self.clone(renamed, kdims=kdims, vdims=vdims)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):

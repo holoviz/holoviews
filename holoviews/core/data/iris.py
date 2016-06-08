@@ -201,6 +201,21 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def rename(cls, dataset, renames):
+        """
+        Rename coords on the Cube.
+        """
+        new_dataset = dataset.data.copy()
+        for name, new_name in renames.items():
+            if name == dataset.data.name():
+                new_dataset.rename(new_name)
+            for coord in dataset.data.dim_coords:
+                if name == coord.name():
+                    coord.rename(new_name)
+        return new_dataset
+
+
+    @classmethod
     def length(cls, dataset):
         """
         Returns the total number of samples in the dataset.
