@@ -494,6 +494,7 @@ class IrisDatasetTest(GridDatasetTest):
         self.data_instance_type = iris.cube.Cube
         self.init_data()
 
+    # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         pass
 

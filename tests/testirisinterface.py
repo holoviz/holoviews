@@ -15,6 +15,7 @@ class TestCube(ComparisonTestCase):
 
     def setUp(self):
         self.cube = lat_lon_cube()
+        self.epsilon = 0.01
 
     def test_dim_to_coord(self):
         dim = coord_to_dimension(self.cube.coords()[0])
@@ -70,7 +71,7 @@ class TestCube(ComparisonTestCase):
 
     def test_select_slice(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1.01)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1+self.epsilon)).data.data,
                          np.array([[1,  2], [5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_set(self):
@@ -84,8 +85,8 @@ class TestCube(ComparisonTestCase):
 
     def test_select_multi_slice1(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1.01),
-                                     latitude=(0, 1.01)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1+self.epsilon),
+                                     latitude=(0, 1+self.epsilon)).data.data,
                          np.array([[5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_multi_slice2(self):
