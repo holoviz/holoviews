@@ -981,7 +981,7 @@ class Store(object):
 
 
     @classmethod
-    def register(cls, associations, backend, batched=False, style_aliases={}):
+    def register(cls, associations, backend, style_aliases={}):
         """
         Register the supplied dictionary of associations between
         elements and plotting classes to the specified backend.
@@ -989,12 +989,7 @@ class Store(object):
         from .overlay import CompositeOverlay
         if backend not in cls.registry:
             cls.registry[backend] = {}
-            cls.registry[backend+'batched'] = {}
-
-        if batched:
-            cls.registry[backend+'batched'].update(associations)
-        else:
-            cls.registry[backend].update(associations)
+        cls.registry[backend].update(associations)
 
         groups = ['style', 'plot', 'norm']
         if backend not in cls._options:

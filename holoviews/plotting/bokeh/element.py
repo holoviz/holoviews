@@ -398,7 +398,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+        plot_method = self._batched_plot_method if self.batched else self._plot_method
+        renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
 
@@ -431,11 +432,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         element = self.hmap.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = util.match_spec(element, ranges)
         self.current_ranges = ranges
         self.current_frame = element
         self.current_key = key
-        style_element = element.last if self._batched else element
+        style_element = element.last if self.batched else element
+        ranges = util.match_spec(style_element, ranges)
 
         # Initialize plot, source and glyph
         if plot is None:
@@ -445,7 +446,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Get data and initialize data source
         empty = self.callbacks and self.callbacks.downsample
-        data, mapping = self.get_data(element, ranges, empty)
+        if self.batched:
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
@@ -482,7 +486,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             self.current_key = key
             self.current_frame = element
-        style_element = element.last if self._batched else element
+
+        if self.batched:
+            style_element = element.last
+        else:
+            style_element = element
+            self.style = self.lookup_options(element, 'style')
 
         glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
@@ -490,11 +499,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not element:
             return
 
-        if isinstance(self.hmap, DynamicMap):
-            ranges = self.compute_ranges(self.hmap, key, ranges)
-        else:
-            ranges = self.compute_ranges(element, key, ranges)
-
+        ranges = self.compute_ranges(self.hmap, key, ranges)
         self.set_param(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
@@ -502,10 +507,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot = self.handles['plot']
         source = self.handles['source']
         empty = (self.callbacks and self.callbacks.downsample) or empty
-        data, mapping = self.get_data(element, ranges, empty)
+        if self.batched:
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
         self._update_datasource(source, data)
 
-        self.style = self.lookup_options(element, 'style')
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
             with abbreviated_exception():
@@ -636,6 +643,10 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
+    batched = param.Boolean(default=True, doc="""
+        Whether to plot Elements NdOverlay in a batched plotting
+        call if possible.""")
+
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -715,7 +726,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         key = self.keys[-1]
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        if plot is None and not self.tabs:
+        if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         if plot and not self.overlaid:
@@ -726,6 +737,8 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         for key, subplot in self.subplots.items():
             if self.tabs: subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
+            if self.batched:
+                self.handles['plot'] = child
             if self.tabs:
                 if self.hmap.type is Overlay:
                     title = ' '.join(key)
@@ -782,6 +795,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                             "were not initialized correctly and could not be "
                             "rendered.")
 
-        if not self.overlaid and not self.tabs:
+        if not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)

@@ -483,12 +483,15 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
+    _batched = False
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
-                 overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
-                 **params):
+                 batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
+                 overlay_dims={}, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
-        self.overlaid = overlaid
+        self.overlaid = overlaid and not batched
+        self.batched = batched
         self.overlay_dims = overlay_dims
 
         if not isinstance(element, (HoloMap, DynamicMap)):
@@ -505,6 +508,19 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+        if self.batched and self._batched:
+            self.ordering = util.layer_sort(self.hmap)
+            self.style = self.lookup_options(self.hmap.last.last, 'style').max_cycles(len(self.ordering))
+        else:
+            self.ordering = []
+
+
+    def get_batched_style(self, spec):
+        if spec not in self.ordering:
+            self.ordering = util.layer_sort(self.hmap)
+            self.style = self.lookup_options(self.hmap.last.last, 'style').max_cycles(len(self.ordering))
+        order = self.ordering.index(spec)
+        return self.style[order]
 
 
     def _get_frame(self, key):
@@ -645,6 +661,8 @@ class GenericOverlayPlot(GenericElementPlot):
     allows collapsing of layers via the Compositor.
     """
 
+    batched = param.Boolean(default=True)
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -657,8 +675,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
     _passed_handles = []
 
-    def __init__(self, overlay, ranges=None, **params):
-        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+    def __init__(self, overlay, ranges=None, batched=True, **params):
+        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges,
+                                                 batched=batched, **params)
 
         # Apply data collapse
         self.hmap = Compositor.collapse(self.hmap, None, mode='data')
@@ -691,10 +710,20 @@ class GenericOverlayPlot(GenericElementPlot):
 
     def _create_subplots(self, ranges):
         subplots = OrderedDict()
+        registry = Store.registry[self.renderer.backend]
 
         length = self.style_grouping
         ordering = util.layer_sort(self.hmap)
-        keys, vmaps = self.hmap.split_overlays()
+        batched = self.batched and type(self.hmap.last) is NdOverlay
+        if batched:
+            batchedplot = registry.get(type(self.hmap.last.last))
+        if batched and batchedplot and batchedplot._batched:
+            self.batched = True
+            keys, vmaps = [()], [self.hmap]
+        else:
+            self.batched = False
+            keys, vmaps = self.hmap.split_overlays()
+
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
@@ -702,13 +731,10 @@ class GenericOverlayPlot(GenericElementPlot):
 
         zoffset = 0
         overlay_type = 1 if self.hmap.type == Overlay else 2
-        registry = Store.registry[self.renderer.backend]
         group_counter = Counter()
         for (key, vmap) in zip(keys, vmaps):
-            vtype = type(vmap.last)
+            vtype = type(vmap.last.last) if self.batched else type(vmap.last)
             plottype = registry.get(vtype, None)
-            if issubclass(vtype, NdOverlay):
-                plottype = Store.registry[self.renderer.backend+'batched'].get(vmap.last.type, plottype)
             if plottype is None:
                 self.warning("No plotting class for %s type and %s backend "
                              "found. " % (vtype.__name__, self.renderer.backend))
@@ -720,7 +746,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 if not isinstance(key, tuple): key = (key,)
                 style_key = group_fn(vmap) + key
             group_key = style_key[:length]
-            zorder = ordering.index(style_key) + zoffset
+            oidx = ordering.index(style_key) if style_key in ordering else 0
+            zorder = oidx + zoffset
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
@@ -730,6 +757,8 @@ class GenericOverlayPlot(GenericElementPlot):
                 opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             if issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
+            elif self.batched:
+                opts['batched'] = self.batched
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
                             zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,

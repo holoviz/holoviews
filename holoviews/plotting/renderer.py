@@ -363,11 +363,7 @@ class Renderer(Exporter):
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
             element_obj = obj.last if isinstance(obj, HoloMap) else obj
         try:
-            plotclass = None
-            if isinstance(element_obj, NdOverlay):
-                plotclass = Store.registry[cls.backend+'batched'].get(type(element_obj.last))
-            if not plotclass:
-                plotclass = Store.registry[cls.backend][element_type]
+            plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
         return plotclass

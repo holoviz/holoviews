@@ -1,20 +1,21 @@
-import numpy as np
+from collections import defaultdict
 
+import numpy as np
+import param
 try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
-import param
 
 from ...element import Raster, Points, Polygons, Spikes
+from ...core import util
 from ...core.util import max_range, basestring
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import get_cmap, mpl_to_bokeh, update_plot
+from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex
 
 
 class PointPlot(ElementPlot):
@@ -112,6 +113,9 @@ class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
     _plot_method = 'line'
+    _batched_plot_method = 'multi_line'
+    _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
+    _batched = True
 
     def get_data(self, element, ranges=None, empty=False):
         x = element.get_dimension(0).name
@@ -119,6 +123,24 @@ class CurvePlot(ElementPlot):
         return ({x: [] if empty else element.dimension_values(0),
                  y: [] if empty else element.dimension_values(1)},
                 dict(x=x, y=y))
+
+    def get_batched_data(self, overlay, ranges=None, empty=False):
+        data = defaultdict(list)
+        for key, el in overlay.items():
+            spec = util.get_overlay_spec(overlay, key, el)
+            style = self.get_batched_style(spec)
+            for opt in self._mapping:
+                if opt in ['xs', 'ys']:
+                    index = {'xs': 0, 'ys': 1}[opt]
+                    val = el.dimension_values(index)
+                else:
+                    val = style.get(opt)
+                if opt == 'color' and isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data[opt].append(val)
+        data = {opt: vals for opt, vals in data.items()
+                if not any(v is None for v in vals)}
+        return data, {k: k for k in data}
 
 
 class AreaPlot(PolygonPlot):

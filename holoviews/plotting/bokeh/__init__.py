@@ -12,7 +12,6 @@ from ...interface import DFrame
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .batched import BatchedCurvePlot
 from .callbacks import Callbacks # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
@@ -74,8 +73,6 @@ Store.register({Overlay: OverlayPlot,
                 NdElement: TablePlot},
                'bokeh')
 
-
-Store.register({Curve: BatchedCurvePlot}, 'bokeh', batched=True)
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
