@@ -140,6 +140,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # A string corresponding to the glyph being drawn by the
     # ElementPlot
     _plot_method = None
+    _batched = False
 
     # The plot objects to be updated on each frame
     # Any entries should be existing keys in the handles
@@ -434,10 +435,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = ranges
         self.current_frame = element
         self.current_key = key
+        style_element = element.last if self._batched else element
 
         # Initialize plot, source and glyph
         if plot is None:
-            plot = self._init_plot(key, element, ranges=ranges, plots=plots)
+            plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         self.handles['plot'] = plot
 
@@ -448,7 +450,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['source'] = source
 
-        properties = self._glyph_properties(plot, element, source, ranges)
+        properties = self._glyph_properties(plot, style_element, source, ranges)
         with abbreviated_exception():
             renderer, glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph'] = glyph
@@ -459,7 +461,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         with abbreviated_exception():
             self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
-            self._update_plot(key, plot, element)
+            self._update_plot(key, plot, style_element)
         if self.callbacks:
             self.callbacks(self)
             self.callbacks.update(self)
@@ -480,6 +482,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             self.current_key = key
             self.current_frame = element
+        style_element = element.last if self._batched else element
 
         glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
@@ -492,8 +495,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             ranges = self.compute_ranges(element, key, ranges)
 
-        self.set_param(**self.lookup_options(element, 'plot').options)
-        ranges = util.match_spec(element, ranges)
+        self.set_param(**self.lookup_options(style_element, 'plot').options)
+        ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
 
         plot = self.handles['plot']
@@ -508,8 +511,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             with abbreviated_exception():
                 self._update_glyph(self.handles['glyph'], properties, mapping)
         if not self.overlaid:
-            self._update_ranges(element, ranges)
-            self._update_plot(key, plot, element)
+            self._update_ranges(style_element, ranges)
+            self._update_plot(key, plot, style_element)
         if self.callbacks:
             self.callbacks.update(self)
 

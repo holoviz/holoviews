@@ -11,7 +11,7 @@ import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
 from ..core.util import find_file
-from .. import Layout, HoloMap, AdjointLayout
+from .. import Layout, HoloMap, AdjointLayout, NdOverlay
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
@@ -358,10 +358,16 @@ class Renderer(Exporter):
             obj  = Layout
         if isinstance(obj, type):
             element_type = obj
+            element_obj = obj
         else:
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
+            element_obj = obj.last if isinstance(obj, HoloMap) else obj
         try:
-            plotclass = Store.registry[cls.backend][element_type]
+            plotclass = None
+            if isinstance(element_obj, NdOverlay):
+                plotclass = Store.registry[cls.backend+'batched'].get(type(element_obj.last))
+            if not plotclass:
+                plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
             raise Exception("No corresponding plot type found for %r" % type(obj))
         return plotclass

@@ -17,6 +17,7 @@ from ..core.options import abbreviated_exception
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
+from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
 from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
@@ -701,10 +702,13 @@ class GenericOverlayPlot(GenericElementPlot):
 
         zoffset = 0
         overlay_type = 1 if self.hmap.type == Overlay else 2
+        registry = Store.registry[self.renderer.backend]
         group_counter = Counter()
         for (key, vmap) in zip(keys, vmaps):
             vtype = type(vmap.last)
-            plottype = Store.registry[self.renderer.backend].get(vtype, None)
+            plottype = registry.get(vtype, None)
+            if issubclass(vtype, NdOverlay):
+                plottype = Store.registry[self.renderer.backend+'batched'].get(vmap.last.type, plottype)
             if plottype is None:
                 self.warning("No plotting class for %s type and %s backend "
                              "found. " % (vtype.__name__, self.renderer.backend))
