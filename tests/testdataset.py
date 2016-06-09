@@ -83,6 +83,17 @@ class HomogeneousColumnTypes(object):
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.sort('y'), dataset_sorted)
 
+
+    def test_dataset_redim_hm_kdim(self):
+        redimmed = self.dataset_hm.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_hm.dimension_values('x'))
+
+    def test_dataset_redim_hm_vdim(self):
+        redimmed = self.dataset_hm.redim(y='Value')
+        self.assertEqual(redimmed.dimension_values('Value'),
+                         self.dataset_hm.dimension_values('y'))
+
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 10, 20]))

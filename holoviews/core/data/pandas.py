@@ -152,6 +152,12 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def redim(cls, dataset, dimensions):
+        column_renames = {k: v.name for k, v in dimensions.items()}
+        return dataset.data.rename(columns=column_renames)
+
+
+    @classmethod
     def sort(cls, columns, by=[]):
         import pandas as pd
         if not isinstance(by, list): by = [by]
@@ -210,7 +216,7 @@ class PandasInterface(Interface):
     @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
-            return columns.reindex(columns=dimensions)
+            return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()
 
