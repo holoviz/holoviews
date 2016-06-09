@@ -394,9 +394,8 @@ class Dataset(Element):
         """
         Replace dimensions on the dataset and allows renaming
         dimensions in the dataset. Dimension mapping should map
-        between the old dimension name and either a dictionary of the
-        new attributes or a completely new dimension to replace it
-        with.
+        between the old dimension name and a dictionary of the new
+        attributes, a completely new dimension or a new string name.
         """
         if specs is not None:
             if not isinstance(specs, list):
@@ -407,11 +406,11 @@ class Dataset(Element):
         kdims = replace_dimensions(self.kdims, dimensions)
         vdims = replace_dimensions(self.vdims, dimensions)
         zipped_dims = zip(self.kdims+self.vdims, kdims+vdims)
-        renames = {pk.name: nk.name for pk, nk in zipped_dims if pk != nk}
-        renamed = self.data
+        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+        data = self.data
         if renames:
-            renamed = self.interface.rename(self, renames)
-        return self.clone(renamed, kdims=kdims, vdims=vdims)
+            data = self.interface.redim(self, renames)
+        return self.clone(data, kdims=kdims, vdims=vdims)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):

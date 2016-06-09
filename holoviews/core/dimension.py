@@ -799,9 +799,9 @@ class Dimensioned(LabelledData):
         """
         Replaces existing dimensions in an object with new dimensions
         or changing specific attributes of a dimensions. Dimension
-        mapping should map between the old dimension name and either a
-        dictionary of the new attributes or a completely new dimension
-        to replace it with.
+        mapping should map between the old dimension name and a
+        dictionary of the new attributes, a completely new dimension
+        or a new string name.
         """
         if specs is None:
             applies = True

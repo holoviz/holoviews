@@ -123,8 +123,8 @@ class DictInterface(Interface):
         return OrderedDict(data)
 
     @classmethod
-    def rename(cls, dataset, renames):
-        return OrderedDict([(renames.get(k, k), v)
+    def redim(cls, dataset, dimensions):
+        return OrderedDict([(dimensions.get(k, dataset.get_dimension(k)).name, v)
                             for k,v in dataset.data.items()])
 
     @classmethod

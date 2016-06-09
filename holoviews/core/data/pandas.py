@@ -152,8 +152,9 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def rename(cls, dataset, renames):
-        return dataset.data.rename(columns=renames)
+    def redim(cls, dataset, dimensions):
+        column_renames = {k: v.name for k, v in dimensions.items()}
+        return dataset.data.rename(columns=column_renames)
 
 
     @classmethod

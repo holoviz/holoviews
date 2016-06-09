@@ -201,17 +201,17 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def rename(cls, dataset, renames):
+    def redim(cls, dataset, dimensions):
         """
         Rename coords on the Cube.
         """
         new_dataset = dataset.data.copy()
-        for name, new_name in renames.items():
-            if name == dataset.data.name():
-                new_dataset.rename(new_name)
-            for coord in dataset.data.dim_coords:
+        for name, new_dim in dimensions.items():
+            if name == new_dataset.name():
+                new_dataset.rename(new_dim.name)
+            for coord in new_dataset.dim_coords:
                 if name == coord.name():
-                    coord.rename(new_name)
+                    coord.rename(new_dim.name)
         return new_dataset
 
 

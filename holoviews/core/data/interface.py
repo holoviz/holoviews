@@ -206,5 +206,5 @@ class Interface(param.Parameterized):
         return len(dataset.data)
 
     @classmethod
-    def rename(cls, dataset, renames):
+    def redim(cls, dataset, dimensions):
         return dataset.data

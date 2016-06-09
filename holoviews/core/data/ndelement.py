@@ -76,8 +76,8 @@ class NdElementInterface(Interface):
         return Dimensioned.get_dimension_type(columns, dim)
 
     @classmethod
-    def rename(cls, dataset, renames):
-        return dataset.data.redim(**renames)
+    def redim(cls, dataset, dimensions):
+        return dataset.data.redim(**dimensions)
 
     @classmethod
     def shape(cls, columns):
