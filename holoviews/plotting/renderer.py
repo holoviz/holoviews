@@ -11,7 +11,7 @@ import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
 from ..core.util import find_file
-from .. import Layout, HoloMap, AdjointLayout, NdOverlay
+from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap

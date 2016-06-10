@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 import numpy as np
 import param
 
+from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .util import get_cmap
@@ -25,6 +28,8 @@ class PolygonPlot(PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_method = 'patches'
+    _batched_plot_method = 'patches'
+    _batched = True
 
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
@@ -41,3 +46,21 @@ class PolygonPlot(PathPlot):
             data['color'] = [] if empty else list(colors)*len(element.data)
 
         return data, mapping
+
+
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        for key, el in element.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld[0])
+            if 'color' not in eldata:
+                spec = util.get_overlay_spec(element, key, el)
+                style = self.get_batched_style(spec)
+                val = style.get('color')
+                elmapping['color'] = 'color'
+                if val is not None:
+                    if isinstance(val, tuple):
+                        val = rgb2hex(val)
+                    data['color'].append(val)
+        return data, elmapping
