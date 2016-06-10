@@ -358,10 +358,8 @@ class Renderer(Exporter):
             obj  = Layout
         if isinstance(obj, type):
             element_type = obj
-            element_obj = obj
         else:
             element_type = obj.type if isinstance(obj, HoloMap) else type(obj)
-            element_obj = obj.last if isinstance(obj, HoloMap) else obj
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:

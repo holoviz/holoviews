@@ -47,7 +47,8 @@ class PointPlot(ElementPlot):
                   line_properties + fill_properties)
 
     _plot_method = 'scatter'
-
+    _batched_plot_method = 'scatter'
+    _batched = True
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
@@ -86,6 +87,25 @@ class PointPlot(ElementPlot):
         data[dims[1]] = [] if empty else element.dimension_values(1)
         self._get_hover_data(data, element, empty)
         return data, mapping
+
+
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        for key, el in element.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld)
+            if 'color' not in eldata:
+                spec = util.get_overlay_spec(element, key, el)
+                style = self.get_batched_style(spec)
+                val = style.get('color')
+                elmapping['color'] = 'color'
+                if val is not None:
+                    if isinstance(val, tuple):
+                        val = rgb2hex(val)
+                    data['color'].append([val]*len(data[k][-1]))
+        data = {k: np.concatenate(v) for k, v in data.items()}
+        return data, elmapping
 
 
     def _init_glyph(self, plot, mapping, properties):

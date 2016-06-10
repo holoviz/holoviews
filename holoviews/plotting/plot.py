@@ -709,11 +709,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
     def _create_subplots(self, ranges):
-        subplots = OrderedDict()
-        registry = Store.registry[self.renderer.backend]
 
-        length = self.style_grouping
-        ordering = util.layer_sort(self.hmap)
+        # Check if plot is batched
+        registry = Store.registry[self.renderer.backend]
         batched = self.batched and type(self.hmap.last) is NdOverlay
         if batched:
             batchedplot = registry.get(type(self.hmap.last.last))
@@ -724,6 +722,9 @@ class GenericOverlayPlot(GenericElementPlot):
             self.batched = False
             keys, vmaps = self.hmap.split_overlays()
 
+        # Compute ordering
+        length = self.style_grouping
+        ordering = util.layer_sort(self.hmap)
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
@@ -732,21 +733,28 @@ class GenericOverlayPlot(GenericElementPlot):
         zoffset = 0
         overlay_type = 1 if self.hmap.type == Overlay else 2
         group_counter = Counter()
+        subplots = OrderedDict()
         for (key, vmap) in zip(keys, vmaps):
-            vtype = type(vmap.last.last) if self.batched else type(vmap.last)
+            if self.hmap.type == Overlay:
+                style_key = (vmap.type.__name__,) + key
+            else:
+                if not isinstance(key, tuple): key = (key,)
+                style_key = group_fn(vmap) + key
+
+            if self.batched:
+                vtype = type(vmap.last.last)
+                oidx = 0
+            else:
+                vtype = type(vmap.last)
+                oidx = ordering.index(style_key)
+
             plottype = registry.get(vtype, None)
             if plottype is None:
                 self.warning("No plotting class for %s type and %s backend "
                              "found. " % (vtype.__name__, self.renderer.backend))
                 continue
 
-            if self.hmap.type == Overlay:
-                style_key = (vmap.type.__name__,) + key
-            else:
-                if not isinstance(key, tuple): key = (key,)
-                style_key = group_fn(vmap) + key
             group_key = style_key[:length]
-            oidx = ordering.index(style_key) if style_key in ordering else 0
             zorder = oidx + zoffset
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
@@ -765,7 +773,8 @@ class GenericOverlayPlot(GenericElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             show_title=self.show_title, dimensions=self.dimensions,
                             uniform=self.uniform,
-                            **{k: v for k, v in self.handles.items() if k in self._passed_handles})
+                            **{k: v for k, v in self.handles.items()
+                               if k in self._passed_handles})
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
