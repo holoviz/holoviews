@@ -643,10 +643,6 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
-    batched = param.Boolean(default=True, doc="""
-        Whether to plot Elements NdOverlay in a batched plotting
-        call if possible.""")
-
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
@@ -754,7 +750,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self.handles['plot'] = Tabs(tabs=panels)
         else:
             self._process_legend()
-
         self.drawn = True
 
         return self.handles['plot']

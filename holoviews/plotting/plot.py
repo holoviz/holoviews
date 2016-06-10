@@ -661,7 +661,9 @@ class GenericOverlayPlot(GenericElementPlot):
     allows collapsing of layers via the Compositor.
     """
 
-    batched = param.Boolean(default=True)
+    batched = param.Boolean(default=True, doc="""
+        Whether to plot Elements NdOverlay in a batched plotting call
+        if possible. Disables legends and zorder may not be preserved.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
