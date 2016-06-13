@@ -456,6 +456,7 @@ class DynamicMap(HoloMap):
     def __init__(self, callback, initial_items=None, **params):
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
+        self.args = None # Last set of args passed to callback
         if self.callback is None:
             raise Exception("A suitable callback must be "
                             "declared to create a DynamicMap")
@@ -541,6 +542,7 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'generator':
             retval = next(self.callback)
         else:
+            self.args = args
             retval = self.callback(*args)
 
         if self.call_mode=='key':
@@ -601,6 +603,7 @@ class DynamicMap(HoloMap):
             product = itertools.product(*args)
 
         data = []
+        args = self.args
         for inner_key in product:
             key = util.wrap_tuple(inner_key)
             if key in cache:
@@ -608,6 +611,7 @@ class DynamicMap(HoloMap):
             else:
                 val = self._execute_callback(*key)
             data.append((key, val))
+        self.args = args
         return self.clone(data)
 
 
