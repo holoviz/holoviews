@@ -50,17 +50,16 @@ class PolygonPlot(PathPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
+        style = self.style.max_cycles(len(self.ordering))
         for key, el in element.items():
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld[0])
             if 'color' not in eldata:
-                spec = util.get_overlay_spec(element, key, el)
-                style = self.get_batched_style(spec)
-                val = style.get('color')
+                zorder = self.get_zorder(element, key, el)
+                val = style[zorder].get('color')
                 elmapping['color'] = 'color'
-                if val is not None:
-                    if isinstance(val, tuple):
-                        val = rgb2hex(val)
-                    data['color'].append(val)
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'].append(val)
         return data, elmapping

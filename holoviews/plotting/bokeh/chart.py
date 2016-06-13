@@ -91,19 +91,18 @@ class PointPlot(ElementPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
+        style = self.style.max_cycles(len(self.ordering))
         for key, el in element.items():
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
             if 'color' not in eldata:
-                spec = util.get_overlay_spec(element, key, el)
-                style = self.get_batched_style(spec)
-                val = style.get('color')
+                zorder = self.get_zorder(element, key, el)
+                val = style[zorder].get('color')
                 elmapping['color'] = 'color'
-                if val is not None:
-                    if isinstance(val, tuple):
-                        val = rgb2hex(val)
-                    data['color'].append([val]*len(data[k][-1]))
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'].append([val]*len(data[k][-1]))
         data = {k: np.concatenate(v) for k, v in data.items()}
         return data, elmapping
 
@@ -145,16 +144,16 @@ class CurvePlot(ElementPlot):
                 dict(x=x, y=y))
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
+        style = self.style.max_cycles(len(self.ordering))
         data = defaultdict(list)
         for key, el in overlay.items():
-            spec = util.get_overlay_spec(overlay, key, el)
-            style = self.get_batched_style(spec)
+            zorder = self.get_zorder(overlay, key, el)
             for opt in self._mapping:
                 if opt in ['xs', 'ys']:
                     index = {'xs': 0, 'ys': 1}[opt]
                     val = el.dimension_values(index)
                 else:
-                    val = style.get(opt)
+                    val = style[zorder].get(opt)
                 if opt == 'color' and isinstance(val, tuple):
                     val = rgb2hex(val)
                 data[opt].append(val)

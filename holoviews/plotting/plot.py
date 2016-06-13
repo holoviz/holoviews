@@ -515,12 +515,14 @@ class GenericElementPlot(DimensionedPlot):
             self.ordering = []
 
 
-    def get_batched_style(self, spec):
-        if spec not in self.ordering:
-            self.ordering = util.layer_sort(self.hmap)
-            self.style = self.lookup_options(self.hmap.last.last, 'style').max_cycles(len(self.ordering))
-        order = self.ordering.index(spec)
-        return self.style[order]
+    def get_zorder(self, overlay, key, el):
+        spec = util.get_overlay_spec(overlay, key, el)
+        try:
+            return self.ordering.index(spec)
+        except IndexError:
+            if spec not in self.ordering:
+                self.ordering = util.layer_sort(self.hmap)
+            return self.ordering.index(spec)
 
 
     def _get_frame(self, key):

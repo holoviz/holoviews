@@ -486,18 +486,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             self.current_key = key
             self.current_frame = element
-
-        if self.batched:
-            style_element = element.last
-        else:
-            style_element = element
-            self.style = self.lookup_options(element, 'style')
+        style_element = element.last if self.batched else element
 
         glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
             glyph.visible = bool(element)
         if not element:
             return
+
+        self.style = self.lookup_options(style_element, 'style')
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.set_param(**self.lookup_options(style_element, 'plot').options)
