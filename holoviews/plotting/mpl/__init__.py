@@ -67,7 +67,7 @@ def get_color_cycle():
     if mpl_ge_150:
         cyl = mpl.rcParams['axes.prop_cycle']
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
-        # but no garuantee that there's a `color` key.
+        # but no guarantee that there's a `color` key.
         # so users could have a custom rcParmas w/ no color...
         try:
             return [x['color'] for x in cyl]
