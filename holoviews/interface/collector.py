@@ -559,7 +559,7 @@ class Collector(AttrTree):
                     if update_progress:
                         interval_hook.percent_range = (completion[i],
                                                        completion[i+1])
-                #interval_hook(0)
+                interval_hook(0)
 
             (self.fixed, attrtree.fixed) = (True, True)
             return attrtree
