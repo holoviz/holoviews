@@ -640,9 +640,6 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
 
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
-
     legend_position = param.ObjectSelector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",

@@ -483,6 +483,7 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
+    # Whether the plotting class supports batched plotting
     _batched = False
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
@@ -667,7 +668,10 @@ class GenericOverlayPlot(GenericElementPlot):
         Whether to plot Elements NdOverlay in a batched plotting call
         if possible. Disables legends and zorder may not be preserved.""")
 
-    show_legend = param.Boolean(default=False, doc="""
+    legend_limit = param.Integer(default=25, doc="""
+        Number of rendered glyphs before legends are disabled.""")
+
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     style_grouping = param.Integer(default=2,
@@ -713,37 +717,39 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
     def _create_subplots(self, ranges):
-
-        # Check if plot is batched
+        # Check if plot should be batched
+        ordering = util.layer_sort(self.hmap)
         registry = Store.registry[self.renderer.backend]
         batched = self.batched and type(self.hmap.last) is NdOverlay
         if batched:
             batchedplot = registry.get(type(self.hmap.last.last))
-        if batched and batchedplot and batchedplot._batched:
+        if (batched and batchedplot and batchedplot._batched and
+            (not self.show_legend or len(ordering) > self.legend_limit)):
             self.batched = True
             keys, vmaps = [()], [self.hmap]
         else:
             self.batched = False
             keys, vmaps = self.hmap.split_overlays()
 
-        # Compute ordering
+        # Compute global ordering
         length = self.style_grouping
-        ordering = util.layer_sort(self.hmap)
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
             map_lengths[group_fn(m)[:length]] += 1
-
         zoffset = 0
         overlay_type = 1 if self.hmap.type == Overlay else 2
         group_counter = Counter()
+
         subplots = OrderedDict()
         for (key, vmap) in zip(keys, vmaps):
+            opts = {}
             if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
                 if not isinstance(key, tuple): key = (key,)
                 style_key = group_fn(vmap) + key
+                opts['overlay_dims'] = OrderedDict(zip(vmap.last.kdims, key))
 
             if self.batched:
                 vtype = type(vmap.last.last)
@@ -758,36 +764,37 @@ class GenericOverlayPlot(GenericElementPlot):
                              "found. " % (vtype.__name__, self.renderer.backend))
                 continue
 
+            # Get zorder and style counter
             group_key = style_key[:length]
-            zorder = oidx + zoffset
+            zorder = self.zorder + oidx + zoffset
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
 
-            opts = {}
-            if overlay_type == 2:
-                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             if issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
             elif self.batched:
                 opts['batched'] = self.batched
+            if len(ordering) > self.legend_limit:
+                opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
-                            zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
+            plotopts = dict(opts, cyclic_index=cyclic_index,
+                            dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
-                            show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform,
+                            overlaid=overlay_type, ranges=ranges,
+                            show_title=self.show_title, style=style,
+                            uniform=self.uniform, zorder=zorder,
                             **{k: v for k, v in self.handles.items()
                                if k in self._passed_handles})
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
-            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
+            if (not isinstance(plottype, PlotSelector) and
+                issubclass(plottype, GenericOverlayPlot)):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
         if not subplots:
             raise SkipRendering("%s backend could not plot any Elements "
                                 "in the Overlay." % self.backend)
-
         return subplots
 
 

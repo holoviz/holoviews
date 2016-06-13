@@ -248,6 +248,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
+    legend_limit = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
     logz = param.Parameter(precedence=-1)
