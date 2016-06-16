@@ -520,6 +520,10 @@ class GenericElementPlot(DimensionedPlot):
 
 
     def get_zorder(self, overlay, key, el):
+        """
+        Computes the z-order of element in the NdOverlay
+        taking into account possible batching of elements.
+        """
         spec = util.get_overlay_spec(overlay, key, el)
         try:
             return self.ordering.index(spec)
