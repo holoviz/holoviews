@@ -15,7 +15,7 @@ class PathPlot(ElementPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['color'] + line_properties
-    _plot_method = 'multi_line'
+    _plot_methods = dict(single='multi_line')
     _mapping = dict(xs='xs', ys='ys')
 
     def get_data(self, element, ranges=None, empty=False):
@@ -27,9 +27,7 @@ class PathPlot(ElementPlot):
 class PolygonPlot(PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
-    _plot_method = 'patches'
-    _batched_plot_method = 'patches'
-    _batched = True
+    _plot_methods = dict(single='patches', batched='patches')
 
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]

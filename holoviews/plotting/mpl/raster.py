@@ -30,6 +30,7 @@ class RasterPlot(ColorbarPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
+    _plot_methods = dict(single='imshow')
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -73,12 +74,6 @@ class RasterPlot(ColorbarPlot):
         style['extent'] = [l, r, b, t]
 
         return [data], style, {'xticks': xticks, 'yticks': yticks}
-
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        im = ax.imshow(*plot_args, **plot_kwargs)
-        return {'artist': im}
-
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']
@@ -191,6 +186,8 @@ class QuadMeshPlot(ColorbarPlot):
 
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
+
+    _plot_methods = dict(single='pcolormesh')
 
     def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],

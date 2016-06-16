@@ -483,8 +483,11 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
-    # Whether the plotting class supports batched plotting
-    _batched = False
+    # A dictionary mapping of the plot methods used to draw the
+    # glyphs corresponding to the ElementPlot, can support two
+    # keyword arguments a 'single' implementation to draw an individual
+    # plot and a 'batched' method to draw multiple Elements at once
+    _plot_methods = {}
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
@@ -509,7 +512,7 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
-        if self.batched and self._batched:
+        if self.batched:
             self.ordering = util.layer_sort(self.hmap)
             self.style = self.lookup_options(self.hmap.last.last, 'style').max_cycles(len(self.ordering))
         else:
@@ -723,7 +726,7 @@ class GenericOverlayPlot(GenericElementPlot):
         batched = self.batched and type(self.hmap.last) is NdOverlay
         if batched:
             batchedplot = registry.get(type(self.hmap.last.last))
-        if (batched and batchedplot and batchedplot._batched and
+        if (batched and batchedplot and 'batched' in batchedplot._plot_methods and
             (not self.show_legend or len(ordering) > self.legend_limit)):
             self.batched = True
             keys, vmaps = [()], [self.hmap]

@@ -137,11 +137,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tick locations or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
 
-    # A string corresponding to the glyph being drawn by the
-    # ElementPlot
-    _plot_method = None
-    _batched = False
-
     # The plot objects to be updated on each frame
     # Any entries should be existing keys in the handles
     # instance attribute.
@@ -398,7 +393,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        plot_method = self._batched_plot_method if self.batched else self._plot_method
+        plot_method = self._plot_methods.get('batched' if self.batched else 'single')
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 

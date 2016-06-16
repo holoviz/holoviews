@@ -115,6 +115,8 @@ class Scatter3DPlot(Plot3D, PointPlot):
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
+    _plot_methods = dict(single='scatter')
+
     def get_data(self, element, ranges, style):
         xs, ys, zs = (element.dimension_values(i) for i in range(3))
         self._compute_styles(element, ranges, style)
@@ -126,11 +128,6 @@ class Scatter3DPlot(Plot3D, PointPlot):
             else:
                 style['facecolors'] = color
         return (xs, ys, zs), style, {}
-
-    def init_artists(self, ax, plot_data, plot_kwargs):
-        scatterplot = ax.scatter(*plot_data, **plot_kwargs)
-        ax.add_collection(scatterplot)
-        return {'artist': scatterplot}
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
@@ -195,11 +192,10 @@ class TrisurfacePlot(Plot3D):
 
     style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
 
+    _plot_methods = dict(single='plot_trisurf')
+
     def get_data(self, element, ranges, style):
         dims = element.dimensions()
         self._norm_kwargs(element, ranges, style, dims[2])
         x, y, z = [element.dimension_values(d) for d in dims]
         return (x, y, z), style, {}
-
-    def init_artists(self, ax, plot_data, plot_kwargs):
-        return {'artist': ax.plot_trisurf(*plot_data, **plot_kwargs)}

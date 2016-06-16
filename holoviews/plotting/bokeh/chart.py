@@ -46,9 +46,7 @@ class PointPlot(ElementPlot):
                    'unselected_color'] +
                   line_properties + fill_properties)
 
-    _plot_method = 'scatter'
-    _batched_plot_method = 'scatter'
-    _batched = True
+    _plot_methods = dict(single='scatter', batched='scatter')
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
@@ -124,17 +122,16 @@ class PointPlot(ElementPlot):
             renderer = plot.add_glyph(source, selected, selection_glyph=selected,
                                       nonselection_glyph=unselected)
         else:
-            renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+            plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+            renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
 
 class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
-    _plot_method = 'line'
-    _batched_plot_method = 'multi_line'
+    _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
-    _batched = True
 
     def get_data(self, element, ranges=None, empty=False):
         x = element.get_dimension(0).name
@@ -214,7 +211,7 @@ class SpreadPlot(PolygonPlot):
 class HistogramPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
-    _plot_method = 'quad'
+    _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
         mapping = dict(top='top', bottom=0, left='left', right='right')
