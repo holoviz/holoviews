@@ -33,6 +33,15 @@ markers = {'s': {'marker': 'square'},
            '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
 
 
+def rgb2hex(rgb):
+    """
+    Convert RGB(A) tuple to hex.
+    """
+    if len(rgb) > 3:
+        rgb = rgb[:-1]
+    return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
 def mplcmap_to_palette(cmap):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
@@ -41,7 +50,7 @@ def mplcmap_to_palette(cmap):
         raise ValueError("Using cmaps on objects requires matplotlib.")
     with abbreviated_exception():
         colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-        return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
+        return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
 
 def get_cmap(cmap):
@@ -73,7 +82,7 @@ def mpl_to_bokeh(properties):
                 v = colors.ColorConverter.colors.get(v, v)
             if isinstance(v, tuple):
                 with abbreviated_exception():
-                    v = colors.rgb2hex(v)
+                    v = rgb2hex(v)
             new_properties[k] = v
         else:
             new_properties[k] = v

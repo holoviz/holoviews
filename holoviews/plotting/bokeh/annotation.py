@@ -8,7 +8,7 @@ from .element import ElementPlot, text_properties, line_properties
 class TextPlot(ElementPlot):
 
     style_opts = text_properties
-    _plot_method = 'text'
+    _plot_methods = dict(single='text')
 
     def get_data(self, element, ranges=None, empty=False):
         mapping = dict(x='x', y='y', text='text')
@@ -62,7 +62,7 @@ class SplinePlot(ElementPlot):
     """
 
     style_opts = line_properties
-    _plot_method = 'bezier'
+    _plot_methods = dict(single='bezier')
 
     def get_data(self, element, ranges=None, empty=False):
         data_attrs = ['x0', 'y0', 'x1', 'y1',

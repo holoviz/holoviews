@@ -1,6 +1,9 @@
+from collections import defaultdict
+
 import numpy as np
 import param
 
+from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .util import get_cmap
@@ -12,7 +15,7 @@ class PathPlot(ElementPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['color'] + line_properties
-    _plot_method = 'multi_line'
+    _plot_methods = dict(single='multi_line')
     _mapping = dict(xs='xs', ys='ys')
 
     def get_data(self, element, ranges=None, empty=False):
@@ -24,7 +27,7 @@ class PathPlot(ElementPlot):
 class PolygonPlot(PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
-    _plot_method = 'patches'
+    _plot_methods = dict(single='patches', batched='patches')
 
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
@@ -41,3 +44,20 @@ class PolygonPlot(PathPlot):
             data['color'] = [] if empty else list(colors)*len(element.data)
 
         return data, mapping
+
+
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        style = self.style.max_cycles(len(self.ordering))
+        for key, el in element.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld[0])
+            if 'color' not in eldata:
+                zorder = self.get_zorder(element, key, el)
+                val = style[zorder].get('color')
+                elmapping['color'] = 'color'
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'].append(val)
+        return data, elmapping

@@ -468,6 +468,18 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
 
 
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        """
+        Initializes the artist based on the plot method declared on
+        the plot.
+        """
+        plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+        plot_fn = getattr(ax, plot_method)
+        artist = plot_fn(*plot_args, **plot_kwargs)
+        return {'artist': artist[0] if isinstance(artist, list) and
+                len(artist) == 1 else artist}
+
+
     def update_handles(self, key, axis, element, ranges, style):
         """
         Update the elements of the plot.

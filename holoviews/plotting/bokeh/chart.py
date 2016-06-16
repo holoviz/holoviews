@@ -1,20 +1,21 @@
-import numpy as np
+from collections import defaultdict
 
+import numpy as np
+import param
 try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
-import param
 
 from ...element import Raster, Points, Polygons, Spikes
+from ...core import util
 from ...core.util import max_range, basestring
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import get_cmap, mpl_to_bokeh, update_plot
+from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex
 
 
 class PointPlot(ElementPlot):
@@ -45,8 +46,7 @@ class PointPlot(ElementPlot):
                    'unselected_color'] +
                   line_properties + fill_properties)
 
-    _plot_method = 'scatter'
-
+    _plot_methods = dict(single='scatter', batched='scatter')
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
@@ -87,6 +87,24 @@ class PointPlot(ElementPlot):
         return data, mapping
 
 
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        style = self.style.max_cycles(len(self.ordering))
+        for key, el in element.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld)
+            if 'color' not in eldata:
+                zorder = self.get_zorder(element, key, el)
+                val = style[zorder].get('color')
+                elmapping['color'] = 'color'
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'].append([val]*len(data[k][-1]))
+        data = {k: np.concatenate(v) for k, v in data.items()}
+        return data, elmapping
+
+
     def _init_glyph(self, plot, mapping, properties):
         """
         Returns a Bokeh glyph object.
@@ -104,14 +122,16 @@ class PointPlot(ElementPlot):
             renderer = plot.add_glyph(source, selected, selection_glyph=selected,
                                       nonselection_glyph=unselected)
         else:
-            renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+            plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+            renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
 
 class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
-    _plot_method = 'line'
+    _plot_methods = dict(single='line', batched='multi_line')
+    _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
     def get_data(self, element, ranges=None, empty=False):
         x = element.get_dimension(0).name
@@ -119,6 +139,24 @@ class CurvePlot(ElementPlot):
         return ({x: [] if empty else element.dimension_values(0),
                  y: [] if empty else element.dimension_values(1)},
                 dict(x=x, y=y))
+
+    def get_batched_data(self, overlay, ranges=None, empty=False):
+        style = self.style.max_cycles(len(self.ordering))
+        data = defaultdict(list)
+        for key, el in overlay.items():
+            zorder = self.get_zorder(overlay, key, el)
+            for opt in self._mapping:
+                if opt in ['xs', 'ys']:
+                    index = {'xs': 0, 'ys': 1}[opt]
+                    val = el.dimension_values(index)
+                else:
+                    val = style[zorder].get(opt)
+                if opt == 'color' and isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data[opt].append(val)
+        data = {opt: vals for opt, vals in data.items()
+                if not any(v is None for v in vals)}
+        return data, {k: k for k in data}
 
 
 class AreaPlot(PolygonPlot):
@@ -173,7 +211,7 @@ class SpreadPlot(PolygonPlot):
 class HistogramPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
-    _plot_method = 'quad'
+    _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
         mapping = dict(top='top', bottom=0, left='left', right='right')

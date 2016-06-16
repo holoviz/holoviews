@@ -17,7 +17,7 @@ class RasterPlot(ElementPlot):
         Whether to show legend for the plot.""")
 
     style_opts = ['cmap']
-    _plot_method = 'image'
+    _plot_methods = dict(single='image')
     _update_handles = ['color_mapper', 'source', 'glyph']
 
     def __init__(self, *args, **kwargs):
@@ -74,7 +74,7 @@ class RasterPlot(ElementPlot):
 class RGBPlot(RasterPlot):
 
     style_opts = []
-    _plot_method = 'image_rgba'
+    _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = super(RGBPlot, self).get_data(element, ranges, empty)
@@ -113,7 +113,7 @@ class HeatmapPlot(ElementPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    _plot_method = 'rect'
+    _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def _axes_props(self, plots, subplots, element, ranges):
@@ -148,7 +148,7 @@ class QuadMeshPlot(ElementPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    _plot_method = 'rect'
+    _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def get_data(self, element, ranges=None, empty=False):

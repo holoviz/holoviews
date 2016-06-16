@@ -54,9 +54,7 @@ class CurvePlot(ChartPlot):
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
 
-    def init_artists(self, ax, plot_data, plot_kwargs):
-        return {'artist': ax.plot(*plot_data, **plot_kwargs)[0]}
-
+    _plot_methods = dict(single='plot')
 
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
@@ -86,6 +84,8 @@ class ErrorPlot(ChartPlot):
                   'linewidth', 'markeredgecolor', 'markeredgewidth',
                   'markerfacecolor', 'markersize', 'solid_capstyle',
                   'solid_joinstyle', 'dashes', 'color']
+
+    _plot_methods = dict(single='errorbar')
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         _, (bottoms, tops), verts = ax.errorbar(*plot_data, **plot_kwargs)
@@ -142,6 +142,8 @@ class AreaPlot(ChartPlot):
     style_opts = ['color', 'facecolor', 'alpha', 'edgecolor', 'linewidth',
                   'hatch', 'linestyle', 'joinstyle',
                   'fill', 'capstyle', 'interpolate']
+
+    _plot_methods = dict(single='fill_between')
 
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
@@ -455,10 +457,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
                   'cmap', 'vmin', 'vmax']
 
     _disabled_opts = ['size']
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        return {'artist': ax.scatter(*plot_args, **plot_kwargs)}
-
+    _plot_methods = dict(single='scatter')
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
@@ -546,6 +545,8 @@ class VectorFieldPlot(ColorbarPlot):
                   'scale', 'headlength', 'headaxislength', 'pivot',
                   'width','headwidth']
 
+    _plot_methods = dict(single='quiver')
+
     def __init__(self, *args, **params):
         super(VectorFieldPlot, self).__init__(*args, **params)
         self._min_dist = self._get_map_info(self.hmap)
@@ -598,14 +599,10 @@ class VectorFieldPlot(ColorbarPlot):
         if 'pivot' not in style: style['pivot'] = 'mid'
         if not self.arrow_heads:
             style['headaxislength'] = 0
-        style.update(dict(scale=input_scale, angles=angles))
+        style.update(dict(scale=input_scale, angles=angles,
+                          units='x', scale_units='x'))
 
         return args, style, {}
-
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        quiver = ax.quiver(*plot_args, units='x', scale_units='x', **plot_kwargs)
-        return {'artist': quiver}
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -960,6 +957,8 @@ class BoxPlot(ChartPlot):
                   'whiskerprops', 'capprops', 'flierprops',
                   'medianprops', 'meanprops', 'meanline']
 
+    _plot_methods = dict(single='boxplot')
+
     def get_extents(self, element, ranges):
         return (np.NaN,)*4
 
@@ -985,11 +984,6 @@ class BoxPlot(ChartPlot):
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims,
                                                element.vdims[0]]}
-
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        boxplot = ax.boxplot(*plot_args, **plot_kwargs)
-        return {'artist': boxplot}
 
 
     def teardown_handles(self):

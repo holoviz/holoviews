@@ -30,6 +30,7 @@ class RasterPlot(ColorbarPlot):
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
+    _plot_methods = dict(single='imshow')
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -73,12 +74,6 @@ class RasterPlot(ColorbarPlot):
         style['extent'] = [l, r, b, t]
 
         return [data], style, {'xticks': xticks, 'yticks': yticks}
-
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        im = ax.imshow(*plot_args, **plot_kwargs)
-        return {'artist': im}
-
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']
@@ -192,6 +187,8 @@ class QuadMeshPlot(ColorbarPlot):
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
+    _plot_methods = dict(single='pcolormesh')
+
     def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
@@ -239,6 +236,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_extents = param.Parameter(precedence=-1)
     apply_ranges = param.Parameter(precedence=-1)
     apply_ticks = param.Parameter(precedence=-1)
+    batched = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
@@ -247,6 +245,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
+    legend_limit = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
     logz = param.Parameter(precedence=-1)
