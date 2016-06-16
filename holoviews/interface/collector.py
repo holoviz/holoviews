@@ -538,30 +538,34 @@ class Collector(AttrTree):
         self._schedule_tasks(times, strict)
         (self.fixed, attrtree.fixed) = (False, False)
 
-        for i, t in enumerate(np.diff(times)):
-            interval_hook(float(t))
+        try:
+            for i, t in enumerate(np.diff(times)):
+                interval_hook(float(t))
 
-            # An empty attrtree buffer stops analysis repeatedly
-            # computing results over the entire accumulated map
-            attrtree_buffer = Layout()
-            for task in self._scheduled_tasks:
-                try:
-                    if isinstance(task, Analyze) and task.mapwise:
-                        task(attrtree, self.time_fn(), times)
-                    else:
-                        task(attrtree_buffer, self.time_fn(), times)
-                        attrtree.update(attrtree_buffer)
-                except Exception as e:
-                    param.main.warning("Task %s at time %s failed with following "
-                                       "exception and was skipped:\n%s",
-                                       task, self.time_fn(), e)
-                if update_progress:
-                    interval_hook.percent_range = (completion[i],
-                                                   completion[i+1])
-            interval_hook(0)
+                # An empty attrtree buffer stops analysis repeatedly
+                # computing results over the entire accumulated map
+                attrtree_buffer = Layout()
+                for task in self._scheduled_tasks:
+                    try:
+                        if isinstance(task, Analyze) and task.mapwise:
+                            task(attrtree, self.time_fn(), times)
+                        else:
+                            task(attrtree_buffer, self.time_fn(), times)
+                            attrtree.update(attrtree_buffer)
+                    except Exception as e:
+                        param.main.warning("Task %s at time %s failed with following "
+                                           "exception and was skipped:\n%s",
+                                           task, self.time_fn(), e)
+                    if update_progress:
+                        interval_hook.percent_range = (completion[i],
+                                                       completion[i+1])
+                interval_hook(0)
 
-        (self.fixed, attrtree.fixed) = (True, True)
-        return attrtree
+            (self.fixed, attrtree.fixed) = (True, True)
+            return attrtree
+        except KeyboardInterrupt:
+            (self.fixed, attrtree.fixed) = (True, True)
+            return attrtree
 
 
     def verify_times(self, times, strict=False):

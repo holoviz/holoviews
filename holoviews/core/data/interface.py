@@ -204,3 +204,7 @@ class Interface(param.Parameterized):
     @classmethod
     def length(cls, dataset):
         return len(dataset.data)
+
+    @classmethod
+    def redim(cls, dataset, dimensions):
+        return dataset.data

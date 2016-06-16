@@ -349,7 +349,7 @@ class VectorField(Points):
     group = param.String(default='VectorField', constant=True)
 
     vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
-                                Dimension('Magnitude')], bounds=(1, 2))
+                                Dimension('Magnitude')], bounds=(1, None))
 
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns

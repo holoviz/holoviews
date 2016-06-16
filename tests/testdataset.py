@@ -83,6 +83,17 @@ class HomogeneousColumnTypes(object):
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.sort('y'), dataset_sorted)
 
+
+    def test_dataset_redim_hm_kdim(self):
+        redimmed = self.dataset_hm.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_hm.dimension_values('x'))
+
+    def test_dataset_redim_hm_vdim(self):
+        redimmed = self.dataset_hm.redim(y='Value')
+        self.assertEqual(redimmed.dimension_values('Value'),
+                         self.dataset_hm.dimension_values('y'))
+
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 10, 20]))
@@ -404,7 +415,7 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
 
 class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
-    Test of the NdDataset interface (mostly for backwards compatibility)
+    Test of the Grid array interface
     """
 
     def setUp(self):
@@ -479,4 +490,37 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
 
     def test_dataset_groupby(self):
         self.assertEqual(self.dataset_hm.groupby('x').keys(), list(self.xs))
+
+
+
+class IrisDatasetTest(GridDatasetTest):
+    """
+    Tests for Iris interface
+    """
+
+    def setUp(self):
+        import iris
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['cube']
+        self.data_instance_type = iris.cube.Cube
+        self.init_data()
+
+    # Disabled tests for NotImplemented methods
+    def test_dataset_add_dimensions_values_hm(self):
+        pass
+
+    def test_dataset_sort_vdim_hm(self):
+        pass
+
+    def test_dataset_1D_reduce_hm(self):
+        pass
+
+    def test_dataset_2D_reduce_hm(self):
+        pass
+
+    def test_dataset_2D_aggregate_partial_hm(self):
+        pass
+
+    def test_dataset_sample_hm(self):
+        pass
 

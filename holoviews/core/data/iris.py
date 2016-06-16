@@ -75,16 +75,18 @@ class CubeInterface(GridInterface):
             kdim_names = [kd.name for kd in eltype.kdims]
 
         if not isinstance(data, iris.cube.Cube):
+            ndims = len(kdim_names)
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kdims]
+            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
             if isinstance(data, tuple):
-                coords = [iris.coords.DimCoord(vals, long_name=kd)
-                          for kd, vals in zip(kdim_names, data)]
                 value_array = data[-1]
-                vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
             elif isinstance(data, dict):
-                vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
-                coords = [iris.coords.DimCoord(vals, long_name=kd)
-                          for kd, vals in data.items() if kd in kdims]
                 value_array = data[vdim]
+            coords = [(iris.coords.DimCoord(data[kd.name], long_name=kd.name,
+                                            units=kd.unit), ndims-n-1)
+                      for n, kd in enumerate(kdims)]
             try:
                 data = iris.cube.Cube(value_array, long_name=vdim,
                                       dim_coords_and_dims=coords)
@@ -199,6 +201,21 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def redim(cls, dataset, dimensions):
+        """
+        Rename coords on the Cube.
+        """
+        new_dataset = dataset.data.copy()
+        for name, new_dim in dimensions.items():
+            if name == new_dataset.name():
+                new_dataset.rename(new_dim.name)
+            for coord in new_dataset.dim_coords:
+                if name == coord.name():
+                    coord.rename(new_dim.name)
+        return new_dataset
+
+
+    @classmethod
     def length(cls, dataset):
         """
         Returns the total number of samples in the dataset.
@@ -223,6 +240,25 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def sample(cls, dataset, samples=[]):
+        """
+        Sampling currently not implemented.
+        """
+        raise NotImplementedError
+
+
+    @classmethod
+    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+        """
+        Adding value dimensions not currently supported by iris interface.
+        Adding key dimensions not possible on dense interfaces.
+        """
+        if not vdim:
+            raise Exception("Cannot add key dimension to a dense representation.")
+        raise NotImplementedError
+
+
+    @classmethod
     def select_to_constraint(cls, selection):
         """
         Transform a selection dictionary to an iris Constraint.
@@ -232,7 +268,7 @@ class CubeInterface(GridInterface):
             if isinstance(constraint, slice):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
-                constraint = iris.util.between(*constraint)
+                constraint = iris.util.between(*constraint, rh_inclusive=False)
             constraint_kwargs[dim] = constraint
         return iris.Constraint(**constraint_kwargs)
 
@@ -244,8 +280,9 @@ class CubeInterface(GridInterface):
         """
         constraint = cls.select_to_constraint(selection)
         pre_dim_coords = [c.name() for c in dataset.data.dim_coords]
+        indexed = cls.indexed(dataset, selection)
         extracted = dataset.data.extract(constraint)
-        if not extracted.dim_coords:
+        if indexed and not extracted.dim_coords:
             return extracted.data.item()
         post_dim_coords = [c.name() for c in extracted.dim_coords]
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]

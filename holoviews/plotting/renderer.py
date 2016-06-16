@@ -363,7 +363,8 @@ class Renderer(Exporter):
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise Exception("No corresponding plot type found for %r" % type(obj))
+            raise SkipRendering("No plotting class for {0} "
+                                "found".format(element_type.__name__))
         return plotclass
 
 

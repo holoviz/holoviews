@@ -122,6 +122,10 @@ class DictInterface(Interface):
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)
 
+    @classmethod
+    def redim(cls, dataset, dimensions):
+        return OrderedDict([(dimensions.get(k, dataset.get_dimension(k)).name, v)
+                            for k,v in dataset.data.items()])
 
     @classmethod
     def concat(cls, dataset_objs):
