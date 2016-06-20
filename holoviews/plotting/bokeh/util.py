@@ -1,6 +1,7 @@
+from distutils.version import LooseVersion
+
 from collections import defaultdict
 import numpy as np
-from ...core.options import abbreviated_exception
 
 try:
     from matplotlib import colors
@@ -8,17 +9,18 @@ try:
 except ImportError:
     cm, colors = None, None
 
-try:
+import bokeh
+bokeh_version = LooseVersion(bokeh.__version__)
+if bokeh_version < '0.11':
     from bokeh.enums import Palette
     from bokeh.plotting import Plot
-    bokeh_lt_011 = True
-except:
+else:
     from bokeh.core.enums import Palette
     from bokeh.models.plots import Plot
-    bokeh_lt_011 = False
-
 from bokeh.models import GlyphRenderer
 from bokeh.plotting import Figure
+
+from ...core.options import abbreviated_exception
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -137,7 +139,7 @@ def models_to_json(models):
             continue
         else:
             ids.append(plotobj.ref['id'])
-        if bokeh_lt_011:
+        if bokeh_version < '0.11':
             json = plotobj.vm_serialize(changed_only=True)
         else:
             json = plotobj.to_json(False)

@@ -15,7 +15,11 @@ from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
-from .util import layout_padding
+from .util import bokeh_version, layout_padding
+
+if bokeh_version >= '0.12':
+    from bokeh.layouts import gridplot
+
 
 class BokehPlot(DimensionedPlot):
     """
@@ -261,7 +265,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
                 passed_plots.append(None)
-        self.handles['plot'] = BokehGridPlot(children=plots[::-1])
+        if bokeh_version < '0.12':
+            self.handles['plot'] = BokehGridPlot(children=plots[::-1])
+        else:
+            self.handles['plot'] = gridplot(plots[::-1])
         self.handles['plots'] = plots
         if self.shared_datasource:
             self.sync_sources()
@@ -481,7 +488,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
         # Replace None types with empty plots
         # to avoid bokeh bug
-        if adjoined:
+        if adjoined and bokeh_version < '0.12':
             plots = layout_padding(plots)
 
         # Determine the most appropriate composite plot type
@@ -496,6 +503,8 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       for c, child in enumerate(row)
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
+        elif bokeh_version >= '0.12':
+            layout_plot = gridplot(children=plots)
         elif len(plots) == 1 and not adjoined:
             layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:

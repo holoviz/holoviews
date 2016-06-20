@@ -1,18 +1,14 @@
 import json
-from distutils.version import LooseVersion
+
+from .util import bokeh_version
+from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 import param
 import bokeh
 from bokeh.io import Document
-
-if LooseVersion(bokeh.__version__) >= LooseVersion('0.11'):
-    bokeh_lt_011 = False
+if bokeh_version >= '0.11':
     from bokeh.io import _CommsHandle
     from bokeh.util.notebook import get_comms
-else:
-    bokeh_lt_011 = True
-
-from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 
 class BokehWidget(NdWidget):
@@ -43,7 +39,7 @@ class BokehWidget(NdWidget):
         first call and
         """
         self.plot.update(idx)
-        if self.embed or fig_format == 'html' or bokeh_lt_011:
+        if self.embed or fig_format == 'html' or bokeh_version < '0.11':
             return self.renderer.html(self.plot, fig_format)
         else:
             doc = self.plot.document

@@ -1,19 +1,17 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, TapTool, ColumnDataSource
-
-try:
-    from bokeh.protocol import serialize_json
-    bokeh_lt_011 = True
-except ImportError:
-    from bokeh.core.json_encoder import serialize_json
-    bokeh_lt_011 = False
-
 import param
 
 from ...core.data import ArrayColumns
-from .util import models_to_json
+from .renderer import bokeh_version
+from .util import models_to_json, bokeh_version
+
+from bokeh.models import CustomJS, TapTool, ColumnDataSource
+if bokeh_version < '0.11':
+    from bokeh.protocol import serialize_json
+else:
+    from bokeh.core.json_encoder import serialize_json
 
 
 class Callback(param.ParameterizedFunction):
@@ -152,7 +150,7 @@ class Callback(param.ParameterizedFunction):
         Serializes any Bokeh plot objects passed to it as a list.
         """
         data = dict(data=models_to_json(objects))
-        if not bokeh_lt_011:
+        if bokeh_version >= '0.11':
             plot = self.plots[0]
             data['root'] = plot.state._id
         return serialize_json(data)

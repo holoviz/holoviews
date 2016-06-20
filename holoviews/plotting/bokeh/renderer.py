@@ -1,23 +1,23 @@
 import uuid
+
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
-from .util import models_to_json
+from .util import bokeh_version, models_to_json
 
 import param
 from param.parameterized import bothmethod
 
+import bokeh
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
-try:
+if bokeh_version < '0.11':
     from bokeh.protocol import serialize_json
-    bokeh_lt_011 = True
-except ImportError:
+else:
     from bokeh.core.json_encoder import serialize_json
     from bokeh.model import _ModelInDocument as add_to_document
-    bokeh_lt_011 = False
 
 
 class BokehRenderer(Renderer):
@@ -55,20 +55,20 @@ class BokehRenderer(Renderer):
             return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)
-            html = '<center>%s</center>' % html
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
             data = dict(data=[])
-            if not bokeh_lt_011:
+            if bokeh_version >= '0.11':
                 data['root'] = plot.state._id
             data['data'] = models_to_json(plotobjects)
             return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        if not bokeh_lt_011:
+        if bokeh_version >= '0.11':
             doc_handler = add_to_document(plot.state)
             with doc_handler:
                 doc = doc_handler._doc
