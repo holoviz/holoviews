@@ -164,8 +164,7 @@ def compute_static_patch(document, models):
     attributes and will break if new models have been added since
     the plot was first created.
     """
-    json = document.to_json()
-    references = refs(json)
+    references = refs(document.to_json())
     requested_updates = [m.ref['id'] for m in models]
 
     value_refs = {}
