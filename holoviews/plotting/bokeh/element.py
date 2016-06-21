@@ -554,7 +554,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             handles.append(plot.title)
 
         if self.current_frame:
-            framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
+            if self.subplots:
+                current_frames = [(sp.current_frame if isinstance(sp.current_frame, Element)
+                                   else sp.current_frame.values()[0])
+                                  for sp in self.subplots.values()
+                                  if sp.current_frame]
+                framewise = any(self.lookup_options(frame, 'norm').options.get('framewise')
+                                for frame in current_frames)
+            else:
+                opts = self.lookup_options(self.current_frame, 'norm')
+                framewise = opts.options.get('framewise')
             if framewise or isinstance(self.hmap, DynamicMap):
                 handles += [plot.x_range, plot.y_range]
         return handles
