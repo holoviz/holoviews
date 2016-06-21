@@ -1,19 +1,13 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, TapTool, ColumnDataSource
-
-try:
-    from bokeh.protocol import serialize_json
-    bokeh_lt_011 = True
-except ImportError:
-    from bokeh.core.json_encoder import serialize_json
-    bokeh_lt_011 = False
-
 import param
 
 from ...core.data import ArrayColumns
-from .util import models_to_json
+from .util import compute_static_patch, models_to_json
+
+from bokeh.models import CustomJS, TapTool, ColumnDataSource
+from bokeh.core.json_encoder import serialize_json
 
 
 class Callback(param.ParameterizedFunction):
@@ -73,20 +67,11 @@ class Callback(param.ParameterizedFunction):
         function callback(msg){
           if (msg.msg_type == "execute_result") {
             var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
-            if (data.root !== undefined) {
-              var doc = Bokeh.index[data.root].model.document;
+            if (data !== undefined) {
+               console.log(data.root)
+               var doc = Bokeh.index[data.root].model.document;
+	       doc.apply_json_patch(data.patch);
             }
-            $.each(data.data, function(i, value) {
-              if (data.root !== undefined) {
-                var ds = doc.get_model_by_id(value.id);
-              } else {
-                var ds = Bokeh.Collections(value.type).get(value.id);
-              }
-              if (ds != undefined) {
-                ds.set(value.data);
-                ds.trigger('change');
-              }
-            });
           } else {
             console.log("Python callback returned unexpected message:", msg)
           }
@@ -147,14 +132,13 @@ class Callback(param.ParameterizedFunction):
             return self.serialize(objects)
 
 
-    def serialize(self, objects):
+    def serialize(self, models):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
-        data = dict(data=models_to_json(objects))
-        if not bokeh_lt_011:
-            plot = self.plots[0]
-            data['root'] = plot.state._id
+        plot = self.plots[0]
+        patch = compute_static_patch(plot.document, models)
+        data = dict(root=plot.state._id, patch=patch)
         return serialize_json(data)
 
 

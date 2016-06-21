@@ -1,6 +1,7 @@
+from distutils.version import LooseVersion
+
 from collections import defaultdict
 import numpy as np
-from ...core.options import abbreviated_exception
 
 try:
     from matplotlib import colors
@@ -8,17 +9,15 @@ try:
 except ImportError:
     cm, colors = None, None
 
-try:
-    from bokeh.enums import Palette
-    from bokeh.plotting import Plot
-    bokeh_lt_011 = True
-except:
-    from bokeh.core.enums import Palette
-    from bokeh.models.plots import Plot
-    bokeh_lt_011 = False
-
+import bokeh
+bokeh_version = LooseVersion(bokeh.__version__)
+from bokeh.core.enums import Palette
+from bokeh.document import Document
+from bokeh.models.plots import Plot
 from bokeh.models import GlyphRenderer
 from bokeh.plotting import Figure
+
+from ...core.options import abbreviated_exception
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -32,6 +31,10 @@ markers = {'s': {'marker': 'square'},
            '3': {'marker': 'triangle', 'orientation': np.pi},
            '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
 
+# List of models that do not update correctly and must be ignored
+# Should only include models that have no direct effect on the display
+# and can therefore be safely ignored.
+IGNORED_MODELS = ['LinearAxis']
 
 def rgb2hex(rgb):
     """
@@ -137,16 +140,52 @@ def models_to_json(models):
             continue
         else:
             ids.append(plotobj.ref['id'])
-        if bokeh_lt_011:
-            json = plotobj.vm_serialize(changed_only=True)
-        else:
-            json = plotobj.to_json(False)
-            json.pop('tool_events', None)
-            json.pop('renderers', None)
-            json_data.append({'id': plotobj.ref['id'],
-                              'type': plotobj.ref['type'],
-                              'data': json})
+        json = plotobj.to_json(False)
+        json.pop('tool_events', None)
+        json.pop('renderers', None)
+        json_data.append({'id': plotobj.ref['id'],
+                          'type': plotobj.ref['type'],
+                          'data': json})
     return json_data
+
+
+def refs(json):
+    """
+    Finds all the references to other objects in the json
+    representation of a bokeh Document.
+    """
+    result = {}
+    for obj in json['roots']['references']:
+        result[obj['id']] = obj
+    return result
+
+
+def compute_static_patch(document, models):
+    """
+    Computes a patch to update an existing document without
+    diffing the json first, making it suitable for static updates
+    between arbitrary frames. Note that this only supports changed
+    attributes and will break if new models have been added since
+    the plot was first created.
+    """
+    references = refs(document.to_json())
+    requested_updates = [m.ref['id'] for m in models]
+
+    value_refs = {}
+    events = []
+    update_types = defaultdict(list)
+    for ref_id, obj in references.items():
+        if ref_id not in requested_updates and not obj['type'] in IGNORED_MODELS:
+            continue
+        for key, val in obj['attributes'].items():
+            event = Document._event_for_attribute_change(references,
+                                                         obj, key, val,
+                                                         value_refs)
+            events.append(event)
+            update_types[obj['type']].append(key)
+    value_refs = {ref_id: val for ref_id, val in value_refs.items()
+                  if val['type'] not in IGNORED_MODELS}
+    return dict(events=events, references=list(value_refs.values()))
 
 
 def hsv_to_rgb(hsv):
