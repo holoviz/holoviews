@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import param
 
-from ...core.data import ArrayColumns
+from ...core.data import ArrayColumns, PandasInterface
 from .util import compute_static_patch, models_to_json
 
 from bokeh.models import CustomJS, TapTool, ColumnDataSource
@@ -66,6 +66,9 @@ class Callback(param.ParameterizedFunction):
         Avoid running the callback if the callback data is unchanged.
         Useful for avoiding infinite loops.""")
 
+    throttle = param.Number(default=100, doc="""
+        Throttling timeout in milliseconds.""")
+
     JS_callback = """
         function callback(msg){
           if (msg.msg_type !== "execute_result") {
@@ -77,13 +80,28 @@ class Callback(param.ParameterizedFunction):
     """
 
     IPython_callback = """
-        if (!(_.isEmpty(data))) {{
+        function execute_callback(data) {{
            var argstring = JSON.stringify(data);
            argstring = argstring.replace('true', 'True').replace('false','False');
            var kernel = IPython.notebook.kernel;
            var cmd = "Callbacks.callbacks[{callback_id}].update(" + argstring + ")";
            var pyimport = "from holoviews.plotting.bokeh import Callbacks;";
            kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
+        }}
+
+        if (!HoloViewsWidget._throttle) {{
+            HoloViewsWidget._throttle = {{}}
+            HoloViewsWidget._blocked = true;
+        }}
+
+        var throttled_cb = HoloViewsWidget._throttle['{callback_id}'];
+        if (_.isEmpty(data)) {{
+        }} else if (throttled_cb) {{
+            throttled_cb(data)
+        }} else if (typeof _ !== "undefined") {{
+            throttled_cb = _.debounce(execute_callback, {throttle});
+            HoloViewsWidget._throttle['{callback_id}'] = throttled_cb;
+            HoloViewsWidget._throttle['{callback_id}'](data)
         }}
     """
 
@@ -243,7 +261,7 @@ class DownsampleColumns(DownsampleCallback):
 
         plot = self.plots[0]
         element = plot.current_frame
-        if element.interface is not ArrayColumns:
+        if element.interface not in [ArrayColumns, PandasInterface]:
             element = plot.current_frame.clone(datatype=['array'])
 
         # Slice element to current ranges
@@ -261,13 +279,13 @@ class DownsampleColumns(DownsampleCallback):
             # Randomize element samples and slice to region
             # Randomization consistent to avoid "flicker".
             length = len(element)
-            inds = self.random_index[self.random_index<length]
-            data = element.data[inds, :]
-            randomized = element.clone(data, datatype=['array'])
-            sliced = randomized.select(**{xdim: (xstart, xend),
-                                          ydim: (ystart, yend)})
-            sliced = sliced.clone(sliced.data[:self.max_samples, :])
-
+            if element.interface is PandasInterface:
+                data = sliced.data.sample(n=self.max_samples, random_state=self.random_seed)
+            else:
+                inds = self.random_index[self.random_index<length]
+                data = element.data[inds, :]
+            sliced = element.clone(data)
+            
         # Update data source
         new_data = plot.get_data(sliced, ranges)[0]
         source = plot.handles['source']
@@ -321,7 +339,8 @@ class Callbacks(param.Parameterized):
         self.plot_callbacks[id(cb_obj)].append(pycallback)
 
         # Generate callback JS code to get all the requested data
-        self_callback = Callback.IPython_callback.format(callback_id=cb_id)
+        self_callback = Callback.IPython_callback.format(callback_id=cb_id,
+                                                         throttle=pycallback.throttle)
         code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
