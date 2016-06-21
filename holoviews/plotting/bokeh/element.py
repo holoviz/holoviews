@@ -23,7 +23,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
-from .util import mpl_to_bokeh, convert_datetime, update_plot
+from .util import mpl_to_bokeh, convert_datetime, update_plot, bokeh_version
 
 
 # Define shared style properties for bokeh plots
@@ -265,10 +265,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
 
+        if self.show_title:
+            title = self._format_title(key, separator=' ')
+        else:
+            title = ''
+
         if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
             properties['webgl'] = self.renderer.webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                     y_axis_type=y_axis_type,
+                                     y_axis_type=y_axis_type, title=title,
                                      tools=tools, **properties)
 
 
@@ -277,8 +282,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Returns a dictionary of plot properties.
         """
         plot_props = dict(plot_height=self.height, plot_width=self.width)
-        if self.show_title:
-            plot_props['title'] = self._format_title(key, separator=' ')
+        if bokeh_version < '0.12':
+            plot_props.update(self._title_properties(key, plot, element))
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
@@ -288,6 +293,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for lod_prop, v in lod.items():
             plot_props['lod_'+lod_prop] = v
         return plot_props
+
+
+    def _title_properties(self, key, plot, element):
+        if self.show_title:
+            title = self._format_title(key, separator=' ')
+        else:
+            title = ''
+
+        if bokeh_version < '0.12':
+            title_font = self._fontsize('title', 'title_text_font_size')
+            return dict(title=title, title_text_color='black', **title_font)
+        else:
+            title_font = self._fontsize('title', 'text_font_size')
+            return dict(text=title, text_color='black', **title_font)
 
 
     def _init_axes(self, plot):
@@ -344,6 +363,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                  for axis in ['x', 'y']}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
+
+        if bokeh_version >= '0.12':
+            plot.title.set(**self._title_properties(key, plot, element))
 
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
@@ -528,6 +550,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot = self.state
         handles.append(plot)
+        if bokeh_version >= '0.12':
+            handles.append(plot.title)
+
         if self.current_frame:
             framewise = self.lookup_options(self.current_frame, 'norm').options.get('framewise')
             if framewise or isinstance(self.hmap, DynamicMap):
