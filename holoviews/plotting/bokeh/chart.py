@@ -15,7 +15,7 @@ from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex
+from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 
 class PointPlot(ElementPlot):
@@ -377,11 +377,14 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    border = param.Integer(default=30, doc="Default borders on plot")
+    border = param.Integer(default=30 if bokeh_version < '0.12' else 5,
+                           doc="Default borders on plot")
 
-    height = param.Integer(default=100, doc="Height of plot")
+    height = param.Integer(default=100 if bokeh_version < '0.12' else 50,
+                           doc="Height of plot")
 
-    width = param.Integer(default=100, doc="Width of plot")
+    width = param.Integer(default=100 if bokeh_version < '0.12' else 50,
+                          doc="Width of plot")
 
 
 
