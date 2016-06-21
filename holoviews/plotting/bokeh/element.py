@@ -23,7 +23,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
-from .util import bokeh_version, mpl_to_bokeh, convert_datetime, update_plot
+from .util import mpl_to_bokeh, convert_datetime, update_plot
 
 
 # Define shared style properties for bokeh plots
@@ -280,9 +280,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.show_title:
             plot_props['title'] = self._format_title(key, separator=' ')
         if self.bgcolor:
-            bg_attr = 'background_fill'
-            if bokeh_version > '0.11': bg_attr += '_color'
-            plot_props[bg_attr] = self.bgcolor
+            plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
             for p in ['left', 'right', 'top', 'bottom']:
                 plot_props['min_border_'+p] = self.border
@@ -675,10 +673,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if legend_fontsize:
             plot.legend[0].label_text_font_size = legend_fontsize
 
-        if bokeh_version < '0.11':
-            plot.legend.orientation = self.legend_position
-        else:
-            plot.legend.location = self.legend_position
+        plot.legend.location = self.legend_position
         legends = plot.legend[0].legends
         new_legends = []
         for label, l in legends:

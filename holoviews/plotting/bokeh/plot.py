@@ -10,7 +10,7 @@ from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor
-from ...core.util import basestring
+from ...core.util import basestring, wrap_tuple
 from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
@@ -257,7 +257,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         passed_plots = list(plots)
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
-            subplot = self.subplots.get(coord, None)
+            subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 plot = subplot.initialize_plot(ranges=ranges, plots=passed_plots)
                 plots[r].append(plot)

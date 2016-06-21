@@ -1,14 +1,12 @@
 import json
 
-from .util import bokeh_version
-from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
-
 import param
 import bokeh
 from bokeh.io import Document
-if bokeh_version >= '0.11':
-    from bokeh.io import _CommsHandle
-    from bokeh.util.notebook import get_comms
+from bokeh.io import _CommsHandle
+from bokeh.util.notebook import get_comms
+
+from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 
 class BokehWidget(NdWidget):
@@ -39,15 +37,13 @@ class BokehWidget(NdWidget):
         first call and
         """
         self.plot.update(idx)
-        if self.embed or fig_format == 'html' or bokeh_version < '0.11':
-            return self.renderer.html(self.plot, fig_format)
+        if self.embed or fig_format == 'html':
+            html = self.renderer.html(self.plot, fig_format)
+            return html
         else:
-            doc = self.plot.document
-
             if hasattr(doc, 'last_comms_handle'):
                 handle = doc.last_comms_handle
             else:
-                doc.add_root(self.plot.state)
                 handle = _CommsHandle(get_comms(doc.last_comms_target),
                                       doc, doc.to_json())
                 doc.last_comms_handle = handle

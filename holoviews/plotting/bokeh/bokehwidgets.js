@@ -25,20 +25,8 @@ var BokehMethods = {
 			var data = this.frames[current];
 		}
 		if (data !== undefined) {
-			if (data.root !== undefined) {
-				var doc = Bokeh.index[data.root].model.document;
-			}
-			$.each(data.data, function(i, value) {
-				if (data.root !== undefined) {
-					var ds = doc.get_model_by_id(value.id);
-				} else {
-					var ds = Bokeh.Collections(value.type).get(value.id);
-				}
-				if (ds != undefined) {
-					ds.set(value.data);
-					ds.trigger('change');
-				}
-			});
+			var doc = Bokeh.index[data.root].model.document;
+			doc.apply_json_patch(data.patch);
 		}
 	},
 	dynamic_update : function(current){
