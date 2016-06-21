@@ -31,6 +31,10 @@ markers = {'s': {'marker': 'square'},
            '3': {'marker': 'triangle', 'orientation': np.pi},
            '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
 
+# List of models that do not update correctly and must be ignored
+# Should only include models that have no direct effect on the display
+# and can therefore be safely ignored.
+IGNORED_MODELS = ['LinearAxis']
 
 def rgb2hex(rgb):
     """
@@ -169,14 +173,18 @@ def compute_static_patch(document, models):
 
     value_refs = {}
     events = []
+    update_types = defaultdict(list)
     for ref_id, obj in references.items():
-        if ref_id not in requested_updates:
+        if ref_id not in requested_updates and not obj['type'] in IGNORED_MODELS:
             continue
         for key, val in obj['attributes'].items():
             event = Document._event_for_attribute_change(references,
                                                          obj, key, val,
                                                          value_refs)
             events.append(event)
+            update_types[obj['type']].append(key)
+    value_refs = {ref_id: val for ref_id, val in value_refs.items()
+                  if val['type'] not in IGNORED_MODELS}
     return dict(events=events, references=list(value_refs.values()))
 
 
