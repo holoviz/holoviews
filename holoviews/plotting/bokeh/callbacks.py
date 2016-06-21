@@ -8,6 +8,8 @@ from .util import compute_static_patch, models_to_json
 
 from bokeh.models import CustomJS, TapTool, ColumnDataSource
 from bokeh.core.json_encoder import serialize_json
+from bokeh.io import _CommsHandle
+from bokeh.util.notebook import get_comms
 
 
 class Callback(param.ParameterizedFunction):
@@ -35,6 +37,7 @@ class Callback(param.ParameterizedFunction):
 
     cb_attributes = param.List(default=[], doc="""
         Callback attributes returned to the Python callback.""")
+    
 
     code = param.String(default="", doc="""
         Custom javascript code executed on the callback. The code
@@ -65,19 +68,12 @@ class Callback(param.ParameterizedFunction):
 
     JS_callback = """
         function callback(msg){
-          if (msg.msg_type == "execute_result") {
-            var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
-            if (data !== undefined) {
-               console.log(data.root)
-               var doc = Bokeh.index[data.root].model.document;
-	       doc.apply_json_patch(data.patch);
-            }
-          } else {
+          if (msg.msg_type !== "execute_result") {
             console.log("Python callback returned unexpected message:", msg)
           }
         }
         callbacks = {iopub: {output: callback}};
-        var data = {};
+    var data = {};
     """
 
     IPython_callback = """
@@ -137,9 +133,16 @@ class Callback(param.ParameterizedFunction):
         Serializes any Bokeh plot objects passed to it as a list.
         """
         plot = self.plots[0]
-        patch = compute_static_patch(plot.document, models)
-        data = dict(root=plot.state._id, patch=patch)
-        return serialize_json(data)
+        doc = plot.document
+        if hasattr(doc, 'last_comms_handle'):
+            handle = doc.last_comms_handle
+        else:
+            handle = _CommsHandle(get_comms(doc.last_comms_target),
+                                      doc, doc.to_json())
+            doc.last_comms_handle = handle
+        msg = compute_static_patch(plot.document, models)
+        handle.comms.send(serialize_json(msg))
+        return None
 
 
 
