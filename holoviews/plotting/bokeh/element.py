@@ -363,13 +363,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif dim.type in dim.type_formatters:
                 formatter = dim.type_formatters[dim.type]
             if formatter:
+                msg = ('%s dimension formatter could not be '
+                       'converted to tick formatter. ' % dim.name)
                 try:
                     formatter = FuncTickFormatter.from_py_func(formatter)
-                except:
-                    self.warning('%s dimension formatter could not be '
-                                 'converted to tick formatter. Ensure '
-                                 'flexx is installed and pyscript can '
-                                 'compile the function.' % dim.name)
+                except RuntimeError:
+                    self.warning(msg+'Ensure Flexx is installed '
+                                 '("conda install -c bokeh flexx" or '
+                                 '"pip install flexx")')
+                except Exception as e:
+                    error = 'Pyscript raised an error: {0}'.format(e)
+                    error = error.replace('%', '%%')
+                    self.warning(msg+error)
                 else:
                     axis_props['formatter'] = formatter
         return axis_props
