@@ -44,11 +44,21 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
+    @property
+    def document(self):
+        return self._document
+
+    @document.setter
+    def document(self, doc):
+        self._document = doc
+        if self.subplots:
+            for plot in self.subplots.values():
+                plot.document = doc
+
     def __init__(self, *args, **params):
         super(BokehPlot, self).__init__(*args, **params)
-        self.document = None
+        self._document = None
         self.root = None
-
 
     def get_data(self, element, ranges=None, empty=False):
         """
