@@ -6,7 +6,6 @@ import bokeh.plotting
 from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
-from distutils.version import LooseVersion
 
 try:
     from bokeh import mpl
@@ -24,6 +23,11 @@ from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
 from .util import mpl_to_bokeh, convert_datetime, update_plot, bokeh_version
+
+if bokeh_version >= '0.12':
+    from bokeh.models import FuncTickFormatter
+else:
+    FuncTickFormatter = None
 
 
 # Define shared style properties for bokeh plots
@@ -270,8 +274,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        if LooseVersion(bokeh.__version__) >= LooseVersion('0.10'):
-            properties['webgl'] = self.renderer.webgl
+        properties['webgl'] = self.renderer.webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type, title=title,
                                      tools=tools, **properties)
@@ -325,7 +328,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.yaxis[:] = plot.right
 
 
-    def _axis_properties(self, axis, key, plot, element):
+    def _axis_properties(self, axis, key, plot, element, ax_mapping={'x': 0, 'y': 1}):
         """
         Returns a dictionary of axis properties depending
         on the specified axis.
@@ -351,6 +354,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     pass
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
+
+        dim = element.get_dimension(ax_mapping[axis])
+        if ax_mapping and dim:
+            formatter = None
+            if dim.value_format:
+                formatter = dim.value_format
+            elif dim.type in dim.type_formatters:
+                formatter = dim.type_formatters[dim.type]
+            if formatter:
+                try:
+                    formatter = FuncTickFormatter.from_py_func(formatter)
+                except:
+                    self.warning('%s dimension formatter could not be '
+                                 'converted to tick formatter. Ensure '
+                                 'flexx is installed and pyscript can '
+                                 'compile the function.' % dim.name)
+                else:
+                    axis_props['formatter'] = formatter
         return axis_props
 
 
