@@ -356,7 +356,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
         dim = element.get_dimension(ax_mapping[axis])
-        if ax_mapping and dim:
+        if FuncTickFormatter is not None and ax_mapping and dim:
             formatter = None
             if dim.value_format:
                 formatter = dim.value_format
