@@ -37,7 +37,6 @@ class Callback(param.ParameterizedFunction):
 
     cb_attributes = param.List(default=[], doc="""
         Callback attributes returned to the Python callback.""")
-    
 
     code = param.String(default="", doc="""
         Custom javascript code executed on the callback. The code
@@ -66,12 +65,22 @@ class Callback(param.ParameterizedFunction):
         Avoid running the callback if the callback data is unchanged.
         Useful for avoiding infinite loops.""")
 
-    throttle = param.Number(default=100, doc="""
-        Throttling timeout in milliseconds.""")
+    timeout = param.Number(default=2500, doc="""
+        Callback error timeout in milliseconds.""")
 
     JS_callback = """
         function callback(msg){
-          if (msg.msg_type !== "execute_result") {
+          if (msg.msg_type == "execute_result") {
+            if (msg.content.data['text/plain'] === "'Complete'") {
+               if (HoloViewsWidget._queued.length) {
+                   execute_callback(HoloViewsWidget._queued[0]);
+                   HoloViewsWidget._queued = [];
+               } else {
+                   HoloViewsWidget._blocked = false;
+               }
+               HoloViewsWidget._timeout = Date.now();
+            }
+          } else {
             console.log("Python callback returned unexpected message:", msg)
           }
         }
@@ -89,19 +98,20 @@ class Callback(param.ParameterizedFunction):
            kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
         }}
 
-        if (!HoloViewsWidget._throttle) {{
-            HoloViewsWidget._throttle = {{}}
-            HoloViewsWidget._blocked = true;
+        if (!HoloViewsWidget._queued) {{
+            HoloViewsWidget._queued = [];
+            HoloViewsWidget._blocked = false;
+            HoloViewsWidget._timeout = Date.now();
         }}
 
-        var throttled_cb = HoloViewsWidget._throttle['{callback_id}'];
+        timeout = HoloViewsWidget._timeout + {timeout};
         if (_.isEmpty(data)) {{
-        }} else if (throttled_cb) {{
-            throttled_cb(data)
-        }} else if (typeof _ !== "undefined") {{
-            throttled_cb = _.debounce(execute_callback, {throttle});
-            HoloViewsWidget._throttle['{callback_id}'] = throttled_cb;
-            HoloViewsWidget._throttle['{callback_id}'](data)
+        }} else if ((HoloViewsWidget._blocked && (Date.now() < timeout))) {{
+            HoloViewsWidget._queued = [data];
+        }} else {{
+            execute_callback(data);
+            HoloViewsWidget._blocked = true;
+            HoloViewsWidget._timeout = Date.now();
         }}
     """
 
@@ -156,11 +166,11 @@ class Callback(param.ParameterizedFunction):
             handle = doc.last_comms_handle
         else:
             handle = _CommsHandle(get_comms(doc.last_comms_target),
-                                      doc, doc.to_json())
+                                  doc, doc.to_json())
             doc.last_comms_handle = handle
         msg = compute_static_patch(plot.document, models)
         handle.comms.send(serialize_json(msg))
-        return None
+        return 'Complete'
 
 
 
@@ -285,7 +295,7 @@ class DownsampleColumns(DownsampleCallback):
                 inds = self.random_index[self.random_index<length]
                 data = element.data[inds, :]
             sliced = element.clone(data)
-            
+
         # Update data source
         new_data = plot.get_data(sliced, ranges)[0]
         source = plot.handles['source']
@@ -340,7 +350,7 @@ class Callbacks(param.Parameterized):
 
         # Generate callback JS code to get all the requested data
         self_callback = Callback.IPython_callback.format(callback_id=cb_id,
-                                                         throttle=pycallback.throttle)
+                                                         timeout=pycallback.timeout)
         code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
