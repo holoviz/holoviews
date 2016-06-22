@@ -258,12 +258,9 @@ class DownsampleColumns(DownsampleCallback):
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
 
-    def initialize(self, data):
-        plot = self.plots[0]
-        maxn = np.max([len(el) for el in plot.hmap])
-        np.random.seed(self.random_seed)
-        self.random_index = np.random.choice(maxn, maxn, False)
 
+    def initialize(self, data):
+        self.prng = np.random.RandomState(self.random_seed)
 
     def __call__(self, data):
         xstart, xend = data['x_range']
@@ -284,15 +281,13 @@ class DownsampleColumns(DownsampleCallback):
         else:
             ranges  = plot.current_ranges
 
-        # Avoid randomizing if possible (expensive)
         if len(sliced) > self.max_samples:
-            # Randomize element samples and slice to region
-            # Randomization consistent to avoid "flicker".
-            length = len(element)
+            length = len(sliced)
             if element.interface is PandasInterface:
-                data = sliced.data.sample(n=self.max_samples, random_state=self.random_seed)
+                data = sliced.data.sample(self.max_samples,
+                                          random_state=self.prng)
             else:
-                inds = self.random_index[self.random_index<length]
+                inds = self.prng.choice(length, self.max_samples, False)
                 data = element.data[inds, :]
             sliced = element.clone(data)
 
