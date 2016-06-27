@@ -164,8 +164,8 @@ class NdWidget(param.Parameterized):
 
     def encode_frames(self, frames):
         if isinstance(frames, dict):
-            frames = {idx: frame for idx, frame in frames.items()}
-        return frames
+            frames = dict(frames)
+        return json.dumps(frames)
 
     def save_json(self, frames):
         """

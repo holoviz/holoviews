@@ -277,7 +277,7 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        js_html, css_html = self.html_assets(backends=[self.backend])
+        js_html, css_html = self.html_assets()
         if template is None: template = static_template
         html = self.html(obj, fmt)
         return template.format(js=js_html, css=css_html, html=html)

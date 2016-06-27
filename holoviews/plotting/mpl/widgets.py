@@ -110,11 +110,11 @@ class MPLWidget(NdWidget):
         elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
-            frames = {idx: frame for idx, frame in frames.items()}
-            frames = json.dumps(frames, **encoder)
+            frames = dict(frames)
+            return json.dumps(frames, **encoder)
         else:
-            frames = {idx: frame for idx, frame in frames.items()}
-        return super(MPLWidget, self).encode_frames(frames)
+            frames = dict(frames)
+            return json.dumps(frames)
 
 
     def initialize_connection(self, plot):
