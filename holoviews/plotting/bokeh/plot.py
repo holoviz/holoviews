@@ -508,7 +508,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         # If there is a table and multiple rows and columns
         # everything will be forced to a vertical layout
         if self.tabs:
-            panels = [Panel(child=child, title=tab_titles.get(r, c))
+            panels = [Panel(child=child, title=str(tab_titles.get(r, c)))
                       for r, row in enumerate(plots)
                       for c, child in enumerate(row)
                       if child is not None]
