@@ -15,7 +15,7 @@ from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
-from .util import bokeh_version, layout_padding
+from .util import bokeh_version, layout_padding, pad_plots
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -514,7 +514,8 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif bokeh_version >= '0.12':
-            layout_plot = gridplot(children=plots)
+            plots, width = pad_plots(plots)
+            layout_plot = gridplot(children=plots, width=width)
         elif len(plots) == 1 and not adjoined:
             layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:

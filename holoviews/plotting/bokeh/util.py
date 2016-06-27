@@ -15,7 +15,11 @@ from bokeh.core.enums import Palette
 from bokeh.document import Document
 from bokeh.models.plots import Plot
 from bokeh.models import GlyphRenderer
+from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
+
+if bokeh_version >= '0.12':
+    from bokeh.layouts import WidgetBox
 
 from ...core.options import abbreviated_exception
 
@@ -248,3 +252,33 @@ def update_plot(old, new):
         if old_r not in updated:
             emptied = {k: [] for k in old_r.data_source.data}
             old_r.data_source.data.update(emptied)
+
+
+def pad_plots(plots, padding=0.85):
+    """
+    Accepts a grid of bokeh plots in form of a list of lists and
+    wraps any DataTable or Tabs in a WidgetBox with appropriate
+    padding. Required to avoid overlap in gridplot.
+    """
+    widths = []
+    for row in plots:
+        row_widths = []
+        for p in row:
+            if isinstance(p, Tabs):
+                width = np.max([p.width if isinstance(p, DataTable) else
+                                t.child.plot_width for t in p.tabs])
+                for p in p.tabs:
+                    p.width = int(padding*width)
+            elif isinstance(p, DataTable):
+                width = p.width
+                p.width = int(padding*width)
+            elif p:
+                width = p.plot_width
+            else:
+                width = 0
+            row_widths.append(width)
+        widths.append(row_widths)
+    plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+              for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
+    total_width = np.max([np.sum(row) for row in widths])
+    return plots, total_width
