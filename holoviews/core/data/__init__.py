@@ -24,6 +24,9 @@ try:
     DFColumns = PandasInterface
 except ImportError:
     pass
+except Exception as e:
+    param.main.warning('Pandas interface failed to import with '
+                       'following error: %s' % e)
 
 try:
     import iris # noqa (Availability import)
@@ -31,6 +34,9 @@ try:
     datatypes.append('cube')
 except ImportError:
     pass
+except Exception as e:
+    param.main.warning('Iris interface failed to import with '
+                       'following error: %s' % e)
 
 from ..dimension import Dimension, replace_dimensions
 from ..element import Element
