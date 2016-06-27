@@ -1,4 +1,5 @@
 import re
+import inspect
 
 import numpy as np
 from matplotlib import ticker
@@ -14,7 +15,13 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        return ticker.FuncFormatter(formatter)
+        args = [arg for arg in inspect.getargspec(formatter).args
+                if arg != 'self']
+        wrapped = formatter
+        if len(args) == 1:
+            def wrapped(val, pos=None):
+                return formatter(val)
+        return ticker.FuncFormatter(wrapped)
     elif isinstance(formatter, basestring):
         if re.findall(r"\{(\w+)\}", formatter):
             return ticker.StrMethodFormatter(formatter)
