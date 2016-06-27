@@ -91,6 +91,7 @@ class PointPlot(ElementPlot):
         data = defaultdict(list)
         style = self.style.max_cycles(len(self.ordering))
         for key, el in element.items():
+            self.set_param(**self.lookup_options(el, 'plot').options)
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)

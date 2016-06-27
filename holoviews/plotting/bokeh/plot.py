@@ -15,7 +15,7 @@ from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
-from .util import bokeh_version, layout_padding
+from .util import bokeh_version, layout_padding, pad_plots
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -508,13 +508,14 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         # If there is a table and multiple rows and columns
         # everything will be forced to a vertical layout
         if self.tabs:
-            panels = [Panel(child=child, title=tab_titles.get(r, c))
+            panels = [Panel(child=child, title=str(tab_titles.get(r, c)))
                       for r, row in enumerate(plots)
                       for c, child in enumerate(row)
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
         elif bokeh_version >= '0.12':
-            layout_plot = gridplot(children=plots)
+            plots, width = pad_plots(plots)
+            layout_plot = gridplot(children=plots, width=width)
         elif len(plots) == 1 and not adjoined:
             layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:

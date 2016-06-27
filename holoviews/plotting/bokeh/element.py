@@ -390,7 +390,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
 
-        if bokeh_version >= '0.12':
+        if bokeh_version >= '0.12' and not self.overlaid:
             plot.title.set(**self._title_properties(key, plot, element))
 
         if not self.show_grid:
@@ -424,11 +424,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Disables legends if show_legend is disabled.
         """
-        if not self.overlaid:
-            for l in self.handles['plot'].legend:
-                l.legends[:] = []
-                l.border_line_alpha = 0
-                l.background_fill_alpha = 0
+        for l in self.handles['plot'].legend:
+            l.legends[:] = []
+            l.border_line_alpha = 0
+            l.background_fill_alpha = 0
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -446,7 +445,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.show_legend:
             if self.overlay_dims:
-                legend = ', '.join([d.pprint_value_string(v) for d, v in
+                legend = ', '.join([d.pprint_value(v) for d, v in
                                     self.overlay_dims.items()])
             else:
                 legend = element.label
@@ -507,7 +506,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.callbacks:
             self.callbacks(self)
             self.callbacks.update(self)
-        self._process_legend()
+        if not self.overlaid:
+            self._process_legend()
         self.drawn = True
 
         return plot
@@ -749,13 +749,16 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
+        hover = False
         for key, subplot in self.subplots.items():
-            try:
                 el = element.get(key)
-                if el:
-                    tools.extend(subplot._init_tools(el))
-            except:
-                pass
+                if el is not None:
+                    el_tools = subplot._init_tools(el)
+                    el_tools = [t for t in el_tools
+                                if not (isinstance(t, HoverTool) and hover)]
+                    tools += el_tools
+                    if any(isinstance(t, HoverTool) for t in el_tools):
+                        hover = True
         return list(set(tools))
 
 
@@ -789,7 +792,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)
-        else:
+        elif not self.overlaid:
             self._process_legend()
         self.drawn = True
 
