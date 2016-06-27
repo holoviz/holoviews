@@ -2,6 +2,7 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
+from __future__ import unicode_literals
 
 from io import BytesIO
 import os, base64
@@ -10,7 +11,7 @@ from contextlib import contextmanager
 import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
-from ..core.util import find_file
+from ..core.util import find_file, unicode
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
@@ -276,7 +277,7 @@ class Renderer(Exporter):
         supplied format. Allows supplying a template formatting string
         with fields to interpolate 'js', 'css' and the main 'html'.
         """
-        js_html, css_html = self.html_assets()
+        js_html, css_html = self.html_assets(backends=[self.backend])
         if template is None: template = static_template
         html = self.html(obj, fmt)
         return template.format(js=js_html, css=css_html, html=html)
@@ -401,15 +402,25 @@ class Renderer(Exporter):
 
         js_html, css_html = '', ''
         for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
-            for js in dep.get('js', []):
-                js_html += '\n<script src="%s" type="text/javascript"></script>' % js
-            for css in dep.get('css', []):
-                css_html += '\n<link rel="stylesheet" href="%s">' % css
+            js_data = dep.get('js', [])
+            if isinstance(js_data, tuple):
+                for js in js_data:
+                    js_html += '\n<script type="text/javascript">%s</script>' % js
+            else:
+                for js in js_data:
+                    js_html += '\n<script src="%s" type="text/javascript"></script>' % js
+            css_data = dep.get('css', [])
+            if isinstance(js_data, tuple):
+                for css in css_data:
+                    css_html += '\n<style>%s</style>' % css
+            else:
+                for css in css_data:
+                    css_html += '\n<link rel="stylesheet" href="%s">' % css
 
         js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
         css_html += '\n<style>%s</style>' % widgetcss
 
-        return js_html, css_html
+        return unicode(js_html), unicode(css_html)
 
 
     @classmethod
