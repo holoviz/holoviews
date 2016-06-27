@@ -42,8 +42,8 @@ class LineAnnotationPlot(ElementPlot):
         """
         Returns a Bokeh glyph object.
         """
-        properties.pop('source')
-        properties.pop('legend')
+        properties.pop('source', None)
+        properties.pop('legend', None)
         box = BoxAnnotation(plot=plot, level='overlay',
                             **dict(mapping, **properties))
         plot.renderers.append(box)
