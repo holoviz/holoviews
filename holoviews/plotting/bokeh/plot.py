@@ -9,7 +9,7 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
-from ...core.options import Compositor
+from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple
 from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
@@ -392,6 +392,8 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 continue
 
             # Options common for any subplot
+            if isinstance(element, Layout):
+                raise SkipRendering("Cannot plot nested Layouts.")
             vtype = element.type if isinstance(element, HoloMap) else element.__class__
             plot_type = Store.registry[self.renderer.backend].get(vtype, None)
             plotopts = self.lookup_options(element, 'plot').options
