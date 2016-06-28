@@ -456,6 +456,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_glyph(self, glyph, properties, mapping):
         allowed_properties = glyph.properties()
+        properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
         glyph.set(**{k: v for k, v in merged.items()
                      if k in allowed_properties})
