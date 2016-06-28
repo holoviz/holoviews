@@ -9,7 +9,7 @@ import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix)
-from ...core.options import Store, Compositor
+from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
@@ -350,6 +350,8 @@ class GridPlot(CompositePlot):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot
+            if isinstance(view, Layout):
+                raise SkipRendering("Cannot plot nested Layouts.")
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
