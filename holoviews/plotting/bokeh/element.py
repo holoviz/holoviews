@@ -328,7 +328,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.yaxis[:] = plot.right
 
 
-    def _axis_properties(self, axis, key, plot, element, ax_mapping={'x': 0, 'y': 1}):
+    def _axis_properties(self, axis, key, plot, dimension,
+                         ax_mapping={'x': 0, 'y': 1}):
         """
         Returns a dictionary of axis properties depending
         on the specified axis.
@@ -355,16 +356,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
-        dim = element.get_dimension(ax_mapping[axis])
-        if FuncTickFormatter is not None and ax_mapping and dim:
+        if FuncTickFormatter is not None and ax_mapping and dimension:
             formatter = None
-            if dim.value_format:
-                formatter = dim.value_format
-            elif dim.type in dim.type_formatters:
-                formatter = dim.type_formatters[dim.type]
+            if dimension.value_format:
+                formatter = dimension.value_format
+            elif dimension.type in dimension.type_formatters:
+                formatter = dimension.type_formatters[dimension.type]
             if formatter:
                 msg = ('%s dimension formatter could not be '
-                       'converted to tick formatter. ' % dim.name)
+                       'converted to tick formatter. ' % dimension.name)
                 try:
                     formatter = FuncTickFormatter.from_py_func(formatter)
                 except RuntimeError:
@@ -384,9 +384,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Updates plot parameters on every frame
         """
+        el = element.traverse(lambda x: x, [Element])
+        dimensions = el[0].dimensions() if el else el.dimensions()
         plot.set(**self._plot_properties(key, plot, element))
-        props = {axis: self._axis_properties(axis, key, plot, element)
-                 for axis in ['x', 'y']}
+        props = {axis: self._axis_properties(axis, key, plot, dim)
+                 for axis, dim in zip(['x', 'y'], dimensions)}
         plot.xaxis[0].set(**props['x'])
         plot.yaxis[0].set(**props['y'])
 
@@ -771,7 +773,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
         if plot and not self.overlaid:
-            self._update_plot(key, plot, self.hmap.last)
+            self._update_plot(key, plot, element)
         self.handles['plot'] = plot
 
         panels = []
