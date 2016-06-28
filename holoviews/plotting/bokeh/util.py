@@ -40,6 +40,11 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored.
 IGNORED_MODELS = ['LinearAxis']
 
+# Model priority order to ensure some types are updated before others
+MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
+                  'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
+
+
 def rgb2hex(rgb):
     """
     Convert RGB(A) tuple to hex.
@@ -181,12 +186,18 @@ def compute_static_patch(document, models):
     for ref_id, obj in references.items():
         if ref_id not in requested_updates and not obj['type'] in IGNORED_MODELS:
             continue
+        if obj['type'] in MODEL_PRIORITY:
+            priority = MODEL_PRIORITY.index(obj['type'])
+        else:
+            priority = float('inf')
         for key, val in obj['attributes'].items():
             event = Document._event_for_attribute_change(references,
                                                          obj, key, val,
                                                          value_refs)
-            events.append(event)
+            
+            events.append((priority, event))
             update_types[obj['type']].append(key)
+    events = [e for _, e in sorted(events)]
     value_refs = {ref_id: val for ref_id, val in value_refs.items()
                   if val['type'] not in IGNORED_MODELS}
     return dict(events=events, references=list(value_refs.values()))
