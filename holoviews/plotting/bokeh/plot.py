@@ -7,7 +7,7 @@ from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, NdLayout)
 from ...core import traversal
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple
@@ -392,7 +392,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 continue
 
             # Options common for any subplot
-            if isinstance(element, Layout):
+            if type(element) in (NdLayout, Layout):
                 raise SkipRendering("Cannot plot nested Layouts.")
             vtype = element.type if isinstance(element, HoloMap) else element.__class__
             plot_type = Store.registry[self.renderer.backend].get(vtype, None)

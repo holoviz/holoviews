@@ -350,7 +350,7 @@ class GridPlot(CompositePlot):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot
-            if isinstance(view, Layout):
+            if type(view) in (Layout, NdLayout):
                 raise SkipRendering("Cannot plot nested Layouts.")
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
