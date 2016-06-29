@@ -160,16 +160,18 @@ class Callback(param.ParameterizedFunction):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
-        plot = self.plots[0]
-        doc = plot.document
-        if hasattr(doc, 'last_comms_handle'):
-            handle = doc.last_comms_handle
-        else:
-            handle = _CommsHandle(get_comms(doc.last_comms_target),
-                                  doc, doc.to_json())
-            doc.last_comms_handle = handle
-        msg = compute_static_patch(plot.document, models)
-        handle.comms.send(serialize_json(msg))
+        documents = {plot.document for plot in self.plots}
+        for doc in documents:
+            json = None
+            if hasattr(doc, 'last_comms_handle'):
+                handle = doc.last_comms_handle
+            else:
+                json = doc.to_json()
+                handle = _CommsHandle(get_comms(doc.last_comms_target),
+                                      doc, json)
+                doc.last_comms_handle = handle
+            msg = compute_static_patch(doc, models, json)
+            handle.comms.send(serialize_json(msg))
         return 'Complete'
 
 
@@ -387,6 +389,7 @@ class Callbacks(param.Parameterized):
             cb_data = models_to_json([pycallback.callback_obj])[0]
             data['cb_obj'] = [cb_data.get(attr) for attr in pycallback.cb_attributes]
         return data
+
 
     def _chain_callbacks(self, plot, cb_obj, callbacks):
         """
