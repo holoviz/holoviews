@@ -169,7 +169,7 @@ def refs(json):
     return result
 
 
-def compute_static_patch(document, models):
+def compute_static_patch(document, models, json=None):
     """
     Computes a patch to update an existing document without
     diffing the json first, making it suitable for static updates
@@ -177,7 +177,7 @@ def compute_static_patch(document, models):
     attributes and will break if new models have been added since
     the plot was first created.
     """
-    references = refs(document.to_json())
+    references = refs(json if json else document.to_json())
     requested_updates = [m.ref['id'] for m in models]
 
     value_refs = {}
