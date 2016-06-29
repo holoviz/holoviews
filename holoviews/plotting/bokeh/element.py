@@ -222,7 +222,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
-                if all(x is not None for x in (low, high)):
+                if all(x is not None and np.isfinite(x) for x in (low, high)):
                     plot_ranges['x_range'] = [low, high]
 
         if self.invert_xaxis:
@@ -241,7 +241,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
-                if all(y is not None for y in (low, high)):
+                if all(y is not None and np.isfinite(y) for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
             yrange = plot_ranges['y_range']
