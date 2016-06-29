@@ -86,8 +86,9 @@ class MPLWidget(NdWidget):
             return ''
         frame = self._plot_figure(key)
         if self.renderer.mode == 'mpld3':
-            frame = self.encode_frames({0: frame})
-        return frame
+            return self.encode_frames({0: frame})
+        else:
+            return str(frame)
 
 
     def get_frames(self):
