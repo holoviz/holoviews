@@ -197,7 +197,7 @@ def compute_static_patch(document, models, json=None):
             
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [e for _, e in sorted(events)]
+    events = [e for _, e in sorted(events, key=lambda x: x[0])]
     value_refs = {ref_id: val for ref_id, val in value_refs.items()
                   if val['type'] not in IGNORED_MODELS}
     return dict(events=events, references=list(value_refs.values()))
