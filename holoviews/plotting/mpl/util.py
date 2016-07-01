@@ -1,5 +1,6 @@
 import re
 import inspect
+import warnings
 
 import numpy as np
 from matplotlib import ticker
@@ -54,4 +55,6 @@ def compute_ratios(ratios, normalized=True):
     if normalized:
         unpacked = normalize_ratios(unpacked)
     sorted_ratios = sorted(unpacked.items())
-    return np.nanmax(np.vstack([v for _, v in sorted_ratios]), axis=0)
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        return np.nanmax(np.vstack([v for _, v in sorted_ratios]), axis=0)
