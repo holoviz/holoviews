@@ -389,8 +389,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot.set(**self._plot_properties(key, plot, element))
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
-        plot.xaxis[0].set(**props['x'])
-        plot.yaxis[0].set(**props['y'])
+        plot.xaxis[0].set(**props.get('x', {}))
+        plot.yaxis[0].set(**props.get('y', {}))
 
         if bokeh_version >= '0.12' and not self.overlaid:
             plot.title.set(**self._title_properties(key, plot, element))
