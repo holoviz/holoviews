@@ -105,7 +105,7 @@ SelectionWidget.prototype.get_key = function(current_vals) {
     for (var i=0; i<this.slider_ids.length; i++)
     {
         val = this.current_vals[i];
-        if (!(_.isString(val))) {
+        if (!(typeof val === 'string')) {
             if (val % 1 === 0) { var fixed = 1;}
             else { var fixed = 10;}
             val = val.toFixed(fixed)
