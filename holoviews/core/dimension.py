@@ -12,7 +12,8 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict, unicode)
+                         find_range, dimension_sanitizer, OrderedDict,
+                         safe_unicode, unicode)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -163,7 +164,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return self.name + unit
+        return safe_unicode(self.name) + safe_unicode(unit)
 
 
     def pprint_value(self, value):
