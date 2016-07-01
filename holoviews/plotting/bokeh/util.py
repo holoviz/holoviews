@@ -212,6 +212,9 @@ def delete_refs(obj, locs, delete):
     Delete all references to specific model types by recursively
     traversing the object and looking for the models to be deleted in
     the supplied locations.
+
+    Note: Can be deleted once bokeh stops raising errors when updating
+          LinearAxis.computed_bounds
     """
     if isinstance(obj, dict):
         if 'type' in obj and obj['type'] in delete:
