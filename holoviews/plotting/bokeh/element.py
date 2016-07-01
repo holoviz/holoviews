@@ -98,7 +98,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for linked panning and zooming.""")
 
     default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
-                                        'box_zoom', 'resize', 'reset'],
+                                        'box_zoom', 'reset'],
         doc="A list of plugin tools to use on the plot.")
 
     tools = param.List(default=[], doc="""
