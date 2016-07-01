@@ -738,14 +738,11 @@ class RGB(Image):
             if not all(shape==shapes[0] for shape in shapes):
                 raise ValueError("Images in the input overlays must contain data of the consistent shape")
             ranges = [im.vdims[0].range for im in images]
-            if any(None in r for r in ranges):
-                # Better give a warning
-                pass
-                #raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
 
             # set undefined ranges, assume data to be normalized on [0,1]
             for i, r in enumerate(ranges):
                 if None in r:
+                    self.warning("Undefined ranges on value dimensions are encountered. Assuming range (0,1).")
                     ranges[i] = (0,1)
 
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
