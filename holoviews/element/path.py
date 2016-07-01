@@ -98,7 +98,7 @@ class Contours(Path):
     level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
-    value_dimension = param.List(default=[Dimension('Level')], doc="""
+    vdims = param.List(default=[Dimension('Level')], doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""", bounds=(1,1))
 
