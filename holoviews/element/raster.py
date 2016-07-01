@@ -8,7 +8,8 @@ import param
 from ..core import util
 from ..core.data import (ArrayInterface, NdElementInterface, DictInterface)
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Dataset, NdElement)
+                    Overlay, Element, Dataset, NdElement,
+                    CompositeOverlay)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
@@ -729,16 +730,24 @@ class RGB(Image):
 
     def __init__(self, data, **params):
         sliced = None
-        if isinstance(data, Overlay):
+        if issubclass(type(data), CompositeOverlay):
             images = data.values()
-            if not all(isinstance(im, Image) for im in images):
-                raise ValueError("Input overlay must only contain Image elements")
+            if not all((isinstance(im, Image) or isinstance(im, Raster)) for im in images):
+                raise ValueError("Input overlay must only contain Image or Raster elements")
             shapes = [im.data.shape for im in images]
             if not all(shape==shapes[0] for shape in shapes):
                 raise ValueError("Images in the input overlays must contain data of the consistent shape")
             ranges = [im.vdims[0].range for im in images]
             if any(None in r for r in ranges):
-                raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
+                # Better give a warning
+                pass
+                #raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
+
+            # set undefined ranges, assume data to be normalized on [0,1]
+            for i, r in enumerate(ranges):
+                if None in r:
+                    ranges[i] = (0,1)
+
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
 
