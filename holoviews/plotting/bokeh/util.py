@@ -39,10 +39,13 @@ markers = {'s': {'marker': 'square'},
 # Should only include models that have no direct effect on the display
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
-IGNORED_MODELS = ['LinearAxis', 'LogAxis']
+IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
+                  'CategoricalAxis' 'BasicTicker', 'BasicTickFormatter',
+                  'FixedTicker', 'FuncTickFormatter']
 
 # Where to look for the ignored models
-LOCATIONS = ['new', 'below']
+LOCATIONS = ['new', 'below', 'right', 'left',
+             'renderers', 'above', 'attributes', 'plot', 'ticker']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
@@ -88,7 +91,7 @@ def mpl_to_bokeh(properties):
     equivalent.
     """
     new_properties = {}
-    for k, v in list(properties.items()):
+    for k, v in properties.items():
         if k == 's':
             new_properties['size'] = v
         elif k == 'marker':
@@ -202,9 +205,11 @@ def compute_static_patch(document, models, json=None):
             update_types[obj['type']].append(key)
     events = [delete_refs(e, LOCATIONS, IGNORED_MODELS)
               for _, e in sorted(events, key=lambda x: x[0])]
-    value_refs = {ref_id: val for ref_id, val in value_refs.items()}
-    value_refs = delete_refs(value_refs, LOCATIONS, IGNORED_MODELS)
-    return dict(events=events, references=list(value_refs.values()))
+    value_refs = {ref_id: delete_refs(val, LOCATIONS, IGNORED_MODELS)
+                  for ref_id, val in value_refs.items()}
+    references = [val for val in value_refs.values()
+                  if val is not None]
+    return dict(events=events, references=references)
 
 
 def delete_refs(obj, locs, delete):
@@ -219,16 +224,15 @@ def delete_refs(obj, locs, delete):
     if isinstance(obj, dict):
         if 'type' in obj and obj['type'] in delete:
             return None
+        new_obj = {}
         for k, v in list(obj.items()):
             if k in locs:
                 ref = delete_refs(v, locs, delete)
                 if ref:
-                    obj[k] = ref
-                else:
-                    del obj[k]
+                    new_obj[k] = ref
             else:
-              obj[k] = v
-        return obj
+              new_obj[k] = v
+        return new_obj
     elif isinstance(obj, list):
         objs = [delete_refs(v, locs, delete) for v in obj]
         return [o for o in objs if o is not None]
