@@ -33,7 +33,7 @@ class BokehPlot(DimensionedPlot):
     height = param.Integer(default=300, doc="""
         Height of the plot in pixels""")
 
-    shared_datasource = param.Boolean(default=True, doc="""
+    shared_datasource = param.Boolean(default=False, doc="""
         Whether Elements drawing the data from the same object should
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
