@@ -221,10 +221,10 @@ class Tabular(Element):
         elif row == 0:
             if col >= ndims:
                 if self.vdims:
-                    return str(self.vdims[col - ndims])
+                    return self.vdims[col - ndims].pprint_label
                 else:
                     return ''
-            return str(self.kdims[col])
+            return self.kdims[col].pprint_label
         else:
             dim = self.get_dimension(col)
             values = self[dim.name]

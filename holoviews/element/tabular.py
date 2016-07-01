@@ -101,7 +101,7 @@ class ItemTable(Element):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions('value')[row])
+            return self.dimensions('value')[row].pprint_label
         else:
             dim = self.get_dimension(row)
             heading = self.vdims[row]
