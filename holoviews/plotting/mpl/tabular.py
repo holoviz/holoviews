@@ -1,6 +1,7 @@
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
+from holoviews.core.util import unicode
 
 import param
 
@@ -86,7 +87,7 @@ class TablePlot(ElementPlot):
         if isinstance(value, float):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
-        elif isinstance(value, str):
+        elif isinstance(value, (str, unicode)):
             formatted = safe_unicode(value)
         else:
             formatted = str(value)
