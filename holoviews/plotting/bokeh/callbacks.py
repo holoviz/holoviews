@@ -105,7 +105,7 @@ class Callback(param.ParameterizedFunction):
         }}
 
         timeout = HoloViewsWidget._timeout + {timeout};
-        if (_.isEmpty(data)) {{
+        if ((typeof _ === "undefined")  || _.isEmpty(data)) {{
         }} else if ((HoloViewsWidget._blocked && (Date.now() < timeout))) {{
             HoloViewsWidget._queued = [data];
         }} else {{
