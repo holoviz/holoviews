@@ -88,7 +88,7 @@ def mpl_to_bokeh(properties):
     equivalent.
     """
     new_properties = {}
-    for k, v in properties.items():
+    for k, v in list(properties.items()):
         if k == 's':
             new_properties['size'] = v
         elif k == 'marker':
@@ -219,7 +219,7 @@ def delete_refs(obj, locs, delete):
     if isinstance(obj, dict):
         if 'type' in obj and obj['type'] in delete:
             return None
-        for k, v in obj.items():
+        for k, v in list(obj.items()):
             if k in locs:
                 ref = delete_refs(v, locs, delete)
                 if ref:
