@@ -37,8 +37,12 @@ markers = {'s': {'marker': 'square'},
 
 # List of models that do not update correctly and must be ignored
 # Should only include models that have no direct effect on the display
-# and can therefore be safely ignored.
-IGNORED_MODELS = ['LinearAxis']
+# and can therefore be safely ignored. Axes currently fail saying
+# LinearAxis.computed_bounds cannot be updated
+IGNORED_MODELS = ['LinearAxis', 'LogAxis']
+
+# Where to look for the ignored models
+LOCATIONS = ['new', 'below']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
@@ -184,7 +188,7 @@ def compute_static_patch(document, models, json=None):
     events = []
     update_types = defaultdict(list)
     for ref_id, obj in references.items():
-        if ref_id not in requested_updates and not obj['type'] in IGNORED_MODELS:
+        if ref_id not in requested_updates:
             continue
         if obj['type'] in MODEL_PRIORITY:
             priority = MODEL_PRIORITY.index(obj['type'])
@@ -194,13 +198,39 @@ def compute_static_patch(document, models, json=None):
             event = Document._event_for_attribute_change(references,
                                                          obj, key, val,
                                                          value_refs)
-            
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [e for _, e in sorted(events, key=lambda x: x[0])]
-    value_refs = {ref_id: val for ref_id, val in value_refs.items()
-                  if val['type'] not in IGNORED_MODELS}
+    events = [delete_refs(e, LOCATIONS, IGNORED_MODELS)
+              for _, e in sorted(events, key=lambda x: x[0])]
+    value_refs = {ref_id: val for ref_id, val in value_refs.items()}
+    value_refs = delete_refs(value_refs, LOCATIONS, IGNORED_MODELS)
     return dict(events=events, references=list(value_refs.values()))
+
+
+def delete_refs(obj, locs, delete):
+    """
+    Delete all references to specific model types by recursively
+    traversing the object and looking for the models to be deleted in
+    the supplied locations.
+    """
+    if isinstance(obj, dict):
+        if 'type' in obj and obj['type'] in delete:
+            return None
+        for k, v in obj.items():
+            if k in locs:
+                ref = delete_refs(v, locs, delete)
+                if ref:
+                    obj[k] = ref
+                else:
+                    del obj[k]
+            else:
+              obj[k] = v
+        return obj
+    elif isinstance(obj, list):
+        objs = [delete_refs(v, locs, delete) for v in obj]
+        return [o for o in objs if o is not None]
+    else:
+        return obj
 
 
 def hsv_to_rgb(hsv):
