@@ -89,7 +89,7 @@ class TablePlot(ElementPlot):
         elif isinstance(value, str):
             formatted = safe_unicode(value)
         else:
-            formatted = str(value)
+            formatted = safe_unicode(value)
 
         if len(formatted) > self.max_value_len:
             return formatted[:(self.max_value_len-3)]+'...'
