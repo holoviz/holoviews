@@ -503,10 +503,10 @@ class GenericElementPlot(DimensionedPlot):
                                kdims=['Frame'], id=element.id)
         else:
             self.hmap = element
+
+        plot_element = self.hmap.last
         if self.batched:
-            plot_element = self.hmap.last.last
-        else:
-            plot_element = self.hmap.last
+            plot_element = plot_element.last
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         dimensions = self.hmap.kdims if dimensions is None else dimensions
@@ -517,9 +517,13 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+
+        # Update plot and style options for batched plots
         if self.batched:
             self.ordering = util.layer_sort(self.hmap)
-            self.set_param(**self.lookup_options(self.hmap.last, 'plot').options)
+            overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
+            opts = {k: v for k, v in overlay_opts if k in self.params()}
+            self.set_param(**opts)
             self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
