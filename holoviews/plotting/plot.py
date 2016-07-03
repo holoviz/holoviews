@@ -503,10 +503,15 @@ class GenericElementPlot(DimensionedPlot):
                                kdims=['Frame'], id=element.id)
         else:
             self.hmap = element
-        self.style = self.lookup_options(self.hmap.last, 'style') if style is None else style
+        if self.batched:
+            plot_element = self.hmap.last.last
+        else:
+            plot_element = self.hmap.last
+
+        self.style = self.lookup_options(plot_element, 'style') if style is None else style
         dimensions = self.hmap.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.hmap.data.keys())
-        plot_opts = self.lookup_options(self.hmap.last, 'plot').options
+        plot_opts = self.lookup_options(plot_element, 'plot').options
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
@@ -514,7 +519,8 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         if self.batched:
             self.ordering = util.layer_sort(self.hmap)
-            self.style = self.lookup_options(self.hmap.last.last, 'style').max_cycles(len(self.ordering))
+            self.set_param(**self.lookup_options(self.hmap.last, 'plot').options)
+            self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
         else:
             self.ordering = []
 
