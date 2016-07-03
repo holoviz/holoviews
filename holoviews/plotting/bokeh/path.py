@@ -36,8 +36,10 @@ class PolygonPlot(PathPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = self.default_tools + self.tools
+        if 'hover' not in tools:
+            return tools
+        tools.pop(tools.index('hover'))
         if self.batched:
-            element = element.last
             dims = self.hmap.last.kdims
         else:
             dims = self.overlay_dims.keys()
@@ -62,10 +64,11 @@ class PolygonPlot(PathPlot):
             mapping['color'] = 'color'
             data['color'] = [] if empty else list(colors)*len(element.data)
             dim_name = util.dimension_sanitizer(element.vdims[0].name)
-            data[dim_name] = [element.level for _ in range(len(xs))]
+        if 'hover' in self.tools+self.default_tools:
             for k, v in self.overlay_dims.items():
                 dim = util.dimension_sanitizer(k.name)
                 data[dim] = [v for _ in range(len(xs))]
+            data[dim_name] = [element.level for _ in range(len(xs))]
 
         return data, mapping
 
