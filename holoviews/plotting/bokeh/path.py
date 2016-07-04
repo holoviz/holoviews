@@ -8,7 +8,7 @@ from bokeh.models import HoverTool
 from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, line_properties, fill_properties
-from .util import get_cmap
+from .util import get_cmap, rgb2hex
 
 
 class PathPlot(ElementPlot):
