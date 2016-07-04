@@ -65,6 +65,9 @@ class Callback(param.ParameterizedFunction):
         Avoid running the callback if the callback data is unchanged.
         Useful for avoiding infinite loops.""")
 
+    delay = param.Number(default=200, doc="""
+        Delay when initiating callback events.""")
+
     timeout = param.Number(default=2500, doc="""
         Callback error timeout in milliseconds.""")
 
@@ -73,8 +76,7 @@ class Callback(param.ParameterizedFunction):
           if (msg.msg_type == "execute_result") {
             if (msg.content.data['text/plain'] === "'Complete'") {
                if (HoloViewsWidget._queued.length) {
-                   execute_callback(HoloViewsWidget._queued[0]);
-                   HoloViewsWidget._queued = [];
+                   execute_callback();
                } else {
                    HoloViewsWidget._blocked = false;
                }
@@ -89,7 +91,8 @@ class Callback(param.ParameterizedFunction):
     """
 
     IPython_callback = """
-        function execute_callback(data) {{
+        function execute_callback() {{
+           data = HoloViewsWidget._queued.pop(0);
            var argstring = JSON.stringify(data);
            argstring = argstring.replace('true', 'True').replace('false','False');
            var kernel = IPython.notebook.kernel;
@@ -109,7 +112,8 @@ class Callback(param.ParameterizedFunction):
         }} else if ((HoloViewsWidget._blocked && (Date.now() < timeout))) {{
             HoloViewsWidget._queued = [data];
         }} else {{
-            execute_callback(data);
+            HoloViewsWidget._queued = [data];
+            setTimeout(execute_callback, {delay});
             HoloViewsWidget._blocked = true;
             HoloViewsWidget._timeout = Date.now();
         }}
@@ -162,15 +166,13 @@ class Callback(param.ParameterizedFunction):
         """
         documents = {plot.document for plot in self.plots}
         for doc in documents:
-            json = None
             if hasattr(doc, 'last_comms_handle'):
                 handle = doc.last_comms_handle
             else:
-                json = doc.to_json()
                 handle = _CommsHandle(get_comms(doc.last_comms_target),
-                                      doc, json)
+                                      doc, None)
                 doc.last_comms_handle = handle
-            msg = compute_static_patch(doc, models, json)
+            msg = compute_static_patch(doc, models)
             handle.comms.send(serialize_json(msg))
         return 'Complete'
 
@@ -347,7 +349,8 @@ class Callbacks(param.Parameterized):
 
         # Generate callback JS code to get all the requested data
         self_callback = Callback.IPython_callback.format(callback_id=cb_id,
-                                                         timeout=pycallback.timeout)
+                                                         timeout=pycallback.timeout,
+                                                         delay=pycallback.delay)
         code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
