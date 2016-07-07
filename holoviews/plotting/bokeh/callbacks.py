@@ -43,7 +43,11 @@ class Callback(param.ParameterizedFunction):
         has access to the plot, source and cb_obj and may modify
         the data javascript object sent back to Python.""")
 
-    current_data = param.Dict(default={})
+    current_data = param.Dict(default={}, doc="""
+        A dictionary of the last data supplied to the callback.""")
+
+    delay = param.Number(default=200, doc="""
+        Delay when initiating callback events in milliseconds.""")
 
     initialize_cb = param.Boolean(default=True, doc="""
         Whether the callback should be initialized when it's first
@@ -64,9 +68,6 @@ class Callback(param.ParameterizedFunction):
     skip_unchanged = param.Boolean(default=False, doc="""
         Avoid running the callback if the callback data is unchanged.
         Useful for avoiding infinite loops.""")
-
-    delay = param.Number(default=200, doc="""
-        Delay when initiating callback events.""")
 
     timeout = param.Number(default=2500, doc="""
         Callback error timeout in milliseconds.""")
