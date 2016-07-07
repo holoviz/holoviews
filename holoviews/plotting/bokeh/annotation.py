@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import numpy as np
 from bokeh.models import BoxAnnotation
 
@@ -8,7 +10,7 @@ from .element import ElementPlot, text_properties, line_properties
 class TextPlot(ElementPlot):
 
     style_opts = text_properties
-    _plot_methods = dict(single='text')
+    _plot_methods = dict(single='text', batched='text')
 
     def get_data(self, element, ranges=None, empty=False):
         mapping = dict(x='x', y='y', text='text')
@@ -17,8 +19,19 @@ class TextPlot(ElementPlot):
         return (dict(x=[element.x], y=[element.y],
                      text=[element.text]), mapping)
 
+
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        for key, el in element.data.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].extend(eld)
+        return data, elmapping
+
+
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
 
 
 class LineAnnotationPlot(ElementPlot):
