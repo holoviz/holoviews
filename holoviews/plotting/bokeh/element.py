@@ -14,7 +14,7 @@ except ImportError:
 import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
-                     CompositeOverlay, Element)
+                     CompositeOverlay, Element, NdOverlay)
 from ...core.options import abbreviated_exception
 from ...core import util
 from ...element import RGB
@@ -178,8 +178,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _axes_props(self, plots, subplots, element, ranges):
+        # Get the bottom layer and range element
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
+        if self.batched and not isinstance(self, OverlayPlot):
+            range_el = el
+        else:
+            range_el = element
+
         dims = el.dimensions()
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
         if self.invert_axes:
@@ -209,11 +215,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             y_axis_type = 'log' if self.logy else 'auto'
 
+        l, b, r, t = self.get_extents(range_el, ranges)
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
             else:
-                l, b, r, t = self.get_extents(element, ranges)
                 low, high = (b, t) if self.invert_axes else (l, r)
                 if x_axis_type == 'datetime':
                     low = convert_datetime(low)
@@ -232,7 +238,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if 'y_range' in ranges:
                 plot_ranges['y_range'] = ranges['y_range']
             else:
-                l, b, r, t = self.get_extents(element, ranges)
                 low, high = (l, r) if self.invert_axes else (b, t)
                 if y_axis_type == 'datetime':
                     low = convert_datetime(low)
@@ -401,10 +406,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_ranges(self, element, ranges):
-        framewise = self.lookup_options(element, 'norm').options.get('framewise')
         l, b, r, t = self.get_extents(element, ranges)
-        if not framewise and not self.dynamic:
-            return
         plot = self.handles['plot']
         if self.invert_axes:
             l, b, r, t = b, l, t, r
@@ -416,10 +418,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             offset = abs(b*0.1 if b else 0.5)
             b -= offset
             t += offset
-        plot.x_range.start = l
-        plot.x_range.end   = r
-        plot.y_range.start = b
-        plot.y_range.end   = t
+
+        # Ensure that it never sets a NaN value
+        if np.isfinite(l): plot.x_range.start = l
+        if np.isfinite(r): plot.x_range.end   = r
+        if np.isfinite(b): plot.y_range.start = b
+        if np.isfinite(t): plot.y_range.end   = t
 
 
     def _process_legend(self):
@@ -583,20 +587,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             handles.append(plot.title)
 
         if self.current_frame:
-            if self.subplots:
-                current_frames = [(sp.current_frame if isinstance(sp.current_frame, Element)
-                                   else sp.current_frame.values()[0])
-                                  for sp in self.subplots.values()
-                                  if sp.current_frame]
-                framewise = any(self.lookup_options(frame, 'norm').options.get('framewise')
-                                for frame in current_frames)
-            else:
-                opts = self.lookup_options(self.current_frame, 'norm')
-                framewise = opts.options.get('framewise')
-            if framewise or isinstance(self.hmap, DynamicMap):
+            if self.framewise or isinstance(self.hmap, DynamicMap):
                 handles += [plot.x_range, plot.y_range]
         return handles
 
+
+    @property
+    def framewise(self):
+        """
+        Property to determine whether the current frame should have
+        framewise normalization enabled.
+        """
+        current_frames = [el for f in self.traverse(lambda x: x.current_frame)
+                          for el in (f.traverse(lambda x: x, [Element])
+                                     if f else [])]
+        return any(self.lookup_options(frame, 'norm').options.get('framewise')
+                   for frame in current_frames)
 
 
 class BokehMPLWrapper(ElementPlot):
