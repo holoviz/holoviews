@@ -818,9 +818,14 @@ class GenericOverlayPlot(GenericElementPlot):
     def get_extents(self, overlay, ranges):
         extents = []
         items = overlay.items()
-        for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, None)
+        if self.batched:
+            subplot = self.subplots.values()[0]
+            subplots = [(k, subplot) for k in overlay.data.keys()]
+        else:
+            subplots = self.subplots.items()
+        for key, subplot in subplots:
             found = False
+            layer = overlay.data.get(key, None)
             if isinstance(self.hmap, DynamicMap) and layer is None:
                 for _, layer in items:
                     if isinstance(layer, subplot.hmap.type):
