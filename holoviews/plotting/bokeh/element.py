@@ -181,10 +181,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get the bottom layer and range element
         el = element.traverse(lambda x: x, [Element])
         el = el[0] if el else element
-        if self.batched and not isinstance(self, OverlayPlot):
-            range_el = el
-        else:
-            range_el = element
 
         dims = el.dimensions()
         xlabel, ylabel, zlabel = self._get_axis_labels(dims)
@@ -215,7 +211,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             y_axis_type = 'log' if self.logy else 'auto'
 
+        # Get the Element that determines the range and get_extents
+        range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
         l, b, r, t = self.get_extents(range_el, ranges)
+
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
