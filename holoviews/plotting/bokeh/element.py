@@ -596,7 +596,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def framewise(self):
         """
         Property to determine whether the current frame should have
-        framewise normalization enabled.
+        framewise normalization enabled. Required for bokeh plotting
+        classes to determine whether to send updated ranges for each
+        frame.
         """
         current_frames = [el for f in self.traverse(lambda x: x.current_frame)
                           for el in (f.traverse(lambda x: x, [Element])
