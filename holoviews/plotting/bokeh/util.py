@@ -41,7 +41,7 @@ markers = {'s': {'marker': 'square'},
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
                   'CategoricalAxis' 'BasicTicker', 'BasicTickFormatter',
-                  'FixedTicker', 'FuncTickFormatter']
+                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
 
 # Where to look for the ignored models
 LOCATIONS = ['new', 'below', 'right', 'left',
