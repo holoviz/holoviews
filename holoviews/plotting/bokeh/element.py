@@ -821,28 +821,27 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             self.current_frame = element
             self.current_key = key
 
+        items = element.items() if element else []
         if isinstance(self.hmap, DynamicMap):
             range_obj = element
-            items = element.items()
         else:
             range_obj = self.hmap
-            items = element.items()
 
         all_empty = empty
         ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
-            if isinstance(self.hmap, DynamicMap):
+            if isinstance(self.hmap, DynamicMap) and element:
                 idx = dynamic_update(self, subplot, k, element, items)
                 empty = idx is None
                 if not empty:
                     _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
-        if isinstance(self.hmap, DynamicMap) and items:
-            raise Exception("Some Elements returned by the dynamic callback "
-                            "were not initialized correctly and could not be "
-                            "rendered.")
+        if isinstance(self.hmap, DynamicMap) and items and element:
+            self.warning("Some Elements returned by the dynamic callback "
+                         "were not initialized correctly and could not be "
+                         "rendered.")
 
         if not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
