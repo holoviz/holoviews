@@ -228,7 +228,7 @@ def delete_refs(obj, locs, delete):
         for k, v in list(obj.items()):
             if k in locs:
                 ref = delete_refs(v, locs, delete)
-                if ref:
+                if ref is not None:
                     new_obj[k] = ref
             else:
               new_obj[k] = v
