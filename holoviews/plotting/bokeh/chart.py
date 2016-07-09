@@ -194,7 +194,7 @@ class SpreadPlot(PolygonPlot):
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
-            return dict(xs=[], ys=[]), self._mapping
+            return dict(xs=[], ys=[]), dict(self._mapping)
 
         xvals = element.dimension_values(0)
         mean = element.dimension_values(1)
@@ -206,7 +206,7 @@ class SpreadPlot(PolygonPlot):
         upper = mean + pos_error
         band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
-        return dict(xs=[band_x], ys=[band_y]), self._mapping
+        return dict(xs=[band_x], ys=[band_y]), dict(elf._mapping)
 
 
 class HistogramPlot(ElementPlot):
@@ -274,7 +274,7 @@ class ErrorPlot(PathPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         if empty:
-            return dict(xs=[], ys=[]), self._mapping
+            return dict(xs=[], ys=[]), dict(self._mapping)
 
         data = element.array(dimensions=element.dimensions()[0:4])
         err_xs = []
@@ -292,7 +292,7 @@ class ErrorPlot(PathPlot):
             else:
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
-        return (dict(xs=err_xs, ys=err_ys), self._mapping)
+        return (dict(xs=err_xs, ys=err_ys), dict(self._mapping))
 
 
 class SpikesPlot(PathPlot):
