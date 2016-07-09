@@ -215,7 +215,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             if c == 0 and r != 0:
                 kwargs['xaxis'] = 'bottom-bare'
                 kwargs['width'] = 150
-            if c != 0 and r == 0 and not layout.ndims == 1:
+            if c != 0 and r == 0:
                 kwargs['yaxis'] = 'left-bare'
                 kwargs['height'] = 150
             if c == 0 and r == 0:
