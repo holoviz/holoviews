@@ -811,7 +811,7 @@ class GenericOverlayPlot(GenericElementPlot):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
         if not subplots:
             raise SkipRendering("%s backend could not plot any Elements "
-                                "in the Overlay." % self.backend)
+                                "in the Overlay." % self.renderer.backend)
         return subplots
 
 
