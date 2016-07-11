@@ -16,8 +16,12 @@ class TextPlot(ElementPlot):
         mapping = dict(x='x', y='y', text='text')
         if empty:
             return dict(x=[], y=[], text=[]), mapping
-        return (dict(x=[element.x], y=[element.y],
-                     text=[element.text]), mapping)
+        if self.invert_axes:
+            data = dict(x=[element.y], y=[element.x])
+        else:
+            data = dict(x=[element.x], y=[element.y])
+        data['text'] = [element.text]
+        return (data, mapping)
 
 
     def get_batched_data(self, element, ranges=None, empty=False):
@@ -42,10 +46,12 @@ class LineAnnotationPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = {}, {}
-        if isinstance(element, HLine):
+        if (isinstance(element, HLine) or
+            (isinstance(element, VLine) and self.invert_axes)):
             mapping['bottom'] = element.data
             mapping['top'] = element.data
-        elif isinstance(element, VLine):
+        elif (isinstance(element, VLine) or
+              (isinstance(element, HLine) and self.invert_axes)):
             mapping['left'] = element.data
             mapping['right'] = element.data
         return (data, mapping)
