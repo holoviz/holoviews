@@ -278,7 +278,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        properties['webgl'] = self.renderer.webgl
+        properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type, title=title,
                                      tools=tools, **properties)
@@ -288,7 +288,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a dictionary of plot properties.
         """
-        plot_props = dict(plot_height=self.height, plot_width=self.width)
+        size_multiplier = Store.renderers[self.renderer.backend].size/100.
+        plot_props = dict(plot_height=int(self.height*size_multiplier),
+                          plot_width=int(self.width*size_multiplier))
         if bokeh_version < '0.12':
             plot_props.update(self._title_properties(key, plot, element))
         if self.bgcolor:
