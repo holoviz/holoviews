@@ -52,7 +52,8 @@ class PointPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
-        mapping = dict(x=dims[0], y=dims[1])
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
@@ -81,8 +82,8 @@ class PointPlot(ElementPlot):
                                                       self.scaling_factor,
                                                       self.scaling_method, ms))
 
-        data[dims[0]] = [] if empty else element.dimension_values(0)
-        data[dims[1]] = [] if empty else element.dimension_values(1)
+        data[dims[xidx]] = [] if empty else element.dimension_values(xidx)
+        data[dims[yidx]] = [] if empty else element.dimension_values(yidx)
         self._get_hover_data(data, element, empty)
         return data, mapping
 
@@ -135,10 +136,11 @@ class CurvePlot(ElementPlot):
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
     def get_data(self, element, ranges=None, empty=False):
-        x = element.get_dimension(0).name
-        y = element.get_dimension(1).name
-        return ({x: [] if empty else element.dimension_values(0),
-                 y: [] if empty else element.dimension_values(1)},
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        x = element.get_dimension(xidx).name
+        y = element.get_dimension(yidx).name
+        return ({x: [] if empty else element.dimension_values(xidx),
+                 y: [] if empty else element.dimension_values(yidx)},
                 dict(x=x, y=y))
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
@@ -184,7 +186,10 @@ class AreaPlot(PolygonPlot):
             bottom = np.zeros(len(element))
         ys = np.hstack((bottom[::-1], element.dimension_values(1)))
 
-        data = dict(xs=[x2], ys=[ys])
+        if self.invert_axes:
+            data = dict(xs=[ys], ys=[x2])
+        else:
+            data = dict(xs=[x2], ys=[ys])
         return data, mapping
 
 
@@ -206,7 +211,11 @@ class SpreadPlot(PolygonPlot):
         upper = mean + pos_error
         band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
-        return dict(xs=[band_x], ys=[band_y]), dict(self._mapping)
+        if self.invert_axes:
+            data = dict(xs=[band_y], ys=[band_x])
+        else:
+            data = dict(xs=[band_x], ys=[band_y])
+        return data, dict(self._mapping)
 
 
 class HistogramPlot(ElementPlot):
@@ -215,7 +224,10 @@ class HistogramPlot(ElementPlot):
     _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
-        mapping = dict(top='top', bottom=0, left='left', right='right')
+        if self.invert_axes:
+            mapping = dict(top='left', bottom='right', left=0, right='top')
+        else:
+            mapping = dict(top='top', bottom=0, left='left', right='right')
         if empty:
             data = dict(top=[], left=[], right=[])
         else:
@@ -292,7 +304,12 @@ class ErrorPlot(PathPlot):
             else:
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
-        return (dict(xs=err_xs, ys=err_ys), dict(self._mapping))
+
+        if self.invert_axes:
+            data = dict(xs=err_ys, ys=err_xs)
+        else:
+            data = dict(xs=err_xs, ys=err_ys)
+        return (data, dict(self._mapping))
 
 
 class SpikesPlot(PathPlot):

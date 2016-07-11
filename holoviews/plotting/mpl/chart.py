@@ -462,7 +462,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
         self._compute_styles(element, ranges, style)
-        return (xs, ys), style, {}
+        return (ys, xs) if self.invert_axes else (xs, ys), style, {}
 
 
     def _compute_styles(self, element, ranges, style):
@@ -571,8 +571,9 @@ class VectorFieldPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
 
-        xs = element.dimension_values(0) if len(element.data) else []
-        ys = element.dimension_values(1) if len(element.data) else []
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        xs = element.dimension_values(xidx) if len(element.data) else []
+        ys = element.dimension_values(yidx) if len(element.data) else []
         radians = element.dimension_values(2) if len(element.data) else []
         angles = list(np.rad2deg(radians))
         if self.rescale_lengths:

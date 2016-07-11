@@ -15,7 +15,10 @@ class PathPlot(ElementPlot):
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def get_data(self, element, ranges, style):
-        return (element.data,), style, {}
+        paths = element.data
+        if self.invert_axes:
+            paths = [p[:, ::-1] for p in paths]
+        return (paths,), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         line_segments = LineCollection(*plot_args, **plot_kwargs)
@@ -52,6 +55,8 @@ class PolygonPlot(ColorbarPlot):
         polys = []
         for segments in element.data:
             if segments.shape[0]:
+                if self.invert_axes:
+                    segments = segments[:, ::-1]
                 polys.append(Polygon(segments))
 
         if value is not None and np.isfinite(value):

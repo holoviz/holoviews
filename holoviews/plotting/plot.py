@@ -796,6 +796,7 @@ class GenericOverlayPlot(GenericElementPlot):
                 opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
             plotopts = dict(opts, cyclic_index=cyclic_index,
+                            invert_axes=self.invert_axes,
                             dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
                             overlaid=overlay_type, ranges=ranges,
