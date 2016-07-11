@@ -651,17 +651,29 @@ class AdjointLayoutPlot(CompositePlot):
         if right:
             ax = self.subaxes['right']
             subplot = self.subplots['right']
-            ax.set_position([bbox.x1 + bbox.width * subplot.border_size,
+            if isinstance(subplot, AdjoinedPlot):
+                subplot_size = subplot.subplot_size
+                border_size = subplot.border_size
+            else:
+                subplot_size = 0.25
+                border_size = 0.25
+            ax.set_position([bbox.x1 + bbox.width * border_size,
                              bbox.y0,
-                             bbox.width * subplot.subplot_size, bbox.height])
+                             bbox.width * subplot_size, bbox.height])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
         if top:
             ax = self.subaxes['top']
             subplot = self.subplots['top']
+            if isinstance(subplot, AdjoinedPlot):
+                subplot_size = subplot.subplot_size
+                border_size = subplot.border_size
+            else:
+                subplot_size = 0.25
+                border_size = 0.25
             ax.set_position([bbox.x0,
-                             bbox.y1 + bbox.height * subplot.border_size,
-                             bbox.width, bbox.height * subplot.subplot_size])
+                             bbox.y1 + bbox.height * border_size,
+                             bbox.width, bbox.height * subplot_size])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
 
@@ -1003,9 +1015,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if isinstance(view, GridSpace):
                 plotopts['create_axes'] = ax is not None
-            if pos == 'main':
-                plot_type = Store.registry['matplotlib'][vtype]
-            else:
+            plot_type = Store.registry['matplotlib'][vtype]
+            if pos != 'main' and vtype in MPLPlot.sideplots:
                 plot_type = MPLPlot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
