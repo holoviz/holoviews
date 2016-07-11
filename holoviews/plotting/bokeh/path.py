@@ -35,14 +35,11 @@ class PathPlot(ElementPlot):
                 data[k].extend(eld)
             zorder = self.get_zorder(element, key, el)
             val = style[zorder].get('color')
-            elmapping['color'] = 'color'
-            if isinstance(val, tuple):
-                val = rgb2hex(val)
-            data['color'] += [val for _ in range(len(eldata['xs']))]
-        if len(set(data.get('color'))) == 1:
-            data.pop('color')
-            elmapping.pop('color')
-
+            if val:
+                elmapping['line_color'] = 'color'
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'] += [val for _ in range(len(eldata.values()[0]))]
         return data, elmapping
 
 
