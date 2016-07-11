@@ -206,7 +206,7 @@ class SpreadPlot(PolygonPlot):
         upper = mean + pos_error
         band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
-        return dict(xs=[band_x], ys=[band_y]), dict(elf._mapping)
+        return dict(xs=[band_x], ys=[band_y]), dict(self._mapping)
 
 
 class HistogramPlot(ElementPlot):
