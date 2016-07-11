@@ -23,7 +23,7 @@ class PathPlot(ElementPlot):
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
         ys = [] if empty else [path[:, 1] for path in element.data]
-        return dict(xs=xs, ys=ys), self._mapping
+        return dict(xs=xs, ys=ys), dict(self._mapping)
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
