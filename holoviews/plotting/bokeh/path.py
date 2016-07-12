@@ -60,7 +60,7 @@ class PolygonPlot(PathPlot):
         if self.batched:
             dims = self.hmap.last.kdims
         else:
-            dims = self.overlay_dims.keys()
+            dims = list(self.overlay_dims.keys())
         dims += element.vdims
         tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
                     for d in dims]
