@@ -532,7 +532,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             self.current_key = key
             self.current_frame = element
-        style_element = element.last if self.batched else element
 
         glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
@@ -540,6 +539,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not element:
             return
 
+        style_element = element.last if self.batched else element
         self.style = self.lookup_options(style_element, 'style')
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
