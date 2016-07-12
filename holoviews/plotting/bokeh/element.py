@@ -845,6 +845,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
                          "were not initialized correctly and could not be "
                          "rendered.")
 
-        if not self.overlaid and not self.tabs and not self.batched:
+        if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)
