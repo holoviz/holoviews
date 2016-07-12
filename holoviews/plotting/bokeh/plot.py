@@ -500,7 +500,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
         # Replace None types with empty plots
         # to avoid bokeh bug
-        if adjoined and bokeh_version < '0.12':
+        if adjoined:
             plots = layout_padding(plots)
 
         # Determine the most appropriate composite plot type
