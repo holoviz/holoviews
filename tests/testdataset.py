@@ -545,15 +545,5 @@ class XArrayDatasetTest(GridDatasetTest):
     def test_dataset_sort_vdim_hm(self):
         pass
 
-    def test_dataset_1D_reduce_hm(self):
-        pass
-
-    def test_dataset_2D_reduce_hm(self):
-        pass
-
-    def test_dataset_2D_aggregate_partial_hm(self):
-        pass
-
     def test_dataset_sample_hm(self):
         pass
-
