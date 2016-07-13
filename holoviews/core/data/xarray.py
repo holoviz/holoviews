@@ -50,10 +50,12 @@ class XArrayInterface(GridInterface):
                      for kd in kdims]
             vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
             if isinstance(data, tuple):
-                value_array = data[-1]
+                value_array = np.array(data[-1])
                 data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
             elif isinstance(data, dict):
-                value_array = data[vdim]
+                value_array = np.array(data[vdim])
+            if value_array.ndim > 1:
+                value_array = value_array.T
             dims, coords = zip(*[(kd.name, data[kd.name])
                                  for kd in kdims])
             try:
@@ -93,7 +95,7 @@ class XArrayInterface(GridInterface):
             group_kwargs = dict(util.get_param_values(dataset),
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
-        
+
         # XArray 0.7.2 does not support multi-dimensional groupby
         # Replace custom implementation when 
         # https://github.com/pydata/xarray/pull/818 is merged.
@@ -120,7 +122,6 @@ class XArrayInterface(GridInterface):
             if data.ndim == 1:
                 return np.array(data)
             else:
-                data = np.rot90(data)
                 return data.flatten() if flat else data
         elif not expanded:
             return data
@@ -132,10 +133,25 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        if len(dimensions) > 2:
+        if len(dimensions) > 1:
             raise NotImplementedError('Multi-dimensional aggregation not '
                                       'supported as of xarray <=0.7.2.')
-        return dataset.data.groupby(dimensions).apply(function)
+        elif not dimensions:
+            return dataset.data.apply(function)
+        else:
+            return dataset.data.groupby(dimensions[0]).apply(function)
+
+
+    @classmethod
+    def unpack_scalar(cls, dataset, data):
+        """
+        Given a dataset object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if (len(data.data_vars) == 1 and
+            len(data[dataset.vdims[0].name].shape) == 0):
+            return data[dataset.vdims[0].name].item()
+        return data
 
 
     @classmethod
@@ -152,7 +168,6 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
-        # DataFrame based tables don't need to be reindexed
         return dataset.data
 
     @classmethod
@@ -175,7 +190,8 @@ class XArrayInterface(GridInterface):
                 validated[k] = v
         data = dataset.data.sel(**validated)
         indexed = cls.indexed(dataset, selection)
-        if indexed and len(data[dataset.vdims[0].name].shape) == 0:
+        if (indexed and len(data.data_vars) == 1 and
+            len(data[dataset.vdims[0].name].shape) == 0):
             return data[dataset.vdims[0].name].item()
         return data
 
