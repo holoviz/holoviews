@@ -78,8 +78,8 @@ class XArrayInterface(GridInterface):
     def range(cls, dataset, dimension):
         dim = dataset.get_dimension(dimension).name
         if dim in dataset.data:
-            data = dataset.data[dim].data
-            return data.min(), data.max()
+            data = dataset.data[dim]
+            return data.min().item(), data.max().item()
         else:
             return np.NaN, np.NaN
 
