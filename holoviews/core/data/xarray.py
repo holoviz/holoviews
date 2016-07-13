@@ -122,6 +122,7 @@ class XArrayInterface(GridInterface):
             if data.ndim == 1:
                 return np.array(data)
             else:
+                data = data.T
                 return data.flatten() if flat else data
         elif not expanded:
             return data
