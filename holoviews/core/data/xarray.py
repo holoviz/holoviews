@@ -1,14 +1,19 @@
 from __future__ import absolute_import
+import sys
+import types
 
 import numpy as np
 import xarray as xr
 
-from ..ndmapping import item_check, sorted_context
-from .. import ViewableElement, Element, NdMapping, util
+from .. import util
+from ..dimension import Dimension
+from ..ndmapping import NdMapping, item_check, sorted_context
+from ..element import Element
+from .grid import GridInterface
 from .interface import Interface
 
 
-class XArrayInterface(Interface):
+class XArrayInterface(GridInterface):
 
     types = (xr.Dataset if xr else None,)
 
@@ -33,6 +38,31 @@ class XArrayInterface(Interface):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
+
+        if kdims:
+            kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+        else:
+            kdim_names = [kd.name for kd in eltype.kdims]
+
+        if not isinstance(data, xr.Dataset):
+            ndims = len(kdim_names)
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kdims]
+            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+            if isinstance(data, tuple):
+                value_array = data[-1]
+                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
+            elif isinstance(data, dict):
+                value_array = data[vdim]
+            dims, coords = zip(*[(kd.name, data[kd.name])
+                                 for kd in kdims])
+            try:
+                arr = xr.DataArray(value_array, coords=coords, dims=dims)
+                data = xr.Dataset({vdim: arr})
+            except:
+                pass
+            if not isinstance(data, xr.Dataset):
+                raise TypeError('Data must be be an xarray Dataset type.')
 
         if isinstance(data, xr.Dataset):
             if vdims is None:
@@ -115,6 +145,10 @@ class XArrayInterface(Interface):
         # once multi-dimensional concat has been added to xarray.
         return xr.concat([col.data for col in dataset_objs], dim='concat_dim')
 
+    @classmethod
+    def redim(cls, dataset, dimensions):
+        renames = {k: v.name for k, v in dimensions.items()}
+        return dataset.data.rename(renames)
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
@@ -127,9 +161,23 @@ class XArrayInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        selection = {k: list(v) if isinstance(v, set) else v
-                     for k, v in selection.items()}
-        return dataset.data.sel(**selection)
+        validated = {}
+        for k, v in selection.items():
+            if isinstance(v, slice):
+                v = (v.start, v.stop)
+            if isinstance(v, set):
+                validated[k] = list(v)
+            elif isinstance(v, tuple):
+                validated[k] = slice(v[0], v[1]-sys.float_info.epsilon*10)
+            elif isinstance(v, types.FunctionType):
+                validated[k] = v(dataset[k])
+            else:
+                validated[k] = v
+        data = dataset.data.sel(**validated)
+        indexed = cls.indexed(dataset, selection)
+        if indexed and len(data[dataset.vdims[0].name].shape) == 0:
+            return data[dataset.vdims[0].name].item()
+        return data
 
     @classmethod
     def length(cls, dataset):
@@ -148,7 +196,10 @@ class XArrayInterface(Interface):
 
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
-        raise NotImplementedError
+        if not vdim:
+            raise Exception("Cannot add key dimension to a dense representation.")
+        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        return dataset.assign(**{dim: values})
 
-        
+
 Interface.register(XArrayInterface)
