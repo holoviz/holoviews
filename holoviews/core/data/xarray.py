@@ -105,7 +105,8 @@ class XArrayInterface(GridInterface):
         else:
             unique_iters = [cls.values(dataset, d, False) for d in dimensions]
             indexes = zip(*[vals.flat for vals in util.cartesian_product(unique_iters)])
-            data = [(k, group_type(dataset.data.sel(**dict(zip(dimensions, k)))))
+            data = [(k, group_type(dataset.data.sel(**dict(zip(dimensions, k))),
+                                   **group_kwargs))
                     for k in indexes]
 
         if issubclass(container_type, NdMapping):
