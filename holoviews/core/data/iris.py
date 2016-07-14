@@ -148,6 +148,14 @@ class CubeInterface(GridInterface):
         does not need to be reindexed, the Element can simply
         reorder its key dimensions.
         """
+        if kdims and len(kdims) != dataset.ndims:
+            drop_dims = [kd for kd in dataset.kdims if kd not in kdims]
+            constraints = {}
+            for d in drop_dims:
+                vals = cls.values(dataset, d, False)
+                if len(vals):
+                    constraints[d.name] = vals[0]
+            return dataset.data.extract(iris.Constraint(**constraints))
         return dataset.data
 
 
@@ -164,15 +172,6 @@ class CubeInterface(GridInterface):
         dims = [dataset.get_dimension(d) for d in dims]
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
-
-        if dynamic:
-            def load_subset(*args):
-                constraint = iris.Constraint(**dict(zip(constraints, args)))
-                return dataset.clone(dataset.data.extract(constraint),
-                                      new_type=group_type,
-                                      **dict(kwargs, kdims=slice_dims))
-            dynamic_dims = [d(values=list(cls.values(dataset, d, False))) for d in dims]
-            return DynamicMap(load_subset, kdims=dynamic_dims)
 
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])

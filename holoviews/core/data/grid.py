@@ -291,7 +291,9 @@ class GridInterface(DictInterface):
                 vdata = data[vdim.name]
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
-                data[vdim.name] = np.transpose(vdata, axes)
+                if len(axes) > 1:
+                    vdata = np.transpose(vdata, axes)
+                data[vdim.name] = vdata
         return data
 
 
