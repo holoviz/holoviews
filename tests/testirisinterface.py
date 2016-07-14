@@ -51,10 +51,10 @@ class TestCube(ComparisonTestCase):
     def test_dimension_values_vdim(self):
         cube = Dataset(self.cube, kdims=['longitude', 'latitude'])
         self.assertEqual(cube.dimension_values('unknown', flat=False),
-                         np.array([[ 0,  4,  8],
-                                   [ 1,  5,  9],
-                                   [ 2,  6, 10],
-                                   [ 3,  7, 11]], dtype=np.int32).T)
+                         np.flipud(np.array([[ 0,  4,  8],
+                                             [ 1,  5,  9],
+                                             [ 2,  6, 10],
+                                             [ 3,  7, 11]], dtype=np.int32).T))
 
     def test_range_kdim(self):
         cube = Dataset(self.cube, kdims=['longitude', 'latitude'])
