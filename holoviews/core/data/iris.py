@@ -128,10 +128,11 @@ class CubeInterface(GridInterface):
             data = dataset.data.copy().data
             coord_names = [c.name() for c in dataset.data.dim_coords
                            if c.name() in dataset.kdims]
-            dim_inds = [coord_names.index(d.name) for d in dataset.kdims]
-            dim_inds += [i for i in range(len(dataset.data.dim_coords))
-                         if i not in dim_inds]
-            data = data.transpose(dim_inds[::-1])
+            if flat:
+                dim_inds = [coord_names.index(d.name) for d in dataset.kdims]
+                dim_inds += [i for i in range(len(dataset.data.dim_coords))
+                             if i not in dim_inds]
+                data = data.transpose(dim_inds)
         elif expanded:
             idx = dataset.get_dimension_index(dim)
             data = util.cartesian_product([dataset.data.coords(d.name)[0].points
@@ -148,15 +149,14 @@ class CubeInterface(GridInterface):
         does not need to be reindexed, the Element can simply
         reorder its key dimensions.
         """
-        if kdims and len(kdims) != dataset.ndims:
-            drop_dims = [kd for kd in dataset.kdims if kd not in kdims]
-            constraints = {}
-            for d in drop_dims:
-                vals = cls.values(dataset, d, False)
-                if len(vals):
-                    constraints[d.name] = vals[0]
-            return dataset.data.extract(iris.Constraint(**constraints))
-        return dataset.data
+        dropped = {d.name: cls.values(dataset, d, False)[0]
+                   for d in dataset.kdims if d not in kdims
+                   and len(cls.values(dataset, d, False)) == 1}
+        if dropped:
+            constraints = iris.Constraint(**dropped)
+            return dataset.data.extract(constraints)
+        else:
+            return dataset.data
 
 
     @classmethod
@@ -172,6 +172,15 @@ class CubeInterface(GridInterface):
         dims = [dataset.get_dimension(d) for d in dims]
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
+
+        if dynamic:
+            def load_subset(*args):
+                constraint = iris.Constraint(**dict(zip(constraints, args)))
+                return dataset.clone(dataset.data.extract(constraint),
+                                      new_type=group_type,
+                                      **dict(kwargs, kdims=slice_dims))
+            dynamic_dims = [d(values=list(cls.values(dataset, d, False))) for d in dims]
+            return DynamicMap(load_subset, kdims=dynamic_dims)
 
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])
