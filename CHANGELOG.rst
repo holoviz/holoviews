@@ -1,3 +1,35 @@
+Version 1.6
+-----------
+
+A major release with an optional new data interface based on xarray,
+support for batching bokeh plots for huge increases in performance,
+support for bokeh 0.12 and various other fixes and improvements.
+
+Features and improvements:
+
+* Made VectorFieldPlot more general with support for independent
+  coloring and scaling (PR `#701
+  <https://github.com/ioam/holoviews/pull/701>`_).
+* Iris interface now allows tuple and dict formats in the constructor
+  (PR `#709 <https://github.com/ioam/holoviews/pull/709>`_.
+* Added support for dynamic groupby on all data interfaces (PR `#711
+  <https://github.com/ioam/holoviews/pull/711>`_).
+* Added an xarray data interface (PR `#713
+  <https://github.com/ioam/holoviews/pull/713>`_).
+* Addded the redim method to all Dimensioned objects making it easy to
+  quickly change dimension names and attributes on nested objects
+  `#715 <https://github.com/ioam/holoviews/pull/715>`_).
+* Added support for batching plots (PR `#715
+  <https://github.com/ioam/holoviews/pull/717>`_).
+* Support for bokeh 0.12 release (PR `#725
+  <https://github.com/ioam/holoviews/pull/725>`_).
+* Added support for logz option on bokeh Raster plots (PR `#729
+  <https://github.com/ioam/holoviews/pull/729>`_).
+* Bokeh plots now support custom tick formatters specified via
+  Dimension value_format (PR `#728
+  <https://github.com/ioam/holoviews/pull/728>`_).
+
+
 Version 1.5
 -----------
 
