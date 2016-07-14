@@ -183,7 +183,7 @@ class HeatMapPlot(RasterPlot):
 class ImagePlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
-        data = element.dimension_values(2, flat=False).T
+        data = element.dimension_values(2, flat=False)
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
