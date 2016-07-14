@@ -640,6 +640,45 @@ class Image(SheetCoordinateSystem, Raster):
 
 
 
+class GridImage(Dataset, Element2D):
+    """
+    Grid interface based version of an Image, which will
+    eventually supercede the original Image implementation.
+    """
+
+    group = param.String(default='GridImage', constant=True)
+
+    kdims = param.List(default=['x', 'y'], bounds=(2, 2))
+
+    vdims = param.List(default=['z'], bounds=(1, 1))
+
+    def __init__(self, data, **params):
+        super(GridImage, self).__init__(data, **params)
+        (l, r), (b, t) = self.interface.range(self, 0), self.interface.range(self, 1)
+        (ys, xs) = self.dimension_values(2, flat=False).shape
+        xsampling = (float(r-l)/xs)/2.
+        ysampling = (float(t-b)/ys)/2.
+        l, r = l-xsampling, r+xsampling
+        b, t = b-ysampling, t+ysampling
+        self.bounds = BoundingBox(points=((l, b), (r, t)))
+
+    def range(self, dim, data_range=True):
+        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
+        dim = self.get_dimension(dim_idx)
+        if dim.range != (None, None):
+            return dim.range
+        elif dim_idx in [0, 1]:
+            l, b, r, t = self.bounds.lbrt()
+            if dim_idx:
+                drange = (b, t)
+            else:
+                drange = (l, r)
+            return drange
+        else:
+            return self.interface.range(self, dim)
+
+
+
 class RGB(Image):
     """
     An RGB element is a Image containing channel data for the the

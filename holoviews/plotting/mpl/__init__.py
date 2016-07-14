@@ -141,6 +141,7 @@ Store.register({Curve: CurvePlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
+                GridImage: ImagePlot,
 
                 # Annotation plots
                 VLine: VLinePlot,
@@ -186,6 +187,7 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
 
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
+options.GridImage = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')
 options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')

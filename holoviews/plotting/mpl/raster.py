@@ -180,6 +180,23 @@ class HeatMapPlot(RasterPlot):
         return axis_kwargs
 
 
+class ImagePlot(RasterPlot):
+
+    def get_data(self, element, ranges, style):
+        data = element.dimension_values(2, flat=False).T
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
+        l, b, r, t = element.bounds.lbrt()
+        style['extent'] = [l, r, b, t]
+        return (data,), style, {}
+
+    def get_extents(self, element, ranges):
+        extents = super(ImagePlot, self).get_extents(element, ranges)
+        if self.situate_axes:
+            return extents
+        else:
+            return element.bounds.lbrt()
 
 
 class QuadMeshPlot(ColorbarPlot):

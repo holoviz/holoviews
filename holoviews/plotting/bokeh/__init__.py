@@ -6,7 +6,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh)
+                        Table, ItemTable, Area, HSV, QuadMesh, GridImage)
 from ...core.options import Options, Cycle
 from ...interface import DFrame
 from ..plot import PlotSelector
@@ -19,7 +19,8 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
+from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
+                     HSVPlot, QuadMeshPlot)
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
@@ -44,6 +45,7 @@ Store.register({Overlay: OverlayPlot,
 
                 # Rasters
                 Image: RasterPlot,
+                GridImage: ImagePlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
@@ -130,6 +132,7 @@ options.Polygons = Options('style', color=Cycle())
 
 # Rasters
 options.Image = Options('style', cmap='hot')
+options.GridImage = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
 options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
