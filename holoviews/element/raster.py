@@ -646,11 +646,11 @@ class GridImage(Dataset, Element2D):
     eventually supercede the original Image implementation.
     """
 
-    group = param.String(default='GridImage')
+    group = param.String(default='GridImage', constant=True)
 
-    kdims = param.List(default=['x', 'y'])
+    kdims = param.List(default=['x', 'y'], bounds=(2, 2))
 
-    vdims = param.List(default=['z'])
+    vdims = param.List(default=['z'], bounds=(1, 1))
 
     def __init__(self, data, **params):
         super(GridImage, self).__init__(data, **params)
