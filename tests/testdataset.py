@@ -524,3 +524,26 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sample_hm(self):
         pass
 
+
+
+class XArrayDatasetTest(GridDatasetTest):
+    """
+    Tests for Iris interface
+    """
+
+    def setUp(self):
+        import xarray
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['xarray']
+        self.data_instance_type = xarray.Dataset
+        self.init_data()
+
+    # Disabled tests for NotImplemented methods
+    def test_dataset_add_dimensions_values_hm(self):
+        pass
+
+    def test_dataset_sort_vdim_hm(self):
+        pass
+
+    def test_dataset_sample_hm(self):
+        pass

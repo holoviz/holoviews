@@ -9,6 +9,7 @@ except ImportError:
 import numpy as np
 import param
 
+from ..dimension import replace_dimensions
 from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -38,7 +39,14 @@ except Exception as e:
     param.main.warning('Iris interface failed to import with '
                        'following error: %s' % e)
 
-from ..dimension import Dimension, replace_dimensions
+try:
+    import xarray # noqa (Availability import)
+    from .xarray import XArrayInterface # noqa (Conditional API import)
+    datatypes.append('xarray')
+except ImportError:
+    pass
+
+from ..dimension import Dimension
 from ..element import Element
 from ..spaces import HoloMap
 from .. import util
