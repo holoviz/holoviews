@@ -421,10 +421,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             t += offset
 
         # Ensure that it never sets a NaN value
-        if np.isfinite(l): plot.x_range.start = l
-        if np.isfinite(r): plot.x_range.end   = r
-        if np.isfinite(b): plot.y_range.start = b
-        if np.isfinite(t): plot.y_range.end   = t
+        if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
+        if isinstance(l, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
+        if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
+        if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
 
 
     def _process_legend(self):

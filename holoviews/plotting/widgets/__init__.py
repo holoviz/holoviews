@@ -3,6 +3,7 @@ from __future__ import unicode_literals
 import os, uuid, json, math
 
 import param
+import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
@@ -24,6 +25,8 @@ def escape_vals(vals, escape_numerics=True):
     for v in vals:
         if not isnumeric(v):
             v = "'"+unicode(safe_unicode(v))+"'"
+        elif isinstance(v, np.datetime64):
+            v = "'"+str(v)+"'"
         elif v % 1 == 0:
             v = ints % v
         else:
@@ -307,7 +310,10 @@ class SelectionWidget(NdWidget):
                 value_labels = escape_list(escape_vals([dim.pprint_value(v)
                                                         for v in dim_vals]))
 
-                if isnumeric(dim_vals[0]):
+                if isinstance(dim_vals[0], np.datetime64):
+                    dim_vals = [str(v) for v in dim_vals]
+                    widget_type = 'slider'
+                elif isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
                         next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
