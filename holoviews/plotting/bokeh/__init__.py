@@ -8,7 +8,12 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, GridImage)
 from ...core.options import Options, Cycle
-from ...interface import DFrame
+
+try:
+    from ...interface import DFrame
+except:
+    DFrame = None
+
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
@@ -26,7 +31,7 @@ from .tabular import TablePlot
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
-Store.register({Overlay: OverlayPlot,
+associations = {Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 GridSpace: GridPlot,
                 GridMatrix: GridPlot,
@@ -71,8 +76,12 @@ Store.register({Overlay: OverlayPlot,
                 # Tabular
                 Table: TablePlot,
                 ItemTable: TablePlot,
-                DFrame: TablePlot,
-                NdElement: TablePlot},
+                NdElement: TablePlot}
+
+if DFrame is not None:
+    associations[DFrame] = TablePlot
+
+Store.register(associations,
                'bokeh')
 
 
@@ -140,4 +149,3 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 # Annotations
 options.HLine = Options('style', line_color='black', line_width=3, line_alpha=1)
 options.VLine = Options('style', line_color='black', line_width=3, line_alpha=1)
-
