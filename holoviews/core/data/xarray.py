@@ -125,8 +125,12 @@ class XArrayInterface(GridInterface):
         if dim in dataset.vdims:
             if data.ndim == 1:
                 return np.array(data)
-            else:
-                return data.T.flatten() if flat else data
+            dims = [name for name in dataset.data.coords
+                    if isinstance(dataset.data[name].data, np.ndarray) and
+                    name in dataset.data.dims]
+            inds = [dims.index(kd.name) for kd in dataset.kdims]
+            transposed = data.transpose(inds[::-1])
+            return transposed.flatten() if flat else transposed
         elif not expanded:
             return data
         else:
