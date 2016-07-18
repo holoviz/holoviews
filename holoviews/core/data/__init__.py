@@ -393,8 +393,8 @@ class Dataset(Element):
 
         if dynamic:
             group_dims = [d.name for d in self.kdims if d not in dimensions]
-            group_kwargs = dict(util.get_param_values(self))
-            group_kwargs.update(kwargs)
+            group_kwargs = dict(util.get_param_values(self), **kwargs)
+            group_kwargs['kdims'] = [self.get_dimension(d) for d in group_dims]
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
                 group = self.select(**constraint)
