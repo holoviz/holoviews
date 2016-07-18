@@ -56,7 +56,8 @@ class DictInterface(Interface):
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
-        elif not any(isinstance(data, interface) for interface in cls.interfaces):
+        elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
+                     for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
