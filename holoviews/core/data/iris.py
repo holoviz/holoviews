@@ -133,8 +133,6 @@ class CubeInterface(GridInterface):
                 dim_inds += [i for i in range(len(dataset.data.dim_coords))
                              if i not in dim_inds]
                 data = data.transpose(dim_inds)
-            else:
-                data = np.flipud(data)
         elif expanded:
             idx = dataset.get_dimension_index(dim)
             data = util.cartesian_product([dataset.data.coords(d.name)[0].points
