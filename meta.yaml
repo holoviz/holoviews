@@ -20,7 +20,6 @@ requirements:
     - jupyter
     - notebook
     - ipython
-    - lancet
 
 test:
   imports:
