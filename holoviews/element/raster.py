@@ -648,9 +648,10 @@ class GridImage(Dataset, Element2D):
 
     group = param.String(default='GridImage', constant=True)
 
-    kdims = param.List(default=['x', 'y'], bounds=(2, 2))
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
 
-    vdims = param.List(default=['z'], bounds=(1, 1))
+    vdims = param.List(default=[Dimension('z')], bounds=(1, 1))
 
     def __init__(self, data, **params):
         super(GridImage, self).__init__(data, **params)
