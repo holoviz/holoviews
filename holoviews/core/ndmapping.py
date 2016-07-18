@@ -412,9 +412,12 @@ class MultiDimensionalMapping(Dimensioned):
         number and type of objects contained within it and information
         about its dimensions.
         """
-        info_str = self.__class__.__name__ +\
-                   " containing %d items of type %s\n" % (len(self.keys()),
-                                                          type(self.values()[0]).__name__)
+        if (len(self.values()) > 0):
+            info_str = self.__class__.__name__ +\
+                       " containing %d items of type %s\n" % (len(self.keys()),
+                                                              type(self.values()[0]).__name__)
+        else:
+            info_str = self.__class__.__name__ + " containing no items\n"
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
         aliases = {v: k for k, v in self._dim_aliases.items()}
         for group in self._dim_groups:
