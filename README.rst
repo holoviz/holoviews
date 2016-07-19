@@ -10,15 +10,17 @@ holoviews
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
 `Numpy <http://www.numpy.org/>`_ and is designed to work 
-together with `Matplotlib <http://matplotlib.org/>`_ and 
-`IPython Notebook <http://ipython.org/notebook/>`_.  
+together with `Matplotlib <http://matplotlib.org/>`_ or 
+ `Bokeh <http://bokeh.pydata.org>`_, making use of the 
+`Jupyter/IPython Notebook <http://jupyter.org>`_.  
 
 Clone holoviews directly from GitHub with::
 
    git clone git://github.com/ioam/holoviews.git
    
 Please visit `our website <http://ioam.github.com/holoviews/>`_ for
-official releases, installation instructions, documentation, and examples.
+official releases, installation instructions, documentation, and many detailed 
+`example notebooks and tutorials <http://holoviews.org/Tutorials>`_.
 
 For general discussion, we have a `gitter channel <https://gitter.im/ioam/holoviews>`_.
 In addition
