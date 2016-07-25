@@ -120,6 +120,20 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
+    def invert(cls, dataset):
+        invert = False
+        slices = []
+        for d in dataset.data.dims:
+            data = dataset.data[d].data
+            if np.all(data[1:] < data[:-1]):
+                slices.append(slice(None, None, -1))
+                invert = True
+            else:
+                slices.append(slice(None))
+        return slices if invert else []
+
+
+    @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
@@ -130,12 +144,18 @@ class XArrayInterface(GridInterface):
                     name in dataset.data.dims]
             inds = [dims.index(kd.name) for kd in dataset.kdims]
             transposed = data.transpose(inds[::-1])
-            return transposed.flatten() if flat else transposed
+            inversions = cls.invert(dataset)
+            if inversions:
+                transposed = transposed.__getitem__(inversions[::-1])
+            return transposed.T.flatten() if flat else transposed
         elif not expanded:
-            return data
+            return data if np.all(data[1:] >= data[:-1]) else data[::-1]
         else:
             arrays = [dataset.data[d.name].data for d in dataset.kdims]
             product = util.cartesian_product(arrays)[dataset.get_dimension_index(dim)]
+            inversions = cls.invert(dataset)
+            if inversions:
+                product = product.__getitem__(inversions)
             return product.flatten() if flat else product
 
 

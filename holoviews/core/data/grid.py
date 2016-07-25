@@ -102,17 +102,39 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def invert(cls, dataset):
+        invert = False
+        slices = []
+        for d in dataset.kdims:
+            data = dataset.data[d.name]
+            if np.all(data[1:] < data[:-1]):
+                slices.append(slice(None, None, -1))
+                invert = True
+            else:
+                slices.append(slice(None))
+        return slices if invert else []
+
+
+    @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         if dim in dataset.kdims:
             if not expanded:
-                return dataset.data[dim]
-            prod = util.cartesian_product([dataset.data[d.name] for d in dataset.kdims])
+                data = dataset.data[dim]
+                return data[::-1] if np.all(data[1:] < data[:-1]) else data
+            prod = util.cartesian_product([dataset.data[d.name]
+                                           for d in dataset.kdims])
             idx = dataset.get_dimension_index(dim)
             values = prod[idx]
+            invert = cls.invert(dataset)
+            if invert:
+                values = values.__getitem__(invert)
             return values.flatten() if flat else values
         else:
             dim = dataset.get_dimension(dim)
             values = dataset.data.get(dim.name)
+            invert = cls.invert(dataset)
+            if invert:
+                values = values.__getitem__(invert[::-1])
             return values.T.flatten() if flat else values
 
 
