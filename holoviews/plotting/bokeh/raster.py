@@ -82,7 +82,7 @@ class RasterPlot(ElementPlot):
 class ImagePlot(RasterPlot):
 
     def get_data(self, element, ranges=None, empty=False):
-        img = np.flipud(element.dimension_values(2, flat=False))
+        img = element.dimension_values(2, flat=False)
         l, b, r, t = element.bounds.lbrt()
         dh, dw = t-b, r-l
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')

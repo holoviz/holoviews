@@ -128,16 +128,14 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            if data.ndim == 1:
-                return np.array(data)
-            dims = [name for name in dataset.data.coords
+            inversions = cls.invert(dataset)
+            if inversions:
+                data = data.__getitem__(inversions[::-1])
+            dims = [name for name in dataset.data[dim].dims
                     if isinstance(dataset.data[name].data, np.ndarray) and
                     name in dataset.data.dims]
             inds = [dims.index(kd.name) for kd in dataset.kdims]
             transposed = data.transpose(inds[::-1])
-            inversions = cls.invert(dataset)
-            if inversions:
-                transposed = transposed.__getitem__(inversions[::-1])
             return transposed.T.flatten() if flat else transposed
         elif not expanded:
             return data if np.all(data[1:] >= data[:-1]) else data[::-1]

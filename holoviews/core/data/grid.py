@@ -140,7 +140,7 @@ class GridInterface(DictInterface):
             values = prod[idx]
             invert = cls.invert(dataset)
             if invert:
-                values = values.__getitem__(invert)
+                values = values.__getitem__(invert[::-1])
             return values.flatten() if flat else values
         else:
             dim = dataset.get_dimension(dim)
