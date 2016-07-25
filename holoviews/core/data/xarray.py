@@ -129,7 +129,7 @@ class XArrayInterface(GridInterface):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
             inversions = cls.invert(dataset)
-            if inversions:
+            if inversions and not (flat and data.ndim > 1):
                 data = data.__getitem__(inversions[::-1])
             dims = [name for name in dataset.data[dim].dims
                     if isinstance(dataset.data[name].data, np.ndarray) and
