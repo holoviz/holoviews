@@ -657,8 +657,8 @@ class GridImage(Dataset, Element2D):
         super(GridImage, self).__init__(data, **params)
         (l, r), (b, t) = self.interface.range(self, 0), self.interface.range(self, 1)
         (ys, xs) = self.dimension_values(2, flat=False).shape
-        xsampling = (float(r-l)/xs)/2.
-        ysampling = (float(t-b)/ys)/2.
+        xsampling = (float(r-l)/(xs-1))/2.
+        ysampling = (float(t-b)/(ys-1))/2.
         l, r = l-xsampling, r+xsampling
         b, t = b-ysampling, t+ysampling
         self.bounds = BoundingBox(points=((l, b), (r, t)))
