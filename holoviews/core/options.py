@@ -430,12 +430,16 @@ class OptionTree(AttrTree):
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
-        current_node = self[identifier] if identifier in self.children else self
-        group_options = current_node.groups[group_name]
-
+        if identifier in self.children:
+            current_node = self[identifier]
+            group_options = current_node.groups[group_name]
+        else:
+            #When creating a node (nothing to merge with) ensure it is empty
+            group_options = Options(group_name,
+                     allowed_keywords=self.groups[group_name].allowed_keywords)
         try:
             return (group_options(**override_kwargs)
-                    if False else Options(group_name, **override_kwargs))
+                    if options.merge_keywords else Options(group_name, **override_kwargs))
         except OptionError as e:
             raise OptionError(e.invalid_keyword,
                               e.allowed_keywords,
@@ -465,7 +469,9 @@ class OptionTree(AttrTree):
         if valid_id in self.children:
             return self.__dict__[valid_id]
 
-        self.__setattr__(identifier, self.groups)
+        # When creating a intermediate child node, leave kwargs empty
+        self.__setattr__(identifier, {k:Options(k, allowed_keywords=v.allowed_keywords)
+                                      for k,v in self.groups.items()})
         return self[identifier]
 
 
