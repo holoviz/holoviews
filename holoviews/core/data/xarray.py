@@ -120,17 +120,8 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def invert(cls, dataset):
-        invert = False
-        slices = []
-        for d in dataset.data.dims:
-            data = dataset.data[d].data
-            if np.all(data[1:] < data[:-1]):
-                slices.append(slice(None, None, -1))
-                invert = True
-            else:
-                slices.append(slice(None))
-        return slices if invert else []
+    def get_coords(cls, dataset, dim):
+        return dataset.data[dim].data
 
 
     @classmethod

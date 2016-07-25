@@ -119,17 +119,8 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def invert(cls, dataset):
-        invert = False
-        slices = []
-        for d in dataset.kdims:
-            data = dataset.data.coords(d.name)[0].points
-            if np.all(data[1:] < data[:-1]):
-                slices.append(slice(None, None, -1))
-                invert = True
-            else:
-                slices.append(slice(None))
-        return slices if invert else []
+    def get_coords(cls, dataset, dim):
+        return dataset.data.coords(dim)[0].points
 
 
     @classmethod
@@ -153,14 +144,14 @@ class CubeInterface(GridInterface):
             return data
         elif expanded:
             idx = dataset.get_dimension_index(dim)
-            data = util.cartesian_product([dataset.data.coords(d.name)[0].points
+            data = util.cartesian_product([cls.get_coords(dataset, d.name)
                                            for d in dataset.kdims])[idx]
             inversions = cls.invert(dataset)
             if inversions:
                 data = data.__getitem__(inversions)
             return data.flatten() if flat else data
         else:
-            data = dataset.data.coords(dim.name)[0].points
+            data = cls.get_coords(dataset, dim.name)
             return data if np.all(data[1:] >= data[:-1]) else data[::-1]
 
 
