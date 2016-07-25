@@ -110,16 +110,17 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def invert(cls, dataset):
+    def invert(cls, dataset, dims=None):
         """
         Detects if coordinates along a dimension are inverted
         and returns slices to flip the array to the expected
         orientation.
         """
+        dims = dataset.dimensions('key', True) if dims is None else dims
         invert = False
         slices = []
-        for d in dataset.kdims:
-            data = cls.get_coords(dataset, d.name)
+        for d in dims:
+            data = cls.get_coords(dataset, d)
             if np.all(data[1:] < data[:-1]):
                 slices.append(slice(None, None, -1))
                 invert = True

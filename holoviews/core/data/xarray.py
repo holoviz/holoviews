@@ -48,7 +48,7 @@ class XArrayInterface(GridInterface):
         if not isinstance(data, xr.Dataset):
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
-            vdims = [d if isinstance(vd, Dimension) else Dimension(vd)
+            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd)
                      for vd in vdims]
             if isinstance(data, tuple):
                 data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
@@ -128,7 +128,7 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            inversions = cls.invert(dataset)
+            inversions = cls.invert(dataset, dataset.data[dim].dims[::-1])
             if inversions:
                 data = data.__getitem__(inversions[::-1])
             dims = [name for name in dataset.data[dim].dims
