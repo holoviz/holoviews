@@ -6,7 +6,8 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import (ArrayInterface, NdElementInterface, DictInterface)
+from ..core.data import (ArrayInterface, NdElementInterface,
+                         DictInterface, GridInterface)
 from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -396,6 +397,8 @@ class HeatMap(Dataset, Element2D):
 
 
     def _compute_raster(self):
+        if issubclass(self.interface, GridInterface):
+            return self, self.dimension_values(2, flat=False)
         d1keys = self.dimension_values(0, False)
         d2keys = self.dimension_values(1, False)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
