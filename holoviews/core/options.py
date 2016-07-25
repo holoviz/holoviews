@@ -542,7 +542,7 @@ class OptionTree(AttrTree):
         components = (obj.__class__.__name__,
                       group_sanitizer(obj.group),
                       label_sanitizer(obj.label))
-        return self.find(components).options(group)
+        return self.find(components).options(group, target='.'.join(components))
 
 
 
