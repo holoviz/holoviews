@@ -71,7 +71,7 @@ class GridInterface(DictInterface):
             if shape != expected[::-1] and not (not expected and shape == (1,)):
                 raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
-                                 'actual shape: %s' % (vdim, expected, shape))
+                                 'actual shape: %s' % (vdim, expected[::-1], shape))
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -318,17 +318,17 @@ class GridInterface(DictInterface):
                 if k not in dropped_kdims+dropped_vdims}
 
         if kdims != dataset.kdims:
-            dropped_axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
+            joined_dims = kdims+dropped_kdims
+            axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
+                         for d in joined_dims)
+            dropped_axes = tuple(dataset.ndims-joined_dims.index(d)-1
                                  for d in dropped_kdims)
-            old_kdims = [d for d in dataset.kdims if not d in dropped_kdims]
-            axes = tuple(dataset.ndims-old_kdims.index(d)-1
-                         for d in kdims)
             for vdim in vdims:
                 vdata = data[vdim.name]
+                if len(axes) > 1:
+                    vdata = vdata.transpose(axes[::-1])
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
-                if len(axes) > 1:
-                    vdata = np.transpose(vdata, axes)
                 data[vdim.name] = vdata
         return data
 
