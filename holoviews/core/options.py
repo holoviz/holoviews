@@ -262,7 +262,7 @@ class Options(param.Parameterized):
        Optional specification of the options key name. For instance,
        key could be 'plot' or 'style'.""")
 
-    merge_keywords = param.Boolean(default=True, doc="""
+    merge_keywords = param.Boolean(default=False, doc="""
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
@@ -275,7 +275,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=None, merge_keywords=False, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
