@@ -192,6 +192,167 @@ class TestOptionTree(ComparisonTestCase):
                          {'kw2':'value2', 'kw4':'value4'})
 
 
+class TestStoreInheritanceDynamic(ComparisonTestCase):
+    """
+    Tests to prevent regression after fix in PR #646
+    """
+
+    def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=['style', 'plot', 'norm'])
+        self.backend = 'matplotlib'
+        Store.current_backend = self.backend
+        super(TestStoreInheritanceDynamic, self).setUp()
+
+    def tearDown(self):
+        Store.options(val=self.store_copy)
+        super(TestStoreInheritanceDynamic, self).tearDown()
+
+    def initialize_option_tree(self):
+        Store.options(val=OptionTree(groups=['plot', 'style']))
+        options = Store.options()
+        options.Image = Options('style', cmap='hot', interpolation='nearest')
+        return options
+
+    def test_merge_keywords(self):
+        options = self.initialize_option_tree()
+        options.Image = Options('style', clims=(0, 0.5))
+
+        expected = {'clims': (0, 0.5), 'cmap': 'hot', 'interpolation': 'nearest'}
+        direct_kws = options.Image.groups['style'].kwargs
+        inherited_kws = options.Image.options('style').kwargs
+        self.assertEqual(direct_kws, expected)
+        self.assertEqual(inherited_kws, expected)
+
+    def test_merge_keywords_disabled(self):
+        options = self.initialize_option_tree()
+        options.Image = Options('style', clims=(0, 0.5), merge_keywords=False)
+
+        expected = {'clims': (0, 0.5)}
+        direct_kws = options.Image.groups['style'].kwargs
+        inherited_kws = options.Image.options('style').kwargs
+        self.assertEqual(direct_kws, expected)
+        self.assertEqual(inherited_kws, expected)
+
+    def test_specification_general_to_specific_group(self):
+        """
+        Test order of specification starting with general and moving
+        to specific
+        """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
+        options = self.initialize_option_tree()
+
+        obj = Image(np.random.rand(10,10), group='SomeGroup')
+
+        options.Image = Options('style', cmap='viridis')
+        options.Image.SomeGroup = Options('style', alpha=0.2)
+
+        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
+        lookup = Store.lookup_options('matplotlib', obj, 'style')
+
+        self.assertEqual(lookup.kwargs, expected)
+        # Check the tree is structured as expected
+        node1 = options.Image.groups['style']
+        node2 = options.Image.SomeGroup.groups['style']
+
+        self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
+        self.assertEqual(node2.kwargs, {'alpha': 0.2})
+
+
+    def test_specification_general_to_specific_group_and_label(self):
+        """
+        Test order of specification starting with general and moving
+        to specific
+        """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
+        options = self.initialize_option_tree()
+
+        obj = Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
+
+        options.Image = Options('style', cmap='viridis')
+        options.Image.SomeGroup.SomeLabel = Options('style', alpha=0.2)
+
+        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
+        lookup = Store.lookup_options('matplotlib', obj, 'style')
+
+        self.assertEqual(lookup.kwargs, expected)
+        # Check the tree is structured as expected
+        node1 = options.Image.groups['style']
+        node2 = options.Image.SomeGroup.SomeLabel.groups['style']
+
+        self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
+        self.assertEqual(node2.kwargs, {'alpha': 0.2})
+
+    def test_specification_specific_to_general_group(self):
+        """
+        Test order of specification starting with a specific option and
+        then specifying a general one
+        """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
+        options = self.initialize_option_tree()
+        options.Image.SomeGroup = Options('style', alpha=0.2)
+
+        obj = Image(np.random.rand(10,10), group='SomeGroup')
+        options.Image = Options('style', cmap='viridis')
+
+        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
+        lookup = Store.lookup_options('matplotlib', obj, 'style')
+
+        self.assertEqual(lookup.kwargs, expected)
+        # Check the tree is structured as expected
+        node1 = options.Image.groups['style']
+        node2 = options.Image.SomeGroup.groups['style']
+
+        self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
+        self.assertEqual(node2.kwargs, {'alpha': 0.2})
+
+
+    def test_specification_specific_to_general_group_and_label(self):
+        """
+        Test order of specification starting with general and moving
+        to specific
+        """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
+        options = self.initialize_option_tree()
+        options.Image.SomeGroup.SomeLabel = Options('style', alpha=0.2)
+        obj = Image(np.random.rand(10,10), group='SomeGroup', label='SomeLabel')
+
+        options.Image = Options('style', cmap='viridis')
+        expected = {'alpha': 0.2, 'cmap': 'viridis', 'interpolation': 'nearest'}
+        lookup = Store.lookup_options('matplotlib', obj, 'style')
+
+        self.assertEqual(lookup.kwargs, expected)
+        # Check the tree is structured as expected
+        node1 = options.Image.groups['style']
+        node2 = options.Image.SomeGroup.SomeLabel.groups['style']
+
+        self.assertEqual(node1.kwargs, {'cmap': 'viridis', 'interpolation': 'nearest'})
+        self.assertEqual(node2.kwargs, {'alpha': 0.2})
+
+    def test_custom_to_default_inheritance(self):
+        options = self.initialize_option_tree()
+        options.Image.A.B = Options('style', alpha=0.2)
+
+        obj = Image(np.random.rand(10, 10), group='A', label='B')
+        expected_obj =  {'alpha': 0.2, 'cmap': 'hot', 'interpolation': 'nearest'}
+        obj_lookup = Store.lookup_options('matplotlib', obj, 'style')
+        self.assertEqual(obj_lookup.kwargs, expected_obj)
+
+        # Customize this particular object
+        custom_obj = obj(style=dict(clims=(0, 0.5)))
+        expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
+        custom_obj_lookup = Store.lookup_options('matplotlib', custom_obj, 'style')
+        self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
+
+
 class TestStoreInheritance(ComparisonTestCase):
     """
     Tests to prevent regression after fix in 71c1f3a that resolves
