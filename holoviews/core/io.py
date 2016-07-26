@@ -640,7 +640,7 @@ class FileArchive(Archive):
         except: raise Exception("Timestamp format invalid")
 
 
-    def add(self, obj=None, filename=None, data=None, info={}):
+    def add(self, obj=None, filename=None, data=None, info={}, **kwargs):
         """
         If a filename is supplied, it will be used. Otherwise, a
         filename will be generated from the supplied object. Note that
