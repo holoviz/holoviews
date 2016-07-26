@@ -356,6 +356,34 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         custom_obj_lookup = Store.lookup_options('matplotlib', custom_obj, 'style')
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
 
+    def test_custom_magic_to_default_inheritance(self):
+        """
+        Checks customs inheritance backs off to default tree correctly
+        simulating the %%opts cell magic.
+        """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("Custom magic inheritance test requires matplotlib")
+        options = self.initialize_option_tree()
+        options.Image.A.B = Options('style', alpha=0.2)
+
+        obj = Image(np.random.rand(10, 10), group='A', label='B')
+
+        # Before customizing...
+        expected_obj =  {'alpha': 0.2, 'cmap': 'hot', 'interpolation': 'nearest'}
+        obj_lookup = Store.lookup_options('matplotlib', obj, 'style')
+        self.assertEqual(obj_lookup.kwargs, expected_obj)
+
+        custom_tree = {0: OptionTree(groups=['plot', 'style', 'norm'],
+                                     style={'Image' : dict(clims=(0, 0.5))})}
+        Store._custom_options['matplotlib'] = custom_tree
+        obj.id = 0 # Manually set the id to point to the tree above
+
+        # Customize this particular object
+        expected_custom_obj =  dict(clims=(0,0.5), **expected_obj)
+        custom_obj_lookup = Store.lookup_options('matplotlib', obj, 'style')
+        self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
+
+
 
 class TestStoreInheritance(ComparisonTestCase):
     """
