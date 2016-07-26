@@ -120,33 +120,25 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def get_coords(cls, dataset, dim):
-        return dataset.data[dim].data
+    def get_coords(cls, dataset, dim, ordered=False):
+        data =  dataset.data[dim].data
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
 
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            inversions = cls.invert(dataset, dataset.data[dim].dims[::-1])
-            if inversions:
-                data = data.__getitem__(inversions[::-1])
-            dims = [name for name in dataset.data[dim].dims
-                    if isinstance(dataset.data[name].data, np.ndarray) and
-                    name in dataset.data.dims]
-            inds = [dims.index(kd.name) for kd in dataset.kdims]
-            if inds:
-                data = data.transpose(inds[::-1])
+            coord_dims = dataset.data[dim].dims[::-1]
+            data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
-        elif not expanded:
-            return data if np.all(data[1:] >= data[:-1]) else data[::-1]
+        elif expanded:
+            data = cls.expanded_coords(dataset, dim)
+            return data.flatten() if flat else data
         else:
-            arrays = [dataset.data[d.name].data for d in dataset.kdims]
-            product = util.cartesian_product(arrays)[dataset.get_dimension_index(dim)]
-            inversions = cls.invert(dataset)
-            if inversions:
-                product = product.__getitem__(inversions)
-            return product.flatten() if flat else product
+            return cls.get_coords(dataset, dim, True)
 
 
     @classmethod

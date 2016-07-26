@@ -102,54 +102,71 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def get_coords(cls, dataset, dim):
+    def get_coords(cls, dataset, dim, ordered=False):
         """
         Returns the coordinates along a dimension.
         """
-        return dataset.data[dim]
+        data = dataset.data[dim]
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
 
 
     @classmethod
-    def invert(cls, dataset, dims=None):
+    def expanded_coords(cls, dataset, dim):
+        arrays = [cls.get_coords(dataset, d.name, True)
+                  for d in dataset.kdims]
+        idx = dataset.get_dimension_index(dim)
+        return util.cartesian_product(arrays)[idx]
+
+
+    @classmethod
+    def canonicalize(cls, dataset, data, coord_dims=None):
         """
-        Detects if coordinates along a dimension are inverted
-        and returns slices to flip the array to the expected
-        orientation.
+        Canonicalize takes an array of values as input and
+        reorients and transposes it to match the canonical
+        format expected by plotting functions. In addition
+        to the dataset and the particular array to apply
+        transforms to a list of coord_dims may be supplied
+        in case the array indexing does not match the key
+        dimensions of the dataset.
         """
-        dims = dataset.dimensions('key', True) if dims is None else dims
+        if coord_dims is None:
+            coord_dims = dataset.dimensions('key', True)
+
+        # Reorient data
         invert = False
         slices = []
-        for d in dims:
-            data = cls.get_coords(dataset, d)
-            if np.all(data[1:] < data[:-1]):
+        for d in coord_dims:
+            coords = cls.get_coords(dataset, d)
+            if np.all(coords[1:] < coords[:-1]):
                 slices.append(slice(None, None, -1))
                 invert = True
             else:
                 slices.append(slice(None))
-        return slices if invert else []
+        data = data.__getitem__(slices[::-1]) if invert else data
+
+        # Transpose data
+        dims = [name for name in coord_dims[::-1]
+                if isinstance(cls.get_coords(dataset, name), np.ndarray)]
+        inds = [dims.index(kd.name) for kd in dataset.kdims]
+        if inds:
+            data = data.transpose(inds[::-1])
+        return data
 
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        if dim in dataset.kdims:
-            if not expanded:
-                data = dataset.data[dim]
-                return data[::-1] if np.all(data[1:] < data[:-1]) else data
-            prod = util.cartesian_product([dataset.data[d.name]
-                                           for d in dataset.kdims])
-            idx = dataset.get_dimension_index(dim)
-            values = prod[idx]
-            invert = cls.invert(dataset)
-            if invert:
-                values = values.__getitem__(invert[::-1])
-            return values.flatten() if flat else values
-        else:
+        if dim in dataset.vdims:
             dim = dataset.get_dimension(dim)
-            values = dataset.data.get(dim.name)
-            invert = cls.invert(dataset)
-            if invert:
-                values = values.__getitem__(invert[::-1])
-            return values.T.flatten() if flat else values
+            data = dataset.data.get(dim.name)
+            data = cls.canonicalize(dataset, data)
+            return data.T.flatten() if flat else data
+        elif expanded:
+            data = cls.expanded_coords(dataset, dim)
+            return data.flatten() if flat else data
+        else:
+            return cls.get_coords(dataset, dim, True)
 
 
     @classmethod

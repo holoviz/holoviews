@@ -119,8 +119,11 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def get_coords(cls, dataset, dim):
-        return dataset.data.coords(dim)[0].points
+    def get_coords(cls, dataset, dim, ordered=False):
+        data = dataset.data.coords(dim)[0].points
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
 
 
     @classmethod
@@ -130,29 +133,16 @@ class CubeInterface(GridInterface):
         """
         dim = dataset.get_dimension(dim)
         if dim in dataset.vdims:
-            data = dataset.data.copy().data
             coord_names = [c.name() for c in dataset.data.dim_coords
                            if c.name() in dataset.kdims]
-            inversions = cls.invert(dataset)
-            if inversions:
-                data = data.__getitem__(inversions[::-1])
-            if flat:
-                dim_inds = [coord_names.index(d.name) for d in dataset.kdims]
-                dim_inds += [i for i in range(len(dataset.data.dim_coords))
-                             if i not in dim_inds]
-                data = data.transpose(dim_inds).flatten()
-            return data
+            data = dataset.data.copy().data.T
+            data = cls.canonicalize(dataset, data, coord_names)
+            return data.T.flatten() if flat else data
         elif expanded:
-            idx = dataset.get_dimension_index(dim)
-            data = util.cartesian_product([cls.get_coords(dataset, d.name)
-                                           for d in dataset.kdims])[idx]
-            inversions = cls.invert(dataset)
-            if inversions:
-                data = data.__getitem__(inversions)
+            data = cls.expanded_coords(dataset, dim)
             return data.flatten() if flat else data
         else:
-            data = cls.get_coords(dataset, dim.name)
-            return data if np.all(data[1:] >= data[:-1]) else data[::-1]
+            return cls.get_coords(dataset, dim.name, True)
 
 
     @classmethod
