@@ -9,6 +9,18 @@ from unittest import SkipTest
 
 Options.skip_invalid = False
 
+try:
+    # Needed a backend to register backend and options
+    from holoviews.plotting import mpl
+except:
+    pass
+
+try:
+    # Needed to register backend  and options
+    from holoviews.plotting import bokeh
+except:
+    pass
+
 class TestOptions(ComparisonTestCase):
 
     def test_options_init(self):
