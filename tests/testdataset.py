@@ -10,6 +10,8 @@ from holoviews.element.comparison import ComparisonTestCase
 from collections import OrderedDict
 from holoviews.core.dimension import OrderedDict as cyODict
 
+from nose.plugins.attrib import attr
+
 try:
     import pandas as pd
 except:
@@ -508,13 +510,17 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
 
 
 
+@attr(optional=1)
 class IrisDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
     """
 
     def setUp(self):
-        import iris
+        try:
+            import iris
+        except:
+            raise SkipTest("Iris not available")
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['cube']
         self.data_instance_type = iris.cube.Cube
@@ -539,14 +545,17 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sample_hm(self):
         pass
 
-
+@attr(optional=1)
 class XArrayDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
     """
 
     def setUp(self):
-        import xarray
+        try:
+            import xarray
+        except:
+            raise SkipTest("Xarray not available")
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['xarray']
         self.data_instance_type = xarray.Dataset
