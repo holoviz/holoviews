@@ -149,9 +149,17 @@ class GridInterface(DictInterface):
         # Transpose data
         dims = [name for name in coord_dims[::-1]
                 if isinstance(cls.get_coords(dataset, name), np.ndarray)]
+        dropped = [dims.index(d) for d in dims if d not in dataset.kdims]
         inds = [dims.index(kd.name) for kd in dataset.kdims]
+        inds += dropped
         if inds:
             data = data.transpose(inds[::-1])
+
+        # Allow lower dimensional views into data
+        if len(dataset.kdims) < 2:
+            data = data.flatten()
+        elif dropped:
+            data = data.squeeze(axis=tuple(range(len(dropped))))
         return data
 
 
