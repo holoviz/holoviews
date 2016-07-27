@@ -104,22 +104,18 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False):
         """
-        Returns the coordinates along a dimension.
+        Returns the coordinates along a dimension.  Ordered ensures
+        coordinates are in ascending order and expanded creates
+        ND-array matching the dimensionality of the dataset.
         """
+        if expanded:
+            return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
-
-
-    @classmethod
-    def expanded_coords(cls, dataset, dim):
-        arrays = [cls.coords(dataset, d.name, True)
-                  for d in dataset.kdims]
-        idx = dataset.get_dimension_index(dim)
-        return util.cartesian_product(arrays)[idx]
 
 
     @classmethod
@@ -173,10 +169,10 @@ class GridInterface(DictInterface):
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.expanded_coords(dataset, dim)
+            data = cls.coords(dataset, dim, expanded=True)
             return data.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim, True)
+            return cls.coords(dataset, dim, ordered=True)
 
 
     @classmethod
