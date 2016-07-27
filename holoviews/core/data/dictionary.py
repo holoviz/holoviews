@@ -87,7 +87,7 @@ class DictInterface(Interface):
             raise ValueError('Following dimensions not found in data: %s' % not_found)
         lengths = [len(dataset.data[dim]) for dim in dimensions]
         if len({l for l in lengths if l > 1}) > 1:
-            raise ValueError('Length of dataset do not match')
+            raise ValueError('Length of columns do not match')
 
 
     @classmethod
@@ -135,8 +135,8 @@ class DictInterface(Interface):
         cast_objs = cls.cast(dataset_objs)
         cols = set(tuple(c.data.keys()) for c in cast_objs)
         if len(cols) != 1:
-            raise Exception("In order to concatenate, all Column objects "
-                            "should have matching set of dataset.")
+            raise Exception("In order to concatenate, all Dataset objects "
+                            "should have matching set of columns.")
         concatenated = OrderedDict()
         for column in cols.pop():
             concatenated[column] = np.concatenate([obj[column] for obj in cast_objs])

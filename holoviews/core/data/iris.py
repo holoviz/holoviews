@@ -93,7 +93,7 @@ class CubeInterface(GridInterface):
             except:
                 pass
             if not isinstance(data, iris.cube.Cube):
-                raise TypeError('Data must be be an iris dataset type.')
+                raise TypeError('Data must be be an iris Cube type.')
 
         if kdims:
             coords = []

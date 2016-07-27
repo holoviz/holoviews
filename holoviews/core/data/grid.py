@@ -55,8 +55,8 @@ class GridInterface(DictInterface):
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif not isinstance(data, dict):
-            raise ValueError('GridInterface must be instantiated as a '
-                             'dictionary or tuple')
+            raise TypeError('GridInterface must be instantiated as a '
+                            'dictionary or tuple')
 
         for dim in kdims+vdims:
             name = dim.name if isinstance(dim, Dimension) else dim
