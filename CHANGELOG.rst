@@ -4,13 +4,14 @@ Version 1.6.1
 Bug fix release following the 1.6 major release with major bug fixes
 for the grid data interfaces and improvements to the options system.
 
-* Ensure that backend specific style options do not break plotting (PR
-  `#802 <https://github.com/ioam/holoviews/pull/802>`_).
-* Added support for placing legends outside the plot area in bokeh (PR
-  `#801 <https://github.com/ioam/holoviews/pull/801>`_).
+* Ensured that style options incompatible with active backend are
+  ignored (PR `#802 <https://github.com/ioam/holoviews/pull/802>`_).
+* Added support for placing legends outside the plot area in
+  bokeh (PR `#801 <https://github.com/ioam/holoviews/pull/801>`_).
 * Fix to ensure bokeh backend does not depend on pandas (PR `#792
   <https://github.com/ioam/holoviews/pull/792>`_).
-* Fixes to ensure non-custom options are inherited correctly (PR `#796
+* Fixed option system to ensure correct inheritance when
+  redefining options (PR `#796
   <https://github.com/ioam/holoviews/pull/796>`_).
 * Major refactor and fixes for the grid based data backends (iris,
   xarray and arrays with coordinates) ensuring the data is oriented
