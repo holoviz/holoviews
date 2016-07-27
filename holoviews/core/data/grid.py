@@ -104,7 +104,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def get_coords(cls, dataset, dim, ordered=False):
+    def coords(cls, dataset, dim, ordered=False):
         """
         Returns the coordinates along a dimension.
         """
@@ -116,7 +116,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def expanded_coords(cls, dataset, dim):
-        arrays = [cls.get_coords(dataset, d.name, True)
+        arrays = [cls.coords(dataset, d.name, True)
                   for d in dataset.kdims]
         idx = dataset.get_dimension_index(dim)
         return util.cartesian_product(arrays)[idx]
@@ -140,7 +140,7 @@ class GridInterface(DictInterface):
         invert = False
         slices = []
         for d in coord_dims:
-            coords = cls.get_coords(dataset, d)
+            coords = cls.coords(dataset, d)
             if np.all(coords[1:] < coords[:-1]):
                 slices.append(slice(None, None, -1))
                 invert = True
@@ -150,7 +150,7 @@ class GridInterface(DictInterface):
 
         # Transpose data
         dims = [name for name in coord_dims[::-1]
-                if isinstance(cls.get_coords(dataset, name), np.ndarray)]
+                if isinstance(cls.coords(dataset, name), np.ndarray)]
         dropped = [dims.index(d) for d in dims if d not in dataset.kdims]
         inds = [dims.index(kd.name) for kd in dataset.kdims]
         inds += dropped
@@ -176,7 +176,7 @@ class GridInterface(DictInterface):
             data = cls.expanded_coords(dataset, dim)
             return data.flatten() if flat else data
         else:
-            return cls.get_coords(dataset, dim, True)
+            return cls.coords(dataset, dim, True)
 
 
     @classmethod
