@@ -68,7 +68,18 @@ class Plot(param.Parameterized):
 
     @classmethod
     def lookup_options(cls, obj, group):
-        return Store.lookup_options(cls.renderer.backend, obj, group)
+        try:
+            plot_class = cls.renderer.plotting_class(obj)
+            style_opts = plot_class.style_opts
+        except SkipRendering:
+            style_opts = None
+
+        node = Store.lookup_options(cls.renderer.backend, obj, group)
+        if group == 'style' and style_opts:
+            return node.filtered(style_opts)
+        else:
+            return node
+
 
 
 class PlotSelector(object):

@@ -296,6 +296,17 @@ class Options(param.Parameterized):
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
 
+    def filtered(self, allowed):
+        """
+        Return a new Options object that is filtered by the specified
+        list of keys. Mutating self.kwargs to filter is unsafe due to
+        the option expansion that occurs on initialization.
+        """
+        kws = {k:v for k,v in self.kwargs.items() if k in allowed}
+        return self.__class__(key=self.key,
+                              allowed_keywords=self.allowed_keywords,
+                              merge_keywords=self.merge_keywords, **kws)
+
 
     def __call__(self, allowed_keywords=None, **kwargs):
         """
