@@ -6,7 +6,8 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import (ArrayInterface, NdElementInterface, DictInterface)
+from ..core.data import (ArrayInterface, NdElementInterface,
+                         DictInterface, GridInterface)
 from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -396,6 +397,8 @@ class HeatMap(Dataset, Element2D):
 
 
     def _compute_raster(self):
+        if self.interface.gridded:
+            return self, np.flipud(self.dimension_values(2, flat=False))
         d1keys = self.dimension_values(0, False)
         d2keys = self.dimension_values(1, False)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
@@ -648,16 +651,17 @@ class GridImage(Dataset, Element2D):
 
     group = param.String(default='GridImage', constant=True)
 
-    kdims = param.List(default=['x', 'y'], bounds=(2, 2))
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
 
-    vdims = param.List(default=['z'], bounds=(1, 1))
+    vdims = param.List(default=[Dimension('z')], bounds=(1, 1))
 
     def __init__(self, data, **params):
         super(GridImage, self).__init__(data, **params)
         (l, r), (b, t) = self.interface.range(self, 0), self.interface.range(self, 1)
         (ys, xs) = self.dimension_values(2, flat=False).shape
-        xsampling = (float(r-l)/xs)/2.
-        ysampling = (float(t-b)/ys)/2.
+        xsampling = (float(r-l)/(xs-1))/2.
+        ysampling = (float(t-b)/(ys-1))/2.
         l, r = l-xsampling, r+xsampling
         b, t = b-ysampling, t+ysampling
         self.bounds = BoundingBox(points=((l, b), (r, t)))

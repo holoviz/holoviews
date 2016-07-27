@@ -56,7 +56,10 @@ class DictInterface(Interface):
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
-        elif not isinstance(data, dict):
+        # Ensure that interface does not consume data of other types
+        # with an iterator interface
+        elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
+                     for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
@@ -84,7 +87,7 @@ class DictInterface(Interface):
             raise ValueError('Following dimensions not found in data: %s' % not_found)
         lengths = [len(dataset.data[dim]) for dim in dimensions]
         if len({l for l in lengths if l > 1}) > 1:
-            raise ValueError('Length of dataset do not match')
+            raise ValueError('Length of columns do not match')
 
 
     @classmethod
@@ -132,8 +135,8 @@ class DictInterface(Interface):
         cast_objs = cls.cast(dataset_objs)
         cols = set(tuple(c.data.keys()) for c in cast_objs)
         if len(cols) != 1:
-            raise Exception("In order to concatenate, all Column objects "
-                            "should have matching set of dataset.")
+            raise Exception("In order to concatenate, all Dataset objects "
+                            "should have matching set of columns.")
         concatenated = OrderedDict()
         for column in cols.pop():
             concatenated[column] = np.concatenate([obj[column] for obj in cast_objs])

@@ -37,6 +37,8 @@ class GridInterface(DictInterface):
 
     datatype = 'grid'
 
+    gridded = True
+
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims is None:
@@ -53,8 +55,8 @@ class GridInterface(DictInterface):
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif not isinstance(data, dict):
-            raise ValueError('GridInterface must be instantiated as a '
-                             'dictionary or tuple')
+            raise TypeError('GridInterface must be instantiated as a '
+                            'dictionary or tuple')
 
         for dim in kdims+vdims:
             name = dim.name if isinstance(dim, Dimension) else dim
@@ -71,7 +73,7 @@ class GridInterface(DictInterface):
             if shape != expected[::-1] and not (not expected and shape == (1,)):
                 raise ValueError('Key dimension values and value array %s '
                                  'shape do not match. Expected shape %s, '
-                                 'actual shape: %s' % (vdim, expected, shape))
+                                 'actual shape: %s' % (vdim, expected[::-1], shape))
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
@@ -102,18 +104,75 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def coords(cls, dataset, dim, ordered=False, expanded=False):
+        """
+        Returns the coordinates along a dimension.  Ordered ensures
+        coordinates are in ascending order and expanded creates
+        ND-array matching the dimensionality of the dataset.
+        """
+        if expanded:
+            return util.expand_grid_coords(dataset, dim)
+        data = dataset.data[dim]
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
+
+
+    @classmethod
+    def canonicalize(cls, dataset, data, coord_dims=None):
+        """
+        Canonicalize takes an array of values as input and
+        reorients and transposes it to match the canonical
+        format expected by plotting functions. In addition
+        to the dataset and the particular array to apply
+        transforms to a list of coord_dims may be supplied
+        in case the array indexing does not match the key
+        dimensions of the dataset.
+        """
+        if coord_dims is None:
+            coord_dims = dataset.dimensions('key', True)
+
+        # Reorient data
+        invert = False
+        slices = []
+        for d in coord_dims:
+            coords = cls.coords(dataset, d)
+            if np.all(coords[1:] < coords[:-1]):
+                slices.append(slice(None, None, -1))
+                invert = True
+            else:
+                slices.append(slice(None))
+        data = data.__getitem__(slices[::-1]) if invert else data
+
+        # Transpose data
+        dims = [name for name in coord_dims[::-1]
+                if isinstance(cls.coords(dataset, name), np.ndarray)]
+        dropped = [dims.index(d) for d in dims if d not in dataset.kdims]
+        inds = [dims.index(kd.name) for kd in dataset.kdims]
+        inds += dropped
+        if inds:
+            data = data.transpose(inds[::-1])
+
+        # Allow lower dimensional views into data
+        if len(dataset.kdims) < 2:
+            data = data.flatten()
+        elif dropped:
+            data = data.squeeze(axis=tuple(range(len(dropped))))
+        return data
+
+
+    @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        if dim in dataset.kdims:
-            if not expanded:
-                return dataset.data[dim]
-            prod = util.cartesian_product([dataset.data[d.name] for d in dataset.kdims])
-            idx = dataset.get_dimension_index(dim)
-            values = prod[idx]
-            return values.flatten() if flat else values
-        else:
+        if dim in dataset.vdims:
             dim = dataset.get_dimension(dim)
-            values = dataset.data.get(dim.name)
-            return values.T.flatten() if flat else values
+            data = dataset.data.get(dim.name)
+            data = cls.canonicalize(dataset, data)
+            return data.T.flatten() if flat else data
+        elif expanded:
+            data = cls.coords(dataset, dim, expanded=True)
+            return data.flatten() if flat else data
+        else:
+            return cls.coords(dataset, dim, ordered=True)
 
 
     @classmethod
@@ -282,17 +341,17 @@ class GridInterface(DictInterface):
                 if k not in dropped_kdims+dropped_vdims}
 
         if kdims != dataset.kdims:
-            dropped_axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
+            joined_dims = kdims+dropped_kdims
+            axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
+                         for d in joined_dims)
+            dropped_axes = tuple(dataset.ndims-joined_dims.index(d)-1
                                  for d in dropped_kdims)
-            old_kdims = [d for d in dataset.kdims if not d in dropped_kdims]
-            axes = tuple(dataset.ndims-old_kdims.index(d)-1
-                         for d in kdims)
             for vdim in vdims:
                 vdata = data[vdim.name]
+                if len(axes) > 1:
+                    vdata = vdata.transpose(axes[::-1])
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
-                if len(axes) > 1:
-                    vdata = np.transpose(vdata, axes)
                 data[vdim.name] = vdata
         return data
 

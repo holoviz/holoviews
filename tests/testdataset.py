@@ -437,6 +437,95 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.y_ints = [i*2 for i in range(11)]
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
+        self.grid_xs = [0, 1]
+        self.grid_ys = [0.1, 0.2, 0.3]
+        self.grid_zs = [[0, 1], [2, 3], [4, 5]]
+        self.dataset_grid = Dataset((self.grid_xs, self.grid_ys,
+                                     self.grid_zs), kdims=['x', 'y'],
+                                    vdims=['z'])
+        self.dataset_grid_inv = Dataset((self.grid_xs[::-1], self.grid_ys[::-1],
+                                         self.grid_zs), kdims=['x', 'y'],
+                                        vdims=['z'])
+
+    def test_dataset_dim_vals_grid_kdims_xs(self):
+        self.assertEqual(self.dataset_grid.dimension_values(0, expanded=False),
+                         np.array([0, 1]))
+
+    def test_dataset_dim_vals_grid_kdims_xs_inv(self):
+        self.assertEqual(self.dataset_grid_inv.dimension_values(0, expanded=False),
+                         np.array([0, 1]))
+
+    def test_dataset_dim_vals_grid_kdims_expanded_xs_flat(self):
+        expanded_xs = np.array([0, 0, 0, 1, 1, 1])
+        self.assertEqual(self.dataset_grid.dimension_values(0),
+                         expanded_xs)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_xs_flat_inv(self):
+        expanded_xs = np.array([0, 0, 0, 1, 1, 1])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(0),
+                         expanded_xs)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_xs(self):
+        expanded_xs = np.array([[0, 0, 0], [1, 1, 1]])
+        self.assertEqual(self.dataset_grid.dimension_values(0, flat=False),
+                         expanded_xs)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_xs_inv(self):
+        expanded_xs = np.array([[0, 0, 0], [1, 1, 1]])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(0, flat=False),
+                         expanded_xs)
+
+    def test_dataset_dim_vals_grid_kdims_ys(self):
+        self.assertEqual(self.dataset_grid.dimension_values(1, expanded=False),
+                         np.array([0.1, 0.2, 0.3]))
+
+    def test_dataset_dim_vals_grid_kdims_ys_inv(self):
+        self.assertEqual(self.dataset_grid_inv.dimension_values(1, expanded=False),
+                         np.array([0.1, 0.2, 0.3]))
+
+    def test_dataset_dim_vals_grid_kdims_expanded_ys_flat(self):
+        expanded_ys = np.array([0.1, 0.2, 0.3,
+                                0.1, 0.2, 0.3])
+        self.assertEqual(self.dataset_grid.dimension_values(1),
+                         expanded_ys)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_ys_flat_inv(self):
+        expanded_ys = np.array([0.1, 0.2, 0.3,
+                                0.1, 0.2, 0.3])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(1),
+                         expanded_ys)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_ys(self):
+        expanded_ys = np.array([[0.1, 0.2, 0.3],
+                                [0.1, 0.2, 0.3]])
+        self.assertEqual(self.dataset_grid.dimension_values(1, flat=False),
+                         expanded_ys)
+
+    def test_dataset_dim_vals_grid_kdims_expanded_ys_inv(self):
+        expanded_ys = np.array([[0.1, 0.2, 0.3],
+                                [0.1, 0.2, 0.3]])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(1, flat=False),
+                         expanded_ys)
+
+    def test_dataset_dim_vals_grid_vdims_zs_flat(self):
+        expanded_zs = np.array([0, 2, 4, 1, 3, 5])
+        self.assertEqual(self.dataset_grid.dimension_values(2),
+                         expanded_zs)
+
+    def test_dataset_dim_vals_grid_vdims_zs_flat_inv(self):
+        expanded_zs = np.array([5, 3, 1, 4, 2, 0])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(2),
+                         expanded_zs)
+
+    def test_dataset_dim_vals_grid_vdims_zs(self):
+        expanded_zs = np.array([[0, 1], [2, 3], [4, 5]])
+        self.assertEqual(self.dataset_grid.dimension_values(2, flat=False),
+                         expanded_zs)
+
+    def test_dataset_dim_vals_grid_vdims_zs_inv(self):
+        expanded_zs = np.array([[5, 4], [3, 2], [1, 0]])
+        self.assertEqual(self.dataset_grid_inv.dimension_values(2, flat=False),
+                         expanded_zs)
 
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"

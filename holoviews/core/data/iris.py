@@ -93,7 +93,7 @@ class CubeInterface(GridInterface):
             except:
                 pass
             if not isinstance(data, iris.cube.Cube):
-                raise TypeError('Data must be be an iris dataset type.')
+                raise TypeError('Data must be be an iris Cube type.')
 
         if kdims:
             coords = []
@@ -119,29 +119,31 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def coords(cls, dataset, dim, ordered=False, expanded=False):
+        if expanded:
+            return util.expand_grid_coords(dataset, dim)
+        data = dataset.data.coords(dim)[0].points
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
+
+
+    @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         """
         Returns an array of the values along the supplied dimension.
         """
         dim = dataset.get_dimension(dim)
         if dim in dataset.vdims:
-            data = dataset.data.copy().data
-            coord_names = [c.name() for c in dataset.data.dim_coords
-                           if c.name() in dataset.kdims]
-            if flat:
-                dim_inds = [coord_names.index(d.name) for d in dataset.kdims]
-                dim_inds += [i for i in range(len(dataset.data.dim_coords))
-                             if i not in dim_inds]
-                data = data.transpose(dim_inds)
-            else:
-                data = np.flipud(data)
+            coord_names = [c.name() for c in dataset.data.dim_coords]
+            data = dataset.data.copy().data.T
+            data = cls.canonicalize(dataset, data, coord_names)
+            return data.T.flatten() if flat else data
         elif expanded:
-            idx = dataset.get_dimension_index(dim)
-            data = util.cartesian_product([dataset.data.coords(d.name)[0].points
-                                           for d in dataset.kdims])[idx]
+            data = cls.coords(dataset, dim, expanded=True)
+            return data.flatten() if flat else data
         else:
-            data = dataset.data.coords(dim.name)[0].points
-        return data.flatten() if flat else data
+            return cls.coords(dataset, dim.name, ordered=True)
 
 
     @classmethod

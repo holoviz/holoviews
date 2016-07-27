@@ -904,3 +904,16 @@ def get_dynamic_item(map_obj, dimensions, key):
     else:
         el = None
     return key, el
+
+
+def expand_grid_coords(dataset, dim):
+    """
+    Expand the coordinates along a dimension of the gridded
+    dataset into an ND-array matching the dimensionality of
+    the dataset.
+    """
+    arrays = [dataset.interface.coords(dataset, d.name, True)
+              for d in dataset.kdims]
+    idx = dataset.get_dimension_index(dim)
+    return cartesian_product(arrays)[idx]
+

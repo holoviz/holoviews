@@ -11,6 +11,8 @@ class Interface(param.Parameterized):
 
     datatype = None
 
+    gridded = False
+
     @classmethod
     def register(cls, interface):
         cls.interfaces[interface.datatype] = interface

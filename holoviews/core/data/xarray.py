@@ -40,37 +40,40 @@ class XArrayInterface(GridInterface):
         vdim_param = element_params['vdims']
 
         if kdims:
-            kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+            kdim_names = [kd.name if isinstance(kd, Dimension)
+                          else kd for kd in kdims]
         else:
             kdim_names = [kd.name for kd in eltype.kdims]
 
         if not isinstance(data, xr.Dataset):
-            ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
-            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd)
+                     for vd in vdims]
             if isinstance(data, tuple):
-                value_array = np.array(data[-1])
-                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
-            elif isinstance(data, dict):
-                value_array = np.array(data[vdim])
-            if value_array.ndim > 1:
-                value_array = value_array.T
-            dims, coords = zip(*[(kd.name, data[kd.name])
-                                 for kd in kdims])
+                data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
+            if not isinstance(data, dict):
+                raise TypeError('XArrayInterface could not interpret data type')
+            coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
+            arrays = {}
+            for vdim in vdims:
+                arr = data[vdim.name]
+                if not isinstance(arr, xr.DataArray):
+                    arr = xr.DataArray(arr, coords=coords)
+                arrays[vdim.name] = arr
             try:
-                arr = xr.DataArray(value_array, coords=coords, dims=dims)
-                data = xr.Dataset({vdim: arr})
+                data = xr.Dataset(arrays)
             except:
                 pass
-            if not isinstance(data, xr.Dataset):
-                raise TypeError('Data must be be an xarray Dataset type.')
-
-        if isinstance(data, xr.Dataset):
+        else:
             if vdims is None:
                 vdims = list(data.data_vars.keys())
             if kdims is None:
-                kdims = list(data.dims.keys())
+                kdims = [name for name in data.dims
+                         if isinstance(data[name].data, np.ndarray)]
+
+        if not isinstance(data, xr.Dataset):
+            raise TypeError('Data must be be an xarray Dataset type.')
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
@@ -117,19 +120,27 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
+    def coords(cls, dataset, dim, ordered=False, expanded=False):
+        if expanded:
+            return util.expand_grid_coords(dataset, dim)
+        data = dataset.data[dim].data
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
+        return data
+
+
+    @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            if data.ndim == 1:
-                return np.array(data)
-            else:
-                return data.T.flatten() if flat else data
-        elif not expanded:
-            return data
+            coord_dims = dataset.data[dim].dims[::-1]
+            data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
+            return data.T.flatten() if flat else data
+        elif expanded:
+            data = cls.coords(dataset, dim, expanded=True)
+            return data.flatten() if flat else data
         else:
-            arrays = [dataset.data[d.name].data for d in dataset.kdims]
-            product = util.cartesian_product(arrays)[dataset.get_dimension_index(dim)]
-            return product.flatten() if flat else product
+            return cls.coords(dataset, dim, ordered=True)
 
 
     @classmethod
