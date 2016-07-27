@@ -603,10 +603,7 @@ class IrisDatasetTest(GridDatasetTest):
     """
 
     def setUp(self):
-        try:
-            import iris
-        except:
-            raise SkipTest("Iris not available")
+        import iris
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['cube']
         self.data_instance_type = iris.cube.Cube
@@ -637,10 +634,7 @@ class XArrayDatasetTest(GridDatasetTest):
     """
 
     def setUp(self):
-        try:
-            import xarray
-        except:
-            raise SkipTest("Xarray not available")
+        import xarray
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['xarray']
         self.data_instance_type = xarray.Dataset
