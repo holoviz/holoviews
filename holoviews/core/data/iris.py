@@ -11,7 +11,7 @@ import numpy as np
 from .interface import Interface
 from .grid import GridInterface
 from ..ndmapping import (NdMapping, item_check, sorted_context)
-from ..spaces import HoloMap, DynamicMap
+from ..spaces import HoloMap
 from .. import util
 
 from holoviews.core.dimension import Dimension
@@ -172,7 +172,6 @@ class CubeInterface(GridInterface):
         break up a high-dimensional dataset into smaller viewable chunks.
         """
         if not isinstance(dims, list): dims = [dims]
-        dynamic = kwargs.pop('dynamic', False)
         dims = [dataset.get_dimension(d) for d in dims]
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]

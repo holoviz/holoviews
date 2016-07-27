@@ -39,13 +39,11 @@ class XArrayInterface(GridInterface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
 
-        if kdims:
-            kdim_names = [kd.name if isinstance(kd, Dimension)
-                          else kd for kd in kdims]
-        else:
-            kdim_names = [kd.name for kd in eltype.kdims]
-
         if not isinstance(data, xr.Dataset):
+            if kdims is None:
+                kdims = kdim_param.default
+            if vdims is None:
+                vdims = vdim_param.default
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
             vdims = [vd if isinstance(vd, Dimension) else Dimension(vd)
@@ -223,7 +221,7 @@ class XArrayInterface(GridInterface):
         raise NotImplementedError
 
     @classmethod
-    def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
+    def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
