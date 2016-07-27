@@ -14,7 +14,7 @@ except ImportError:
 import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
-                     CompositeOverlay, Element, NdOverlay)
+                     CompositeOverlay, Element)
 from ...core.options import abbreviated_exception
 from ...core import util
 from ...element import RGB

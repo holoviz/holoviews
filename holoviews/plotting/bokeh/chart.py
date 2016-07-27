@@ -9,7 +9,6 @@ except:
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core import util
 from ...core.util import max_range, basestring
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors

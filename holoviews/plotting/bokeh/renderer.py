@@ -8,16 +8,12 @@ from .util import compute_static_patch
 import param
 from param.parameterized import bothmethod
 
-import bokeh
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
-from bokeh.io import _CommsHandle
-from bokeh.util.notebook import get_comms
 
 from bokeh.core.json_encoder import serialize_json
 from bokeh.model import _ModelInDocument as add_to_document
-from bokeh.document import Document
 
 
 class BokehRenderer(Renderer):

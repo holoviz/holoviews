@@ -13,7 +13,6 @@ import param
 from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.element import Element
-from ..core.options import abbreviated_exception
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering

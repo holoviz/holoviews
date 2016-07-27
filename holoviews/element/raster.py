@@ -6,8 +6,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import (ArrayInterface, NdElementInterface,
-                         DictInterface, GridInterface)
+from ..core.data import ArrayInterface, NdElementInterface, DictInterface
 from ..core import (Dimension, NdMapping, Element2D,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox

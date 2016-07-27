@@ -1,8 +1,6 @@
 import json
 
 import param
-import bokeh
-from bokeh.io import Document
 from bokeh.io import _CommsHandle
 from bokeh.util.notebook import get_comms
 

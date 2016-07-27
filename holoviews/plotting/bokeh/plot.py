@@ -7,7 +7,7 @@ from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, NdLayout)
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple

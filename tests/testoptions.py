@@ -11,13 +11,13 @@ Options.skip_invalid = False
 
 try:
     # Needed a backend to register backend and options
-    from holoviews.plotting import mpl
+    from holoviews.plotting import mpl # noqa
 except:
     pass
 
 try:
     # Needed to register backend  and options
-    from holoviews.plotting import bokeh
+    from holoviews.plotting import bokeh # noqa
 except:
     pass
 

@@ -90,7 +90,7 @@ class ImagePlot(RasterPlot):
             data = dict(image=[], x=[], y=[], dw=[], dh=[])
         else:
             data = dict(image=[img], x=[l],
-                        y=[b], dw=[r-l], dh=[dh])
+                        y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
 
 
