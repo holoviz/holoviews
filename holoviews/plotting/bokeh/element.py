@@ -705,12 +705,17 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     legend_position = param.ObjectSelector(objects=["top_right",
                                                     "top_left",
                                                     "bottom_left",
-                                                    "bottom_right"],
+                                                    "bottom_right",
+                                                    'right', 'left',
+                                                    'top', 'bottom'],
                                                     default="top_right",
                                                     doc="""
         Allows selecting between a number of predefined legend position
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
+
+    legend_cols = param.Integer(default=False, doc="""
+       Whether to lay out the legend as columns.""")
 
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
@@ -718,6 +723,11 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     style_opts = legend_dimensions + line_properties + text_properties
 
     _update_handles = ['source']
+
+    legend_specs = {'right': dict(pos='right', loc=(5, -40)),
+                    'left': dict(pos='left', loc=(0, -40)),
+                    'top': dict(pos='above', loc=(120, 5)),
+                    'bottom': dict(pos='below', loc=(60, 0))}
 
     def _process_legend(self):
         plot = self.handles['plot']
@@ -745,7 +755,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         if legend_fontsize:
             plot.legend[0].label_text_font_size = legend_fontsize
 
-        plot.legend.location = self.legend_position
+        if self.legend_position not in self.legend_specs:
+            plot.legend.location = self.legend_position
+        plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
         legends = plot.legend[0].legends
         new_legends = []
         for label, l in legends:
@@ -754,6 +766,13 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
             legend_labels.append(label)
             new_legends.append((label, l))
         plot.legend[0].legends[:] = new_legends
+        if self.legend_position in self.legend_specs:
+            legend = plot.legend[0]
+            plot.legend[:] = []
+            legend.plot = None
+            leg_opts = self.legend_specs[self.legend_position]
+            legend.location = leg_opts['loc']
+            plot.add_layout(plot.legend[0], leg_opts['pos'])
 
 
     def _init_tools(self, element):
