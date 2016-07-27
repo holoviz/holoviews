@@ -10,8 +10,6 @@ from holoviews.element.comparison import ComparisonTestCase
 from collections import OrderedDict
 from holoviews.core.dimension import OrderedDict as cyODict
 
-from nose.plugins.attrib import attr
-
 try:
     import pandas as pd
 except:
@@ -510,7 +508,6 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
 
 
 
-@attr(optional=1)
 class IrisDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
@@ -545,7 +542,6 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sample_hm(self):
         pass
 
-@attr(optional=1)
 class XArrayDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
