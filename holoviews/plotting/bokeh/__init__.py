@@ -147,5 +147,5 @@ options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
-options.HLine = Options('style', line_color='black', line_width=3, line_alpha=1)
-options.VLine = Options('style', line_color='black', line_width=3, line_alpha=1)
+options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
