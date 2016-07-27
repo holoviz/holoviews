@@ -37,7 +37,7 @@ Features and improvements:
   <https://github.com/ioam/holoviews/pull/711>`_).
 * Added an xarray data interface (PR `#713
   <https://github.com/ioam/holoviews/pull/713>`_).
-* Addded the redim method to all Dimensioned objects making it easy to
+* Added the redim method to all Dimensioned objects making it easy to
   quickly change dimension names and attributes on nested objects
   `#715 <https://github.com/ioam/holoviews/pull/715>`_).
 * Added support for batching plots (PR `#715
