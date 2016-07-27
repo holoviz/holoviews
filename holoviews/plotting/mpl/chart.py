@@ -338,8 +338,6 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
     show_grid = param.Boolean(default=True, doc="""
         Whether to overlay a grid on the axis.""")
 
-    style_opts = []
-
     def _process_hist(self, hist):
         """
         Subclassed to offset histogram by defined amount.
