@@ -37,6 +37,8 @@ class GridInterface(DictInterface):
 
     datatype = 'grid'
 
+    gridded = True
+
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims is None:

@@ -397,7 +397,7 @@ class HeatMap(Dataset, Element2D):
 
 
     def _compute_raster(self):
-        if issubclass(self.interface, GridInterface):
+        if self.interface.gridded:
             return self, np.flipud(self.dimension_values(2, flat=False))
         d1keys = self.dimension_values(0, False)
         d2keys = self.dimension_values(1, False)
