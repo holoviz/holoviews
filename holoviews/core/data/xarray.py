@@ -22,14 +22,12 @@ class XArrayInterface(GridInterface):
     @classmethod
     def dimension_type(cls, dataset, dim):
         name = dataset.get_dimension(dim).name
-        idx = list(dataset.data.keys()).index(name)
         return dataset.data[name].dtype.type
 
 
     @classmethod
     def dtype(cls, dataset, dim):
         name = dataset.get_dimension(dim).name
-        idx = list(dataset.data.keys()).index(name)
         return dataset.data[name].dtype
 
 
