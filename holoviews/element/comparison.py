@@ -609,7 +609,8 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_timeseries(cls, el1, el2, msg='TimeSeries'):
-        cls.compare_dataset(el1, el2, msg)
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, msg)
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg='Bivariate'):
