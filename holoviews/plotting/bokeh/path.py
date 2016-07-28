@@ -40,7 +40,7 @@ class PathPlot(ElementPlot):
                 elmapping['line_color'] = 'color'
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
-                data['color'] += [val for _ in range(len(eldata.values()[0]))]
+                data['color'] += [val for _ in range(len(list(eldata.values())[0]))]
         return data, elmapping
 
 
