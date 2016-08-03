@@ -1,6 +1,7 @@
+import itertools
 from distutils.version import LooseVersion
-
 from collections import defaultdict
+
 import numpy as np
 
 try:
@@ -40,12 +41,8 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
-                  'CategoricalAxis' 'BasicTicker', 'BasicTickFormatter',
+                  'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
                   'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
-
-# Where to look for the ignored models
-LOCATIONS = ['new', 'below', 'right', 'left',
-             'renderers', 'above', 'attributes', 'plot', 'ticker']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
@@ -176,7 +173,22 @@ def refs(json):
     return result
 
 
-def compute_static_patch(document, models, json=None):
+def get_ids(obj):
+    """
+    Returns a list of all ids in the supplied object.
+    Useful for determining if a json representation contains
+    references to other objects.
+    """
+    ids = []
+    if isinstance(obj, list):
+        ids = [get_ids(o) for o in obj]
+    elif isinstance(obj, dict):
+        ids = [(v,) if k == 'id' else get_ids(v)
+               for k, v in obj.items()]
+    return list(itertools.chain(*ids))
+
+
+def compute_static_patch(document, models):
     """
     Computes a patch to update an existing document without
     diffing the json first, making it suitable for static updates
@@ -184,14 +196,17 @@ def compute_static_patch(document, models, json=None):
     attributes and will break if new models have been added since
     the plot was first created.
     """
-    references = refs(json if json else document.to_json())
-    requested_updates = [m.ref['id'] for m in models]
+    references = refs(document.to_json())
+    model_ids = [m.ref['id'] for m in models]
 
+    requested_updates = []
     value_refs = {}
     events = []
     update_types = defaultdict(list)
     for ref_id, obj in references.items():
-        if ref_id not in requested_updates:
+        if ref_id in model_ids:
+            requested_updates += get_ids(obj)
+        else:
             continue
         if obj['type'] in MODEL_PRIORITY:
             priority = MODEL_PRIORITY.index(obj['type'])
@@ -203,16 +218,17 @@ def compute_static_patch(document, models, json=None):
                                                          value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [delete_refs(e, LOCATIONS, IGNORED_MODELS)
+    events = [delete_refs(e, IGNORED_MODELS)
               for _, e in sorted(events, key=lambda x: x[0])]
-    value_refs = {ref_id: delete_refs(val, LOCATIONS, IGNORED_MODELS)
+    events = [e for e in events if all(i in requested_updates for i in get_ids(e))]
+    value_refs = {ref_id: delete_refs(val, IGNORED_MODELS)
                   for ref_id, val in value_refs.items()}
     references = [val for val in value_refs.values()
-                  if val is not None]
+                  if val not in [None, {}]]
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, locs, delete):
+def delete_refs(obj, delete):
     """
     Delete all references to specific model types by recursively
     traversing the object and looking for the models to be deleted in
@@ -226,15 +242,14 @@ def delete_refs(obj, locs, delete):
             return None
         new_obj = {}
         for k, v in list(obj.items()):
-            if k in locs:
-                ref = delete_refs(v, locs, delete)
-                if ref is not None:
-                    new_obj[k] = ref
-            else:
-              new_obj[k] = v
+            if k in ['data', 'palette'] or (k == 'attributes' and not get_ids(v)):
+                continue
+            ref = delete_refs(v, delete)
+            if ref is not None:
+                new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, locs, delete) for v in obj]
+        objs = [delete_refs(v, delete) for v in obj]
         return [o for o in objs if o is not None]
     else:
         return obj
