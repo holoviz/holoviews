@@ -40,6 +40,12 @@ class DimensionedSelectionTest(ComparisonTestCase):
                          self.img_map[1:3, 1:3])
 
 
+    def test_function_holoslice(self):
+        self.assertEqual(self.img_map.select(a=lambda x: 1 <= x < 3,
+                                             b=lambda x: 1 <= x < 3),
+                         self.img_map[1:3, 1:3])
+
+
     def test_sanitized_holoslice(self):
         self.assertEqual(self.sanitized_map.select(A_B=(1,3)),
                          self.sanitized_map[1:3])

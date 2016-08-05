@@ -10,22 +10,6 @@ from ..core.options import Cycle
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
 
-try:
-    from . import mpl                     # noqa (API import)
-except ImportError:
-    pass
-
-try:
-    from . import bokeh                   # noqa (API import)
-except ImportError:
-    pass
-
-try:
-    from . import plotly                  # noqa (API import)
-except ImportError:
-    pass
-
-
 def public(obj):
     if not isinstance(obj, type): return False
     is_plot_or_cycle = any([issubclass(obj, bc) for bc in [Plot, Cycle]])

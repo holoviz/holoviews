@@ -1,3 +1,5 @@
+from distutils.version import LooseVersion
+
 from collections import defaultdict
 import numpy as np
 
@@ -7,17 +9,19 @@ try:
 except ImportError:
     cm, colors = None, None
 
-try:
-    from bokeh.enums import Palette
-    from bokeh.plotting import Plot
-    bokeh_lt_011 = True
-except:
-    from bokeh.core.enums import Palette
-    from bokeh.models.plots import Plot
-    bokeh_lt_011 = False
-
+import bokeh
+bokeh_version = LooseVersion(bokeh.__version__)
+from bokeh.core.enums import Palette
+from bokeh.document import Document
+from bokeh.models.plots import Plot
 from bokeh.models import GlyphRenderer
+from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
+
+if bokeh_version >= '0.12':
+    from bokeh.layouts import WidgetBox
+
+from ...core.options import abbreviated_exception
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -31,6 +35,31 @@ markers = {'s': {'marker': 'square'},
            '3': {'marker': 'triangle', 'orientation': np.pi},
            '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
 
+# List of models that do not update correctly and must be ignored
+# Should only include models that have no direct effect on the display
+# and can therefore be safely ignored. Axes currently fail saying
+# LinearAxis.computed_bounds cannot be updated
+IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
+                  'CategoricalAxis' 'BasicTicker', 'BasicTickFormatter',
+                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
+
+# Where to look for the ignored models
+LOCATIONS = ['new', 'below', 'right', 'left',
+             'renderers', 'above', 'attributes', 'plot', 'ticker']
+
+# Model priority order to ensure some types are updated before others
+MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
+                  'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
+
+
+def rgb2hex(rgb):
+    """
+    Convert RGB(A) tuple to hex.
+    """
+    if len(rgb) > 3:
+        rgb = rgb[:-1]
+    return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
 
 def mplcmap_to_palette(cmap):
     """
@@ -38,8 +67,9 @@ def mplcmap_to_palette(cmap):
     """
     if colors is None:
         raise ValueError("Using cmaps on objects requires matplotlib.")
-    colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-    return [colors.rgb2hex(m) for m in colormap(np.arange(colormap.N))]
+    with abbreviated_exception():
+        colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+        return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
 
 def get_cmap(cmap):
@@ -47,26 +77,11 @@ def get_cmap(cmap):
     Returns matplotlib cmap generated from bokeh palette or
     directly accessed from matplotlib.
     """
-    rgb_vals = getattr(Palette, cmap, None)
-    if rgb_vals:
-        return colors.ListedColormap(rgb_vals, name=cmap)
-    return cm.get_cmap(cmap)
-
-
-def map_colors(arr, crange, cmap):
-    """
-    Maps an array of values to RGB hex strings, given
-    a color range and colormap.
-    """
-    if crange:
-        cmin, cmax = crange
-    else:
-        cmin, cmax = np.nanmin(arr), np.nanmax(arr)
-    arr = (arr - cmin) / (cmax-cmin)
-    arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
-    arr = cmap(arr)*255
-    return ["#{0:02x}{1:02x}{2:02x}".format(*(int(v) for v in c[:-1]))
-            for c in arr]
+    with abbreviated_exception():
+        rgb_vals = getattr(Palette, cmap, None)
+        if rgb_vals:
+            return colors.ListedColormap(rgb_vals, name=cmap)
+        return cm.get_cmap(cmap)
 
 
 def mpl_to_bokeh(properties):
@@ -82,9 +97,11 @@ def mpl_to_bokeh(properties):
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
         elif k == 'color' or k.endswith('_color'):
-            v = colors.ColorConverter.colors.get(v, v)
+            with abbreviated_exception():
+                v = colors.ColorConverter.colors.get(v, v)
             if isinstance(v, tuple):
-                v = colors.rgb2hex(v)
+                with abbreviated_exception():
+                    v = rgb2hex(v)
             new_properties[k] = v
         else:
             new_properties[k] = v
@@ -139,16 +156,88 @@ def models_to_json(models):
             continue
         else:
             ids.append(plotobj.ref['id'])
-        if bokeh_lt_011:
-            json = plotobj.vm_serialize(changed_only=True)
-        else:
-            json = plotobj.to_json(False)
-            json.pop('tool_events', None)
-            json.pop('renderers', None)
-            json_data.append({'id': plotobj.ref['id'],
-                              'type': plotobj.ref['type'],
-                              'data': json})
+        json = plotobj.to_json(False)
+        json.pop('tool_events', None)
+        json.pop('renderers', None)
+        json_data.append({'id': plotobj.ref['id'],
+                          'type': plotobj.ref['type'],
+                          'data': json})
     return json_data
+
+
+def refs(json):
+    """
+    Finds all the references to other objects in the json
+    representation of a bokeh Document.
+    """
+    result = {}
+    for obj in json['roots']['references']:
+        result[obj['id']] = obj
+    return result
+
+
+def compute_static_patch(document, models, json=None):
+    """
+    Computes a patch to update an existing document without
+    diffing the json first, making it suitable for static updates
+    between arbitrary frames. Note that this only supports changed
+    attributes and will break if new models have been added since
+    the plot was first created.
+    """
+    references = refs(json if json else document.to_json())
+    requested_updates = [m.ref['id'] for m in models]
+
+    value_refs = {}
+    events = []
+    update_types = defaultdict(list)
+    for ref_id, obj in references.items():
+        if ref_id not in requested_updates:
+            continue
+        if obj['type'] in MODEL_PRIORITY:
+            priority = MODEL_PRIORITY.index(obj['type'])
+        else:
+            priority = float('inf')
+        for key, val in obj['attributes'].items():
+            event = Document._event_for_attribute_change(references,
+                                                         obj, key, val,
+                                                         value_refs)
+            events.append((priority, event))
+            update_types[obj['type']].append(key)
+    events = [delete_refs(e, LOCATIONS, IGNORED_MODELS)
+              for _, e in sorted(events, key=lambda x: x[0])]
+    value_refs = {ref_id: delete_refs(val, LOCATIONS, IGNORED_MODELS)
+                  for ref_id, val in value_refs.items()}
+    references = [val for val in value_refs.values()
+                  if val is not None]
+    return dict(events=events, references=references)
+
+
+def delete_refs(obj, locs, delete):
+    """
+    Delete all references to specific model types by recursively
+    traversing the object and looking for the models to be deleted in
+    the supplied locations.
+
+    Note: Can be deleted once bokeh stops raising errors when updating
+          LinearAxis.computed_bounds
+    """
+    if isinstance(obj, dict):
+        if 'type' in obj and obj['type'] in delete:
+            return None
+        new_obj = {}
+        for k, v in list(obj.items()):
+            if k in locs:
+                ref = delete_refs(v, locs, delete)
+                if ref is not None:
+                    new_obj[k] = ref
+            else:
+              new_obj[k] = v
+        return new_obj
+    elif isinstance(obj, list):
+        objs = [delete_refs(v, locs, delete) for v in obj]
+        return [o for o in objs if o is not None]
+    else:
+        return obj
 
 
 def hsv_to_rgb(hsv):
@@ -211,3 +300,33 @@ def update_plot(old, new):
         if old_r not in updated:
             emptied = {k: [] for k in old_r.data_source.data}
             old_r.data_source.data.update(emptied)
+
+
+def pad_plots(plots, padding=0.85):
+    """
+    Accepts a grid of bokeh plots in form of a list of lists and
+    wraps any DataTable or Tabs in a WidgetBox with appropriate
+    padding. Required to avoid overlap in gridplot.
+    """
+    widths = []
+    for row in plots:
+        row_widths = []
+        for p in row:
+            if isinstance(p, Tabs):
+                width = np.max([p.width if isinstance(p, DataTable) else
+                                t.child.plot_width for t in p.tabs])
+                for p in p.tabs:
+                    p.width = int(padding*width)
+            elif isinstance(p, DataTable):
+                width = p.width
+                p.width = int(padding*width)
+            elif p:
+                width = p.plot_width
+            else:
+                width = 0
+            row_widths.append(width)
+        widths.append(row_widths)
+    plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
+              for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
+    total_width = np.max([np.sum(row) for row in widths])
+    return plots, total_width

@@ -23,8 +23,9 @@ from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
 
 from . import *    # noqa (All Elements need to support comparison)
-from ..core import Element, Empty, AdjointLayout, Overlay, Dimension, HoloMap, \
-                   Dimensioned, Layout, NdLayout, NdOverlay, GridSpace, DynamicMap
+from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
+                    HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
+                    GridSpace, DynamicMap, GridMatrix)
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -142,10 +143,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Raster] =      cls.compare_raster
         cls.equality_type_funcs[QuadMesh] =    cls.compare_quadmesh
         cls.equality_type_funcs[Surface] =     cls.compare_surface
-        cls.equality_type_funcs[HeatMap] =     cls.compare_columns
+        cls.equality_type_funcs[HeatMap] =     cls.compare_dataset
 
         # Charts
-        cls.equality_type_funcs[Columns] =      cls.compare_columns
+        cls.equality_type_funcs[Dataset] =      cls.compare_dataset
         cls.equality_type_funcs[Curve] =        cls.compare_curve
         cls.equality_type_funcs[ErrorBars] =    cls.compare_errorbars
         cls.equality_type_funcs[Spread] =       cls.compare_spread
@@ -180,6 +181,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[AdjointLayout] = cls.compare_adjointlayouts
         cls.equality_type_funcs[NdOverlay] =     cls.compare_ndoverlays
         cls.equality_type_funcs[GridSpace] =     cls.compare_grids
+        cls.equality_type_funcs[GridMatrix] =     cls.compare_grids
         cls.equality_type_funcs[HoloMap] =       cls.compare_holomap
         cls.equality_type_funcs[DynamicMap] =    cls.compare_dynamicmap
 
@@ -443,7 +445,7 @@ class Comparison(ComparisonInterface):
     #========#
     
     @classmethod
-    def compare_columns(cls, el1, el2, msg='Columns'):
+    def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
         if len(el1) != len(el2):
             raise AssertionError("%s not of matching length." % msg)
@@ -455,38 +457,39 @@ class Comparison(ComparisonInterface):
                                      % (d1, d2))
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
-                    cls.failureException("Columns along dimension %s not equal." % dim)
+                    cls.failureException("%s along dimension %s not equal." %
+                                         (msg, dim))
             else:
                 cls.compare_arrays(d1, d2, msg)
 
 
     @classmethod
     def compare_curve(cls, el1, el2, msg='Curve'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_errorbars(cls, el1, el2, msg='ErrorBars'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_spread(cls, el1, el2, msg='Spread'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_area(cls, el1, el2, msg='Area'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_scatter(cls, el1, el2, msg='Scatter'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_scatter3d(cls, el1, el2, msg='Scatter3D'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_trisurface(cls, el1, el2, msg='Trisurface'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_histogram(cls, el1, el2, msg='Histogram'):
@@ -496,24 +499,24 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_points(cls, el1, el2, msg='Points'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
 
     @classmethod
     def compare_vectorfield(cls, el1, el2, msg='VectorField'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_bars(cls, el1, el2, msg='Bars'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_spikes(cls, el1, el2, msg='Spikes'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     #=========#
     # Rasters #
@@ -579,7 +582,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_tables(cls, el1, el2, msg='Table'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     #========#
     # Pandas #
@@ -602,19 +605,20 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_distribution(cls, el1, el2, msg='Distribution'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_timeseries(cls, el1, el2, msg='TimeSeries'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dimensioned(el1, el2)
+        cls.compare_arrays(el1.data, el2.data, msg)
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg='Bivariate'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_regression(cls, el1, el2, msg='Regression'):
-        cls.compare_columns(el1, el2, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     #=======#
     # Grids #

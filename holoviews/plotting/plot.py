@@ -5,7 +5,7 @@ of this Plot baseclass.
 """
 
 from itertools import groupby, product
-from collections import Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import param
@@ -15,18 +15,11 @@ from ..core import util, traversal
 from ..core.element import Element
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
-from ..core.options import Store, Compositor
+from ..core.options import Store, Compositor, SkipRendering
+from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
-from .util import get_dynamic_mode, initialize_sampled
-
-
-class BackendError(Exception):
-
-    def __init__(self, backend):
-        msg = "%s backend could not plot supplied object." % backend
-        super(BackendError, self).__init__(msg)
-        self.backend = backend
+from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
 
 
 class Plot(param.Parameterized):
@@ -74,7 +67,18 @@ class Plot(param.Parameterized):
 
     @classmethod
     def lookup_options(cls, obj, group):
-        return Store.lookup_options(cls.renderer.backend, obj, group)
+        try:
+            plot_class = cls.renderer.plotting_class(obj)
+            style_opts = plot_class.style_opts
+        except SkipRendering:
+            style_opts = None
+
+        node = Store.lookup_options(cls.renderer.backend, obj, group)
+        if group == 'style' and style_opts:
+            return node.filtered(style_opts)
+        else:
+            return node
+
 
 
 class PlotSelector(object):
@@ -166,7 +170,11 @@ class DimensionedPlot(Plot):
         of plotting. Allows selecting normalization at different levels
         for nested data containers.""")
 
-    projection = param.ObjectSelector(default=None)
+    projection = param.Parameter(default=None, doc="""
+        Allows supplying a custom projection to transform the axis
+        coordinates during display. Example projections include '3d'
+        and 'polar' projections supported by some backends. Depending
+        on the backend custom projection objects may be supplied.""")
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
@@ -270,21 +278,24 @@ class DimensionedPlot(Plot):
 
     def _fontsize(self, key, label='fontsize', common=True):
         if not self.fontsize: return {}
+
+        if not isinstance(self.fontsize, dict):
+            return {label:self.fontsize} if common else {}
+
         unknown_keys = set(self.fontsize.keys()) - set(self._fontsize_keys)
         if unknown_keys:
             msg = "Popping unknown keys %r from fontsize dictionary.\nValid keys: %r"
             self.warning(msg %  (list(unknown_keys), self._fontsize_keys))
             for key in unknown_keys: self.fontsize.pop(key, None)
 
-        if isinstance(self.fontsize, dict):
-            if key in self.fontsize:
-                return {label:self.fontsize[key]}
-            elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
-                return {label:self.fontsize['labels']}
-            else:
-                return {}
+        if key in self.fontsize:
+            return {label:self.fontsize[key]}
+        elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
+            return {label:self.fontsize['labels']}
+        else:
+            return {}
 
-        return {label:self.fontsize} if common else {}
+
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -309,7 +320,6 @@ class DimensionedPlot(Plot):
         # Traverse displayed object if normalization applies
         # at this level, and ranges for the group have not
         # been supplied from a composite plot
-        elements = []
         return_fn = lambda x: x if isinstance(x, Element) else None
         for group, (axiswise, framewise) in norm_opts.items():
             elements = []
@@ -370,7 +380,7 @@ class DimensionedPlot(Plot):
                     if 'axiswise' in nopts or 'framewise' in nopts:
                         norm_opts.update({path: (nopts.get('axiswise', False),
                                                  nopts.get('framewise', False))})
-        element_specs = [spec for eid, spec in element_specs]
+        element_specs = [spec for _, spec in element_specs]
         norm_opts.update({spec: (False, False) for spec in element_specs
                           if not any(spec[:i] in norm_opts.keys() for i in range(1, 4))})
         return norm_opts
@@ -393,15 +403,67 @@ class DimensionedPlot(Plot):
 
 
     @classmethod
-    def _deep_options(cls, obj, opt_type, opts, specs=None):
+    def _traverse_options(cls, obj, opt_type, opts, specs=None, keyfn=None, defaults=True):
         """
-        Traverses the supplied object getting all options
-        in opts for the specified opt_type and specs
+        Traverses the supplied object getting all options in opts for
+        the specified opt_type and specs. Also takes into account the
+        plotting class defaults for plot options. If a keyfn is
+        supplied the returned options will be grouped by the returned
+        keys.
         """
-        lookup = lambda x: ((type(x).__name__, x.group, x.label),
-                            {o: cls.lookup_options(x, opt_type).options.get(o, None)
-                             for o in opts})
-        return dict(obj.traverse(lookup, specs))
+        def lookup(x):
+            """
+            Looks up options for object, including plot defaults,
+            keyfn determines returned key otherwise None key is used.
+            """
+            options = cls.lookup_options(x, opt_type)
+            selected = {o: options.options[o]
+                        for o in opts if o in options.options}
+            if opt_type == 'plot' and defaults:
+                plot = Store.registry[cls.renderer.backend].get(type(x))
+                selected['defaults'] = {o: getattr(plot, o) for o in opts
+                                        if o not in selected and hasattr(plot, o)}
+            key = keyfn(x) if keyfn else None
+            return (key, selected)
+
+        # Traverse object and accumulate options by key
+        traversed = obj.traverse(lookup, specs)
+        options = defaultdict(lambda: defaultdict(list))
+        default_opts = defaultdict(lambda: defaultdict(list)) 
+        for key, opts in traversed:
+            defaults = opts.pop('defaults', {})
+            for opt, v in opts.items():
+                options[key][opt].append(v)
+            for opt, v in defaults.items():
+                default_opts[key][opt].append(v)
+
+        # Merge defaults into dictionary if not explicitly specified
+        for key, opts in default_opts.items():
+            for opt, v in opts.items():
+                if opt not in options[key]:
+                    options[key][opt] = v
+        return options if keyfn else options[None]
+
+
+    def _get_projection(cls, obj):
+        """
+        Uses traversal to find the appropriate projection
+        for a nested object. Respects projections set on
+        Overlays before considering Element based settings,
+        before finally looking up the default projection on
+        the plot type. If more than one non-None projection
+        type is found an exception is raised.
+        """
+        isoverlay = lambda x: isinstance(x, CompositeOverlay)
+        opts = cls._traverse_options(obj, 'plot', ['projection'],
+                                     [CompositeOverlay, Element],
+                                     keyfn=isoverlay)
+        from_overlay = not all(p is None for p in opts[True]['projection'])
+        projections = opts[from_overlay]['projection']
+        custom_projs = [p for p in projections if p is not None]
+        if len(set(custom_projs)) > 1:
+            raise Exception("An axis may only be assigned one projection type")
+        return custom_projs[0] if custom_projs else None
 
 
     def update(self, key):
@@ -431,68 +493,19 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
-    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
-        If set bgcolor overrides the background color of the axis.""")
-
-    invert_xaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot x-axis.""")
-
-    invert_yaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot y-axis.""")
-
-    logx = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the x-axis of the Chart.""")
-
-    logy  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""")
-
-    logz  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the y-axis of the Chart.""")
-
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
-
-    xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom', 'bare', 'top-bare',
-                                          'bottom-bare', None], doc="""
-        Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel. Valid options are 'top',
-        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
-
-    yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', 'bare', 'left-bare',
-                                               'right-bare', None], doc="""
-        Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel. Valid options are 'left',
-        'right', 'bare' 'left-bare' and 'right-bare'.""")
-
-    zaxis = param.Boolean(default=True, doc="""
-        Whether to display the z-axis.""")
-
-    xticks = param.Parameter(default=None, doc="""
-        Ticks along x-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
-
-    yticks = param.Parameter(default=None, doc="""
-        Ticks along y-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
-
-    zticks = param.Parameter(default=None, doc="""
-        Ticks along z-axis specified as an integer, explicit list of
-        tick locations, list of tuples containing the locations and
-        labels or a matplotlib tick locator object. If set to None
-        default matplotlib ticking behavior is applied.""")
+    # A dictionary mapping of the plot methods used to draw the
+    # glyphs corresponding to the ElementPlot, can support two
+    # keyword arguments a 'single' implementation to draw an individual
+    # plot and a 'batched' method to draw multiple Elements at once
+    _plot_methods = {}
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
-                 overlaid=0, cyclic_index=0, zorder=0, style=None, overlay_dims={},
-                 **params):
+                 batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
+                 overlay_dims={}, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
-        self.overlaid = overlaid
+        self.overlaid = overlaid and not batched
+        self.batched = batched
         self.overlay_dims = overlay_dims
 
         if not isinstance(element, (HoloMap, DynamicMap)):
@@ -500,15 +513,44 @@ class GenericElementPlot(DimensionedPlot):
                                kdims=['Frame'], id=element.id)
         else:
             self.hmap = element
-        self.style = self.lookup_options(self.hmap.last, 'style') if style is None else style
+
+        plot_element = self.hmap.last
+        if self.batched:
+            plot_element = plot_element.last
+
+        self.style = self.lookup_options(plot_element, 'style') if style is None else style
         dimensions = self.hmap.kdims if dimensions is None else dimensions
         keys = keys if keys else list(self.hmap.data.keys())
-        plot_opts = self.lookup_options(self.hmap.last, 'plot').options
+        plot_opts = self.lookup_options(plot_element, 'plot').options
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+
+        # Update plot and style options for batched plots
+        if self.batched:
+            self.ordering = util.layer_sort(self.hmap)
+            overlay_opts = self.lookup_options(self.hmap.last, 'plot').options.items()
+            opts = {k: v for k, v in overlay_opts if k in self.params()}
+            self.set_param(**opts)
+            self.style = self.lookup_options(plot_element, 'style').max_cycles(len(self.ordering))
+        else:
+            self.ordering = []
+
+
+    def get_zorder(self, overlay, key, el):
+        """
+        Computes the z-order of element in the NdOverlay
+        taking into account possible batching of elements.
+        """
+        spec = util.get_overlay_spec(overlay, key, el)
+        try:
+            return self.ordering.index(spec)
+        except IndexError:
+            if spec not in self.ordering:
+                self.ordering = util.layer_sort(self.hmap)
+            return self.ordering.index(spec)
 
 
     def _get_frame(self, key):
@@ -516,16 +558,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            if isinstance(key, tuple):
-                dims = {d.name: k for d, k in zip(self.dimensions, key)
-                        if d in self.hmap.kdims}
-                frame = self.hmap.select(**dims)
-            elif key < self.hmap.counter:
-                key = self.hmap.keys()[key]
-                frame = self.hmap[key]
-            elif key >= self.hmap.counter:
-                frame = next(self.hmap)
-                key = self.hmap.keys()[-1]
+            key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             if not isinstance(key, tuple): key = (key,)
             if not key in self.keys:
                 self.keys.append(key)
@@ -581,7 +614,10 @@ class GenericElementPlot(DimensionedPlot):
                 else:
                     y0, y1 = (np.NaN, np.NaN)
                 if self.projection == '3d':
-                    z0, z1 = ranges[dims[2].name]
+                    if len(dims) > 2:
+                        z0, z1 = ranges[dims[2].name]
+                    else:
+                        z0, z1 = np.NaN, np.NaN
             else:
                 x0, x1 = view.range(0)
                 y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
@@ -607,21 +643,13 @@ class GenericElementPlot(DimensionedPlot):
                      l2 for l1, l2 in zip(range_extents, extents))
 
 
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        # Axis labels
-        if isinstance(view, CompositeOverlay):
-            bottom = view.values()[0]
-            dims = bottom.dimensions()
-            if isinstance(bottom, CompositeOverlay):
-                dims = dims[bottom.ndims:]
-        else:
-            dims = view.dimensions()
-        if dims and xlabel is None:
-            xlabel = util.safe_unicode(dims[0].pprint_label)
-        if len(dims) >= 2 and ylabel is None:
-            ylabel = util.safe_unicode(dims[1].pprint_label)
-        if self.projection == '3d' and len(dims) >= 3 and zlabel is None:
-            zlabel = util.safe_unicode(dims[2].pprint_label)
+    def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
+        if dimensions and xlabel is None:
+            xlabel = dim_axis_label(dimensions[0])
+        if len(dimensions) >= 2 and ylabel is None:
+            ylabel = dim_axis_label(dimensions[1])
+        if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
+            zlabel = dim_axis_label(dimensions[2])
         return xlabel, ylabel, zlabel
 
 
@@ -663,7 +691,14 @@ class GenericOverlayPlot(GenericElementPlot):
     allows collapsing of layers via the Compositor.
     """
 
-    show_legend = param.Boolean(default=False, doc="""
+    batched = param.Boolean(default=True, doc="""
+        Whether to plot Elements NdOverlay in a batched plotting call
+        if possible. Disables legends and zorder may not be preserved.""")
+
+    legend_limit = param.Integer(default=25, doc="""
+        Number of rendered glyphs before legends are disabled.""")
+
+    show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
     style_grouping = param.Integer(default=2,
@@ -675,8 +710,9 @@ class GenericOverlayPlot(GenericElementPlot):
 
     _passed_handles = []
 
-    def __init__(self, overlay, ranges=None, **params):
-        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+    def __init__(self, overlay, ranges=None, batched=True, **params):
+        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges,
+                                                 batched=batched, **params)
 
         # Apply data collapse
         self.hmap = Compositor.collapse(self.hmap, None, mode='data')
@@ -708,69 +744,101 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
     def _create_subplots(self, ranges):
-        subplots = OrderedDict()
-
-        length = self.style_grouping
+        # Check if plot should be batched
         ordering = util.layer_sort(self.hmap)
-        keys, vmaps = self.hmap.split_overlays()
+        registry = Store.registry[self.renderer.backend]
+        batched = self.batched and type(self.hmap.last) is NdOverlay
+        if batched:
+            batchedplot = registry.get(type(self.hmap.last.last))
+        if (batched and batchedplot and 'batched' in batchedplot._plot_methods and
+            (not self.show_legend or len(ordering) > self.legend_limit)):
+            self.batched = True
+            keys, vmaps = [()], [self.hmap]
+        else:
+            self.batched = False
+            keys, vmaps = self.hmap.split_overlays()
+
+        # Compute global ordering
+        length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         map_lengths = Counter()
         for m in vmaps:
             map_lengths[group_fn(m)[:length]] += 1
-
         zoffset = 0
         overlay_type = 1 if self.hmap.type == Overlay else 2
         group_counter = Counter()
-        for (key, vmap) in zip(keys, vmaps):
-            vtype = type(vmap.last)
-            plottype = Store.registry[self.renderer.backend].get(vtype, None)
-            if plottype is None:
-                self.warning("No plotting class for %s type and %s backend "
-                             "found. " % (vtype.__name__, self.renderer.backend))
-                continue
 
+        subplots = OrderedDict()
+        for (key, vmap) in zip(keys, vmaps):
+            opts = {}
             if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
                 if not isinstance(key, tuple): key = (key,)
                 style_key = group_fn(vmap) + key
+                opts['overlay_dims'] = OrderedDict(zip(vmap.last.kdims, key))
+
+            if self.batched:
+                vtype = type(vmap.last.last)
+                oidx = 0
+            else:
+                vtype = type(vmap.last)
+                oidx = ordering.index(style_key)
+
+            plottype = registry.get(vtype, None)
+            if plottype is None:
+                self.warning("No plotting class for %s type and %s backend "
+                             "found. " % (vtype.__name__, self.renderer.backend))
+                continue
+
+            # Get zorder and style counter
             group_key = style_key[:length]
-            zorder = ordering.index(style_key) + zoffset
+            zorder = self.zorder + oidx + zoffset
             cyclic_index = group_counter[group_key]
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
 
-            opts = {}
-            if overlay_type == 2:
-                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
             if issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
+            elif self.batched:
+                opts['batched'] = self.batched
+            if len(ordering) > self.legend_limit:
+                opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
-            plotopts = dict(opts, keys=self.keys, style=style, cyclic_index=cyclic_index,
-                            zorder=self.zorder+zorder, ranges=ranges, overlaid=overlay_type,
+            plotopts = dict(opts, cyclic_index=cyclic_index,
+                            invert_axes=self.invert_axes,
+                            dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
-                            show_title=self.show_title, dimensions=self.dimensions,
-                            uniform=self.uniform,
-                            **{k: v for k, v in self.handles.items() if k in self._passed_handles})
+                            overlaid=overlay_type, ranges=ranges,
+                            show_title=self.show_title, style=style,
+                            uniform=self.uniform, zorder=zorder,
+                            **{k: v for k, v in self.handles.items()
+                               if k in self._passed_handles})
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
-            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
+            if (not isinstance(plottype, PlotSelector) and
+                issubclass(plottype, GenericOverlayPlot)):
                 zoffset += len(set([k for o in vmap for k in o.keys()])) - 1
         if not subplots:
-            raise BackendError(self.renderer.backend)
-
+            raise SkipRendering("%s backend could not plot any Elements "
+                                "in the Overlay." % self.renderer.backend)
         return subplots
 
 
     def get_extents(self, overlay, ranges):
         extents = []
         items = overlay.items()
-        for key, subplot in self.subplots.items():
-            layer = overlay.data.get(key, None)
+        if self.batched:
+            subplot = self.subplots.values()[0]
+            subplots = [(k, subplot) for k in overlay.data.keys()]
+        else:
+            subplots = self.subplots.items()
+        for key, subplot in subplots:
             found = False
+            layer = overlay.data.get(key, None)
             if isinstance(self.hmap, DynamicMap) and layer is None:
-                for i, (k, layer) in enumerate(items):
+                for _, layer in items:
                     if isinstance(layer, subplot.hmap.type):
                         found = True
                         break

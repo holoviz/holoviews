@@ -1,19 +1,15 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import CustomJS, TapTool, ColumnDataSource
-
-try:
-    from bokeh.protocol import serialize_json
-    bokeh_lt_011 = True
-except ImportError:
-    from bokeh.core.json_encoder import serialize_json
-    bokeh_lt_011 = False
-
 import param
 
-from ...core.data import ArrayColumns
-from .util import models_to_json
+from ...core.data import ArrayColumns, PandasInterface
+from .util import compute_static_patch, models_to_json
+
+from bokeh.models import CustomJS, TapTool, ColumnDataSource
+from bokeh.core.json_encoder import serialize_json
+from bokeh.io import _CommsHandle
+from bokeh.util.notebook import get_comms
 
 
 class Callback(param.ParameterizedFunction):
@@ -47,7 +43,11 @@ class Callback(param.ParameterizedFunction):
         has access to the plot, source and cb_obj and may modify
         the data javascript object sent back to Python.""")
 
-    current_data = param.Dict(default={})
+    current_data = param.Dict(default={}, doc="""
+        A dictionary of the last data supplied to the callback.""")
+
+    delay = param.Number(default=200, doc="""
+        Delay when initiating callback events in milliseconds.""")
 
     initialize_cb = param.Boolean(default=True, doc="""
         Whether the callback should be initialized when it's first
@@ -69,40 +69,54 @@ class Callback(param.ParameterizedFunction):
         Avoid running the callback if the callback data is unchanged.
         Useful for avoiding infinite loops.""")
 
+    timeout = param.Number(default=2500, doc="""
+        Callback error timeout in milliseconds.""")
+
     JS_callback = """
         function callback(msg){
           if (msg.msg_type == "execute_result") {
-            var data = JSON.parse(msg.content.data['text/plain'].slice(1, -1));
-            if (data.root !== undefined) {
-              var doc = Bokeh.index[data.root].model.document;
+            if (msg.content.data['text/plain'] === "'Complete'") {
+               if (HoloViewsWidget._queued.length) {
+                   execute_callback();
+               } else {
+                   HoloViewsWidget._blocked = false;
+               }
+               HoloViewsWidget._timeout = Date.now();
             }
-            $.each(data.data, function(i, value) {
-              if (data.root !== undefined) {
-                var ds = doc.get_model_by_id(value.id);
-              } else {
-                var ds = Bokeh.Collections(value.type).get(value.id);
-              }
-              if (ds != undefined) {
-                ds.set(value.data);
-                ds.trigger('change');
-              }
-            });
           } else {
             console.log("Python callback returned unexpected message:", msg)
           }
         }
         callbacks = {iopub: {output: callback}};
-        var data = {};
+    var data = {};
     """
 
     IPython_callback = """
-        if (!(_.isEmpty(data))) {{
+        function execute_callback() {{
+           data = HoloViewsWidget._queued.pop(0);
            var argstring = JSON.stringify(data);
            argstring = argstring.replace('true', 'True').replace('false','False');
            var kernel = IPython.notebook.kernel;
            var cmd = "Callbacks.callbacks[{callback_id}].update(" + argstring + ")";
            var pyimport = "from holoviews.plotting.bokeh import Callbacks;";
            kernel.execute(pyimport + cmd, callbacks, {{silent : false}});
+        }}
+
+        if (!HoloViewsWidget._queued) {{
+            HoloViewsWidget._queued = [];
+            HoloViewsWidget._blocked = false;
+            HoloViewsWidget._timeout = Date.now();
+        }}
+
+        timeout = HoloViewsWidget._timeout + {timeout};
+        if ((typeof _ === "undefined")  || _.isEmpty(data)) {{
+        }} else if ((HoloViewsWidget._blocked && (Date.now() < timeout))) {{
+            HoloViewsWidget._queued = [data];
+        }} else {{
+            HoloViewsWidget._queued = [data];
+            setTimeout(execute_callback, {delay});
+            HoloViewsWidget._blocked = true;
+            HoloViewsWidget._timeout = Date.now();
         }}
     """
 
@@ -147,15 +161,21 @@ class Callback(param.ParameterizedFunction):
             return self.serialize(objects)
 
 
-    def serialize(self, objects):
+    def serialize(self, models):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
-        data = dict(data=models_to_json(objects))
-        if not bokeh_lt_011:
-            plot = self.plots[0]
-            data['root'] = plot.state._id
-        return serialize_json(data)
+        documents = {plot.document for plot in self.plots}
+        for doc in documents:
+            if hasattr(doc, 'last_comms_handle'):
+                handle = doc.last_comms_handle
+            else:
+                handle = _CommsHandle(get_comms(doc.last_comms_target),
+                                      doc, None)
+                doc.last_comms_handle = handle
+            msg = compute_static_patch(doc, models)
+            handle.comms.send(serialize_json(msg))
+        return 'Complete'
 
 
 
@@ -243,12 +263,9 @@ class DownsampleColumns(DownsampleCallback):
     plot_attributes = param.Dict(default={'x_range': ['start', 'end'],
                                           'y_range': ['start', 'end']})
 
-    def initialize(self, data):
-        plot = self.plots[0]
-        maxn = np.max([len(el) for el in plot.hmap])
-        np.random.seed(self.random_seed)
-        self.random_index = np.random.choice(maxn, maxn, False)
 
+    def initialize(self, data):
+        self.prng = np.random.RandomState(self.random_seed)
 
     def __call__(self, data):
         xstart, xend = data['x_range']
@@ -256,7 +273,7 @@ class DownsampleColumns(DownsampleCallback):
 
         plot = self.plots[0]
         element = plot.current_frame
-        if element.interface is not ArrayColumns:
+        if element.interface not in [ArrayColumns, PandasInterface]:
             element = plot.current_frame.clone(datatype=['array'])
 
         # Slice element to current ranges
@@ -269,17 +286,15 @@ class DownsampleColumns(DownsampleCallback):
         else:
             ranges  = plot.current_ranges
 
-        # Avoid randomizing if possible (expensive)
         if len(sliced) > self.max_samples:
-            # Randomize element samples and slice to region
-            # Randomization consistent to avoid "flicker".
-            length = len(element)
-            inds = self.random_index[self.random_index<length]
-            data = element.data[inds, :]
-            randomized = element.clone(data, datatype=['array'])
-            sliced = randomized.select(**{xdim: (xstart, xend),
-                                          ydim: (ystart, yend)})
-            sliced = sliced.clone(sliced.data[:self.max_samples, :])
+            length = len(sliced)
+            if element.interface is PandasInterface:
+                data = sliced.data.sample(self.max_samples,
+                                          random_state=self.prng)
+            else:
+                inds = self.prng.choice(length, self.max_samples, False)
+                data = element.data[inds, :]
+            sliced = element.clone(data)
 
         # Update data source
         new_data = plot.get_data(sliced, ranges)[0]
@@ -334,7 +349,9 @@ class Callbacks(param.Parameterized):
         self.plot_callbacks[id(cb_obj)].append(pycallback)
 
         # Generate callback JS code to get all the requested data
-        self_callback = Callback.IPython_callback.format(callback_id=cb_id)
+        self_callback = Callback.IPython_callback.format(callback_id=cb_id,
+                                                         timeout=pycallback.timeout,
+                                                         delay=pycallback.delay)
         code = ''
         for k, v in pycallback.plot_attributes.items():
             format_kwargs = dict(key=repr(k), attrs=repr(v))
@@ -370,11 +387,13 @@ class Callbacks(param.Parameterized):
             else:
                 obj = getattr(plot.state, k)
                 obj_data = models_to_json([obj])[0]
-                data[k] = [obj_data.get(attr) for attr in v]
+                data[k] = [obj_data.get(attr, obj_data.get('data', {}).get(attr))
+                           for attr in v]
         if pycallback.cb_attributes:
             cb_data = models_to_json([pycallback.callback_obj])[0]
             data['cb_obj'] = [cb_data.get(attr) for attr in pycallback.cb_attributes]
         return data
+
 
     def _chain_callbacks(self, plot, cb_obj, callbacks):
         """

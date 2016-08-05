@@ -13,7 +13,7 @@ extras_require={}
 
 # Notebook dependencies of IPython 3
 extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
-                                           'jsonschema',  'ipython', 'pygments']
+                                           'jsonschema',  'notebook', 'pygments']
 # IPython Notebook + matplotlib + Lancet
 extras_require['recommended'] = (extras_require['notebook-dependencies']
                                  + ['matplotlib', 'lancet-ioam'])
@@ -27,20 +27,21 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.4.2",
+    version="1.6.1",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
     long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
     author= "Jean-Luc Stevens and Philipp Rudiger",
-    author_email= "holoviews@googlegroups.com",
+    author_email= "holoviews@gmail.com",
     maintainer= "IOAM",
-    maintainer_email= "holoviews@googlegroups.com",
+    maintainer_email= "holoviews@gmail.com",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://ioam.github.com/holoviews/',
     packages = ["holoviews",
                 "holoviews.core",
+                "holoviews.core.data",
                 "holoviews.element",
                 "holoviews.interface",
                 "holoviews.ipython",
@@ -99,5 +100,23 @@ if __name__=="__main__":
 
             import holoviews
             holoviews.__version__.verify(setup_args['version'])
+
+
+    if 'install' in sys.argv:
+        header = "HOLOVIEWS INSTALLATION INFORMATION"
+        bars = "="*len(header)
+
+        extras = '\n'.join('holoviews[%s]' % e for e in setup_args['extras_require'])
+
+        print("%s\n%s\n%s" % (bars, header, bars))
+
+        print("\nHoloViews supports the following installation types:\n")
+        print("%s\n" % extras)
+        print("Users should consider using one of these options.\n")
+        print("By default only a core installation is performed and ")
+        print("only the minimal set of dependencies are fetched.\n\n")
+        print("For more information please visit http://holoviews.org/install.html\n")
+        print(bars+'\n')
+
 
     setup(**setup_args)

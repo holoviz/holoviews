@@ -3,10 +3,10 @@ import numpy as np
 import param
 
 from ..core import util
-from ..core import Dimension, Columns, Element2D
+from ..core import Dimension, Dataset, Element2D
 from .util import compute_edges
 
-class Chart(Columns, Element2D):
+class Chart(Dataset, Element2D):
     """
     The data held within Chart is a numpy array of shape (N, D),
     where N is the number of samples and D the number of dimensions.
@@ -118,7 +118,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Columns):
+class Bars(Dataset):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
@@ -349,7 +349,7 @@ class VectorField(Points):
     group = param.String(default='VectorField', constant=True)
 
     vdims = param.List(default=[Dimension('Angle', cyclic=True, range=(0,2*np.pi)),
-                                Dimension('Magnitude')], bounds=(1, 2))
+                                Dimension('Magnitude')], bounds=(1, None))
 
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns

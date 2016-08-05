@@ -93,11 +93,11 @@ class Distribution(Chart):
     list. Internally it uses Seaborn to make all the conversions.
     """
 
-    kdims = param.List(default=[], bounds=(0,0))
+    kdims = param.List(default=[])
 
     group = param.String(default='Distribution', constant=True)
 
-    vdims = param.List(default=[Dimension('Frequency')])
+    vdims = param.List(default=[Dimension('Value')])
 
     _1d = True
 

@@ -1,8 +1,9 @@
 import uuid
+
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
-from .util import models_to_json
+from .util import compute_static_patch
 
 import param
 from param.parameterized import bothmethod
@@ -11,13 +12,8 @@ from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
-try:
-    from bokeh.protocol import serialize_json
-    bokeh_lt_011 = True
-except ImportError:
-    from bokeh.core.json_encoder import serialize_json
-    from bokeh.model import _ModelInDocument as add_to_document
-    bokeh_lt_011 = False
+from bokeh.core.json_encoder import serialize_json
+from bokeh.model import _ModelInDocument as add_to_document
 
 
 class BokehRenderer(Renderer):
@@ -38,7 +34,8 @@ class BokehRenderer(Renderer):
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget}
 
-    backend_dependencies = {'js': CDN.js_files, 'css': CDN.css_files}
+    backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
+                            'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
 
     _loaded = False
 
@@ -55,30 +52,26 @@ class BokehRenderer(Renderer):
             return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)
-            html = '<center>%s</center>' % html
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                            for h in handles]
-            data = dict(data=[])
-            if not bokeh_lt_011:
-                data['root'] = plot.state._id
-            data['data'] = models_to_json(plotobjects)
+            patch = compute_static_patch(plot.document, plotobjects)
+            data = dict(root=plot.state._id, patch=patch)
             return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        if not bokeh_lt_011:
-            doc_handler = add_to_document(plot.state)
-            with doc_handler:
-                doc = doc_handler._doc
-                comms_target = str(uuid.uuid4())
-                doc.last_comms_target = comms_target
-                div = notebook_div(plot.state, comms_target)
-            plot.document = doc
-            return div
-        else:
-            return notebook_div(plot.state)
+        doc_handler = add_to_document(plot.state)
+        with doc_handler:
+            doc = doc_handler._doc
+            comms_target = str(uuid.uuid4())
+            doc.last_comms_target = comms_target
+            div = notebook_div(plot.state, comms_target)
+        plot.document = doc
+        doc.add_root(plot.state)
+        return div
 
 
     @classmethod

@@ -7,9 +7,9 @@ import numpy as np
 import param
 
 from ...core import util
-from ...core import (OrderedDict, Collator, NdOverlay, HoloMap, DynamicMap,
-                     CompositeOverlay, Element3D, Columns, NdElement)
-from ...element import Table, ItemTable
+from ...core import (OrderedDict, NdOverlay, DynamicMap,
+                     CompositeOverlay, Element3D, Element)
+from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import MPLPlot
@@ -29,16 +29,72 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         'equal' correspond to the axis modes of the same name in
         matplotlib, a numeric value may also be passed.""")
 
+    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
+        If set bgcolor overrides the background color of the axis.""")
+
     invert_axes = param.ObjectSelector(default=False, doc="""
         Inverts the axes of the plot. Note that this parameter may not
         always be respected by all plots but should be respected by
         adjoined plots when appropriate.""")
 
+    invert_xaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot x-axis.""")
+
+    invert_yaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot y-axis.""")
+
+    invert_zaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot z-axis.""")
+
+    labelled = param.List(default=['x', 'y'], doc="""
+        Whether to plot the 'x' and 'y' labels.""")
+
+    logx = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the x-axis of the Chart.""")
+
+    logy  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
+    logz  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the y-axis of the Chart.""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    zaxis = param.Boolean(default=True, doc="""
+        Whether to display the z-axis.""")
+
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
     xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the xticks.""")
+
+    yticks = param.Parameter(default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
 
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
@@ -46,10 +102,17 @@ class ElementPlot(GenericElementPlot, MPLPlot):
     zrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the zticks.""")
 
+    zticks = param.Parameter(default=None, doc="""
+        Ticks along z-axis specified as an integer, explicit list of
+        tick locations, list of tuples containing the locations and
+        labels or a matplotlib tick locator object. If set to None
+        default matplotlib ticking behavior is applied.""")
+
     # Element Plots should declare the valid style options for matplotlib call
     style_opts = []
 
-    _suppressed = [Table, NdElement, Collator, Columns, ItemTable]
+    # Whether plot has axes, disables setting axis limits, labels and ticks
+    _has_axes = True
 
     def __init__(self, element, **params):
         super(ElementPlot, self).__init__(element, **params)
@@ -66,8 +129,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def _finalize_axis(self, key, title=None, ranges=None, xticks=None, yticks=None,
-                       zticks=None, xlabel=None, ylabel=None, zlabel=None):
+    def _finalize_axis(self, key, title=None, dimensions=None, ranges=None, xticks=None,
+                       yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
         Only plots with zorder 0 get to apply their settings.
@@ -77,65 +140,59 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         element = self._get_frame(key)
         self.current_frame = element
+        if not dimensions and element and not self.subplots:
+            el = element.traverse(lambda x: x, [Element])
+            if el: dimensions = el[0].dimensions()
         axis = self.handles['axis']
-        if self.bgcolor:
-            axis.set_axis_bgcolor(self.bgcolor)
 
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
+            if self.bgcolor:
+                axis.set_axis_bgcolor(self.bgcolor)
+
+            # Apply title
             title = None if self.zorder > 0 else self._format_title(key)
-            suppress = any(sp.hmap.type in self._suppressed for sp in [self] + subplots
-                           if isinstance(sp.hmap, HoloMap))
-            if element is not None and not suppress:
-                xlabel, ylabel, zlabel = self._axis_labels(element, subplots, xlabel, ylabel, zlabel)
-                if self.invert_axes:
-                    xlabel, ylabel = ylabel, xlabel
-
-                self._finalize_limits(axis, element, subplots, ranges)
-
-                # Tick formatting
-                xdim, ydim = element.get_dimension(0), element.get_dimension(1)
-                xformat, yformat = None, None
-                if xdim is None:
-                    pass
-                elif xdim.value_format:
-                    xformat = xdim.value_format
-                elif xdim.type in xdim.type_formatters:
-                    xformat = xdim.type_formatters[xdim.type]
-                if xformat:
-                    axis.xaxis.set_major_formatter(wrap_formatter(xformat))
-
-                if ydim is None:
-                    pass
-                elif ydim.value_format:
-                    yformat = ydim.value_format
-                elif ydim.type in ydim.type_formatters:
-                    yformat = ydim.type_formatters[ydim.type]
-                if yformat:
-                    axis.yaxis.set_major_formatter(wrap_formatter(yformat))
-
-            if self.zorder == 0 and not subplots:
-                legend = axis.get_legend()
-                if legend: legend.set_visible(self.show_legend)
-
-                axis.get_xaxis().grid(self.show_grid)
-                axis.get_yaxis().grid(self.show_grid)
-
-            if xlabel and self.xaxis: axis.set_xlabel(xlabel, **self._fontsize('xlabel'))
-            if ylabel and self.yaxis: axis.set_ylabel(ylabel, **self._fontsize('ylabel'))
-            if zlabel and self.zaxis: axis.set_zlabel(zlabel, **self._fontsize('ylabel'))
-
-            self._apply_aspect(axis)
-            self._subplot_label(axis)
-            if self.apply_ticks:
-                self._finalize_ticks(axis, element, xticks, yticks, zticks)
-
             if self.show_title and title is not None:
-                self.handles['title'] = axis.set_title(title,
-                                                **self._fontsize('title'))
-        # Always called to ensure log and inverted axes are applied
-        self._finalize_axes(axis)
-        if not self.overlaid and not self.drawn:
+                fontsize = self._fontsize('title')
+                self.handles['title'] = axis.set_title(title, **fontsize)
+
+            # Apply subplot label
+            self._subplot_label(axis)
+
+            # Apply axis options if axes are enabled
+            if element and not any(not sp._has_axes for sp in [self] + subplots):
+                # Set axis labels
+                if dimensions:
+                    self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
+
+                # Set axes limits
+                self._set_axis_limits(axis, element, subplots, ranges)
+
+                if not subplots:
+                    legend = axis.get_legend()
+                    if legend: legend.set_visible(self.show_legend)
+                    axis.xaxis.grid(self.show_grid)
+                    axis.yaxis.grid(self.show_grid)
+
+                # Apply log axes
+                if self.logx:
+                    axis.set_xscale('log')
+                if self.logy:
+                    axis.set_yscale('log')
+
+                if not self.projection == '3d':
+                    self._set_axis_position(axis, 'x', self.xaxis)
+                    self._set_axis_position(axis, 'y', self.yaxis)
+
+                # Apply ticks
+                if self.apply_ticks:
+                    self._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
+
+            # Apply aspects
+            if not (self.logx or self.logy):
+                self._set_aspect(axis, self.aspect)
+
+        if not subplots and not self.drawn:
             self._finalize_artist(key)
 
         for hook in self.finalize_hooks:
@@ -147,6 +204,43 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         return super(ElementPlot, self)._finalize_axis(key)
 
 
+    def _finalize_ticks(self, axis, dimensions, xticks, yticks, zticks):
+        """
+        Finalizes the ticks on the axes based on the supplied ticks
+        and Elements. Sets the axes position as well as tick positions,
+        labels and fontsize.
+        """
+        ndims = len(dimensions) if dimensions else 0
+        xdim = dimensions[0] if ndims else None
+        ydim = dimensions[1] if ndims > 1 else None
+
+        # Tick formatting
+        if xdim:
+            self._set_axis_formatter(axis.xaxis, xdim)
+        if ydim:
+            self._set_axis_formatter(axis.yaxis, ydim)
+        if self.projection == '3d':
+            zdim = dimensions[2] if ndims > 2 else None
+            if zdim:
+                self._set_axis_formatter(axis.zaxis, zdim)
+
+        xticks = xticks if xticks else self.xticks
+        self._set_axis_ticks(axis.xaxis, xticks, log=self.logx,
+                             rotation=self.xrotation)
+
+        yticks = yticks if yticks else self.yticks
+        self._set_axis_ticks(axis.yaxis, yticks, log=self.logy,
+                             rotation=self.yrotation)
+
+        if self.projection == '3d':
+            zticks = zticks if zticks else self.zticks
+            self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
+                                 rotation=self.zrotation)
+
+        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
+        if tick_fontsize: axis.tick_params(**tick_fontsize)
+
+
     def _finalize_artist(self, element):
         """
         Allows extending the _finalize_axis method with Element
@@ -155,182 +249,158 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         pass
 
 
-    def _apply_aspect(self, axis):
-        if self.logx or self.logy:
-            pass
-        elif self.aspect == 'square':
-            axis.set_aspect((1./axis.get_data_ratio()))
-        elif self.aspect not in [None, 'square']:
-            if isinstance(self.aspect, util.basestring):
-                axis.set_aspect(self.aspect)
+    def _set_labels(self, axes, dimensions, xlabel=None, ylabel=None, zlabel=None):
+        """
+        Sets the labels of the axes using the supplied list of dimensions.
+        Optionally explicit labels may be supplied to override the dimension
+        label.
+        """
+        xlabel, ylabel, zlabel = self._get_axis_labels(dimensions, xlabel, ylabel, zlabel)
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+        if xlabel and self.xaxis and 'x' in self.labelled:
+            axes.set_xlabel(xlabel, **self._fontsize('xlabel'))
+        if ylabel and self.yaxis and 'y' in self.labelled:
+            axes.set_ylabel(ylabel, **self._fontsize('ylabel'))
+        if zlabel and self.zaxis and 'z' in self.labelled:
+            axes.set_zlabel(zlabel, **self._fontsize('zlabel'))
+
+
+    def _set_axis_formatter(self, axis, dim):
+        """
+        Set axis formatter based on dimension formatter.
+        """
+        if isinstance(dim, list): dim = dim[0]
+        formatter = None
+        if dim.value_format:
+            formatter = dim.value_format
+        elif dim.type in dim.type_formatters:
+            formatter = dim.type_formatters[dim.type]
+        if formatter:
+            axis.set_major_formatter(wrap_formatter(formatter))
+
+
+    def _set_aspect(self, axes, aspect):
+        """
+        Set the aspect on the axes based on the aspect setting.
+        """
+        if aspect and aspect == 'square':
+            axes.set_aspect((1./axes.get_data_ratio()))
+        elif aspect not in [None, 'square']:
+            if isinstance(aspect, util.basestring):
+                axes.set_aspect(aspect)
             else:
-                axis.set_aspect(((1./axis.get_data_ratio()))/self.aspect)
+                axes.set_aspect(((1./axes.get_data_ratio()))/aspect)
 
 
-    def _finalize_limits(self, axis, view, subplots, ranges):
+    def _set_axis_limits(self, axis, view, subplots, ranges):
+        """
+        Compute extents for current view and apply as axis limits
+        """
         # Extents
+        scalex, scaley = True, True
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
-            if isinstance(view, Element3D) or self.projection == '3d':
+            valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
+            if self.projection == '3d' or len(extents) == 6:
                 l, b, zmin, r, t, zmax = coords
-                zmin, zmax = (c if np.isfinite(c) else None for c in (zmin, zmax))
-                if not zmin == zmax:
-                    axis.set_zlim((zmin, zmax))
+                if self.invert_zaxis or any(p.invert_zaxis for p in subplots):
+                    zmin, zmax = zmax, zmin
+                if zmin != zmax:
+                    if valid_lim(zmin):
+                        axis.set_zlim(bottom=zmin)
+                    if valid_lim(zmax):
+                        axis.set_zlim(top=zmax)
             else:
-                l, b, r, t = [coord if np.isreal(coord) else np.NaN for coord in extents]
+                l, b, r, t = coords
+
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
-            l, r = (c if np.isfinite(c) else None for c in (l, r))
+
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
-            if not l == r:
-                axis.set_xlim((l, r))
-            b, t = (c if np.isfinite(c) else None for c in (b, t))
+            if l != r:
+                if valid_lim(l):
+                    axis.set_xlim(left=l)
+                    scalex = False
+                if valid_lim(r):
+                    axis.set_xlim(right=r)
+                    scalex = False
+
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
-            if not b == t:
-                axis.set_ylim((b, t))
+            if b != t:
+                if valid_lim(b):
+                    axis.set_ylim(bottom=b)
+                    scaley = False
+                if valid_lim(t):
+                    axis.set_ylim(top=t)
+                    scaley = False
+        axis.autoscale_view(scalex=scalex, scaley=scaley)
 
 
-    def _finalize_axes(self, axis):
-        if self.logx:
-            axis.set_xscale('log')
-        elif self.logy:
-            axis.set_yscale('log')
-
-
-    def _finalize_ticks(self, axis, view, xticks, yticks, zticks):
-        if not self.projection == '3d':
-            disabled_spines = []
-            if self.xaxis is not None:
-                if 'bare' in self.xaxis:
-                    axis.xaxis.set_ticklabels([])
-                    axis.xaxis.set_ticks([])
-                    axis.set_xlabel('')
-                if 'top' in self.xaxis:
-                    axis.xaxis.set_ticks_position("top")
-                    axis.xaxis.set_label_position("top")
-                elif 'bottom' in self.xaxis:
-                    axis.xaxis.set_ticks_position("bottom")
-            else:
-                axis.xaxis.set_visible(False)
-                disabled_spines.extend(['top', 'bottom'])
-
-            if self.yaxis is not None:
-                if 'bare' in self.yaxis:
-                    axis.yaxis.set_ticklabels([])
-                    axis.yaxis.set_ticks([])
-                    axis.set_ylabel('')
-                if 'left' in self.yaxis:
-                    axis.yaxis.set_ticks_position("left")
-                elif 'right' in self.yaxis:
-                    axis.yaxis.set_ticks_position("right")
-                    axis.yaxis.set_label_position("right")
-            else:
-                axis.yaxis.set_visible(False)
-                disabled_spines.extend(['left', 'right'])
-
-            for pos in disabled_spines:
-                axis.spines[pos].set_visible(False)
-
+    def _set_axis_position(self, axes, axis, option):
+        """
+        Set the position and visibility of the xaxis or yaxis by
+        supplying the axes object, the axis to set, i.e. 'x' or 'y'
+        and an option to specify the position and visibility of the axis.
+        The option may be None, 'bare' or positional, i.e. 'left' and
+        'right' for the yaxis and 'top' and 'bottom' for the xaxis.
+        May also combine positional and 'bare' into for example 'left-bare'.
+        """
+        positions = {'x': ['bottom', 'top'], 'y': ['left', 'right']}[axis]
+        axis = axes.xaxis if axis == 'x' else axes.yaxis
+        if option is None:
+            axis.set_visible(False)
+            for pos in positions:
+                axes.spines[pos].set_visible(False)
+        else:
+            if 'bare' in option:
+                axis.set_ticklabels([])
+                axis.set_label_text('')
+            if option != 'bare':
+                option = option.split('-')[0]
+                axis.set_ticks_position(option)
+                axis.set_label_position(option)
         if not self.overlaid and not self.show_frame and self.projection != 'polar':
-            xaxis = self.xaxis if self.xaxis else ''
-            yaxis = self.yaxis if self.yaxis else ''
-            axis.spines['top' if self.xaxis == 'bare' or 'bottom' in xaxis else 'bottom'].set_visible(False)
-            axis.spines['right' if self.yaxis == 'bare' or 'left' in yaxis else 'left'].set_visible(False)
+            pos = (positions[1] if (option and (option == 'bare' or positions[0] in option))
+                   else positions[0])
+            axes.spines[pos].set_visible(False)
 
-        if xticks:
-            axis.set_xticks(xticks[0])
-            axis.set_xticklabels(xticks[1])
-        elif self.xticks is not None:
-            if isinstance(self.xticks, ticker.Locator):
-                axis.xaxis.set_major_locator(self.xticks)
-            elif self.xticks == 0:
-                axis.set_xticks([])
-            elif isinstance(self.xticks, int):
-                if self.logx:
-                    locator = ticker.LogLocator(numticks=self.xticks,
-                                                subs=range(1,10))
-                else:
-                    locator = ticker.MaxNLocator(self.xticks)
-                axis.xaxis.set_major_locator(locator)
-            elif isinstance(self.xticks, (list, tuple)):
-                if all(isinstance(t, tuple) for t in self.xticks):
-                    xticks, xlabels = zip(*self.xticks)
-                else:
-                    xdim = view.get_dimension(0)
-                    xticks, xlabels = zip(*[(t, xdim.pprint_value(t))
-                                            for t in self.xticks])
-                axis.set_xticks(xticks)
-                axis.set_xticklabels(xlabels)
 
-        if self.xticks != 0 or xticks:
-            for tick in axis.get_xticklabels():
-                tick.set_rotation(self.xrotation)
-
-        if yticks:
-            axis.set_yticks(yticks[0])
-            axis.set_yticklabels(yticks[1])
-        elif self.yticks is not None:
-            if isinstance(self.yticks, ticker.Locator):
-                axis.yaxis.set_major_locator(self.yticks)
-            elif self.yticks == 0:
-                axis.set_yticks([])
-            elif isinstance(self.yticks, int):
-                if self.logy:
-                    locator = ticker.LogLocator(numticks=self.yticks,
-                                                subs=range(1,10))
-                else:
-                    locator = ticker.MaxNLocator(self.yticks)
-                axis.yaxis.set_major_locator(locator)
-            elif isinstance(self.yticks, (list, tuple)):
-                if all(isinstance(t, tuple) for t in self.yticks):
-                    yticks, ylabels = zip(*self.yticks)
-                else:
-                    ydim = view.get_dimension(1)
-                    yticks, ylabels = zip(*[(t, ydim.pprint_value(t))
-                                            for t in self.yticks])
-                axis.set_yticks(yticks)
-                axis.set_yticklabels(ylabels)
-
-        if self.yticks != 0 or yticks:
-            for tick in axis.get_yticklabels():
-                tick.set_rotation(self.yrotation)
-
-        if not self.projection == '3d':
-            pass
-        elif zticks:
-            axis.set_zticks(zticks[0])
-            axis.set_zticklabels(zticks[1])
-        elif self.zticks is not None:
-            if isinstance(self.zticks, ticker.Locator):
-                axis.zaxis.set_major_locator(self.zticks)
-            elif self.zticks == 0:
-                axis.set_zticks([])
-            elif isinstance(self.zticks, int):
-                if self.logz:
-                    locator = ticker.LogLocator(numticks=self.zticks,
-                                                subs=range(1,10))
-                else:
-                    locator = ticker.MaxNLocator(self.zticks)
-                axis.zaxis.set_major_locator(locator)
-            elif isinstance(self.zticks, (list, tuple)):
-                if all(isinstance(t, tuple) for t in self.zticks):
-                    zticks, zlabels = zip(*self.zticks)
-                else:
-                    zdim = view.get_dimension(2)
-                    zticks, zlabels = zip(*[(t, zdim.pprint_value(t))
-                                            for t in self.zticks])
-                axis.set_zticks(zticks)
-                axis.set_zticklabels(zlabels)
-
-        if self.projection == '3d' and self.zticks != 0:
-            for tick in axis.get_zticklabels():
-                tick.set_rotation(self.zrotation)
-
-        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
-        if tick_fontsize:  axis.tick_params(**tick_fontsize)
+    def _set_axis_ticks(self, axis, ticks, log=False, rotation=0):
+        """
+        Allows setting the ticks for a particular axis either with
+        a tuple of ticks, a tick locator object, an integer number
+        of ticks, a list of tuples containing positions and labels
+        or a list of positions. Also supports enabling log ticking
+        if an integer number of ticks is supplied and setting a
+        rotation for the ticks.
+        """
+        if isinstance(ticks, (list, tuple)) and all(isinstance(l, list) for l in ticks):
+            axis.set_ticks(ticks[0])
+            axis.set_ticklabels(ticks[1])
+        elif isinstance(ticks, ticker.Locator):
+            axis.set_major_locator(ticks)
+        elif not ticks and ticks is not None:
+            axis.set_ticks([])
+        elif isinstance(ticks, int):
+            if log:
+                locator = ticker.LogLocator(numticks=ticks,
+                                            subs=range(1,10))
+            else:
+                locator = ticker.MaxNLocator(ticks)
+            axis.set_major_locator(locator)
+        elif isinstance(ticks, (list, tuple)):
+            labels = None
+            if all(isinstance(t, tuple) for t in ticks):
+                ticks, labels = zip(*ticks)
+            axis.set_ticks(ticks)
+            if labels:
+                axis.set_ticklabels(labels)
+        for tick in axis.get_ticklabels():
+            tick.set_rotation(rotation)
 
 
     def update_frame(self, key, ranges=None, element=None):
@@ -364,19 +434,73 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 handle.set_visible(element is not None)
         if element is None:
             return
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if not self.adjoined:
             ranges = util.match_spec(element, ranges)
-        axis_kwargs = self.update_handles(axis, element, key if element is not None else {}, ranges)
+
+        label = element.label if self.show_legend else ''
+        style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
+        axis_kwargs = self.update_handles(key, axis, element, ranges, style)
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def initialize_plot(self, ranges=None):
+        element = self.hmap.last
+        ax = self.handles['axis']
+        key = list(self.hmap.data.keys())[-1]
+        dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
+        key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
+
+        ranges = self.compute_ranges(self.hmap, key, ranges)
+        ranges = util.match_spec(element, ranges)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        if self.show_legend:
+            style['label'] = element.label
+
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+
+        with abbreviated_exception():
+            handles = self.init_artists(ax, plot_data, plot_kwargs)
+        self.handles.update(handles)
+
+        return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
+
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        """
+        Initializes the artist based on the plot method declared on
+        the plot.
+        """
+        plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+        plot_fn = getattr(ax, plot_method)
+        artist = plot_fn(*plot_args, **plot_kwargs)
+        return {'artist': artist[0] if isinstance(artist, list) and
+                len(artist) == 1 else artist}
+
+
+    def update_handles(self, key, axis, element, ranges, style):
         """
         Update the elements of the plot.
-        :param axis:
         """
-        raise NotImplementedError
+        self.teardown_handles()
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+
+        with abbreviated_exception():
+            handles = self.init_artists(axis, plot_data, plot_kwargs)
+        self.handles.update(handles)
+        return axis_kwargs
+
+    def teardown_handles(self):
+        """
+        If no custom update_handles method is supplied this method
+        is called to tear down any previous handles before replacing
+        them.
+        """
+        if 'artist' in self.handles:
+            self.handles['artist'].remove()
+
 
 
 
@@ -398,10 +522,14 @@ class ColorbarPlot(ElementPlot):
         set to None default matplotlib ticking behavior is
         applied.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     _colorbars = {}
 
     def _adjust_cbar(self, cbar, label, dim):
-        if math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1:
+        noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
+        if (cbar.solids and noalpha):
             cbar.solids.set_edgecolor("face")
         cbar.set_label(label)
         if isinstance(self.cbar_ticks, ticker.Locator):
@@ -459,6 +587,8 @@ class ColorbarPlot(ElementPlot):
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
+            ylabel = cax.yaxis.get_label()
+            self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
         for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
@@ -470,16 +600,14 @@ class ColorbarPlot(ElementPlot):
 
 
 
-    def _norm_kwargs(self, element, ranges, opts):
+    def _norm_kwargs(self, element, ranges, opts, vdim):
         """
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
-        norm = None
         clim = opts.pop('clims', None)
         if clim is None:
-            val_dim = [d.name for d in element.vdims][0]
-            clim = ranges.get(val_dim)
+            clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
             if self.symmetric:
                 clim = -np.abs(clim).max(), np.abs(clim).max()
         if self.logz:
@@ -488,8 +616,9 @@ class ColorbarPlot(ElementPlot):
                                          linthresh=clim[1]/np.e)
             else:
                 norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
-        return clim, norm, opts
-
+            opts['norm'] = norm
+        opts['vmin'] = clim[0]
+        opts['vmax'] = clim[1]
 
 
 class LegendPlot(ElementPlot):
@@ -538,9 +667,10 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     _passed_handles = ['fig', 'axis']
 
     def __init__(self, overlay, ranges=None, **params):
-        if overlay.traverse(lambda x: x, (Element3D,)):
-            params['projection'] = '3d'
+        if 'projection' not in params:
+            params['projection'] = self._get_projection(overlay)
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
+
 
     def _finalize_artist(self, key):
         for subplot in self.subplots.values():
@@ -551,7 +681,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         Accumulate the legend handles and labels for all subplots
         and set up the legend
         """
-        title = ''
         legend_data = []
         dimensions = overlay.kdims
         title = ', '.join([d.name for d in dimensions])
@@ -597,6 +726,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             frame.set_linewidth('1.0')
             leg.set_zorder(10e6)
             self.handles['legend'] = leg
+            self.handles['bbox_extra_artists'].append(leg)
         self.handles['legend_data'] = data
 
 
@@ -606,8 +736,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         element = self._get_frame(key)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        for plot in self.subplots.values():
-            plot.initialize_plot(ranges=ranges)
+        for k, subplot in self.subplots.items():
+            subplot.initialize_plot(ranges=ranges)
+            if isinstance(element, CompositeOverlay):
+                frame = element.get(k, None)
+                subplot.current_frame = frame
 
         if self.show_legend:
             self._adjust_legend(element, axis)
@@ -617,9 +750,6 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
-        if self.projection == '3d':
-            axis.clear()
-
         if element is None:
             element = self._get_frame(key)
         else:
@@ -651,40 +781,3 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             self._adjust_legend(element, axis)
 
         self._finalize_axis(key, ranges=ranges)
-
-
-
-class DrawPlot(ElementPlot):
-    """
-    A DrawPlot is an ElementPlot that uses a draw method for
-    rendering. The draw method is also called per update such that a
-    full redraw is triggered per frame.
-
-    Although not optimized for HoloMaps (due to the full redraw),
-    DrawPlot is very easy to subclass to interface HoloViews with any
-    third-party libraries offering matplotlib plotting functionality.
-    """
-
-    _abstract = True
-
-    def draw(self, axis, element, ranges=None):
-        """
-        The only method that needs to be overridden in subclasses.
-
-        The current axis and element are supplied as arguments. The
-        job of this function is to apply the appropriate matplotlib
-        commands to render the element to the supplied axis.
-        """
-        raise NotImplementedError
-
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        key = self.keys[-1]
-        ranges = self.compute_ranges(self.hmap, key, ranges)
-        ranges = util.match_spec(element, ranges)
-        self.draw(self.handles['axis'], self.hmap.last, ranges)
-        return self._finalize_axis(self.keys[-1], ranges=ranges)
-
-    def update_handles(self, axis, element, key, ranges=None):
-        if self.zorder == 0 and axis: axis.cla()
-        self.draw(axis, element, ranges)

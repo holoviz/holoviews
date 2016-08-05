@@ -2,23 +2,14 @@ from __future__ import unicode_literals
 
 import os, uuid, json, math
 
-import numpy as np
 import param
+import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
-from ...core.util import (dimension_sanitizer, safe_unicode, basestring,
-                          unique_iterator, unicode)
+from ...core.util import (dimension_sanitizer, safe_unicode,
+                          unique_array, unicode, isnumeric)
 from ...core.traversal import hierarchical
-
-def isnumeric(val):
-    if isinstance(val, (basestring, bool, np.bool_)):
-        return False
-    try:
-        float(val)
-        return True
-    except:
-        return False
 
 def escape_vals(vals, escape_numerics=True):
     """
@@ -34,6 +25,8 @@ def escape_vals(vals, escape_numerics=True):
     for v in vals:
         if not isnumeric(v):
             v = "'"+unicode(safe_unicode(v))+"'"
+        elif isinstance(v, np.datetime64):
+            v = "'"+str(v)+"'"
         elif v % 1 == 0:
             v = ints % v
         else:
@@ -85,7 +78,10 @@ class NdWidget(param.Parameterized):
 
     json_load_path = param.String(default=None, doc="""
          If export_json is enabled the widget JS code will load the data
-         from this relative path, if None defaults to json_save_path.""")
+         from this path, if None defaults to json_save_path. For loading
+         the data from within the notebook the path must be relative,
+         when exporting the notebook the path can be set to another
+         location like a webserver where the json files can be uploaded to.""")
 
     ##############################
     # Javascript include options #
@@ -146,7 +142,9 @@ class NdWidget(param.Parameterized):
         mode = repr(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
-        dynamic = repr(self.plot.dynamic) if self.plot.dynamic else 'false'
+        if json_path and json_path[-1] != '/':
+            json_path = json_path + '/'
+        dynamic = json.dumps(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
@@ -169,8 +167,8 @@ class NdWidget(param.Parameterized):
 
     def encode_frames(self, frames):
         if isinstance(frames, dict):
-            frames = {idx: frame for idx, frame in frames.items()}
-        return frames
+            frames = dict(frames)
+        return json.dumps(frames)
 
     def save_json(self, frames):
         """
@@ -263,7 +261,7 @@ class SelectionWidget(NdWidget):
 
             # Hide widget if it has 1-to-1 mapping to next widget
             visible = False
-            dim_nesting = hierarchy[idx-1].values() if isinstance(hierarchy, dict) else []
+            dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
             many_to_one = any(len(v) > 1 for v in dim_nesting)
             if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
                 visible = True
@@ -271,14 +269,22 @@ class SelectionWidget(NdWidget):
             if self.plot.dynamic:
                 if dim.values:
                     if all(isnumeric(v) for v in dim.values):
-                        dim_vals = {i: v for i, v in enumerate(dim.values)}
+                        # Widgets currently detect dynamic mode by type
+                        # this value representation is now redundant
+                        # and should be removed in a refactor
+                        dim_vals = {i: i for i, v in enumerate(dim.values)}
                         widget_type = 'slider'
+                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                                for v in dim.values]))
                     else:
-                        dim_vals = escape_list(escape_vals(dim.values))
+                        dim_vals = list(range(len(dim.values)))
+                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                                for v in dim.values]))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
                     widget_type = 'slider'
+                    value_labels = []
                     dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
                                 dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
@@ -294,14 +300,20 @@ class SelectionWidget(NdWidget):
                     dim_vals = next_vals[init_dim_vals[idx-1]]
                 else:
                     dim_vals = (dim.values if dim.values else
-                                list(unique_iterator(self.mock_obj.dimension_values(dim.name))))
+                                list(unique_array(self.mock_obj.dimension_values(dim.name))))
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
 
-                if isnumeric(dim_vals[0]):
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim_vals]))
+
+                if isinstance(dim_vals[0], np.datetime64):
+                    dim_vals = [str(v) for v in dim_vals]
+                    widget_type = 'slider'
+                elif isnumeric(dim_vals[0]):
                     dim_vals = [round(v, 10) for v in dim_vals]
                     if next_vals:
                         next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
@@ -319,13 +331,14 @@ class SelectionWidget(NdWidget):
 
             visibility = '' if visible else 'display: none'
             dim_str = safe_unicode(dim.name)
-            widget_data = dict(dim=dimension_sanitizer(dim_str), dim_label=dim_str,
+            escaped_dim = dimension_sanitizer(dim_str)
+            widget_data = dict(dim=escaped_dim, dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
                                visibility=visibility, step=step, next_dim=next_dim,
-                               next_vals=next_vals)
+                               next_vals=next_vals, labels=value_labels)
 
             widgets.append(widget_data)
-            dimensions.append(dim_str)
+            dimensions.append(escaped_dim)
         init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
 
@@ -353,5 +366,7 @@ class SelectionWidget(NdWidget):
 
 
     def update(self, key):
-        if self.plot.dynamic: key = tuple(key)
+        if self.plot.dynamic:
+            key = tuple(dim.values[k] if dim.values else k
+                        for dim, k in zip(self.mock_obj.kdims, tuple(key)))
         return self._plot_figure(key)

@@ -9,8 +9,9 @@ python:
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
-
+    
 install:
+  - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
       wget https://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh;
     else
@@ -23,11 +24,12 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION nose numpy=1.9.1 matplotlib bokeh pandas scipy jupyter ipython param freetype=2.5.2
+  - conda create -q -c scitools -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose matplotlib bokeh pandas jupyter ipython=4.2.0 param iris xarray
   - source activate test-environment
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
+  - rm -r $SITE_PACKAGES/numpy*
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
@@ -74,6 +76,7 @@ after_script:
     fi
   - aws s3 cp --recursive --region eu-west-1 ./doc/test_html "s3://travis.holoviews.org/build_$TRAVIS_BUILD_NUMBER"
   - curl -s -X GET "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/travis-holoviews-index"
+  - echo insecure >> ~/.curlrc
   - if [ "$TRAVIS_PULL_REQUEST" != 'false' ]; then
       curl -X POST -d "$TRAVIS_BUILD_NUMBER" "https://kq5y73i0xe.execute-api.eu-west-1.amazonaws.com/dev/pr-status";
     fi

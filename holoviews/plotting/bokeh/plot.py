@@ -9,13 +9,17 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
-from ...core.options import Compositor
-from ...core.util import basestring
+from ...core.options import Compositor, SkipRendering
+from ...core.util import basestring, wrap_tuple
 from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
-from .util import layout_padding
+from .util import bokeh_version, layout_padding, pad_plots
+
+if bokeh_version >= '0.12':
+    from bokeh.layouts import gridplot
+
 
 class BokehPlot(DimensionedPlot):
     """
@@ -40,11 +44,21 @@ class BokehPlot(DimensionedPlot):
 
     renderer = BokehRenderer
 
+    @property
+    def document(self):
+        return self._document
+
+    @document.setter
+    def document(self, doc):
+        self._document = doc
+        if self.subplots:
+            for plot in self.subplots.values():
+                plot.document = doc
+
     def __init__(self, *args, **params):
         super(BokehPlot, self).__init__(*args, **params)
-        self.document = None
+        self._document = None
         self.root = None
-
 
     def get_data(self, element, ranges=None, empty=False):
         """
@@ -125,7 +139,7 @@ class BokehPlot(DimensionedPlot):
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
         grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
-        for gid, group in grouped_sources:
+        for _, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
                 source_data = {}
@@ -201,7 +215,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             if c == 0 and r != 0:
                 kwargs['xaxis'] = 'bottom-bare'
                 kwargs['width'] = 150
-            if c != 0 and r == 0 and not layout.ndims == 1:
+            if c != 0 and r == 0:
                 kwargs['yaxis'] = 'left-bare'
                 kwargs['height'] = 150
             if c == 0 and r == 0:
@@ -253,7 +267,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         passed_plots = list(plots)
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
-            subplot = self.subplots.get(coord, None)
+            subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 plot = subplot.initialize_plot(ranges=ranges, plots=passed_plots)
                 plots[r].append(plot)
@@ -261,7 +275,10 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             else:
                 plots[r].append(None)
                 passed_plots.append(None)
-        self.handles['plot'] = BokehGridPlot(children=plots[::-1])
+        if bokeh_version < '0.12':
+            self.handles['plot'] = BokehGridPlot(children=plots[::-1])
+        else:
+            self.handles['plot'] = gridplot(plots[::-1])
         self.handles['plots'] = plots
         if self.shared_datasource:
             self.sync_sources()
@@ -277,7 +294,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
         state.
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
-        for i, coord in enumerate(self.layout.keys(full_grid=True)):
+        for coord in self.layout.keys(full_grid=True):
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
@@ -289,7 +306,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
     shared_axes = param.Boolean(default=True, doc="""
         Whether axes should be shared across plots""")
 
-    shared_datasource = param.Boolean(default=True, doc="""
+    shared_datasource = param.Boolean(default=False, doc="""
         Whether Elements drawing the data from the same object should
         share their Bokeh data source allowing for linked brushing
         and other linked behaviors.""")
@@ -375,6 +392,8 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 continue
 
             # Options common for any subplot
+            if type(element) in (NdLayout, Layout):
+                raise SkipRendering("Cannot plot nested Layouts.")
             vtype = element.type if isinstance(element, HoloMap) else element.__class__
             plot_type = Store.registry[self.renderer.backend].get(vtype, None)
             plotopts = self.lookup_options(element, 'plot').options
@@ -423,7 +442,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
 
     def initialize_plot(self, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        plots = [[] for i in range(self.rows)]
+        plots = [[] for _ in range(self.rows)]
         passed_plots = []
         tab_titles = {}
         insert_rows, insert_cols = [], []
@@ -491,11 +510,14 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         # If there is a table and multiple rows and columns
         # everything will be forced to a vertical layout
         if self.tabs:
-            panels = [Panel(child=child, title=tab_titles.get(r, c))
+            panels = [Panel(child=child, title=str(tab_titles.get(r, c)))
                       for r, row in enumerate(plots)
                       for c, child in enumerate(row)
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
+        elif bokeh_version >= '0.12':
+            plots, width = pad_plots(plots)
+            layout_plot = gridplot(children=plots, width=width)
         elif len(plots) == 1 and not adjoined:
             layout_plot = VBox(children=[HBox(children=plots[0])])
         elif len(plots[0]) == 1:

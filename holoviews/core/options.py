@@ -33,6 +33,7 @@ Store:
 
 """
 import pickle
+import traceback
 from contextlib import contextmanager
 from collections import OrderedDict
 
@@ -44,16 +45,6 @@ from .util import sanitize_identifier, group_sanitizer,label_sanitizer
 from .pprint import InfoPrinter
 
 
-class BackendError(Exception):
-    """
-    Custom exception used to generate abbreviated tracebacks when there
-    is an error in the backend. Use to suppress long tracebacks that can
-    easily be caused by the users (e.g a typo in the style options)
-    where the user would be better served by a short error message
-    rather than a long traceback.
-    """
-    pass
-
 class SkipRendering(Exception):
     """
     A SkipRendering exception in the plotting code will make the display
@@ -61,6 +52,7 @@ class SkipRendering(Exception):
     DynamicMaps with exhausted element generators.
     """
     pass
+
 
 class OptionError(Exception):
     """
@@ -87,6 +79,48 @@ class OptionError(Exception):
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
         return msg
+
+
+class AbbreviatedException(Exception):
+    """
+    Raised by the abbreviate_exception context manager when it is
+    appropriate to present an abbreviated the traceback and exception
+    message in the notebook.
+
+    Particularly useful when processing style options supplied by the
+    user which may not be valid.
+    """
+    def __init__(self, etype, value, traceback):
+        self.etype = etype
+        self.value = value
+        self.traceback = traceback
+        self.msg = str(value)
+
+    def __str__(self):
+        abbrev = '%s: %s' % (self.etype.__name__, self.msg)
+        msg = ('To view the original traceback, catch this exception '
+               'and call print_traceback() method.')
+        return '%s\n\n%s' % (abbrev, msg)
+
+    def print_traceback(self):
+        """
+        Print the traceback of the exception wrapped by the AbbreviatedException.
+        """
+        traceback.print_exception(self.etype, self.value, self.traceback)
+
+
+class abbreviated_exception(object):
+    """
+    Context manager used to to abbreviate tracebacks using an
+    AbbreviatedException when a backend may raise an error due to
+    incorrect style options.
+    """
+    def __enter__(self):
+        return self
+
+    def __exit__(self, etype, value, traceback):
+        if isinstance(value, Exception):
+            raise AbbreviatedException(etype, value, traceback)
 
 
 class Cycle(param.Parameterized):
@@ -262,6 +296,17 @@ class Options(param.Parameterized):
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
 
+    def filtered(self, allowed):
+        """
+        Return a new Options object that is filtered by the specified
+        list of keys. Mutating self.kwargs to filter is unsafe due to
+        the option expansion that occurs on initialization.
+        """
+        kws = {k:v for k,v in self.kwargs.items() if k in allowed}
+        return self.__class__(key=self.key,
+                              allowed_keywords=self.allowed_keywords,
+                              merge_keywords=self.merge_keywords, **kws)
+
 
     def __call__(self, allowed_keywords=None, **kwargs):
         """
@@ -396,9 +441,13 @@ class OptionTree(AttrTree):
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
-        current_node = self[identifier] if identifier in self.children else self
-        group_options = current_node.groups[group_name]
-
+        if identifier in self.children:
+            current_node = self[identifier]
+            group_options = current_node.groups[group_name]
+        else:
+            #When creating a node (nothing to merge with) ensure it is empty
+            group_options = Options(group_name,
+                     allowed_keywords=self.groups[group_name].allowed_keywords)
         try:
             return (group_options(**override_kwargs)
                     if options.merge_keywords else Options(group_name, **override_kwargs))
@@ -431,7 +480,9 @@ class OptionTree(AttrTree):
         if valid_id in self.children:
             return self.__dict__[valid_id]
 
-        self.__setattr__(identifier, self.groups)
+        # When creating a intermediate child node, leave kwargs empty
+        self.__setattr__(identifier, {k:Options(k, allowed_keywords=v.allowed_keywords)
+                                      for k,v in self.groups.items()})
         return self[identifier]
 
 
@@ -478,7 +529,7 @@ class OptionTree(AttrTree):
         path = path.split('.') if isinstance(path, str) else list(path)
         item = self
 
-        for idx, child in enumerate(path):
+        for child in path:
             escaped_child = sanitize_identifier(child, escape=False)
             matching_children = [c for c in item.children
                                  if child.endswith(c) or escaped_child.endswith(c)]
@@ -502,7 +553,8 @@ class OptionTree(AttrTree):
         components = (obj.__class__.__name__,
                       group_sanitizer(obj.group),
                       label_sanitizer(obj.label))
-        return self.find(components).options(group)
+        target = '.'.join([c for c in components if c])
+        return self.find(components).options(group, target=target)
 
 
 
@@ -943,7 +995,7 @@ class Store(object):
                 if option not in cls.registry[backend][component].style_opts:
                     plot_class = cls.registry[backend][component]
                     plot_class.style_opts = sorted(plot_class.style_opts+[option])
-        cls._options[backend][type(component).__name__] = Options('style', merge_keywords=True, allowed_keywords=new_options)
+        cls._options[backend][component.name] = Options('style', merge_keywords=True, allowed_keywords=new_options)
 
 
     @classmethod
@@ -1137,7 +1189,7 @@ class StoreOptions(object):
                 id_mapping.append((tree_id, offset))
 
            # Nodes needed to ensure allowed_keywords is respected
-            for (k,v) in Store.options().items():
+            for k in Store.options():
                 if k in [(opt.split('.')[0],) for opt in options]:
                     group = {grp:Options(
                         allowed_keywords=opt.allowed_keywords)
@@ -1310,6 +1362,6 @@ class StoreOptions(object):
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees)
-        for tree_id, (match_id, new_id) in zip(custom_trees.keys(), id_mapping):
+        for (match_id, new_id) in id_mapping:
             cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
         return obj

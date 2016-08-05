@@ -14,7 +14,11 @@ MPLScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 // Define methods to override on widgets
 var MPLMethods = {
 	init_slider : function(init_val){
-		this.update_cache();
+		if(this.load_json) {
+			this.from_json()
+		} else {
+			this.update_cache();
+		}
 		this.update(0);
 		if(this.mode == 'nbagg') {
 			this.set_frame(init_val, 0);
@@ -22,21 +26,13 @@ var MPLMethods = {
 	},
 	populate_cache : function(idx){
 		var cache_id = this.img_id+"_"+idx;
-		if(this.load_json) {
-			var data_url = this.json_path + '/' + this.id + '.json';
-			$.getJSON(data_url, $.proxy(function(json_data) {
-				if(this.mode == 'mpld3') {
-					mpld3.draw_figure(cache_id, json_data[idx]);
-				} else {
-					this.cache[idx].html(json_data[idx]);
-				}
-			}, this));
+		if(this.mode == 'mpld3') {
+			mpld3.draw_figure(cache_id, this.frames[idx]);
 		} else {
-			if(this.mode == 'mpld3') {
-				mpld3.draw_figure(cache_id, this.frames[idx]);
-			} else {
-				this.cache[idx].html(this.frames[idx]);
-			}
+			this.cache[idx].html(this.frames[idx]);
+		}
+		if (this.embed) {
+			delete this.frames[idx];
 		}
 	},
 	dynamic_update : function(current){
@@ -51,6 +47,7 @@ var MPLMethods = {
 			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+				this.time = undefined;
 				return
 			}
 			if (!(this.mode == 'nbagg')) {
@@ -63,6 +60,14 @@ var MPLMethods = {
 					this.update_cache();
 				}
 				this.update(current);
+			}
+			this.timed = (Date.now() - this.time) * 1.5;
+			this.wait = false;
+			if (this.queue.length > 0) {
+				var current_vals = this.queue[this.queue.length-1];
+				this.time = Date.now();
+				this.dynamic_update(current_vals);
+				this.queue = [];
 			}
 		}
 		var kernel = IPython.notebook.kernel;

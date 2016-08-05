@@ -295,7 +295,7 @@ class PrettyPrinter(object):
         level, lines = cls.node_info(node, attrpath, attrpaths, siblings, level, value_dims)
         attrpaths = ['.'.join(k) for k in node.keys()] if  hasattr(node, 'children') else []
         siblings = [node.get(child) for child in attrpaths]
-        for index, attrpath in enumerate(attrpaths):
+        for attrpath in attrpaths:
             lines += cls.recurse(node.get(attrpath), attrpath, attrpaths=attrpaths,
                                  siblings=siblings, level=level+1, value_dims=value_dims)
         return lines
@@ -311,6 +311,8 @@ class PrettyPrinter(object):
             (lvl, lines) = cls.adjointlayout_info(node, siblings, level, value_dims)
         elif getattr(node, '_deep_indexable', False):
             (lvl, lines) = cls.ndmapping_info(node, siblings, level, value_dims)
+        elif hasattr(node, 'unit_format'):
+            (lvl, lines) = level, [(level, repr(node))]
         else:
             (lvl, lines) = cls.element_info(node, siblings, level, value_dims)
 

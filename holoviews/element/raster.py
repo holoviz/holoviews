@@ -6,15 +6,21 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import DFColumns, ArrayColumns, NdColumns, DictColumns
+from ..core.data import ArrayInterface, NdElementInterface, DictInterface
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Columns, NdElement)
+                    Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, toarray
+
+try:
+    from ..core.data import PandasInterface
+except ImportError:
+    PandasInterface = None
+
 
 class Raster(Element2D):
     """
@@ -103,7 +109,7 @@ class Raster(Element2D):
         params.pop('bounds', None)
         if len(sample_values) == self.ndims or len(samples):
             if not len(samples):
-                samples = zip(*[c if isinstance(c, list) else [c] for didx, c in
+                samples = zip(*[c if isinstance(c, list) else [c] for _, c in
                                sorted([(self.get_dimension_index(k), v) for k, v in
                                        sample_values.items()])])
             table_data = [c+(self._zdata[self._coord2matrix(c)],)
@@ -129,7 +135,7 @@ class Raster(Element2D):
             sample[sample_ind] = self._coord2matrix(coord_fn(sample_coord))[abs(sample_ind-1)]
 
             # Sample data
-            x_vals = self.dimension_values(other_dimension[0].name, unique=True)
+            x_vals = self.dimension_values(other_dimension[0].name, False)
             ydata = self._zdata[sample[::-1]]
             if hasattr(self, 'bounds') and sample_ind == 0: ydata = ydata[::-1]
             data = list(zip(x_vals, ydata))
@@ -154,9 +160,11 @@ class Raster(Element2D):
             dimension = dims[0]
             other_dimension = [d for d in self.kdims if d.name != dimension]
             oidx = self.get_dimension_index(other_dimension[0])
-            x_vals = self.dimension_values(other_dimension[0].name, unique=True)
+            x_vals = self.dimension_values(other_dimension[0].name, False)
             reduced = function(self._zdata, axis=oidx)
-            data = zip(x_vals, reduced if not oidx else reduced[::-1])
+            if oidx and hasattr(self, 'bounds'):
+                reduced = reduced[::-1]
+            data = zip(x_vals, reduced)
             params = dict(dict(self.get_param_values(onlychanged=True)),
                           kdims=other_dimension, vdims=self.vdims)
             params.pop('bounds', None)
@@ -164,18 +172,18 @@ class Raster(Element2D):
             return Table(data, **params)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         """
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
-        if unique and dim_idx == 0:
+        if not expanded and dim_idx == 0:
             return np.array(range(self.data.shape[1]))
-        elif unique and dim_idx == 1:
+        elif not expanded and dim_idx == 1:
             return np.array(range(self.data.shape[0]))
         elif dim_idx in [0, 1]:
-            D1, D2 = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]]
-            return D1.flatten() if dim_idx == 0 else D2.flatten()
+            values = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]][dim_idx]
+            return values.flatten() if flat else values
         elif dim_idx == 2:
             return toarray(self.data.T).flatten()
         else:
@@ -338,26 +346,26 @@ class QuadMesh(Raster):
         super(QuadMesh, self).range(dimension)
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         idx = self.get_dimension_index(dimension)
         data = self.data[idx]
         if idx in [0, 1]:
             if not self._grid:
                 return data.flatten()
-            odim = 1 if unique else self.data[2].shape[idx]
+            odim = self.data[2].shape[idx] if expanded else 1
             vals = np.tile(np.convolve(data, np.ones((2,))/2, mode='valid'), odim)
             if idx:
                 return np.sort(vals)
             else:
                 return vals
         elif idx == 2:
-            return data.flatten()
+            return data.flatten() if flat else data
         else:
             return super(QuadMesh, self).dimension_values(idx)
 
 
 
-class HeatMap(Columns, Element2D):
+class HeatMap(Dataset, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
     parameter spaces. It supports sparse or non-linear spaces, dynamically
@@ -388,12 +396,14 @@ class HeatMap(Columns, Element2D):
 
 
     def _compute_raster(self):
-        d1keys = self.dimension_values(0, True)
-        d2keys = self.dimension_values(1, True)
+        if self.interface.gridded:
+            return self, np.flipud(self.dimension_values(2, flat=False))
+        d1keys = self.dimension_values(0, False)
+        d2keys = self.dimension_values(1, False)
         coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
         dtype = 'dataframe' if pd else 'dictionary'
-        dense_data = Columns(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
-        concat_data = self.interface.concatenate([dense_data, Columns(self)], datatype=dtype)
+        dense_data = Dataset(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
+        concat_data = self.interface.concatenate([dense_data, Dataset(self)], datatype=dtype)
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'Mean of empty slice')
             data = concat_data.aggregate(self.kdims, np.nanmean)
@@ -409,8 +419,8 @@ class HeatMap(Columns, Element2D):
                          for k, v in data.items()]
                 kdims = state['kdims'] if 'kdims' in state else self.kdims
                 vdims = state['vdims'] if 'vdims' in state else self.vdims
-                data = Columns(items, kdims=kdims, vdims=vdims).data
-            elif isinstance(data, Columns):
+                data = Dataset(items, kdims=kdims, vdims=vdims).data
+            elif isinstance(data, Dataset):
                 data = data.data
                 kdims = data.kdims
                 vdims = data.vdims
@@ -420,13 +430,13 @@ class HeatMap(Columns, Element2D):
         self.__dict__ = state
 
         if isinstance(self.data, NdElement):
-            self.interface = NdColumns
+            self.interface = NdElementInterface
         elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayColumns
+            self.interface = ArrayInterface
         elif util.is_dataframe(self.data):
-            self.interface = DFColumns
+            self.interface = PandasInterface
         elif isinstance(self.data, dict):
-            self.interface = DictColumns
+            self.interface = DictInterface
         self.depth = 1
         data, self.raster = self._compute_raster()
         self.interface = data.interface
@@ -438,8 +448,8 @@ class HeatMap(Columns, Element2D):
         super(HeatMap, self).__setstate__(state)
 
     def dense_keys(self):
-        d1keys = self.dimension_values(0, True)
-        d2keys = self.dimension_values(1, True)
+        d1keys = self.dimension_values(0, False)
+        d2keys = self.dimension_values(1, False)
         return list(zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys]))
 
 
@@ -551,6 +561,8 @@ class Image(SheetCoordinateSystem, Raster):
         if coords is () or coords == slice(None, None):
             return self
 
+        if not isinstance(coords, tuple):
+            coords = (coords, slice(None))
         if len(coords) > (2 + self.depth):
             raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
         elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
@@ -603,7 +615,7 @@ class Image(SheetCoordinateSystem, Raster):
         return self.sheet2matrixidx(*coord)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         """
         The set of samples available along a particular dimension.
         """
@@ -615,15 +627,58 @@ class Image(SheetCoordinateSystem, Raster):
             d2_half_unit = (t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
-            if unique:
-                return d2lin if dim_idx else d1lin
+            if expanded:
+                values = np.meshgrid(d2lin, d1lin)[abs(dim_idx-1)]
+                return values.flatten() if flat else values
             else:
-                Y, X = np.meshgrid(d2lin, d1lin)
-                return Y.flatten() if dim_idx else X.flatten()
+                return d2lin if dim_idx else d1lin
         elif dim_idx == 2:
-            return np.flipud(self.data).T.flatten()
+            # Raster arrays are stored with different orientation
+            # than expanded column format, reorient before expanding
+            data = np.flipud(self.data).T
+            return data.flatten() if flat else data
         else:
             super(Image, self).dimension_values(dim)
+
+
+
+class GridImage(Dataset, Element2D):
+    """
+    Grid interface based version of an Image, which will
+    eventually supercede the original Image implementation.
+    """
+
+    group = param.String(default='GridImage', constant=True)
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
+
+    vdims = param.List(default=[Dimension('z')], bounds=(1, 1))
+
+    def __init__(self, data, **params):
+        super(GridImage, self).__init__(data, **params)
+        (l, r), (b, t) = self.interface.range(self, 0), self.interface.range(self, 1)
+        (ys, xs) = self.dimension_values(2, flat=False).shape
+        xsampling = (float(r-l)/(xs-1))/2.
+        ysampling = (float(t-b)/(ys-1))/2.
+        l, r = l-xsampling, r+xsampling
+        b, t = b-ysampling, t+ysampling
+        self.bounds = BoundingBox(points=((l, b), (r, t)))
+
+    def range(self, dim, data_range=True):
+        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
+        dim = self.get_dimension(dim_idx)
+        if dim.range != (None, None):
+            return dim.range
+        elif dim_idx in [0, 1]:
+            l, b, r, t = self.bounds.lbrt()
+            if dim_idx:
+                drange = (b, t)
+            else:
+                drange = (l, r)
+            return drange
+        else:
+            return self.interface.range(self, dim)
 
 
 
@@ -693,7 +748,7 @@ class RGB(Image):
         data = plt.imread(filename)
         if array:  return data
 
-        (h, w, channels) = data.shape
+        (h, w, _) = data.shape
         if bounds is None:
             f = float(height) / h
             xoffset, yoffset = w*f/2, h*f/2
@@ -703,14 +758,15 @@ class RGB(Image):
         return rgb
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         """
         The set of samples available along a particular dimension.
         """
         dim_idx = self.get_dimension_index(dim)
         if self.ndims <= dim_idx < len(self.dimensions()):
-            return np.flipud(self.data[:,:,dim_idx-self.ndims]).T.flatten()
-        return super(RGB, self).dimension_values(dim, unique=True)
+            data = np.flipud(self.data[:,:,dim_idx-self.ndims]).T
+            return data.flatten() if flat else data
+        return super(RGB, self).dimension_values(dim, expanded, flat)
 
 
     def __init__(self, data, **params):

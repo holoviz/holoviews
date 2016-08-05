@@ -1,6 +1,7 @@
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
+from holoviews.core.util import unicode
 
 import param
 
@@ -42,8 +43,8 @@ class TablePlot(ElementPlot):
 
     style_opts = ['alpha', 'sketch_params']
 
-    # Disable computing plot bounds from data.
-    apply_databounds = False
+    # Disable axes handling for Table plots
+    _has_axes = False
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
@@ -86,7 +87,7 @@ class TablePlot(ElementPlot):
         if isinstance(value, float):
             formatter = '{:.%df}' % self.float_precision
             formatted = formatter.format(value)
-        elif isinstance(value, str):
+        elif isinstance(value, (str, unicode)):
             formatted = safe_unicode(value)
         else:
             formatted = str(value)
@@ -132,7 +133,7 @@ class TablePlot(ElementPlot):
         return self._finalize_axis(self.keys[-1])
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, key, axis, view, ranges, style):
         table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():

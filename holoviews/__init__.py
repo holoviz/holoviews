@@ -8,13 +8,14 @@ sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
 import param
 
-__version__ = param.Version(release=(1,4,2), fpath=__file__,
+__version__ = param.Version(release=(1,6,1), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core import archive                               # noqa (API import)
 from .core.dimension import OrderedDict, Dimension      # noqa (API import)
 from .core.boundingregion import BoundingBox            # noqa (API import)
-from .core.options import Options, Store, StoreOptions  # noqa (API import)
+from .core.options import (Options, Store, Cycle,       # noqa (API import)
+                           Palette, StoreOptions)
 from .core.layout import *                              # noqa (API import)
 from .core.element import *                             # noqa (API import)
 from .core.overlay import *                             # noqa (API import)

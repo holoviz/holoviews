@@ -1,9 +1,11 @@
-from numbers import Number
 import itertools
-import numpy as np
-
-import param
 import types
+from numbers import Number
+from itertools import groupby
+from functools import partial
+
+import numpy as np
+import param
 
 from . import traversal, util
 from .dimension import OrderedDict, Dimension, ViewableElement
@@ -31,7 +33,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return NdOverlay(self, **kwargs)
+                return NdOverlay(self, **kwargs).reindex(dimensions)
         else:
             dims = [d for d in self.kdims if d not in dimensions]
             return self.groupby(dims, group_type=NdOverlay, **kwargs)
@@ -47,7 +49,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return GridSpace(self, **kwargs)
+                return GridSpace(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=GridSpace, **kwargs)
 
 
@@ -61,7 +63,7 @@ class HoloMap(UniformNdMapping):
         dimensions = self._valid_dimensions(dimensions)
         if len(dimensions) == self.ndims:
             with item_check(False):
-                return NdLayout(self, **kwargs)
+                return NdLayout(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
 
 
@@ -97,6 +99,56 @@ class HoloMap(UniformNdMapping):
                 for k in self.keys()]
 
 
+    def _dynamic_mul(self, dimensions, other, keys):
+        """
+        Implements dynamic version of overlaying operation overlaying
+        DynamicMaps and HoloMaps where the key dimensions of one is
+        a strict superset of the other.
+        """
+        # If either is a HoloMap compute Dimension values
+        if not isinstance(self, DynamicMap) or not isinstance(other, DynamicMap):
+            keys = sorted((d, v) for k in keys for d, v in k)
+            grouped =  dict([(g, [v for _, v in group])
+                             for g, group in groupby(keys, lambda x: x[0])])
+            dimensions = [d(values=grouped[d.name]) for d in dimensions]
+            mode = 'bounded'
+            map_obj = None
+        elif (isinstance(self, DynamicMap) and (other, DynamicMap) and
+            self.mode != other.mode):
+            raise ValueError("Cannot overlay DynamicMaps with mismatching mode.")
+        else:
+            map_obj = self if isinstance(self, DynamicMap) else other
+            mode = map_obj.mode
+
+        def dynamic_mul(*key):
+            key = key[0] if mode == 'open' else key
+            layers = []
+            try:
+                if isinstance(self, DynamicMap):
+                    _, self_el = util.get_dynamic_item(self, dimensions, key)
+                    if self_el is not None:
+                        layers.append(self_el)
+                else:
+                    layers.append(self[key])
+            except KeyError:
+                pass
+            try:
+                if isinstance(other, DynamicMap):
+                    _, other_el = util.get_dynamic_item(other, dimensions, key)
+                    if other_el is not None:
+                        layers.append(other_el)
+                else:
+                    layers.append(other[key])
+            except KeyError:
+                pass
+            return Overlay(layers)
+        if map_obj:
+            return map_obj.clone(callback=dynamic_mul, shared_data=False,
+                                 kdims=dimensions)
+        else:
+            return DynamicMap(callback=dynamic_mul, kdims=dimensions)
+
+
     def __mul__(self, other):
         """
         The mul (*) operator implements overlaying of different Views.
@@ -108,7 +160,7 @@ class HoloMap(UniformNdMapping):
         will try to match up the dimensions, making sure that items
         with completely different dimensions aren't overlaid.
         """
-        if isinstance(other, self.__class__):
+        if isinstance(other, HoloMap):
             self_set = {d.name for d in self.kdims}
             other_set = {d.name for d in other.kdims}
 
@@ -117,8 +169,10 @@ class HoloMap(UniformNdMapping):
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
             dimensions = self.kdims
+
             if self_in_other and other_in_self: # superset of each other
-                super_keys = sorted(set(self._dimension_keys() + other._dimension_keys()))
+                keys = self._dimension_keys() + other._dimension_keys()
+                super_keys = util.unique_iterator(keys)
             elif self_in_other: # self is superset
                 dimensions = other.kdims
                 super_keys = other._dimension_keys()
@@ -126,6 +180,9 @@ class HoloMap(UniformNdMapping):
                 super_keys = self._dimension_keys()
             else: # neither is superset
                 raise Exception('One set of keys needs to be a strict subset of the other.')
+
+            if isinstance(self, DynamicMap) or isinstance(other, DynamicMap):
+                return self._dynamic_mul(dimensions, other, super_keys)
 
             items = []
             for dim_keys in super_keys:
@@ -146,6 +203,11 @@ class HoloMap(UniformNdMapping):
                     items.append((new_key, Overlay([other[other_key]])))
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
+            if isinstance(self, DynamicMap):
+                from .operation import DynamicFunction
+                def dynamic_mul(element):
+                    return element * other
+                return DynamicFunction(self, function=dynamic_mul)
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
@@ -264,7 +326,7 @@ class HoloMap(UniformNdMapping):
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
 
-            samples = util.unique_array(self.last.closest(linsamples))
+            samples = list(util.unique_iterator(self.last.closest(linsamples)))
 
         sampled = self.clone([(k, view.sample(samples, **sample_values))
                               for k, view in self.data.items()])
@@ -294,8 +356,8 @@ class HoloMap(UniformNdMapping):
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
-        histmaps = [self.clone(shared_data=False)
-                    for d in kwargs.get('dimension', range(1))]
+        histmaps = [self.clone(shared_data=False) for _ in
+                    kwargs.get('dimension', range(1))]
 
         if individually:
             map_range = None
@@ -430,9 +492,7 @@ class DynamicMap(HoloMap):
             return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
-            if (kdim.values) and kdim.range != (None,None):
-                raise Exception('Dimension cannot have both values and ranges.')
-            elif kdim.values:
+            if kdim.values:
                 continue
             if None in kdim.range:
                 return 'counter'
@@ -488,7 +548,7 @@ class DynamicMap(HoloMap):
 
         if isinstance(retval, tuple):
             self._validate_key(retval[0]) # Validated output key
-            return self._style(retval)
+            return (retval[0], self._style(retval[1]))
         else:
             self._validate_key((self.counter,))
             return (self.counter, self._style(retval))
@@ -652,6 +712,102 @@ class DynamicMap(HoloMap):
         self.counter += 1
         return val
 
+
+    def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
+        """
+        Implements a dynamic version of a groupby, which will
+        intelligently expand either the inner or outer dimensions
+        depending on whether the container_type or group_type is dynamic.
+
+        To apply a groupby to a DynamicMap the dimensions, which are
+        expanded into a non-dynamic type must define a fixed sampling
+        via the values attribute.
+
+        Using the dynamic groupby makes it incredibly easy to generate
+        dynamic views into a high-dimensional space while taking
+        advantage of the capabilities of NdOverlay, GridSpace and
+        NdLayout types to visualize more than one Element at a time.
+        """
+        if dimensions is None:
+            dimensions = self.kdims
+        if not isinstance(dimensions, (list, tuple)):
+            dimensions = [dimensions]
+
+        container_type = container_type if container_type else type(self)
+        group_type = group_type if group_type else type(self)
+
+        outer_kdims = [self.get_dimension(d) for d in dimensions]
+        inner_kdims = [d for d in self.kdims if not d in outer_kdims]
+
+        outer_dynamic = issubclass(container_type, DynamicMap)
+        inner_dynamic = issubclass(group_type, DynamicMap)
+
+        if ((not outer_dynamic and any(not d.values for d in outer_kdims)) or
+            (not inner_dynamic and any(not d.values for d in inner_kdims))):
+            raise Exception('Dimensions must specify sampling via '
+                            'values to apply a groupby')
+
+        if outer_dynamic:
+            def outer_fn(*outer_key):
+                if inner_dynamic:
+                    def inner_fn(*inner_key):
+                        outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key))
+                        inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key))
+                        inner_sel = [(k.name, v) for k, v in inner_vals]
+                        outer_sel = [(k.name, v) for k, v in outer_vals]
+                        return self.select(**dict(inner_sel+outer_sel))
+                    return self.clone([], callback=inner_fn, kdims=inner_kdims)
+                else:
+                    dim_vals = [(d.name, d.values) for d in inner_kdims]
+                    dim_vals += [(d.name, [v]) for d, v in
+                                   zip(outer_kdims, util.wrap_tuple(outer_key))]
+                    return group_type(self.select(**dict(dim_vals))).reindex(inner_kdims)
+            if outer_kdims:
+                return self.clone([], callback=outer_fn, kdims=outer_kdims)
+            else:
+                return outer_fn(())
+        else:
+            outer_product = itertools.product(*[self.get_dimension(d).values
+                                                for d in dimensions])
+            groups = []
+            for outer in outer_product:
+                outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer)]
+                if inner_dynamic or not inner_kdims:
+                    def inner_fn(outer_vals, *key):
+                        inner_dims = zip(inner_kdims, util.wrap_tuple(key))
+                        inner_vals = [(d.name, k) for d, k in inner_dims]
+                        return self.select(**dict(outer_vals+inner_vals)).last
+                    if inner_kdims:
+                        group = self.clone(callback=partial(inner_fn, outer_vals),
+                                           kdims=inner_kdims)
+                    else:
+                        group = inner_fn(outer_vals, ())
+                    groups.append((outer, group))
+                else:
+                    inner_vals = [(d.name, self.get_dimension(d).values)
+                                     for d in inner_kdims]
+                    group = group_type(self.select(**dict(outer_vals+inner_vals)).reindex(inner_kdims))
+                    groups.append((outer, group))
+            return container_type(groups, kdims=outer_kdims)
+
+
+    def grid(self, dimensions=None, **kwargs):
+        return self.groupby(dimensions, container_type=GridSpace, **kwargs)
+
+
+    def layout(self, dimensions=None, **kwargs):
+        return self.groupby(dimensions, container_type=NdLayout, **kwargs)
+
+
+    def overlay(self, dimensions=None, **kwargs):
+        if dimensions is None:
+            dimensions = self.kdims
+        if not isinstance(dimensions, (list, tuple)):
+            dimensions = [dimensions]
+        dimensions = [self.get_dimension(d) for d in dimensions]
+        dims = [d for d in self.kdims if d not in dimensions]
+        return self.groupby(dims, group_type=NdOverlay)
+
     # For Python 2 and 3 compatibility
     __next__ = next
 
@@ -709,7 +865,7 @@ class GridSpace(UniformNdMapping):
         values are numeric, otherwise applies no transformation.
         """
         ndims = self.ndims
-        if all(not isinstance(el, slice) for el in key):
+        if all(not (isinstance(el, slice) or callable(el)) for el in key):
             dim_inds = []
             for dim in self.kdims:
                 dim_type = self.get_dimension_type(dim)
@@ -728,7 +884,7 @@ class GridSpace(UniformNdMapping):
                 num_keys = iter(keys[idx])
             key = tuple(next(num_keys) if i in dim_inds else next(str_keys)
                         for i in range(self.ndims))
-        elif any(not isinstance(el, slice) for el in key):
+        elif any(not (isinstance(el, slice) or callable(el)) for el in key):
             index_inds = [idx for idx, el in enumerate(key)
                          if not isinstance(el, (slice, str))]
             if len(index_inds):

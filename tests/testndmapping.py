@@ -3,7 +3,7 @@ from collections import OrderedDict
 from holoviews.core import Dimension
 from holoviews.core.ndmapping import MultiDimensionalMapping
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews import HoloMap, Columns
+from holoviews import HoloMap, Dataset
 import numpy as np
 
 class DimensionTest(ComparisonTestCase):
@@ -97,6 +97,12 @@ class NdIndexableMappingTest(ComparisonTestCase):
 
         self.assertEqual([d.name for d in reduced_ndmap.kdims], reduced_dims)
 
+    def test_idxmapping_redim(self):
+        data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
+        ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
+        redimmed = ndmap.redim(intdim='Integer')
+        self.assertEqual(redimmed.kdims, [Dimension('Integer'), Dimension('floatdim')])
+
     def test_idxmapping_add_dimension(self):
         ndmap = MultiDimensionalMapping(self.init_items_1D_list, kdims=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
@@ -133,16 +139,31 @@ class HoloMapTest(ComparisonTestCase):
         self.xs = range(11)
         self.y_ints = [i*2 for i in range(11)]
         self.ys = np.linspace(0, 1, 11)
-        self.columns = Columns(np.column_stack([self.xs, self.y_ints]),
+        self.columns = Dataset(np.column_stack([self.xs, self.y_ints]),
                                kdims=['x'], vdims=['y'])
 
+    def test_holomap_redim(self):
+        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+                                   kdims=['x'], vdims=['y'])
+                        for i in range(10)}, kdims=['z'])
+        redimmed = hmap.redim(x='Time')
+        self.assertEqual(redimmed.dimensions('all', True),
+                         ['z', 'Time', 'y'])
+
+    def test_holomap_redim_nested(self):
+        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+                                   kdims=['x'], vdims=['y'])
+                        for i in range(10)}, kdims=['z'])
+        redimmed = hmap.redim(x='Time', z='Magnitude')
+        self.assertEqual(redimmed.dimensions('all', True),
+                         ['Magnitude', 'Time', 'y'])
 
     def test_columns_collapse_heterogeneous(self):
-        collapsed = HoloMap({i: Columns({'x':self.xs, 'y':self.ys*i},
+        collapsed = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
                                         kdims=['x'], vdims=['y'])
                              for i in range(10)}, kdims=['z']).collapse('z', np.mean)
-        expected = Columns({'x':self.xs, 'y':self.ys*4.5}, kdims=['x'], vdims=['y'])
-        self.compare_columns(collapsed, expected)
+        expected = Dataset({'x':self.xs, 'y': self.ys * 4.5}, kdims=['x'], vdims=['y'])
+        self.compare_dataset(collapsed, expected)
 
 
     def test_columns_sample_homogeneous(self):

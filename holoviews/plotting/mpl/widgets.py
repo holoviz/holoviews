@@ -73,7 +73,8 @@ class MPLWidget(NdWidget):
 
     def update(self, key):
         if self.plot.dynamic == 'bounded' and not isinstance(key, int):
-            key = tuple(key)
+            key = tuple(dim.values[k] if dim.values else k
+                        for dim, k in zip(self.mock_obj.kdims, tuple(key)))
 
         if self.renderer.mode == 'nbagg':
             if not self.manager._shown:
@@ -85,8 +86,9 @@ class MPLWidget(NdWidget):
             return ''
         frame = self._plot_figure(key)
         if self.renderer.mode == 'mpld3':
-            frame = self.encode_frames({0: frame})
-        return frame
+            return self.encode_frames({0: frame})
+        else:
+            return str(frame)
 
 
     def get_frames(self):
@@ -109,16 +111,16 @@ class MPLWidget(NdWidget):
         elif self.renderer.mode == 'mpld3':
             import mpld3
             encoder = dict(cls=mpld3._display.NumpyEncoder)
-            frames = {idx: frame for idx, frame in frames.items()}
-            frames = json.dumps(frames, **encoder)
+            frames = dict(frames)
+            return json.dumps(frames, **encoder)
         else:
-            frames = {idx: frame for idx, frame in frames.items()}
-        return super(MPLWidget, self).encode_frames(frames)
+            frames = dict(frames)
+            return json.dumps(frames)
 
 
     def initialize_connection(self, plot):
         plot.update(0)
-        self.manager = self.renderer.get_figure_manager(plot)
+        self.manager = self.renderer.get_figure_manager(plot.state)
         self.comm = WidgetCommSocket(self.manager)
 
 

@@ -23,18 +23,17 @@ try:
 except ImportError:
     dd = None
 
-try:
-    from blaze import bz
-except ImportError:
-    bz = None
-
 # Python3 compatibility
+import types
 if sys.version_info.major == 3:
     basestring = str
     unicode = str
+    generator_types = (zip, range, types.GeneratorType)
 else:
     basestring = basestring
     unicode = unicode
+    from itertools import izip
+    generator_types = (izip, xrange, types.GeneratorType)
 
 
 def process_ellipses(obj, key, vdim_selection=False):
@@ -182,7 +181,8 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
 
     prefix = 'A_'
 
-    _lookup_table = {}
+    _lookup_table = param.Dict(default={}, doc="""
+       Cache of previously computed sanitizations""")
 
 
     @param.parameterized.bothmethod
@@ -340,6 +340,17 @@ group_sanitizer = sanitize_identifier_fn.instance()
 label_sanitizer = sanitize_identifier_fn.instance()
 dimension_sanitizer = sanitize_identifier_fn.instance(capitalize=False)
 
+
+def isnumeric(val):
+    if isinstance(val, (basestring, bool, np.bool_)):
+        return False
+    try:
+        float(val)
+        return True
+    except:
+        return False
+
+
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns
@@ -403,7 +414,7 @@ def max_extents(extents, zrange=False):
     """
     if zrange:
         num = 6
-        inds = [(0, 2), (1, 3)]
+        inds = [(0, 3), (1, 4), (2, 5)]
         extents = [e if len(e) == 6 else (e[0], e[1], None,
                                           e[2], e[3], None)
                    for e in extents]
@@ -438,7 +449,7 @@ def int_to_alpha(n, upper=True):
     if n == 0: return str(chr(n + casenum))
     while n >= 0:
         mod, div = n % 26, n
-        for i in range(count):
+        for _ in range(count):
             div //= 26
         div %= 26
         if count == 0:
@@ -718,7 +729,7 @@ def find_file(folder, filename):
     Find a file given folder and filename.
     """
     matches = []
-    for root, dirnames, filenames in os.walk(folder):
+    for root, _, filenames in os.walk(folder):
         for filename in fnmatch.filter(filenames, filename):
             matches.append(os.path.join(root, filename))
     return matches[-1]
@@ -729,8 +740,7 @@ def is_dataframe(data):
     Checks whether the supplied data is DatFrame type.
     """
     return((pd is not None and isinstance(data, pd.DataFrame)) or
-          (dd is not None and isinstance(data, dd.DataFrame)) or
-          (bz is not None and isinstance(data, bz.Data)))
+          (dd is not None and isinstance(data, dd.DataFrame)))
 
 
 def get_param_values(data):
@@ -849,4 +859,61 @@ class ndmapping_groupby(param.ParameterizedFunction):
                   for k, v in iterative_select(ndmapping, dim_names, selects)]
         return container_type(groups, kdims=dimensions)
 
+
+def cartesian_product(arrays):
+    """
+    Computes the cartesian product of a list of 1D arrays
+    returning arrays matching the shape defined by all
+    supplied dimensions.
+    """
+    return np.broadcast_arrays(*np.ix_(*arrays))
+
+
+def arglexsort(arrays):
+    """
+    Returns the indices of the lexicographical sorting
+    order of the supplied arrays.
+    """
+    dtypes = ','.join(array.dtype.str for array in arrays)
+    recarray = np.empty(len(arrays[0]), dtype=dtypes)
+    for i, array in enumerate(arrays):
+        recarray['f%s' % i] = array
+    return recarray.argsort()
+
+
+def get_dynamic_item(map_obj, dimensions, key):
+    """
+    Looks up an item in a DynamicMap given a list of dimensions
+    and a corresponding key. The dimensions must be a subset
+    of the map_obj key dimensions.
+    """
+    if isinstance(key, tuple):
+        dims = {d.name: k for d, k in zip(dimensions, key)
+                if d in map_obj.kdims}
+        key = tuple(dims.get(d.name) for d in map_obj.kdims)
+        el = map_obj.select([lambda x: type(x).__name__ == 'DynamicMap'],
+                            **dims)
+    elif key < map_obj.counter:
+        key_offset = max([key-map_obj.cache_size, 0])
+        key = map_obj.keys()[min([key-key_offset,
+                                  len(map_obj)-1])]
+        el = map_obj[key]
+    elif key >= map_obj.counter:
+        el = next(map_obj)
+        key = list(map_obj.keys())[-1]
+    else:
+        el = None
+    return key, el
+
+
+def expand_grid_coords(dataset, dim):
+    """
+    Expand the coordinates along a dimension of the gridded
+    dataset into an ND-array matching the dimensionality of
+    the dataset.
+    """
+    arrays = [dataset.interface.coords(dataset, d.name, True)
+              for d in dataset.kdims]
+    idx = dataset.get_dimension_index(dim)
+    return cartesian_product(arrays)[idx]
 

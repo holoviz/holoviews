@@ -247,7 +247,7 @@ class OptsSpec(Parser):
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
         else:
-            (k,s,e) = parses[0]
+            e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
@@ -326,7 +326,7 @@ class CompositorSpec(Parser):
         if len(parses) != 1:
             raise SyntaxError("Invalid specification syntax.")
         else:
-            (k,s,e) = parses[0]
+            e = parses[0][2]
             processed = line[:e]
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])

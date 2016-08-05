@@ -7,9 +7,9 @@ from matplotlib import pyplot as plt
 from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
-                     GridSpace, Element, CompositeOverlay, Element3D,
-                     Empty, Collator)
-from ...core.options import Store, Compositor
+                     GridSpace, Element, CompositeOverlay, Empty,
+                     Collator, GridMatrix, Layout)
+from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
@@ -82,10 +82,11 @@ class MPLPlot(DimensionedPlot):
     sublabel_size = param.Number(default=18, doc="""
          Size of optional subfigure label.""")
 
-    projection = param.ObjectSelector(default=None,
-                                      objects=['3d', 'polar', None], doc="""
+    projection = param.Parameter(default=None, doc="""
         The projection of the plot axis, default of None is equivalent to
-        2D plot, '3d' and 'polar' are also supported.""")
+        2D plot, '3d' and 'polar' are also supported by matplotlib by default.
+        May also supply a custom projection that is either a matplotlib
+        projection type or implements the `_as_mpl_axes` method.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -110,6 +111,7 @@ class MPLPlot(DimensionedPlot):
             self.warning('Set either final_hooks or deprecated '
                          'finalize_hooks, not both.')
         self.finalize_hooks = self.final_hooks
+        self.handles['bbox_extra_artists'] = []
 
 
     def _init_axis(self, fig, axis):
@@ -163,6 +165,10 @@ class MPLPlot(DimensionedPlot):
                               bbox_transform=axis.transAxes)
             at.patch.set_visible(False)
             axis.add_artist(at)
+            sublabel = at.txt.get_children()[0]
+            self.handles['sublabel'] = sublabel
+            self.handles['bbox_extra_artists'] += [sublabel]
+
 
 
     def _finalize_axis(self, key):
@@ -220,8 +226,13 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
             subplot.update_frame(key, ranges=ranges)
-        axis = self.handles['axis']
-        self.update_handles(axis, self.layout, key, ranges)
+
+        title = self._format_title(key) if self.show_title else ''
+        if 'title' in self.handles:
+            self.handles['title'].set_text(title)
+        else:
+            title = self.handles['axis'].set_title(title, **self._fontsize('title'))
+            self.handles['title'] = title
 
 
 
@@ -325,9 +336,8 @@ class GridPlot(CompositePlot):
     def _create_subplots(self, layout, axis, ranges, create_axes):
         layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
                             clone=False)
-        norm_opts = self._deep_options(layout, 'norm', ['axiswise'], [Element])
-        axiswise = all(v.get('axiswise', False) for v in norm_opts.values())
-
+        norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
+        axiswise = all(norm_opts['axiswise'])
         if not ranges:
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
@@ -340,19 +350,19 @@ class GridPlot(CompositePlot):
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot
+            if type(view) in (Layout, NdLayout):
+                raise SkipRendering("Cannot plot nested Layouts.")
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
             else:
-                continue
+                vtype = None
 
             # Create axes
             kwargs = {}
             if create_axes:
-                threed = issubclass(vtype, Element3D)
-                subax = plt.subplot(self._layoutspec[r, c],
-                                    projection='3d' if threed else None)
-
+                projection = self._get_projection(view) if vtype else None
+                subax = plt.subplot(self._layoutspec[r, c], projection=projection)
                 if not axiswise and self.shared_xaxis and self.xaxis is not None:
                     self.xaxis = 'top'
                 if not axiswise and self.shared_yaxis and self.yaxis is not None:
@@ -381,10 +391,14 @@ class GridPlot(CompositePlot):
                 subaxes[(r, c)] = subax
             else:
                 subax = None
-            if issubclass(vtype, CompositeOverlay) and (c == self.cols - 1 and
-                                                        r == self.rows//2):
+            if vtype and issubclass(vtype, CompositeOverlay) and (c == self.cols - 1 and
+                                                                  r == self.rows//2):
                 kwargs['show_legend'] = self.show_legend
                 kwargs['legend_position'] = 'right'
+            if (not isinstance(self.layout, GridMatrix) and not
+                ((c == self.cols//2 and r == 0) or
+                (c == 0 and r == self.rows//2))):
+                kwargs['labelled'] = []
 
             # Create subplot
             if view is not None:
@@ -397,7 +411,7 @@ class GridPlot(CompositePlot):
                 subplot = plotting_class(view,  **dict(opts, **dict(params, **kwargs)))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
                 subplots[(r, c)] = subplot
-            else:
+            elif subax is not None:
                 subax.set_visible(False)
             if r != self.rows-1:
                 r += 1
@@ -441,17 +455,6 @@ class GridPlot(CompositePlot):
             self._adjust_subplots(self.handles['axis'], self.subaxes)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        if self.show_title:
-            title = axis.set_title(self._format_title(key),
-                                   **self._fontsize('title'))
-            self.handles['title'] = title
-
-
     def _layout_axis(self, layout, axis):
         fig = self.handles['fig']
         axkwargs = {'gid': str(self.position)} if axis else {}
@@ -486,7 +489,7 @@ class GridPlot(CompositePlot):
 
         # Process ticks
         plot_width = (1.0 - self.padding) / self.cols
-        border_width = self.padding / (self.cols-1)
+        border_width = self.padding / (self.cols-1) if self.cols > 1 else 0
         xticks = [(plot_width/2)+(r*(plot_width+border_width)) for r in range(self.cols)]
         plot_height = (1.0 - self.padding) / self.rows
         border_height = self.padding / (self.rows-1) if layout.ndims > 1 else 0
@@ -648,17 +651,29 @@ class AdjointLayoutPlot(CompositePlot):
         if right:
             ax = self.subaxes['right']
             subplot = self.subplots['right']
-            ax.set_position([bbox.x1 + bbox.width * subplot.border_size,
+            if isinstance(subplot, AdjoinedPlot):
+                subplot_size = subplot.subplot_size
+                border_size = subplot.border_size
+            else:
+                subplot_size = 0.25
+                border_size = 0.25
+            ax.set_position([bbox.x1 + bbox.width * border_size,
                              bbox.y0,
-                             bbox.width * subplot.subplot_size, bbox.height])
+                             bbox.width * subplot_size, bbox.height])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
         if top:
             ax = self.subaxes['top']
             subplot = self.subplots['top']
+            if isinstance(subplot, AdjoinedPlot):
+                subplot_size = subplot.subplot_size
+                border_size = subplot.border_size
+            else:
+                subplot_size = 0.25
+                border_size = 0.25
             ax.set_position([bbox.x0,
-                             bbox.y1 + bbox.height * subplot.border_size,
-                             bbox.width, bbox.height * subplot.subplot_size])
+                             bbox.y1 + bbox.height * border_size,
+                             bbox.width, bbox.height * subplot_size])
             if isinstance(subplot, GridPlot):
                 ax.set_aspect('equal')
 
@@ -796,8 +811,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             col_widthratios[c][1].append(width_ratios)
 
 
-        col_splits = [v[0] for _c, v in sorted(col_widthratios.items())]
-        row_splits = [v[0] for _r, v in sorted(row_heightratios.items())]
+        col_splits = [v[0] for __, v in sorted(col_widthratios.items())]
+        row_splits = [v[0] for ___, v in sorted(row_heightratios.items())]
 
         widths = np.array([r for col in col_widthratios.values()
                            for ratios in col[1] for r in ratios])/4
@@ -911,11 +926,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 padding = dict(w_pad=self.tight_padding, h_pad=self.tight_padding)
             self.gs.tight_layout(self.handles['fig'], rect=self.fig_bounds, **padding)
 
-        # Create title handle
-        if self.show_title and len(self.coords) > 1:
-            title = self.handles['fig'].suptitle('', **self._fontsize('title'))
-            self.handles['title'] = title
-
         return layout_subplots, layout_axes, collapsed_layout
 
 
@@ -974,17 +984,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 continue
 
             # Determine projection type for plot
-            components = view.traverse(lambda x: x)
-            projs = ['3d' if isinstance(c, Element3D) else
-                     self.lookup_options(c, 'plot').options.get('projection', None)
-                     for c in components]
-            projs = [p for p in projs if p is not None]
-            if len(set(projs)) > 1:
-                raise Exception("A single axis may only be assigned one projection type")
-            elif projs:
-                projections.append(projs[0])
-            else:
-                projections.append(None)
+            projections.append(self._get_projection(view))
 
             if not create:
                 continue
@@ -1015,9 +1015,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             vtype = view.type if isinstance(view, HoloMap) else view.__class__
             if isinstance(view, GridSpace):
                 plotopts['create_axes'] = ax is not None
-            if pos == 'main':
-                plot_type = Store.registry['matplotlib'][vtype]
-            else:
+            plot_type = Store.registry['matplotlib'][vtype]
+            if pos != 'main' and vtype in MPLPlot.sideplots:
                 plot_type = MPLPlot.sideplots[vtype]
             num = num if len(self.coords) > 1 else 0
             subplots[pos] = plot_type(view, axis=ax, keys=self.keys,
@@ -1033,22 +1032,18 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return subplots, adjoint_clone, projections
 
 
-    def update_handles(self, axis, view, key, ranges=None):
-        """
-        Should be called by the update_frame class to update
-        any handles on the plot.
-        """
-        if self.show_title and 'title' in self.handles and len(self.coords) > 1:
-            self.handles['title'].set_text(self._format_title(key))
-
-
     def initialize_plot(self):
-        axis = self.handles['axis']
-        self.update_handles(axis, None, self.keys[-1])
-
-        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        key = self.keys[-1]
+        ranges = self.compute_ranges(self.layout, key, None)
         for subplot in self.subplots.values():
             subplot.initialize_plot(ranges=ranges)
+
+        # Create title handle
+        if self.show_title and len(self.coords) > 1:
+            title = self._format_title(key)
+            title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            self.handles['title'] = title
+            self.handles['bbox_extra_artists'] += [title]
 
         return self._finalize_axis(None)
 

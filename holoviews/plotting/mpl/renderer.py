@@ -3,6 +3,7 @@ import sys
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
+from itertools import chain
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -148,7 +149,7 @@ class MPLRenderer(Renderer):
         """
         fig = plot.state
         if self.mode == 'nbagg':
-            manager = self.get_figure_manager(plot)
+            manager = self.get_figure_manager(plot.state)
             if manager is None: return ''
             self.counter += 1
             manager.show()
@@ -162,12 +163,17 @@ class MPLRenderer(Renderer):
             else:
                 return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
 
+        traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+        extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
+                                     if artists is not None]))
+
         kw = dict(
             format=fmt,
             facecolor=fig.get_facecolor(),
             edgecolor=fig.get_edgecolor(),
             dpi=self.dpi,
             bbox_inches=bbox_inches,
+            bbox_extra_artists=extra_artists
         )
         kw.update(kwargs)
 
@@ -185,9 +191,8 @@ class MPLRenderer(Renderer):
         return data
 
 
-    def get_figure_manager(self, plot):
+    def get_figure_manager(self, fig):
         from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-        fig = plot.state
         manager = new_figure_manager_given_figure(self.counter, fig)
         # Need to call mouse_init on each 3D axis to enable rotation support
         for ax in fig.get_axes():
@@ -204,7 +209,7 @@ class MPLRenderer(Renderer):
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
-        if self.fps is not None: anim_kwargs['fps'] = self.fps
+        if self.fps is not None: anim_kwargs['fps'] = max([int(self.fps), 1])
         if self.dpi is not None: anim_kwargs['dpi'] = self.dpi
         if not hasattr(anim, '_encoded_video'):
             with NamedTemporaryFile(suffix='.%s' % fmt) as f:
@@ -230,10 +235,13 @@ class MPLRenderer(Renderer):
                 fig.canvas.draw()
                 renderer = fig._cachedRenderer
                 bbox_inches = fig.get_tightbbox(renderer)
-                bbox_artists = fig.get_default_bbox_extra_artists()
+                bbox_artists = kw.pop("bbox_extra_artists", [])
+                bbox_artists += fig.get_default_bbox_extra_artists()
                 bbox_filtered = []
                 for a in bbox_artists:
                     bbox = a.get_window_extent(renderer)
+                    if isinstance(bbox, tuple):
+                        continue
                     if a.get_clip_on():
                         clip_box = a.get_clip_box()
                         if clip_box is not None:

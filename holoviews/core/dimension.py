@@ -12,7 +12,8 @@ import param
 
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict, unicode)
+                         find_range, dimension_sanitizer, OrderedDict,
+                         safe_unicode, unicode)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -37,6 +38,35 @@ def param_aliases(d):
         if old_param in d:
             d[new_param] = d.pop(old_param)
     return d
+
+
+def replace_dimensions(dimensions, overrides):
+    """
+    Replaces dimensions in a list with a dictionary of overrides.
+    Overrides should be indexed by the dimension name with values that
+    is either a Dimension object, a string name or a dictionary
+    specifying the dimension parameters to override.
+    """
+    replaced = []
+    for d in dimensions:
+        if d.name in overrides:
+            override = overrides[d.name]
+        else:
+            override = None
+
+        if override is None:
+            replaced.append(d)
+        elif isinstance(override, basestring):
+            replaced.append(d(override))
+        elif isinstance(override, Dimension):
+            replaced.append(override)
+        elif isinstance(override, dict):
+            replaced.append(d(**override))
+        else:
+            raise ValueError('Dimension can only be overridden '
+                             'with another dimension or a dictionary '
+                             'of attributes')
+    return replaced
 
 
 class Dimension(param.Parameterized):
@@ -91,6 +121,8 @@ class Dimension(param.Parameterized):
     # Defines default formatting by type
     type_formatters = {}
     unit_format = ' ({unit})'
+    presets = {} # A dictionary-like mapping name, (name,) or
+                 # (name, unit) to a preset Dimension object
 
     def __init__(self, name, **params):
         """
@@ -98,6 +130,13 @@ class Dimension(param.Parameterized):
         """
         if isinstance(name, Dimension):
             existing_params = dict(name.get_param_values())
+        elif (name, params.get('unit', None)) in self.presets.keys():
+            preset = self.presets[(str(name), str(params['unit']))]
+            existing_params = dict(preset.get_param_values())
+        elif name in self.presets.keys():
+            existing_params = dict(self.presets[str(name)].get_param_values())
+        elif (name,) in self.presets.keys():
+            existing_params = dict(self.presets[(str(name),)].get_param_values())
         else:
             existing_params = {'name': name}
 
@@ -125,7 +164,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return self.name + unit
+        return safe_unicode(self.name) + safe_unicode(unit)
 
 
     def pprint_value(self, value):
@@ -167,7 +206,7 @@ class Dimension(param.Parameterized):
         hashes are equal, all the parameters of the Dimensions are
         also equal.
         """
-        return sum([hash(value) for name, value in self.get_param_values()
+        return sum([hash(value) for _, value in self.get_param_values()
                     if not isinstance(value, list)])
 
 
@@ -277,6 +316,8 @@ class LabelledData(param.Parameterized):
             new_params = new_type.params()
             params = {k: v for k, v in params.items()
                       if k in new_params}
+            if params.get('group') == self.params()['group'].default:
+                params.pop('group')
         settings = dict(params, **overrides)
         if 'id' not in settings:
             settings['id'] = self.id
@@ -639,14 +680,15 @@ class Dimensioned(LabelledData):
         """
         if isinstance(dim, Dimension): dim = dim.name
         if isinstance(dim, int):
-            if dim < len(self.dimensions()):
+            if (dim < (self.ndims + len(self.vdims)) or
+                dim < len(self.dimensions())):
                 return dim
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            sanitized = {dimension_sanitizer(kd): kd
-                         for kd in self.dimensions('key', True)}
-            return [d.name for d in self.dimensions()].index(sanitized.get(dim, dim))
+            if dim in self.kdims+self.vdims:
+                return (self.kdims+self.vdims).index(dim)
+            return self.dimensions().index(dim)
         except ValueError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
@@ -713,7 +755,7 @@ class Dimensioned(LabelledData):
         if local_kwargs and matches:
             ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
                      else self.ndims)
-            select = [slice(None) for i in range(ndims)]
+            select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
                     select += [val]
@@ -754,7 +796,36 @@ class Dimensioned(LabelledData):
         return selection
 
 
-    def dimension_values(self, dimension, unique=False):
+    def redim(self, specs=None, **dimensions):
+        """
+        Replaces existing dimensions in an object with new dimensions
+        or changing specific attributes of a dimensions. Dimension
+        mapping should map between the old dimension name and a
+        dictionary of the new attributes, a completely new dimension
+        or a new string name.
+        """
+        if specs is None:
+            applies = True
+        else:
+            if not isinstance(specs, list):
+                specs = [specs]
+            applies = any(self.matches(spec) for spec in specs)
+
+        redimmed = self
+        if self._deep_indexable:
+            deep_mapped = [(k, v.redim(specs, **dimensions))
+                           for k, v in self.items()]
+            redimmed = self.clone(deep_mapped)
+
+        if applies:
+            kdims = replace_dimensions(self.kdims, dimensions)
+            vdims = replace_dimensions(self.vdims, dimensions)
+            return redimmed.clone(kdims=kdims, vdims=vdims)
+        else:
+            return redimmed
+
+
+    def dimension_values(self, dimension, expanded=True, flat=True):
         """
         Returns the values along the specified dimension. This method
         must be implemented for all Dimensioned type.

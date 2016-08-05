@@ -18,17 +18,12 @@ from .pandas import DFrameViewPlot
 from .plot import MPLPlot, AdjoinedPlot
 
 
-class FullRedrawPlot(ElementPlot):
+class SeabornPlot(ElementPlot):
     """
-    FullRedrawPlot provides an abstract baseclass, defining an
+    SeabornPlot provides an abstract baseclass, defining an
     update_frame method, which completely wipes the axis and
     redraws the plot.
     """
-
-    apply_databounds = param.Boolean(default=False, doc="""
-        Enables computing the plot bounds from the data itself.
-        Disabled by default since data is often preprocessed,
-        before display, changing the bounds.""")
 
     aspect = param.Parameter(default='square', doc="""
         Aspect ratio defaults to square, 'equal' or numeric values
@@ -39,14 +34,12 @@ class FullRedrawPlot(ElementPlot):
 
     _abstract = True
 
-    def update_handles(self, axis, view, key, ranges=None):
-        if self.zorder == 0 and axis:
-            axis.cla()
-        self._update_plot(axis, view)
+    def teardown_handles(self):
+        if self.zorder == 0:
+            self.handles['axis'].cla()
 
 
-
-class RegressionPlot(FullRedrawPlot):
+class RegressionPlot(SeabornPlot):
     """
     RegressionPlot visualizes Regression Views using the Seaborn
     regplot interface, allowing the user to perform and plot
@@ -60,22 +53,15 @@ class RegressionPlot(FullRedrawPlot):
                   'scatter_kws', 'line_kws', 'ci', 'dropna',
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
-    def initialize_plot(self, ranges=None):
-        self._update_plot(self.handles['axis'], self.hmap.last)
-        return self._finalize_axis(self.keys[-1])
+    def init_artists(self, ax, plot_data, plot_kwargs):
+        return {'axis': sns.regplot(*plot_data, ax=ax, **plot_kwargs)}
+
+    def get_data(self, element, ranges, style):
+        xs, ys = (element[d] for d in self.dimensions()[:1])
+        return (xs, ys), style, {}
 
 
-    def _update_plot(self, axis, view):
-        kwargs = self.style[self.cyclic_index]
-        label = view.label if self.overlaid >= 1 else ''
-        if label:
-            kwargs['label'] = label
-        sns.regplot(view.dimension_values(0), view.dimension_values(1),
-                    ax=axis, **kwargs)
-
-
-
-class BivariatePlot(FullRedrawPlot):
+class BivariatePlot(SeabornPlot):
     """
     Bivariate plot visualizes two-dimensional kernel density
     estimates using the Seaborn kdeplot function. Additionally,
@@ -93,33 +79,24 @@ class BivariatePlot(FullRedrawPlot):
                   'ci', 'kind', 'bw', 'kernel', 'cumulative',
                   'shade', 'vertical', 'cmap']
 
-    def initialize_plot(self, ranges=None):
-        kdeview = self.hmap.last
-        axis = self.handles['axis']
-        if self.joint and self.subplot:
-            raise Exception("Joint plots can't be animated or laid out in a grid.")
-        self._update_plot(axis, kdeview)
-
-        return self._finalize_axis(self.keys[-1])
-
-
-    def _update_plot(self, axis, view):
-        kwargs = self.style[self.cyclic_index]
+    def init_artists(self, ax, plot_data, plot_kwargs):
         if self.joint:
-            kwargs.pop('cmap', None)
-            self.handles['fig'] = sns.jointplot(view.data[:,0],
-                                                view.data[:,1],
-                                                **kwargs).fig
+            if self.joint and self.subplot:
+                raise Exception("Joint plots can't be animated or laid out in a grid.")
+            return {'fig': sns.jointplot(*plot_data, **plot_kwargs).fig}
         else:
-            kwargs = self.style[self.cyclic_index]
-            label = view.label if self.overlaid >= 1 else ''
-            if label:
-                kwargs['label'] = label
-            sns.kdeplot(view.data, ax=axis, zorder=self.zorder, **kwargs)
+            return {'axis': sns.kdeplot(*plot_data, ax=ax, **plot_kwargs)}
+
+    def get_data(self, element, ranges, style):
+        xs, ys = (element[d] for d in element.dimensions()[:2])
+        if self.joint:
+            style.pop('cmap', None)
+        style.pop('zorder', None)
+        return (xs, ys), style, {}
 
 
 
-class TimeSeriesPlot(FullRedrawPlot):
+class TimeSeriesPlot(SeabornPlot):
     """
     TimeSeries visualizes sets of curves using the Seaborn
     tsplot function. This provides functionality to plot
@@ -137,27 +114,20 @@ class TimeSeriesPlot(FullRedrawPlot):
                   'ci', 'n_boot', 'err_kws', 'err_palette',
                   'estimator', 'kwargs']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        self._update_plot(axis, element)
+    def get_data(self, element, ranges, style):
+        style.pop('zorder', None)
+        if 'label' in style:
+            style['condition'] = style.pop('label')
+        axis_kwargs = {'xlabel': str(element.kdims[0]),
+                       'ylabel': str(element.vdims[0])}
+        return (element.data, element.xdata), style, axis_kwargs
 
-        return self._finalize_axis(self.keys[-1])
-
-    def _update_plot(self, axis, view):
-        kwargs = self.style[self.cyclic_index]
-        label = view.label if self.overlaid >= 1 else ''
-        if label:
-            kwargs['condition'] = label
-        sns.tsplot(view.data, view.xdata, ax=axis, zorder=self.zorder, **kwargs)
-
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        xlabel = xlabel if xlabel else str(view.kdims[0])
-        ylabel = ylabel if ylabel else str(view.vdims[0])
-        return xlabel, ylabel, zlabel
+    def init_artists(self, ax, plot_data, plot_kwargs):
+        return {'axis': sns.tsplot(*plot_data, ax=ax, **plot_kwargs)}
 
 
-class DistributionPlot(FullRedrawPlot):
+
+class DistributionPlot(SeabornPlot):
     """
     DistributionPlot visualizes Distribution Views using the
     Seaborn distplot function. This allows visualizing a 1D
@@ -173,23 +143,17 @@ class DistributionPlot(FullRedrawPlot):
     style_opts = ['bins', 'hist', 'kde', 'rug', 'fit', 'hist_kws',
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
-        self._update_plot(axis, element)
-        dim = element.get_dimension(0)
-
-        return self._finalize_axis(self.keys[-1], xlabel='', ylabel=str(dim))
-
-
-    def _update_plot(self, axis, view):
-        kwargs = self.style[self.cyclic_index]
-        label = view.label if self.overlaid >= 1 else ''
-        if label:
-            kwargs['label'] = label
+    def get_data(self, element, ranges, style):
+        style.pop('zorder', None)
         if self.invert_axes:
-            kwargs['vertical'] = True
-        sns.distplot(view.dimension_values(0), ax=axis, **kwargs)
+            style['vertical'] = True
+        vdim = element.vdims[0]
+        axis_kwargs = dict(dimensions=[vdim])
+        return (element.dimension_values(vdim),), style, axis_kwargs
+
+    def init_artists(self, ax, plot_data, plot_kwargs):
+        return {'axis': sns.distplot(*plot_data, ax=ax, **plot_kwargs)}
+
 
 
 class SideDistributionPlot(AdjoinedPlot, DistributionPlot):
@@ -270,7 +234,9 @@ class SNSFramePlot(DFrameViewPlot):
         axis = self.handles['axis']
         self._validate(dfview)
 
-        self._update_plot(axis, dfview)
+        style = self._process_style(self.style[self.cyclic_index])
+
+        self._update_plot(axis, dfview, style)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
@@ -292,17 +258,21 @@ class SNSFramePlot(DFrameViewPlot):
                             % self.plot_type)
 
     def update_frame(self, key, ranges=None):
-        view = self.hmap.get(key, None)
+        element = self.hmap.get(key, None)
         axis = self.handles['axis']
         if axis:
-            axis.set_visible(view is not None)
-        axis_kwargs = self.update_handles(axis, view, key, ranges)
+            axis.set_visible(element is not None)
+
+        style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
+        if self.show_legend:
+            style['label'] = element.label
+
+        axis_kwargs = self.update_handles(key, axis, element, key, ranges, style)
         if axis:
             self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
 
 
-    def _update_plot(self, axis, view):
-        style = self._process_style(self.style[self.cyclic_index])
+    def _update_plot(self, axis, view, style):
         if self.plot_type == 'factorplot':
             opts = dict(style, **({'hue': view.x2} if view.x2 else {}))
             sns.factorplot(x=view.x, y=view.y, data=view.data, **opts)
@@ -342,7 +312,7 @@ class SNSFramePlot(DFrameViewPlot):
                 plt.close(self.handles['fig'])
             self.handles['fig'] = plt.gcf()
         else:
-            super(SNSFramePlot, self)._update_plot(axis, view)
+            super(SNSFramePlot, self)._update_plot(axis, view, style)
 
 
 Store.register({TimeSeries: TimeSeriesPlot,

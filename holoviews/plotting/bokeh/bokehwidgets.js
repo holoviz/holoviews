@@ -13,20 +13,10 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 
 // Define methods to override on widgets
 var BokehMethods = {
-	init_slider : function(init_val){
-		if(this.load_json) {
-			var data_url = this.json_path + '/' + this.id + '.json';
-			$.getJSON(data_url, $.proxy(function(json_data) {
-				this.frames = json_data;
-				$.each(this.frames, $.proxy(function(index, frame) {
-					this.frames[index] = JSON.parse(frame);
-				}, this));
-			}, this));
-		} else {
-			$.each(this.frames, $.proxy(function(index, frame) {
-				this.frames[index] = JSON.parse(frame);
-			}, this));
-		}
+	update_cache : function(){
+		$.each(this.frames, $.proxy(function(index, frame) {
+			this.frames[index] = JSON.parse(frame);
+		}, this));
 	},
 	update : function(current){
 		if (current === undefined) {
@@ -35,20 +25,8 @@ var BokehMethods = {
 			var data = this.frames[current];
 		}
 		if (data !== undefined) {
-			if (data.root !== undefined) {
-				var doc = Bokeh.index[data.root].model.document;
-			}
-			$.each(data.data, function(i, value) {
-				if (data.root !== undefined) {
-					var ds = doc.get_model_by_id(value.id);
-				} else {
-					var ds = Bokeh.Collections(value.type).get(value.id);
-				}
-				if (ds != undefined) {
-					ds.set(value.data);
-					ds.trigger('change');
-				}
-			});
+			var doc = Bokeh.index[data.root].model.document;
+			doc.apply_json_patch(data.patch);
 		}
 	},
 	dynamic_update : function(current){
@@ -60,15 +38,27 @@ var BokehMethods = {
 		}
 		function callback(initialized, msg){
 			/* This callback receives data from Python as a string
-			 in order to parse it correctly quotes are sliced off*/
+			   in order to parse it correctly quotes are sliced off*/
 			if (msg.content.ename != undefined) {
 				this.process_error(msg);
 			}
 			if (msg.msg_type != "execute_result") {
 				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
+				this.time = undefined;
+				this.wait = false;
 				return
 			}
+			this.timed = (Date.now() - this.time) * 1.1;
 			if (msg.msg_type == "execute_result") {
+				if (msg.content.data['text/plain'] === "'Complete'") {
+					this.wait = false;
+					if (this.queue.length > 0) {
+						this.time = Date.now();
+						this.dynamic_update(this.queue[this.queue.length-1]);
+						this.queue = [];
+					}
+					return
+			    }
 				var data = msg.content.data['text/plain'].slice(1, -1);
 				this.frames[current] = JSON.parse(data);
 				this.update(current);

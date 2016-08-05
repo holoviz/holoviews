@@ -67,7 +67,7 @@ def get_color_cycle():
     if mpl_ge_150:
         cyl = mpl.rcParams['axes.prop_cycle']
         # matplotlib 1.5 verifies that axes.prop_cycle *is* a cycler
-        # but no garuantee that there's a `color` key.
+        # but no guarantee that there's a `color` key.
         # so users could have a custom rcParmas w/ no color...
         try:
             return [x['color'] for x in cyl]
@@ -132,16 +132,16 @@ Store.register({Curve: CurvePlot,
                 ItemTable: TablePlot,
                 Table: TablePlot,
                 NdElement: TablePlot,
-                Columns: TablePlot,
                 Collator: TablePlot,
 
                 # Raster plots
                 QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
-                HeatMap: RasterPlot,
+                HeatMap: HeatMapPlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
+                GridImage: ImagePlot,
 
                 # Annotation plots
                 VLine: VLinePlot,
@@ -177,7 +177,7 @@ options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', l
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
 options.Points = Options('style', color=Cycle(), marker='o')
-options.Scatter3D = Options('style', facecolors=Cycle(), marker='o')
+options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
 options.Spikes = Options('style', color='black')
@@ -187,6 +187,7 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
 
 # Rasters
 options.Image = Options('style', cmap='hot', interpolation='nearest')
+options.GridImage = Options('style', cmap='hot', interpolation='nearest')
 options.Raster = Options('style', cmap='hot', interpolation='nearest')
 options.QuadMesh = Options('style', cmap='hot')
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')

@@ -1,3 +1,147 @@
+Version 1.6.1
+-------------
+
+Bug fix release following the 1.6 major release with major bug fixes
+for the grid data interfaces and improvements to the options system.
+
+* Ensured that style options incompatible with active backend are
+  ignored (PR `#802 <https://github.com/ioam/holoviews/pull/802>`_).
+* Added support for placing legends outside the plot area in
+  bokeh (PR `#801 <https://github.com/ioam/holoviews/pull/801>`_).
+* Fix to ensure bokeh backend does not depend on pandas (PR `#792
+  <https://github.com/ioam/holoviews/pull/792>`_).
+* Fixed option system to ensure correct inheritance when
+  redefining options (PR `#796
+  <https://github.com/ioam/holoviews/pull/796>`_).
+* Major refactor and fixes for the grid based data backends (iris,
+  xarray and arrays with coordinates) ensuring the data is oriented
+  and transposed correctly (PR `#794
+  <https://github.com/ioam/holoviews/pull/794>`_).
+
+
+Version 1.6
+-----------
+
+A major release with an optional new data interface based on xarray,
+support for batching bokeh plots for huge increases in performance,
+support for bokeh 0.12 and various other fixes and improvements.
+
+Features and improvements:
+
+* Made VectorFieldPlot more general with support for independent
+  coloring and scaling (PR `#701
+  <https://github.com/ioam/holoviews/pull/701>`_).
+* Iris interface now allows tuple and dict formats in the constructor
+  (PR `#709 <https://github.com/ioam/holoviews/pull/709>`_.
+* Added support for dynamic groupby on all data interfaces (PR `#711
+  <https://github.com/ioam/holoviews/pull/711>`_).
+* Added an xarray data interface (PR `#713
+  <https://github.com/ioam/holoviews/pull/713>`_).
+* Added the redim method to all Dimensioned objects making it easy to
+  quickly change dimension names and attributes on nested objects
+  `#715 <https://github.com/ioam/holoviews/pull/715>`_).
+* Added support for batching plots (PR `#715
+  <https://github.com/ioam/holoviews/pull/717>`_).
+* Support for bokeh 0.12 release (PR `#725
+  <https://github.com/ioam/holoviews/pull/725>`_).
+* Added support for logz option on bokeh Raster plots (PR `#729
+  <https://github.com/ioam/holoviews/pull/729>`_).
+* Bokeh plots now support custom tick formatters specified via
+  Dimension value_format (PR `#728
+  <https://github.com/ioam/holoviews/pull/728>`_).
+
+
+Version 1.5
+-----------
+
+A major release with a large number of new features including new data
+interfaces for grid based data, major improvements for DynamicMaps
+and a large number of bug fixes. 
+
+Features and improvements:
+
+* Added a grid based data interface to explore n-dimensional gridded
+  data easily (PR `#562 <https://github.com/ioam/holoviews/pull/542>`_).
+* Added data interface based on `iris Cubes <http://scitools.org.uk/iris/docs/v1.9.2/index.html>`_ (PR `#624
+  <https://github.com/ioam/holoviews/pull/624>`_).
+* Added support for dynamic operations and overlaying of DynamicMaps
+  (PR `#588 <https://github.com/ioam/holoviews/pull/588>`_).
+* Added support for applying groupby operations to DynamicMaps (PR
+  `#667 <https://github.com/ioam/holoviews/pull/667>`_).
+* Added dimension value formatting in widgets (PR `#562
+  <https://github.com/ioam/holoviews/issues/562>`_).
+* Added support for indexing and slicing with a function (PR `#619
+  <https://github.com/ioam/holoviews/pull/619>`_).
+* Improved throttling behavior on widgets (PR `#596
+  <https://github.com/ioam/holoviews/pull/596>`_).
+* Major refactor of matplotlib plotting classes to simplify
+  implementing new Element plots (PR `#438
+  <https://github.com/ioam/holoviews/pull/438>`_).
+* Added Renderer.last_plot attribute to allow easily debugging or
+  modifying the last displayed plot (PR `#538
+  <https://github.com/ioam/holoviews/pull/538>`_).
+* Added bokeh QuadMeshPlot (PR `#661
+  <https://github.com/ioam/holoviews/pull/661>`_).
+
+Bug fixes:
+
+* Fixed overlaying of 3D Element types (PR `#504
+  <https://github.com/ioam/holoviews/pull/504>`_).
+* Fix for bokeh hovertools with dimensions with special characters
+  (PR `#524 <https://github.com/ioam/holoviews/pull/524>`_).
+* Fixed bugs in seaborn Distribution Element (PR `#630
+  <https://github.com/ioam/holoviews/pull/630>`_).
+* Fix for inverted Raster.reduce method (PR `#672
+  <https://github.com/ioam/holoviews/pull/672>`_).
+* Fixed Store.add_style_opts method (PR `#587
+  <https://github.com/ioam/holoviews/pull/587>`_).
+* Fixed bug preventing simultaneous logx and logy plot options (PR `#554
+  <https://github.com/ioam/holoviews/pull/554>`_).
+
+Backwards compatibility:
+
+* Renamed ``Columns`` type to ``Dataset`` (PR `#620
+  <https://github.com/ioam/holoviews/issues/620>`_).
+
+
+Version 1.4.3
+-------------
+
+A minor bugfix release to patch a number of small but important issues.
+
+Fixes and improvements:
+
+
+* Added a `DynamicMap Tutorial
+  <http://holoviews.org/Tutorials/Dynamic_Map.html>`_ to explain how to
+  explore very large or continuous parameter spaces in HoloViews (`PR
+  #470 <https://github.com/ioam/holoviews/issues/470>`_).
+* Various fixes and improvements for DynamicMaps including slicing (`PR
+  #488 <https://github.com/ioam/holoviews/issues/488>`_) and validation
+  (`PR #483 <https://github.com/ioam/holoviews/issues/478>`_) and
+  serialization (`PR #483
+  <https://github.com/ioam/holoviews/issues/478>`_)
+* Widgets containing matplotlib plots now display the first frame from
+  cache providing at least the initial frame when exporting DynamicMaps
+  (`PR #486 <https://github.com/ioam/holoviews/issues/483>`_)
+* Fixed plotting bokeh plots using widgets in live mode, after changes
+  introduced in latest bokeh version (commit `1b87c91e9
+  <https://github.com/ioam/holoviews/commit/1b87c91e9e7cf35b267344ccd4a2fa91dd052890>`_).
+* Fixed issue in coloring Point/Scatter objects by values (`Issue #467
+  <https://github.com/ioam/holoviews/issues/467>`_).
+
+
+Backwards compatibility:
+
+* The behavior of the ``scaling_factor`` on Point and Scatter plots has
+  changed now simply multiplying ``area`` or ``width`` (as defined by
+  the ``scaling_method``). To disable scaling points by a dimension
+  set ``size_index=None``.
+* Removed hooks to display 3D Elements using the ``BokehMPLRawWrapper``
+  in bokeh (`PR #477 <https://github.com/ioam/holoviews/pull/477>`_)
+* Renamed the DynamicMap mode ``closed`` to ``bounded`` (`PR #477 <https://github.com/ioam/holoviews/pull/485>`_)
+
+
 Version 1.4.2
 -------------
 

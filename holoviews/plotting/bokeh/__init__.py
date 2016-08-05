@@ -1,14 +1,19 @@
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, Columns, GridMatrix, NdLayout)
+                     GridSpace, NdElement, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV)
+                        Table, ItemTable, Area, HSV, QuadMesh, GridImage)
 from ...core.options import Options, Cycle
-from ...interface import DFrame
+
+try:
+    from ...interface import DFrame
+except:
+    DFrame = None
+
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
@@ -19,13 +24,14 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideSpikesPlot, AreaPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot
+from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
+                     HSVPlot, QuadMeshPlot)
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
-Store.register({Overlay: OverlayPlot,
+associations = {Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 GridSpace: GridPlot,
                 GridMatrix: GridPlot,
@@ -40,17 +46,17 @@ Store.register({Overlay: OverlayPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
                 Spikes: SpikesPlot,
-                BoxWhisker: BoxPlot,
-                Bars: BarPlot,
                 Area: AreaPlot,
 
                 # Rasters
                 Image: RasterPlot,
+                GridImage: ImagePlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
                 Histogram: HistogramPlot,
+                QuadMesh: QuadMeshPlot,
 
                 # Paths
                 Path: PathPlot,
@@ -70,15 +76,24 @@ Store.register({Overlay: OverlayPlot,
                 # Tabular
                 Table: TablePlot,
                 ItemTable: TablePlot,
-                DFrame: TablePlot,
-                NdElement: TablePlot,
-                Columns: TablePlot},
+                NdElement: TablePlot}
 
+if DFrame is not None:
+    associations[DFrame] = TablePlot
+
+Store.register(associations,
                'bokeh')
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
+
+try:
+    import pandas # noqa (Conditional import)
+    Store.register({BoxWhisker: BoxPlot,
+                    Bars: BarPlot}, 'bokeh')
+except ImportError:
+    pass
 
 try:
     from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
@@ -126,11 +141,11 @@ options.Polygons = Options('style', color=Cycle())
 
 # Rasters
 options.Image = Options('style', cmap='hot')
+options.GridImage = Options('style', cmap='hot')
 options.Raster = Options('style', cmap='hot')
-options.QuadMesh = Options('style', cmap='hot')
+options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
-options.HLine = Options('style', line_color='black', line_width=3, line_alpha=1)
-options.VLine = Options('style', line_color='black', line_width=3, line_alpha=1)
-
+options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)

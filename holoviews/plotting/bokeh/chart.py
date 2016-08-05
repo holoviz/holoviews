@@ -1,14 +1,20 @@
+from collections import defaultdict
+
 import numpy as np
-from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
-from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 import param
+try:
+    from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
+except:
+    Bar, BokehBoxPlot = None, None
+from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 
 from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring
-from ..util import compute_sizes, get_sideplot_ranges, match_spec
+from ...core.options import abbreviated_exception
+from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
-from .util import map_colors, get_cmap, mpl_to_bokeh, update_plot
+from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 
 class PointPlot(ElementPlot):
@@ -39,14 +45,14 @@ class PointPlot(ElementPlot):
                    'unselected_color'] +
                   line_properties + fill_properties)
 
-    _plot_method = 'scatter'
-
+    _plot_methods = dict(single='scatter', batched='scatter')
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
-        mapping = dict(x=dims[0], y=dims[1])
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
         cmap = style.get('palette', style.get('cmap', None))
@@ -59,7 +65,7 @@ class PointPlot(ElementPlot):
             else:
                 cmap = get_cmap(cmap)
                 colors = element.dimension_values(self.color_index)
-                crange = ranges.get(cdim.name, None)
+                crange = ranges.get(cdim.name, element.range(cdim.name))
                 data[map_key] = map_colors(colors, crange, cmap)
 
         sdim = element.get_dimension(self.size_index)
@@ -75,12 +81,29 @@ class PointPlot(ElementPlot):
                                                       self.scaling_factor,
                                                       self.scaling_method, ms))
 
-        data[dims[0]] = [] if empty else element.dimension_values(0)
-        data[dims[1]] = [] if empty else element.dimension_values(1)
-        if 'hover' in self.tools+self.default_tools:
-            for d in dims:
-                data[d] = [] if empty else element.dimension_values(d)
+        data[dims[xidx]] = [] if empty else element.dimension_values(xidx)
+        data[dims[yidx]] = [] if empty else element.dimension_values(yidx)
+        self._get_hover_data(data, element, empty)
         return data, mapping
+
+
+    def get_batched_data(self, element, ranges=None, empty=False):
+        data = defaultdict(list)
+        style = self.style.max_cycles(len(self.ordering))
+        for key, el in element.items():
+            self.set_param(**self.lookup_options(el, 'plot').options)
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld)
+            if 'color' not in eldata:
+                zorder = self.get_zorder(element, key, el)
+                val = style[zorder].get('color')
+                elmapping['color'] = 'color'
+                if isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data['color'].append([val]*len(data[k][-1]))
+        data = {k: np.concatenate(v) for k, v in data.items()}
+        return data, elmapping
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -100,21 +123,42 @@ class PointPlot(ElementPlot):
             renderer = plot.add_glyph(source, selected, selection_glyph=selected,
                                       nonselection_glyph=unselected)
         else:
-            renderer = getattr(plot, self._plot_method)(**dict(properties, **mapping))
+            plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+            renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
 
 class CurvePlot(ElementPlot):
 
     style_opts = ['color'] + line_properties
-    _plot_method = 'line'
+    _plot_methods = dict(single='line', batched='multi_line')
+    _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
     def get_data(self, element, ranges=None, empty=False):
-        x = element.get_dimension(0).name
-        y = element.get_dimension(1).name
-        return ({x: [] if empty else element.dimension_values(0),
-                 y: [] if empty else element.dimension_values(1)},
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        x = element.get_dimension(xidx).name
+        y = element.get_dimension(yidx).name
+        return ({x: [] if empty else element.dimension_values(xidx),
+                 y: [] if empty else element.dimension_values(yidx)},
                 dict(x=x, y=y))
+
+    def get_batched_data(self, overlay, ranges=None, empty=False):
+        style = self.style.max_cycles(len(self.ordering))
+        data = defaultdict(list)
+        for key, el in overlay.items():
+            zorder = self.get_zorder(overlay, key, el)
+            for opt in self._mapping:
+                if opt in ['xs', 'ys']:
+                    index = {'xs': 0, 'ys': 1}[opt]
+                    val = el.dimension_values(index)
+                else:
+                    val = style[zorder].get(opt)
+                if opt == 'color' and isinstance(val, tuple):
+                    val = rgb2hex(val)
+                data[opt].append(val)
+        data = {opt: vals for opt, vals in data.items()
+                if not any(v is None for v in vals)}
+        return data, {k: k for k in data}
 
 
 class AreaPlot(PolygonPlot):
@@ -141,7 +185,10 @@ class AreaPlot(PolygonPlot):
             bottom = np.zeros(len(element))
         ys = np.hstack((bottom[::-1], element.dimension_values(1)))
 
-        data = dict(xs=[x2], ys=[ys])
+        if self.invert_axes:
+            data = dict(xs=[ys], ys=[x2])
+        else:
+            data = dict(xs=[x2], ys=[ys])
         return data, mapping
 
 
@@ -151,7 +198,7 @@ class SpreadPlot(PolygonPlot):
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
-            return dict(xs=[], ys=[]), self._mapping
+            return dict(xs=[], ys=[]), dict(self._mapping)
 
         xvals = element.dimension_values(0)
         mean = element.dimension_values(1)
@@ -163,25 +210,29 @@ class SpreadPlot(PolygonPlot):
         upper = mean + pos_error
         band_x = np.append(xvals, xvals[::-1])
         band_y = np.append(lower, upper[::-1])
-        return dict(xs=[band_x], ys=[band_y]), self._mapping
+        if self.invert_axes:
+            data = dict(xs=[band_y], ys=[band_x])
+        else:
+            data = dict(xs=[band_x], ys=[band_y])
+        return data, dict(self._mapping)
 
 
 class HistogramPlot(ElementPlot):
 
     style_opts = ['color'] + line_properties + fill_properties
-    _plot_method = 'quad'
+    _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
-        mapping = dict(top='top', bottom=0, left='left', right='right')
+        if self.invert_axes:
+            mapping = dict(top='left', bottom='right', left=0, right='top')
+        else:
+            mapping = dict(top='top', bottom=0, left='left', right='right')
         if empty:
             data = dict(top=[], left=[], right=[])
         else:
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
-
-        if 'hover' in self.default_tools + self.tools:
-            data.update({d: [] if empty else element.dimension_values(d)
-                         for d in element.dimensions(label=True)})
+        self._get_hover_data(data, element, empty)
         return (data, mapping)
 
 
@@ -221,10 +272,7 @@ class SideHistogramPlot(HistogramPlot):
             cmap = get_cmap(style.get('cmap', style.get('palette', None)))
             data['color'] = [] if empty else map_colors(vals, main_range, cmap)
             mapping['fill_color'] = 'color'
-
-        if 'hover' in self.default_tools + self.tools:
-            data.update({d: [] if empty else element.dimension_values(d)
-                         for d in element.dimensions(label=True)})
+        self._get_hover_data(data, element, empty)
         return (data, mapping)
 
 
@@ -237,7 +285,7 @@ class ErrorPlot(PathPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         if empty:
-            return dict(xs=[], ys=[]), self._mapping
+            return dict(xs=[], ys=[]), dict(self._mapping)
 
         data = element.array(dimensions=element.dimensions()[0:4])
         err_xs = []
@@ -255,7 +303,12 @@ class ErrorPlot(PathPlot):
             else:
                 err_xs.append((x, x))
                 err_ys.append((y - neg, y + pos))
-        return (dict(xs=err_xs, ys=err_ys), self._mapping)
+
+        if self.invert_axes:
+            data = dict(xs=err_ys, ys=err_xs)
+        else:
+            data = dict(xs=err_xs, ys=err_ys)
+        return (data, dict(self._mapping))
 
 
 class SpikesPlot(PathPlot):
@@ -341,11 +394,14 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    border = param.Integer(default=30, doc="Default borders on plot")
+    border = param.Integer(default=30 if bokeh_version < '0.12' else 5,
+                           doc="Default borders on plot")
 
-    height = param.Integer(default=100, doc="Height of plot")
+    height = param.Integer(default=100 if bokeh_version < '0.12' else 50,
+                           doc="Height of plot")
 
-    width = param.Integer(default=100, doc="Width of plot")
+    width = param.Integer(default=100 if bokeh_version < '0.12' else 50,
+                          doc="Width of plot")
 
 
 
@@ -375,7 +431,8 @@ class ChartPlot(ElementPlot):
             raise Exception("Can't overlay Bokeh Charts based plot properties")
 
         init_element = element.clone(element.interface.concat(self.hmap.values()))
-        plot = self._init_chart(init_element, ranges)
+        with abbreviated_exception():
+            plot = self._init_chart(init_element, ranges)
 
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
@@ -414,7 +471,8 @@ class ChartPlot(ElementPlot):
 
 
     def _update_chart(self, key, element, ranges):
-        new_chart = self._init_chart(element, ranges)
+        with abbreviated_exception():
+            new_chart = self._init_chart(element, ranges)
         old_chart = self.handles['plot']
         update_plot(old_chart, new_chart)
         properties = self._plot_properties(key, old_chart, element)

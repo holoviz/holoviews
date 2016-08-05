@@ -37,7 +37,7 @@ class Element(ViewableElement, Composable, Overlayable):
         from ..operation import histogram
         if not isinstance(dimension, list): dimension = [dimension]
         hists = []
-        for idx, d in enumerate(dimension[::-1]):
+        for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
                              adjoin=False, individually=individually,
                              dimension=d, **kwargs)
@@ -221,10 +221,10 @@ class Tabular(Element):
         elif row == 0:
             if col >= ndims:
                 if self.vdims:
-                    return str(self.vdims[col - ndims])
+                    return self.vdims[col - ndims].pprint_label
                 else:
                     return ''
-            return str(self.kdims[col])
+            return self.kdims[col].pprint_label
         else:
             dim = self.get_dimension(col)
             values = self[dim.name]
@@ -285,13 +285,12 @@ class NdElement(NdMapping, Tabular):
 
         if isinstance(data, Element):
             params = dict(get_param_values(data), **params)
-            if isinstance(data, NdElement):
-                mapping = data.mapping()
-                data = mapping.data
-            else:
-                data = data.data
+            mapping = data if isinstance(data, NdElement) else data.mapping()
+            data = mapping.data
             if 'kdims' not in params:
                 params['kdims'] = mapping.kdims
+            elif 'Index' not in params['kdims']:
+                params['kdims'] = ['Index'] + params['kdims']
             if 'vdims' not in params:
                 params['vdims'] = mapping.vdims
 
@@ -482,15 +481,16 @@ class NdElement(NdMapping, Tabular):
         return self.clone(rows, kdims=grouped.kdims)
 
 
-    def dimension_values(self, dim, unique=False):
+    def dimension_values(self, dim, expanded=True, flat=True):
         dim = self.get_dimension(dim, strict=True)
         value_dims = self.dimensions('value', label=True)
         if dim.name in value_dims:
             index = value_dims.index(dim.name)
             vals = np.array([v[index] for v in self.data.values()])
-            return unique_array(vals) if unique else vals
+            return vals if expanded else unique_array(vals)
         else:
-            return NdMapping.dimension_values(self, dim.name, unique)
+            return NdMapping.dimension_values(self, dim.name,
+                                              expanded, flat)
 
 
     def values(self):

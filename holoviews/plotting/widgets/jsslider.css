@@ -4,6 +4,10 @@ div.hololayout {
     margin: 0;
 }
 
+div.holoframe {
+	width: 75%;
+}
+
 div.holowell {
     display: flex;
     align-items: center;
@@ -14,27 +18,32 @@ form.holoform {
     background-color: #fafafa;
     border-radius: 5px;
     overflow: hidden;
-    padding: 0.8em;
+	padding-left: 0.8em;
+    padding-right: 0.8em;
+    padding-top: 0.4em;
+    padding-bottom: 0.4em;
 }
 
 div.holowidgets {
     padding-right: 0;
+	width: 25%;
 }
 
 div.holoslider {
     min-height: 0 !important;
     height: 0.8em;
+    width: 60%;
 }
 
 div.holoformgroup {
-    padding-right: 0.5em;
     padding-top: 0.5em;
     margin-bottom: 0.5em;
 }
 
 div.hologroup {
     padding-left: 0;
-    padding-right: 0;
+    padding-right: 0.8em;
+    width: 50%;
 }
 
 .holoselect {
@@ -47,4 +56,16 @@ div.hologroup {
     width: 100%;
     padding-left:  0.5em;
     padding-right: 0;
+}
+
+.holowidgets .ui-resizable-se {
+	visibility: hidden
+}
+
+.holoframe > .ui-resizable-se {
+	visibility: hidden
+}
+
+.holowidgets .ui-resizable-s {
+	visibility: hidden
 }

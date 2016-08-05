@@ -2,6 +2,7 @@ import matplotlib
 from matplotlib import patches as patches
 
 from ...core.util import match_spec
+from ...core.options import abbreviated_exception
 from .element import ElementPlot
 
 
@@ -22,28 +23,24 @@ class AnnotationPlot(ElementPlot):
         ranges = match_spec(annotation, ranges)
         axis = self.handles['axis']
         opts = self.style[self.cyclic_index]
-        handles = self.draw_annotation(axis, annotation.data, opts)
+        with abbreviated_exception():
+            handles = self.draw_annotation(axis, annotation.data, opts)
         self.handles['annotations'] = handles
         return self._finalize_axis(key, ranges=ranges)
 
-
-    def update_handles(self, axis, annotation, key, ranges=None):
+    def update_handles(self, key, axis, annotation, ranges, style):
         # Clear all existing annotations
         for element in self.handles['annotations']:
             element.remove()
 
-        self.handles['annotations']=[]
-        opts = self.style[self.cyclic_index]
-        self.handles['annotations'] = self.draw_annotation(axis, annotation.data, opts)
+        with abbreviated_exception():
+            self.handles['annotations'] = self.draw_annotation(axis, annotation.data, style)
 
 
 class VLinePlot(AnnotationPlot):
     "Draw a vertical line on the axis"
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
-
-    def __init__(self, annotation, **params):
-        super(VLinePlot, self).__init__(annotation, **params)
 
     def draw_annotation(self, axis, position, opts):
         return [axis.axvline(position, **opts)]
@@ -55,9 +52,6 @@ class HLinePlot(AnnotationPlot):
 
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
-    def __init__(self, annotation, **params):
-        super(HLinePlot, self).__init__(annotation, **params)
-
     def draw_annotation(self, axis, position, opts):
         "Draw a horizontal line on the axis"
         return [axis.axhline(position, **opts)]
@@ -67,9 +61,6 @@ class TextPlot(AnnotationPlot):
     "Draw the Text annotation object"
 
     style_opts = ['alpha', 'color', 'family', 'weight', 'rotation', 'fontsize', 'visible']
-
-    def __init__(self, annotation, **params):
-        super(TextPlot, self).__init__(annotation, **params)
 
     def draw_annotation(self, axis, data, opts):
         (x,y, text, fontsize,
@@ -90,9 +81,6 @@ class ArrowPlot(AnnotationPlot):
 
     style_opts = sorted(set(_arrow_style_opts + _text_style_opts))
 
-    def __init__(self, annotation, **params):
-        super(ArrowPlot, self).__init__(annotation, **params)
-
     def draw_annotation(self, axis, data, opts):
         direction, text, xy, points, arrowstyle = data
         arrowprops = dict({'arrowstyle':arrowstyle},
@@ -112,9 +100,6 @@ class SplinePlot(AnnotationPlot):
     "Draw the supplied Spline annotation (see Spline docstring)"
 
     style_opts = ['alpha', 'edgecolor', 'linewidth', 'linestyle', 'visible']
-
-    def __init__(self, annotation, **params):
-        super(SplinePlot, self).__init__(annotation, **params)
 
     def draw_annotation(self, axis, data, opts):
         verts, codes = data

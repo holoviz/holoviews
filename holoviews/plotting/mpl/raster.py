@@ -8,8 +8,8 @@ import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range
-from ...element.raster import HeatMap, Image, Raster, RGB
+from ...core.util import match_spec, max_range, unique_iterator
+from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
@@ -27,15 +27,10 @@ class RasterPlot(ColorbarPlot):
     situate_axes = param.Boolean(default=False, doc="""
         Whether to situate the image relative to other plots. """)
 
-    show_values = param.Boolean(default=False, doc="""
-        Whether to annotate each pixel with its value.""")
-
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
                   'filterrad', 'clims', 'norm']
 
+    _plot_methods = dict(single='imshow')
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -54,18 +49,15 @@ class RasterPlot(ColorbarPlot):
                 return element.extents
 
 
-    def initialize_plot(self, ranges=None):
-        element = self.hmap.last
-        axis = self.handles['axis']
+    def _compute_ticks(self, element, ranges):
+        return None, None
 
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
 
+    def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
 
-        opts = self.style[self.cyclic_index]
         if element.depth != 1:
-            opts.pop('cmap', None)
+            style.pop('cmap', None)
 
         data = element.data
         if isinstance(element, Image):
@@ -77,148 +69,173 @@ class RasterPlot(ColorbarPlot):
 
         if isinstance(element, RGB):
             data = element.rgb.data
-        elif isinstance(element, HeatMap):
-            data = element.raster
-            data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-            cmap_name = opts.pop('cmap', None)
-            cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-            cmap.set_bad('w', 1.)
-            opts['cmap'] = cmap
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
+        style['extent'] = [l, r, b, t]
 
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        im = axis.imshow(data, extent=[l, r, b, t], zorder=self.zorder,
-                         clim=clim, norm=norm, **opts)
-        self.handles['artist'] = im
+        return [data], style, {'xticks': xticks, 'yticks': yticks}
 
-        if isinstance(element, HeatMap):
-            self.handles['axis'].set_aspect(float(r - l)/(t-b))
-            self.handles['annotations'] = {}
+    def update_handles(self, key, axis, element, ranges, style):
+        im = self.handles['artist']
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        l, r, b, t = style['extent']
+        im.set_data(data[0])
+        im.set_extent((l, r, b, t))
+        im.set_clim((style['vmin'], style['vmax']))
+        if 'norm' in style:
+            im.norm = style['norm']
 
-            if self.show_values:
-                self._annotate_values(element)
-
-        return self._finalize_axis(self.keys[-1], ranges=ranges,
-                                   xticks=xticks, yticks=yticks)
+        return axis_kwargs
 
 
-    def _compute_ticks(self, element, ranges):
-        if isinstance(element, HeatMap):
-            xdim, ydim = element.kdims
-            dim1_keys, dim2_keys = [element.dimension_values(i, True)
-                                    for i in range(2)]
-            num_x, num_y = len(dim1_keys), len(dim2_keys)
-            x0, y0, x1, y1 = element.extents
-            xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
-            xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
-            ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
-            xlabels = [xdim.pprint_value(k) for k in dim1_keys]
-            ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-            return (xpos, xlabels), (ypos, ylabels)
-        else:
-            return None, None
+class HeatMapPlot(RasterPlot):
+
+    show_values = param.Boolean(default=False, doc="""
+        Whether to annotate each pixel with its value.""")
+
+    def _annotate_plot(self, ax, annotations):
+        handles = {}
+        for plot_coord, text in annotations.items():
+            handles[plot_coord] = ax.annotate(text, xy=plot_coord,
+                                              xycoords='axes fraction',
+                                              horizontalalignment='center',
+                                              verticalalignment='center')
+        return handles
 
 
     def _annotate_values(self, element):
-        axis = self.handles['axis']
         val_dim = element.vdims[0]
         vals = np.rot90(element.raster, 3).flatten()
-        d1uniq, d2uniq = [np.unique(element.dimension_values(i)) for i in range(2)]
+        d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
         xstep, ystep = 1.0/num_x, 1.0/num_y
         xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
         ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
         plot_coords = product(xpos, ypos)
+        annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
             text = val_dim.pprint_value(v)
             text = '' if v is np.nan else text
-            if plot_coord not in self.handles['annotations']:
-                annotation = axis.annotate(text, xy=plot_coord,
-                                           xycoords='axes fraction',
-                                           horizontalalignment='center',
-                                           verticalalignment='center')
-                self.handles['annotations'][plot_coord] = annotation
-            else:
-                self.handles['annotations'][plot_coord].set_text(text)
-        old_coords = set(self.handles['annotations'].keys()) - set(product(xpos, ypos))
-        for plot_coord in old_coords:
-            annotation = self.handles['annotations'].pop(plot_coord)
-            annotation.remove()
+            annotations[plot_coord] = text
+        return annotations
 
 
-    def update_handles(self, axis, element, key, ranges=None):
-        im = self.handles.get('artist', None)
-        data = np.ma.array(element.data,
-                           mask=np.logical_not(np.isfinite(element.data)))
-        im.set_data(data)
+    def _compute_ticks(self, element, ranges):
+        xdim, ydim = element.kdims
+        dim1_keys, dim2_keys = [element.dimension_values(i, False)
+                                for i in range(2)]
+        num_x, num_y = len(dim1_keys), len(dim2_keys)
+        x0, y0, x1, y1 = element.extents
+        xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
+        xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
+        ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
+        xlabels = [xdim.pprint_value(k) for k in dim1_keys]
+        ylabels = [ydim.pprint_value(k) for k in dim2_keys]
+        return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
-        if isinstance(element, HeatMap) and self.show_values:
-           self._annotate_values(element)
 
-        if isinstance(element, Image):
-            l, b, r, t = element.bounds.lbrt()
-        else:
-            l, b, r, t = element.extents
-            if type(element) == Raster:
-                b, t = t, b
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        l, r, b, t = plot_kwargs['extent']
+        ax.set_aspect(float(r - l)/(t-b))
 
-        opts = self.style[self.cyclic_index]
+        handles = {}
+        annotations = plot_kwargs.pop('annotations', None)
+        handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
+        if self.show_values and annotations:
+            handles['annotations'] = self._annotate_plot(ax, annotations)
+        return handles
 
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        im.set_clim(clim)
-        if norm:
-            im.norm = norm
+
+    def get_data(self, element, ranges, style):
+        _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
+        data = element.raster
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        cmap_name = style.pop('cmap', None)
+        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
+        cmap.set_bad('w', 1.)
+        style['cmap'] = cmap
+        style['annotations'] = self._annotate_values(element)
+        return [data], style, axis_kwargs
+
+
+    def update_handles(self, key, axis, element, ranges, style):
+        im = self.handles['artist']
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        l, r, b, t = style['extent']
+        im.set_data(data[0])
         im.set_extent((l, r, b, t))
-        xticks, yticks = self._compute_ticks(element, ranges)
-        return {'xticks': xticks, 'yticks': yticks}
+        im.set_clim((style['vmin'], style['vmax']))
+        if 'norm' in style:
+            im.norm = style['norm']
+
+        if self.show_values:
+            annotations = self.handles['annotations']
+            for annotation in annotations.values():
+                try:
+                    annotation.remove()
+                except:
+                    pass
+            annotations = self._annotate_plot(axis, style['annotations'])
+            self.handles['annotations'] = annotations
+        return axis_kwargs
+
+
+class ImagePlot(RasterPlot):
+
+    def get_data(self, element, ranges, style):
+        data = np.flipud(element.dimension_values(2, flat=False))
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
+        l, b, r, t = element.bounds.lbrt()
+        style['extent'] = [l, r, b, t]
+        return (data,), style, {}
+
+    def get_extents(self, element, ranges):
+        extents = super(ImagePlot, self).get_extents(element, ranges)
+        if self.situate_axes:
+            return extents
+        else:
+            return element.bounds.lbrt()
 
 
 class QuadMeshPlot(ColorbarPlot):
 
-    symmetric = param.Boolean(default=False, doc="""
-        Whether to make the colormap symmetric around zero.""")
-
     style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
-    def initialize_plot(self, ranges=None):
-        key = self.hmap.keys()[-1]
-        element = self.hmap.last
-        axis = self.handles['axis']
+    _plot_methods = dict(single='pcolormesh')
 
-        ranges = self.compute_ranges(self.hmap, self.keys[-1], ranges)
-        ranges = match_spec(element, ranges)
-        self._init_cmesh(axis, element, ranges)
-
-        return self._finalize_axis(key, ranges)
-
-    def _init_cmesh(self, axis, element, ranges):
-        opts = self.style[self.cyclic_index]
-        if 'cmesh' in self.handles:
-            self.handles['cmesh'].remove()
+    def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
         cmesh_data = list(element.data[:2]) + [data]
-        clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-        self.handles['artist'] = axis.pcolormesh(*cmesh_data, zorder=self.zorder,
-                                                 vmin=clim[0], vmax=clim[1], norm=norm,
-                                                 **opts)
-        self.handles['locs'] = np.concatenate(element.data[:2])
+        style['locs'] = np.concatenate(element.data[:2])
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
+        return tuple(cmesh_data), style, {}
 
 
-    def update_handles(self, axis, element, key, ranges=None):
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        locs = plot_kwargs.pop('locs')
+        artist = ax.pcolormesh(*plot_args, **plot_kwargs)
+        return {'artist': artist, 'locs': locs}
+
+
+    def update_handles(self, key, axis, element, ranges, style):
         cmesh = self.handles['artist']
-        opts = self.style[self.cyclic_index]
         locs = np.concatenate(element.data[:2])
+
         if (locs != self.handles['locs']).any():
-            self._init_cmesh(axis, element, ranges)
+            return super(QuadMeshPlot, self).update_handles(key, axis, element,
+                                                            ranges, style)
         else:
-            mask_array = np.logical_not(np.isfinite(element.data[2]))
-            data = np.ma.array(element.data[2], mask=mask_array)
-            cmesh.set_array(data.ravel())
-            clim, norm, opts = self._norm_kwargs(element, ranges, opts)
-            cmesh.set_clim(clim)
-            if norm:
-                cmesh.norm = norm
+            data, style, axis_kwargs = self.get_data(element, ranges, style)
+            cmesh.set_array(data[-1])
+            cmesh.set_clim((style['vmin'], style['vmax']))
+            if 'norm' in style:
+                cmesh.norm = style['norm']
+            return axis_kwargs
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
@@ -236,12 +253,16 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     apply_extents = param.Parameter(precedence=-1)
     apply_ranges = param.Parameter(precedence=-1)
     apply_ticks = param.Parameter(precedence=-1)
+    batched = param.Parameter(precedence=-1)
     bgcolor = param.Parameter(precedence=-1)
     invert_axes = param.Parameter(precedence=-1)
     invert_xaxis = param.Parameter(precedence=-1)
     invert_yaxis = param.Parameter(precedence=-1)
+    invert_zaxis = param.Parameter(precedence=-1)
+    labelled = param.Parameter(precedence=-1)
     legend_cols = param.Parameter(precedence=-1)
     legend_position = param.Parameter(precedence=-1)
+    legend_limit = param.Parameter(precedence=-1)
     logx = param.Parameter(precedence=-1)
     logy = param.Parameter(precedence=-1)
     logz = param.Parameter(precedence=-1)
@@ -319,7 +340,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
-                valrange = match_spec(pane, ranges)[pane.vdims[0].name]
+                cdim = pane.vdims[0].name
+                valrange = match_spec(pane, ranges).get(cdim, pane.range(cdim))
                 plot.set_clim(valrange)
                 if data is None:
                     plot.set_visible(False)
@@ -331,17 +353,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
             x += w + b_w
             self._xticks.append(x-b_w-w/2.)
 
-        grid_dims = self.layout.kdims
-        ydim = grid_dims[1] if self.layout.ndims > 1 else None
-        xticks = (self._xticks, self._process_ticklabels(self._xkeys, grid_dims[0]))
-        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
-        ylabel = str(self.layout.kdims[1]) if self.layout.ndims > 1 else ''
-
-        return self._finalize_axis(key, ranges=ranges,
-                                   title=self._format_title(key),
-                                   xticks=xticks, yticks=yticks,
-                                   xlabel=str(self.layout.get_dimension(0)),
-                                   ylabel=ylabel)
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
 
 
     def update_frame(self, key, ranges=None):
@@ -359,32 +372,30 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 else:
                     plot.set_visible(False)
 
+        kwargs = self._get_axis_kwargs()
+        return self._finalize_axis(key, ranges=ranges, **kwargs)
+
+
+    def _get_axis_kwargs(self):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-
-        self._finalize_axis(key, ranges=ranges, title=self._format_title(key),
-                            xticks=(self._xticks, self._process_ticklabels(self._xkeys, xdim)),
-                            yticks=(self._yticks, self._process_ticklabels(self._ykeys, ydim)))
-
-
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        xdim = self.layout.kdims[0]
-        ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-        return xlabel if xlabel else str(xdim), ylabel if ylabel or not ydim else str(ydim), zlabel
+        xticks = (self._xticks, self._process_ticklabels(self._xkeys, xdim))
+        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
+        return dict(xlabel=xdim.pprint_label, ylabel=ydim.pprint_label if ydim else '',
+                    xticks=xticks, yticks=yticks)
 
 
     def _compute_borders(self):
         ndims = self.layout.ndims
-        xkey, ykey = self._xkeys[0], self._ykeys[0]
         width_fn = lambda x: x.range(0)
         height_fn = lambda x: x.range(1)
+        width_extents = [max_range(self.layout[x, :].traverse(width_fn, [Element]))
+                         for x in unique_iterator(self.layout.dimension_values(0))]
         if ndims > 1:
-            vert_section = self.layout[xkey, slice(None)]
+            height_extents = [max_range(self.layout[:, y].traverse(height_fn, [Element]))
+                              for y in unique_iterator(self.layout.dimension_values(1))]
         else:
-            vert_section = [self.layout[xkey]]
-        horz_section = self.layout[(slice(None), ykey) if ndims > 1 else slice(None)]
-        height_extents = [max_range(hm.traverse(height_fn, [Element])) for hm in vert_section]
-        width_extents = [max_range(hm.traverse(width_fn, [Element])) for hm in horz_section]
+            height_extents = [max_range(self.layout.traverse(height_fn, [Element]))]
         widths = [extent[0]-extent[1] for extent in width_extents]
         heights = [extent[0]-extent[1] for extent in height_extents]
         width, height = np.sum(widths), np.sum(heights)

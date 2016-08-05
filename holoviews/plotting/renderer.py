@@ -2,6 +2,7 @@
 Public API for all plotting renderers supported by HoloViews,
 regardless of plotting package or backend.
 """
+from __future__ import unicode_literals
 
 from io import BytesIO
 import os, base64
@@ -10,7 +11,7 @@ from contextlib import contextmanager
 import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
-from ..core.util import find_file
+from ..core.util import find_file, unicode
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
@@ -88,7 +89,7 @@ class Renderer(Exporter):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
-    fps=param.Integer(20, doc="""
+    fps=param.Number(20, doc="""
         Rendered fps (frames per second) for animated formats.""")
 
     holomap = param.ObjectSelector(default='auto',
@@ -143,6 +144,7 @@ class Renderer(Exporter):
     backend_dependencies = {}
 
     def __init__(self, **params):
+        self.last_plot = None
         super(Renderer, self).__init__(**params)
 
 
@@ -198,13 +200,14 @@ class Renderer(Exporter):
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
 
         if fmt in self.widgets:
-            plot = self.get_widget(plot, fmt)
+            plot = self.get_widget(plot, fmt, display_options={'fps': self.fps})
             fmt = 'html'
 
         all_formats = set(fig_formats + holomap_formats)
         if fmt not in all_formats:
             raise Exception("Format %r not supported by mode %r. Allowed formats: %r"
                             % (fmt, self.mode, fig_formats + holomap_formats))
+        self.last_plot = plot
         return plot, fmt
 
 
@@ -254,7 +257,7 @@ class Renderer(Exporter):
             if fmt == 'svg':
                 figdata = figdata.encode("utf-8")
             elif fmt == 'pdf' and 'height' not in css:
-                w,h = self.get_size(plot)
+                _, h = self.get_size(plot)
                 css['height'] = '%dpx' % (h*self.dpi*1.15)
 
         if isinstance(css, dict):
@@ -303,7 +306,7 @@ class Renderer(Exporter):
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
-        return widget_cls(plot, renderer=self_or_cls,
+        return widget_cls(plot, renderer=self_or_cls.instance(),
                           embed=self_or_cls.widget_mode == 'embed', **kwargs)
 
 
@@ -361,7 +364,8 @@ class Renderer(Exporter):
         try:
             plotclass = Store.registry[cls.backend][element_type]
         except KeyError:
-            raise Exception("No corresponding plot type found for %r" % type(obj))
+            raise SkipRendering("No plotting class for {0} "
+                                "found".format(element_type.__name__))
         return plotclass
 
 
@@ -398,15 +402,25 @@ class Renderer(Exporter):
 
         js_html, css_html = '', ''
         for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
-            for js in dep.get('js', []):
-                js_html += '\n<script src="%s" type="text/javascript"></script>' % js
-            for css in dep.get('css', []):
-                css_html += '\n<link rel="stylesheet" href="%s">' % css
+            js_data = dep.get('js', [])
+            if isinstance(js_data, tuple):
+                for js in js_data:
+                    js_html += '\n<script type="text/javascript">%s</script>' % js
+            else:
+                for js in js_data:
+                    js_html += '\n<script src="%s" type="text/javascript"></script>' % js
+            css_data = dep.get('css', [])
+            if isinstance(js_data, tuple):
+                for css in css_data:
+                    css_html += '\n<style>%s</style>' % css
+            else:
+                for css in css_data:
+                    css_html += '\n<link rel="stylesheet" href="%s">' % css
 
         js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
         css_html += '\n<style>%s</style>' % widgetcss
 
-        return js_html, css_html
+        return unicode(js_html), unicode(css_html)
 
 
     @classmethod

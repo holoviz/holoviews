@@ -126,9 +126,9 @@ class AdjointLayout(Dimensioned):
         return self.data[key] if key in self.data else default
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
-        return self.main.dimension_values(dimension, unique)
+        return self.main.dimension_values(dimension, expanded, flat)
 
 
     def __getitem__(self, key):
@@ -428,10 +428,12 @@ class Layout(AttrTree, Dimensioned):
         """
         clone = super(Layout, self).clone(*args, **overrides)
         clone._display = self._display
+        clone._max_cols = self._max_cols
+        clone.id = self.id
         return clone
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension, strict=True).name
         all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
@@ -439,9 +441,10 @@ class Layout(AttrTree, Dimensioned):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions(label=True)]
             vals = np.concatenate(values)
-            return unique_array(vals) if unique else vals
+            return vals if expanded else unique_array(vals)
         else:
-            return super(Layout, self).dimension_values(dimension, unique)
+            return super(Layout, self).dimension_values(dimension,
+                                                        expanded, flat)
 
 
     def cols(self, ncols):

@@ -343,7 +343,7 @@ class MultiDimensionalMapping(Dimensioned):
                           kdims=dims)
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         "Returns the values along the specified dimension."
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.kdims:
@@ -352,9 +352,9 @@ class MultiDimensionalMapping(Dimensioned):
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)
-            return util.unique_array(vals) if unique else vals
+            return vals if expanded else util.unique_array(vals)
         else:
-            return super(MultiDimensionalMapping, self).dimension_values(dimension, unique)
+            return super(MultiDimensionalMapping, self).dimension_values(dimension, expanded, flat)
 
 
     def reindex(self, kdims=[], force=False):
@@ -412,9 +412,12 @@ class MultiDimensionalMapping(Dimensioned):
         number and type of objects contained within it and information
         about its dimensions.
         """
-        info_str = self.__class__.__name__ +\
-                   " containing %d items of type %s\n" % (len(self.keys()),
-                                                          type(self.values()[0]).__name__)
+        if (len(self.values()) > 0):
+            info_str = self.__class__.__name__ +\
+                       " containing %d items of type %s\n" % (len(self.keys()),
+                                                              type(self.values()[0]).__name__)
+        else:
+            info_str = self.__class__.__name__ + " containing no items\n"
         info_str += ('-' * (len(info_str)-1)) + "\n\n"
         aliases = {v: k for k, v in self._dim_aliases.items()}
         for group in self._dim_groups:
@@ -579,7 +582,8 @@ class NdMapping(MultiDimensionalMapping):
         map_slice = self._transform_indices(map_slice)
         map_slice = self._expand_slice(map_slice)
 
-        if all(not isinstance(el, (slice, set, list, tuple)) for el in map_slice):
+        if all(not (isinstance(el, (slice, set, list, tuple)) or callable(el))
+               for el in map_slice):
             return self._dataslice(self.data[map_slice], data_slice)
         else:
             conditions = self._generate_conditions(map_slice)
@@ -659,6 +663,8 @@ class NdMapping(MultiDimensionalMapping):
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
                 conditions.append(self._all_condition())
+            elif callable(dim_slice):
+                conditions.append(dim_slice)
             elif isinstance(dim_slice, (tuple)):
                 raise IndexError("Keys may only be selected with sets or lists, not tuples.")
             else:

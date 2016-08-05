@@ -2,8 +2,7 @@ import numpy as np
 
 import param
 
-from ..core import (OrderedDict, Dimension, Element, Columns,
-                    Tabular, HoloMap)
+from ..core import OrderedDict, Dimension, Element, Dataset, Tabular
 
 
 class ItemTable(Element):
@@ -71,7 +70,7 @@ class ItemTable(Element):
         return OrderedDict(zip(data[0].keys(), function(groups, axis=-1, **kwargs)))
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         dimension = self.get_dimension(dimension, strict=True).name
         if dimension in self.dimensions('value', label=True):
             return np.array([self.data.get(dimension, np.NaN)])
@@ -102,7 +101,7 @@ class ItemTable(Element):
         elif row >= self.rows:
             raise Exception("Maximum row index is %d" % self.rows-1)
         elif col == 0:
-            return str(self.dimensions('value')[row])
+            return self.dimensions('value')[row].pprint_label
         else:
             dim = self.get_dimension(row)
             heading = self.vdims[row]
@@ -142,7 +141,7 @@ class ItemTable(Element):
 
 
 
-class Table(Columns, Tabular):
+class Table(Dataset, Tabular):
     """
     Table is an NdElement type, which gets displayed in a tabular
     format and is convertible to most other Element types.
@@ -166,139 +165,4 @@ class Table(Columns, Tabular):
                 raise Exception("Input ItemTables dimensions must match value dimensions.")
             value = value.data.values()
         super(Table, self)._add_item(key, value, sort)
-
-
-    @property
-    def to(self):
-        """
-        Property to create a conversion table with methods to convert
-        to any type.
-        """
-        return TableConversion(self)
-
-
-
-
-class TableConversion(object):
-    """
-    TableConversion is a very simple container object which can
-    be given an existing Table and provides methods to convert
-    the Table into most other Element types.
-    """
-
-    def __init__(self, table):
-        self._table = table
-
-    def __call__(self, new_type, kdims=None, vdims=None, mdims=None, sort=False, **kwargs):
-        """
-        Generic conversion method for Column based types. Supply the
-        Columns based type to convert to and optionally the
-        key dimensions (kdims), value dimensions (vdims) and HoloMap
-        key dimensions (mdims). Converted Columns can be automatically
-        sorted via the sort option and kwargs can be passed through.
-        """
-        if kdims is None:
-            kdims = self._table.kdims
-        elif kdims and not isinstance(kdims, list): kdims = [kdims]
-        if vdims is None:
-            vdims = self._table.vdims
-        if vdims and not isinstance(vdims, list): vdims = [vdims]
-        if mdims is None:
-            mdims = [d for d in self._table.kdims if d not in kdims+vdims]
-
-        selected = self._table.reindex(mdims+kdims, vdims)
-        params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
-                  'vdims': [selected.get_dimension(vd) for vd in vdims],
-                  'label': selected.label}
-        if selected.group != selected.params()['group'].default:
-            params['group'] = selected.group
-        params.update(kwargs)
-        if len(kdims) == selected.ndims:
-            element = new_type(selected, **params)
-            return element.sort() if sort else element
-        group = selected.groupby(mdims, container_type=HoloMap, group_type=new_type, **params)
-        if sort:
-            return group.map(lambda x: x.sort(), [new_type])
-        else:
-            return group
-
-    def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Bars
-        return self(Bars, kdims, vdims, mdims, **kwargs)
-
-    def box(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import BoxWhisker
-        return self(BoxWhisker, kdims, vdims, mdims, **kwargs)
-
-    def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from ..interface.seaborn import Bivariate
-        return self(Bivariate, kdims, vdims, mdims, **kwargs)
-
-    def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Curve
-        return self(Curve, kdims, vdims, mdims, sort=True, **kwargs)
-
-    def errorbars(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import ErrorBars
-        return self(ErrorBars, kdims, vdims, mdims, sort=True, **kwargs)
-
-    def distribution(self, dim, mdims=[], **kwargs):
-        from ..interface.seaborn import Distribution
-        if mdims:
-            reindexed = self._table.reindex(mdims+[dim])
-            return reindexed.groupby(mdims, HoloMap, Distribution, **kwargs)
-        else:
-            table = self._table
-            params = dict(kdims=[table.get_dimension(dim)],
-                          label=table.label)
-            if table.group != table.params()['group'].default:
-                params['group'] = table.group
-            return Distribution((table.dimension_values(dim),),
-                                **dict(params, **kwargs))
-
-    def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .raster import HeatMap
-        return self(HeatMap, kdims, vdims, mdims, **kwargs)
-
-    def points(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Points
-        return self(Points, kdims, vdims, mdims, **kwargs)
-
-    def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .raster import Raster
-        heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Raster(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
-
-    def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from ..interface.seaborn import Regression
-        return self(Regression, kdims, vdims, mdims, **kwargs)
-
-    def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Scatter
-        return self(Scatter, kdims, vdims, mdims, **kwargs)
-
-    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart3d import Scatter3D
-        return self(Scatter3D, kdims, vdims, mdims, **kwargs)
-
-    def spikes(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Spikes
-        return self(Spikes, kdims, vdims, mdims, **kwargs)
-
-    def spread(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import Spread
-        return self(Spread, kdims, vdims, mdims, sort=True, **kwargs)
-
-    def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart3d import Surface
-        heatmap = self.heatmap(kdims, vdims, **kwargs)
-        return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
-
-    def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart3d import Trisurface
-        return self(Trisurface, kdims, vdims, mdims, **kwargs)
-
-    def vectorfield(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        from .chart import VectorField
-        return self(VectorField, kdims, vdims, mdims, **kwargs)
 

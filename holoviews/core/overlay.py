@@ -23,6 +23,11 @@ class Overlayable(object):
     """
 
     def __mul__(self, other):
+        if type(other).__name__ == 'DynamicMap':
+            from .operation import DynamicFunction
+            def dynamic_mul(element):
+                return self * element
+            return DynamicFunction(other, function=dynamic_mul)
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
@@ -65,7 +70,7 @@ class CompositeOverlay(ViewableElement, Composable):
         return layout
 
 
-    def dimension_values(self, dimension, unique=False):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         values = []
         found = False
         for el in self:
@@ -73,12 +78,12 @@ class CompositeOverlay(ViewableElement, Composable):
                 values.append(el.dimension_values(dimension))
                 found = True
         if not found:
-            return super(CompositeOverlay, self).dimension_values(dimension, unique)
+            return super(CompositeOverlay, self).dimension_values(dimension, expanded, flat)
         values = [v for v in values if v is not None and len(v)]
         if not values:
             return np.array()
         vals = np.concatenate(values)
-        return unique_array(vals) if unique else vals
+        return vals if expanded else unique_array(vals)
 
 
 class Overlay(Layout, CompositeOverlay):

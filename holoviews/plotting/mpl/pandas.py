@@ -60,8 +60,6 @@ class DFrameViewPlot(ElementPlot):
 
     style_opts = list({opt for opts in dframe_options.values() for opt in opts})
 
-    apply_databounds = False
-
     def __init__(self, view, **params):
         super(DFrameViewPlot, self).__init__(view, **params)
         if self.hmap.last.plot_type and 'plot_type' not in params:
@@ -69,14 +67,16 @@ class DFrameViewPlot(ElementPlot):
 
 
     def initialize_plot(self, ranges=None):
-        dfview = self.hmap.last
-        self._validate(dfview)
+        element = self.hmap.last
+        self._validate(element)
 
-        self._update_plot(dfview)
+        style = self._process_style(self.style[self.cyclic_index])
+        axis = self.handles['axis']
+        self._update_plot(axis, element, style)
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], **self.get_axis_kwargs(element))
 
 
     def _process_style(self, style):
@@ -94,16 +94,6 @@ class DFrameViewPlot(ElementPlot):
         return style
 
 
-    def _axis_labels(self, view, subplots, xlabel=None, ylabel=None, zlabel=None):
-        if view.x and not xlabel:
-            xlabel = str(view.get_dimension(view.x))
-        if view.x2 and not ylabel:
-            ylabel = str(view.get_dimension(view.x2))
-        elif view.y and not ylabel:
-            ylabel = str(view.get_dimension(view.y))
-        return xlabel, ylabel, zlabel
-
-
     def get_extents(self, view, ranges):
         x0, y0, x1, y1 = (np.NaN,) * 4
         if ranges:
@@ -116,6 +106,16 @@ class DFrameViewPlot(ElementPlot):
         return (x0, y0, x1, y1)
 
 
+    def get_axis_kwargs(self, element):
+        if element.x:
+            xlabel = str(element.get_dimension(element.x))
+        if element.x2:
+            ylabel = str(element.get_dimension(element.x2))
+        elif element.y:
+            ylabel = str(element.get_dimension(element.y))
+        return dict(xlabel=xlabel, ylabel=ylabel)
+
+
     def _validate(self, dfview):
         composed = self.handles['axis'] is not None
 
@@ -123,8 +123,7 @@ class DFrameViewPlot(ElementPlot):
             raise Exception("Multiple %s plots cannot be composed." % self.plot_type)
 
 
-    def _update_plot(self, axis, view):
-        style = self._process_style(self.style[self.cyclic_index])
+    def _update_plot(self, axis, view, style):
         if self.plot_type == 'scatter_matrix':
             pd.scatter_matrix(view.data, ax=axis, **style)
         elif self.plot_type == 'autocorrelation_plot':
@@ -136,14 +135,15 @@ class DFrameViewPlot(ElementPlot):
             getattr(view.data, self.plot_type)(ax=axis, **style)
 
 
-    def update_handles(self, axis, view, key, ranges=None):
+    def update_handles(self, key, axis, view, ranges, style):
         """
         Update the plot for an animation.
         """
         if not self.plot_type in ['hist', 'scatter_matrix']:
             if self.zorder == 0 and axis:
                 axis.cla()
-        self._update_plot(axis, view)
+        self._update_plot(axis, view, style)
+        return self.get_axis_kwargs(view)
 
 
 Store.register({DataFrameView: DFrameViewPlot,
