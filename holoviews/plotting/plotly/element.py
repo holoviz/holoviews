@@ -115,7 +115,9 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             legend = element.label
 
-        opts = dict(showlegend=self.show_legend,
+        self.style = self.lookup_options(element, 'style')
+        properties = self.style[self.cyclic_index]
+        opts = dict(properties, showlegend=self.show_legend,
                     legendgroup=element.group,
                     name=legend)
 
