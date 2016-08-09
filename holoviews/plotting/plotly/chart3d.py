@@ -35,8 +35,14 @@ class Chart3DPlot(ElementPlot):
         if self.logz:
             zaxis['type'] = 'log'
 
+        opts = {}
+        if self.aspect == 'cube':
+            opts['aspectmode'] = 'cube'
+        else:
+            opts['aspectmode'] = 'manual'
+            opts['aspectratio'] = self.aspect
         scene = Scene(xaxis=XAxis(xaxis), yaxis=YAxis(yaxis),
-                      zaxis=ZAxis(zaxis), aspectmode=self.aspect)
+                      zaxis=ZAxis(zaxis), **opts)
 
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),
