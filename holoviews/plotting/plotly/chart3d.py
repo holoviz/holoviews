@@ -1,10 +1,13 @@
+import numpy as np
 import plotly.graph_objs as go
+from matplotlib.cm import get_cmap
 from plotly.tools import FigureFactory as FF
 from plotly.graph_objs import Scene, XAxis, YAxis, ZAxis
 
 import param
 
 from ...core.spaces import DynamicMap
+from ...core.options import SkipRendering
 from .element import ElementPlot
 
 class Chart3DPlot(ElementPlot):
@@ -68,3 +71,24 @@ class Scatter3dPlot(Chart3DPlot):
                              mode = 'markers', **opts)
         return trace
 
+
+class TrisurfacePlot(Chart3DPlot):
+
+    colorbar = param.Boolean(default=True)
+
+    style_opts = ['cmap']
+
+    def init_graph(self, element, ranges, **opts):
+        try:
+            from scipy.spatial import Delaunay
+        except:
+            SkipRendering("SciPy not available, cannot plot Trisurface")
+        x, y, z = (element.dimension_values(i) for i in range(3))
+        points2D = np.vstack([x, y]).T
+        tri = Delaunay(points2D)
+        simplices = tri.simplices
+        cmap = get_cmap(opts.pop('cmap', 'viridis'))
+        colormap = [cmap(i) for i in np.linspace(0, 1)]
+        trisurf = FF._trisurf(x, y, z, simplices, self.colorbar,
+                              colormap=colormap)
+        return trisurf[0]
