@@ -56,9 +56,9 @@ class SurfacePlot(Chart3DPlot):
 
     def init_graph(self, element, ranges, **opts):
         data = go.Surface(
-            x=element.dimension_values(0, True),
-            y=element.dimension_values(1, True),
-            z=element.data, **opts)
+            x=element.dimension_values(0, expanded=False),
+            y=element.dimension_values(1, expanded=False),
+            z=element.dimension_values(2, flat=False), **opts)
         return data
 
 
