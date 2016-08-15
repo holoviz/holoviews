@@ -44,6 +44,9 @@ IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
                   'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
                   'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
 
+# List of attributes that can safely be dropped from the references
+IGNORED_ATTRIBUTES = ['data', 'palette']
+
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
                   'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
@@ -175,9 +178,11 @@ def refs(json):
 
 def get_ids(obj):
     """
-    Returns a list of all ids in the supplied object.
-    Useful for determining if a json representation contains
-    references to other objects.
+    Returns a list of all ids in the supplied object.  Useful for
+    determining if a json representation contains references to other
+    objects. Since only the references between objects are required
+    this allows determining whether a particular branch of the json
+    representation is required.
     """
     ids = []
     if isinstance(obj, list):
@@ -195,6 +200,20 @@ def compute_static_patch(document, models):
     between arbitrary frames. Note that this only supports changed
     attributes and will break if new models have been added since
     the plot was first created.
+
+    A static patch consists of two components:
+
+    1) The events: Contain references to particular model attributes
+       along with the updated value.
+    2) The references: Contain a list of all references required to
+       resolve the update events.
+
+    This function cleans up the events and references that are sent
+    to ensure that only the data that is required is sent. It does so
+    by a) filtering the events and references for the models that have
+    been requested to be updated and b) cleaning up the references to
+    ensure that only the references between objects are sent without
+    duplicating any of the data.
     """
     references = refs(document.to_json())
     model_ids = [m.ref['id'] for m in models]
@@ -221,35 +240,33 @@ def compute_static_patch(document, models):
     events = [delete_refs(e, IGNORED_MODELS)
               for _, e in sorted(events, key=lambda x: x[0])]
     events = [e for e in events if all(i in requested_updates for i in get_ids(e))]
-    value_refs = {ref_id: delete_refs(val, IGNORED_MODELS)
+    value_refs = {ref_id: delete_refs(val, IGNORED_MODELS, IGNORED_ATTRIBUTES)
                   for ref_id, val in value_refs.items()}
     references = [val for val in value_refs.values()
                   if val not in [None, {}]]
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, delete):
+def delete_refs(obj, models=[], attributes=[]):
     """
-    Delete all references to specific model types by recursively
-    traversing the object and looking for the models to be deleted in
-    the supplied locations.
-
-    Note: Can be deleted once bokeh stops raising errors when updating
-          LinearAxis.computed_bounds
+    Recursively traverses the object and looks for models and model
+    attributes to be deleted.
     """
     if isinstance(obj, dict):
-        if 'type' in obj and obj['type'] in delete:
+        if 'type' in obj and obj['type'] in models:
             return None
         new_obj = {}
         for k, v in list(obj.items()):
-            if k in ['data', 'palette'] or (k == 'attributes' and not get_ids(v)):
+            # Drop unneccessary attributes, i.e. those that do not
+            # contain references to other objects.
+            if k in attributes or (k == 'attributes' and not get_ids(v)):
                 continue
-            ref = delete_refs(v, delete)
+            ref = delete_refs(v, models, attributes)
             if ref is not None:
                 new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, delete) for v in obj]
+        objs = [delete_refs(v, models, attributes) for v in obj]
         return [o for o in objs if o is not None]
     else:
         return obj
