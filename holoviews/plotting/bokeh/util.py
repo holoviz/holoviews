@@ -1,6 +1,7 @@
+import itertools
 from distutils.version import LooseVersion
-
 from collections import defaultdict
+
 import numpy as np
 
 try:
@@ -40,12 +41,11 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
-                  'CategoricalAxis' 'BasicTicker', 'BasicTickFormatter',
+                  'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
                   'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
 
-# Where to look for the ignored models
-LOCATIONS = ['new', 'below', 'right', 'left',
-             'renderers', 'above', 'attributes', 'plot', 'ticker']
+# List of attributes that can safely be dropped from the references
+IGNORED_ATTRIBUTES = ['data', 'palette']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
@@ -176,22 +176,56 @@ def refs(json):
     return result
 
 
-def compute_static_patch(document, models, json=None):
+def get_ids(obj):
+    """
+    Returns a list of all ids in the supplied object.  Useful for
+    determining if a json representation contains references to other
+    objects. Since only the references between objects are required
+    this allows determining whether a particular branch of the json
+    representation is required.
+    """
+    ids = []
+    if isinstance(obj, list):
+        ids = [get_ids(o) for o in obj]
+    elif isinstance(obj, dict):
+        ids = [(v,) if k == 'id' else get_ids(v)
+               for k, v in obj.items()]
+    return list(itertools.chain(*ids))
+
+
+def compute_static_patch(document, models):
     """
     Computes a patch to update an existing document without
     diffing the json first, making it suitable for static updates
     between arbitrary frames. Note that this only supports changed
     attributes and will break if new models have been added since
     the plot was first created.
-    """
-    references = refs(json if json else document.to_json())
-    requested_updates = [m.ref['id'] for m in models]
 
+    A static patch consists of two components:
+
+    1) The events: Contain references to particular model attributes
+       along with the updated value.
+    2) The references: Contain a list of all references required to
+       resolve the update events.
+
+    This function cleans up the events and references that are sent
+    to ensure that only the data that is required is sent. It does so
+    by a) filtering the events and references for the models that have
+    been requested to be updated and b) cleaning up the references to
+    ensure that only the references between objects are sent without
+    duplicating any of the data.
+    """
+    references = refs(document.to_json())
+    model_ids = [m.ref['id'] for m in models]
+
+    requested_updates = []
     value_refs = {}
     events = []
     update_types = defaultdict(list)
     for ref_id, obj in references.items():
-        if ref_id not in requested_updates:
+        if ref_id in model_ids:
+            requested_updates += get_ids(obj)
+        else:
             continue
         if obj['type'] in MODEL_PRIORITY:
             priority = MODEL_PRIORITY.index(obj['type'])
@@ -203,38 +237,36 @@ def compute_static_patch(document, models, json=None):
                                                          value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [delete_refs(e, LOCATIONS, IGNORED_MODELS)
+    events = [delete_refs(e, IGNORED_MODELS)
               for _, e in sorted(events, key=lambda x: x[0])]
-    value_refs = {ref_id: delete_refs(val, LOCATIONS, IGNORED_MODELS)
+    events = [e for e in events if all(i in requested_updates for i in get_ids(e))]
+    value_refs = {ref_id: delete_refs(val, IGNORED_MODELS, IGNORED_ATTRIBUTES)
                   for ref_id, val in value_refs.items()}
     references = [val for val in value_refs.values()
-                  if val is not None]
+                  if val not in [None, {}]]
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, locs, delete):
+def delete_refs(obj, models=[], attributes=[]):
     """
-    Delete all references to specific model types by recursively
-    traversing the object and looking for the models to be deleted in
-    the supplied locations.
-
-    Note: Can be deleted once bokeh stops raising errors when updating
-          LinearAxis.computed_bounds
+    Recursively traverses the object and looks for models and model
+    attributes to be deleted.
     """
     if isinstance(obj, dict):
-        if 'type' in obj and obj['type'] in delete:
+        if 'type' in obj and obj['type'] in models:
             return None
         new_obj = {}
         for k, v in list(obj.items()):
-            if k in locs:
-                ref = delete_refs(v, locs, delete)
-                if ref is not None:
-                    new_obj[k] = ref
-            else:
-              new_obj[k] = v
+            # Drop unneccessary attributes, i.e. those that do not
+            # contain references to other objects.
+            if k in attributes or (k == 'attributes' and not get_ids(v)):
+                continue
+            ref = delete_refs(v, models, attributes)
+            if ref is not None:
+                new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, locs, delete) for v in obj]
+        objs = [delete_refs(v, models, attributes) for v in obj]
         return [o for o in objs if o is not None]
     else:
         return obj
