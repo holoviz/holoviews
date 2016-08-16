@@ -547,9 +547,8 @@ class GenericElementPlot(DimensionedPlot):
         spec = util.get_overlay_spec(overlay, key, el)
         try:
             return self.ordering.index(spec)
-        except IndexError:
-            if spec not in self.ordering:
-                self.ordering = util.layer_sort(self.hmap)
+        except ValueError:
+            self.ordering = sorted(self.ordering+[spec])
             return self.ordering.index(spec)
 
 
