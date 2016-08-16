@@ -852,11 +852,18 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
+            # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
-                idx = dynamic_update(self, subplot, k, element, items)
-                empty = idx is None
-                if not empty:
-                    _, el = items.pop(idx)
+                # In batched mode NdOverlay is passed to subplot directly
+                if self.batched:
+                    el = element
+                    empty = False
+                # If not batched get the Element matching the subplot
+                else:
+                    idx = dynamic_update(self, subplot, k, element, items)
+                    empty = idx is None
+                    if not empty:
+                        _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
         if isinstance(self.hmap, DynamicMap) and items:
