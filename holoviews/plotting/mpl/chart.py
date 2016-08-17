@@ -1,10 +1,12 @@
 from __future__ import unicode_literals
+
 from itertools import product
 
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib.dates import date2num
 
 import param
 
@@ -12,7 +14,7 @@ from ...core import OrderedDict
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges
+from ..util import compute_sizes, get_sideplot_ranges, dt64_to_dt
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -61,6 +63,14 @@ class CurvePlot(ChartPlot):
         ys = element.dimension_values(1)
         return (xs, ys), style, {}
 
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        xs, ys = plot_args
+        if xs.dtype.kind == 'M':
+            xs = np.array([date2num(dt64_to_dt(x)) for x in xs])
+            artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
+        else:
+            artist = ax.plot(xs, ys, **plot_kwargs)[0]
+        return {'artist': artist}
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
