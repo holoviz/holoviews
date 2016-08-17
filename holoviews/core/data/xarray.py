@@ -122,8 +122,8 @@ class XArrayInterface(GridInterface):
     def coords(cls, dataset, dim, ordered=False, expanded=False):
         if expanded:
             return util.expand_grid_coords(dataset, dim)
-        data = dataset.data[dim].data
-        if ordered and np.all(data[1:] < data[:-1]):
+        data = np.atleast_1d(dataset.data[dim].data)
+        if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
 
@@ -200,6 +200,14 @@ class XArrayInterface(GridInterface):
             else:
                 validated[k] = v
         data = dataset.data.sel(**validated)
+
+        # Restore constant dimensions
+        dropped = {d.name: np.atleast_1d(data[d.name])
+                   for d in dataset.kdims
+                   if not data[d.name].data.shape}
+        if dropped:
+            data = data.assign_coords(**dropped)
+
         indexed = cls.indexed(dataset, selection)
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
