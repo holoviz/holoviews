@@ -463,7 +463,7 @@ class Dataset(Element):
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
             return dim_obj.type
-        return self.interface.dimension_type(self, dim)
+        return self.interface.dimension_type(self, dim_obj)
 
 
     def dframe(self, dimensions=None):
