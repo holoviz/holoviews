@@ -1,4 +1,5 @@
 import math
+import datetime as dt
 
 from matplotlib import ticker
 from matplotlib import colors
@@ -302,6 +303,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
             coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            coords = [c.astype(dt.datetime) if isinstance(c, np.datetime64) else c
+                      for c in coords]
             valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
             if self.projection == '3d' or len(extents) == 6:
                 l, b, zmin, r, t, zmax = coords
