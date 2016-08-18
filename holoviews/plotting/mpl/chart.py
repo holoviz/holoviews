@@ -66,7 +66,6 @@ class CurvePlot(ChartPlot):
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
         if xs.dtype.kind == 'M':
-            xs = np.array([date2num(dt64_to_dt(x)) for x in xs])
             artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
         else:
             artist = ax.plot(xs, ys, **plot_kwargs)[0]
