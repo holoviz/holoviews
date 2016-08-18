@@ -493,13 +493,15 @@ class GridPlot(CompositePlot):
         yticks = [(plot_height/2)+(r*(plot_height+border_height)) for r in range(self.rows)]
 
         layout_axis.set_xticks(xticks)
-        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys)), dims[0]))
+        layout_axis.set_xticklabels([dims[0].pprint_value(l)
+                                     for l in sorted(set(dim1_keys))])
         for tick in layout_axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
 
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        layout_axis.set_yticklabels([ydim.pprint_value(l) if ydim else l
+                                     for l in sorted(set(dim2_keys))])
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
@@ -524,22 +526,6 @@ class GridPlot(CompositePlot):
             axis.spines[pos].set_visible(False)
 
         return layout_axis
-
-
-    def _process_ticklabels(self, labels, dim):
-        formatted_labels = []
-        for k in labels:
-            if dim and dim.value_format:
-                k = dim.value_format(k)
-            elif dim.type in dim.type_formatters:
-                formatter = dim.type_formatters[dim.type]
-                k = formatter % k
-            elif k is None:
-                k = ''
-            else:
-                k = str(k)
-            formatted_labels.append(k)
-        return formatted_labels
 
 
     def _adjust_subplots(self, axis, subaxes):
