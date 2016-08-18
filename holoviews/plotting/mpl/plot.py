@@ -262,9 +262,6 @@ class GridPlot(CompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
-    tick_format = param.String(default="%.2f", doc="""
-        Formatting string for the GridPlot ticklabels.""")
-
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis, supported options are
@@ -534,10 +531,13 @@ class GridPlot(CompositePlot):
         for k in labels:
             if dim and dim.value_format:
                 k = dim.value_format(k)
-            elif not isinstance(k, (str, type(None))):
-                k = self.tick_format % k
+            elif dim.type in dim.type_formatters:
+                formatter = dim.type_formatters[dim.type]
+                k = formatter % k
             elif k is None:
                 k = ''
+            else:
+                k = str(k)
             formatted_labels.append(k)
         return formatted_labels
 
