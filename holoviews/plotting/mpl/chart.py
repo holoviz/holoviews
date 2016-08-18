@@ -6,15 +6,15 @@ import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
-from matplotlib.dates import date2num
+from matplotlib.dates import date2num, DateFormatter
 
 import param
 
-from ...core import OrderedDict
+from ...core import OrderedDict, Dimension
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges, dt64_to_dt
+from ..util import compute_sizes, get_sideplot_ranges
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -61,7 +61,11 @@ class CurvePlot(ChartPlot):
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
-        return (xs, ys), style, {}
+        dims = element.dimensions()
+        if xs.dtype.kind == 'M':
+            dt_format = Dimension.type_formatters[np.datetime64]
+            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+        return (xs, ys), style, {'dimensions': dims}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args

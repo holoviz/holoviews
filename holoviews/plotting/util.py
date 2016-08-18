@@ -1,7 +1,5 @@
 from __future__ import unicode_literals
 
-from datetime import datetime as dt
-
 import numpy as np
 import param
 
@@ -272,10 +270,3 @@ def dim_axis_label(dimensions, separator=', '):
     if not isinstance(dimensions, list): dimensions = [dimensions]
     return separator.join([safe_unicode(d.pprint_label)
                            for d in dimensions])
-
-def dt64_to_dt(dt64):
-    """
-    Safely converts NumPy datetime64 to a datetime object.
-    """
-    ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
-    return dt.utcfromtimestamp(ts)
