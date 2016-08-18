@@ -174,7 +174,6 @@ class SpreadPlot(AreaPlot):
 
     def __init__(self, element, **params):
         super(SpreadPlot, self).__init__(element, **params)
-        self._extents = None
 
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
@@ -183,6 +182,17 @@ class SpreadPlot(AreaPlot):
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        neg_dim = vdims[1].name
+        pos_dim = vdims[2].name if len(vdims) > 2 else vdims[1].name
+        neg = np.max(np.abs(ranges[neg_dim]))
+        pos = np.max(np.abs(ranges[pos_dim]))
+        ranges[vdim] = (ranges[vdim][0]-neg, ranges[vdim][1]+pos)
+        return super(AreaPlot, self).get_extents(element, ranges)
+
 
 
 class HistogramPlot(ChartPlot):
