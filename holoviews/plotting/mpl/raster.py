@@ -379,8 +379,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _get_axis_kwargs(self):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-        xticks = (self._xticks, self._process_ticklabels(self._xkeys, xdim))
-        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
+        xticks = (self._xticks, [xdim.pprint_value(l) for l in self._xkeys])
+        yticks = (self._yticks, [ydim.pprint_value(l) if ydim else l
+                                 for l in self._ykeys])
         return dict(xlabel=xdim.pprint_label, ylabel=ydim.pprint_label if ydim else '',
                     xticks=xticks, yticks=yticks)
 
