@@ -191,7 +191,8 @@ class XArrayInterface(GridInterface):
             if isinstance(v, set):
                 validated[k] = list(v)
             elif isinstance(v, tuple):
-                validated[k] = slice(v[0], v[1]-sys.float_info.epsilon*10)
+                upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
+                validated[k] = slice(v[0], upper)
             elif isinstance(v, types.FunctionType):
                 validated[k] = v(dataset[k])
             else:
@@ -231,7 +232,9 @@ class XArrayInterface(GridInterface):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
-        return dataset.assign(**{dim: values})
+        arr = xr.DataArray(values, coords=dataset.data.coords, name=dim,
+                           dims=dataset.data.dims)
+        return dataset.data.assign(**{dim: arr})
 
 
 Interface.register(XArrayInterface)
