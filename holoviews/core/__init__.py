@@ -17,6 +17,7 @@ Dimension.type_formatters[int] = "%d"
 Dimension.type_formatters[float] = "%.5g"
 Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
+Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 
 
 def public(obj):

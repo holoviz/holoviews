@@ -262,9 +262,6 @@ class GridPlot(CompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
-    tick_format = param.String(default="%.2f", doc="""
-        Formatting string for the GridPlot ticklabels.""")
-
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis, supported options are
@@ -496,13 +493,15 @@ class GridPlot(CompositePlot):
         yticks = [(plot_height/2)+(r*(plot_height+border_height)) for r in range(self.rows)]
 
         layout_axis.set_xticks(xticks)
-        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys)), dims[0]))
+        layout_axis.set_xticklabels([dims[0].pprint_value(l)
+                                     for l in sorted(set(dim1_keys))])
         for tick in layout_axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
 
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        layout_axis.set_yticklabels([ydim.pprint_value(l) if ydim else ''
+                                     for l in sorted(set(dim2_keys))])
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
@@ -527,19 +526,6 @@ class GridPlot(CompositePlot):
             axis.spines[pos].set_visible(False)
 
         return layout_axis
-
-
-    def _process_ticklabels(self, labels, dim):
-        formatted_labels = []
-        for k in labels:
-            if dim and dim.value_format:
-                k = dim.value_format(k)
-            elif not isinstance(k, (str, type(None))):
-                k = self.tick_format % k
-            elif k is None:
-                k = ''
-            formatted_labels.append(k)
-        return formatted_labels
 
 
     def _adjust_subplots(self, axis, subaxes):

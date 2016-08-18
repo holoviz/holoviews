@@ -1,10 +1,11 @@
 import math
 
+import param
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib import colors
-import matplotlib.pyplot as plt
-import numpy as np
-import param
+from matplotlib.dates import date2num
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
@@ -301,7 +302,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         scalex, scaley = True, True
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
-            coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+            coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
+                      for c in coords]
             valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
             if self.projection == '3d' or len(extents) == 6:
                 l, b, zmin, r, t, zmax = coords

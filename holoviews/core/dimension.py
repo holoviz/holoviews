@@ -5,6 +5,7 @@ baseclass for classes that accept Dimension values.
 """
 from __future__ import unicode_literals
 import re
+import datetime as dt
 from operator import itemgetter
 
 import numpy as np
@@ -13,7 +14,7 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         safe_unicode, unicode)
+                         safe_unicode, unicode, dt64_to_dt)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -178,7 +179,11 @@ class Dimension(param.Parameterized):
             if callable(formatter):
                 return formatter(value)
             elif isinstance(formatter, basestring):
-                if re.findall(r"\{(\w+)\}", formatter):
+                if isinstance(value, dt.datetime):
+                    return value.strftime(formatter)
+                elif isinstance(value, np.datetime64):
+                    return dt64_to_dt(value).strftime(formatter)
+                elif re.findall(r"\{(\w+)\}", formatter):
                     return formatter.format(value)
                 else:
                     return formatter % value

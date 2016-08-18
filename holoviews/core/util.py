@@ -3,6 +3,7 @@ import numbers
 import itertools
 import string, fnmatch
 import unicodedata
+import datetime as dt
 from collections import defaultdict
 
 import numpy as np
@@ -917,3 +918,10 @@ def expand_grid_coords(dataset, dim):
     idx = dataset.get_dimension_index(dim)
     return cartesian_product(arrays)[idx]
 
+
+def dt64_to_dt(dt64):
+    """
+    Safely converts NumPy datetime64 to a datetime object.
+    """
+    ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+    return dt.datetime.utcfromtimestamp(ts)

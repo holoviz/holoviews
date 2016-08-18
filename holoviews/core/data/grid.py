@@ -84,10 +84,8 @@ class GridInterface(DictInterface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        if dim in dataset.kdims:
-            arr = dataset.data[dim.name]
-        elif dim in dataset.vdims:
-            arr = dataset.data[dim.name]
+        if dim in dataset.dimensions():
+            arr = cls.values(dataset, dim, False, False)
         else:
             return None
         return arr.dtype.type
