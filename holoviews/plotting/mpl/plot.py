@@ -500,7 +500,7 @@ class GridPlot(CompositePlot):
 
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels([ydim.pprint_value(l) if ydim else l
+        layout_axis.set_yticklabels([ydim.pprint_value(l) if ydim else ''
                                      for l in sorted(set(dim2_keys))])
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
