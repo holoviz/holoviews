@@ -108,9 +108,10 @@ class GridInterface(DictInterface):
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
+        dim = dataset.get_dimension(dim)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
-        data = dataset.data[dim]
+        data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
