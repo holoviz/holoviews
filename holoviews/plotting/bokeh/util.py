@@ -40,7 +40,7 @@ markers = {'s': {'marker': 'square'},
 # Should only include models that have no direct effect on the display
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
-IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis',
+IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
                   'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
                   'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
 
