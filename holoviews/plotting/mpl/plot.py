@@ -698,7 +698,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       (left, bottom, right, top), defining the size of the border
       around the subplots.""")
 
-    fix_aspect = param.Boolean(default=False, doc="""Apply a fix to the
+    fix_aspect = param.Boolean(default=True, doc="""Apply a fix to the
       figure aspect to take into account non-square plots (will be the
       default in future versions""")
 
@@ -713,7 +713,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vspace = param.Number(default=0.1, doc="""
+    vspace = param.Number(default=0.25, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
