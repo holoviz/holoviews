@@ -111,8 +111,8 @@ def fix_aspect(fig, title=None, extra_artists=[], vspace=0.2, hspace=0.2):
             bbox = ax.get_tightbbox(fig.canvas.renderer)
             heights[c].append(bbox.height)
             widths[r].append(bbox.width)
-    height = (max([sum(c) for c in heights])) + (rs)*vspace
-    width = (max([sum(r) for r in widths])) + (cs)*hspace
+    height = (max([sum(c) for c in heights])) + (rs)*vspace*fig.dpi
+    width = (max([sum(r) for r in widths])) + (cs)*hspace*fig.dpi
 
     # Compute aspect and set new size (in inches)
     aspect = height/width
