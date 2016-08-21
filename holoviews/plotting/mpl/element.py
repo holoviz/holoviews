@@ -553,21 +553,23 @@ class ColorbarPlot(ElementPlot):
 
 
     def _finalize_artist(self, key):
-        element = self.hmap.last
         artist = self.handles.get('artist', None)
         if artist and self.colorbar:
-            self._draw_colorbar(artist, element)
+            self._draw_colorbar()
 
 
-    def _draw_colorbar(self, artist, element, dim=None):
+    def _draw_colorbar(self, dim=None, redraw=True):
+        element = self.hmap.last
+        artist = self.handles.get('artist', None)
         fig = self.handles['fig']
         axis = self.handles['axis']
         ax_colorbars, position = ColorbarPlot._colorbars.get(id(axis), ([], None))
         specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
         spec = util.get_spec(element)
 
-        if position is None:
-            fig.canvas.draw()
+        if position is None or not redraw:
+            if redraw:
+                fig.canvas.draw()
             bbox = axis.get_position()
             l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
         else:
@@ -594,7 +596,7 @@ class ColorbarPlot(ElementPlot):
             self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
             scaled_w = w*width
             cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
                               b, scaled_w, h])
