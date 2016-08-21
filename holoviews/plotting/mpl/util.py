@@ -111,8 +111,8 @@ def fix_aspect(fig, title=None, extra_artists=[], vspace=0.2, hspace=0.2):
             bbox = ax.get_tightbbox(fig.canvas.renderer)
             heights[c].append(bbox.height)
             widths[r].append(bbox.width)
-    height = (max([sum(c) for c in heights])) + (rs)*vspace*fig.dpi
-    width = (max([sum(r) for r in widths])) + (cs)*hspace*fig.dpi
+    height = (max([sum(c) for c in heights])) + (rs-1)*vspace*fig.dpi
+    width = (max([sum(r) for r in widths])) + (cs-1)*hspace*fig.dpi
 
     # Compute aspect and set new size (in inches)
     aspect = height/width
@@ -124,9 +124,10 @@ def fix_aspect(fig, title=None, extra_artists=[], vspace=0.2, hspace=0.2):
     # Redraw and adjust title position if defined
     fig.canvas.draw()
     if title and title.get_text():
+        extra_artists = [a for a in extra_artists
+                         if a is not title]
         bbox = get_tight_bbox(fig, extra_artists)
         top = bbox.intervaly[1]
-        extra_artists = [a for a in extra_artists if a is not title]
         if title and title.get_text():
             title.set_y((top/(w*aspect)))
 
