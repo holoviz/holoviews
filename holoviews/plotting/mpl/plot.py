@@ -56,7 +56,7 @@ class MPLPlot(DimensionedPlot):
     fig_rcparams = param.Dict(default={}, doc="""
         matplotlib rc parameters to apply to the overall figure.""")
 
-    fig_size = param.Integer(default=100, bounds=(1, None), doc="""
+    fig_size = param.Number(default=100., bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
     initial_hooks = param.HookList(default=[], doc="""
@@ -99,12 +99,12 @@ class MPLPlot(DimensionedPlot):
         self._create_fig = True
         super(MPLPlot, self).__init__(**params)
         # List of handles to matplotlib objects for animation update
-        scale = self.fig_size/100.
+        self.fig_scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
-            self.fig_inches = [None if i is None else i*scale
+            self.fig_inches = [None if i is None else i*self.fig_scale
                                for i in self.fig_inches]
         else:
-            self.fig_inches *= scale
+            self.fig_inches *= self.fig_scale
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
@@ -1045,8 +1045,9 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
             extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
                                          if artists is not None]))
-            aspect = fix_aspect(fig, title, extra_artists, vspace=self.vspace,
-                                hspace=self.hspace)
+            aspect = fix_aspect(fig, title, extra_artists,
+                                vspace=self.vspace*self.fig_scale,
+                                hspace=self.hspace*self.fig_scale)
             colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])
             for cbar_plot in colorbars:
                 if cbar_plot.colorbar:
