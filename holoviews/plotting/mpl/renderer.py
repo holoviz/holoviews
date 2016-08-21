@@ -19,6 +19,7 @@ from ...core.options import Store
 
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
+from .util import get_tight_bbox
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -233,34 +234,9 @@ class MPLRenderer(Renderer):
             if not fig_id in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
-                renderer = fig._cachedRenderer
-                bbox_inches = fig.get_tightbbox(renderer)
-                bbox_artists = kw.pop("bbox_extra_artists", [])
-                bbox_artists += fig.get_default_bbox_extra_artists()
-                bbox_filtered = []
-                for a in bbox_artists:
-                    bbox = a.get_window_extent(renderer)
-                    if isinstance(bbox, tuple):
-                        continue
-                    if a.get_clip_on():
-                        clip_box = a.get_clip_box()
-                        if clip_box is not None:
-                            bbox = Bbox.intersection(bbox, clip_box)
-                        clip_path = a.get_clip_path()
-                        if clip_path is not None and bbox is not None:
-                            clip_path = clip_path.get_fully_transformed_path()
-                            bbox = Bbox.intersection(bbox,
-                                                     clip_path.get_extents())
-                    if bbox is not None and (bbox.width != 0 or
-                                             bbox.height != 0):
-                        bbox_filtered.append(bbox)
-                if bbox_filtered:
-                    _bbox = Bbox.union(bbox_filtered)
-                    trans = Affine2D().scale(1.0 / self.dpi)
-                    bbox_extra = TransformedBbox(_bbox, trans)
-                    bbox_inches = Bbox.union([bbox_inches, bbox_extra])
+                extra_artists = kw.pop("bbox_extra_artists", [])
                 pad = plt.rcParams['savefig.pad_inches']
-                bbox_inches = bbox_inches.padded(pad)
+                bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
                 MPLRenderer.drawn[fig_id] = bbox_inches
                 kw['bbox_inches'] = bbox_inches
             else:

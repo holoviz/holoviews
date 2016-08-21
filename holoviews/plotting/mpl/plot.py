@@ -1,5 +1,7 @@
 from __future__ import division
 
+from itertools import chain
+
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
@@ -15,7 +17,7 @@ from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import MPLRenderer
-from .util import compute_ratios
+from .util import compute_ratios, fix_aspect
 
 
 class MPLPlot(DimensionedPlot):
@@ -617,7 +619,7 @@ class AdjointLayoutPlot(CompositePlot):
         self.drawn = True
 
 
-    def adjust_positions(self):
+    def adjust_positions(self, redraw=True):
         """
         Make adjustments to the positions of subplots (if available)
         relative to the main plot axes as required.
@@ -631,7 +633,8 @@ class AdjointLayoutPlot(CompositePlot):
         top = all('top' in check for check in checks)
         if not 'main' in self.subplots or not (top or right):
             return
-        self.handles['fig'].canvas.draw()
+        if redraw:
+            self.handles['fig'].canvas.draw()
         main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if right:
@@ -695,6 +698,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       (left, bottom, right, top), defining the size of the border
       around the subplots.""")
 
+    fix_aspect = param.Boolean(default=False, doc="""Apply a fix to the
+      figure aspect to take into account non-square plots (will be the
+      default in future versions""")
+
     tight = param.Boolean(default=False, doc="""
       Tightly fit the axes in the layout within the fig_bounds
       and tight_padding.""")
@@ -706,7 +713,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vspace = param.Number(default=0.1, doc="""
+    vspace = param.Number(default=0.3, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
@@ -1025,12 +1032,28 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             subplot.initialize_plot(ranges=ranges)
 
         # Create title handle
+        title = None
         if self.show_title and len(self.coords) > 1:
             title = self._format_title(key)
             title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
             self.handles['title'] = title
             self.handles['bbox_extra_artists'] += [title]
 
+        fig = self.handles['fig']
+        if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
+            and self.fix_aspect):
+            traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
+                                         if artists is not None]))
+            aspect = fix_aspect(fig, title, extra_artists, vspace=self.vspace,
+                                hspace=self.hspace)
+            colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])
+            for cbar_plot in colorbars:
+                if cbar_plot.colorbar:
+                    cbar_plot._draw_colorbar(redraw=False)
+            adjoined = self.traverse(specs=[AdjointLayoutPlot])
+            for adjoined in adjoined:
+                adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)
 
 
