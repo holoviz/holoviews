@@ -1032,12 +1032,12 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             subplot.initialize_plot(ranges=ranges)
 
         # Create title handle
-        title = None
-        if self.show_title and len(self.coords) > 1:
-            title = self._format_title(key)
-            title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
-            self.handles['title'] = title
-            self.handles['bbox_extra_artists'] += [title]
+        title_obj = None
+        title = self._format_title(key)
+        if self.show_title and len(self.coords) > 1 and title:
+            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            self.handles['title'] = title_obj
+            self.handles['bbox_extra_artists'] += [title_obj]
 
         fig = self.handles['fig']
         if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
@@ -1045,7 +1045,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
             extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
                                          if artists is not None]))
-            aspect = fix_aspect(fig, title, extra_artists,
+            aspect = fix_aspect(fig, self.rows, self.cols,
+                                title_obj, extra_artists,
                                 vspace=self.vspace*self.fig_scale,
                                 hspace=self.hspace*self.fig_scale)
             colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])

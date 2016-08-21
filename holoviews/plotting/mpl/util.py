@@ -93,7 +93,8 @@ def resolve_rows(rows):
         return resolve_rows(merged_rows)
 
 
-def fix_aspect(fig, title=None, extra_artists=[], vspace=0.2, hspace=0.2):
+def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
+               vspace=0.2, hspace=0.2):
     """
     Calculate heights and widths of axes and adjust
     the size of the figure to match the aspect.
@@ -111,8 +112,8 @@ def fix_aspect(fig, title=None, extra_artists=[], vspace=0.2, hspace=0.2):
             bbox = ax.get_tightbbox(fig.canvas.renderer)
             heights[c].append(bbox.height)
             widths[r].append(bbox.width)
-    height = (max([sum(c) for c in heights])) + (rs-1)*vspace*fig.dpi
-    width = (max([sum(r) for r in widths])) + (cs-1)*hspace*fig.dpi
+    height = (max([sum(c) for c in heights])) + nrows*vspace*fig.dpi
+    width = (max([sum(r) for r in widths])) + ncols*hspace*fig.dpi
 
     # Compute aspect and set new size (in inches)
     aspect = height/width
