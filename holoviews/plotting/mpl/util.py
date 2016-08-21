@@ -67,7 +67,7 @@ def axis_overlap(ax1, ax2):
     """
     b1, t1 = ax1.get_position().intervaly
     b2, t2 = ax2.get_position().intervaly
-    return t1 >= b2 and b1 <= t2
+    return t1 > b2 and b1 < t2
 
 
 def resolve_rows(rows):
