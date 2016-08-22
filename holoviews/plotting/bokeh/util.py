@@ -45,7 +45,7 @@ IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatte
                   'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
 
 # List of attributes that can safely be dropped from the references
-IGNORED_ATTRIBUTES = ['data', 'palette']
+IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
@@ -189,7 +189,7 @@ def get_ids(obj):
         ids = [get_ids(o) for o in obj]
     elif isinstance(obj, dict):
         ids = [(v,) if k == 'id' else get_ids(v)
-               for k, v in obj.items()]
+               for k, v in obj.items() if not k in IGNORED_ATTRIBUTES]
     return list(itertools.chain(*ids))
 
 
@@ -239,7 +239,8 @@ def compute_static_patch(document, models):
             update_types[obj['type']].append(key)
     events = [delete_refs(e, IGNORED_MODELS)
               for _, e in sorted(events, key=lambda x: x[0])]
-    events = [e for e in events if all(i in requested_updates for i in get_ids(e))]
+    events = [e for e in events if all(i in requested_updates for i in get_ids(e))
+              if 'new' in e]
     value_refs = {ref_id: delete_refs(val, IGNORED_MODELS, IGNORED_ATTRIBUTES)
                   for ref_id, val in value_refs.items()}
     references = [val for val in value_refs.values()
