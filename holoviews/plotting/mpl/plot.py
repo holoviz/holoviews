@@ -698,10 +698,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       (left, bottom, right, top), defining the size of the border
       around the subplots.""")
 
-    fix_aspect = param.Boolean(default=True, doc="""Apply a fix to the
-      figure aspect to take into account non-square plots (will be the
-      default in future versions""")
-
     tight = param.Boolean(default=False, doc="""
       Tightly fit the axes in the layout within the fig_bounds
       and tight_padding.""")
@@ -713,11 +709,16 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vspace = param.Number(default=0.3, doc="""
+    vspace = param.Number(default=0.1, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
+
+    # Whether to enable fix for non-square figures
+    # Will be enabled by default in v1.7
+    # If enabled default vspace should be increased to 0.3
+    v17_layout_format = False
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout=layout, **params)
@@ -1041,7 +1042,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
         fig = self.handles['fig']
         if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
-            and self.fix_aspect):
+            and self.v17_layout_format):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
             extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
                                          if artists is not None]))
