@@ -26,9 +26,11 @@ optimizations for bokeh.
   <https://github.com/ioam/holoviews/pull/826>`_). Disabled by default
   until 1.7 release but can be enabled with::
 
-	from holoviews.plotting.mpl import LayoutPlot
-	LayoutPlot.v17_layout_format = True
-	LayoutPlot.vspace = 0.3
+.. code-block:: python
+
+   from holoviews.plotting.mpl import LayoutPlot
+   LayoutPlot.v17_layout_format = True
+   LayoutPlot.vspace = 0.3
 
 
 Version 1.6.1
