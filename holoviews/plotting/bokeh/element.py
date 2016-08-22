@@ -576,15 +576,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.static and not self.dynamic:
             return handles
 
+        previous_id = self.handles.get('previous_id', None)
+        current_id = id(self.current_frame)
         for handle in self._update_handles:
             if (handle == 'source' and self.dynamic and
-                self.current_frame is self.handles.get('previous_frame', None)):
+                current_id == previous_id):
                 continue
             if handle in self.handles:
                 handles.append(self.handles[handle])
 
+        # Cache frame object id to skip updating if unchanged
         if self.dynamic:
-            self.handles['previous_frame'] = self.current_frame
+            self.handles['previous_id'] = current_id
 
         if self.overlaid:
             return handles
