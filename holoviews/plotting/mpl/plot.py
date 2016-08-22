@@ -1,5 +1,7 @@
 from __future__ import division
 
+from itertools import chain
+
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
@@ -15,7 +17,7 @@ from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import MPLRenderer
-from .util import compute_ratios
+from .util import compute_ratios, fix_aspect
 
 
 class MPLPlot(DimensionedPlot):
@@ -54,7 +56,7 @@ class MPLPlot(DimensionedPlot):
     fig_rcparams = param.Dict(default={}, doc="""
         matplotlib rc parameters to apply to the overall figure.""")
 
-    fig_size = param.Integer(default=100, bounds=(1, None), doc="""
+    fig_size = param.Number(default=100., bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
     initial_hooks = param.HookList(default=[], doc="""
@@ -97,12 +99,12 @@ class MPLPlot(DimensionedPlot):
         self._create_fig = True
         super(MPLPlot, self).__init__(**params)
         # List of handles to matplotlib objects for animation update
-        scale = self.fig_size/100.
+        self.fig_scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
-            self.fig_inches = [None if i is None else i*scale
+            self.fig_inches = [None if i is None else i*self.fig_scale
                                for i in self.fig_inches]
         else:
-            self.fig_inches *= scale
+            self.fig_inches *= self.fig_scale
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
@@ -617,7 +619,7 @@ class AdjointLayoutPlot(CompositePlot):
         self.drawn = True
 
 
-    def adjust_positions(self):
+    def adjust_positions(self, redraw=True):
         """
         Make adjustments to the positions of subplots (if available)
         relative to the main plot axes as required.
@@ -631,7 +633,8 @@ class AdjointLayoutPlot(CompositePlot):
         top = all('top' in check for check in checks)
         if not 'main' in self.subplots or not (top or right):
             return
-        self.handles['fig'].canvas.draw()
+        if redraw:
+            self.handles['fig'].canvas.draw()
         main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if right:
@@ -711,6 +714,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Default value is set conservatively to avoid overlap of subplots.""")
 
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
+
+    # Whether to enable fix for non-square figures
+    # Will be enabled by default in v1.7
+    # If enabled default vspace should be increased to 0.3
+    v17_layout_format = False
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout=layout, **params)
@@ -1025,12 +1033,30 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             subplot.initialize_plot(ranges=ranges)
 
         # Create title handle
-        if self.show_title and len(self.coords) > 1:
-            title = self._format_title(key)
-            title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
-            self.handles['title'] = title
-            self.handles['bbox_extra_artists'] += [title]
+        title_obj = None
+        title = self._format_title(key)
+        if self.show_title and len(self.coords) > 1 and title:
+            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            self.handles['title'] = title_obj
+            self.handles['bbox_extra_artists'] += [title_obj]
 
+        fig = self.handles['fig']
+        if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
+            and self.v17_layout_format):
+            traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
+                                         if artists is not None]))
+            aspect = fix_aspect(fig, self.rows, self.cols,
+                                title_obj, extra_artists,
+                                vspace=self.vspace*self.fig_scale,
+                                hspace=self.hspace*self.fig_scale)
+            colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])
+            for cbar_plot in colorbars:
+                if cbar_plot.colorbar:
+                    cbar_plot._draw_colorbar(redraw=False)
+            adjoined = self.traverse(specs=[AdjointLayoutPlot])
+            for adjoined in adjoined:
+                adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)
 
 

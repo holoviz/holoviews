@@ -84,7 +84,10 @@ class Plot3D(ColorbarPlot):
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
-    def _draw_colorbar(self, artist, element, dim=None):
+    def _draw_colorbar(self, dim=None):
+        element = self.hmap.last
+        artist = self.handles.get('artist', None)
+
         fig = self.handles['fig']
         ax = self.handles['axis']
         # Get colorbar label
