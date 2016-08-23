@@ -559,6 +559,8 @@ class GenericElementPlot(DimensionedPlot):
         elif self.dynamic:
             key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             if not isinstance(key, tuple): key = (key,)
+            key_map = dict(zip([d.name for d in self.hmap.kdims], key))
+            key = tuple(key_map.get(d.name, None) for d in self.dimensions)
             if not key in self.keys:
                 self.keys.append(key)
             self.current_frame = frame
