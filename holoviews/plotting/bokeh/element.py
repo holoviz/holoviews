@@ -577,7 +577,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return handles
 
         previous_id = self.handles.get('previous_id', None)
-        current_id = id(self.current_frame)
+        current_id = id(self.current_frame.data)
         for handle in self._update_handles:
             if (handle == 'source' and self.dynamic and
                 current_id == previous_id):
