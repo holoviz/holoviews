@@ -33,7 +33,7 @@ class PointPlot(ElementPlot):
       Determines whether the `scaling_factor` should be applied to
       the width or area of each point (default: "area").""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
 
@@ -65,7 +65,10 @@ class PointPlot(ElementPlot):
             else:
                 cmap = get_cmap(cmap)
                 colors = element.dimension_values(self.color_index)
-                crange = ranges.get(cdim.name, element.range(cdim.name))
+                if colors.dtype.kind in 'if':
+                    crange = ranges.get(cdim.name, element.range(cdim.name))
+                else:
+                    crange = np.unique(colors)
                 data[map_key] = map_colors(colors, crange, cmap)
 
         sdim = element.get_dimension(self.size_index)

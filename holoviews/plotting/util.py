@@ -248,12 +248,17 @@ def map_colors(arr, crange, cmap, hex=True):
     Maps an array of values to RGB hex strings, given
     a color range and colormap.
     """
-    if crange:
-        cmin, cmax = crange
+    if isinstance(crange, np.ndarray):
+        xsorted = np.argsort(crange)
+        ypos = np.searchsorted(crange[xsorted], arr)
+        arr = xsorted[ypos]
     else:
-        cmin, cmax = np.nanmin(arr), np.nanmax(arr)
-    arr = (arr - cmin) / (cmax-cmin)
-    arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
+        if isinstance(crange, tuple):
+            cmin, cmax = crange
+        else:
+            cmin, cmax = np.nanmin(arr), np.nanmax(arr)
+        arr = (arr - cmin) / (cmax-cmin)
+        arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
     arr = cmap(arr)
     if hex:
         arr *= 255

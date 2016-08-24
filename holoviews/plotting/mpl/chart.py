@@ -14,7 +14,7 @@ from ...core import OrderedDict, Dimension
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges
+from ..util import compute_sizes, get_sideplot_ranges, map_colors
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -493,7 +493,15 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         if cdim:
             cs = element.dimension_values(self.color_index)
-            style['c'] = cs
+            # Check if numeric otherwise treat as categorical
+            if cs.dtype.kind in 'if':
+                crange = ranges.get(cdim.name, element.range(cdim.name))
+                style['c'] = cs
+            else:
+                categories = np.unique(cs)
+                xsorted = np.argsort(categories)
+                ypos = np.searchsorted(categories[xsorted], cs)
+                style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
         elif color:
             style['c'] = color
