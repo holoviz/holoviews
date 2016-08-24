@@ -613,7 +613,7 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop('clims', None)
         if clim is None:
             cs = element.dimension_values(vdim)
-            if cs and cs.dtype.kind in 'if':
+            if len(cs) and cs.dtype.kind in 'if':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
