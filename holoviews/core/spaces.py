@@ -556,8 +556,10 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'generator':
             retval = next(self.callback)
         else:
-            retval = self.callback(*args)
-
+            # Additional validation needed to ensure kwargs don't clash
+            kwarg_items = [s.value.items() for s in self.streams]
+            flattened = [el for kws in kwarg_items for el in kws]
+            retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
 
