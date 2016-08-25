@@ -71,3 +71,27 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
+class MouseX(Stream):
+
+    x = param.Number(default=0)
+
+    def __init__(self, mapping=None, **params):
+        super(MouseX, self).__init__(mapping=mapping, **params)
+
+
+class MouseY(Stream):
+
+    y = param.Number(default=0)
+
+    def __init__(self, mapping=None, **params):
+        super(MouseY, self).__init__(mapping=mapping, **params)
+
+
+class MouseXY(Stream):
+
+    x = param.Number(default=0)
+
+    y = param.Number(default=0)
+
+    def __init__(self, mapping=None, **params):
+        super(MouseXY, self).__init__(mapping=mapping, **params)
