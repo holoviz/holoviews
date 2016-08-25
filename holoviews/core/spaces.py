@@ -436,6 +436,15 @@ class DynamicMap(HoloMap):
         simulation time across the layout).
     """)
 
+    streams = param.List(default=[], doc="""
+       List of Stream instances to associate with the DynamicMap. The
+       set of parameter values across these streams will be supplied as
+       keyword arguments to the callback when the events are received,
+       updating the streams.
+
+       Note that streams may only be used with callable callbacks (i.e
+       not generators).""" )
+
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
        cache where the least recently used item is overwritten once
