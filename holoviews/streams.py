@@ -14,8 +14,8 @@ class Stream(param.Parameterized):
 
     def update(self, params):
         self.set_param(**params)
-        for callback in self.callbacks + self._hidden_callbacks:
-            callback(params)
+        for subscriber in self.subscribers + self._hidden_subscribers:
+            subscriber(params)
 
     @classmethod
     def find(cls, obj):
@@ -24,7 +24,7 @@ class Stream(param.Parameterized):
         """
         return set(v for v in cls.registry.values() if v.source is obj)
 
-    def __init__(self, mapping=None, source=None, callbacks=[], **params):
+    def __init__(self, mapping=None, source=None, subscribers=[], **params):
         """
         Mapping allows multiple streams with similar event state to be
         used by remapping parameter names.
@@ -34,8 +34,8 @@ class Stream(param.Parameterized):
         by the plotting backend.
         """
         self.source = source
-        self.callbacks = callbacks
-        self._hidden_callbacks = []
+        self.subscribers = subscribers
+        self._hidden_subscribers = []
 
         if mapping is None:
             self.mapping = {}
