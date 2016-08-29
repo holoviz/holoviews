@@ -149,7 +149,7 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj):
+    def get_plot(self_or_cls, obj, renderer=None):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -170,10 +170,12 @@ class Renderer(Exporter):
                 except StopIteration: # Exhausted DynamicMap
                     raise SkipRendering("DynamicMap generator exhausted.")
 
+        if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
-            plot = self_or_cls.plotting_class(obj)(obj, **plot_opts)
+            plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
+                                                   **plot_opts)
             plot.update(0)
         else:
             plot = obj
@@ -187,7 +189,7 @@ class Renderer(Exporter):
         """
         if isinstance(obj, tuple(self.widgets.values())):
             return obj, 'html'
-        plot = self.get_plot(obj)
+        plot = self.get_plot(obj, renderer=self)
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]

@@ -42,7 +42,7 @@ class BokehPlot(DimensionedPlot):
         The formatting string for the title of this plot, allows defining
         a label group separator and dimension labels.""")
 
-    renderer = BokehRenderer
+    backend = 'bokeh'
 
     @property
     def document(self):

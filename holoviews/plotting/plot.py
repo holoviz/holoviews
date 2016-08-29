@@ -68,12 +68,12 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         try:
-            plot_class = cls.renderer.plotting_class(obj)
+            plot_class = Store.renderers[cls.backend].plotting_class(obj)
             style_opts = plot_class.style_opts
         except SkipRendering:
             style_opts = None
 
-        node = Store.lookup_options(cls.renderer.backend, obj, group)
+        node = Store.lookup_options(cls.backend, obj, group)
         if group == 'style' and style_opts:
             return node.filtered(style_opts)
         else:
@@ -178,7 +178,7 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -195,6 +195,8 @@ class DimensionedPlot(Plot):
         self.current_frame = None
         self.current_key = None
         self.ranges = {}
+        self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
+
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -420,7 +422,7 @@ class DimensionedPlot(Plot):
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
             if opt_type == 'plot' and defaults:
-                plot = Store.registry[cls.renderer.backend].get(type(x))
+                plot = Store.registry[cls.backend].get(type(x))
                 selected['defaults'] = {o: getattr(plot, o) for o in opts
                                         if o not in selected and hasattr(plot, o)}
             key = keyfn(x) if keyfn else None

@@ -16,7 +16,6 @@ from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
-from .renderer import MPLRenderer
 from .util import compute_ratios, fix_aspect
 
 
@@ -30,7 +29,8 @@ class MPLPlot(DimensionedPlot):
     via the anim() method.
     """
 
-    renderer = MPLRenderer
+    backend = 'matplotlib'
+
     sideplots = {}
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
