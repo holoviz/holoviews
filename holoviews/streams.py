@@ -24,6 +24,14 @@ class Stream(param.Parameterized):
 
     @classmethod
     def trigger(cls, streams):
+        """
+        Given a list of streams, collect all the stream parameters into
+        a dictionary and pass it to the union set of subscribers.
+
+        Passing multiple streams at once to trigger can be useful when a
+        subscriber may be set multiple times across streams but only
+        needs to be called once.
+        """
         # Union of stream values
         union = dict(stream.value.items() for stream in streams)
         # Currently building a simple set of subscribers
