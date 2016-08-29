@@ -24,7 +24,13 @@ class Stream(param.Parameterized):
 
     @classmethod
     def trigger(cls, streams):
-        pass
+        # Union of stream values
+        union = dict(stream.value.items() for stream in streams)
+        # Currently building a simple set of subscribers
+        groups = [stream.subscribers + stream._hidden_subscribers for stream in streams]
+        subscribers = set(s for subscribers in groups for s in subscribers)
+        for subscriber in subscribers:
+            subscriber(union)
 
     def update(self, params, trigger=True):
         """
