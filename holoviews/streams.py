@@ -107,6 +107,12 @@ class Stream(param.Parameterized):
 
 
 class PositionX(Stream):
+    """
+    A position along the x-axis in data coordinates.
+
+    With the appropriate plotting backend, this may correspond to the
+    position of the mouse/trackpad cursor.
+    """
 
     x = param.Number(default=0)
 
@@ -115,6 +121,12 @@ class PositionX(Stream):
 
 
 class PositionY(Stream):
+    """
+    A position along the y-axis in data coordinates.
+
+    With the appropriate plotting backend, this may correspond to the
+    position of the mouse/trackpad cursor.
+    """
 
     y = param.Number(default=0)
 
@@ -123,6 +135,13 @@ class PositionY(Stream):
 
 
 class PositionXY(Stream):
+    """
+    A position along the x- and y-axes in data coordinates.
+
+    With the appropriate plotting backend, this may correspond to the
+    position of the mouse/trackpad cursor.
+    """
+
 
     x = param.Number(default=0)
 
