@@ -1,9 +1,23 @@
+"""
+The streams module defines the streams API that allows visualizations to
+generate and respond to events, originating either in Python on the
+server-side or in Javascript in the Jupyter notebook (client-side).
+"""
+
 import param
 import uuid
 from collections import OrderedDict
 
 
 class Stream(param.Parameterized):
+    """
+    A Stream is simply a parameterized object with parameters that
+    change over time in response to update events. Parameters are
+    updated via the update method.
+
+    Streams may have one or more subscribers, callables that are passed
+    the parameter dictionary when the trigger classmethod is called.
+    """
 
     # Mapping from uuid to stream instance
     registry = OrderedDict()
