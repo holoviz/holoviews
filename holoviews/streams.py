@@ -114,7 +114,8 @@ class PositionX(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.Number(default=0)
+    x = param.Number(default=0, doc="""
+           Position along the x-axis in data coordinates""")
 
     def __init__(self, mapping=None, **params):
         super(PositionX, self).__init__(mapping=mapping, **params)
@@ -128,7 +129,8 @@ class PositionY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    y = param.Number(default=0)
+    y = param.Number(default=0, doc="""
+           Position along the y-axis in data coordinates""")
 
     def __init__(self, mapping=None, **params):
         super(PositionY, self).__init__(mapping=mapping, **params)
@@ -143,9 +145,11 @@ class PositionXY(Stream):
     """
 
 
-    x = param.Number(default=0)
+    x = param.Number(default=0, doc="""
+           Position along the x-axis in data coordinates""")
 
-    y = param.Number(default=0)
+    y = param.Number(default=0, doc="""
+           Position along the y-axis in data coordinates""")
 
     def __init__(self, mapping=None, **params):
         super(PositionXY, self).__init__(mapping=mapping, **params)
