@@ -26,10 +26,17 @@ class Stream(param.Parameterized):
     def trigger(cls, streams):
         pass
 
-    def update(self, params):
+    def update(self, params, trigger=True):
+        """
+        The update method updates the stream parameters in response to
+        some event.
+
+        If trigger is enabled, the trigger classmethod is invoked on
+        this particular Stream instance.
+        """
         self.set_param(**params)
-        for subscriber in self.subscribers + self._hidden_subscribers:
-            subscriber(params)
+        if trigger:
+            self.trigger([self])
 
     @classmethod
     def find(cls, obj):
