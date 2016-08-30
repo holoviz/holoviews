@@ -106,7 +106,7 @@ class JupyterComm(Comm):
         Pushes data to comms socket
         """
         if not self._comm:
-            raise ValueError("Comm has not been initialized.")
+            self.init()
         self._comm.send(data)
 
 
