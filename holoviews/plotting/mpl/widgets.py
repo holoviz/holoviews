@@ -3,44 +3,6 @@ import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from matplotlib.backends.backend_nbagg import CommSocket
-except ImportError:
-    CommSocket = object
-
-class WidgetCommSocket(CommSocket):
-    """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
-    """
-
-    def __init__(self, manager):
-        self.supports_binary = None
-        self.manager = manager
-        self.uuid = str(uuid.uuid4())
-        self.html = "<div id=%r></div>" % self.uuid
-
-    def start(self):
-        try:
-            # Jupyter/IPython 4.0
-            from ipykernel.comm import Comm
-        except:
-            # IPython <=3.0
-            from IPython.kernel.comm import Comm
-
-        try:
-            self.comm = Comm('matplotlib', data={'id': self.uuid})
-        except AttributeError:
-            raise RuntimeError('Unable to create an IPython notebook Comm '
-                               'instance. Are you in the IPython notebook?')
-        self.comm.on_msg(self.on_message)
-        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
-
 
 class MPLWidget(NdWidget):
 

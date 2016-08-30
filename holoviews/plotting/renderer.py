@@ -17,6 +17,7 @@ from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
 from . import Plot
+from .comms import JupyterComm
 from .util import displayable, collate
 
 from param.parameterized import bothmethod
@@ -128,6 +129,9 @@ class Renderer(Exporter):
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
+
+    # Define comms class and message handler for each mode
+    comms = {'default': (JupyterComm, None)}
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
@@ -245,9 +249,11 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None):
+    def html(self, obj, fmt=None, css=None, comm=True):
         """
         Renders plot or data structure and wraps the output in HTML.
+        The comm argument defines whether the HTML output includes
+        code to initialize a Comm, if the plot supplies one.
         """
         plot, fmt =  self._validate(obj, fmt)
         figdata, _ = self(plot, fmt)
@@ -270,7 +276,15 @@ class Renderer(Exporter):
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-        return tag.format(src=src, mime_type=mime_type, css=css)
+        html = tag.format(src=src, mime_type=mime_type, css=css)
+        if comm and plot.comm is not None:
+            comm, msg_handler = self.comms[self.mode]
+            msg_handler = msg_handler.format(comms_target=plot.comm.target)
+            return comm.template.format(init_frame=html,
+                                        msg_handler=msg_handler,
+                                        comms_target=plot.comm.target)
+        else:
+            return html
 
 
     def static_html(self, obj, fmt=None, template=None):

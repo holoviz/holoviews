@@ -55,23 +55,25 @@ class BokehRenderer(Renderer):
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
-            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
-                           for h in handles]
-            patch = compute_static_patch(plot.document, plotobjects)
-            data = dict(root=plot.state._id, patch=patch)
-            return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
+            return self.patch(plot), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
         doc_handler = add_to_document(plot.state)
         with doc_handler:
             doc = doc_handler._doc
-            comms_target = str(uuid.uuid4())
-            doc.last_comms_target = comms_target
-            div = notebook_div(plot.state, comms_target)
+            if plot.comm:
+                div = notebook_div(plot.state, plot.comm.target)
         plot.document = doc
         doc.add_root(plot.state)
         return div
+
+
+    def patch(self, plot):
+        plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
+                       for h in handles]
+        patch = compute_static_patch(plot.document, plotobjects)
+        return self._apply_post_render_hooks(serialize_json(patch), plot, 'json')
 
 
     @classmethod

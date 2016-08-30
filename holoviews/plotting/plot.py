@@ -197,6 +197,9 @@ class DimensionedPlot(Plot):
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
 
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            self.comm = self.renderer.comms[self.renderer.mode][0](self)
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -474,6 +477,29 @@ class DimensionedPlot(Plot):
         return self.__getitem__(key)
 
 
+    def refresh(self):
+        """
+        Refreshes the plot by rerendering it and then pushing
+        the updated data if the plot has an associated Comm.
+        """
+        if self.current_key:
+            self.update(self.current_key)
+        else:
+            self.update(0)
+        if self.comm is not None:
+            self.push()
+
+
+    def push(self):
+        """
+        Pushes updated plot data via the Comm.
+        """
+        if self.comm is None:
+            raise Exception('Renderer does not have a comm.')
+        patch = self.renderer.patch(self)
+        self.comm.send(patch)
+
+
     def __len__(self):
         """
         Returns the total number of available frames.
@@ -572,10 +598,7 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
-        if key == self.current_key:
-            return self.current_frame
-        else:
-            self.current_key = key
+        self.current_key = key
 
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
