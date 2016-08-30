@@ -546,4 +546,6 @@ class BarPlot(ChartPlot):
         crange = Range1d(*ranges.get(vdim))
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
+        if not self.show_legend:
+            plot.legend[0].legends[:] = []
         return plot
