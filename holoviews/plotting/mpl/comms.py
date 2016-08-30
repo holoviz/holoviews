@@ -36,7 +36,7 @@ class WidgetCommSocket(CommSocket):
     def __init__(self, manager, target=None):
         self.supports_binary = None
         self.manager = manager
-        self.target = str(uuid.uuid4()) if target is None else target
+        self.target = uuid.uuid4().hex if target is None else target
         self.html = "<div id=%r></div>" % self.target
 
     def start(self):

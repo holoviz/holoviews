@@ -17,7 +17,7 @@ class Comm(param.Parameterized):
         """
         Initializes a Comms object
         """
-        self.target = target if target else str(uuid.uuid4())
+        self.target = target if target else uuid.uuid4().hex
         self._plot = plot
         self._on_msg = on_msg
         self._comm = None
