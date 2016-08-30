@@ -36,23 +36,16 @@ class MPLWidget(NdWidget):
         if self.plot.dynamic == 'bounded' and not isinstance(key, int):
             key = tuple(dim.values[k] if dim.values else k
                         for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-
-        if self.renderer.mode == 'nbagg':
-            if not self.manager._shown:
-                self.comm.start()
-                self.manager.add_web_socket(self.comm)
-                self.manager._shown = True
-            fig = self.plot[key]
-            fig.canvas.draw_idle()
-            return ''
-        frame = self._plot_figure(key)
+        self.plot[key]
         self.plot.push()
-        return "Complete"
+        return '' if self.renderer.mode == 'nbagg' else 'Complete'
+
 
     def get_frames(self):
         if self.renderer.mode == 'nbagg':
-            self.manager.display_js()
-            frames = {0: self.comm.html}
+            manager = self.plot.comm.get_figure_manager()
+            manager.display_js()
+            frames = {0: self.plot.comm._comm_socket.html}
         elif self.embed:
             return super(MPLWidget, self).get_frames()
         else:
