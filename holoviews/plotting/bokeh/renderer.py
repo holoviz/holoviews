@@ -3,7 +3,7 @@ import uuid
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
-from .util import compute_static_patch
+from .util import compute_static_patch, serialize_json
 
 import param
 from param.parameterized import bothmethod
@@ -12,7 +12,6 @@ from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
-from bokeh.core.json_encoder import serialize_json
 from bokeh.model import _ModelInDocument as add_to_document
 
 

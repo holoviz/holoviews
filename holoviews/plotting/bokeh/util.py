@@ -13,12 +13,12 @@ except ImportError:
 import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
+from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.document import Document
 from bokeh.models.plots import Plot
 from bokeh.models import GlyphRenderer
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
-
 if bokeh_version >= '0.12':
     from bokeh.layouts import WidgetBox
 
