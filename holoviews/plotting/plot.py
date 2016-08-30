@@ -199,7 +199,8 @@ class DimensionedPlot(Plot):
 
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
-            self.comm = self.renderer.comms[self.renderer.mode][0](self)
+            comm = self.renderer.comms[self.renderer.mode][0](self)
+        self.comm = comm
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
