@@ -74,6 +74,7 @@ class JupyterComm(Comm):
     template = """
     <script>
       function msg_handler(msg) {{
+        var data = msg.content.data;
         {msg_handler}
       }}
 

@@ -12,7 +12,6 @@ from mpl_toolkits.mplot3d import Axes3D
 from ..comms import JupyterComm
 
 mpl_msg_handler = """
-var data = msg.content.data;
 target = $('#{comms_target}');
 img = $('<div />').html(data);
 target.children().each(function () {{ $(this).remove() }})
@@ -20,7 +19,6 @@ target.append(img)
 """
 
 mpld3_msg_handler = """
-var data = msg.content.data;
 target = $('#fig_el{comms_target}');
 target.children().each(function () {{ $(this).remove() }});
 mpld3.draw_figure("fig_el{comms_target}", data);
