@@ -18,7 +18,6 @@ class MPLWidget(NdWidget):
         super(MPLWidget, self).__init__(plot, renderer, **params)
         if self.renderer.mode == 'nbagg':
             self.cached = False
-            self.initialize_connection(plot)
 
 
     def _plot_figure(self, idx):
@@ -30,7 +29,7 @@ class MPLWidget(NdWidget):
                 figure_format = self.renderer.params('fig').objects[0]
             else:
                 figure_format = self.renderer.fig
-            return self.renderer.html(self.plot, figure_format)
+            return self.renderer.html(self.plot, figure_format, comm=False)
 
 
     def update(self, key):
@@ -47,11 +46,8 @@ class MPLWidget(NdWidget):
             fig.canvas.draw_idle()
             return ''
         frame = self._plot_figure(key)
-        if self.renderer.mode == 'mpld3':
-            return self.encode_frames({0: frame})
-        else:
-            return str(frame)
-
+        self.plot.push()
+        return "Complete"
 
     def get_frames(self):
         if self.renderer.mode == 'nbagg':
@@ -79,11 +75,6 @@ class MPLWidget(NdWidget):
             frames = dict(frames)
             return json.dumps(frames)
 
-
-    def initialize_connection(self, plot):
-        plot.update(0)
-        self.manager = self.renderer.get_figure_manager(plot.state)
-        self.comm = WidgetCommSocket(self.manager)
 
 
 class MPLSelectionWidget(MPLWidget, SelectionWidget):

@@ -62,19 +62,19 @@ class BokehRenderer(Renderer):
         doc_handler = add_to_document(plot.state)
         with doc_handler:
             doc = doc_handler._doc
-            if plot.comm:
-                div = notebook_div(plot.state, plot.comm.target)
+            target = plot.comm.target if plot.comm else None
+            div = notebook_div(plot.state, target)
         plot.document = doc
         doc.add_root(plot.state)
         return div
 
 
-    def patch(self, plot):
+    def patch(self, plot, serialize=True):
         plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                        for h in handles]
         patch = compute_static_patch(plot.document, plotobjects)
-        return self._apply_post_render_hooks(serialize_json(patch), plot, 'json')
-
+        processed = self._apply_post_render_hooks(patch, plot, 'json')
+        return serialize_json(processed) if serialize else processed
 
     @classmethod
     def plot_options(cls, obj, percent_size):
