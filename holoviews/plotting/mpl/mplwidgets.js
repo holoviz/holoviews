@@ -38,16 +38,8 @@ var MPLMethods = {
 	process_msg : function(msg) {
 		if (!(this.mode == 'nbagg')) {
 			var data = msg.content.data;
-			if(this.mode == 'mpld3'){
-				data = JSON.parse(data)[0];
-			}
-			current_frame = this.cache[this.current];
-			delete this.cache[this.current];
 			this.frames[this.current] = data;
-			this.update_cache();
-			if (current_frame) {
-				current_frame.remove()
-			}
+			this.update_cache(true);
 			this.update(this.current);
 		}
 	}

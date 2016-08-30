@@ -68,7 +68,7 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 	kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 }
 
-HoloViewsWidget.prototype.update_cache = function(){
+HoloViewsWidget.prototype.update_cache = function(force){
     var frame_len = Object.keys(this.frames).length;
     for (var i=0; i<frame_len; i++) {
         if(!this.load_json || this.dynamic)  {
@@ -76,11 +76,12 @@ HoloViewsWidget.prototype.update_cache = function(){
         } else {
             frame = i;
         }
-        if(!(frame in this.cache)) {
-            this.cache[frame] = $('<div />').appendTo("#"+"_anim_img"+this.id).hide();
-            var cache_id = "_anim_img"+this.id+"_"+frame;
-            this.cache[frame].attr("id", cache_id);
-            this.populate_cache(frame);
+        if(!(frame in this.cache) || force) {
+			if ((frame in this.cache) && force) { this.cache[frame].remove() }
+			this.cache[frame] = $('<div />').appendTo("#"+"_anim_img"+this.id).hide();
+			var cache_id = "_anim_img"+this.id+"_"+frame;
+			this.cache[frame].attr("id", cache_id);
+			this.populate_cache(frame);
         }
     }
 }
