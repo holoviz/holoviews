@@ -499,6 +499,17 @@ class DimensionedPlot(Plot):
         self.comm.send(diff)
 
 
+    def init_comm(self, obj):
+        """
+        Initializes comm and attaches streams.
+        """
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            comm = self.renderer.comms[self.renderer.mode][0](self)
+            attach_streams(self, obj)
+        return comm
+
+
     def __len__(self):
         """
         Returns the total number of available frames.
@@ -545,8 +556,8 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             plot_element = plot_element.last
 
-        subplot = not keys
-        if subplot:
+        top_level = keys is None
+        if top_level:
             dimensions = self.hmap.kdims
             keys = list(self.hmap.data.keys())
 
@@ -557,12 +568,8 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
-        comm = None
-        if subplot:
-            if dynamic or self.renderer.widget_mode == 'live':
-                comm = self.renderer.comms[self.renderer.mode][0](self)
-                attach_streams(self, element)
-        self.comm = comm
+        if top_level:
+            self.comm = self.init_comm(element)
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -898,8 +905,8 @@ class GenericCompositePlot(DimensionedPlot):
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
 
-        subplot = not keys
-        if subplot:
+        top_level = keys is None
+        if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
         self.layout = layout
@@ -908,12 +915,8 @@ class GenericCompositePlot(DimensionedPlot):
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
-        comm = None
-        if subplot:
-            if self.dynamic or self.renderer.widget_mode == 'live':
-                comm = self.renderer.comms[self.renderer.mode][0](self)
-                attach_streams(self, layout)
-        self.comm = comm
+        if top_level:
+            self.comm = self.init_comm(layout)
 
 
     def _get_frame(self, key):
