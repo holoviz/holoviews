@@ -532,7 +532,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                 subplot.update_frame(key, ranges)
 
 
-class AdjointLayoutPlot(BokehPlot, GenericCompositePlot):
+class AdjointLayoutPlot(BokehPlot):
 
     layout_dict = {'Single': {'positions': ['main']},
                    'Dual':   {'positions': ['main', 'right']},

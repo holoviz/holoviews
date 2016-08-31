@@ -554,7 +554,7 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(CompositePlot):
+class AdjointLayoutPlot(MPLPlot):
     """
     LayoutPlot allows placing up to three Views in a number of
     predefined and fixed layouts, which are defined by the layout_dict
