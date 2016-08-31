@@ -2,6 +2,7 @@ import uuid
 
 import param
 from ipykernel.comm import Comm as IPyComm
+from IPython import get_ipython
 
 
 class Comm(param.Parameterized):
@@ -78,13 +79,10 @@ class JupyterComm(Comm):
         {msg_handler}
       }}
 
-      function register_handler(comm, msg) {{
-        comm.on_msg(msg_handler)
-      }}
-
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
-        comm_manager = Jupyter.notebook.kernel.comm_manager
-        comm_manager.register_target("{comms_target}", register_handler);
+        var comm_manager = Jupyter.notebook.kernel.comm_manager;
+        comm = comm_manager.new_comm("{comms_target}", {{}}, {{}}, {{}}, "{comms_target}");
+        comm.on_msg(msg_handler);
       }}
     </script>
 
@@ -93,11 +91,17 @@ class JupyterComm(Comm):
     </div>
     """
 
-    def init(self):
-        if self._comm:
-            self.warning("Comms already initialized")
-            return
-        self._comm = IPyComm(target_name=self.target, data={})
+    def __init__(self, plot, target=None, on_msg=None):
+        """
+        Initializes a Comms object
+        """
+        super(JupyterComm, self).__init__(plot, target, on_msg)
+        self.manager = get_ipython().kernel.comm_manager
+        self.manager.register_target(self.target, self._handle_open)
+
+
+    def _handle_open(self, comm, msg):
+        self._comm = comm
         self._comm.on_msg(self._handle_msg)
 
 
@@ -106,7 +110,9 @@ class JupyterComm(Comm):
         Pushes data to comms socket
         """
         if not self._comm:
-            self.init()
+            raise Exception('Comm has not been initialized, ensure '
+                            'it has been opened on the frontend before '
+                            'sending data.')
         self._comm.send(data)
 
 

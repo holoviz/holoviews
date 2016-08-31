@@ -99,10 +99,8 @@ HoloViewsWidget.prototype.update = function(current){
 HoloViewsWidget.prototype.init_comms = function() {
 	var widget = this;
 	var comm_manager = Jupyter.notebook.kernel.comm_manager
-    comm_manager.register_target(this.id, function (comm, msg) {
-		widget.comm = comm;
-		comm.on_msg(function(msg) { widget.process_msg(msg) });
-    });
+	comm = comm_manager.new_comm(this.id, {}, {}, {}, this.id);
+	comm.on_msg(function (msg) { widget.process_msg(msg) })
 }
 
 HoloViewsWidget.prototype.process_msg = function(msg) {
