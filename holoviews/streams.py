@@ -115,7 +115,7 @@ class PositionX(Stream):
     """
 
     x = param.Number(default=0, doc="""
-           Position along the x-axis in data coordinates""")
+           Position along the x-axis in data coordinates""", constant=True)
 
     def __init__(self, mapping=None, **params):
         super(PositionX, self).__init__(mapping=mapping, **params)
@@ -130,7 +130,7 @@ class PositionY(Stream):
     """
 
     y = param.Number(default=0, doc="""
-           Position along the y-axis in data coordinates""")
+           Position along the y-axis in data coordinates""", constant=True)
 
     def __init__(self, mapping=None, **params):
         super(PositionY, self).__init__(mapping=mapping, **params)
@@ -146,10 +146,10 @@ class PositionXY(Stream):
 
 
     x = param.Number(default=0, doc="""
-           Position along the x-axis in data coordinates""")
+           Position along the x-axis in data coordinates""", constant=True)
 
     y = param.Number(default=0, doc="""
-           Position along the y-axis in data coordinates""")
+           Position along the y-axis in data coordinates""", constant=True)
 
     def __init__(self, mapping=None, **params):
         super(PositionXY, self).__init__(mapping=mapping, **params)
