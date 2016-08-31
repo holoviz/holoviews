@@ -89,12 +89,17 @@ class Stream(param.Parameterized):
         """
         # Union of stream values
         items = [stream.value.items() for stream in streams]
-        union = dict(kv for kvs in items for kv in kvs)
+        union = [kv for kvs in items for kv in kvs]
+        klist = [k for k,_ in union]
+        clashes = set([k for k in klist if klist.count(k) > 1])
+        if clashes:
+            param.main.warning('Parameter name clashes for keys: %r' % clashes)
+
         # Currently building a simple set of subscribers
         groups = [stream.subscribers + stream._hidden_subscribers for stream in streams]
         subscribers = set(s for subscribers in groups for s in subscribers)
         for subscriber in subscribers:
-            subscriber(union)
+            subscriber(dict(union))
 
 
     @classmethod
