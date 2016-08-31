@@ -7,7 +7,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 import param
 import uuid
 from collections import OrderedDict
-
+from core import util
 
 
 class Preprocessor(param.Parameterized):
@@ -96,8 +96,10 @@ class Stream(param.Parameterized):
             param.main.warning('Parameter name clashes for keys: %r' % clashes)
 
         # Currently building a simple set of subscribers
-        groups = [stream.subscribers + stream._hidden_subscribers for stream in streams]
-        subscribers = set(s for subscribers in groups for s in subscribers)
+        groups = [stream.subscribers for stream in streams]
+        hidden = [stream._hidden_subscribers for stream in streams]
+        subscribers = util.unique_iterator([s for subscribers in groups+hidden
+                                            for s in subscribers])
         for subscriber in subscribers:
             subscriber(dict(union))
 
