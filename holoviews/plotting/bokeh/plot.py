@@ -164,11 +164,11 @@ class GridPlot(BokehPlot, GenericCompositePlot):
     object.
     """
 
-    def __init__(self, layout, ranges=None, **params):
+    def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout=layout, ranges=ranges,
-                                       **params)
+        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+                                       ranges=ranges, **params)
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
 

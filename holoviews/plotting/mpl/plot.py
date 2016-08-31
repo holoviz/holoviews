@@ -280,10 +280,12 @@ class GridPlot(CompositePlot):
     yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
         Rotation angle of the yticks.""")
 
-    def __init__(self, layout, axis=None, create_axes=True, ranges=None, **params):
+    def __init__(self, layout, axis=None, create_axes=True, ranges=None,
+                 layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        super(GridPlot, self).__init__(layout, ranges=ranges, **params)
+        super(GridPlot, self).__init__(layout, layout_num=layout_num,
+                                       ranges=ranges, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
