@@ -7,7 +7,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 import param
 import uuid
 from collections import OrderedDict
-from core import util
+from .core import util
 
 
 class Preprocessor(param.Parameterized):
