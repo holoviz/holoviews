@@ -19,7 +19,8 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
-from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
+from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
+                   attach_streams)
 
 
 class Plot(param.Parameterized):
@@ -196,11 +197,8 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
+        self.comm = None
 
-        comm = None
-        if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comms[self.renderer.mode][0](self)
-        self.comm = comm
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -478,7 +476,7 @@ class DimensionedPlot(Plot):
         return self.__getitem__(key)
 
 
-    def refresh(self):
+    def refresh(self, **kwargs):
         """
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
@@ -499,6 +497,17 @@ class DimensionedPlot(Plot):
             raise Exception('Renderer does not have a comm.')
         diff = self.renderer.diff(self)
         self.comm.send(diff)
+
+
+    def init_comm(self, obj):
+        """
+        Initializes comm and attaches streams.
+        """
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            comm = self.renderer.comms[self.renderer.mode][0](self)
+            attach_streams(self, obj)
+        return comm
 
 
     def __len__(self):
@@ -547,8 +556,8 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             plot_element = plot_element.last
 
-        subplot = not keys
-        if subplot:
+        top_level = keys is None
+        if top_level:
             dimensions = self.hmap.kdims
             keys = list(self.hmap.data.keys())
 
@@ -559,6 +568,8 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+        if top_level:
+            self.comm = self.init_comm(element)
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -894,8 +905,8 @@ class GenericCompositePlot(DimensionedPlot):
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
 
-        subplot = not keys
-        if subplot:
+        top_level = keys is None
+        if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
         self.layout = layout
@@ -904,6 +915,8 @@ class GenericCompositePlot(DimensionedPlot):
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
+        if top_level:
+            self.comm = self.init_comm(layout)
 
 
     def _get_frame(self, key):

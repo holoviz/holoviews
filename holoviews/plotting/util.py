@@ -275,3 +275,13 @@ def dim_axis_label(dimensions, separator=', '):
     if not isinstance(dimensions, list): dimensions = [dimensions]
     return separator.join([safe_unicode(d.pprint_label)
                            for d in dimensions])
+
+
+def attach_streams(plot, obj):
+    """
+    Attaches plot refresh to all streams on the object.
+    """
+    def append_refresh(dmap):
+        for stream in dmap.streams:
+            stream._hidden_subscribers.append(plot.refresh)
+    return obj.traverse(append_refresh, [DynamicMap])

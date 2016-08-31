@@ -277,9 +277,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
-        if not keys or not dimensions:
+        top_level = keys is None
+        if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
         MPLPlot.__init__(self, dimensions=dimensions, keys=keys, **params)
+        if top_level:
+            self.comm = self.init_comm(layout)
+
         self.layout = layout
         self.cyclic_index = 0
         self.zorder = 0
