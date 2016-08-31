@@ -49,11 +49,13 @@ class Stream(param.Parameterized):
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
         """
-        for param in self.params().values():
+        params = self.params().values()
+        constants = [p.constant for p in params]
+        for param in params:
             param.constant = False
         self.set_param(**kwargs)
-        for param in self.params().values():
-            param.constant = True
+        for (param, const) in zip(params, constants):
+            param.constant = const
 
         if trigger:
             self.trigger([self])
