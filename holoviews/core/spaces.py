@@ -463,13 +463,13 @@ class DynamicMap(HoloMap):
        """)
 
     def __init__(self, callback, initial_items=None, **params):
+        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         # Set source to self if not already specified
-        for stream in params.get('streams',[]):
+        for stream in self.streams:
             if stream.source is None:
                 stream.source = self
 
-        super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
