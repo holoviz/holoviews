@@ -127,12 +127,10 @@ class Stream(param.Parameterized):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k,v)
                           for (k,v) in self.get_param_values() if k != 'name')
-        if not self.mapping:
+        if not self.preprocessors:
             return '%s(%s)' % (cls_name, kwargs)
-        elif len(self.mapping) == 1:
-            return '%s(%r, %s)' % (cls_name, self.mapping.values()[0], kwargs)
         else:
-            return '%s(%r, %s)' % (cls_name, self.mapping, kwargs)
+            return '%s(%r, %s)' % (cls_name, self.preprocessors, kwargs)
 
     def __str__(self):
         return repr(self)
