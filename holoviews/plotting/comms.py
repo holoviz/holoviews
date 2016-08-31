@@ -49,7 +49,8 @@ class Comm(param.Parameterized):
         """
 
 
-    def decode(self, msg):
+    @classmethod
+    def decode(cls, msg):
         """
         Decode incoming message, e.g. by parsing json.
         """
@@ -104,7 +105,8 @@ class JupyterPushComm(Comm):
         self._comm.on_msg(self._handle_msg)
 
 
-    def decode(self, msg):
+    @classmethod
+    def decode(cls, msg):
         return msg['content']['data']
 
 
