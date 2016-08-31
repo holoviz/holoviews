@@ -12,7 +12,7 @@ class TestSubscriber(object):
         self.call_count = 0
         self.kwargs = None
 
-    def __call__(self, kwargs):
+    def __call__(self, **kwargs):
         self.call_count += 1
         self.kwargs = kwargs
 

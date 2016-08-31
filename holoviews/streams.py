@@ -101,7 +101,7 @@ class Stream(param.Parameterized):
         subscribers = util.unique_iterator([s for subscribers in groups+hidden
                                             for s in subscribers])
         for subscriber in subscribers:
-            subscriber(dict(union))
+            subscriber(**dict(union))
 
 
     @classmethod
