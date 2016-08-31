@@ -38,6 +38,10 @@ class Rename(Preprocessor):
     def __call__(self, params):
         return {self.mapping.get(k,k):v for (k,v) in params.items()}
 
+    def __repr__(self):
+        keywords = ','.join('%s=%r' % (k,v) for (k,v) in sorted(self.mapping.items()))
+        return 'Rename(%s)' % keywords
+
 
 
 class Stream(param.Parameterized):
