@@ -33,7 +33,8 @@ class Stream(param.Parameterized):
         needs to be called once.
         """
         # Union of stream values
-        union = dict(stream.value.items() for stream in streams)
+        items = [stream.value.items() for stream in streams]
+        union = dict(kv for kvs in items for kv in kvs)
         # Currently building a simple set of subscribers
         groups = [stream.subscribers + stream._hidden_subscribers for stream in streams]
         subscribers = set(s for subscribers in groups for s in subscribers)
