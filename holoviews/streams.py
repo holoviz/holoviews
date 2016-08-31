@@ -47,6 +47,23 @@ class Rename(Preprocessor):
 
 
 
+class Group(Preprocessor):
+    """
+    A preprocessor that keeps the parameter dictionary together,
+    supplying it as a value associated with the given key.
+    """
+
+    def __init__(self, key):
+        super(Group, self).__init__(key=key)
+
+    def __call__(self, params):
+        return {self.key:params}
+
+    def __repr__(self):
+        return 'Group(%r)' % self.key
+
+
+
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
