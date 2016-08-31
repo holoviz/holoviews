@@ -40,7 +40,7 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             subscriber(union)
 
-    def update(self, params, trigger=True):
+    def update(self, trigger=True, **kwargs):
         """
         The update method updates the stream parameters in response to
         some event.
@@ -48,7 +48,12 @@ class Stream(param.Parameterized):
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
         """
-        self.set_param(**params)
+        for param in self.params().values():
+            param.constant = False
+        self.set_param(**kwargs)
+        for param in self.params().values():
+            param.constant = True
+
         if trigger:
             self.trigger([self])
 
