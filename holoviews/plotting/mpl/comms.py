@@ -24,13 +24,11 @@ target.children().each(function () {{ $(this).remove() }});
 mpld3.draw_figure("fig_el{comms_target}", data);
 """
 
-class WidgetCommSocket(CommSocket):
+class NbAggCommSocket(CommSocket):
     """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
+    NbAggCommSocket subclasses the matplotlib CommSocket allowing
+    the opening of a comms channel to be delayed until the plot
+    is displayed.
     """
 
     def __init__(self, manager, target=None):
@@ -58,6 +56,10 @@ class WidgetCommSocket(CommSocket):
 
 
 class NbAggJupyterComm(JupyterComm):
+    """
+    Wraps a NbAggCommSocket to provide a consistent API to work for
+    updating nbagg plots.
+    """
 
     def get_figure_manager(self):
         fig = self._plot.state
@@ -68,8 +70,8 @@ class NbAggJupyterComm(JupyterComm):
         for ax in fig.get_axes():
             if isinstance(ax, Axes3D):
                 ax.mouse_init()
-        self._comm_socket = WidgetCommSocket(target=self.target,
-                                             manager=self.manager)
+        self._comm_socket = NbAggCommSocket(target=self.target,
+                                            manager=self.manager)
         return self.manager
 
 
