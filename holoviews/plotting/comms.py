@@ -70,9 +70,9 @@ class Comm(param.Parameterized):
             self._on_msg(self.decode(msg))
 
 
-class SimpleJupyterComm(Comm):
+class JupyterPushComm(Comm):
     """
-    SimpleJupyterComm provides a Comm for simple unidirectional
+    JupyterPushComm provides a Comm for simple unidirectional
     communication from the python process to a frontend. The
     Comm is opened before the first event is sent to the frontend.
     """

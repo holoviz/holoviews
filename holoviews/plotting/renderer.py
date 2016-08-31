@@ -17,7 +17,7 @@ from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
 from . import Plot
-from .comms import SimpleJupyterComm
+from .comms import JupyterPushComm
 from .util import displayable, collate
 
 from param.parameterized import bothmethod
@@ -133,7 +133,7 @@ class Renderer(Exporter):
     # Define comms class and message handler for each mode
     # The Comm opens a communication channel and the message
     # handler defines how the message is processed on the frontend
-    comms = {'default': (SimpleJupyterComm, None)}
+    comms = {'default': (JupyterPushComm, None)}
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
