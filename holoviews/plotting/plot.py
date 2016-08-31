@@ -547,9 +547,12 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             plot_element = plot_element.last
 
+        subplot = not keys
+        if subplot:
+            dimensions = self.hmap.kdims
+            keys = list(self.hmap.data.keys())
+
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
-        dimensions = self.hmap.kdims if dimensions is None else dimensions
-        keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(plot_element, 'plot').options
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
@@ -887,14 +890,17 @@ class GenericCompositePlot(DimensionedPlot):
         dynamic, sampled = get_dynamic_mode(layout)
         if sampled:
             initialize_sampled(layout, dimensions, keys[0])
-        if not keys:
-            dimensions, keys = traversal.unique_dimkeys(layout)
+
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
 
+        subplot = not keys
+        if subplot:
+            dimensions, keys = traversal.unique_dimkeys(layout)
+
         self.layout = layout
         self.rows, self.cols = layout.shape
-        super(GenericCompositePlot, self).__init__(layout, keys=keys,
+        super(GenericCompositePlot, self).__init__(keys=keys,
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
