@@ -141,7 +141,10 @@ class MPLRenderer(Renderer):
         return (w*dpi, h*dpi)
 
 
-    def patch(self, plot):
+    def diff(self, plot):
+        """
+        Returns the latest plot data to update an existing plot.
+        """
         data = None
         if self.mode != 'nbagg':
             if self.mode == 'mpld3':

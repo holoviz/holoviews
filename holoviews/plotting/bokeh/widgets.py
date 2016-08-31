@@ -5,7 +5,7 @@ from bokeh.io import _CommsHandle
 from bokeh.util.notebook import get_comms
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
-from .util import compute_static_patch, serialize_json
+from .util import serialize_json
 
 class BokehWidget(NdWidget):
 
@@ -39,7 +39,7 @@ class BokehWidget(NdWidget):
             if fig_format == 'html':
                 msg = self.renderer.html(self.plot, fig_format)
             else:
-                json_patch = self.renderer.patch(self.plot, serialize=False)
+                json_patch = self.renderer.diff(self.plot, serialize=False)
                 msg = dict(patch=json_patch, root=self.plot.state._id)
                 msg = serialize_json(msg)
             return msg

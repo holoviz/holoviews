@@ -497,8 +497,8 @@ class DimensionedPlot(Plot):
         """
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
-        patch = self.renderer.patch(self)
-        self.comm.send(patch)
+        diff = self.renderer.diff(self)
+        self.comm.send(diff)
 
 
     def __len__(self):

@@ -54,7 +54,7 @@ class BokehRenderer(Renderer):
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
-            return self.patch(plot), info
+            return self.diff(plot), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
@@ -68,7 +68,11 @@ class BokehRenderer(Renderer):
         return div
 
 
-    def patch(self, plot, serialize=True):
+    def diff(self, plot, serialize=True):
+        """
+        Returns a json diff required to update an existing plot with
+        the latest plot data.
+        """
         plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
                        for h in handles]
         patch = compute_static_patch(plot.document, plotobjects)
