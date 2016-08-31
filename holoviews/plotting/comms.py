@@ -18,8 +18,10 @@ class Comm(param.Parameterized):
 
     The template must accept three arguments:
 
-    * comms_target - A unique id to register to register as the comms target.
-    * msg_handler -  JS code that processes messages sent to the frontend.
+    * comms_target - A unique id to register to register as the
+                     comms target.
+    * msg_handler -  JS code which has the msg variable in scope and
+                     performs appropriate action for the supplied message.
     * init_frame  -  The initial frame to render on the frontend.
     """
 
@@ -80,7 +82,7 @@ class JupyterPushComm(Comm):
     template = """
     <script>
       function msg_handler(msg) {{
-        var data = msg.content.data;
+        var msg = msg.content.data;
         {msg_handler}
       }}
 
@@ -127,7 +129,7 @@ class JupyterComm(Comm):
     template = """
     <script>
       function msg_handler(msg) {{
-        var data = msg.content.data;
+        var msg = msg.content.data;
         {msg_handler}
       }}
 

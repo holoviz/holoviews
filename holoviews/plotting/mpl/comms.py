@@ -12,16 +12,18 @@ from mpl_toolkits.mplot3d import Axes3D
 from ..comms import JupyterComm
 
 mpl_msg_handler = """
+/* Backend specific body of the msg_handler, updates displayed frame */
 target = $('#{comms_target}');
-img = $('<div />').html(data);
+img = $('<div />').html(msg);
 target.children().each(function () {{ $(this).remove() }})
 target.append(img)
 """
 
 mpld3_msg_handler = """
+/* Backend specific body of the msg_handler, updates displayed frame */
 target = $('#fig_el{comms_target}');
 target.children().each(function () {{ $(this).remove() }});
-mpld3.draw_figure("fig_el{comms_target}", data);
+mpld3.draw_figure("fig_el{comms_target}", msg);
 """
 
 class NbAggCommSocket(CommSocket):
