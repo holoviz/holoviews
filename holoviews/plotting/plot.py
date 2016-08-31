@@ -973,7 +973,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
 
-        super(GenericLayoutPlot, self).__init__(**params)
+        super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
