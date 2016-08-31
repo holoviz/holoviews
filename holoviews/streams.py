@@ -76,24 +76,6 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             subscriber(union)
 
-    def update(self, trigger=True, **kwargs):
-        """
-        The update method updates the stream parameters in response to
-        some event.
-
-        If trigger is enabled, the trigger classmethod is invoked on
-        this particular Stream instance.
-        """
-        params = self.params().values()
-        constants = [p.constant for p in params]
-        for param in params:
-            param.constant = False
-        self.set_param(**kwargs)
-        for (param, const) in zip(params, constants):
-            param.constant = const
-
-        if trigger:
-            self.trigger([self])
 
     @classmethod
     def find(cls, obj):
@@ -101,6 +83,7 @@ class Stream(param.Parameterized):
         Return a set of streams from the registry with a given source.
         """
         return set(v for v in cls.registry.values() if v.source is obj)
+
 
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
@@ -120,12 +103,34 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         self.registry[self.uuid] = self
 
+
     @property
     def value(self):
         remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
         for preprocessor in self.preprocessors:
             remapped = preprocessor(remapped)
         return remapped
+
+
+    def update(self, trigger=True, **kwargs):
+        """
+        The update method updates the stream parameters in response to
+        some event.
+
+        If trigger is enabled, the trigger classmethod is invoked on
+        this particular Stream instance.
+        """
+        params = self.params().values()
+        constants = [p.constant for p in params]
+        for param in params:
+            param.constant = False
+        self.set_param(**kwargs)
+        for (param, const) in zip(params, constants):
+            param.constant = const
+
+        if trigger:
+            self.trigger([self])
+
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -135,6 +140,7 @@ class Stream(param.Parameterized):
             return '%s(%s)' % (cls_name, kwargs)
         else:
             return '%s(%r, %s)' % (cls_name, self.preprocessors, kwargs)
+
 
     def __str__(self):
         return repr(self)
