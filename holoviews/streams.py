@@ -46,7 +46,7 @@ class Stream(param.Parameterized):
     change over time in response to update events. Parameters are
     updated via the update method.
 
-    Streams may have one or more subscribers, callables that are passed
+    Streams may have one or more subscribers which are callables passed
     the parameter dictionary when the trigger classmethod is called.
     """
 
