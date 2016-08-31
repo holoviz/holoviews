@@ -888,7 +888,9 @@ def get_dynamic_item(map_obj, dimensions, key):
     and a corresponding key. The dimensions must be a subset
     of the map_obj key dimensions.
     """
-    if isinstance(key, tuple):
+    if key == () and not dimensions:
+        return key, map_obj[()]
+    elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)

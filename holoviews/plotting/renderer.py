@@ -202,7 +202,8 @@ class Renderer(Exporter):
 
         if fmt in ['auto', None]:
             if ((len(plot) == 1 and not plot.dynamic)
-                or (len(plot) > 1 and self.holomap is None)):
+                or (len(plot) > 1 and self.holomap is None) or
+                (plot.dynamic and len(plot.keys[0]) == 0)):
                 fmt = fig_formats[0] if self.fig=='auto' else self.fig
             else:
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
