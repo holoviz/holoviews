@@ -17,7 +17,7 @@ from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
 from . import Plot
-from .comms import JupyterComm
+from .comms import SimpleJupyterComm
 from .util import displayable, collate
 
 from param.parameterized import bothmethod
@@ -131,7 +131,9 @@ class Renderer(Exporter):
                     'holomap': {'default': [None, 'auto']}}
 
     # Define comms class and message handler for each mode
-    comms = {'default': (JupyterComm, None)}
+    # The Comm opens a communication channel and the message
+    # handler defines how the message is processed on the frontend
+    comms = {'default': (SimpleJupyterComm, None)}
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}

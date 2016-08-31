@@ -10,9 +10,20 @@ class Comm(param.Parameterized):
     Comm encompasses any uni- or bi-directional connection between
     a python process and a frontend allowing passing of messages
     between the two. A Comms class must implement methods
-    to initialize the connection, send data and handle received
-    message events.
+    send data and handle received message events.
+
+    If the Comm has to be set up on the frontend a template to
+    handle the creation of the comms channel along with a message
+    handler to process incoming messages must be supplied.
+
+    The template must accept three arguments:
+
+    * comms_target - A unique id to register to register as the comms target.
+    * msg_handler -  JS code that processes messages sent to the frontend.
+    * init_frame  -  The initial frame to render on the frontend.
     """
+
+    template = ''
 
     def __init__(self, plot, target=None, on_msg=None):
         """
@@ -59,17 +70,58 @@ class Comm(param.Parameterized):
             self._on_msg(self.decode(msg))
 
 
+class SimpleJupyterComm(Comm):
+    """
+    SimpleJupyterComm provides a Comm for simple unidirectional
+    communication from the python process to a frontend. The
+    Comm is opened before the first event is sent to the frontend.
+    """
+
+    template = """
+    <script>
+      function msg_handler(msg) {{
+        var data = msg.content.data;
+        {msg_handler}
+      }}
+
+      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
+        comm_manager = Jupyter.notebook.kernel.comm_manager;
+        comm_manager.register_target("{comms_target}", register_handler);
+      }}
+    </script>
+
+    <div id="{comms_target}">
+      {init_frame}
+    </div>
+    """
+
+    def init(self):
+        if self._comm:
+            return
+        self._comm = IPyComm(target_name=self.target, data={})
+        self._comm.on_msg(self._handle_msg)
+
+
+    def decode(self, msg):
+        return msg['content']['data']
+
+
+    def send(self, data):
+        """
+        Pushes data across comm socket.
+        """
+        if not self._comm:
+            self.init()
+        self.comm.send(data)
+
+
 
 class JupyterComm(Comm):
     """
     JupyterComm allows for a bidirectional communication channel
-    inside the Jupyter notebook. A JupyterComm requires the comm to be
-    registered on the frontend along with a message handler. This is
-    handled by the template, which accepts three arguments:
-
-    * comms_target - A unique id to register to register as the comms target.
-    * msg_handler -  JS code that processes messages sent to the frontend.
-    * init_frame  -  The initial frame to render on the frontend.
+    inside the Jupyter notebook. The JupyterComm will register
+    a comm target on the IPython kernel comm manager, which will then
+    be opened by the templated code on the frontend.
     """
 
     template = """
@@ -107,14 +159,7 @@ class JupyterComm(Comm):
 
     def send(self, data):
         """
-        Pushes data to comms socket
+        Pushes data across comm socket.
         """
-        if not self._comm:
-            raise Exception('Comm has not been initialized, ensure '
-                            'it has been opened on the frontend before '
-                            'sending data.')
-        self._comm.send(data)
+        self.comm.send(data)
 
-
-    def decode(self, msg):
-        return msg['content']['data']
