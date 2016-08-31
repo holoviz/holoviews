@@ -436,6 +436,15 @@ class DynamicMap(HoloMap):
         simulation time across the layout).
     """)
 
+    streams = param.List(default=[], doc="""
+       List of Stream instances to associate with the DynamicMap. The
+       set of parameter values across these streams will be supplied as
+       keyword arguments to the callback when the events are received,
+       updating the streams.
+
+       Note that streams may only be used with callable callbacks (i.e
+       not generators).""" )
+
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
        cache where the least recently used item is overwritten once
@@ -455,6 +464,12 @@ class DynamicMap(HoloMap):
 
     def __init__(self, callback, initial_items=None, **params):
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
+
+        # Set source to self if not already specified
+        for stream in self.streams:
+            if stream.source is None:
+                stream.source = self
+
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
@@ -541,8 +556,15 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'generator':
             retval = next(self.callback)
         else:
-            retval = self.callback(*args)
+            # Additional validation needed to ensure kwargs don't clash
+            kwarg_items = [s.value.items() for s in self.streams]
+            flattened = [el for kws in kwarg_items for el in kws]
+            klist = [k for k,_ in flattened]
+            clashes = set([k for k in klist if klist.count(k) > 1])
+            if clashes:
+                self.warning('Parameter name clashes for keys: %r' % clashes)
 
+            retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
 
@@ -651,6 +673,8 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
+            if self.streams:
+                raise KeyError('Using streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
             # Return selected cache items in a new DynamicMap
             if isinstance(cache, DynamicMap) and self.mode=='open':
