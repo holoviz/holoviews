@@ -547,9 +547,12 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             plot_element = plot_element.last
 
+        subplot = not keys
+        if subplot:
+            dimensions = self.hmap.kdims
+            keys = list(self.hmap.data.keys())
+
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
-        dimensions = self.hmap.kdims if dimensions is None else dimensions
-        keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(plot_element, 'plot').options
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
@@ -883,6 +886,26 @@ class GenericOverlayPlot(GenericElementPlot):
 
 class GenericCompositePlot(DimensionedPlot):
 
+    def __init__(self, layout, keys=None, dimensions=None, **params):
+        dynamic, sampled = get_dynamic_mode(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
+
+        if 'uniform' not in params:
+            params['uniform'] = traversal.uniform(layout)
+
+        subplot = not keys
+        if subplot:
+            dimensions, keys = traversal.unique_dimkeys(layout)
+
+        self.layout = layout
+        self.rows, self.cols = layout.shape
+        super(GenericCompositePlot, self).__init__(keys=keys,
+                                                   dynamic=dynamic,
+                                                   dimensions=dimensions,
+                                                   **params)
+
+
     def _get_frame(self, key):
         """
         Creates a clone of the Layout with the nth-frame for each
@@ -956,18 +979,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
 
-        self.layout = layout
+        super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
-        self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic, sampled = get_dynamic_mode(layout)
-        dimensions, keys = traversal.unique_dimkeys(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
-
-        uniform = traversal.uniform(layout)
-        plotopts = self.lookup_options(layout, 'plot').options
-        super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                                uniform=uniform, dynamic=dynamic,
-                                                **dict(plotopts, **params))
