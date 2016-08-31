@@ -24,6 +24,22 @@ class Preprocessor(param.Parameterized):
 
     def __call__(self, params):
         return params
+
+
+
+class Rename(Preprocessor):
+    """
+    A preprocesor used to rename parameter values.
+    """
+
+    def __init__(self, **mapping):
+        self.mapping = mapping
+
+    def __call__(self, params):
+        return {self.mapping.get(k,k):v for (k,v) in params.items()}
+
+
+
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
