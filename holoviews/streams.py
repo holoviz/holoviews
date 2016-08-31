@@ -98,8 +98,7 @@ class Stream(param.Parameterized):
         """
         return set(v for v in cls.registry.values() if v.source is obj)
 
-    def __init__(self, mapping=None, source=None,
-                 subscribers=[], preprocessors=[], **params):
+    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
         Mapping allows multiple streams with similar event state to be
         used by remapping parameter names.
@@ -113,24 +112,13 @@ class Stream(param.Parameterized):
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
 
-        if mapping is None:
-            self.mapping = {}
-        elif isinstance(mapping, dict):
-            # Could do some validation here
-            self.mapping = mapping
-        elif len(self.params()) == 2:
-            self.mapping = {k:mapping for k in self.params() if k != 'name'}
-        else:
-            raise Exception("Stream has multiple parameters, please supply a dictionary")
-
         self.uuid = uuid.uuid4().hex
         super(Stream, self).__init__(**params)
         self.registry[self.uuid] = self
 
     @property
     def value(self):
-        remapped =  {self.mapping.get(k,k):v for (k,v) in self.get_param_values()
-                     if k != 'name'}
+        remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
         for preprocessor in self.preprocessors:
             remapped = preprocessor(remapped)
         return remapped
