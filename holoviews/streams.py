@@ -9,6 +9,21 @@ import uuid
 from collections import OrderedDict
 
 
+
+class Preprocessor(param.Parameterized):
+    """
+    A Preprocessor is a callable that takes a dictionary as an argument
+    and returns a dictionary. Where possible, Preprocessors should have
+    valid reprs that can be evaluated.
+
+    Preprocessors are used to set the value of a stream based on the
+    parameter values. They may be used for debugging purposes or to
+    remap or repack parameter values before they are passed onto to the
+    subscribers.
+    """
+
+    def __call__(self, params):
+        return params
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
