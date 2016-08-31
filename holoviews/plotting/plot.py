@@ -197,6 +197,7 @@ class DimensionedPlot(Plot):
         self.current_key = None
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
+        self.comm = None
 
         params = {k: v for k, v in params.items()
                   if k in self.params()}
