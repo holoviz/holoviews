@@ -29,11 +29,14 @@ class Preprocessor(param.Parameterized):
 
 class Rename(Preprocessor):
     """
-    A preprocesor used to rename parameter values.
+    A preprocessor used to rename parameter values.
     """
 
+    mapping = param.Dict(default={}, doc="""
+      The mapping from the parameter names to the designated names""")
+
     def __init__(self, **mapping):
-        self.mapping = mapping
+        super(Rename, self).__init__(mapping=mapping)
 
     def __call__(self, params):
         return {self.mapping.get(k,k):v for (k,v) in params.items()}
