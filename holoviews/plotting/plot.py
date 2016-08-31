@@ -19,7 +19,8 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..element import Table
-from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
+from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
+                   attach_streams)
 
 
 class Plot(param.Parameterized):
@@ -197,10 +198,6 @@ class DimensionedPlot(Plot):
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
 
-        comm = None
-        if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comms[self.renderer.mode][0](self)
-        self.comm = comm
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -478,7 +475,7 @@ class DimensionedPlot(Plot):
         return self.__getitem__(key)
 
 
-    def refresh(self):
+    def refresh(self, **kwargs):
         """
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
@@ -559,6 +556,12 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+        comm = None
+        if subplot:
+            if dynamic or self.renderer.widget_mode == 'live':
+                comm = self.renderer.comms[self.renderer.mode][0](self)
+                attach_streams(self, element)
+        self.comm = comm
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -904,6 +907,12 @@ class GenericCompositePlot(DimensionedPlot):
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
+        comm = None
+        if subplot:
+            if self.dynamic or self.renderer.widget_mode == 'live':
+                comm = self.renderer.comms[self.renderer.mode][0](self)
+                attach_streams(self, layout)
+        self.comm = comm
 
 
     def _get_frame(self, key):
