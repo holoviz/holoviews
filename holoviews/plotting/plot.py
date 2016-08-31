@@ -894,7 +894,7 @@ class GenericCompositePlot(DimensionedPlot):
 
         self.layout = layout
         self.rows, self.cols = layout.shape
-        super(GenericCompositePlot, self).__init__(composite, keys=keys,
+        super(GenericCompositePlot, self).__init__(layout, keys=keys,
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
