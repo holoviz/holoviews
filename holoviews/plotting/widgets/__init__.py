@@ -104,7 +104,7 @@ class NdWidget(param.Parameterized):
 
     def __init__(self, plot, renderer=None, **params):
         super(NdWidget, self).__init__(**params)
-        self.id = uuid.uuid4().hex
+        self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
         self.plot = plot
         self.dimensions = plot.dimensions
         self.keys = plot.keys
@@ -189,7 +189,8 @@ class NdWidget(param.Parameterized):
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css)
+            return self.renderer.html(self.plot, figure_format, css=css,
+                                      comm=False)
 
 
     def update(self, key):

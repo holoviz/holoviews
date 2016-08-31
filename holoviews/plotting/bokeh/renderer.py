@@ -3,7 +3,7 @@ import uuid
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
-from .util import compute_static_patch
+from .util import compute_static_patch, serialize_json
 
 import param
 from param.parameterized import bothmethod
@@ -12,7 +12,6 @@ from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
 from bokeh.resources import CDN, INLINE
 
-from bokeh.core.json_encoder import serialize_json
 from bokeh.model import _ModelInDocument as add_to_document
 
 
@@ -55,24 +54,30 @@ class BokehRenderer(Renderer):
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
-            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
-                           for h in handles]
-            patch = compute_static_patch(plot.document, plotobjects)
-            data = dict(root=plot.state._id, patch=patch)
-            return self._apply_post_render_hooks(serialize_json(data), obj, fmt), info
+            return self.diff(plot), info
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
         doc_handler = add_to_document(plot.state)
         with doc_handler:
             doc = doc_handler._doc
-            comms_target = str(uuid.uuid4())
-            doc.last_comms_target = comms_target
-            div = notebook_div(plot.state, comms_target)
+            target = plot.comm.target if plot.comm else None
+            div = notebook_div(plot.state, target)
         plot.document = doc
         doc.add_root(plot.state)
         return div
 
+
+    def diff(self, plot, serialize=True):
+        """
+        Returns a json diff required to update an existing plot with
+        the latest plot data.
+        """
+        plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
+                       for h in handles]
+        patch = compute_static_patch(plot.document, plotobjects)
+        processed = self._apply_post_render_hooks(patch, plot, 'json')
+        return serialize_json(processed) if serialize else processed
 
     @classmethod
     def plot_options(cls, obj, percent_size):

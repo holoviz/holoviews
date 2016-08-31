@@ -5,7 +5,7 @@ from bokeh.io import _CommsHandle
 from bokeh.util.notebook import get_comms
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
-from .util import compute_static_patch
+from .util import serialize_json
 
 class BokehWidget(NdWidget):
 
@@ -36,22 +36,16 @@ class BokehWidget(NdWidget):
         """
         self.plot.update(idx)
         if self.embed or fig_format == 'html':
-            html = self.renderer.html(self.plot, fig_format)
-            return html
-        else:
-            doc = self.plot.document
-            if hasattr(doc, 'last_comms_handle'):
-                handle = doc.last_comms_handle
+            if fig_format == 'html':
+                msg = self.renderer.html(self.plot, fig_format)
             else:
-                handle = _CommsHandle(get_comms(doc.last_comms_target),
-                                      doc, doc.to_json())
-                doc.last_comms_handle = handle
-
-            plotobjects = [h for handles in self.plot.traverse(lambda x: x.current_handles)
-                           for h in handles]
-            msg = compute_static_patch(doc, plotobjects)
-            handle.comms.send(json.dumps(msg))
-            return 'Complete'
+                json_patch = self.renderer.diff(self.plot, serialize=False)
+                msg = dict(patch=json_patch, root=self.plot.state._id)
+                msg = serialize_json(msg)
+            return msg
+        else:
+            self.plot.push()
+            return "Complete"
 
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):

@@ -68,12 +68,12 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         try:
-            plot_class = cls.renderer.plotting_class(obj)
+            plot_class = Store.renderers[cls.backend].plotting_class(obj)
             style_opts = plot_class.style_opts
         except SkipRendering:
             style_opts = None
 
-        node = Store.lookup_options(cls.renderer.backend, obj, group)
+        node = Store.lookup_options(cls.backend, obj, group)
         if group == 'style' and style_opts:
             return node.filtered(style_opts)
         else:
@@ -178,7 +178,7 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -195,6 +195,12 @@ class DimensionedPlot(Plot):
         self.current_frame = None
         self.current_key = None
         self.ranges = {}
+        self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
+
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            comm = self.renderer.comms[self.renderer.mode][0](self)
+        self.comm = comm
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -420,7 +426,7 @@ class DimensionedPlot(Plot):
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
             if opt_type == 'plot' and defaults:
-                plot = Store.registry[cls.renderer.backend].get(type(x))
+                plot = Store.registry[cls.backend].get(type(x))
                 selected['defaults'] = {o: getattr(plot, o) for o in opts
                                         if o not in selected and hasattr(plot, o)}
             key = keyfn(x) if keyfn else None
@@ -470,6 +476,29 @@ class DimensionedPlot(Plot):
         if len(self) == 1 and key == 0 and not self.drawn:
             return self.initialize_plot()
         return self.__getitem__(key)
+
+
+    def refresh(self):
+        """
+        Refreshes the plot by rerendering it and then pushing
+        the updated data if the plot has an associated Comm.
+        """
+        if self.current_key:
+            self.update(self.current_key)
+        else:
+            self.update(0)
+        if self.comm is not None:
+            self.push()
+
+
+    def push(self):
+        """
+        Pushes updated plot data via the Comm.
+        """
+        if self.comm is None:
+            raise Exception('Renderer does not have a comm.')
+        diff = self.renderer.diff(self)
+        self.comm.send(diff)
 
 
     def __len__(self):
@@ -570,10 +599,7 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
-        if key == self.current_key:
-            return self.current_frame
-        else:
-            self.current_key = key
+        self.current_key = key
 
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)

@@ -3,44 +3,6 @@ import param
 
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
-try:
-    with warnings.catch_warnings():
-        warnings.simplefilter("ignore")
-        from matplotlib.backends.backend_nbagg import CommSocket
-except ImportError:
-    CommSocket = object
-
-class WidgetCommSocket(CommSocket):
-    """
-    CustomCommSocket provides communication between the IPython
-    kernel and a matplotlib canvas element in the notebook.
-    A CustomCommSocket is required to delay communication
-    between the kernel and the canvas element until the widget
-    has been rendered in the notebook.
-    """
-
-    def __init__(self, manager):
-        self.supports_binary = None
-        self.manager = manager
-        self.uuid = str(uuid.uuid4())
-        self.html = "<div id=%r></div>" % self.uuid
-
-    def start(self):
-        try:
-            # Jupyter/IPython 4.0
-            from ipykernel.comm import Comm
-        except:
-            # IPython <=3.0
-            from IPython.kernel.comm import Comm
-
-        try:
-            self.comm = Comm('matplotlib', data={'id': self.uuid})
-        except AttributeError:
-            raise RuntimeError('Unable to create an IPython notebook Comm '
-                               'instance. Are you in the IPython notebook?')
-        self.comm.on_msg(self.on_message)
-        self.comm.on_close(lambda close_message: self.manager.clearup_closed())
-
 
 class MPLWidget(NdWidget):
 
@@ -56,7 +18,6 @@ class MPLWidget(NdWidget):
         super(MPLWidget, self).__init__(plot, renderer, **params)
         if self.renderer.mode == 'nbagg':
             self.cached = False
-            self.initialize_connection(plot)
 
 
     def _plot_figure(self, idx):
@@ -68,33 +29,23 @@ class MPLWidget(NdWidget):
                 figure_format = self.renderer.params('fig').objects[0]
             else:
                 figure_format = self.renderer.fig
-            return self.renderer.html(self.plot, figure_format)
+            return self.renderer.html(self.plot, figure_format, comm=False)
 
 
     def update(self, key):
         if self.plot.dynamic == 'bounded' and not isinstance(key, int):
             key = tuple(dim.values[k] if dim.values else k
                         for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-
-        if self.renderer.mode == 'nbagg':
-            if not self.manager._shown:
-                self.comm.start()
-                self.manager.add_web_socket(self.comm)
-                self.manager._shown = True
-            fig = self.plot[key]
-            fig.canvas.draw_idle()
-            return ''
-        frame = self._plot_figure(key)
-        if self.renderer.mode == 'mpld3':
-            return self.encode_frames({0: frame})
-        else:
-            return str(frame)
+        self.plot[key]
+        self.plot.push()
+        return '' if self.renderer.mode == 'nbagg' else 'Complete'
 
 
     def get_frames(self):
         if self.renderer.mode == 'nbagg':
-            self.manager.display_js()
-            frames = {0: self.comm.html}
+            manager = self.plot.comm.get_figure_manager()
+            manager.display_js()
+            frames = {0: self.plot.comm._comm_socket.html}
         elif self.embed:
             return super(MPLWidget, self).get_frames()
         else:
@@ -117,11 +68,6 @@ class MPLWidget(NdWidget):
             frames = dict(frames)
             return json.dumps(frames)
 
-
-    def initialize_connection(self, plot):
-        plot.update(0)
-        self.manager = self.renderer.get_figure_manager(plot.state)
-        self.comm = WidgetCommSocket(self.manager)
 
 
 class MPLSelectionWidget(MPLWidget, SelectionWidget):

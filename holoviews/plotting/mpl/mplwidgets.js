@@ -25,7 +25,7 @@ var MPLMethods = {
 		}
 	},
 	populate_cache : function(idx){
-		var cache_id = this.img_id+"_"+idx;
+		var cache_id = "_anim_img"+this.id+"_"+idx;
 		if(this.mode == 'mpld3') {
 			mpld3.draw_figure(cache_id, this.frames[idx]);
 		} else {
@@ -35,48 +35,15 @@ var MPLMethods = {
 			delete this.frames[idx];
 		}
 	},
-	dynamic_update : function(current){
-		if (this.dynamic) {
-			current = JSON.stringify(current);
+	process_msg : function(msg) {
+		if (!(this.mode == 'nbagg')) {
+			var data = msg.content.data;
+			this.frames[this.current] = data;
+			this.update_cache(true);
+			this.update(this.current);
 		}
-		function callback(msg){
-			/* This callback receives data from Python as a string
-			 in order to parse it correctly quotes are sliced off*/
-			if (msg.content.ename != undefined) {
-				this.process_error(msg);
-			}
-			if (msg.msg_type != "execute_result") {
-				console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
-				this.time = undefined;
-				return
-			}
-			if (!(this.mode == 'nbagg')) {
-				if(!(current in this.cache)) {
-					var data = msg.content.data['text/plain'].slice(1, -1);
-					if(this.mode == 'mpld3'){
-						data = JSON.parse(data)[0];
-					}
-					this.frames[current] = data;
-					this.update_cache();
-				}
-				this.update(current);
-			}
-			this.timed = (Date.now() - this.time) * 1.5;
-			this.wait = false;
-			if (this.queue.length > 0) {
-				var current_vals = this.queue[this.queue.length-1];
-				this.time = Date.now();
-				this.dynamic_update(current_vals);
-				this.queue = [];
-			}
-		}
-		var kernel = IPython.notebook.kernel;
-		callbacks = {iopub: {output: $.proxy(callback, this)}};
-		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
 	}
 }
-
 // Extend MPL widgets with backend specific methods
 extend(MPLSelectionWidget.prototype, MPLMethods);
 extend(MPLScrubberWidget.prototype, MPLMethods);

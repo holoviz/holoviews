@@ -228,7 +228,7 @@ class InfoPrinter(object):
     @classmethod
     def options_info(cls, plot_class, ansi=False, pattern=None):
         if plot_class.style_opts:
-            backend_name = plot_class.renderer.backend
+            backend_name = plot_class.backend
             style_info = ("\n(Consult %s's documentation for more information.)" % backend_name)
             style_keywords = '\t%s' % ', '.join(plot_class.style_opts)
             style_msg = '%s\n%s' % (style_keywords, style_info)

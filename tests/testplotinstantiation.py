@@ -13,6 +13,7 @@ try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
     from holoviews.plotting.mpl import OverlayPlot
+    from holoviews.plotting.comms import JupyterPushComms
     renderer = Store.renderers['matplotlib']
 except:
     pyplot = None
@@ -23,6 +24,11 @@ class TestPlotInstantiation(ComparisonTestCase):
     def setUp(self):
         if pyplot is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
+        self.default_comm = renderer.comms['default']
+        renderer.comms['default'] = JupyterPushComms
+
+    def teardown(self):
+        renderer.comms['default'] = self.default_comm
 
     def test_interleaved_overlay(self):
         """

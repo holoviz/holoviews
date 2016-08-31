@@ -9,7 +9,6 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from mpl_toolkits.mplot3d import Axes3D
 
 import param
 from param.parameterized import bothmethod
@@ -18,6 +17,8 @@ from ...core import HoloMap
 from ...core.options import Store
 
 from ..renderer import Renderer, MIME_TYPES
+from .comms import (JupyterComm, NbAggJupyterComm,
+                    mpl_msg_handler, mpld3_msg_handler)
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
@@ -81,6 +82,11 @@ class MPLRenderer(Renderer):
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
 
+    # Define comm targets by mode
+    comms = {'default': (JupyterComm, mpl_msg_handler),
+             'nbagg':   (NbAggJupyterComm, None),
+             'mpld3':   (JupyterComm, mpld3_msg_handler)}
+
     def __call__(self, obj, fmt='auto'):
         """
         Render the supplied HoloViews component or MPLPlot instance
@@ -135,6 +141,22 @@ class MPLRenderer(Renderer):
         return (w*dpi, h*dpi)
 
 
+    def diff(self, plot):
+        """
+        Returns the latest plot data to update an existing plot.
+        """
+        data = None
+        if self.mode != 'nbagg':
+            if self.mode == 'mpld3':
+                figure_format = 'json'
+            elif self.fig == 'auto':
+                figure_format = self.renderer.params('fig').objects[0]
+            else:
+                figure_format = self.fig
+            data = self.html(plot, figure_format, comm=False)
+        return data
+
+
     def _figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
         """
         Render matplotlib figure object and return the corresponding data.
@@ -144,7 +166,7 @@ class MPLRenderer(Renderer):
         """
         fig = plot.state
         if self.mode == 'nbagg':
-            manager = self.get_figure_manager(plot.state)
+            manager = plot.comm.get_figure_manager()
             if manager is None: return ''
             self.counter += 1
             manager.show()
@@ -156,7 +178,16 @@ class MPLRenderer(Renderer):
             if fmt == 'json':
                 return mpld3.fig_to_dict(fig)
             else:
-                return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
+                figid = "fig_el"+plot.comm.target if plot.comm else None
+                html = mpld3.fig_to_html(fig, figid=figid)
+                html = "<center>" + html + "<center/>"
+                if plot.comm:
+                    comm, msg_handler = self.comms[self.mode]
+                    msg_handler = msg_handler.format(comms_target=plot.comm.target)
+                    return comm.template.format(init_frame=html,
+                                                msg_handler=msg_handler,
+                                                comms_target=plot.comm.target)
+                return html
 
         traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
         extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
@@ -184,16 +215,6 @@ class MPLRenderer(Renderer):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
-
-
-    def get_figure_manager(self, fig):
-        from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-        manager = new_figure_manager_given_figure(self.counter, fig)
-        # Need to call mouse_init on each 3D axis to enable rotation support
-        for ax in fig.get_axes():
-            if isinstance(ax, Axes3D):
-                ax.mouse_init()
-        return manager
 
 
     def _anim_data(self, anim, fmt):
