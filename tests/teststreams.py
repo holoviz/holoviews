@@ -1,8 +1,9 @@
 """
 Unit test of the streams system
 """
+import param
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream, PositionX, PositionY, PositionXY
+from holoviews.streams import Stream, PositionX, PositionY, PositionXY, ParamValues
 from holoviews.streams import Rename, Group
 
 
@@ -38,6 +39,44 @@ class TestPositionStreams(ComparisonTestCase):
             raise Exception('No constant parameter exception')
         except TypeError as e:
             self.assertEqual(str(e), "Constant parameter 'y' cannot be modified")
+
+
+class TestParamValuesStream(ComparisonTestCase):
+
+    def setUp(self):
+
+        class Inner(param.Parameterized):
+
+            x = param.Number(default = 0)
+            y = param.Number(default = 0)
+
+        self.inner = Inner
+
+    def tearDown(self):
+        self.inner.x = 0
+        self.inner.y = 0
+
+    def test_object_value(self):
+        obj = self.inner()
+        stream = ParamValues(obj)
+        self.assertEqual(stream.value, {'x':0, 'y':0})
+
+    def test_class_value(self):
+        stream = ParamValues(self.inner)
+        self.assertEqual(stream.value, {'x':0, 'y':0})
+
+    def test_object_value_update(self):
+        obj = self.inner()
+        stream = ParamValues(obj)
+        self.assertEqual(stream.value, {'x':0, 'y':0})
+        stream.update(x=5, y=10)
+        self.assertEqual(stream.value, {'x':5, 'y':10})
+
+    def test_class_value_update(self):
+        stream = ParamValues(self.inner)
+        self.assertEqual(stream.value, {'x':0, 'y':0})
+        stream.update(x=5, y=10)
+        self.assertEqual(stream.value, {'x':5, 'y':10})
 
 
 
