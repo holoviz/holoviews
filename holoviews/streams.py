@@ -223,3 +223,60 @@ class PositionXY(Stream):
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         super(PositionXY, self).__init__(preprocessors=preprocessors, source=source,
                                         subscribers=subscribers, **params)
+
+
+
+
+class ParamValues(Stream):
+    """
+    A Stream based on the parameter values of some other parameterized
+    object, whether it is a parameterized class or a parameterized
+    instance.
+
+    The update method enables the stream to update the parameters of the
+    specified object.
+    """
+
+    def __init__(self, obj, **params):
+        self._obj = obj
+        super(ParamValues, self).__init__(**params)
+
+
+    @property
+    def value(self):
+        if isinstance(self._obj, type):
+            remapped={k: getattr(self._obj,k)
+                               for k in self._obj.params().keys() if k!= 'name'}
+        else:
+            remapped={k:v for k,v in self._obj.get_param_values() if k!= 'name'}
+
+        for preprocessor in self.preprocessors:
+            remapped = preprocessor(remapped)
+        return remapped
+
+
+    def update(self, trigger=True, **kwargs):
+        """
+        The update method updates the parameters of the specified object.
+
+        If trigger is enabled, the trigger classmethod is invoked on
+        this Stream instance to execute its subscribers.
+        """
+        if isinstance(self._obj, type):
+            for name in self._obj.params().keys():
+                if name in kwargs:
+                    setattr(self._obj, name, kwargs[name])
+        else:
+            self._obj.set_param(**kwargs)
+
+        if trigger:
+            self.trigger([self])
+
+
+    def __repr__(self):
+        cls_name = self.__class__.__name__
+        return '%s(%r)' % (cls_name, self._obj)
+
+
+    def __str__(self):
+        return repr(self)
