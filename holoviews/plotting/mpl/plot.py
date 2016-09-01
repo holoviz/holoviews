@@ -294,6 +294,7 @@ class GridPlot(CompositePlot):
             grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
             self.position = (l, b, w, h)
 
+        self.cols, self.rows = layout.shape
         self.fig_inches = self._get_size()
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
         self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)

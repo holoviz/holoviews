@@ -910,7 +910,6 @@ class GenericCompositePlot(DimensionedPlot):
             dimensions, keys = traversal.unique_dimkeys(layout)
 
         self.layout = layout
-        self.rows, self.cols = layout.shape
         super(GenericCompositePlot, self).__init__(keys=keys,
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
@@ -994,5 +993,6 @@ class GenericLayoutPlot(GenericCompositePlot):
 
         super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
+        self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))

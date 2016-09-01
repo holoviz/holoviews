@@ -169,6 +169,7 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             raise Exception("GridPlot only accepts GridSpace.")
         super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
                                        ranges=ranges, **params)
+        self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
 
 
