@@ -557,7 +557,7 @@ class DynamicMap(HoloMap):
             retval = next(self.callback)
         else:
             # Additional validation needed to ensure kwargs don't clash
-            kwarg_items = [s.value.items() for s in self.streams]
+            kwarg_items = [s.contents.items() for s in self.streams]
             flattened = [el for kws in kwarg_items for el in kws]
             klist = [k for k,_ in flattened]
             clashes = set([k for k in klist if klist.count(k) > 1])

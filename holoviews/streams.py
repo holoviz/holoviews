@@ -16,7 +16,7 @@ class Preprocessor(param.Parameterized):
     and returns a dictionary. Where possible, Preprocessors should have
     valid reprs that can be evaluated.
 
-    Preprocessors are used to set the value of a stream based on the
+    Preprocessors are used to set the contents of a stream based on the
     parameter values. They may be used for debugging purposes or to
     remap or repack parameter values before they are passed onto to the
     subscribers.
@@ -87,8 +87,8 @@ class Stream(param.Parameterized):
         subscriber may be set multiple times across streams but only
         needs to be called once.
         """
-        # Union of stream values
-        items = [stream.value.items() for stream in streams]
+        # Union of stream contents
+        items = [stream.contents.items() for stream in streams]
         union = [kv for kvs in items for kv in kvs]
         klist = [k for k,_ in union]
         clashes = set([k for k in klist if klist.count(k) > 1])
@@ -132,7 +132,7 @@ class Stream(param.Parameterized):
 
 
     @property
-    def value(self):
+    def contents(self):
         remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
         for preprocessor in self.preprocessors:
             remapped = preprocessor(remapped)
@@ -243,7 +243,7 @@ class ParamValues(Stream):
 
 
     @property
-    def value(self):
+    def contents(self):
         if isinstance(self._obj, type):
             remapped={k: getattr(self._obj,k)
                                for k in self._obj.params().keys() if k!= 'name'}
