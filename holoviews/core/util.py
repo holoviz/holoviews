@@ -779,9 +779,10 @@ def wrap_tuple(unwrapped):
 
 
 
-def stream_parameters(streams, no_duplicates=True):
+def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     """
-    Given a list of streams, return a flat list of parameter names.
+    Given a list of streams, return a flat list of parameter name,
+    excluding those listed in the exclude list.
 
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
@@ -793,7 +794,7 @@ def stream_parameters(streams, no_duplicates=True):
         clashes = set([n for n in names if names.count(n) > 1])
         if clashes:
             raise KeyError('Parameter name clashes for keys: %r' % clashes)
-    return names
+    return [name for name in names if name not in exclude]
 
 
 def dimensionless_contents(streams, kdims):
