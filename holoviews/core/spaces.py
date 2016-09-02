@@ -654,7 +654,7 @@ class DynamicMap(HoloMap):
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
-        tuple_key = util.wrap_tuple(key)
+        tuple_key = util.wrap_tuple_streams(key, self.kdims, self.streams)
 
         # Validation for bounded mode
         if self.mode == 'bounded':
