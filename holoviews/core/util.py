@@ -778,6 +778,22 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+
+def stream_parameters(streams, no_duplicates=True):
+    """
+    Given a list of streams, return a flat list of parameter names.
+
+    If no_duplicates is enabled, a KeyError will be raised if there are
+    parameter name clashes across the streams.
+    """
+    param_groups = [s.params().keys() for s in streams]
+    names = [name for group in param_groups for name in group]
+
+    if no_duplicates:
+        clashes = set([n for n in names if names.count(n) > 1])
+        if clashes:
+            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+    return names
 def itervalues(obj):
     "Get value iterator from dictionary for Python 2 and 3"
     return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
