@@ -507,6 +507,8 @@ class DynamicMap(HoloMap):
             return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
+            if kdim.name in util.stream_parameters(self.streams):
+                return 'key'
             if kdim.values:
                 continue
             if None in kdim.range:
