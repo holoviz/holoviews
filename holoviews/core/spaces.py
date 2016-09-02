@@ -729,7 +729,7 @@ class DynamicMap(HoloMap):
         (key, val) = (retval if isinstance(retval, tuple)
                       else (self.counter, retval))
 
-        key = util.wrap_tuple(key)
+        key = util.wrap_tuple_streams(key, self.kdims, self.streams)
         if len(key) != len(self.key_dimensions):
             raise Exception("Generated key does not match the number of key dimensions")
 
