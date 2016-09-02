@@ -8,7 +8,9 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.core.util import sanitize_identifier_fn, find_range, max_range
+from holoviews.core.util import sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams
+from holoviews import Dimension
+from holoviews.streams import PositionXY
 from holoviews.element.comparison import ComparisonTestCase
 
 py_version = sys.version_info.major
@@ -298,3 +300,36 @@ class TestMaxRange(unittest.TestCase):
         lower, upper = max_range(self.ranges2)
         self.assertTrue(math.isnan(lower))
         self.assertTrue(math.isnan(upper))
+
+
+
+class TestWrapTupleStreams(unittest.TestCase):
+
+
+    def test_no_streams(self):
+        result = wrap_tuple_streams((1,2), [],[])
+        self.assertEqual(result, (1,2))
+
+    def test_no_streams_two_kdims(self):
+        result = wrap_tuple_streams((1,2),
+                                    [Dimension('x'), Dimension('y')],
+                                    [])
+        self.assertEqual(result, (1,2))
+
+    def test_no_streams_none_value(self):
+        result = wrap_tuple_streams((1,None),
+                                    [Dimension('x'), Dimension('y')],
+                                    [])
+        self.assertEqual(result, (1,None))
+
+    def test_no_streams_one_stream_substitution(self):
+        result = wrap_tuple_streams((None,3),
+                                    [Dimension('x'), Dimension('y')],
+                                    [PositionXY(x=-5,y=10)])
+        self.assertEqual(result, (-5,3))
+
+    def test_no_streams_two_stream_substitution(self):
+        result = wrap_tuple_streams((None,None),
+                                    [Dimension('x'), Dimension('y')],
+                                    [PositionXY(x=0,y=5)])
+        self.assertEqual(result, (0,5))
