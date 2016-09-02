@@ -794,6 +794,25 @@ def stream_parameters(streams, no_duplicates=True):
         if clashes:
             raise KeyError('Parameter name clashes for keys: %r' % clashes)
     return names
+
+
+def wrap_tuple_streams(unwrapped, kdims, streams):
+    """
+    Fills in tuple keys with dimensioned stream values as appropriate.
+    """
+    param_groups = [(s.params().keys(), s) for s in streams]
+    pairs = [(name,s)  for (group, s) in param_groups for name in group]
+    substituted = []
+    for pos,el in enumerate(wrap_tuple(unwrapped)):
+        if el is None and pos < len(kdims):
+            matches = [(name,s) for (name,s) in pairs if name==kdims[pos].name]
+            if len(matches) == 1:
+                (name, stream) = matches[0]
+                el = stream.contents[name]
+        substituted.append(el)
+    return tuple(substituted)
+
+
 def itervalues(obj):
     "Get value iterator from dictionary for Python 2 and 3"
     return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
