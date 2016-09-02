@@ -557,8 +557,10 @@ class DynamicMap(HoloMap):
             retval = next(self.callback)
         else:
             # Additional validation needed to ensure kwargs don't clash
+            kdims = [kdim.name for kdim in self.kdims]
             kwarg_items = [s.contents.items() for s in self.streams]
-            flattened = [el for kws in kwarg_items for el in kws]
+            flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
+                         if k not in kdims]
             retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
