@@ -796,6 +796,16 @@ def stream_parameters(streams, no_duplicates=True):
     return names
 
 
+def dimensionless_contents(streams, kdims):
+    """
+    Return a list of stream parameters that have not been associated
+    with any of the key dimensions.
+    """
+    names = stream_parameters(streams)
+    kdim_names = [kdim.name for kdim in kdims]
+    return [name for name in names if name not in kdim_names]
+
+
 def wrap_tuple_streams(unwrapped, kdims, streams):
     """
     Fills in tuple keys with dimensioned stream values as appropriate.
