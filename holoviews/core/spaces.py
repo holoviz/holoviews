@@ -672,8 +672,8 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
-            if self.streams:
-                raise KeyError('Using streams disables DynamicMap cache')
+            if util.dimensionless_contents(self.streams, self.kdims):
+                raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
             # Return selected cache items in a new DynamicMap
             if isinstance(cache, DynamicMap) and self.mode=='open':
