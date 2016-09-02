@@ -23,14 +23,14 @@ class TestPositionStreams(ComparisonTestCase):
     def test_positionX_init(self):
         PositionX()
 
-    def test_positionXY_init_values(self):
+    def test_positionXY_init_contents(self):
         position = PositionXY(x=1, y=3)
-        self.assertEqual(position.value, dict(x=1, y=3))
+        self.assertEqual(position.contents, dict(x=1, y=3))
 
-    def test_positionXY_update_values(self):
+    def test_positionXY_update_contents(self):
         position = PositionXY()
         position.update(x=5, y=10)
-        self.assertEqual(position.value, dict(x=5, y=10))
+        self.assertEqual(position.contents, dict(x=5, y=10))
 
     def test_positionY_const_parameter(self):
         position = PositionY()
@@ -56,27 +56,27 @@ class TestParamValuesStream(ComparisonTestCase):
         self.inner.x = 0
         self.inner.y = 0
 
-    def test_object_value(self):
+    def test_object_contents(self):
         obj = self.inner()
         stream = ParamValues(obj)
-        self.assertEqual(stream.value, {'x':0, 'y':0})
+        self.assertEqual(stream.contents, {'x':0, 'y':0})
 
     def test_class_value(self):
         stream = ParamValues(self.inner)
-        self.assertEqual(stream.value, {'x':0, 'y':0})
+        self.assertEqual(stream.contents, {'x':0, 'y':0})
 
     def test_object_value_update(self):
         obj = self.inner()
         stream = ParamValues(obj)
-        self.assertEqual(stream.value, {'x':0, 'y':0})
+        self.assertEqual(stream.contents, {'x':0, 'y':0})
         stream.update(x=5, y=10)
-        self.assertEqual(stream.value, {'x':5, 'y':10})
+        self.assertEqual(stream.contents, {'x':5, 'y':10})
 
     def test_class_value_update(self):
         stream = ParamValues(self.inner)
-        self.assertEqual(stream.value, {'x':0, 'y':0})
+        self.assertEqual(stream.contents, {'x':0, 'y':0})
         stream.update(x=5, y=10)
-        self.assertEqual(stream.value, {'x':5, 'y':10})
+        self.assertEqual(stream.contents, {'x':5, 'y':10})
 
 
 
@@ -142,8 +142,8 @@ class TestPreprocessors(ComparisonTestCase):
 
     def test_rename_preprocessor(self):
         position = PositionXY([Rename(x='x1',y='y1')], x=1, y=3)
-        self.assertEqual(position.value, dict(x1=1, y1=3))
+        self.assertEqual(position.contents, dict(x1=1, y1=3))
 
     def test_group_preprocessor(self):
         position = PositionXY([Group('mygroup')], x=1, y=3)
-        self.assertEqual(position.value, dict(mygroup={'x':1,'y':3}))
+        self.assertEqual(position.contents, dict(mygroup={'x':1,'y':3}))
