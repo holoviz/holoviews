@@ -559,11 +559,6 @@ class DynamicMap(HoloMap):
             # Additional validation needed to ensure kwargs don't clash
             kwarg_items = [s.contents.items() for s in self.streams]
             flattened = [el for kws in kwarg_items for el in kws]
-            klist = [k for k,_ in flattened]
-            clashes = set([k for k in klist if klist.count(k) > 1])
-            if clashes:
-                self.warning('Parameter name clashes for keys: %r' % clashes)
-
             retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
