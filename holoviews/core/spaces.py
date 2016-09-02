@@ -703,9 +703,11 @@ class DynamicMap(HoloMap):
         """
         Request that a key/value pair be considered for caching.
         """
+        cache_size = (1 if util.dimensionless_contents(self.streams, self.kdims)
+                      else self.cache_size)
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
-        if len(self) >= self.cache_size:
+        if len(self) >= cache_size:
             first_key = next(self.data.iterkeys())
             self.data.pop(first_key)
         self.data[key] = val
