@@ -89,6 +89,13 @@ def last_frame(obj):
 # Display hooks #
 #===============#
 
+def option_state(element, state=None):
+    # Temporary fix to avoid issues with DynamicMap traversal
+    DynamicMap._deep_indexable = False
+    optstate = StoreOptions.state(element,state=state)
+    DynamicMap._deep_indexable = True
+    return optstate
+
 
 def display_hook(fn):
     @wraps(fn)
@@ -96,7 +103,7 @@ def display_hook(fn):
         global FULL_TRACEBACK
         if Store.current_backend is None:
             return
-        optstate = StoreOptions.state(element)
+        optstate = option_state(element)
         try:
             html = fn(element,
                       max_frames=OutputMagic.options['max_frames'],
@@ -115,7 +122,8 @@ def display_hook(fn):
             sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
-            try:    StoreOptions.state(element, state=optstate)
+            try:
+                option_state(element, state=optstate)
             except: pass
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
@@ -126,7 +134,8 @@ def display_hook(fn):
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
-            try:    StoreOptions.state(element, state=optstate)
+            try:
+                option_state(element, state=optstate)
             except: pass
             raise
     return wrapped
