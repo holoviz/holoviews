@@ -122,8 +122,7 @@ def display_hook(fn):
             sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
-            try:
-                option_state(element, state=optstate)
+            try: option_state(element, state=optstate)
             except: pass
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
@@ -134,8 +133,7 @@ def display_hook(fn):
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
-            try:
-                option_state(element, state=optstate)
+            try: option_state(element, state=optstate)
             except: pass
             raise
     return wrapped
