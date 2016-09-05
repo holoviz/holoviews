@@ -996,3 +996,13 @@ def dt64_to_dt(dt64):
     """
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
     return dt.datetime.utcfromtimestamp(ts)
+
+
+def is_nan(x):
+    """
+    Checks whether value is NaN on arbitrary types
+    """
+    try:
+        return np.isnan(x)
+    except:
+        return False
