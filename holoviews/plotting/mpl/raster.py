@@ -12,7 +12,7 @@ from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
-
+from ..util import get_2d_aggregate
 
 class RasterPlot(ColorbarPlot):
 
@@ -105,7 +105,7 @@ class HeatMapPlot(RasterPlot):
         handles = {}
         for plot_coord, text in annotations.items():
             handles[plot_coord] = ax.annotate(text, xy=plot_coord,
-                                              xycoords='axes fraction',
+                                              xycoords='data',
                                               horizontalalignment='center',
                                               verticalalignment='center')
         return handles
@@ -113,12 +113,12 @@ class HeatMapPlot(RasterPlot):
 
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
-        vals = np.rot90(element.raster, 3).flatten()
+        aggregate = get_2d_aggregate(element)
+        vals = aggregate.dimension_values(2)
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
-        xstep, ystep = 1.0/num_x, 1.0/num_y
-        xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
-        ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
+        xpos = np.linspace(0.5, num_x-0.5, num_x)
+        ypos = np.linspace(0.5, num_y-0.5, num_y)
         plot_coords = product(xpos, ypos)
         annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
@@ -133,18 +133,15 @@ class HeatMapPlot(RasterPlot):
         dim1_keys, dim2_keys = [element.dimension_values(i, False)
                                 for i in range(2)]
         num_x, num_y = len(dim1_keys), len(dim2_keys)
-        x0, y0, x1, y1 = element.extents
-        xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
-        xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
-        ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
+        xpos = np.linspace(.5, num_x-0.5, num_x)
+        ypos = np.linspace(.5, num_y-0.5, num_y)
         xlabels = [xdim.pprint_value(k) for k in dim1_keys]
         ylabels = [ydim.pprint_value(k) for k in dim2_keys]
         return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        l, r, b, t = plot_kwargs['extent']
-        ax.set_aspect(float(r - l)/(t-b))
+        ax.set_aspect(plot_kwargs.pop('aspect', 1))
 
         handles = {}
         annotations = plot_kwargs.pop('annotations', None)
@@ -156,16 +153,23 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        mask = np.logical_not(np.isfinite(element.raster))
-        data = np.ma.array(element.raster, mask=mask)
-        style['annotations'] = self._annotate_values(element)
+        shape = tuple(len(element.dimension_values(i)) for i in range(2))
+        aggregate = get_2d_aggregate(element)
+        data = np.flipud(aggregate.dimension_values(2).reshape(shape[::-1]))
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        cmap_name = style.pop('cmap', None)
+        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
+        cmap.set_bad('w', 1.)
+        style['cmap'] = cmap
+        style['aspect'] = shape[0]/shape[1]
+        style['extent'] = (0, shape[0], 0, shape[1])
+        style['annotations'] = self._annotate_values(aggregate)
         return [data], style, axis_kwargs
 
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
-        l, r, b, t = style['extent']
         im.set_data(data[0])
         im.set_extent((l, r, b, t))
         im.set_clim((style['vmin'], style['vmax']))

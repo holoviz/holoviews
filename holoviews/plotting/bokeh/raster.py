@@ -1,10 +1,16 @@
 import numpy as np
 import param
 
-from ...core.util import cartesian_product
+from bokeh.models.mappers import LinearColorMapper
+try:
+    from bokeh.models.mappers import LogColorMapper
+except ImportError:
+    LogColorMapper = None
+
+from ...core.util import cartesian_product, is_nan
 from ...element import Image, Raster, RGB
 from ..renderer import SkipRendering
-from ..util import map_colors
+from ..util import map_colors, get_2d_aggregate
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb, mpl_to_bokeh
 
@@ -137,19 +143,22 @@ class HeatmapPlot(ColorbarPlot):
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
 
-
     def get_data(self, element, ranges=None, empty=False):
-        x, y, z = element.dimensions(label=True)
+        x, y, z = element.dimensions(label=True)[:3]
+        aggregate = get_2d_aggregate(element)
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
             data = {x: [], y: [], z: [], 'color': []}
         else:
-            zvals = np.rot90(element.raster, 3).flatten()
+            zvals = aggregate.dimension_values(z)
             xvals, yvals = [[str(v) for v in element.dimension_values(i)]
                             for i in range(2)]
             data = {x: xvals, y: yvals, z: zvals}
-
+        if 'hover' in self.tools:
+            for vdim in element.vdims[1:]:
+                data[vdim.name] = ['' if is_nan(v) else v
+                                   for v in aggregate.dimension_values(vdim)]
         return (data, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper},
                        'height': 1, 'width': 1})
 
