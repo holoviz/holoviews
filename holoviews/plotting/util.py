@@ -4,10 +4,10 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, Store, Callable, Overlay)
+                    GridSpace, NdLayout, Store, Dataset)
 from ..core.spaces import get_nested_streams
-from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
-                         get_overlay_spec, unique_iterator, safe_unicode)
+from ..core.util import (match_spec, is_number, wrap_tuple, basestring, pd,
+                         get_overlay_spec, unique_iterator, safe_unicode, is_nan)
 
 
 def displayable(obj):
@@ -484,3 +484,32 @@ try:
     register_cmap("fire_r", cmap=fire_r_cmap)
 except ImportError:
     pass
+
+def reduce_fn(x):
+    """
+    Aggregation function to get the first non-zero value.
+    """
+    values = x.values if pd and isinstance(pd.Series, values) else x
+    for v in values:
+        if not is_nan(v):
+            return v
+    return np.NaN
+
+
+def get_2d_aggregate(obj):
+    """
+    Generates a 2D aggregate by inserting NaNs at all cross-product
+    locations that do not already have a value assigned, creating
+    values that can be shaped into a 2D array.
+    """
+    if obj.interface.gridded:
+        return obj
+    elif obj.ndims > 2:
+        raise Exception("Cannot aggregate more than two dimensions")
+    d1keys = obj.dimension_values(0, False)
+    d2keys = obj.dimension_values(1, False)
+    coords = [(d1, d2) + (np.NaN,)*len(obj.vdims) for d1 in d1keys for d2 in d2keys]
+    dtype = 'dataframe' if pd else 'dictionary'
+    dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
+    concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
+    return concat_data.aggregate(obj.kdims, reduce_fn)
