@@ -52,7 +52,6 @@ class TablePlot(ElementPlot):
 
 
     def _format_table(self):
-        cell_values = defaultdict(dict)
         cell_widths = defaultdict(int)
         for key in self.keys:
             frame = self._get_frame(key)
@@ -73,10 +72,9 @@ class TablePlot(ElementPlot):
                             adjusted_row = (frame.rows - self.max_rows + row)
                         value = frame.pprint_cell(adjusted_row, col)
                         cell_text = self.pprint_value(value)
-                    cell_values[key][(row, col)] = cell_text
                     if len(cell_text) + 2 > cell_widths[col]:
                         cell_widths[col] = len(cell_text) + 2
-        return cell_values, cell_widths
+        return cell_widths
 
 
     def pprint_value(self, value):
