@@ -115,7 +115,7 @@ class TablePlot(ElementPlot):
             for col in range(element.cols):
                 if summarize and row > half_rows:
                     adjusted_row = (element.rows - self.max_rows + row)
-                cell_value = element.pprint_cell(row, col)
+                cell_value = self.pprint_value(element.pprint_cell(row, col))
                 cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
                 width = self.cell_widths[col] / float(total_width)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
@@ -135,7 +135,7 @@ class TablePlot(ElementPlot):
         table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():
-            value = element.pprint_cell(*coords)
+            value = self.pprint_value(element.pprint_cell(*coords))
             cell.set_text_props(text=value)
 
         # Resize fonts across table as necessary
