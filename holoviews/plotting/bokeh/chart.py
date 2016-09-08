@@ -9,7 +9,7 @@ except:
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core.util import max_range, basestring
+from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, line_properties, fill_properties
@@ -336,29 +336,24 @@ class SpikesPlot(PathPlot):
             b, t = self.position, self.position+self.spike_length
         return l, b, r, t
 
-
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
         pos = self.position
+        mapping = dict(xs='xs', ys='ys')
         if empty:
-            xs, ys, keys = [], [], []
-            mapping = dict(xs=dims[0], ys=dims[1] if len(dims) > 1 else 'heights')
+            xs, ys = [], []
         elif len(dims) > 1:
-            xs, ys = zip(*(((x, x), (pos, pos+y))
-                           for x, y in element.array()))
-            mapping = dict(xs=dims[0], ys=dims[1])
-            keys = (dims[0], dims[1])
+            xs, ys = zip(*(((x, x), (pos+y, pos))
+                           for x, y in element.array(dims[:2])))
         else:
             height = self.spike_length
-            xs, ys = zip(*(((x[0], x[0]), (pos, pos+height))
-                           for x in element.array()))
-            mapping = dict(xs=dims[0], ys='heights')
-            keys = (dims[0], 'heights')
+            xs, ys = zip(*(((x[0], x[0]), (pos+height, pos))
+                           for x in element.array(dims[:1])))
 
         if not empty and self.invert_axes: keys = keys[::-1]
-        data = dict(zip(keys, (xs, ys)))
+        data = dict(zip(('xs', 'ys'), (xs, ys)))
 
         cmap = style.get('palette', style.get('cmap', None))
         cdim = element.get_dimension(self.color_index)
@@ -374,8 +369,11 @@ class SpikesPlot(PathPlot):
                 colors = map_colors(cvals, crange, cmap)
             data[map_key] = colors
 
-        return data, mapping
+        if 'hover' in self.tools+self.default_tools and not empty:
+            for d in dims:
+                data[dimension_sanitizer(d)] = element.dimension_values(d)
 
+        return data, mapping
 
 
 class SideSpikesPlot(SpikesPlot):
