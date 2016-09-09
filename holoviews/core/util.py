@@ -778,6 +778,52 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+
+def stream_parameters(streams, no_duplicates=True, exclude=['name']):
+    """
+    Given a list of streams, return a flat list of parameter name,
+    excluding those listed in the exclude list.
+
+    If no_duplicates is enabled, a KeyError will be raised if there are
+    parameter name clashes across the streams.
+    """
+    param_groups = [s.params().keys() for s in streams]
+    names = [name for group in param_groups for name in group]
+
+    if no_duplicates:
+        clashes = set([n for n in names if names.count(n) > 1])
+        if clashes:
+            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+    return [name for name in names if name not in exclude]
+
+
+def dimensionless_contents(streams, kdims):
+    """
+    Return a list of stream parameters that have not been associated
+    with any of the key dimensions.
+    """
+    names = stream_parameters(streams)
+    kdim_names = [kdim.name for kdim in kdims]
+    return [name for name in names if name not in kdim_names]
+
+
+def wrap_tuple_streams(unwrapped, kdims, streams):
+    """
+    Fills in tuple keys with dimensioned stream values as appropriate.
+    """
+    param_groups = [(s.params().keys(), s) for s in streams]
+    pairs = [(name,s)  for (group, s) in param_groups for name in group]
+    substituted = []
+    for pos,el in enumerate(wrap_tuple(unwrapped)):
+        if el is None and pos < len(kdims):
+            matches = [(name,s) for (name,s) in pairs if name==kdims[pos].name]
+            if len(matches) == 1:
+                (name, stream) = matches[0]
+                el = stream.contents[name]
+        substituted.append(el)
+    return tuple(substituted)
+
+
 def itervalues(obj):
     "Get value iterator from dictionary for Python 2 and 3"
     return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
