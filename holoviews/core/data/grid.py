@@ -129,7 +129,7 @@ class GridInterface(DictInterface):
         dimensions of the dataset.
         """
         if coord_dims is None:
-            coord_dims = dataset.dimensions('key', True)
+            coord_dims = dataset.dimensions('key', True)[::-1]
 
         # Reorient data
         invert = False
@@ -141,7 +141,7 @@ class GridInterface(DictInterface):
                 invert = True
             else:
                 slices.append(slice(None))
-        data = data.__getitem__(slices[::-1]) if invert else data
+        data = data.__getitem__(slices) if invert else data
 
         # Transpose data
         dims = [name for name in coord_dims[::-1]
@@ -150,7 +150,7 @@ class GridInterface(DictInterface):
         inds = [dims.index(kd.name) for kd in dataset.kdims]
         inds += dropped
         if inds:
-            data = data.transpose(inds[::-1])
+            data = data.transpose(inds)
 
         # Allow lower dimensional views into data
         if len(dataset.kdims) < 2:

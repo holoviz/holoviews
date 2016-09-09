@@ -137,7 +137,7 @@ class CubeInterface(GridInterface):
         dim = dataset.get_dimension(dim)
         if dim in dataset.vdims:
             coord_names = [c.name() for c in dataset.data.dim_coords]
-            data = dataset.data.copy().data.T
+            data = dataset.data.copy().data
             data = cls.canonicalize(dataset, data, coord_names)
             return data.T.flatten() if flat else data
         elif expanded:
