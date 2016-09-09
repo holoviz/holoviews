@@ -132,7 +132,7 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            coord_dims = dataset.data[dim].dims[::-1]
+            coord_dims = dataset.data[dim].dims
             data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
