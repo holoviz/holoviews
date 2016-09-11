@@ -870,8 +870,8 @@ class GenericOverlayPlot(GenericElementPlot):
     def get_extents(self, overlay, ranges):
         extents = []
         items = overlay.items()
-        if self.batched:
-            subplot = self.subplots.values()[0]
+        if self.batched and self.subplots:
+            subplot = list(self.subplots.values())[0]
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()
