@@ -5,30 +5,36 @@ Tests of plot instantiation (not display tests, just instantiation)
 from unittest import SkipTest
 import numpy as np
 from holoviews import (Dimension, Curve, Scatter, Overlay, DynamicMap,
-                       Store, Image, VLine)
+                       Store, Image, VLine, NdOverlay, Points)
 from holoviews.element.comparison import ComparisonTestCase
 
+# Standardize backend due to random inconsistencies
 try:
-    # Standardize backend due to random inconsistencies
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
     from holoviews.plotting.mpl import OverlayPlot
-    from holoviews.plotting.comms import JupyterPushComms
-    renderer = Store.renderers['matplotlib']
+    from holoviews.plotting.comms import JupyterPushComm
+    mpl_renderer = Store.renderers['matplotlib']
 except:
-    pyplot = None
+    mpl_renderer = None
+
+try:
+    import holoviews.plotting.bokeh
+    bokeh_renderer = Store.renderers['bokeh']
+except:
+    bokeh_renderer = None
 
 
-class TestPlotInstantiation(ComparisonTestCase):
+class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
-        if pyplot is None:
+        if mpl_renderer is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
-        self.default_comm = renderer.comms['default']
-        renderer.comms['default'] = JupyterPushComms
+        self.default_comm, _ = mpl_renderer.comms['default']
+        mpl_renderer.comms['default'] = (JupyterPushComm, '')
 
     def teardown(self):
-        renderer.comms['default'] = self.default_comm
+        mpl_renderer.comms['default'] = (self.default_comm, '')
 
     def test_interleaved_overlay(self):
         """
@@ -44,4 +50,18 @@ class TestPlotInstantiation(ComparisonTestCase):
         dmap1 = DynamicMap(lambda x, y, z: Image(np.random.rand(10,10)), kdims=kdims)
         dmap2 = DynamicMap(lambda x: Curve(np.random.rand(10,2))*VLine(x),
                            kdims=kdims[:1])
-        renderer.get_widget(dmap1 + dmap2, 'selection')
+        mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
+
+
+
+class TestBokehPlotInstantiation(ComparisonTestCase):
+
+    def setUp(self):
+        if not bokeh_renderer:
+            raise SkipTest("Bokeh required to test plot instantiation")
+
+    def test_batched_plot(self):
+        overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
+        plot = bokeh_renderer.get_plot(overlay)
+        extents = plot.get_extents(overlay, {})
+        self.assertEqual(extents, (0, 0, 98, 98))
