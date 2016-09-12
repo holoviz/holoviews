@@ -32,15 +32,6 @@ class MPLWidget(NdWidget):
             return self.renderer.html(self.plot, figure_format, comm=False)
 
 
-    def update(self, key):
-        if self.plot.dynamic == 'bounded' and not isinstance(key, int):
-            key = tuple(dim.values[k] if dim.values else k
-                        for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-        self.plot[key]
-        self.plot.push()
-        return '' if self.renderer.mode == 'nbagg' else 'Complete'
-
-
     def get_frames(self):
         if self.renderer.mode == 'nbagg':
             manager = self.plot.comm.get_figure_manager()

@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
-from ..core.util import find_file, unicode
+from ..core.util import find_file, unicode, streamless_dimensions
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
@@ -201,9 +201,10 @@ class Renderer(Exporter):
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None]:
-            if ((len(plot) == 1 and not plot.dynamic)
+            if (((len(plot) == 1 and not plot.dynamic)
                 or (len(plot) > 1 and self.holomap is None) or
-                (plot.dynamic and len(plot.keys[0]) == 0)):
+                (plot.dynamic and len(plot.keys[0]) == 0)) or
+                not streamless_dimensions(plot.streams, plot.dimensions)):
                 fmt = fig_formats[0] if self.fig=='auto' else self.fig
             else:
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap

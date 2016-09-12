@@ -8,7 +8,8 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode,
-                          unique_array, unicode, isnumeric)
+                          unique_array, unicode, isnumeric,
+                          wrap_tuple_streams, drop_streams)
 from ...core.traversal import hierarchical
 
 def escape_vals(vals, escape_numerics=True):
@@ -106,9 +107,8 @@ class NdWidget(param.Parameterized):
         super(NdWidget, self).__init__(**params)
         self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        self.dimensions = plot.dimensions
-        self.keys = plot.keys
-
+        dims, keys = drop_streams(drop_streams, plot.keys, plot.dimensions)
+        self.dimensions, self.keys = dims, keys
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
         if renderer is None:
@@ -194,7 +194,9 @@ class NdWidget(param.Parameterized):
 
 
     def update(self, key):
-        return self._plot_figure(key)
+        self.plot.update(key)
+        self.plot.push()
+        return 'Complete'
 
 
 
@@ -370,4 +372,10 @@ class SelectionWidget(NdWidget):
         if self.plot.dynamic:
             key = tuple(dim.values[k] if dim.values else k
                         for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-        return self._plot_figure(key)
+            key = [key[self.dimensions.index(kdim)] if kdim in self.dimensions else None
+                   for kdim in self.plot.dimensions]
+            key = wrap_tuple_streams(tuple(key), self.plot.dimensions,
+                                     self.plot.streams)
+        self.plot.update(key)
+        self.plot.push()
+        return 'Complete'

@@ -43,10 +43,6 @@ class BokehWidget(NdWidget):
                 msg = dict(patch=json_patch, root=self.plot.state._id)
                 msg = serialize_json(msg)
             return msg
-        else:
-            self.plot.push()
-            return "Complete"
-
 
 class BokehSelectionWidget(BokehWidget, SelectionWidget):
     pass
