@@ -21,7 +21,7 @@ from ..core.spaces import HoloMap, DynamicMap
 from ..core.traversal import enable_streams_cache
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
-                   attach_streams)
+                   attach_streams, traverse_setter)
 
 
 class Plot(param.Parameterized):
@@ -260,15 +260,6 @@ class DimensionedPlot(Plot):
                 if not full_breadth: break
         return accumulator
 
-    @property
-    def force(self):
-        return self._force
-
-
-    @force.setter
-    def force(self, value):
-        self.traverse(lambda x: setattr(x, '_force', value))
-
 
     def _frame_title(self, key, group_size=2, separator='\n'):
         """
@@ -492,7 +483,7 @@ class DimensionedPlot(Plot):
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
         """
-        self.force = True
+        traverse_setter(self, '_force', True)
         if self.current_key:
             self.update(self.current_key)
         else:
@@ -612,9 +603,9 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            with enable_streams_cache(self.hmap, not self.force or not self.drawn):
+            with enable_streams_cache(self.hmap, not self._force or not self.drawn):
                 key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
-            self.force = False
+            traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
             key_map = dict(zip([d.name for d in self.hmap.kdims], key))
             key = tuple(key_map.get(d.name, None) for d in self.dimensions)
@@ -958,7 +949,7 @@ class GenericCompositePlot(DimensionedPlot):
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
             elif item.traverse(lambda x: x, [DynamicMap]):
-                with enable_streams_cache(item, not self.force or not self.drawn):
+                with enable_streams_cache(item, not self._force or not self.drawn):
                     key, frame = util.get_dynamic_item(item, self.dimensions, key)
                 layout_frame[path] = frame
                 continue
@@ -975,6 +966,7 @@ class GenericCompositePlot(DimensionedPlot):
                     layout_frame[path] = obj
             else:
                 layout_frame[path] = item
+        traverse_setter(self, '_force', False)
 
         self.current_frame = layout_frame
         return layout_frame
