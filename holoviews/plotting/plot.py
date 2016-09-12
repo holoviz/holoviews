@@ -484,10 +484,9 @@ class DimensionedPlot(Plot):
         the updated data if the plot has an associated Comm.
         """
         traverse_setter(self, '_force', True)
-        if self.current_key:
-            self.update(self.current_key)
-        else:
-            self.update(0)
+        key = self.current_key if self.current_key else self.keys[0]
+        stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
+        self.update(stream_key)
         if self.comm is not None:
             self.push()
 
@@ -573,6 +572,7 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         if top_level:
             self.comm = self.init_comm(element)
+        self.streams = self.hmap.streams if isinstance(self.hmap, DynamicMap) else []
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -920,6 +920,9 @@ class GenericCompositePlot(DimensionedPlot):
                                                    **params)
         if top_level:
             self.comm = self.init_comm(layout)
+        self.streams = [s for streams in layout.traverse(lambda x: x.streams,
+                                                         [DynamicMap])
+                        for s in streams]
 
 
     def _get_frame(self, key):
