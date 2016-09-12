@@ -140,12 +140,12 @@ class enable_streams_cache(object):
     part of some processing pipeline.
     """
 
-    def __init__(self, obj, enable):
+    def __init__(self, obj, allow_cache_lookup=True):
         self.obj = obj
-        self._enable = enable
+        self._allow_cache_lookup = enable
 
     def __enter__(self):
-        self.set_cache_flag(self._enable)
+        self.set_cache_flag(self._allow_cache_lookup)
 
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.set_cache_flag(False)
