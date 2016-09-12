@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.traversal import enable_streams_cache
+from ..core.traversal import dimensionless_cache
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
                    attach_streams, traverse_setter)
@@ -603,7 +603,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            with enable_streams_cache(self.hmap, not self._force or not self.drawn):
+            with dimensionless_cache(self.hmap, not self._force or not self.drawn):
                 key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
@@ -949,7 +949,7 @@ class GenericCompositePlot(DimensionedPlot):
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
             elif item.traverse(lambda x: x, [DynamicMap]):
-                with enable_streams_cache(item, not self._force or not self.drawn):
+                with dimensionless_cache(item, not self._force or not self.drawn):
                     key, frame = util.get_dynamic_item(item, self.dimensions, key)
                 layout_frame[path] = frame
                 continue

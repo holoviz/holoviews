@@ -130,19 +130,19 @@ def hierarchical(keys):
     return hierarchies
 
 
-class enable_streams_cache(object):
+class dimensionless_cache(object):
     """
-    Context manager which temporarily enables lookup of frame in cache
-    on a DynamicMap with streams. Allows passing any Dimensioned
-    object which might contain a DynamicMap and whether to enable the
-    cache. This allows looking up an item without triggering the
-    callback. Useful when the object is looked up multiple times as
-    part of some processing pipeline.
+    Context manager which temporarily enables lookup of frame in the
+    cache on a DynamicMap with dimensionless streams. Allows passing
+    any Dimensioned object which might contain a DynamicMap and
+    whether to enable the cache. This allows looking up an item
+    without triggering the callback. Useful when the object is looked
+    up multiple times as part of some processing pipeline.
     """
 
     def __init__(self, obj, allow_cache_lookup=True):
         self.obj = obj
-        self._allow_cache_lookup = enable
+        self._allow_cache_lookup = allow_cache_lookup
 
     def __enter__(self):
         self.set_cache_flag(self._allow_cache_lookup)

@@ -477,7 +477,7 @@ class DynamicMap(HoloMap):
 
         self.call_mode = self._validate_mode()
         self.mode = 'bounded' if self.call_mode == 'key' else 'open'
-        self._stream_cache_lookup = False
+        self._dimensionless_cache = False
 
 
     def _initial_key(self):
@@ -673,8 +673,8 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
-            if (util.dimensionless_contents(self.streams, self.kdims) and
-                not self._stream_cache_lookup):
+            dimensionless = util.dimensionless_contents(self.streams, self.kdims)
+            if (dimensionless and not self._dimensionless_cache):
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
             # Return selected cache items in a new DynamicMap
