@@ -806,7 +806,7 @@ def dimensionless_contents(streams, kdims):
     return [name for name in names if name not in kdims]
 
 
-def streamless_dimensions(streams, kdims):
+def unbound_dimensions(streams, kdims):
     """
     Return a list of dimensions that have not been associated with
     any streams.
@@ -832,7 +832,7 @@ def wrap_tuple_streams(unwrapped, kdims, streams):
     return tuple(substituted)
 
 
-def drop_streams(streams, keys, kdims):
+def drop_streams(streams, kdims, keys):
     """
     Drop any dimensionsed streams from the keys and kdims.
     """
