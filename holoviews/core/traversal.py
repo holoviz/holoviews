@@ -150,7 +150,7 @@ class enable_streams_cache(object):
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.set_cache_flag(False)
 
-    def set_cache_flag(self, value)
+    def set_cache_flag(self, value):
         self.obj.traverse(lambda x: setattr(x, '_stream_cache_lookup', value),
                           ['DynamicMap'])
 
