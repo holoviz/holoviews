@@ -710,7 +710,7 @@ class DynamicMap(HoloMap):
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
         if len(self) >= cache_size:
-            first_key = next(self.data.iterkeys())
+            first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self.data[key] = val
 
