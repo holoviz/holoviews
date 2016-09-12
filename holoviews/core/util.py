@@ -803,15 +803,23 @@ def dimensionless_contents(streams, kdims):
     with any of the key dimensions.
     """
     names = stream_parameters(streams)
-    kdim_names = [kdim.name for kdim in kdims]
-    return [name for name in names if name not in kdim_names]
+    return [name for name in names if name not in kdims]
+
+
+def streamless_dimensions(streams, kdims):
+    """
+    Return a list of dimensions that have not been associated with
+    any streams.
+    """
+    params = stream_parameters(streams)
+    return [d for d in kdims if d not in params]
 
 
 def wrap_tuple_streams(unwrapped, kdims, streams):
     """
     Fills in tuple keys with dimensioned stream values as appropriate.
     """
-    param_groups = [(s.params().keys(), s) for s in streams]
+    param_groups = [(s.contents.keys(), s) for s in streams]
     pairs = [(name,s)  for (group, s) in param_groups for name in group]
     substituted = []
     for pos,el in enumerate(wrap_tuple(unwrapped)):
@@ -822,6 +830,16 @@ def wrap_tuple_streams(unwrapped, kdims, streams):
                 el = stream.contents[name]
         substituted.append(el)
     return tuple(substituted)
+
+
+def drop_streams(streams, keys, kdims):
+    """
+    Drop any dimensionsed streams from the keys and kdims.
+    """
+    stream_params = stream_parameters(streams)
+    inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
+                       if kdim not in stream_params])
+    return dims, [tuple(key[ind] for ind in inds) for key in keys]
 
 
 def itervalues(obj):
