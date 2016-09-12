@@ -210,7 +210,6 @@ class DimensionedPlot(Plot):
         """
         Get the state of the Plot for a given frame number.
         """
-        self.force = True
         if not self.dynamic == 'open' and isinstance(frame, int) and frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
