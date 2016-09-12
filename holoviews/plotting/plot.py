@@ -19,6 +19,7 @@ from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.traversal import dimensionless_cache
+from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
                    attach_streams, traverse_setter)
@@ -485,6 +486,9 @@ class DimensionedPlot(Plot):
         """
         traverse_setter(self, '_force', True)
         key = self.current_key if self.current_key else self.keys[0]
+        stream_params = stream_parameters(self.streams)
+        key = tuple(None if d in stream_params else k
+                    for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
         self.update(stream_key)
         if self.comm is not None:
