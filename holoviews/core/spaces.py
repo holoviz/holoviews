@@ -692,7 +692,7 @@ class DynamicMap(HoloMap):
             return product
 
         # Not a cross product and nothing cached so compute element.
-        if cache: return cache
+        if cache is not None: return cache
         val = self._execute_callback(*tuple_key)
         if self.call_mode == 'counter':
             val = val[1]
