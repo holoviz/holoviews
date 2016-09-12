@@ -14,7 +14,7 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         safe_unicode, unicode, dt64_to_dt)
+                         safe_unicode, unicode, dt64_to_dt, unique_array)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -147,6 +147,7 @@ class Dimension(param.Parameterized):
             dimension_sanitizer.add_aliases(**{alias:long_name})
             all_params['name'] = long_name
 
+        all_params['values'] = list(unique_array(params.get('values', [])))
         super(Dimension, self).__init__(**all_params)
 
 
