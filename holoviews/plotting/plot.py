@@ -572,8 +572,7 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         if top_level:
             self.comm = self.init_comm(element)
-        if isinstance(self.hmap, DynamicMap):
-            self.streams = self.hmap.streams
+        self.streams = self.hmap.streams if isinstance(self.hmap, DynamicMap) else []
 
         # Update plot and style options for batched plots
         if self.batched:
