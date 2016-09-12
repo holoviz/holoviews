@@ -107,7 +107,7 @@ class NdWidget(param.Parameterized):
         super(NdWidget, self).__init__(**params)
         self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        dims, keys = drop_streams(drop_streams, plot.keys, plot.dimensions)
+        dims, keys = drop_streams(plot.streams, plot.keys, plot.dimensions)
         self.dimensions, self.keys = dims, keys
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
