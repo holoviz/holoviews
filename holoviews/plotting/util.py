@@ -285,3 +285,11 @@ def attach_streams(plot, obj):
         for stream in dmap.streams:
             stream._hidden_subscribers.append(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
+
+
+def traverse_setter(obj, attribute, value):
+    """
+    Traverses the object and sets the supplied attribute on the
+    object. Supports Dimensioned and DimensionedPlot types.
+    """
+    obj.traverse(lambda x: setattr(x, attribute, value))

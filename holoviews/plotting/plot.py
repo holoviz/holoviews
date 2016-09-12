@@ -18,9 +18,10 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
+from ..core.traversal import dimensionless_cache
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
-                   attach_streams)
+                   attach_streams, traverse_setter)
 
 
 class Plot(param.Parameterized):
@@ -198,6 +199,7 @@ class DimensionedPlot(Plot):
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self.comm = None
+        self._force = True
 
         params = {k: v for k, v in params.items()
                   if k in self.params()}
@@ -481,6 +483,7 @@ class DimensionedPlot(Plot):
         Refreshes the plot by rerendering it and then pushing
         the updated data if the plot has an associated Comm.
         """
+        traverse_setter(self, '_force', True)
         if self.current_key:
             self.update(self.current_key)
         else:
@@ -600,7 +603,9 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
+            with dimensionless_cache(self.hmap, not self._force or not self.drawn):
+                key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
+            traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
             key_map = dict(zip([d.name for d in self.hmap.kdims], key))
             key = tuple(key_map.get(d.name, None) for d in self.dimensions)
@@ -898,10 +903,6 @@ class GenericOverlayPlot(GenericElementPlot):
 class GenericCompositePlot(DimensionedPlot):
 
     def __init__(self, layout, keys=None, dimensions=None, **params):
-        dynamic, sampled = get_dynamic_mode(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
-
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
 
@@ -909,6 +910,9 @@ class GenericCompositePlot(DimensionedPlot):
         if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
+        dynamic, sampled = get_dynamic_mode(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
         self.layout = layout
         super(GenericCompositePlot, self).__init__(keys=keys,
                                                    dynamic=dynamic,
@@ -944,6 +948,11 @@ class GenericCompositePlot(DimensionedPlot):
                     dim_keys = zip([d.name for d in self.dimensions
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
+            elif item.traverse(lambda x: x, [DynamicMap]):
+                with dimensionless_cache(item, not self._force or not self.drawn):
+                    key, frame = util.get_dynamic_item(item, self.dimensions, key)
+                layout_frame[path] = frame
+                continue
             elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
@@ -957,6 +966,7 @@ class GenericCompositePlot(DimensionedPlot):
                     layout_frame[path] = obj
             else:
                 layout_frame[path] = item
+        traverse_setter(self, '_force', False)
 
         self.current_frame = layout_frame
         return layout_frame

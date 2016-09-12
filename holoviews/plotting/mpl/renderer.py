@@ -150,7 +150,7 @@ class MPLRenderer(Renderer):
             if self.mode == 'mpld3':
                 figure_format = 'json'
             elif self.fig == 'auto':
-                figure_format = self.renderer.params('fig').objects[0]
+                figure_format = self.params('fig').objects[0]
             else:
                 figure_format = self.fig
             data = self.html(plot, figure_format, comm=False)

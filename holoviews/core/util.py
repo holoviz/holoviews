@@ -787,7 +787,7 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     If no_duplicates is enabled, a KeyError will be raised if there are
     parameter name clashes across the streams.
     """
-    param_groups = [s.params().keys() for s in streams]
+    param_groups = [s.contents.keys() for s in streams]
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
