@@ -613,7 +613,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            with enable_streams_cache(self.hmap, not self.force):
+            with enable_streams_cache(self.hmap, not self.force or not self.drawn):
                 key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             self.force = False
             if not isinstance(key, tuple): key = (key,)
@@ -959,7 +959,7 @@ class GenericCompositePlot(DimensionedPlot):
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
             elif item.traverse(lambda x: x, [DynamicMap]):
-                with enable_streams_cache(item, not self.force):
+                with enable_streams_cache(item, not self.force or not self.drawn):
                     key, frame = util.get_dynamic_item(item, self.dimensions, key)
                 layout_frame[path] = frame
                 continue
