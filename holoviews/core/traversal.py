@@ -151,6 +151,6 @@ class dimensionless_cache(object):
         self.set_cache_flag(False)
 
     def set_cache_flag(self, value):
-        self.obj.traverse(lambda x: setattr(x, '_stream_cache_lookup', value),
+        self.obj.traverse(lambda x: setattr(x, '_dimensionless_cache', value),
                           ['DynamicMap'])
 
