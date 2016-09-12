@@ -3,17 +3,20 @@ Tests of plot instantiation (not display tests, just instantiation)
 """
 
 from unittest import SkipTest
+from io import BytesIO
+
 import numpy as np
 from holoviews import (Dimension, Curve, Scatter, Overlay, DynamicMap,
                        Store, Image, VLine, NdOverlay, Points)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.streams import PositionXY
 
 # Standardize backend due to random inconsistencies
 try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
     from holoviews.plotting.mpl import OverlayPlot
-    from holoviews.plotting.comms import JupyterPushComm
+    from holoviews.plotting.comms import Comm
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None
@@ -31,7 +34,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         if mpl_renderer is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
         self.default_comm, _ = mpl_renderer.comms['default']
-        mpl_renderer.comms['default'] = (JupyterPushComm, '')
+        mpl_renderer.comms['default'] = (Comm, '')
 
     def teardown(self):
         mpl_renderer.comms['default'] = (self.default_comm, '')
@@ -52,6 +55,18 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
+
+    def test_dynamic_streams_refresh(self):
+        stream = PositionXY()
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]),
+                             kdims=[], streams=[stream])
+        plot = mpl_renderer.get_plot(dmap)
+        plot.initialize_plot()
+        pre = mpl_renderer(plot, fmt='png')
+        stream.update(x=1, y=1)
+        plot.refresh()
+        post = mpl_renderer(plot, fmt='png')
+        self.assertNotEqual(pre, post)
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
