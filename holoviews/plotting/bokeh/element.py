@@ -289,6 +289,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
+                                     toolbar_location='above',
                                      y_axis_type=y_axis_type, title=title,
                                      tools=tools, **properties)
 
