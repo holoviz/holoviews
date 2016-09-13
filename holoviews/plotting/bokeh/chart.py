@@ -232,7 +232,7 @@ class HistogramPlot(ElementPlot):
         return (data, mapping)
 
 
-class SideHistogramPlot(HistogramPlot):
+class SideHistogramPlot(HistogramPlot, ColorbarPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
@@ -255,19 +255,20 @@ class SideHistogramPlot(HistogramPlot):
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
 
-        dim = element.get_dimension(0).name
+        dim = element.get_dimension(0)
         main = self.adjoined.main
-        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        vals = element.dimension_values(dim)
+        range_item, main_range, _ = get_sideplot_ranges(self, element, main, ranges)
         if isinstance(range_item, (Raster, Points, Polygons, Spikes)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
         else:
             style = {}
 
         if 'cmap' in style or 'palette' in style:
-            cmap = get_cmap(style.get('cmap', style.get('palette', None)))
-            data['color'] = [] if empty else map_colors(vals, main_range, cmap)
-            mapping['fill_color'] = 'color'
+            main_range = {dim.name: main_range}
+            mapper = self._get_colormapper(dim, element, main_range, style)
+            data[dim.name] = [] if empty else element.dimension_values(dim)
+            mapping['fill_color'] = {'field': dim.name,
+                                     'transform': mapper}
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
