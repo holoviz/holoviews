@@ -151,7 +151,7 @@ class HeatmapPlot(ElementPlot):
         return (data, {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})
 
 
-class QuadMeshPlot(ElementPlot):
+class QuadMeshPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -161,24 +161,23 @@ class QuadMeshPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)
+        style = self.style[self.cyclic_index]
+        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
-            data = {x: [], y: [], z: [], 'color': [], 'height': [], 'width': []}
+            data = {x: [], y: [], z: [], 'height': [], 'width': []}
         else:
-            style = self.style[self.cyclic_index]
-            cmap = style.get('palette', style.get('cmap', None))
-            cmap = get_cmap(cmap)
             if len(set(v.shape for v in element.data)) == 1:
                 raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
             zvals = element.data[2].T.flatten()
-            colors = map_colors(zvals, ranges[z], cmap)
             xvals = element.dimension_values(0, False)
             yvals = element.dimension_values(1, False)
             widths = np.diff(element.data[0])
             heights = np.diff(element.data[1])
             xs, ys = cartesian_product([xvals, yvals])
             ws, hs = cartesian_product([widths, heights])
-            data = {x: xs.flat, y: ys.flat, z: zvals, 'color': colors,
+            data = {x: xs.flat, y: ys.flat, z: zvals,
                     'widths': ws.flat, 'heights': hs.flat}
 
-        return (data, {'x': x, 'y': y, 'fill_color': 'color',
+        return (data, {'x': x, 'y': y,
+                       'fill_color': {'field': z, 'transform': cmapper},
                        'height': 'heights', 'width': 'widths'})
