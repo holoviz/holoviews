@@ -308,7 +308,7 @@ class ErrorPlot(PathPlot):
         return (data, dict(self._mapping))
 
 
-class SpikesPlot(PathPlot):
+class SpikesPlot(PathPlot, ColorbarPlot):
 
     color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
@@ -346,22 +346,14 @@ class SpikesPlot(PathPlot):
             xs, ys = zip(*(((x[0], x[0]), (pos+height, pos))
                            for x in element.array(dims[:1])))
 
-        if not empty and self.invert_axes: keys = keys[::-1]
+        if not empty and self.invert_axes: xs, ys = ys, xs
         data = dict(zip(('xs', 'ys'), (xs, ys)))
-
-        cmap = style.get('palette', style.get('cmap', None))
         cdim = element.get_dimension(self.color_index)
-        if cdim and cmap:
-            map_key = 'color_' + cdim.name
-            mapping['color'] = map_key
-            if empty:
-                colors = []
-            else:
-                cmap = get_cmap(cmap)
-                cvals = element.dimension_values(cdim)
-                crange = ranges.get(cdim.name, None)
-                colors = map_colors(cvals, crange, cmap)
-            data[map_key] = colors
+        if cdim:
+            mapper = self._get_colormapper(cdim, element, ranges, style)
+            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            mapping['color'] = {'field': cdim.name,
+                                'transform': mapper}
 
         if 'hover' in self.tools+self.default_tools and not empty:
             for d in dims:
