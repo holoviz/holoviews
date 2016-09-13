@@ -1,24 +1,15 @@
 import numpy as np
 import param
 
-from bokeh.models.mappers import LinearColorMapper
-try:
-    from bokeh.models.mappers import LogColorMapper
-except ImportError:
-    LogColorMapper = None
-
 from ...core.util import cartesian_product
 from ...element import Image, Raster, RGB
 from ..renderer import SkipRendering
 from ..util import map_colors
-from .element import ElementPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb
+from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
+from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb, mpl_to_bokeh
 
 
-class RasterPlot(ElementPlot):
-
-    logz  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the z-axis.""")
+class RasterPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -56,15 +47,9 @@ class RasterPlot(ElementPlot):
         properties = super(RasterPlot, self)._glyph_properties(plot, element,
                                                                source, ranges)
         properties = {k: v for k, v in properties.items()}
-        val_dim = [d.name for d in element.vdims][0]
-        low, high = ranges.get(val_dim)
-        if 'cmap' in properties:
-            palette = mplcmap_to_palette(properties.pop('cmap', None))
-        colormapper = LogColorMapper if self.logz else LinearColorMapper
-        cmap = colormapper(palette, low=low, high=high)
-        properties['color_mapper'] = cmap
-        if 'color_mapper' not in self.handles:
-            self.handles['color_mapper'] = cmap
+        val_dim = [d for d in element.vdims][0]
+        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
+                                                           properties)
         return properties
 
 
