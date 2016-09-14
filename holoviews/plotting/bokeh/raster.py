@@ -116,7 +116,7 @@ class HSVPlot(RGBPlot):
         return super(HSVPlot, self).get_data(rgb, ranges, empty)
 
 
-class HeatmapPlot(ElementPlot):
+class HeatmapPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -129,6 +129,7 @@ class HeatmapPlot(ElementPlot):
         labels = self._get_axis_labels(dims)
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
+        if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
@@ -136,19 +137,18 @@ class HeatmapPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)
+        style = self.style[self.cyclic_index]
+        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
             data = {x: [], y: [], z: [], 'color': []}
         else:
-            style = self.style[self.cyclic_index]
-            cmap = style.get('palette', style.get('cmap', None))
-            cmap = get_cmap(cmap)
             zvals = np.rot90(element.raster, 3).flatten()
-            colors = map_colors(zvals, ranges[z], cmap)
             xvals, yvals = [[str(v) for v in element.dimension_values(i)]
                             for i in range(2)]
-            data = {x: xvals, y: yvals, z: zvals, 'color': colors}
+            data = {x: xvals, y: yvals, z: zvals}
 
-        return (data, {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})
+        return (data, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper},
+                       'height': 1, 'width': 1})
 
 
 class QuadMeshPlot(ColorbarPlot):
