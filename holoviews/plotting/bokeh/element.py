@@ -710,8 +710,7 @@ class ColorbarPlot(ElementPlot):
 
     def _get_colormapper(self, dim, element, ranges, style):
         low, high = ranges.get(dim.name)
-        if 'cmap' in style:
-            palette = mplcmap_to_palette(style.pop('cmap', None))
+        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         colormapper = LogColorMapper if self.logz else LinearColorMapper
         cmapper = colormapper(palette, low=low, high=high)
         if 'color_mapper' not in self.handles:
