@@ -717,6 +717,9 @@ class ColorbarPlot(ElementPlot):
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         colormapper = LogColorMapper if self.logz else LinearColorMapper
         cmapper = colormapper(palette, low=low, high=high)
+
+        # The initial colormapper instance is cached the first time
+        # and then updated with the values from new instances
         if 'color_mapper' not in self.handles:
             self.handles['color_mapper'] = cmapper
         return cmapper
