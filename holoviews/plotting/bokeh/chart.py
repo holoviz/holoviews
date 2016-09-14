@@ -265,10 +265,10 @@ class SideHistogramPlot(HistogramPlot, ColorbarPlot):
 
         if 'cmap' in style or 'palette' in style:
             main_range = {dim.name: main_range}
-            mapper = self._get_colormapper(dim, element, main_range, style)
+            cmapper = self._get_colormapper(dim, element, main_range, style)
             data[dim.name] = [] if empty else element.dimension_values(dim)
             mapping['fill_color'] = {'field': dim.name,
-                                     'transform': mapper}
+                                     'transform': cmapper}
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
@@ -350,10 +350,10 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         data = dict(zip(('xs', 'ys'), (xs, ys)))
         cdim = element.get_dimension(self.color_index)
         if cdim:
-            mapper = self._get_colormapper(cdim, element, ranges, style)
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
             data[cdim.name] = [] if empty else element.dimension_values(cdim)
             mapping['color'] = {'field': cdim.name,
-                                'transform': mapper}
+                                'transform': cmapper}
 
         if 'hover' in self.tools+self.default_tools and not empty:
             for d in dims:

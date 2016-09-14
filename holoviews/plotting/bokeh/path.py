@@ -78,10 +78,10 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
-            mapper = self._get_colormapper(cdim, element, ranges, style)
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
             data[cdim.name] = [] if empty else element.dimension_values(2)
             mapping['fill_color'] = {'field': cdim.name,
-                                     'transform': mapper}
+                                     'transform': cmapper}
 
         if 'hover' in self.tools+self.default_tools:
             dim_name = util.dimension_sanitizer(element.vdims[0].name)
