@@ -710,6 +710,19 @@ class ColorbarPlot(ElementPlot):
         return ret
 
 
+    def _update_glyph(self, glyph, properties, mapping):
+        allowed_properties = glyph.properties()
+        cmappers = [v.get('transform') for v in mapping.values()
+                    if isinstance(v, dict)]
+        cmappers.append(properties.pop('color_mapper', None))
+        for cm in cmappers:
+            if cm:
+                self.handles['color_mapper'].low = cm.low
+                self.handles['color_mapper'].high = cm.high
+        merged = dict(properties, **mapping)
+        glyph.set(**{k: v for k, v in merged.items()
+                     if k in allowed_properties})
+
 
 class LegendPlot(ElementPlot):
 
