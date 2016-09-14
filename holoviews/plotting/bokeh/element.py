@@ -689,6 +689,9 @@ class ColorbarPlot(ElementPlot):
 
     _update_handles = ['color_mapper', 'source', 'glyph']
 
+    _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
+                              major_tick_line_color='black')
+
     def _draw_colorbar(self, plot, color_mapper):
         if LogColorMapper and isinstance(color_mapper, LogColorMapper):
             ticker = LogTicker()
@@ -701,8 +704,7 @@ class ColorbarPlot(ElementPlot):
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
-        opts = dict(cbar_opts['opts'], bar_line_color='black',
-                    label_standoff=8, major_tick_line_color='black')
+        opts = dict(cbar_opts['opts'], self._colorbar_defaults)
         color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
                              **dict(opts, **self.colorbar_opts))
 
