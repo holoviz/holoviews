@@ -694,17 +694,17 @@ class ColorbarPlot(ElementPlot):
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
-        cbar_opts = dict(self.colorbar_specs[self.colorbar_position],
-                         bar_line_color='black', label_standoff=8,
-                         major_tick_line_color='black')
+        cbar_opts = dict(self.colorbar_specs[self.colorbar_position])
 
         # Check if there is a colorbar in the same position
         pos = cbar_opts['pos']
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
+        opts = dict(cbar_opts['opts'], bar_line_color='black',
+                    label_standoff=8, major_tick_line_color='black')
         color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
-                             **dict(cbar_opts['opts'], **self.colorbar_opts))
+                             **dict(opts, **self.colorbar_opts))
 
         plot.add_layout(color_bar, pos)
         self.handles['colorbar'] = color_bar
