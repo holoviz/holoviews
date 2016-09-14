@@ -687,6 +687,8 @@ class ColorbarPlot(ElementPlot):
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
+    _update_handles = ['color_mapper', 'source', 'glyph']
+
     def _draw_colorbar(self, plot, color_mapper):
         if LogColorMapper and isinstance(color_mapper, LogColorMapper):
             ticker = LogTicker()

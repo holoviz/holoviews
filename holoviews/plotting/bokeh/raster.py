@@ -16,7 +16,6 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
     _plot_methods = dict(single='image')
-    _update_handles = ['color_mapper', 'source', 'glyph']
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
