@@ -675,7 +675,9 @@ class ColorbarPlot(ElementPlot):
             ticker = LogTicker()
         else:
             ticker = BasicTicker()
-        cbar_opts = self.colorbar_specs[self.colorbar_position]
+        cbar_opts = dict(self.colorbar_specs[self.colorbar_position],
+                         bar_line_color='black', label_standoff=8,
+                         major_tick_line_color='black')
 
         # Check if there is a colorbar in the same position
         pos = cbar_opts['pos']
