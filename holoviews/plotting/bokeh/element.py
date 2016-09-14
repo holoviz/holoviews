@@ -739,6 +739,7 @@ class ColorbarPlot(ElementPlot):
             if cm:
                 self.handles['color_mapper'].low = cm.low
                 self.handles['color_mapper'].high = cm.high
+                self.handles['color_mapper'].palette = cm.palette
         merged = dict(properties, **mapping)
         glyph.set(**{k: v for k, v in merged.items()
                      if k in allowed_properties})
