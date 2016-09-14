@@ -640,18 +640,40 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
 class ColorbarPlot(ElementPlot):
+    """
+    ColorbarPlot provides methods to create colormappers and colorbar
+    models which can be added to a glyph. Additionally it provides
+    parameters to control the position and other styling options of
+    the colorbar. The default colorbar_position options are defined
+    by the colorbar_specs, but may be overridden by the colorbar_opts.
+    """
+
+    colorbar_specs = {'right':     {'pos': 'right',
+                                    'opts': {'location': (0, 0)}},
+                      'left':      {'pos': 'left',
+                                    'opts':{'location':(0, 0)}},
+                      'bottom':    {'pos': 'below',
+                                    'opts': {'location': (0, 0),
+                                             'orientation':'horizontal'}},
+                      'top':       {'pos': 'above',
+                                    'opts': {'location':(0, 0),
+                                             'orientation':'horizontal'}},
+                      'top_right':   {'pos': 'center',
+                                      'opts': {'location': 'top_right'}},
+                      'top_left':    {'pos': 'center',
+                                      'opts': {'location': 'top_left'}},
+                      'bottom_left': {'pos': 'center',
+                                      'opts': {'location': 'bottom_left',
+                                               'orientation': 'horizontal'}},
+                      'bottom_right': {'pos': 'center',
+                                      'opts': {'location': 'bottom_right',
+                                               'orientation': 'horizontal'}}}
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
-    colorbar_position = param.ObjectSelector(objects=["top_right",
-                                                      "top_left",
-                                                      "bottom_left",
-                                                      "bottom_right",
-                                                      'right', 'left',
-                                                      'top', 'bottom'],
-                                             default="right",
-                                             doc="""
+    colorbar_position = param.ObjectSelector(objects=list(colorbar_specs),
+                                             default="right", doc="""
         Allows selecting between a number of predefined colorbar position
         options. The predefined options may be customized in the
         colorbar_specs class attribute.""")
@@ -661,21 +683,6 @@ class ColorbarPlot(ElementPlot):
         the options defined in the colorbar_specs class attribute. Includes
         location, orientation, height, width, scale_alpha, title, title_props,
         margin, padding, background_fill_color and more.""")
-
-    colorbar_specs = {'right': {'pos': 'right', 'opts': {'location': (0, 0)}},
-                      'left': {'pos': 'left', 'opts':{'location':(0, 0)}},
-                      'top_right': {'pos': 'center', 'opts': {'location': 'top_right'}},
-                      'top_left': {'pos': 'center', 'opts': {'location': 'top_left'}},
-                      'top': {'opts': {'location':(0, 0), 'orientation':'horizontal'},
-                              'pos': 'above'},
-                      'bottom': {'opts': {'location': (0, 0), 'orientation':'horizontal'},
-                                 'pos': 'below'},
-                      'bottom_left': {'pos': 'center',
-                                      'opts': {'location': 'bottom_center',
-                                               'orientation': 'horizontal'}},
-                      'bottom_right': {'pos': 'center',
-                                      'opts': {'location': 'bottom_right',
-                                               'orientation': 'horizontal'}}}
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
