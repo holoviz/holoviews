@@ -113,6 +113,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
+    toolbar = param.ObjectSelector(default='right',
+                                   objects=["above", "below",
+                                            "left", "right", None],
+                                   doc="""
+        The toolbar location, must be one of 'above', 'below',
+        'left', 'right', None.""")
+
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
                                           'bottom-bare', None], doc="""
@@ -277,7 +284,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
         xlabel, ylabel, _ = labels
         x_axis_type, y_axis_type = axis_types
-        tools = self._init_tools(element)
         properties = dict(plot_ranges)
         properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
@@ -287,11 +293,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
+        if self.toolbar:
+            tools = self._init_tools(element)
+            properties['tools'] = tools
+            properties['toolbar_location'] = self.toolbar
+
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                     toolbar_location='above',
                                      y_axis_type=y_axis_type, title=title,
-                                     tools=tools, **properties)
+                                     **properties)
 
 
     def _plot_properties(self, key, plot, element):
