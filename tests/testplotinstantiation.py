@@ -6,8 +6,9 @@ from unittest import SkipTest
 from io import BytesIO
 
 import numpy as np
-from holoviews import (Dimension, Curve, Scatter, Overlay, DynamicMap,
-                       Store, Image, VLine, NdOverlay, Points)
+from holoviews import (Dimension, Overlay, DynamicMap, Store, NdOverlay)
+from holoviews.element import (Curve, Scatter, Image, VLine, Points,
+                               HeatMap, QuadMesh, Spikes)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY
 
@@ -24,6 +25,7 @@ except:
 try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
+    from bokeh.models.mappers import LinearColorMapper, LogColorMapper
 except:
     bokeh_renderer = None
 
@@ -31,6 +33,8 @@ except:
 class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'matplotlib'
         if mpl_renderer is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
         self.default_comm, _ = mpl_renderer.comms['default']
@@ -38,6 +42,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def teardown(self):
         mpl_renderer.comms['default'] = (self.default_comm, '')
+        Store.current_backend = self.previous_backend
 
     def test_interleaved_overlay(self):
         """
@@ -72,11 +77,51 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'bokeh'
+
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
+
+    def teardown(self):
+        Store.current_backend = self.previous_backend
 
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
         plot = bokeh_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (0, 0, 98, 98))
+
+    def _test_colormapping(self, element, dim, log=False):
+        plot = bokeh_renderer.get_plot(element)
+        plot.initialize_plot()
+        fig = plot.state
+        cmapper = plot.handles['color_mapper']
+        low, high = element.range(dim)
+        self.assertEqual(cmapper.low, low)
+        self.assertEqual(cmapper.high, high)
+        mapper_type = LogColorMapper if log else LinearColorMapper
+        self.assertTrue(isinstance(cmapper, mapper_type))
+
+    def test_points_colormapping(self):
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])
+        self._test_colormapping(points, 3)
+
+    def test_image_colormapping(self):
+        img = Image(np.random.rand(10, 10))(plot=dict(logz=True))
+        self._test_colormapping(img, 2, True)
+
+    def test_heatmap_colormapping(self):
+        hm = HeatMap([(1,1,1), (2,2,0)])
+        self._test_colormapping(hm, 2)
+
+    def test_quadmesh_colormapping(self):
+        n = 21
+        xs = np.logspace(1, 3, n)
+        ys = np.linspace(1, 10, n)
+        qmesh = QuadMesh((xs, ys, np.random.rand(n-1, n-1)))
+        self._test_colormapping(qmesh, 2)
+
+    def test_spikes_colormapping(self):
+        spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
+        self._test_colormapping(spikes, 1)
