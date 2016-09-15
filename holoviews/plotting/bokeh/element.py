@@ -704,7 +704,7 @@ class ColorbarPlot(ElementPlot):
         if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
             return
 
-        opts = dict(cbar_opts['opts'], self._colorbar_defaults)
+        opts = dict(cbar_opts['opts'], **self._colorbar_defaults)
         color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
                              **dict(opts, **self.colorbar_opts))
 
@@ -713,7 +713,7 @@ class ColorbarPlot(ElementPlot):
 
 
     def _get_colormapper(self, dim, element, ranges, style):
-        low, high = ranges.get(dim.name)
+        low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         colormapper = LogColorMapper if self.logz else LinearColorMapper
         cmapper = colormapper(palette, low=low, high=high)
