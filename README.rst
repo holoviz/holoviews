@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Gitter|_
+|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Gitter|_ |MyBinder|_
 
 holoviews
 =========
@@ -104,3 +104,6 @@ Features
 
 .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _Gitter: https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
+
+.. |MyBinder| image::  http://mybinder.org/badge.svg
+.. _MyBinder: http://mybinder.org/repo/ioam/holoviews
