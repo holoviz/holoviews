@@ -389,11 +389,11 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
                     yaxis = 'right-bare' if 'bare' in plot_type.yaxis else 'right'
                     side_opts = dict(height=main_plot.height, yaxis=yaxis,
                                      width=plot_type.width, invert_axes=True,
-                                     show_labels=['y'], xticks=1, xaxis=main_plot.xaxis)
+                                     labelled=['y'], xticks=1, xaxis=main_plot.xaxis)
                 else:
                     xaxis = 'top-bare' if 'bare' in plot_type.xaxis else 'top'
                     side_opts = dict(width=main_plot.width, xaxis=xaxis,
-                                     height=plot_type.height, show_labels=['x'],
+                                     height=plot_type.height, labelled=['x'],
                                      yticks=1, yaxis=main_plot.yaxis)
 
             # Override the plotopts as required
