@@ -18,37 +18,22 @@ var PlotlyMethods = {
 			this.frames[index] = JSON.parse(frame);
 		}, this));
     },
+	process_msg : function(msg) {
+		var data = JSON.parse(msg.content.data);
+		this.frames[this.current] = data;
+		this.update_cache(true);
+		this.update(this.current);
+	},
     update : function(current){
 		var data = this.frames[current];
-		$.each(data, function(id, data) {
-			var plot = $('#'+id)[0];
-			$.each(data.data, function(i, obj) {
-				$.each(Object.keys(obj), function(j, key) {
-					plot.data[i][key] = data.data[i][key];
-				});
+		var plot = $('#'+this.id)[0];
+		$.each(data.data, function(i, obj) {
+			$.each(Object.keys(obj), function(j, key) {
+				plot.data[i][key] = obj[key];
 			});
-			Plotly.relayout(plot, data.layout);
-			Plotly.redraw(plot);
 		});
-    },
-    dynamic_update : function(current){
-		function callback(initialized, msg){
-			/* This callback receives data from Python as a string
-			   in order to parse it correctly quotes are sliced off*/
-			if (msg.msg_type == "execute_result") {
-				var data = msg.content.data['text/plain'].slice(1, -1);
-				this.frames[current] = JSON.parse(data);
-				this.update(current);
-			}
-		}
-		if(!(current in this.frames)) {
-			var kernel = IPython.notebook.kernel;
-			callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
-			var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-			kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
-		} else {
-			this.update(current);
-		}
+		Plotly.relayout(plot, data.layout);
+		Plotly.redraw(plot);
     }
 }
 

@@ -81,13 +81,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        return self.generate_plot(self.keys[-1], ranges)
+        fig = self.generate_plot(self.keys[-1], ranges)
+        self.drawn = True
+        return fig
 
 
     def generate_plot(self, key, ranges):
-        element = self._get_frame(key) if len(self) > 1 else self.hmap.last
-        self.current_frame = element
-        self.current_key = key
+        element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 

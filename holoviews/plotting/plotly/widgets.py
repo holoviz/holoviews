@@ -24,7 +24,13 @@ class PlotlyWidget(NdWidget):
         first call and
         """
         self.plot.update(idx)
-        return self.renderer.html(self.plot, fig_format, divuuid=self.id)
+        if self.embed or fig_format == 'html':
+            if fig_format == 'html':
+                msg = self.renderer.figure_data(self.plot,
+                                                divuuid=self.id, comm=False)
+            else:
+                msg = self.renderer.diff(self.plot)
+            return msg
 
 
 class PlotlySelectionWidget(PlotlyWidget, SelectionWidget):

@@ -4,14 +4,30 @@ from plotly.offline.offline import utils, get_plotlyjs
 import param
 
 from ..renderer import Renderer, MIME_TYPES
+from ..widgets import NdWidget
 from ...core.options import Store
 from ...core import HoloMap
+from ..comms import JupyterComm
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 
+plotly_msg_handler = """
+/* Backend specific body of the msg_handler, updates displayed frame */
+var plot = $('#{comms_target}')[0];
+var data = JSON.parse(msg);
+$.each(data.data, function(i, obj) {{
+  $.each(Object.keys(obj), function(j, key) {{
+    plot.data[i][key] = obj[key];
+  }});
+}});
+Plotly.relayout(plot, data.layout);
+Plotly.redraw(plot);
+"""
+
+
 class PlotlyRenderer(Renderer):
-    
-    backend = 'plotly'
+
+    backend = param.String(default='plotly', doc="The backend name.")
 
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
         Output render format for static figures. If None, no figure
@@ -23,23 +39,41 @@ class PlotlyRenderer(Renderer):
     widgets = {'scrubber': PlotlyScrubberWidget,
                'widgets': PlotlySelectionWidget}
 
+    comms = {'default': (JupyterComm, plotly_msg_handler)}
+
     def __call__(self, obj, fmt='html', divuuid=None):
-        divuuid = uuid.uuid4() if divuuid is None else divuuid
         plot, fmt =  self._validate(obj, fmt)
         mime_types = {'file-ext':fmt, 'mime_type': MIME_TYPES[fmt]}
 
         if isinstance(plot, tuple(self.widgets.values())):
             return plot(), mime_types
         elif fmt == 'html':
-            return self.figure_data(plot.state, divuuid), mime_types
+            return self.figure_data(plot, divuuid=divuuid), mime_types
         elif fmt == 'json':
-            return json.dumps({str(divuuid): {'data': plot.state.get('data', []),
-                                              'layout': plot.state.get('layout', {})}},
-                              cls=utils.PlotlyJSONEncoder), mime_types
+            return self.diff(plot), mime_types
 
 
-    @classmethod
-    def figure_data(cls, figure, divuuid=None, width=800, height=600):
+    def diff(self, plot, serialize=True):
+        """
+        Returns a json diff required to update an existing plot with
+        the latest plot data.
+        """
+        diff = {'data': plot.state.get('data', []),
+                'layout': plot.state.get('layout', {})}
+        if serialize:
+            return json.dumps(diff, cls=utils.PlotlyJSONEncoder)
+        else:
+            return diff
+
+
+    def figure_data(self, plot, divuuid=None, comm=True, width=800, height=600):
+        figure = plot.state
+        if divuuid is None:
+            if plot.comm:
+                divuuid = plot.comm.target
+            else:
+                divuuid = uuid.uuid4().hex
+
         jdata = json.dumps(figure.get('data', []), cls=utils.PlotlyJSONEncoder)
         jlayout = json.dumps(figure.get('layout', {}), cls=utils.PlotlyJSONEncoder)
 
@@ -68,10 +102,17 @@ class PlotlyRenderer(Renderer):
                       '{script}'
                       '</script>').format(id=divuuid, script=script,
                                           height=height, width=width)
-    
-        return '\n'.join([header, content])
-    
-    
+        joined = '\n'.join([header, content])
+
+        if comm and plot.comm is not None:
+            comm, msg_handler = self.comms[self.mode]
+            msg_handler = msg_handler.format(comms_target=plot.comm.target)
+            return comm.template.format(init_frame=joined,
+                                        msg_handler=msg_handler,
+                                        comms_target=plot.comm.target)
+        return joined
+
+
     @classmethod
     def plot_options(cls, obj, percent_size):
         factor = percent_size / 100.0

@@ -8,11 +8,11 @@ from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import PlotlyRenderer
 
 class PlotlyPlot(DimensionedPlot):
+
+    backend = 'plotly'
     
     width = param.Integer(default=400)
     height = param.Integer(default=400)
-
-    renderer = PlotlyRenderer
 
     @property
     def state(self):
