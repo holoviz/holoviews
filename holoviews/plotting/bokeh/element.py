@@ -687,7 +687,7 @@ class ColorbarPlot(ElementPlot):
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
-    _update_handles = ['color_mapper', 'source', 'glyph']
+    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar']
 
     _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
                               major_tick_line_color='black')
