@@ -13,6 +13,7 @@ from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys
+from ..core.io import FileArchive
 from .magics import OutputMagic, OptsMagic
 
 # To assist with debugging of display hooks
@@ -112,7 +113,8 @@ def display_hook(fn):
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                holoviews.archive.add(element, html=html)
+                if type(holoviews.archive) is not FileArchive:
+                    holoviews.archive.add(element, html=html)
             filename = OutputMagic.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
