@@ -82,6 +82,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     invert_yaxis = param.Boolean(default=False, doc="""
         Whether to invert the plot y-axis.""")
 
+    labelled = param.List(default=['x', 'y'], doc="""
+        Whether to plot the 'x' and 'y' labels.""")
+
     lod = param.Dict(default={'factor': 10, 'interval': 300,
                               'threshold': 2000, 'timeout': 500}, doc="""
         Bokeh plots offer "Level of Detail" (LOD) capability to
@@ -161,8 +164,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # instance attribute.
     _update_handles = ['source', 'glyph']
 
-    def __init__(self, element, plot=None, show_labels=['x', 'y'], **params):
-        self.show_labels = show_labels
+    def __init__(self, element, plot=None, **params):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
@@ -285,8 +287,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xlabel, ylabel, _ = labels
         x_axis_type, y_axis_type = axis_types
         properties = dict(plot_ranges)
-        properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
-        properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
+        properties['x_axis_label'] = xlabel if 'x' in self.labelled else ' '
+        properties['y_axis_label'] = ylabel if 'y' in self.labelled else ' '
 
         if self.show_title:
             title = self._format_title(key, separator=' ')

@@ -19,7 +19,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     _update_handles = ['source', 'glyph']
 
-    def __init__(self, element, plot=None, show_labels=['x', 'y'], **params):
+    def __init__(self, element, plot=None, **params):
         super(TablePlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
