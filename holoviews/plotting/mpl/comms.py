@@ -13,7 +13,7 @@ from ..comms import JupyterComm
 
 mpl_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-target = $('#{comms_target}');
+target = $('#fig_{comms_target}');
 img = $('<div />').html(msg);
 target.children().each(function () {{ $(this).remove() }})
 target.append(img)

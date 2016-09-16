@@ -97,11 +97,12 @@ HoloViewsWidget.prototype.update = function(current){
 }
 
 HoloViewsWidget.prototype.init_comms = function() {
-	var widget = this;
 	if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {
-		var comm_manager = Jupyter.notebook.kernel.comm_manager
-		comm = comm_manager.new_comm(this.id, {}, {}, {}, this.id);
-		comm.on_msg(function (msg) { widget.process_msg(msg) })
+		var widget = this;
+		comm_manager = Jupyter.notebook.kernel.comm_manager;
+        comm_manager.register_target(this.id, function (comm) {
+			comm.on_msg(function (msg) { widget.process_msg(msg) });
+		});
 	}
 }
 

@@ -1,7 +1,7 @@
 from nose.tools import *
 
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.comms import Comm, JupyterPushComm
+from holoviews.plotting.comms import Comm, JupyterComm
 
 
 class TestComm(ComparisonTestCase):
@@ -29,21 +29,21 @@ class TestComm(ComparisonTestCase):
 class TestJupyterComm(ComparisonTestCase):
 
     def test_init_comm(self):
-        JupyterPushComm(None)
+        JupyterComm(None)
 
     def test_init_comm_target(self):
-        comm = JupyterPushComm(None, target='Test')
+        comm = JupyterComm(None, target='Test')
         self.assertEqual(comm.target, 'Test')
 
     def test_decode(self):
         msg = {'content': {'data': 'Test'}}
-        decoded = JupyterPushComm.decode(msg)
+        decoded = JupyterComm.decode(msg)
         self.assertEqual(decoded, 'Test')
 
     def test_on_msg(self):
         def raise_error(msg):
             if msg == 'Error':
                 raise Exception()
-        comm = JupyterPushComm(None, target='Test', on_msg=raise_error)
+        comm = JupyterComm(None, target='Test', on_msg=raise_error)
         with self.assertRaises(Exception):
             comm._handle_msg({'content': {'data': 'Error'}})
