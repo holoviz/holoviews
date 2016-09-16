@@ -73,11 +73,10 @@ class Comm(param.Parameterized):
             self._on_msg(self.decode(msg))
 
 
-class JupyterPushComm(Comm):
+class JupyterComm(Comm):
     """
-    JupyterPushComm provides a Comm for simple unidirectional
-    communication from the python process to a frontend. The
-    Comm is opened before the first event is sent to the frontend.
+    JupyterComm provides a Comm for the notebook which is initialized
+    the first time data is pushed to the frontend.
     """
 
     template = """
@@ -89,11 +88,11 @@ class JupyterPushComm(Comm):
 
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
         comm_manager = Jupyter.notebook.kernel.comm_manager;
-        comm_manager.register_target("{comms_target}", register_handler);
+        comm_manager.register_target("{comms_target}", function(comm) {{ comm.on_msg(msg_handler);}});
       }}
     </script>
 
-    <div id="{comms_target}">
+    <div id="fig_{comms_target}">
       {init_frame}
     </div>
     """
@@ -120,12 +119,11 @@ class JupyterPushComm(Comm):
 
 
 
-class JupyterComm(Comm):
+class JupyterCommJS(Comm):
     """
-    JupyterComm allows for a bidirectional communication channel
-    inside the Jupyter notebook. The JupyterComm will register
-    a comm target on the IPython kernel comm manager, which will then
-    be opened by the templated code on the frontend.
+    JupyterCommJS provides a comms channel for the Jupyter notebook,
+    which is initialized on the frontend. This allows sending events
+    initiated on the frontend to python.
     """
 
     template = """
@@ -142,7 +140,7 @@ class JupyterComm(Comm):
       }}
     </script>
 
-    <div id="{comms_target}">
+    <div id="fig_{comms_target}">
       {init_frame}
     </div>
     """
