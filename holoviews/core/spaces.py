@@ -436,6 +436,15 @@ class DynamicMap(HoloMap):
         simulation time across the layout).
     """)
 
+    streams = param.List(default=[], doc="""
+       List of Stream instances to associate with the DynamicMap. The
+       set of parameter values across these streams will be supplied as
+       keyword arguments to the callback when the events are received,
+       updating the streams.
+
+       Note that streams may only be used with callable callbacks (i.e
+       not generators).""" )
+
     cache_size = param.Integer(default=500, doc="""
        The number of entries to cache for fast access. This is an LRU
        cache where the least recently used item is overwritten once
@@ -455,6 +464,12 @@ class DynamicMap(HoloMap):
 
     def __init__(self, callback, initial_items=None, **params):
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
+
+        # Set source to self if not already specified
+        for stream in self.streams:
+            if stream.source is None:
+                stream.source = self
+
         self.counter = 0
         if self.callback is None:
             raise Exception("A suitable callback must be "
@@ -462,6 +477,7 @@ class DynamicMap(HoloMap):
 
         self.call_mode = self._validate_mode()
         self.mode = 'bounded' if self.call_mode == 'key' else 'open'
+        self._dimensionless_cache = False
 
 
     def _initial_key(self):
@@ -492,6 +508,8 @@ class DynamicMap(HoloMap):
             return 'key'
         # Any unbounded kdim (any direction) implies open mode
         for kdim in self.kdims:
+            if kdim.name in util.stream_parameters(self.streams):
+                return 'key'
             if kdim.values:
                 continue
             if None in kdim.range:
@@ -541,8 +559,12 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'generator':
             retval = next(self.callback)
         else:
-            retval = self.callback(*args)
-
+            # Additional validation needed to ensure kwargs don't clash
+            kdims = [kdim.name for kdim in self.kdims]
+            kwarg_items = [s.contents.items() for s in self.streams]
+            flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
+                         if k not in kdims]
+            retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
 
@@ -632,7 +654,7 @@ class DynamicMap(HoloMap):
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
-        tuple_key = util.wrap_tuple(key)
+        tuple_key = util.wrap_tuple_streams(key, self.kdims, self.streams)
 
         # Validation for bounded mode
         if self.mode == 'bounded':
@@ -651,6 +673,9 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
+            dimensionless = util.dimensionless_contents(self.streams, self.kdims)
+            if (dimensionless and not self._dimensionless_cache):
+                raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
             # Return selected cache items in a new DynamicMap
             if isinstance(cache, DynamicMap) and self.mode=='open':
@@ -667,7 +692,7 @@ class DynamicMap(HoloMap):
             return product
 
         # Not a cross product and nothing cached so compute element.
-        if cache: return cache
+        if cache is not None: return cache
         val = self._execute_callback(*tuple_key)
         if self.call_mode == 'counter':
             val = val[1]
@@ -680,10 +705,12 @@ class DynamicMap(HoloMap):
         """
         Request that a key/value pair be considered for caching.
         """
+        cache_size = (1 if util.dimensionless_contents(self.streams, self.kdims)
+                      else self.cache_size)
         if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
             return
-        if len(self) >= self.cache_size:
-            first_key = next(self.data.iterkeys())
+        if len(self) >= cache_size:
+            first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self.data[key] = val
 
@@ -704,7 +731,7 @@ class DynamicMap(HoloMap):
         (key, val) = (retval if isinstance(retval, tuple)
                       else (self.counter, retval))
 
-        key = util.wrap_tuple(key)
+        key = util.wrap_tuple_streams(key, self.kdims, self.streams)
         if len(key) != len(self.key_dimensions):
             raise Exception("Generated key does not match the number of key dimensions")
 

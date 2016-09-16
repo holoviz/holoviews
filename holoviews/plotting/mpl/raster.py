@@ -277,9 +277,13 @@ class RasterGridPlot(GridPlot, OverlayPlot):
 
     def __init__(self, layout, keys=None, dimensions=None, create_axes=False, ranges=None,
                  layout_num=1, **params):
-        if not keys or not dimensions:
+        top_level = keys is None
+        if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
         MPLPlot.__init__(self, dimensions=dimensions, keys=keys, **params)
+        if top_level:
+            self.comm = self.init_comm(layout)
+
         self.layout = layout
         self.cyclic_index = 0
         self.zorder = 0
@@ -379,8 +383,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
     def _get_axis_kwargs(self):
         xdim = self.layout.kdims[0]
         ydim = self.layout.kdims[1] if self.layout.ndims > 1 else None
-        xticks = (self._xticks, self._process_ticklabels(self._xkeys, xdim))
-        yticks = (self._yticks, self._process_ticklabels(self._ykeys, ydim))
+        xticks = (self._xticks, [xdim.pprint_value(l) for l in self._xkeys])
+        yticks = (self._yticks, [ydim.pprint_value(l) if ydim else ''
+                                 for l in self._ykeys])
         return dict(xlabel=xdim.pprint_label, ylabel=ydim.pprint_label if ydim else '',
                     xticks=xticks, yticks=yticks)
 

@@ -1,10 +1,11 @@
 import math
 
+import param
+import numpy as np
+import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib import colors
-import matplotlib.pyplot as plt
-import numpy as np
-import param
+from matplotlib.dates import date2num
 
 from ...core import util
 from ...core import (OrderedDict, NdOverlay, DynamicMap,
@@ -301,7 +302,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         scalex, scaley = True, True
         extents = self.get_extents(view, ranges)
         if extents and not self.overlaid:
-            coords = [coord if np.isreal(coord) else np.NaN for coord in extents]
+            coords = [coord if np.isreal(coord) or isinstance(coord, np.datetime64) else np.NaN for coord in extents]
+            coords = [date2num(util.dt64_to_dt(c)) if isinstance(c, np.datetime64) else c
+                      for c in coords]
             valid_lim = lambda c: util.isnumeric(c) and not np.isnan(c)
             if self.projection == '3d' or len(extents) == 6:
                 l, b, zmin, r, t, zmax = coords
@@ -550,21 +553,23 @@ class ColorbarPlot(ElementPlot):
 
 
     def _finalize_artist(self, key):
-        element = self.hmap.last
         artist = self.handles.get('artist', None)
         if artist and self.colorbar:
-            self._draw_colorbar(artist, element)
+            self._draw_colorbar()
 
 
-    def _draw_colorbar(self, artist, element, dim=None):
+    def _draw_colorbar(self, dim=None, redraw=True):
+        element = self.hmap.last
+        artist = self.handles.get('artist', None)
         fig = self.handles['fig']
         axis = self.handles['axis']
         ax_colorbars, position = ColorbarPlot._colorbars.get(id(axis), ([], None))
         specs = [spec[:2] for _, _, spec, _ in ax_colorbars]
         spec = util.get_spec(element)
 
-        if position is None:
-            fig.canvas.draw()
+        if position is None or not redraw:
+            if redraw:
+                fig.canvas.draw()
             bbox = axis.get_position()
             l, b, w, h = bbox.x0, bbox.y0, bbox.width, bbox.height
         else:
@@ -591,7 +596,7 @@ class ColorbarPlot(ElementPlot):
             self.handles['bbox_extra_artists'] += [cax, ylabel]
             ax_colorbars.append((artist, cax, spec, label))
 
-        for i, (artist, cax, spec, label) in enumerate(ax_colorbars[:-1]):
+        for i, (artist, cax, spec, label) in enumerate(ax_colorbars):
             scaled_w = w*width
             cax.set_position([l+w+padding+(scaled_w+padding+w*0.15)*i,
                               b, scaled_w, h])
@@ -607,9 +612,15 @@ class ColorbarPlot(ElementPlot):
         """
         clim = opts.pop('clims', None)
         if clim is None:
-            clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
-            if self.symmetric:
-                clim = -np.abs(clim).max(), np.abs(clim).max()
+            cs = element.dimension_values(vdim)
+            if not isinstance(cs, np.ndarray):
+                cs = np.array(cs)
+            if len(cs) and cs.dtype.kind in 'if':
+                clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
+                if self.symmetric:
+                    clim = -np.abs(clim).max(), np.abs(clim).max()
+            else:
+                clim = (0, len(np.unique(cs)))
         if self.logz:
             if self.symmetric:
                 norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],

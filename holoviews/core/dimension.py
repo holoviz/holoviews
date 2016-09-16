@@ -5,6 +5,7 @@ baseclass for classes that accept Dimension values.
 """
 from __future__ import unicode_literals
 import re
+import datetime as dt
 from operator import itemgetter
 
 import numpy as np
@@ -13,7 +14,7 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         safe_unicode, unicode)
+                         safe_unicode, unicode, dt64_to_dt, unique_array)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -146,6 +147,10 @@ class Dimension(param.Parameterized):
             dimension_sanitizer.add_aliases(**{alias:long_name})
             all_params['name'] = long_name
 
+        if not isinstance(params.get('values',None),basestring):
+            all_params['values'] = list(unique_array(params.get('values', [])))
+        elif params['values'] != 'initial':
+            raise Exception("Values argument can only be set with the string 'initial'.")
         super(Dimension, self).__init__(**all_params)
 
 
@@ -178,7 +183,11 @@ class Dimension(param.Parameterized):
             if callable(formatter):
                 return formatter(value)
             elif isinstance(formatter, basestring):
-                if re.findall(r"\{(\w+)\}", formatter):
+                if isinstance(value, dt.datetime):
+                    return value.strftime(formatter)
+                elif isinstance(value, np.datetime64):
+                    return dt64_to_dt(value).strftime(formatter)
+                elif re.findall(r"\{(\w+)\}", formatter):
                     return formatter.format(value)
                 else:
                     return formatter % value
@@ -596,7 +605,7 @@ class Dimensioned(LabelledData):
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
-        
+
         Returns kdims if no dimensions are specified"""
         if dimensions is None:
             dimensions = self.kdims

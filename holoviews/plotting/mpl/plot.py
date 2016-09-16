@@ -1,5 +1,7 @@
 from __future__ import division
 
+from itertools import chain
+
 import numpy as np
 import matplotlib as mpl
 from mpl_toolkits.mplot3d import Axes3D  # noqa (For 3D plots)
@@ -14,8 +16,7 @@ from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
-from .renderer import MPLRenderer
-from .util import compute_ratios
+from .util import compute_ratios, fix_aspect
 
 
 class MPLPlot(DimensionedPlot):
@@ -28,7 +29,8 @@ class MPLPlot(DimensionedPlot):
     via the anim() method.
     """
 
-    renderer = MPLRenderer
+    backend = 'matplotlib'
+
     sideplots = {}
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
@@ -54,7 +56,7 @@ class MPLPlot(DimensionedPlot):
     fig_rcparams = param.Dict(default={}, doc="""
         matplotlib rc parameters to apply to the overall figure.""")
 
-    fig_size = param.Integer(default=100, bounds=(1, None), doc="""
+    fig_size = param.Number(default=100., bounds=(1, None), doc="""
         Size relative to the supplied overall fig_inches in percent.""")
 
     initial_hooks = param.HookList(default=[], doc="""
@@ -97,12 +99,12 @@ class MPLPlot(DimensionedPlot):
         self._create_fig = True
         super(MPLPlot, self).__init__(**params)
         # List of handles to matplotlib objects for animation update
-        scale = self.fig_size/100.
+        self.fig_scale = self.fig_size/100.
         if isinstance(self.fig_inches, (tuple, list)):
-            self.fig_inches = [None if i is None else i*scale
+            self.fig_inches = [None if i is None else i*self.fig_scale
                                for i in self.fig_inches]
         else:
-            self.fig_inches *= scale
+            self.fig_inches *= self.fig_scale
         fig, axis = self._init_axis(fig, axis)
         self.handles['fig'] = fig
         self.handles['axis'] = axis
@@ -262,9 +264,6 @@ class GridPlot(CompositePlot):
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
 
-    tick_format = param.String(default="%.2f", doc="""
-        Formatting string for the GridPlot ticklabels.""")
-
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['bottom', 'top', None], doc="""
         Whether and where to display the xaxis, supported options are
@@ -282,23 +281,11 @@ class GridPlot(CompositePlot):
         Rotation angle of the yticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None,
-                 keys=None, dimensions=None, layout_num=1, **params):
+                 layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        self.layout = layout
-        self.cols, self.rows = layout.shape
-        self.layout_num = layout_num
-        extra_opts = self.lookup_options(layout, 'plot').options
-        if not keys or not dimensions:
-            dimensions, keys = traversal.unique_dimkeys(layout)
-        if 'uniform' not in params:
-            params['uniform'] = traversal.uniform(layout)
-        dynamic, sampled = get_dynamic_mode(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
-        super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                       dynamic=dynamic,
-                                       **dict(extra_opts, **params))
+        super(GridPlot, self).__init__(layout, layout_num=layout_num,
+                                       ranges=ranges, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
@@ -307,6 +294,7 @@ class GridPlot(CompositePlot):
             grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
             self.position = (l, b, w, h)
 
+        self.cols, self.rows = layout.shape
         self.fig_inches = self._get_size()
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
         self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
@@ -496,13 +484,15 @@ class GridPlot(CompositePlot):
         yticks = [(plot_height/2)+(r*(plot_height+border_height)) for r in range(self.rows)]
 
         layout_axis.set_xticks(xticks)
-        layout_axis.set_xticklabels(self._process_ticklabels(sorted(set(dim1_keys)), dims[0]))
+        layout_axis.set_xticklabels([dims[0].pprint_value(l)
+                                     for l in sorted(set(dim1_keys))])
         for tick in layout_axis.get_xticklabels():
             tick.set_rotation(self.xrotation)
 
         ydim = dims[1] if layout.ndims > 1 else None
         layout_axis.set_yticks(yticks)
-        layout_axis.set_yticklabels(self._process_ticklabels(sorted(set(dim2_keys)), ydim))
+        layout_axis.set_yticklabels([ydim.pprint_value(l) if ydim else ''
+                                     for l in sorted(set(dim2_keys))])
         for tick in layout_axis.get_yticklabels():
             tick.set_rotation(self.yrotation)
 
@@ -527,19 +517,6 @@ class GridPlot(CompositePlot):
             axis.spines[pos].set_visible(False)
 
         return layout_axis
-
-
-    def _process_ticklabels(self, labels, dim):
-        formatted_labels = []
-        for k in labels:
-            if dim and dim.value_format:
-                k = dim.value_format(k)
-            elif not isinstance(k, (str, type(None))):
-                k = self.tick_format % k
-            elif k is None:
-                k = ''
-            formatted_labels.append(k)
-        return formatted_labels
 
 
     def _adjust_subplots(self, axis, subaxes):
@@ -578,7 +555,7 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(CompositePlot):
+class AdjointLayoutPlot(MPLPlot):
     """
     LayoutPlot allows placing up to three Views in a number of
     predefined and fixed layouts, which are defined by the layout_dict
@@ -631,7 +608,7 @@ class AdjointLayoutPlot(CompositePlot):
         self.drawn = True
 
 
-    def adjust_positions(self):
+    def adjust_positions(self, redraw=True):
         """
         Make adjustments to the positions of subplots (if available)
         relative to the main plot axes as required.
@@ -645,7 +622,8 @@ class AdjointLayoutPlot(CompositePlot):
         top = all('top' in check for check in checks)
         if not 'main' in self.subplots or not (top or right):
             return
-        self.handles['fig'].canvas.draw()
+        if redraw:
+            self.handles['fig'].canvas.draw()
         main_ax = self.subplots['main'].handles['axis']
         bbox = main_ax.get_position()
         if right:
@@ -725,6 +703,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Default value is set conservatively to avoid overlap of subplots.""")
 
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
+
+    # Whether to enable fix for non-square figures
+    # Will be enabled by default in v1.7
+    # If enabled default vspace should be increased to 0.3
+    v17_layout_format = False
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout=layout, **params)
@@ -1039,12 +1022,30 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             subplot.initialize_plot(ranges=ranges)
 
         # Create title handle
-        if self.show_title and len(self.coords) > 1:
-            title = self._format_title(key)
-            title = self.handles['fig'].suptitle(title, **self._fontsize('title'))
-            self.handles['title'] = title
-            self.handles['bbox_extra_artists'] += [title]
+        title_obj = None
+        title = self._format_title(key)
+        if self.show_title and len(self.coords) > 1 and title:
+            title_obj = self.handles['fig'].suptitle(title, **self._fontsize('title'))
+            self.handles['title'] = title_obj
+            self.handles['bbox_extra_artists'] += [title_obj]
 
+        fig = self.handles['fig']
+        if (not self.traverse(specs=[GridPlot]) and not isinstance(self.fig_inches, tuple)
+            and self.v17_layout_format):
+            traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+            extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
+                                         if artists is not None]))
+            aspect = fix_aspect(fig, self.rows, self.cols,
+                                title_obj, extra_artists,
+                                vspace=self.vspace*self.fig_scale,
+                                hspace=self.hspace*self.fig_scale)
+            colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])
+            for cbar_plot in colorbars:
+                if cbar_plot.colorbar:
+                    cbar_plot._draw_colorbar(redraw=False)
+            adjoined = self.traverse(specs=[AdjointLayoutPlot])
+            for adjoined in adjoined:
+                adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)
 
 

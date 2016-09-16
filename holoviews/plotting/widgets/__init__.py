@@ -8,7 +8,8 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode,
-                          unique_array, unicode, isnumeric)
+                          unique_array, unicode, isnumeric,
+                          wrap_tuple_streams, drop_streams)
 from ...core.traversal import hierarchical
 
 def escape_vals(vals, escape_numerics=True):
@@ -104,10 +105,11 @@ class NdWidget(param.Parameterized):
 
     def __init__(self, plot, renderer=None, **params):
         super(NdWidget, self).__init__(**params)
-        self.id = uuid.uuid4().hex
+        self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        self.dimensions = plot.dimensions
-        self.keys = plot.keys
+        self.dimensions, self.keys = drop_streams(plot.streams,
+                                                  plot.dimensions,
+                                                  plot.keys)
 
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
@@ -189,11 +191,14 @@ class NdWidget(param.Parameterized):
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css)
+            return self.renderer.html(self.plot, figure_format, css=css,
+                                      comm=False)
 
 
     def update(self, key):
-        return self._plot_figure(key)
+        self.plot.update(key)
+        self.plot.push()
+        return 'Complete'
 
 
 
@@ -369,4 +374,10 @@ class SelectionWidget(NdWidget):
         if self.plot.dynamic:
             key = tuple(dim.values[k] if dim.values else k
                         for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-        return self._plot_figure(key)
+            key = [key[self.dimensions.index(kdim)] if kdim in self.dimensions else None
+                   for kdim in self.plot.dimensions]
+            key = wrap_tuple_streams(tuple(key), self.plot.dimensions,
+                                     self.plot.streams)
+        self.plot.update(key)
+        self.plot.push()
+        return 'Complete'

@@ -18,8 +18,11 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
+from ..core.traversal import dimensionless_cache
+from ..core.util import stream_parameters
 from ..element import Table
-from .util import get_dynamic_mode, initialize_sampled, dim_axis_label
+from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
+                   attach_streams, traverse_setter)
 
 
 class Plot(param.Parameterized):
@@ -68,12 +71,12 @@ class Plot(param.Parameterized):
     @classmethod
     def lookup_options(cls, obj, group):
         try:
-            plot_class = cls.renderer.plotting_class(obj)
+            plot_class = Store.renderers[cls.backend].plotting_class(obj)
             style_opts = plot_class.style_opts
         except SkipRendering:
             style_opts = None
 
-        node = Store.lookup_options(cls.renderer.backend, obj, group)
+        node = Store.lookup_options(cls.backend, obj, group)
         if group == 'style' and style_opts:
             return node.filtered(style_opts)
         else:
@@ -178,7 +181,7 @@ class DimensionedPlot(Plot):
 
     def __init__(self, keys=None, dimensions=None, layout_dimensions=None,
                  uniform=True, subplot=False, adjoined=None, layout_num=0,
-                 style=None, subplots=None, dynamic=False, **params):
+                 style=None, subplots=None, dynamic=False, renderer=None, **params):
         self.subplots = subplots
         self.adjoined = adjoined
         self.dimensions = dimensions
@@ -195,6 +198,10 @@ class DimensionedPlot(Plot):
         self.current_frame = None
         self.current_key = None
         self.ranges = {}
+        self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
+        self.comm = None
+        self._force = True
+
         params = {k: v for k, v in params.items()
                   if k in self.params()}
         super(DimensionedPlot, self).__init__(**params)
@@ -420,7 +427,7 @@ class DimensionedPlot(Plot):
             selected = {o: options.options[o]
                         for o in opts if o in options.options}
             if opt_type == 'plot' and defaults:
-                plot = Store.registry[cls.renderer.backend].get(type(x))
+                plot = Store.registry[cls.backend].get(type(x))
                 selected['defaults'] = {o: getattr(plot, o) for o in opts
                                         if o not in selected and hasattr(plot, o)}
             key = keyfn(x) if keyfn else None
@@ -472,6 +479,43 @@ class DimensionedPlot(Plot):
         return self.__getitem__(key)
 
 
+    def refresh(self, **kwargs):
+        """
+        Refreshes the plot by rerendering it and then pushing
+        the updated data if the plot has an associated Comm.
+        """
+        traverse_setter(self, '_force', True)
+        key = self.current_key if self.current_key else self.keys[0]
+        stream_params = stream_parameters(self.streams)
+        key = tuple(None if d in stream_params else k
+                    for d, k in zip(self.dimensions, key))
+        stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
+        self.update(stream_key)
+        if self.comm is not None:
+            self.push()
+
+
+    def push(self):
+        """
+        Pushes updated plot data via the Comm.
+        """
+        if self.comm is None:
+            raise Exception('Renderer does not have a comm.')
+        diff = self.renderer.diff(self)
+        self.comm.send(diff)
+
+
+    def init_comm(self, obj):
+        """
+        Initializes comm and attaches streams.
+        """
+        comm = None
+        if self.dynamic or self.renderer.widget_mode == 'live':
+            comm = self.renderer.comms[self.renderer.mode][0](self)
+            attach_streams(self, obj)
+        return comm
+
+
     def __len__(self):
         """
         Returns the total number of available frames.
@@ -518,15 +562,21 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched:
             plot_element = plot_element.last
 
+        top_level = keys is None
+        if top_level:
+            dimensions = self.hmap.kdims
+            keys = list(self.hmap.data.keys())
+
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
-        dimensions = self.hmap.kdims if dimensions is None else dimensions
-        keys = keys if keys else list(self.hmap.data.keys())
         plot_opts = self.lookup_options(plot_element, 'plot').options
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
+        if top_level:
+            self.comm = self.init_comm(element)
+        self.streams = self.hmap.streams if isinstance(self.hmap, DynamicMap) else []
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -547,9 +597,8 @@ class GenericElementPlot(DimensionedPlot):
         spec = util.get_overlay_spec(overlay, key, el)
         try:
             return self.ordering.index(spec)
-        except IndexError:
-            if spec not in self.ordering:
-                self.ordering = util.layer_sort(self.hmap)
+        except ValueError:
+            self.ordering = sorted(self.ordering+[spec])
             return self.ordering.index(spec)
 
 
@@ -558,8 +607,12 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
+            with dimensionless_cache(self.hmap, not self._force or not self.drawn):
+                key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
+            traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
+            key_map = dict(zip([d.name for d in self.hmap.kdims], key))
+            key = tuple(key_map.get(d.name, None) for d in self.dimensions)
             if not key in self.keys:
                 self.keys.append(key)
             self.current_frame = frame
@@ -569,10 +622,7 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(key, int):
             key = self.hmap.keys()[min([key, len(self.hmap)-1])]
 
-        if key == self.current_key:
-            return self.current_frame
-        else:
-            self.current_key = key
+        self.current_key = key
 
         if self.uniform:
             if not isinstance(key, tuple): key = (key,)
@@ -829,8 +879,8 @@ class GenericOverlayPlot(GenericElementPlot):
     def get_extents(self, overlay, ranges):
         extents = []
         items = overlay.items()
-        if self.batched:
-            subplot = self.subplots.values()[0]
+        if self.batched and self.subplots:
+            subplot = list(self.subplots.values())[0]
             subplots = [(k, subplot) for k in overlay.data.keys()]
         else:
             subplots = self.subplots.items()
@@ -855,6 +905,29 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
 class GenericCompositePlot(DimensionedPlot):
+
+    def __init__(self, layout, keys=None, dimensions=None, **params):
+        if 'uniform' not in params:
+            params['uniform'] = traversal.uniform(layout)
+
+        top_level = keys is None
+        if top_level:
+            dimensions, keys = traversal.unique_dimkeys(layout)
+
+        dynamic, sampled = get_dynamic_mode(layout)
+        if sampled:
+            initialize_sampled(layout, dimensions, keys[0])
+        self.layout = layout
+        super(GenericCompositePlot, self).__init__(keys=keys,
+                                                   dynamic=dynamic,
+                                                   dimensions=dimensions,
+                                                   **params)
+        if top_level:
+            self.comm = self.init_comm(layout)
+        self.streams = [s for streams in layout.traverse(lambda x: x.streams,
+                                                         [DynamicMap])
+                        for s in streams]
+
 
     def _get_frame(self, key):
         """
@@ -882,6 +955,11 @@ class GenericCompositePlot(DimensionedPlot):
                     dim_keys = zip([d.name for d in self.dimensions
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
+            elif item.traverse(lambda x: x, [DynamicMap]):
+                with dimensionless_cache(item, not self._force or not self.drawn):
+                    key, frame = util.get_dynamic_item(item, self.dimensions, key)
+                layout_frame[path] = frame
+                continue
             elif self.uniform:
                 dim_keys = zip([d.name for d in self.dimensions
                                 if d in item.dimensions('key')], key)
@@ -895,6 +973,7 @@ class GenericCompositePlot(DimensionedPlot):
                     layout_frame[path] = obj
             else:
                 layout_frame[path] = item
+        traverse_setter(self, '_force', False)
 
         self.current_frame = layout_frame
         return layout_frame
@@ -929,18 +1008,8 @@ class GenericLayoutPlot(GenericCompositePlot):
         if len(layout.values()) == 0:
             raise ValueError("Cannot display empty layout")
 
-        self.layout = layout
+        super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
         self.rows, self.cols = layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))
-        dynamic, sampled = get_dynamic_mode(layout)
-        dimensions, keys = traversal.unique_dimkeys(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
-
-        uniform = traversal.uniform(layout)
-        plotopts = self.lookup_options(layout, 'plot').options
-        super(GenericLayoutPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                                uniform=uniform, dynamic=dynamic,
-                                                **dict(plotopts, **params))

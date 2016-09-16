@@ -65,7 +65,7 @@ script:
   - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
-  - coverage combine
+  - coverage combine --append
 
 after_script:
   - if [ "$TRAVIS_BRANCH" == 'master' ]; then

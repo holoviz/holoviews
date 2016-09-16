@@ -1,18 +1,20 @@
 from __future__ import unicode_literals
+
 from itertools import product
 
 import numpy as np
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib.dates import date2num, DateFormatter
 
 import param
 
-from ...core import OrderedDict
+from ...core import OrderedDict, Dimension
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges
+from ..util import compute_sizes, get_sideplot_ranges, map_colors
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -59,8 +61,19 @@ class CurvePlot(ChartPlot):
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
-        return (xs, ys), style, {}
+        dims = element.dimensions()
+        if xs.dtype.kind == 'M':
+            dt_format = Dimension.type_formatters[np.datetime64]
+            dims[0] = dims[0](value_format=DateFormatter(dt_format))
+        return (xs, ys), style, {'dimensions': dims}
 
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        xs, ys = plot_args
+        if xs.dtype.kind == 'M':
+            artist = ax.plot_date(xs, ys, '-', **plot_kwargs)[0]
+        else:
+            artist = ax.plot(xs, ys, **plot_kwargs)[0]
+        return {'artist': artist}
 
     def update_handles(self, key, axis, element, ranges, style):
         artist = self.handles['artist']
@@ -174,7 +187,6 @@ class SpreadPlot(AreaPlot):
 
     def __init__(self, element, **params):
         super(SpreadPlot, self).__init__(element, **params)
-        self._extents = None
 
     def get_data(self, element, ranges, style):
         xs = element.dimension_values(0)
@@ -183,6 +195,17 @@ class SpreadPlot(AreaPlot):
         pos_idx = 3 if len(element.dimensions()) > 3 else 2
         pos_error = element.dimension_values(pos_idx)
         return (xs, mean-neg_error, mean+pos_error), style, {}
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        neg_dim = vdims[1].name
+        pos_dim = vdims[2].name if len(vdims) > 2 else vdims[1].name
+        neg = np.max(np.abs(ranges[neg_dim]))
+        pos = np.max(np.abs(ranges[pos_dim]))
+        ranges[vdim] = (ranges[vdim][0]-neg, ranges[vdim][1]+pos)
+        return super(AreaPlot, self).get_extents(element, ranges)
+
 
 
 class HistogramPlot(ChartPlot):
@@ -470,7 +493,15 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         if cdim:
             cs = element.dimension_values(self.color_index)
-            style['c'] = cs
+            # Check if numeric otherwise treat as categorical
+            if cs.dtype.kind in 'if':
+                crange = ranges.get(cdim.name, element.range(cdim.name))
+                style['c'] = cs
+            else:
+                categories = np.unique(cs)
+                xsorted = np.argsort(categories)
+                ypos = np.searchsorted(categories[xsorted], cs)
+                style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
         elif color:
             style['c'] = color

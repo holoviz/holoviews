@@ -9,7 +9,6 @@ import matplotlib as mpl
 from matplotlib import pyplot as plt
 
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-from mpl_toolkits.mplot3d import Axes3D
 
 import param
 from param.parameterized import bothmethod
@@ -18,7 +17,10 @@ from ...core import HoloMap
 from ...core.options import Store
 
 from ..renderer import Renderer, MIME_TYPES
+from .comms import (JupyterComm, NbAggJupyterComm,
+                    mpl_msg_handler, mpld3_msg_handler)
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
+from .util import get_tight_bbox
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
@@ -80,6 +82,11 @@ class MPLRenderer(Renderer):
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
 
+    # Define comm targets by mode
+    comms = {'default': (JupyterComm, mpl_msg_handler),
+             'nbagg':   (NbAggJupyterComm, None),
+             'mpld3':   (JupyterComm, mpld3_msg_handler)}
+
     def __call__(self, obj, fmt='auto'):
         """
         Render the supplied HoloViews component or MPLPlot instance
@@ -121,15 +128,9 @@ class MPLRenderer(Renderer):
         factor = percent_size / 100.0
         obj = obj.last if isinstance(obj, HoloMap) else obj
         options = Store.lookup_options(cls.backend, obj, 'plot').options
-        fig_inches = options.get('fig_inches', MPLPlot.fig_inches)
+        fig_size = options.get('fig_size', MPLPlot.fig_size)*factor
 
-        if isinstance(fig_inches, (list, tuple)):
-            fig_inches =  (None if fig_inches[0] is None else fig_inches[0] * factor,
-                           None if fig_inches[1] is None else fig_inches[1] * factor)
-        else:
-            fig_inches = MPLPlot.fig_inches * factor
-
-        return dict({'fig_inches':fig_inches},
+        return dict({'fig_size':fig_size},
                     **Store.lookup_options(cls.backend, obj, 'plot').options)
 
 
@@ -138,6 +139,22 @@ class MPLRenderer(Renderer):
         w, h = plot.state.get_size_inches()
         dpi = plot.state.dpi
         return (w*dpi, h*dpi)
+
+
+    def diff(self, plot):
+        """
+        Returns the latest plot data to update an existing plot.
+        """
+        data = None
+        if self.mode != 'nbagg':
+            if self.mode == 'mpld3':
+                figure_format = 'json'
+            elif self.fig == 'auto':
+                figure_format = self.params('fig').objects[0]
+            else:
+                figure_format = self.fig
+            data = self.html(plot, figure_format, comm=False)
+        return data
 
 
     def _figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
@@ -149,7 +166,7 @@ class MPLRenderer(Renderer):
         """
         fig = plot.state
         if self.mode == 'nbagg':
-            manager = self.get_figure_manager(plot.state)
+            manager = plot.comm.get_figure_manager()
             if manager is None: return ''
             self.counter += 1
             manager.show()
@@ -161,7 +178,16 @@ class MPLRenderer(Renderer):
             if fmt == 'json':
                 return mpld3.fig_to_dict(fig)
             else:
-                return "<center>" + mpld3.fig_to_html(fig) + "<center/>"
+                figid = "fig_el"+plot.comm.target if plot.comm else None
+                html = mpld3.fig_to_html(fig, figid=figid)
+                html = "<center>" + html + "<center/>"
+                if plot.comm:
+                    comm, msg_handler = self.comms[self.mode]
+                    msg_handler = msg_handler.format(comms_target=plot.comm.target)
+                    return comm.template.format(init_frame=html,
+                                                msg_handler=msg_handler,
+                                                comms_target=plot.comm.target)
+                return html
 
         traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
         extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
@@ -189,16 +215,6 @@ class MPLRenderer(Renderer):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
-
-
-    def get_figure_manager(self, fig):
-        from matplotlib.backends.backend_nbagg import new_figure_manager_given_figure
-        manager = new_figure_manager_given_figure(self.counter, fig)
-        # Need to call mouse_init on each 3D axis to enable rotation support
-        for ax in fig.get_axes():
-            if isinstance(ax, Axes3D):
-                ax.mouse_init()
-        return manager
 
 
     def _anim_data(self, anim, fmt):
@@ -233,34 +249,9 @@ class MPLRenderer(Renderer):
             if not fig_id in MPLRenderer.drawn:
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
-                renderer = fig._cachedRenderer
-                bbox_inches = fig.get_tightbbox(renderer)
-                bbox_artists = kw.pop("bbox_extra_artists", [])
-                bbox_artists += fig.get_default_bbox_extra_artists()
-                bbox_filtered = []
-                for a in bbox_artists:
-                    bbox = a.get_window_extent(renderer)
-                    if isinstance(bbox, tuple):
-                        continue
-                    if a.get_clip_on():
-                        clip_box = a.get_clip_box()
-                        if clip_box is not None:
-                            bbox = Bbox.intersection(bbox, clip_box)
-                        clip_path = a.get_clip_path()
-                        if clip_path is not None and bbox is not None:
-                            clip_path = clip_path.get_fully_transformed_path()
-                            bbox = Bbox.intersection(bbox,
-                                                     clip_path.get_extents())
-                    if bbox is not None and (bbox.width != 0 or
-                                             bbox.height != 0):
-                        bbox_filtered.append(bbox)
-                if bbox_filtered:
-                    _bbox = Bbox.union(bbox_filtered)
-                    trans = Affine2D().scale(1.0 / self.dpi)
-                    bbox_extra = TransformedBbox(_bbox, trans)
-                    bbox_inches = Bbox.union([bbox_inches, bbox_extra])
+                extra_artists = kw.pop("bbox_extra_artists", [])
                 pad = plt.rcParams['savefig.pad_inches']
-                bbox_inches = bbox_inches.padded(pad)
+                bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
                 MPLRenderer.drawn[fig_id] = bbox_inches
                 kw['bbox_inches'] = bbox_inches
             else:

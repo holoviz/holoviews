@@ -9,15 +9,15 @@ except:
 from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core.util import max_range, basestring
+from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
-from .element import ElementPlot, line_properties, fill_properties
+from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 
-class PointPlot(ElementPlot):
+class PointPlot(ColorbarPlot):
 
     color_index = param.ClassSelector(default=3, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -33,7 +33,7 @@ class PointPlot(ElementPlot):
       Determines whether the `scaling_factor` should be applied to
       the width or area of each point (default: "area").""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
 
@@ -55,18 +55,12 @@ class PointPlot(ElementPlot):
         mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
-        cmap = style.get('palette', style.get('cmap', None))
         cdim = element.get_dimension(self.color_index)
-        if cdim and cmap:
-            map_key = 'color_' + cdim.name
-            mapping['color'] = map_key
-            if empty:
-                data[map_key] = []
-            else:
-                cmap = get_cmap(cmap)
-                colors = element.dimension_values(self.color_index)
-                crange = ranges.get(cdim.name, element.range(cdim.name))
-                data[map_key] = map_colors(colors, crange, cmap)
+        if cdim:
+            mapper = self._get_colormapper(cdim, element, ranges, style)
+            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            mapping['color'] = {'field': cdim.name,
+                                'transform': mapper}
 
         sdim = element.get_dimension(self.size_index)
         if sdim:
@@ -95,7 +89,7 @@ class PointPlot(ElementPlot):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
-            if 'color' not in eldata:
+            if 'color' not in elmapping:
                 zorder = self.get_zorder(element, key, el)
                 val = style[zorder].get('color')
                 elmapping['color'] = 'color'
@@ -125,6 +119,8 @@ class PointPlot(ElementPlot):
         else:
             plot_method = self._plot_methods.get('batched' if self.batched else 'single')
             renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
         return renderer, renderer.glyph
 
 
@@ -236,7 +232,7 @@ class HistogramPlot(ElementPlot):
         return (data, mapping)
 
 
-class SideHistogramPlot(HistogramPlot):
+class SideHistogramPlot(HistogramPlot, ColorbarPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
@@ -259,19 +255,20 @@ class SideHistogramPlot(HistogramPlot):
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
 
-        dim = element.get_dimension(0).name
+        dim = element.get_dimension(0)
         main = self.adjoined.main
-        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        vals = element.dimension_values(dim)
+        range_item, main_range, _ = get_sideplot_ranges(self, element, main, ranges)
         if isinstance(range_item, (Raster, Points, Polygons, Spikes)):
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
         else:
             style = {}
 
         if 'cmap' in style or 'palette' in style:
-            cmap = get_cmap(style.get('cmap', style.get('palette', None)))
-            data['color'] = [] if empty else map_colors(vals, main_range, cmap)
-            mapping['fill_color'] = 'color'
+            main_range = {dim.name: main_range}
+            cmapper = self._get_colormapper(dim, element, main_range, style)
+            data[dim.name] = [] if empty else element.dimension_values(dim)
+            mapping['fill_color'] = {'field': dim.name,
+                                     'transform': cmapper}
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
@@ -311,7 +308,7 @@ class ErrorPlot(PathPlot):
         return (data, dict(self._mapping))
 
 
-class SpikesPlot(PathPlot):
+class SpikesPlot(PathPlot, ColorbarPlot):
 
     color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
@@ -333,46 +330,36 @@ class SpikesPlot(PathPlot):
             b, t = self.position, self.position+self.spike_length
         return l, b, r, t
 
-
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
         pos = self.position
+        mapping = dict(xs='xs', ys='ys')
         if empty:
-            xs, ys, keys = [], [], []
-            mapping = dict(xs=dims[0], ys=dims[1] if len(dims) > 1 else 'heights')
+            xs, ys = [], []
         elif len(dims) > 1:
-            xs, ys = zip(*(((x, x), (pos, pos+y))
-                           for x, y in element.array()))
-            mapping = dict(xs=dims[0], ys=dims[1])
-            keys = (dims[0], dims[1])
+            xs, ys = zip(*(((x, x), (pos+y, pos))
+                           for x, y in element.array(dims[:2])))
         else:
             height = self.spike_length
-            xs, ys = zip(*(((x[0], x[0]), (pos, pos+height))
-                           for x in element.array()))
-            mapping = dict(xs=dims[0], ys='heights')
-            keys = (dims[0], 'heights')
+            xs, ys = zip(*(((x[0], x[0]), (pos+height, pos))
+                           for x in element.array(dims[:1])))
 
-        if not empty and self.invert_axes: keys = keys[::-1]
-        data = dict(zip(keys, (xs, ys)))
-
-        cmap = style.get('palette', style.get('cmap', None))
+        if not empty and self.invert_axes: xs, ys = ys, xs
+        data = dict(zip(('xs', 'ys'), (xs, ys)))
         cdim = element.get_dimension(self.color_index)
-        if cdim and cmap:
-            map_key = 'color_' + cdim.name
-            mapping['color'] = map_key
-            if empty:
-                colors = []
-            else:
-                cmap = get_cmap(cmap)
-                cvals = element.dimension_values(cdim)
-                crange = ranges.get(cdim.name, None)
-                colors = map_colors(cvals, crange, cmap)
-            data[map_key] = colors
+        if cdim:
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
+            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            mapping['color'] = {'field': cdim.name,
+                                'transform': cmapper}
+
+        if 'hover' in self.tools+self.default_tools and not empty:
+            for d in dims:
+                data[dimension_sanitizer(d)] = element.dimension_values(d)
 
         return data, mapping
-
 
 
 class SideSpikesPlot(SpikesPlot):
@@ -543,4 +530,6 @@ class BarPlot(ChartPlot):
         crange = Range1d(*ranges.get(vdim))
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
+        if not self.show_legend:
+            plot.legend[0].legends[:] = []
         return plot

@@ -3,6 +3,7 @@ import numbers
 import itertools
 import string, fnmatch
 import unicodedata
+import datetime as dt
 from collections import defaultdict
 
 import numpy as np
@@ -777,6 +778,70 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+
+def stream_parameters(streams, no_duplicates=True, exclude=['name']):
+    """
+    Given a list of streams, return a flat list of parameter name,
+    excluding those listed in the exclude list.
+
+    If no_duplicates is enabled, a KeyError will be raised if there are
+    parameter name clashes across the streams.
+    """
+    param_groups = [s.contents.keys() for s in streams]
+    names = [name for group in param_groups for name in group]
+
+    if no_duplicates:
+        clashes = set([n for n in names if names.count(n) > 1])
+        if clashes:
+            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+    return [name for name in names if name not in exclude]
+
+
+def dimensionless_contents(streams, kdims):
+    """
+    Return a list of stream parameters that have not been associated
+    with any of the key dimensions.
+    """
+    names = stream_parameters(streams)
+    return [name for name in names if name not in kdims]
+
+
+def unbound_dimensions(streams, kdims):
+    """
+    Return a list of dimensions that have not been associated with
+    any streams.
+    """
+    params = stream_parameters(streams)
+    return [d for d in kdims if d not in params]
+
+
+def wrap_tuple_streams(unwrapped, kdims, streams):
+    """
+    Fills in tuple keys with dimensioned stream values as appropriate.
+    """
+    param_groups = [(s.contents.keys(), s) for s in streams]
+    pairs = [(name,s)  for (group, s) in param_groups for name in group]
+    substituted = []
+    for pos,el in enumerate(wrap_tuple(unwrapped)):
+        if el is None and pos < len(kdims):
+            matches = [(name,s) for (name,s) in pairs if name==kdims[pos].name]
+            if len(matches) == 1:
+                (name, stream) = matches[0]
+                el = stream.contents[name]
+        substituted.append(el)
+    return tuple(substituted)
+
+
+def drop_streams(streams, kdims, keys):
+    """
+    Drop any dimensionsed streams from the keys and kdims.
+    """
+    stream_params = stream_parameters(streams)
+    inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
+                       if kdim not in stream_params])
+    return dims, [tuple(key[ind] for ind in inds) for key in keys]
+
+
 def itervalues(obj):
     "Get value iterator from dictionary for Python 2 and 3"
     return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
@@ -887,7 +952,9 @@ def get_dynamic_item(map_obj, dimensions, key):
     and a corresponding key. The dimensions must be a subset
     of the map_obj key dimensions.
     """
-    if isinstance(key, tuple):
+    if key == () and not dimensions:
+        return key, map_obj[()]
+    elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)
@@ -917,3 +984,10 @@ def expand_grid_coords(dataset, dim):
     idx = dataset.get_dimension_index(dim)
     return cartesian_product(arrays)[idx]
 
+
+def dt64_to_dt(dt64):
+    """
+    Safely converts NumPy datetime64 to a datetime object.
+    """
+    ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
+    return dt.datetime.utcfromtimestamp(ts)

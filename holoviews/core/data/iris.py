@@ -10,11 +10,11 @@ import numpy as np
 
 from .interface import Interface
 from .grid import GridInterface
+from ..dimension import Dimension
 from ..ndmapping import (NdMapping, item_check, sorted_context)
 from ..spaces import HoloMap
 from .. import util
 
-from holoviews.core.dimension import Dimension
 
 
 def get_date_format(coord):
@@ -102,11 +102,12 @@ class CubeInterface(GridInterface):
                 if len(coord) == 0:
                     raise ValueError('Key dimension %s not found in '
                                      'Iris cube.' % kd)
-                coords.append(coord[0])
+                coords.append(kd if isinstance(kd, Dimension) else coord[0])
         else:
             coords = data.dim_coords
             coords = sorted(coords, key=sort_coords)
-        kdims = [coord_to_dimension(crd) for crd in coords]
+        kdims = [crd if isinstance(crd, Dimension) else coord_to_dimension(crd)
+                 for crd in coords]
         if vdims is None:
             vdims = [Dimension(data.name(), unit=str(data.units))]
 
@@ -136,7 +137,7 @@ class CubeInterface(GridInterface):
         dim = dataset.get_dimension(dim)
         if dim in dataset.vdims:
             coord_names = [c.name() for c in dataset.data.dim_coords]
-            data = dataset.data.copy().data.T
+            data = dataset.data.copy().data
             data = cls.canonicalize(dataset, data, coord_names)
             return data.T.flatten() if flat else data
         elif expanded:

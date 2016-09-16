@@ -84,10 +84,8 @@ class GridInterface(DictInterface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        if dim in dataset.kdims:
-            arr = dataset.data[dim.name]
-        elif dim in dataset.vdims:
-            arr = dataset.data[dim.name]
+        if dim in dataset.dimensions():
+            arr = cls.values(dataset, dim, False, False)
         else:
             return None
         return arr.dtype.type
@@ -110,9 +108,10 @@ class GridInterface(DictInterface):
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
+        dim = dataset.get_dimension(dim)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
-        data = dataset.data[dim]
+        data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -130,7 +129,7 @@ class GridInterface(DictInterface):
         dimensions of the dataset.
         """
         if coord_dims is None:
-            coord_dims = dataset.dimensions('key', True)
+            coord_dims = dataset.dimensions('key', True)[::-1]
 
         # Reorient data
         invert = False
@@ -142,7 +141,7 @@ class GridInterface(DictInterface):
                 invert = True
             else:
                 slices.append(slice(None))
-        data = data.__getitem__(slices[::-1]) if invert else data
+        data = data.__getitem__(slices) if invert else data
 
         # Transpose data
         dims = [name for name in coord_dims[::-1]
@@ -151,7 +150,7 @@ class GridInterface(DictInterface):
         inds = [dims.index(kd.name) for kd in dataset.kdims]
         inds += dropped
         if inds:
-            data = data.transpose(inds[::-1])
+            data = data.transpose(inds)
 
         # Allow lower dimensional views into data
         if len(dataset.kdims) < 2:

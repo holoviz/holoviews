@@ -447,6 +447,19 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                                          self.grid_zs), kdims=['x', 'y'],
                                         vdims=['z'])
 
+    def test_canonical_vdim(self):
+        x = np.array([ 0.  ,  0.75,  1.5 ])
+        y = np.array([ 1.5 ,  0.75,  0.  ])
+        z = np.array([[ 0.06925999,  0.05800389,  0.05620127],
+                      [ 0.06240918,  0.05800931,  0.04969735],
+                      [ 0.05376789,  0.04669417,  0.03880118]])
+        dataset = Dataset((x, y, z), kdims=['x', 'y'], vdims=['z'])
+        canonical = np.array([[ 0.05376789,  0.04669417,  0.03880118],
+                              [ 0.06240918,  0.05800931,  0.04969735],
+                              [ 0.06925999,  0.05800389,  0.05620127]])
+        self.assertEqual(dataset.dimension_values('z', flat=False),
+                         canonical)
+
     def test_dataset_dim_vals_grid_kdims_xs(self):
         self.assertEqual(self.dataset_grid.dimension_values(0, expanded=False),
                          np.array([0, 1]))

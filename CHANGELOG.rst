@@ -1,3 +1,38 @@
+Version 1.6.2
+-------------
+
+Bug fix release with various fixes for gridded data backends and
+optimizations for bokeh.
+
+* Optimized bokeh event messaging, reducing the average json payload
+  by 30-50% (PR `#807 <https://github.com/ioam/holoviews/pull/807>`_).
+* Fixes for correctly handling NdOverlay types returned by DynamicMaps
+  (PR `#814 <https://github.com/ioam/holoviews/pull/814>`_).
+* Added support for datetime64 handling in matplotlib and support for
+  datetime formatters on Dimension.type_formatters (PR `#816
+  <https://github.com/ioam/holoviews/pull/816>`_).
+* Fixed handling of constant dimensions when slicing xarray datasets
+  (PR `#817 <https://github.com/ioam/holoviews/pull/817>`_).
+* Fixed support for passing custom dimensions to iris Datasets (PR
+  `#818 <https://github.com/ioam/holoviews/pull/818>`_).
+* Fixed support for add_dimension on xarray interface (PR `#820
+  <https://github.com/ioam/holoviews/pull/820>`_).
+* Improved extents computation on matplotlib SpreadPlot (PR `#821
+  <https://github.com/ioam/holoviews/pull/821>`_).
+* Bokeh backend avoids sending data for static frames and empty events
+  (PR `#822 <https://github.com/ioam/holoviews/pull/822>`_).
+* Added major layout fix for figures with non-square aspects, reducing
+  the amount of unnecessary whitespace (PR `#826
+  <https://github.com/ioam/holoviews/pull/826>`_). Disabled by default
+  until 1.7 release but can be enabled with::
+
+.. code-block:: python
+
+   from holoviews.plotting.mpl import LayoutPlot
+   LayoutPlot.v17_layout_format = True
+   LayoutPlot.vspace = 0.3
+
+
 Version 1.6.1
 -------------
 

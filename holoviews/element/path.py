@@ -111,7 +111,7 @@ class Contours(Path):
     def dimension_values(self, dim):
         dimension = self.get_dimension(dim, strict=True)
         if dimension in self.vdims:
-            return [self.level]
+            return np.array([self.level])
         return super(Contours, self).dimension_values(dim)
 
 

@@ -69,7 +69,7 @@ class PolygonPlot(ColorbarPlot):
         collection = PatchCollection(*plot_args, **plot_kwargs)
         ax.add_collection(collection)
         if self.colorbar:
-            self._draw_colorbar(collection, self.current_frame)
+            self._draw_colorbar()
         return {'artist': collection, 'polys': plot_args[0]}
 
 

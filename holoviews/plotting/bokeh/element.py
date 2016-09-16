@@ -7,6 +7,14 @@ from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
+from bokeh.models.mappers import LinearColorMapper
+try:
+    from bokeh.models import ColorBar
+    from bokeh.models.mappers import LogColorMapper
+except ImportError:
+    LogColorMapper, ColorBar = None, None
+from bokeh.models import LogTicker, BasicTicker
+
 try:
     from bokeh import mpl
 except ImportError:
@@ -22,7 +30,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .callbacks import Callbacks
 from .plot import BokehPlot
-from .util import mpl_to_bokeh, convert_datetime, update_plot, bokeh_version
+from .util import (mpl_to_bokeh, convert_datetime, update_plot,
+                   bokeh_version, mplcmap_to_palette)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -103,6 +112,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
+
+    toolbar = param.ObjectSelector(default='right',
+                                   objects=["above", "below",
+                                            "left", "right", None],
+                                   doc="""
+        The toolbar location, must be one of 'above', 'below',
+        'left', 'right', None.""")
 
     xaxis = param.ObjectSelector(default='bottom',
                                  objects=['top', 'bottom', 'bare', 'top-bare',
@@ -268,7 +284,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         axis_types, labels, plot_ranges = self._axes_props(plots, subplots, element, ranges)
         xlabel, ylabel, _ = labels
         x_axis_type, y_axis_type = axis_types
-        tools = self._init_tools(element)
         properties = dict(plot_ranges)
         properties['x_axis_label'] = xlabel if 'x' in self.show_labels else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.show_labels else ' '
@@ -278,10 +293,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
+        if self.toolbar:
+            tools = self._init_tools(element)
+            properties['tools'] = tools
+            properties['toolbar_location'] = self.toolbar
+
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                      y_axis_type=y_axis_type, title=title,
-                                     tools=tools, **properties)
+                                     **properties)
 
 
     def _plot_properties(self, key, plot, element):
@@ -575,9 +595,19 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         handles = []
         if self.static and not self.dynamic:
             return handles
+
+        previous_id = self.handles.get('previous_id', None)
+        current_id = id(self.current_frame.data) if self.current_frame else None
         for handle in self._update_handles:
+            if (handle == 'source' and self.dynamic and
+                current_id == previous_id):
+                continue
             if handle in self.handles:
                 handles.append(self.handles[handle])
+
+        # Cache frame object id to skip updating if unchanged
+        if self.dynamic:
+            self.handles['previous_id'] = current_id
 
         if self.overlaid:
             return handles
@@ -606,6 +636,144 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      if f else [])]
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
+
+
+
+class ColorbarPlot(ElementPlot):
+    """
+    ColorbarPlot provides methods to create colormappers and colorbar
+    models which can be added to a glyph. Additionally it provides
+    parameters to control the position and other styling options of
+    the colorbar. The default colorbar_position options are defined
+    by the colorbar_specs, but may be overridden by the colorbar_opts.
+    """
+
+    colorbar_specs = {'right':     {'pos': 'right',
+                                    'opts': {'location': (0, 0)}},
+                      'left':      {'pos': 'left',
+                                    'opts':{'location':(0, 0)}},
+                      'bottom':    {'pos': 'below',
+                                    'opts': {'location': (0, 0),
+                                             'orientation':'horizontal'}},
+                      'top':       {'pos': 'above',
+                                    'opts': {'location':(0, 0),
+                                             'orientation':'horizontal'}},
+                      'top_right':   {'pos': 'center',
+                                      'opts': {'location': 'top_right'}},
+                      'top_left':    {'pos': 'center',
+                                      'opts': {'location': 'top_left'}},
+                      'bottom_left': {'pos': 'center',
+                                      'opts': {'location': 'bottom_left',
+                                               'orientation': 'horizontal'}},
+                      'bottom_right': {'pos': 'center',
+                                      'opts': {'location': 'bottom_right',
+                                               'orientation': 'horizontal'}}}
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to display a colorbar.""")
+
+    colorbar_position = param.ObjectSelector(objects=list(colorbar_specs),
+                                             default="right", doc="""
+        Allows selecting between a number of predefined colorbar position
+        options. The predefined options may be customized in the
+        colorbar_specs class attribute.""")
+
+    colorbar_opts = param.Dict(default={}, doc="""
+        Allows setting specific styling options for the colorbar overriding
+        the options defined in the colorbar_specs class attribute. Includes
+        location, orientation, height, width, scale_alpha, title, title_props,
+        margin, padding, background_fill_color and more.""")
+
+    logz  = param.Boolean(default=False, doc="""
+         Whether to apply log scaling to the z-axis.""")
+
+    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar']
+
+    _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
+                              major_tick_line_color='black')
+
+    def _draw_colorbar(self, plot, color_mapper):
+        if LogColorMapper and isinstance(color_mapper, LogColorMapper):
+            ticker = LogTicker()
+        else:
+            ticker = BasicTicker()
+        cbar_opts = dict(self.colorbar_specs[self.colorbar_position])
+
+        # Check if there is a colorbar in the same position
+        pos = cbar_opts['pos']
+        if any(isinstance(model, ColorBar) for model in getattr(plot, pos, [])):
+            return
+
+        opts = dict(cbar_opts['opts'], **self._colorbar_defaults)
+        color_bar = ColorBar(color_mapper=color_mapper, ticker=ticker,
+                             **dict(opts, **self.colorbar_opts))
+
+        plot.add_layout(color_bar, pos)
+        self.handles['colorbar'] = color_bar
+
+
+    def _get_colormapper(self, dim, element, ranges, style):
+        low, high = ranges.get(dim.name, element.range(dim.name))
+        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
+        colormapper = LogColorMapper if self.logz else LinearColorMapper
+        cmapper = colormapper(palette, low=low, high=high)
+
+        # The initial colormapper instance is cached the first time
+        # and then updated with the values from new instances
+        if 'color_mapper' not in self.handles:
+            self.handles['color_mapper'] = cmapper
+        return cmapper
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object and optionally creates a colorbar.
+        """
+        ret = super(ColorbarPlot, self)._init_glyph(plot, mapping, properties)
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
+        return ret
+
+
+    def _update_glyph(self, glyph, properties, mapping):
+        allowed_properties = glyph.properties()
+        cmappers = [v.get('transform') for v in mapping.values()
+                    if isinstance(v, dict)]
+        cmappers.append(properties.pop('color_mapper', None))
+        for cm in cmappers:
+            if cm:
+                self.handles['color_mapper'].low = cm.low
+                self.handles['color_mapper'].high = cm.high
+                self.handles['color_mapper'].palette = cm.palette
+        merged = dict(properties, **mapping)
+        glyph.set(**{k: v for k, v in merged.items()
+                     if k in allowed_properties})
+
+
+class LegendPlot(ElementPlot):
+
+    legend_position = param.ObjectSelector(objects=["top_right",
+                                                    "top_left",
+                                                    "bottom_left",
+                                                    "bottom_right",
+                                                    'right', 'left',
+                                                    'top', 'bottom'],
+                                                    default="top_right",
+                                                    doc="""
+        Allows selecting between a number of predefined legend position
+        options. The predefined options may be customized in the
+        legend_specs class attribute.""")
+
+
+    legend_cols = param.Integer(default=False, doc="""
+       Whether to lay out the legend as columns.""")
+
+
+    legend_specs = {'right': dict(pos='right', loc=(5, -40)),
+                    'left': dict(pos='left', loc=(0, -40)),
+                    'top': dict(pos='above', loc=(120, 5)),
+                    'bottom': dict(pos='below', loc=(60, 0))}
+
 
 
 class BokehMPLWrapper(ElementPlot):
@@ -700,22 +868,8 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
             self.handles['plot'] = self._render_plot(element)
 
 
-class OverlayPlot(GenericOverlayPlot, ElementPlot):
+class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
-    legend_position = param.ObjectSelector(objects=["top_right",
-                                                    "top_left",
-                                                    "bottom_left",
-                                                    "bottom_right",
-                                                    'right', 'left',
-                                                    'top', 'bottom'],
-                                                    default="top_right",
-                                                    doc="""
-        Allows selecting between a number of predefined legend position
-        options. The predefined options may be customized in the
-        legend_specs class attribute.""")
-
-    legend_cols = param.Integer(default=False, doc="""
-       Whether to lay out the legend as columns.""")
 
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
@@ -723,11 +877,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
     style_opts = legend_dimensions + line_properties + text_properties
 
     _update_handles = ['source']
-
-    legend_specs = {'right': dict(pos='right', loc=(5, -40)),
-                    'left': dict(pos='left', loc=(0, -40)),
-                    'top': dict(pos='above', loc=(120, 5)),
-                    'bottom': dict(pos='below', loc=(60, 0))}
 
     def _process_legend(self):
         plot = self.handles['plot']
@@ -852,11 +1001,18 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
+            # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
-                idx = dynamic_update(self, subplot, k, element, items)
-                empty = idx is None
-                if not empty:
-                    _, el = items.pop(idx)
+                # In batched mode NdOverlay is passed to subplot directly
+                if self.batched:
+                    el = element
+                    empty = False
+                # If not batched get the Element matching the subplot
+                else:
+                    idx = dynamic_update(self, subplot, k, element, items)
+                    empty = idx is None
+                    if not empty:
+                        _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
         if isinstance(self.hmap, DynamicMap) and items:

@@ -1,31 +1,21 @@
 import numpy as np
 import param
 
-from bokeh.models.mappers import LinearColorMapper
-try:
-    from bokeh.models.mappers import LogColorMapper
-except ImportError:
-    LogColorMapper = None
-
 from ...core.util import cartesian_product
 from ...element import Image, Raster, RGB
 from ..renderer import SkipRendering
 from ..util import map_colors
-from .element import ElementPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb
+from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
+from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb, mpl_to_bokeh
 
 
-class RasterPlot(ElementPlot):
-
-    logz  = param.Boolean(default=False, doc="""
-         Whether to apply log scaling to the z-axis.""")
+class RasterPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
     style_opts = ['cmap']
     _plot_methods = dict(single='image')
-    _update_handles = ['color_mapper', 'source', 'glyph']
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
@@ -56,27 +46,11 @@ class RasterPlot(ElementPlot):
         properties = super(RasterPlot, self)._glyph_properties(plot, element,
                                                                source, ranges)
         properties = {k: v for k, v in properties.items()}
-        val_dim = [d.name for d in element.vdims][0]
-        low, high = ranges.get(val_dim)
-        if 'cmap' in properties:
-            palette = mplcmap_to_palette(properties.pop('cmap', None))
-        colormapper = LogColorMapper if self.logz else LinearColorMapper
-        cmap = colormapper(palette, low=low, high=high)
-        properties['color_mapper'] = cmap
-        if 'color_mapper' not in self.handles:
-            self.handles['color_mapper'] = cmap
+        val_dim = [d for d in element.vdims][0]
+        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
+                                                           properties)
         return properties
 
-
-    def _update_glyph(self, glyph, properties, mapping):
-        allowed_properties = glyph.properties()
-        cmap = properties.pop('color_mapper', None)
-        if cmap:
-            glyph.color_mapper.low = cmap.low
-            glyph.color_mapper.high = cmap.high
-        merged = dict(properties, **mapping)
-        glyph.set(**{k: v for k, v in merged.items()
-                     if k in allowed_properties})
 
 
 class ImagePlot(RasterPlot):
@@ -131,7 +105,7 @@ class HSVPlot(RGBPlot):
         return super(HSVPlot, self).get_data(rgb, ranges, empty)
 
 
-class HeatmapPlot(ElementPlot):
+class HeatmapPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -144,6 +118,7 @@ class HeatmapPlot(ElementPlot):
         labels = self._get_axis_labels(dims)
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
+        if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
@@ -151,22 +126,21 @@ class HeatmapPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)
+        style = self.style[self.cyclic_index]
+        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
             data = {x: [], y: [], z: [], 'color': []}
         else:
-            style = self.style[self.cyclic_index]
-            cmap = style.get('palette', style.get('cmap', None))
-            cmap = get_cmap(cmap)
             zvals = np.rot90(element.raster, 3).flatten()
-            colors = map_colors(zvals, ranges[z], cmap)
             xvals, yvals = [[str(v) for v in element.dimension_values(i)]
                             for i in range(2)]
-            data = {x: xvals, y: yvals, z: zvals, 'color': colors}
+            data = {x: xvals, y: yvals, z: zvals}
 
-        return (data, {'x': x, 'y': y, 'fill_color': 'color', 'height': 1, 'width': 1})
+        return (data, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper},
+                       'height': 1, 'width': 1})
 
 
-class QuadMeshPlot(ElementPlot):
+class QuadMeshPlot(ColorbarPlot):
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -176,24 +150,23 @@ class QuadMeshPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)
+        style = self.style[self.cyclic_index]
+        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
-            data = {x: [], y: [], z: [], 'color': [], 'height': [], 'width': []}
+            data = {x: [], y: [], z: [], 'height': [], 'width': []}
         else:
-            style = self.style[self.cyclic_index]
-            cmap = style.get('palette', style.get('cmap', None))
-            cmap = get_cmap(cmap)
             if len(set(v.shape for v in element.data)) == 1:
                 raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
             zvals = element.data[2].T.flatten()
-            colors = map_colors(zvals, ranges[z], cmap)
             xvals = element.dimension_values(0, False)
             yvals = element.dimension_values(1, False)
             widths = np.diff(element.data[0])
             heights = np.diff(element.data[1])
             xs, ys = cartesian_product([xvals, yvals])
             ws, hs = cartesian_product([widths, heights])
-            data = {x: xs.flat, y: ys.flat, z: zvals, 'color': colors,
+            data = {x: xs.flat, y: ys.flat, z: zvals,
                     'widths': ws.flat, 'heights': hs.flat}
 
-        return (data, {'x': x, 'y': y, 'fill_color': 'color',
+        return (data, {'x': x, 'y': y,
+                       'fill_color': {'field': z, 'transform': cmapper},
                        'height': 'heights', 'width': 'widths'})

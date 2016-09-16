@@ -359,7 +359,8 @@ class Dataset(Element):
             combined = self.clone(aggregated, kdims=kdims)
             for i, d in enumerate(vdims):
                 dim = d('_'.join([d.name, spread_name]))
-                combined = combined.add_dimension(dim, ndims+i, error[d], True)
+                dvals = error.dimension_values(d, False, False)
+                combined = combined.add_dimension(dim, ndims+i, dvals, True)
             return combined
 
         if np.isscalar(aggregated):
@@ -463,7 +464,7 @@ class Dataset(Element):
         dim_obj = self.get_dimension(dim)
         if dim_obj and dim_obj.type is not None:
             return dim_obj.type
-        return self.interface.dimension_type(self, dim)
+        return self.interface.dimension_type(self, dim_obj)
 
 
     def dframe(self, dimensions=None):

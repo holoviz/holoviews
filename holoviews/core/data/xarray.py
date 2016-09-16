@@ -78,7 +78,10 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dimension).name
         if dim in dataset.data:
             data = dataset.data[dim]
-            return data.min().item(), data.max().item()
+            dmin, dmax = data.min().data, data.max().data
+            dmin = dmin if np.isscalar(dmin) else dmin.item()
+            dmax = dmax if np.isscalar(dmax) else dmax.item()
+            return dmin, dmax
         else:
             return np.NaN, np.NaN
 
@@ -119,8 +122,8 @@ class XArrayInterface(GridInterface):
     def coords(cls, dataset, dim, ordered=False, expanded=False):
         if expanded:
             return util.expand_grid_coords(dataset, dim)
-        data = dataset.data[dim].data
-        if ordered and np.all(data[1:] < data[:-1]):
+        data = np.atleast_1d(dataset.data[dim].data)
+        if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
 
@@ -129,7 +132,7 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         data = dataset.data[dim].data
         if dim in dataset.vdims:
-            coord_dims = dataset.data[dim].dims[::-1]
+            coord_dims = dataset.data[dim].dims
             data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
@@ -191,12 +194,21 @@ class XArrayInterface(GridInterface):
             if isinstance(v, set):
                 validated[k] = list(v)
             elif isinstance(v, tuple):
-                validated[k] = slice(v[0], v[1]-sys.float_info.epsilon*10)
+                upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
+                validated[k] = slice(v[0], upper)
             elif isinstance(v, types.FunctionType):
                 validated[k] = v(dataset[k])
             else:
                 validated[k] = v
         data = dataset.data.sel(**validated)
+
+        # Restore constant dimensions
+        dropped = {d.name: np.atleast_1d(data[d.name])
+                   for d in dataset.kdims
+                   if not data[d.name].data.shape}
+        if dropped:
+            data = data.assign_coords(**dropped)
+
         indexed = cls.indexed(dataset, selection)
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
@@ -223,7 +235,9 @@ class XArrayInterface(GridInterface):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
-        return dataset.assign(**{dim: values})
+        arr = xr.DataArray(values, coords=dataset.data.coords, name=dim,
+                           dims=dataset.data.dims)
+        return dataset.data.assign(**{dim: arr})
 
 
 Interface.register(XArrayInterface)
