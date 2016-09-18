@@ -2,6 +2,7 @@ import math
 
 import param
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib import colors
