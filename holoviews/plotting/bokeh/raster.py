@@ -7,7 +7,7 @@ try:
 except ImportError:
     LogColorMapper = None
 
-from ...core.util import cartesian_product, is_nan
+from ...core.util import cartesian_product, is_nan, unique_array
 from ...element import Image, Raster, RGB
 from ..renderer import SkipRendering
 from ..util import map_colors, get_2d_aggregate
@@ -136,7 +136,7 @@ class HeatmapPlot(ColorbarPlot):
     def _axes_props(self, plots, subplots, element, ranges):
         dims = element.dimensions()
         labels = self._get_axis_labels(dims)
-        xvals, yvals = [element.dimension_values(i, False)
+        xvals, yvals = [np.sort(unique_array(element.dimension_values(i, False)))
                         for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
@@ -145,17 +145,18 @@ class HeatmapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)[:3]
-        aggregate = get_2d_aggregate(element)
+        aggregate = get_2d_aggregate(element).sort()
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
-            data = {x: [], y: [], z: [], 'color': []}
+            data = {x: [], y: [], z: []}
         else:
             zvals = aggregate.dimension_values(z)
-            xvals, yvals = [[str(v) for v in element.dimension_values(i)]
+            xvals, yvals = [[str(v) for v in aggregate.dimension_values(i)]
                             for i in range(2)]
             data = {x: xvals, y: yvals, z: zvals}
-        if 'hover' in self.tools:
+
+        if 'hover' in self.tools+self.default_tools:
             for vdim in element.vdims[1:]:
                 data[vdim.name] = ['' if is_nan(v) else v
                                    for v in aggregate.dimension_values(vdim)]

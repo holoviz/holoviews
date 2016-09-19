@@ -489,7 +489,7 @@ def reduce_fn(x):
     """
     Aggregation function to get the first non-zero value.
     """
-    values = x.values if pd and isinstance(pd.Series, values) else x
+    values = x.values if pd and isinstance(x, pd.Series) else x
     for v in values:
         if not is_nan(v):
             return v

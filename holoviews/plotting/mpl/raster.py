@@ -8,7 +8,7 @@ import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator
+from ...core.util import match_spec, max_range, unique_iterator, unique_array
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
@@ -130,7 +130,7 @@ class HeatMapPlot(RasterPlot):
 
     def _compute_ticks(self, element, ranges):
         xdim, ydim = element.kdims
-        dim1_keys, dim2_keys = [element.dimension_values(i, False)
+        dim1_keys, dim2_keys = [np.sort(unique_array(element.dimension_values(i, False)))
                                 for i in range(2)]
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xpos = np.linspace(.5, num_x-0.5, num_x)
@@ -153,8 +153,9 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        shape = tuple(len(element.dimension_values(i)) for i in range(2))
-        aggregate = get_2d_aggregate(element)
+        shape = tuple(len(unique_array(element.dimension_values(i)))
+                      for i in range(2))
+        aggregate = get_2d_aggregate(element).sort()
         data = np.flipud(aggregate.dimension_values(2).reshape(shape[::-1]))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         cmap_name = style.pop('cmap', None)
@@ -171,7 +172,8 @@ class HeatMapPlot(RasterPlot):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         im.set_data(data[0])
-        im.set_extent((l, r, b, t))
+        shape = data[0].shape
+        im.set_extent((0, shape[1], 0, shape[0]))
         im.set_clim((style['vmin'], style['vmax']))
         if 'norm' in style:
             im.norm = style['norm']

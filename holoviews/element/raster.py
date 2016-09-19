@@ -385,12 +385,6 @@ class HeatMap(Dataset, Element2D):
     depth = 1
 
 
-    def __init__(self, data, **params):
-        super(HeatMap, self).__init__(data, **params)
-        shape = (len(self.dimension_values(1)), len(self.dimension_values(0)))
-        self.extents = (0., 0., shape[0], shape[1])
-
-
 class Image(SheetCoordinateSystem, Raster):
     """
     Image is the atomic unit as which 2D data is stored, along with
