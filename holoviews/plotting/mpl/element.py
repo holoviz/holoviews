@@ -2,6 +2,7 @@ import math
 
 import param
 import numpy as np
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 from matplotlib import colors
@@ -15,6 +16,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import MPLPlot
 from .util import wrap_formatter
+from distutils.version import LooseVersion
 
 
 class ElementPlot(GenericElementPlot, MPLPlot):
@@ -149,8 +151,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         subplots = list(self.subplots.values()) if self.subplots else []
         if self.zorder == 0 and key is not None:
             if self.bgcolor:
-                axis.set_axis_bgcolor(self.bgcolor)
-
+                if LooseVersion(mpl.__version__) <= '1.5.9':
+                    axis.set_axis_bgcolor(self.bgcolor)
+                else:
+                    axis.set_facecolor(self.bgcolor)
+              
             # Apply title
             title = None if self.zorder > 0 else self._format_title(key)
             if self.show_title and title is not None:
