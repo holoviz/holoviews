@@ -110,7 +110,7 @@ class ErrorPlot(ChartPlot):
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
         yerr = element.array(dimensions=dims[2:4])
-        style['yerr'] = yerr.T if len(dims) > 3 else yerr
+        style['yerr'] = yerr.T if len(dims) > 3 else yerr[:, 0]
         return (xs, ys), style, {}
 
 
