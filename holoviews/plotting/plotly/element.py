@@ -47,6 +47,10 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the y-axis of the Chart.""")
 
+    margins = param.NumericTuple(default=(50, 50, 50, 50), doc="""
+         Margins in pixel values specified as a tuple of the form
+         (left, bottom, right, top).""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -76,6 +80,8 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         labels or a matplotlib tick locator object. If set to None
         default matplotlib ticking behavior is applied.""")
 
+    graph_obj = None
+
     def initialize_plot(self, ranges=None):
         """
         Initializes a new plot object with the last available frame.
@@ -91,23 +97,26 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
+        data_args, data_kwargs = self.get_data(element, ranges)
         opts = self.graph_options(element, ranges)
-        graph = self.init_graph(element, ranges, **opts)
+        graph = self.init_graph(data_args, dict(opts, **data_kwargs))
         self.handles['graph'] = graph
-        
+
         layout = self.init_layout(key, element, ranges)
         self.handles['layout'] = layout
-        
+
         if isinstance(graph, go.Figure):
-            graph['layout'] = layout
+            graph.update({'layout': layout})
             self.handles['fig'] = graph
         elif not (self.overlaid or self.subplot):
-            fig = go.Figure(data=[graph], layout=layout)
+            if not isinstance(graph, list):
+                graph = [graph]
+            fig = go.Figure(data=graph, layout=layout)
             self.handles['fig'] = fig
             return fig
         return graph
 
-    
+
     def graph_options(self, element, ranges):
         if self.overlay_dims:
             legend = ', '.join([d.pprint_value_string(v) for d, v in
@@ -116,8 +125,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
             legend = element.label
 
         self.style = self.lookup_options(element, 'style')
-        properties = self.style[self.cyclic_index]
-        opts = dict(properties, showlegend=self.show_legend,
+        opts = dict(showlegend=self.show_legend,
                     legendgroup=element.group,
                     name=legend)
 
@@ -128,26 +136,50 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         return opts
 
 
-    def init_graph(self, element, ranges, **opts):
-        pass
+    def init_graph(self, plot_args, plot_kwargs):
+        return self.graph_obj(*plot_args, **plot_kwargs)
 
     
-    def init_layout(self, key, element, ranges):
+    def get_data(self, element, ranges):
+        return {}
+
+
+    def init_layout(self, key, element, ranges, xdim=None, ydim=None):
         l, b, r, t = self.get_extents(element, ranges)
 
-        xd, yd = (element.get_dimension(i) for i in range(2))
-        xaxis = dict(range=[l, r], title=str(xd))
-        if self.logx:
-            xaxis['type'] = 'log'
+        options = {}
 
-        yaxis = dict(range=[b, t], title=str(yd))
-        if self.logy:
-            yaxis['type'] = 'log'
+        xdim = element.get_dimension(0) if xdim is None else xdim
+        ydim = element.get_dimension(1) if ydim is None else ydim
+        xlabel, ylabel, zlabel = self._get_axis_labels([xdim, ydim])
 
-        return dict(width=self.width, height=self.height,
-                    title=self._format_title(key, separator=' '),
-                    plot_bgcolor=self.bgcolor, xaxis=xaxis,
-                    yaxis=yaxis)
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+            l, b, r, t = b, l, t, r
+
+        if 'x' not in self.labelled:
+            xlabel = ''
+        if 'y' not in self.labelled:
+            ylabel = ''
+
+        if xdim:
+            xaxis = dict(range=[l, r], title=xlabel)
+            if self.logx:
+                xaxis['type'] = 'log'
+            options['xaxis'] = xaxis
+
+        if ydim:
+            yaxis = dict(range=[b, t], title=ylabel)
+            if self.logy:
+                yaxis['type'] = 'log'
+            options['yaxis'] = yaxis
+
+        l, b, r, t = self.margins
+        margin = go.Margin(l=l, r=r,b=b, t=t, pad=4)
+        return go.Layout(width=self.width, height=self.height,
+                         title=self._format_title(key, separator=' '),
+                         plot_bgcolor=self.bgcolor, margin=margin,
+                         **options)
 
 
     def update_frame(self, key, ranges=None):
