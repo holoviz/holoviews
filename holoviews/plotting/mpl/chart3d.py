@@ -80,7 +80,10 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        axis.set_axis_bgcolor(self.bgcolor)
+        if LooseVersion(mpl.__version__) <= '1.5.9':
+            axis.set_axis_bgcolor(self.bgcolor)
+        else:
+            axis.set_facecolor(self.bgcolor)
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
