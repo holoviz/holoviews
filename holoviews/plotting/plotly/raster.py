@@ -1,34 +1,49 @@
 import numpy as np
 import plotly.graph_objs as go
 
-from .element import ElementPlot
+from ...core.options import SkipRendering
+from ...element import Image, Raster
+from .element import ColorbarPlot
 
 
-class HeatMapPlot(ElementPlot):
-
-    def init_graph(self, element, ranges, **opts):
-        data = go.Heatmap(
-        z=np.flipud(element.raster),
-        x=element.dimension_values(0, True),
-        y=element.dimension_values(1, True), **opts)
-        return data
-
-class RasterPlot(ElementPlot):
+class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
 
+    graph_obj = go.Heatmap
+
     def graph_options(self, element, ranges):
         opts = super(RasterPlot, self).graph_options(element, ranges)
-        opts['zmin'], opts['zmax'] = ranges[element.get_dimension(2).name]
-        opts['zauto'] = False
-        if 'cmap' in opts:
-            opts['colorscale'] = opts.pop('cmap', None)
-        return opts
+        style = self.style[self.cyclic_index]
+        copts = self.get_color_opts(element.vdims[0], element, ranges, style)
+        opts['zmin'] = copts.pop('cmin')
+        opts['zmax'] = copts.pop('cmax')
+        opts['zauto'] = copts.pop('cauto')
+        return dict(opts, **copts)
 
-    def init_graph(self, element, ranges, **opts):
-        data = go.Heatmap(
-            x=element.dimension_values(0, expanded=False),
-            y=element.dimension_values(1, expanded=False),
-            z=element.dimension_values(2, flat=False), **opts)
-        return data
+    def get_data(self, element, ranges):
+        if isinstance(element, Image):
+            l, b, r, t = element.bounds.lbrt()
+        else:
+            l, b, r, t = element.extents
+        array = element.dimension_values(2, flat=False)
+        ny, nx = array.shape
+        dx, dy = float(r-l)/nx, float(t-b)/ny
+        return (), dict(x0=l, y0=b, dx=dx, dy=dy, z=array)
 
+
+class HeatMapPlot(RasterPlot):
+
+    def get_data(self, element, ranges):
+        return (), dict(x=element.dimension_values(0, True),
+                        y=element.dimension_values(1, True),
+                        z=np.flipud(element.raster))
+
+
+class QuadMeshPlot(RasterPlot):
+
+    def get_data(self, element, ranges):
+        if len(set(v.shape for v in element.data)) == 1:
+            raise SkipRendering("Plotly QuadMeshPlot only supports rectangular meshes")
+        return (), dict(x=element.data[0], y=element.data[1],
+                        z=element.data[2])

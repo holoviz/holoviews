@@ -209,10 +209,11 @@ class ColorbarPlot(ElementPlot):
             opts['showscale'] = False
 
         opts['colorscale'] = style.pop('cmap', 'viridis')
-        cmin, cmax = ranges.get(dim.name, element.range(dim.name))
-        opts['cmin'] = cmin
-        opts['cmax'] = cmax
-        opts['cauto'] = False
+        if dim:
+            cmin, cmax = ranges.get(dim.name, element.range(dim.name))
+            opts['cmin'] = cmin
+            opts['cmax'] = cmax
+            opts['cauto'] = False
         return dict(style, **opts)
 
 

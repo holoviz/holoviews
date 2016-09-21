@@ -1,6 +1,7 @@
 import numpy as np
 import plotly.graph_objs as go
 from matplotlib.cm import get_cmap
+from plotly import colors
 from plotly.tools import FigureFactory as FF
 from plotly.graph_objs import Scene, XAxis, YAxis, ZAxis
 
@@ -8,7 +9,8 @@ import param
 
 from ...core.spaces import DynamicMap
 from ...core.options import SkipRendering
-from .element import ElementPlot
+from .element import ElementPlot, ColorbarPlot
+from .chart import ScatterPlot
 
 class Chart3DPlot(ElementPlot):
 
@@ -52,33 +54,40 @@ class Chart3DPlot(ElementPlot):
                     plot_bgcolor=self.bgcolor, scene=scene)
 
 
-class SurfacePlot(Chart3DPlot):
+class SurfacePlot(ColorbarPlot, Chart3DPlot):
 
-    def init_graph(self, element, ranges, **opts):
-        data = go.Surface(
-            x=element.dimension_values(0, expanded=False),
-            y=element.dimension_values(1, expanded=False),
-            z=element.dimension_values(2, flat=False), **opts)
-        return data
+    graph_obj = go.Surface
 
+    style_opts = ['opacity', 'lighting', 'lightposition', 'cmap']
 
-class Scatter3dPlot(Chart3DPlot):
-
-    def init_graph(self, element, ranges, **opts):
-        trace = go.Scatter3d(x=element.dimension_values(0),
-                             y=element.dimension_values(1),
-                             z=element.dimension_values(2),
-                             mode = 'markers', **opts)
-        return trace
+    def graph_options(self, element, ranges):
+        opts = super(SurfacePlot, self).graph_options(element, ranges)
+        style = self.style[self.cyclic_index]
+        copts = self.get_color_opts(element.vdims[0], element, ranges, style)
+        return dict(opts, **copts)
 
 
-class TrisurfacePlot(Chart3DPlot):
+    def get_data(self, element, ranges):
+        return (), dict(x=element.dimension_values(0, False),
+                        y=element.dimension_values(1, False),
+                        z=element.dimension_values(2, flat=False))
 
-    colorbar = param.Boolean(default=True)
+
+class Scatter3dPlot(ScatterPlot, Chart3DPlot):
+
+    graph_obj = go.Scatter3d
+
+    def get_data(self, element, ranges):
+        return (), dict(x=element.dimension_values(0),
+                        y=element.dimension_values(1),
+                        z=element.dimension_values(2))
+
+
+class TrisurfacePlot(ColorbarPlot, Chart3DPlot):
 
     style_opts = ['cmap']
 
-    def init_graph(self, element, ranges, **opts):
+    def get_data(self, element, ranges):
         try:
             from scipy.spatial import Delaunay
         except:
@@ -87,8 +96,19 @@ class TrisurfacePlot(Chart3DPlot):
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
-        cmap = get_cmap(opts.pop('cmap', 'viridis'))
-        colormap = [cmap(i) for i in np.linspace(0, 1)]
-        trisurf = FF._trisurf(x, y, z, simplices, self.colorbar,
-                              colormap=colormap)
+        return (x, y, z, simplices, self.colorbar, 'black'), {}
+
+    def graph_options(self, element, ranges):
+        opts = self.style[self.cyclic_index]
+        if 'cmap' in opts:
+            cmap = opts.pop('cmap')
+            if cmap in colors.PLOTLY_SCALES:
+                opts['colormap'] = colors.PLOTLY_SCALES[cmap]
+            else:
+                cmap = get_cmap(cmap)
+                opts['colormap'] = [cmap(i) for i in np.linspace(0, 1)]
+        return opts
+
+    def init_graph(self, plot_args, plot_kwargs):
+        trisurf = FF._trisurf(*plot_args, **plot_kwargs)
         return trisurf[0]

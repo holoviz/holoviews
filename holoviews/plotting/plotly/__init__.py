@@ -1,5 +1,6 @@
-from ...core.options import Store
-from ...core import Overlay, NdOverlay, Layout, NdLayout
+from ...core.options import Store, Cycle, Options
+from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
+                     GridMatrix)
 from ...interface.seaborn import *
 from ...element import * 
 from .renderer import PlotlyRenderer
