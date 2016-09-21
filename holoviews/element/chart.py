@@ -118,7 +118,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Dataset):
+class Bars(Dataset, Element2D):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
