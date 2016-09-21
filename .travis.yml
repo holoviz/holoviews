@@ -26,6 +26,7 @@ install:
   - conda info -a
   - conda create -q -c scitools -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose matplotlib bokeh pandas jupyter ipython=4.2.0 param iris xarray
   - source activate test-environment
+  - conda install -q -c conda-forge plotly
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
