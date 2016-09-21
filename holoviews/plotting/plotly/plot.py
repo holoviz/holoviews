@@ -1,6 +1,6 @@
 import param
 
-from plotly.graph_objs import Figure
+import plotly.graph_objs as go
 from plotly import tools
 
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
@@ -223,14 +223,22 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                                   vertical_spacing=self.vspacing)
 
         width, height = self._get_size()
+        ax_idx = 0
         for r, row in enumerate(plots):
             for c, plot in enumerate(row):
+                ax_idx += 1
                 if plot:
                     plots = plot if isinstance(plot, list) else [plot]
                     for p in plots:
-                        if isinstance(p, Figure):
-                            p = p['data']
-                        fig.append_trace(p, r+1, c+1)
+                        if isinstance(p, go.Figure):
+                            layout = replace_refs(p['layout'], ax_idx)
+                            fig['layout']['xaxis%d'%ax_idx].update(layout.get('xaxis', {}))
+                            fig['layout']['yaxis%d'%ax_idx].update(layout.get('yaxis', {}))
+                            fig['layout']['annotations'].extend(layout.get('annotations', []))
+                            for d in p['data']:
+                                fig.append_trace(d, r+1, c+1)
+                        else:
+                            fig.append_trace(p, r+1, c+1)
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
@@ -238,7 +246,21 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         return self.handles['fig']
 
 
-
+def replace_refs(obj, ind):
+    """
+    Replaces xref and yref to allow combining multiple plots
+    """
+    if isinstance(obj, go.graph_objs.PlotlyList):
+        return [replace_refs(o, ind) for o in obj]
+    elif isinstance(obj, go.graph_objs.PlotlyDict):
+        new_obj = {}
+        for k, v in obj.items():
+            if k in ['xref', 'yref']:
+                v = '{ax}{ind}'.format(ax=k[0], ind=ind)
+            new_obj[k] = replace_refs(v, ind)
+        return new_obj
+    else:
+        return obj
 
 
 class AdjointLayoutPlot(PlotlyPlot):
