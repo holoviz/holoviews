@@ -1,17 +1,21 @@
 import param
 
+from plotly.graph_objs import Figure
 from plotly import tools
 
-from ...core import OrderedDict, NdLayout, AdjointLayout, Empty, HoloMap
-from ...core.options import Store
+from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
+                     HoloMap, GridSpace, CompositeOverlay, GridMatrix)
+from ...core.options import Store, Compositor
+from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import PlotlyRenderer
 
 class PlotlyPlot(DimensionedPlot):
 
     backend = 'plotly'
-    
+
     width = param.Integer(default=400)
+
     height = param.Integer(default=400)
 
     @property
@@ -23,8 +27,20 @@ class PlotlyPlot(DimensionedPlot):
         return self.handles['fig']
 
 
+    def initialize_plot(self, ranges=None):
+        return self.generate_plot(self.keys[-1], ranges)
+
+
+    def update_frame(self, key, ranges=None):
+        return self.generate_plot(key, ranges)
+
+
 
 class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
+
+    hspacing = param.Number(default=0.2, bounds=(0, 1))
+
+    vspacing = param.Number(default=0.2, bounds=(0, 1))
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout, **params)
@@ -118,11 +134,11 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
                     side_opts = dict(height=main_plot.height, yaxis='right',
-                                     invert_axes=True, width=120, show_labels=['y'],
+                                     invert_axes=True, width=120, labelled=['y'],
                                      xticks=2, show_title=False)
                 else:
                     side_opts = dict(width=main_plot.width, xaxis='top',
-                                     height=120, show_labels=['x'], yticks=2,
+                                     height=120, labelled=['x'], yticks=2,
                                      show_title=False)
 
             # Override the plotopts as required
@@ -151,10 +167,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 main_plot = subplot
 
         return subplots, adjoint_clone
-
-
-    def initialize_plot(self, ranges=None):
-        return self.generate_plot(self.keys[-1], ranges)
 
 
     def generate_plot(self, key, ranges=None):
@@ -206,12 +218,19 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                     plots[r+offset].append(None)
 
         rows, cols = len(plots), len(plots[0])
-        fig = tools.make_subplots(rows=rows, cols=cols, print_grid=False)
+        fig = tools.make_subplots(rows=rows, cols=cols, print_grid=False,
+                                  horizontal_spacing=self.hspacing,
+                                  vertical_spacing=self.vspacing)
+
         width, height = self._get_size()
         for r, row in enumerate(plots):
             for c, plot in enumerate(row):
                 if plot:
-                    fig.append_trace(plot, r+1, c+1)
+                    plots = plot if isinstance(plot, list) else [plot]
+                    for p in plots:
+                        if isinstance(p, Figure):
+                            p = p['data']
+                        fig.append_trace(p, r+1, c+1)
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
@@ -219,12 +238,10 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         return self.handles['fig']
 
 
-    def update_frame(self, key, ranges=None):
-        return self.generate_plot(key, ranges)
 
 
 
-class AdjointLayoutPlot(PlotlyPlot, GenericCompositePlot):
+class AdjointLayoutPlot(PlotlyPlot):
 
     layout_dict = {'Single': {'positions': ['main']},
                    'Dual':   {'positions': ['main', 'right']},
@@ -264,3 +281,111 @@ class AdjointLayoutPlot(PlotlyPlot, GenericCompositePlot):
                 adjoined_plots.append(subplot.generate_plot(key, ranges=ranges))
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
+
+
+
+
+class GridPlot(PlotlyPlot, GenericCompositePlot):
+    """
+    Plot a group of elements in a grid layout based on a GridSpace element
+    object.
+    """
+
+    hspacing = param.Number(default=0.05, bounds=(0, 1))
+
+    vspacing = param.Number(default=0.05, bounds=(0, 1))
+
+    def __init__(self, layout, ranges=None, layout_num=1, **params):
+        if not isinstance(layout, GridSpace):
+            raise Exception("GridPlot only accepts GridSpace.")
+        super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
+                                       ranges=ranges, **params)
+        self.cols, self.rows = layout.shape
+        self.subplots, self.layout = self._create_subplots(layout, ranges)
+
+
+    def _create_subplots(self, layout, ranges):
+        layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
+                            clone=False)
+
+        subplots = OrderedDict()
+        frame_ranges = self.compute_ranges(layout, None, ranges)
+        frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
+                                    for key in self.keys])
+        collapsed_layout = layout.clone(shared_data=False, id=layout.id)
+        for i, coord in enumerate(layout.keys(full_grid=True)):
+            r = i % self.cols
+            c = i // self.cols
+
+            if not isinstance(coord, tuple): coord = (coord,)
+            view = layout.data.get(coord, None)
+            # Create subplot
+            if view is not None:
+                vtype = view.type if isinstance(view, HoloMap) else view.__class__
+                opts = self.lookup_options(view, 'plot').options
+            else:
+                vtype = None
+
+            # Create axes
+            kwargs = {}
+            if isinstance(layout, GridMatrix):
+                if view.traverse(lambda x: x, [Histogram]):
+                    kwargs['shared_axes'] = False
+
+            # Create subplot
+            plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
+            if plotting_class is None:
+                if view is not None:
+                    self.warning("Plotly plotting class for %s type not found, "
+                                 "object will not be rendered." % vtype.__name__)
+            else:
+                subplot = plotting_class(view, dimensions=self.dimensions,
+                                         show_title=False, subplot=True,
+                                         ranges=frame_ranges, uniform=self.uniform,
+                                         keys=self.keys, **dict(opts, **kwargs))
+                collapsed_layout[coord] = (subplot.layout
+                                           if isinstance(subplot, GenericCompositePlot)
+                                           else subplot.hmap)
+                subplots[coord] = subplot
+        return subplots, collapsed_layout
+
+
+    def generate_plot(self, key, ranges=None):
+        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        plots = [[] for r in range(self.cols)]
+        for i, coord in enumerate(self.layout.keys(full_grid=True)):
+            r = i % self.cols
+            subplot = self.subplots.get(wrap_tuple(coord), None)
+            if subplot is not None:
+                plot = subplot.initialize_plot(ranges=ranges)
+                plots[r].append(plot)
+            else:
+                plots[r].append(None)
+
+        rows, cols = len(plots), len(plots[0])
+        fig = tools.make_subplots(rows=rows, cols=cols, print_grid=False,
+                                  shared_xaxes=True, shared_yaxes=True,
+                                  horizontal_spacing=self.hspacing,
+                                  vertical_spacing=self.vspacing)
+        for r, row in enumerate(plots):
+            for c, plot in enumerate(row):
+                if plot:
+                    fig.append_trace(plot, r+1, c+1)
+        w, h = self._get_size(subplot.width, subplot.height)
+        fig['layout'].update(width=w, height=h,
+                             title=self._format_title(key))
+
+        self.handles['fig'] = fig
+        return self.handles['fig']
+
+
+    def _get_size(self, width, height):
+        max_dim = max(self.layout.shape)
+        # Reduce plot size as GridSpace gets larger
+        shape_factor = 1. / max_dim
+        # Expand small grids to a sensible viewing size
+        expand_factor = 1 + (max_dim - 1) * 0.1
+        scale_factor = expand_factor * shape_factor
+        cols, rows = self.layout.shape
+        return (scale_factor * cols * width,
+                scale_factor * rows * height)
