@@ -232,8 +232,9 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         graphs = []
-        for key, subplot in self.subplots.items():
-            graphs.append(subplot.generate_plot(key, ranges))
+        for okey, subplot in self.subplots.items():
+            graph = subplot.generate_plot(key, ranges)
+            graphs += graph if isinstance(graph, list) else [graph]
 
         layout = self.init_layout(key, element, ranges)
         fig = go.Figure(data=graphs, layout=layout)
