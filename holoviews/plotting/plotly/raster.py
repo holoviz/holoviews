@@ -2,6 +2,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from ...core.options import SkipRendering
+from ...core.util import unique_array
 from ...element import Image, Raster
 from .element import ColorbarPlot
 
@@ -34,9 +35,12 @@ class RasterPlot(ColorbarPlot):
 
 class HeatMapPlot(RasterPlot):
 
+    def get_extents(self, element, ranges):
+        return (np.NaN,)*4
+
     def get_data(self, element, ranges):
-        return (), dict(x=element.dimension_values(0, True),
-                        y=element.dimension_values(1, True),
+        return (), dict(x=unique_array(element.dimension_values(0, False)),
+                        y=unique_array(element.dimension_values(1, False)),
                         z=np.flipud(element.raster))
 
 
