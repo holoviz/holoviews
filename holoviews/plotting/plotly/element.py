@@ -189,8 +189,33 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         """
         self.generate_plot(key, ranges)
 
-        
-    
+
+class ColorbarPlot(ElementPlot):
+
+    colorbar = param.Boolean(default=False, doc="""
+        Whether to display a colorbar.""")
+
+    colorbar_opts = param.Dict(default={}, doc="""
+        Allows setting including borderwidth, showexponent, nticks,
+        outlinecolor, thickness, bgcolor, outlinewidth, bordercolor,
+        ticklen, xpad, ypad, tickangle...""")
+
+    def get_color_opts(self, dim, element, ranges, style):
+        opts = {}
+        if self.colorbar:
+            opts['colorbar'] = dict(title=dim.pprint_label,
+                                    **self.colorbar_opts)
+        else:
+            opts['showscale'] = False
+
+        opts['colorscale'] = style.pop('cmap', 'viridis')
+        cmin, cmax = ranges.get(dim.name, element.range(dim.name))
+        opts['cmin'] = cmin
+        opts['cmax'] = cmax
+        opts['cauto'] = False
+        return dict(style, **opts)
+
+
 class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
 
