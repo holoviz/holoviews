@@ -8,7 +8,7 @@ from .element import ElementPlot, ColorbarPlot
 
 class ScatterPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+    color_index = param.ClassSelector(default=3, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -96,6 +96,7 @@ class BivariatePlot(ColorbarPlot):
         if self.ncontours:
             opts['autocontour'] = False
             opts['ncontours'] = self.ncontours
+        style = self.style[self.cyclic_index]
         copts = self.get_color_opts(None, element, ranges, style)
         return dict(opts, **copts)
 
