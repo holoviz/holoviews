@@ -253,7 +253,7 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, comm=True):
+    def html(self, obj, fmt=None, css=None, comm=True, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
