@@ -9,7 +9,7 @@ from .. import util
 
 
 class ElementPlot(PlotlyPlot, GenericElementPlot):
-    
+
     aspect = param.Parameter(default='cube', doc="""
         The aspect ratio mode of the plot. By default, a plot may
         select its own appropriate aspect ratio but sometimes it may
@@ -94,6 +94,13 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
 
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)
+        if element is None:
+            return self.handles['fig']
+        plot_opts = self.lookup_options(element, 'plot').options
+        self.set_param(**{k: v for k, v in plot_opts.items()
+                          if k in self.params()})
+        self.style = self.lookup_options(element, 'style')
+
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
 
@@ -108,13 +115,12 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         if isinstance(graph, go.Figure):
             graph.update({'layout': layout})
             self.handles['fig'] = graph
-        elif not (self.overlaid or self.subplot):
+        else:
             if not isinstance(graph, list):
                 graph = [graph]
             fig = go.Figure(data=graph, layout=layout)
             self.handles['fig'] = fig
             return fig
-        return graph
 
 
     def graph_options(self, element, ranges):
@@ -124,7 +130,6 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
         else:
             legend = element.label
 
-        self.style = self.lookup_options(element, 'style')
         opts = dict(showlegend=self.show_legend,
                     legendgroup=element.group,
                     name=legend)
@@ -233,11 +238,15 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         graphs = []
+        figure = None
         for okey, subplot in self.subplots.items():
-            graph = subplot.generate_plot(key, ranges)
-            graphs += graph if isinstance(graph, list) else [graph]
+            fig = subplot.generate_plot(key, ranges)
+            if figure is None:
+                figure = fig
+            else:
+                figure['data'].extend(fig['data'])
 
         layout = self.init_layout(key, element, ranges)
-        fig = go.Figure(data=graphs, layout=layout)
-        self.handles['fig'] = fig
-        return fig
+        figure['layout'].update(layout)
+        self.handles['fig'] = figure
+        return figure

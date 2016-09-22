@@ -88,8 +88,7 @@ class BivariatePlot(ColorbarPlot):
     
     graph_obj = go.Histogram2dcontour
 
-    style_opts = ['cmap', 'ncontours']
-
+    style_opts = ['cmap']
     
     def graph_options(self, element, ranges):
         opts = super(BivariatePlot, self).graph_options(element, ranges)
@@ -157,16 +156,15 @@ class BarPlot(ElementPlot):
         self.handles['layout'] = layout
         layout['barmode'] = 'group' if cat_dim else 'stacked'
 
-        if not (self.overlaid or self.subplot):
-            fig = go.Figure(data=bars, layout=layout)
-            self.handles['fig'] = fig
-            return fig
-        return bars
+        fig = go.Figure(data=bars, layout=layout)
+        self.handles['fig'] = fig
+        return fig
 
 
 class BoxWhiskerPlot(ElementPlot):
 
-    boxpoints = param.ObjectSelector(objects=["all", "outliers", "suspectedoutliers", False],
+    boxpoints = param.ObjectSelector(objects=["all", "outliers",
+                                              "suspectedoutliers", False],
                                      default='outliers', doc="""
         Which points to show, valid options are 'all', 'outliers',
         'suspectedoutliers' and False""")
@@ -177,7 +175,8 @@ class BoxWhiskerPlot(ElementPlot):
         the sample points are drawn in a random jitter of width equal
         to the width of the box(es).""")
 
-    mean = param.ObjectSelector(default=False, objects=[True, False, 'sd'], doc="""
+    mean = param.ObjectSelector(default=False, objects=[True, False, 'sd'],
+                                doc="""
         If "True", the mean of the box(es)' underlying distribution
         is drawn as a dashed line inside the box(es). If "sd" the
         standard deviation is also drawn.""")
@@ -193,9 +192,10 @@ class BoxWhiskerPlot(ElementPlot):
 
         style = self.style[self.cyclic_index]
         orientation = 'h' if self.invert_axes else 'v'
+        axis = 'x' if self.invert_axes else 'y'
         box_opts = dict(boxmean=self.mean, jitter=self.jitter,
                         marker=style, orientation=orientation)
-
+        print orientation, axis
         groups = element.groupby(element.kdims)
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         plots = []
@@ -205,13 +205,10 @@ class BoxWhiskerPlot(ElementPlot):
                                   for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            data = {'x' if self.invert_axes else 'y': group.dimension_values(group.vdims[0])}
+            data = {axis: group.dimension_values(group.vdims[0])}
             plots.append(go.Box(name=label, **dict(box_opts, **data)))
         layout = self.init_layout(key, element, ranges, element.kdims, element.vdims)
         self.handles['layout'] = layout
-        if not (self.overlaid or self.subplot):
-            fig = go.Figure(data=plots, layout=layout)
-            self.handles['fig'] = fig
-            return fig
-        return plots
-
+        fig = go.Figure(data=plots, layout=layout)
+        self.handles['fig'] = fig
+        return fig

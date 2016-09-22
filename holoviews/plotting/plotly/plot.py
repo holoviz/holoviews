@@ -9,6 +9,7 @@ from ...core.options import Store, Compositor
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .renderer import PlotlyRenderer
+from .util import add_figure
 
 class PlotlyPlot(DimensionedPlot):
 
@@ -228,39 +229,13 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             for c, plot in enumerate(row):
                 ax_idx += 1
                 if plot:
-                    plots = plot if isinstance(plot, list) else [plot]
-                    for p in plots:
-                        if isinstance(p, go.Figure):
-                            layout = replace_refs(p['layout'], ax_idx)
-                            fig['layout']['xaxis%d'%ax_idx].update(layout.get('xaxis', {}))
-                            fig['layout']['yaxis%d'%ax_idx].update(layout.get('yaxis', {}))
-                            fig['layout']['annotations'].extend(layout.get('annotations', []))
-                            for d in p['data']:
-                                fig.append_trace(d, r+1, c+1)
-                        else:
-                            fig.append_trace(p, r+1, c+1)
+                    add_figure(fig, plot, r, c, ax_idx)
         fig['layout'].update(height=height, width=width,
                              title=self._format_title(key))
 
         self.handles['fig'] = fig
         return self.handles['fig']
 
-
-def replace_refs(obj, ind):
-    """
-    Replaces xref and yref to allow combining multiple plots
-    """
-    if isinstance(obj, go.graph_objs.PlotlyList):
-        return [replace_refs(o, ind) for o in obj]
-    elif isinstance(obj, go.graph_objs.PlotlyDict):
-        new_obj = {}
-        for k, v in obj.items():
-            if k in ['xref', 'yref']:
-                v = '{ax}{ind}'.format(ax=k[0], ind=ind)
-            new_obj[k] = replace_refs(v, ind)
-        return new_obj
-    else:
-        return obj
 
 
 class AdjointLayoutPlot(PlotlyPlot):
@@ -303,7 +278,6 @@ class AdjointLayoutPlot(PlotlyPlot):
                 adjoined_plots.append(subplot.generate_plot(key, ranges=ranges))
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
-
 
 
 
@@ -389,10 +363,12 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
                                   shared_xaxes=True, shared_yaxes=True,
                                   horizontal_spacing=self.hspacing,
                                   vertical_spacing=self.vspacing)
+        ax_idx = 0
         for r, row in enumerate(plots):
             for c, plot in enumerate(row):
+                ax_idx += 1
                 if plot:
-                    fig.append_trace(plot, r+1, c+1)
+                    add_figure(fig, plot, r, c, ax_idx)
         w, h = self._get_size(subplot.width, subplot.height)
         fig['layout'].update(width=w, height=h,
                              title=self._format_title(key))
