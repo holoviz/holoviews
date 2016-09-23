@@ -141,7 +141,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self._test_colormapping(spikes, 1)
 
 
-class TestBokehPlotInstantiation(ComparisonTestCase):
+class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
