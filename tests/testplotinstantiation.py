@@ -9,7 +9,7 @@ import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
-                               HeatMap, QuadMesh, Spikes)
+                               HeatMap, QuadMesh, Spikes, Scatter3D)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY
 
@@ -155,6 +155,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         state = self._get_plot_state(curve)
         self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
         self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
+
+    def test_scatter3d_state(self):
+        scatter = Scatter3D(([0,1], [2,3], [4,5]))
+        state = self._get_plot_state(scatter)
+        self.assertEqual(state['data'][0]['x'], np.array([0, 1]))
+        self.assertEqual(state['data'][0]['y'], np.array([2, 3]))
+        self.assertEqual(state['data'][0]['z'], np.array([4, 5]))
+        self.assertEqual(state['layout']['scene']['xaxis']['range'], [0, 1])
+        self.assertEqual(state['layout']['scene']['yaxis']['range'], [2, 3])
+        self.assertEqual(state['layout']['scene']['zaxis']['range'], [4, 5])
 
     def test_overlay_state(self):
         layout = Curve([1, 2, 3]) * Curve([2, 4, 6])
