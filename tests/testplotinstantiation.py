@@ -6,7 +6,8 @@ from unittest import SkipTest
 from io import BytesIO
 
 import numpy as np
-from holoviews import (Dimension, Overlay, DynamicMap, Store, NdOverlay)
+from holoviews import (Dimension, Overlay, DynamicMap, Store,
+                       NdOverlay, GridSpace)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes)
 from holoviews.element.comparison import ComparisonTestCase
@@ -28,6 +29,12 @@ try:
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
 except:
     bokeh_renderer = None
+
+try:
+    import holoviews.plotting.plotly
+    plotly_renderer = Store.renderers['plotly']
+except:
+    plotly_renderer = None
 
 
 class TestMPLPlotInstantiation(ComparisonTestCase):
@@ -125,3 +132,58 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_spikes_colormapping(self):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
         self._test_colormapping(spikes, 1)
+
+
+class TestBokehPlotInstantiation(ComparisonTestCase):
+
+    def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'plotly'
+        if not plotly_renderer:
+            raise SkipTest("Plotly required to test plot instantiation")
+
+    def teardown(self):
+        Store.current_backend = self.previous_backend
+
+    def _get_plot_state(self, element):
+        plot = plotly_renderer.get_plot(element)
+        plot.initialize_plot()
+        return plot.state
+
+    def test_curve_state(self):
+        curve = Curve([1, 2, 3])
+        state = self._get_plot_state(curve)
+        self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
+        self.assertEqual(state['layout']['yaxis']['range'], [1, 3])
+
+    def test_overlay_state(self):
+        layout = Curve([1, 2, 3]) * Curve([2, 4, 6])
+        state = self._get_plot_state(layout)
+        self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
+        self.assertEqual(state['data'][1]['y'], np.array([2, 4, 6]))
+        self.assertEqual(state['layout']['yaxis']['range'], [1, 6])
+
+    def test_layout_state(self):
+        layout = Curve([1, 2, 3]) + Curve([2, 4, 6])
+        state = self._get_plot_state(layout)
+        self.assertEqual(state['data'][0]['y'], np.array([1, 2, 3]))
+        self.assertEqual(state['data'][0]['yaxis'], 'y1')
+        self.assertEqual(state['data'][1]['y'], np.array([2, 4, 6]))
+        self.assertEqual(state['data'][1]['yaxis'], 'y2')
+
+    def test_grid_state(self):
+        grid = GridSpace({(i, j): Curve([i, j]) for i in [0, 1]
+                          for j in [0, 1]})
+        state = self._get_plot_state(grid)
+        self.assertEqual(state['data'][0]['y'], np.array([0, 0]))
+        self.assertEqual(state['data'][0]['xaxis'], 'x1')
+        self.assertEqual(state['data'][0]['yaxis'], 'y1')
+        self.assertEqual(state['data'][1]['y'], np.array([1, 0]))
+        self.assertEqual(state['data'][1]['xaxis'], 'x2')
+        self.assertEqual(state['data'][1]['yaxis'], 'y1')
+        self.assertEqual(state['data'][2]['y'], np.array([0, 1]))
+        self.assertEqual(state['data'][2]['xaxis'], 'x1')
+        self.assertEqual(state['data'][2]['yaxis'], 'y2')
+        self.assertEqual(state['data'][3]['y'], np.array([1, 1]))
+        self.assertEqual(state['data'][3]['xaxis'], 'x2')
+        self.assertEqual(state['data'][3]['yaxis'], 'y2')
