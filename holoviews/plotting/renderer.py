@@ -253,14 +253,14 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, comm=True):
+    def html(self, obj, fmt=None, css=None, comm=True, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
         code to initialize a Comm, if the plot supplies one.
         """
         plot, fmt =  self._validate(obj, fmt)
-        figdata, _ = self(plot, fmt)
+        figdata, _ = self(plot, fmt, **kwargs)
         if css is None: css = self.css
 
         if fmt in ['html', 'json']:

@@ -141,13 +141,14 @@ class notebook_extension(param.ParameterizedFunction):
 
     # Mapping between backend name and module name
     _backends = {'matplotlib': 'mpl',
-                 'bokeh': 'bokeh'}
+                 'bokeh': 'bokeh',
+                 'plotly': 'plotly'}
 
     def __call__(self, *args, **params):
         imports = [(name, b) for name, b in self._backends.items()
                    if name in args or params.get(name, False)]
-        if not imports:
-            imports.append(('matplotlib', 'mpl'))
+        if not imports or 'matplotlib' not in Store.renderers:
+            imports = imports + [('matplotlib', 'mpl')]
         for backend, imp in imports:
             try:
                 __import__('holoviews.plotting.%s' % imp)

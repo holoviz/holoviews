@@ -185,7 +185,8 @@ class Raster(Element2D):
             values = np.mgrid[0:self.data.shape[1], 0:self.data.shape[0]][dim_idx]
             return values.flatten() if flat else values
         elif dim_idx == 2:
-            return toarray(self.data.T).flatten()
+            arr = toarray(self.data.T)
+            return arr.flatten() if flat else arr
         else:
             return super(Raster, self).dimension_values(dim)
 

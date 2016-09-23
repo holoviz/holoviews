@@ -695,11 +695,11 @@ class GenericElementPlot(DimensionedPlot):
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
         if dimensions and xlabel is None:
-            xlabel = dim_axis_label(dimensions[0])
+            xlabel = dim_axis_label(dimensions[0]) if dimensions[0] else ''
         if len(dimensions) >= 2 and ylabel is None:
-            ylabel = dim_axis_label(dimensions[1])
+            ylabel = dim_axis_label(dimensions[1]) if dimensions[1] else ''
         if self.projection == '3d' and len(dimensions) >= 3 and zlabel is None:
-            zlabel = dim_axis_label(dimensions[2])
+            zlabel = dim_axis_label(dimensions[2]) if dimensions[2] else ''
         return xlabel, ylabel, zlabel
 
 
