@@ -195,7 +195,6 @@ class BoxWhiskerPlot(ElementPlot):
         axis = 'x' if self.invert_axes else 'y'
         box_opts = dict(boxmean=self.mean, jitter=self.jitter,
                         marker=style, orientation=orientation)
-        print orientation, axis
         groups = element.groupby(element.kdims)
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         plots = []
