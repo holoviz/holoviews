@@ -768,6 +768,7 @@ class GenericOverlayPlot(GenericElementPlot):
         self.hmap = Compositor.collapse(self.hmap, None, mode='data')
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
+        self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
@@ -924,6 +925,7 @@ class GenericCompositePlot(DimensionedPlot):
                                                    **params)
         if top_level:
             self.comm = self.init_comm(layout)
+        self.traverse(lambda x: setattr(x, 'comm', self.comm))
         self.streams = [s for streams in layout.traverse(lambda x: x.streams,
                                                          [DynamicMap])
                         for s in streams]

@@ -165,16 +165,9 @@ class Callback(param.ParameterizedFunction):
         """
         Serializes any Bokeh plot objects passed to it as a list.
         """
-        documents = {plot.document for plot in self.plots}
-        for doc in documents:
-            if hasattr(doc, 'last_comms_handle'):
-                handle = doc.last_comms_handle
-            else:
-                handle = _CommsHandle(get_comms(doc.last_comms_target),
-                                      doc, None)
-                doc.last_comms_handle = handle
-            msg = compute_static_patch(doc, models)
-            handle.comms.send(serialize_json(msg))
+        for plot in self.plots:
+            msg = compute_static_patch(plot.document, models)
+            plot.comm.send(serialize_json(msg))
         return 'Complete'
 
 
