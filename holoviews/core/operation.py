@@ -119,7 +119,8 @@ class DynamicOperation(Operation):
         """
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
-        kdims = [d(values=list(values)) for d, values in zip(hmap.kdims, dim_values)]
+        kdims = [d(values=list(set(values))) for d, values in
+                 zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
 
 
