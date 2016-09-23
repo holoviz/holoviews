@@ -24,6 +24,15 @@ Plotly.relayout(plot, data.layout);
 Plotly.redraw(plot);
 """
 
+PLOTLY_WARNING = """
+<div class="alert alert-warning">
+The plotly backend is experimental, and is
+not supported at this time.  If you would like to volunteer to help
+maintain this backend by adding documentation, responding to user
+issues, keeping the backend up to date as other code changes, or by
+adding support for other elements, please email holoviews@gmail.com
+</div>
+"""
 
 class PlotlyRenderer(Renderer):
 
@@ -40,6 +49,8 @@ class PlotlyRenderer(Renderer):
                'widgets': PlotlySelectionWidget}
 
     comms = {'default': (JupyterComm, plotly_msg_handler)}
+
+    _loaded = False
 
     def __call__(self, obj, fmt='html', divuuid=None):
         plot, fmt =  self._validate(obj, fmt)
@@ -130,6 +141,9 @@ class PlotlyRenderer(Renderer):
         Loads the plotly notebook resources.
         """
         from IPython.display import display, HTML
+        if not cls._loaded:
+            display(HTML(PLOTLY_WARNING))
+            cls._loaded = True
         display(HTML(plotly_include()))
 
 
