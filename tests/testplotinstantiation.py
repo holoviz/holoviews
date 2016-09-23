@@ -9,7 +9,8 @@ import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
-                               HeatMap, QuadMesh, Spikes, Scatter3D)
+                               HeatMap, QuadMesh, Spikes, ErrorBars,
+                               Scatter3D)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY
 
@@ -79,6 +80,12 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot.refresh()
         post = mpl_renderer(plot, fmt='png')
         self.assertNotEqual(pre, post)
+
+    def test_errorbar_test(self):
+        errorbars = ErrorBars(([0,1],[1,2],[0.1,0.2]))
+        plot = mpl_renderer.get_plot(errorbars)
+        plot.initialize_plot()
+
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
