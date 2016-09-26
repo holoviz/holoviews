@@ -494,7 +494,7 @@ def unique_array(arr):
     """
     Returns an array of unique values in the input order
     """
-    if not arr:
+    if not len(arr):
         return arr
     elif pd:
         return pd.unique(arr)
