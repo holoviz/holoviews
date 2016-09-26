@@ -494,7 +494,9 @@ def unique_array(arr):
     """
     Returns an array of unique values in the input order
     """
-    if pd:
+    if not arr:
+        return arr
+    elif pd:
         return pd.unique(arr)
     else:
         _, uniq_inds = np.unique(arr, return_index=True)
