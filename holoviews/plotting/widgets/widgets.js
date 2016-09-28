@@ -1,6 +1,8 @@
 function HoloViewsWidget(){
 }
 
+HoloViewsWidget.comms = {};
+
 HoloViewsWidget.prototype.init_slider = function(init_val){
 	if(this.load_json) {
 		this.from_json()
