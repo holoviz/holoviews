@@ -119,7 +119,7 @@ class JupyterComm(Comm):
 
 
 
-class JupyterCommJS(Comm):
+class JupyterCommJS(JupyterComm):
     """
     JupyterCommJS provides a comms channel for the Jupyter notebook,
     which is initialized on the frontend. This allows sending events
@@ -149,7 +149,7 @@ class JupyterCommJS(Comm):
         """
         Initializes a Comms object
         """
-        super(JupyterComm, self).__init__(plot, target, on_msg)
+        super(JupyterCommJS, self).__init__(plot, target, on_msg)
         self.manager = get_ipython().kernel.comm_manager
         self.manager.register_target(self.target, self._handle_open)
 
