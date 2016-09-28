@@ -6,7 +6,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 
 import param
 import uuid
-from collections import OrderedDict
+from collections import defaultdict
 from .core import util
 
 
@@ -75,7 +75,9 @@ class Stream(param.Parameterized):
     """
 
     # Mapping from uuid to stream instance
-    registry = OrderedDict()
+    registry = defaultdict(list)
+
+    _callbacks = defaultdict(dict)
 
     @classmethod
     def trigger(cls, streams):
@@ -104,14 +106,6 @@ class Stream(param.Parameterized):
             subscriber(**dict(union))
 
 
-    @classmethod
-    def find(cls, obj):
-        """
-        Return a set of streams from the registry with a given source.
-        """
-        return set(v for v in cls.registry.values() if v.source is obj)
-
-
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
         Mapping allows multiple streams with similar event state to be
@@ -121,14 +115,26 @@ class Stream(param.Parameterized):
         datastructure that the stream receives events from, as supported
         by the plotting backend.
         """
-        self.source = source
+        self._source = source
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
 
         self.uuid = uuid.uuid4().hex
         super(Stream, self).__init__(**params)
-        self.registry[self.uuid] = self
+        if source:
+            self.registry[source].append(self)
+
+    @property
+    def source(self):
+        return self._source
+
+    @source.setter
+    def source(self, source):
+        if self._source:
+            raise Exception('source has already been defined on stream.')
+        self._source = source
+        self.registry[source].append(self)
 
 
     @property
