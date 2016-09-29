@@ -172,7 +172,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _init_callbacks(self):
-        streams = Stream.registry.get(self.hmap, [])
+        source = self.hmap.last if self.static else self.hmap
+        streams = Stream.registry.get(source, [])
         registry = Stream._callbacks['bokeh']
         callbacks = {(registry[type(stream)], stream) for stream in streams
                      if type(stream) in registry and streams}
