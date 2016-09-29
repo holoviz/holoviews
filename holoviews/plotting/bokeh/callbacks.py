@@ -221,5 +221,5 @@ callbacks[PositionY] = PositionYCallback
 callbacks[RangeXY] = RangeXYCallback
 callbacks[RangeX] = RangeXCallback
 callbacks[RangeY] = RangeYCallback
-callbacks[Box] = BoundsCallback
+callbacks[Bounds] = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
