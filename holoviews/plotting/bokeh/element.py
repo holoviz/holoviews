@@ -371,6 +371,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
+        self.handles['xaxis'] = plot.xaxis[0]
+        self.handles['x_range'] = plot.x_range
 
         if self.yaxis is None:
             plot.yaxis.visible = False
@@ -378,6 +380,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
+        self.handles['yaxis'] = plot.yaxis[0]
+        self.handles['y_range'] = plot.y_range
 
 
     def _axis_properties(self, axis, key, plot, dimension,
