@@ -190,10 +190,6 @@ class PositionX(Stream):
     x = param.Number(default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionX, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
-
 
 class PositionY(Stream):
     """
@@ -206,10 +202,6 @@ class PositionY(Stream):
     y = param.Number(default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionY, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
-
 
 class PositionXY(Stream):
     """
@@ -219,18 +211,46 @@ class PositionXY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-
     x = param.Number(default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
     y = param.Number(default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionXY, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
+
+class RangeXY(Stream):
+    """
+    Axis ranges along x- and y-axis in data coordinates.
+    """
+
+    x_range = param.NumericTuple(default=(0, 1), constant=True)
+
+    y_range = param.NumericTuple(default=(0, 1), constant=True)
 
 
+class RangeX(Stream):
+    """
+    Axis range along x-axis in data coordinates.
+    """
+
+    x_range = param.NumericTuple(default=(0, 1), constant=True)
+
+
+class RangeY(Stream):
+    """
+    Axis range along y-axis in data coordinates.
+    """
+
+    y_range = param.NumericTuple(default=(0, 1), constant=True)
+
+
+class BoxSelect(Stream):
+    """
+    A stream representing the bounds of a box selection as an
+    tuple of the left, bottom, right and top coordinates.
+    """
+
+    bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True)
 
 
 class ParamValues(Stream):

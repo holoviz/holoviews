@@ -5,7 +5,8 @@ import param
 import numpy as np
 from bokeh.models import CustomJS
 
-from ...streams import Stream, PositionXY
+from ...streams import (Stream, PositionXY, RangeXY, BoxSelect, RangeX,
+                        RangeY, PositionX, PositionY)
 from ..comms import JupyterCommJS
 
 
@@ -97,5 +98,75 @@ class PositionXYCallback(Callback):
     handles = ['hover']
 
 
+class PositionXCallback(Callback):
+
+    attributes = {'x': 'cb_data.geometry.x'}
+
+    handles = ['hover']
+
+
+class PositionYCallback(Callback):
+
+    attributes = {'y': 'cb_data.geometry.y'}
+
+    handles = ['hover']
+
+
+class RangeXYCallback(Callback):
+
+    attributes = {'x0': 'x_range.attributes.start',
+                  'x1': 'x_range.attributes.end',
+                  'y0': 'y_range.attributes.start',
+                  'y1': 'y_range.attributes.end'}
+
+    handles = ['x_range', 'y_range']
+
+    def _process_msg(self, msg):
+        return {'x_range': (msg['x0'], msg['x1']),
+                'y_range': (msg['y0'], msg['y1'])}
+
+
+class RangeXCallback(Callback):
+
+    attributes = {'x0': 'x_range.attributes.start',
+                  'x1': 'x_range.attributes.end'}
+
+    handles = ['x_range']
+
+    def _process_msg(self, msg):
+        return {'x_range': (msg['x0'], msg['x1'])}
+
+
+class RangeYCallback(Callback):
+
+    attributes = {'y0': 'y_range.attributes.start',
+                  'y1': 'y_range.attributes.end'}
+
+    handles = ['y_range']
+
+    def _process_msg(self, msg):
+        return {'y_range': (msg['y0'], msg['y1'])}
+
+
+class BoxCallback(Callback):
+
+    attributes = {'x0': 'cb_data.geometry.x0',
+                  'x1': 'cb_data.geometry.x1',
+                  'y0': 'cb_data.geometry.y0',
+                  'y1': 'cb_data.geometry.y1'}
+
+    handles = ['box_select']
+
+    def _process_msg(self, msg):
+        return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+
+
 callbacks = Stream._callbacks['bokeh']
+
 callbacks[PositionXY] = PositionXYCallback
+callbacks[PositionX] = PositionXCallback
+callbacks[PositionY] = PositionYCallback
+callbacks[RangeXY] = RangeXYCallback
+callbacks[RangeX] = RangeXCallback
+callbacks[RangeY] = RangeYCallback
+callbacks[BoxSelect] = BoxCallback
