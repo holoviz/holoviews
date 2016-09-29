@@ -5,8 +5,8 @@ import param
 import numpy as np
 from bokeh.models import CustomJS
 
-from ...streams import (Stream, PositionXY, RangeXY, BoxSelect, RangeX,
-                        RangeY, PositionX, PositionY)
+from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
+                        RangeY, PositionX, PositionY, Bounds)
 from ..comms import JupyterCommJS
 
 
@@ -156,7 +156,7 @@ class RangeYCallback(Callback):
         return {'y_range': (msg['y0'], msg['y1'])}
 
 
-class BoxCallback(Callback):
+class BoundsCallback(Callback):
 
     attributes = {'x0': 'cb_data.geometry.x0',
                   'x1': 'cb_data.geometry.x1',
@@ -169,6 +169,13 @@ class BoxCallback(Callback):
         return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
 
 
+class Selection1DCallback(Callback):
+
+    attributes = {'index': 'source.selected.1d.indices'}
+
+    handles = ['source']
+
+
 callbacks = Stream._callbacks['bokeh']
 
 callbacks[PositionXY] = PositionXYCallback
@@ -177,4 +184,5 @@ callbacks[PositionY] = PositionYCallback
 callbacks[RangeXY] = RangeXYCallback
 callbacks[RangeX] = RangeXCallback
 callbacks[RangeY] = RangeYCallback
-callbacks[BoxSelect] = BoxCallback
+callbacks[Box] = BoundsCallback
+callbacks[Selection1D] = Selection1DCallback

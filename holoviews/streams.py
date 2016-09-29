@@ -244,13 +244,21 @@ class RangeY(Stream):
     y_range = param.NumericTuple(default=(0, 1), constant=True)
 
 
-class BoxSelect(Stream):
+class Bounds(Stream):
     """
     A stream representing the bounds of a box selection as an
     tuple of the left, bottom, right and top coordinates.
     """
 
     bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True)
+
+
+class Selection1D(Stream):
+    """
+    A stream representing a 1D selection of objects by their index.
+    """
+
+    index = param.List(default=[])
 
 
 class ParamValues(Stream):
