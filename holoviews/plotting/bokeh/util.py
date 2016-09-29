@@ -16,7 +16,7 @@ from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import GlyphRenderer
+from bokeh.models import GlyphRenderer, Model, HasProps
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
 if bokeh_version >= '0.12':
@@ -146,36 +146,6 @@ def convert_datetime(time):
     return time.astype('datetime64[s]').astype(float)*1000
 
 
-def models_to_json(models):
-    """
-    Convert list of bokeh models into json to update plot(s).
-    """
-    json_data, ids = [], []
-    for plotobj in models:
-        if plotobj.ref['id'] in ids:
-            continue
-        else:
-            ids.append(plotobj.ref['id'])
-        json = plotobj.to_json(False)
-        json.pop('tool_events', None)
-        json.pop('renderers', None)
-        json_data.append({'id': plotobj.ref['id'],
-                          'type': plotobj.ref['type'],
-                          'data': json})
-    return json_data
-
-
-def refs(json):
-    """
-    Finds all the references to other objects in the json
-    representation of a bokeh Document.
-    """
-    result = {}
-    for obj in json['roots']['references']:
-        result[obj['id']] = obj
-    return result
-
-
 def get_ids(obj):
     """
     Returns a list of all ids in the supplied object.  Useful for
@@ -191,6 +161,39 @@ def get_ids(obj):
         ids = [(v,) if k == 'id' else get_ids(v)
                for k, v in obj.items() if not k in IGNORED_ATTRIBUTES]
     return list(itertools.chain(*ids))
+
+
+def replace_models(obj):
+    """
+    Processes references replacing Model and HasProps objects.
+    """
+    if isinstance(obj, Model):
+        return obj.ref
+    elif isinstance(obj, HasProps):
+        return obj.properties_with_values(include_defaults=False)
+    elif isinstance(obj, dict):
+        return {k: replace_models(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_models(v) for v in obj]
+    else:
+        return obj
+
+
+def to_references(doc):
+    """
+    Convert the document to a dictionary of references.  Avoids
+    converting document to json and the performance penalty that
+    involves.
+    """
+    root_ids = []
+    for r in doc._roots:
+        root_ids.append(r._id)
+
+    references = {}
+    for obj in doc._references_json(doc._all_models.values()):
+        obj = replace_models(obj)
+        references[obj['id']] = obj
+    return references
 
 
 def compute_static_patch(document, models):
@@ -215,7 +218,7 @@ def compute_static_patch(document, models):
     ensure that only the references between objects are sent without
     duplicating any of the data.
     """
-    references = refs(document.to_json())
+    references = to_references(document)
     model_ids = [m.ref['id'] for m in models]
 
     requested_updates = []
