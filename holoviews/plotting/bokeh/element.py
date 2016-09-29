@@ -172,8 +172,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _init_callbacks(self):
-        if not isinstance(self.hmap, DynamicMap):
-            return []
         streams = Stream.registry.get(self.hmap, [])
         registry = Stream._callbacks['bokeh']
         callbacks = {(registry[type(stream)], stream) for stream in streams
@@ -185,7 +183,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return cbs
 
 
-    def _init_tools(self, element):
+    def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
@@ -197,8 +195,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
                     for d in dims]
 
+        callbacks = callbacks+self.callbacks
         cb_tools = []
-        for cb in self.callbacks:
+        for cb in callbacks:
             for handle in cb.handles:
                 if handle and handle in known_tools:
                     if handle == 'hover':
@@ -965,14 +964,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         tools = []
         hover = False
         for key, subplot in self.subplots.items():
-                el = element.get(key)
-                if el is not None:
-                    el_tools = subplot._init_tools(el)
-                    el_tools = [t for t in el_tools
-                                if not (isinstance(t, HoverTool) and hover)]
-                    tools += el_tools
-                    if any(isinstance(t, HoverTool) for t in el_tools):
-                        hover = True
+            el = element.get(key)
+            if el is not None:
+                el_tools = subplot._init_tools(el, self.callbacks)
+                el_tools = [t for t in el_tools
+                            if not (isinstance(t, HoverTool) and hover)]
+                tools += el_tools
+                if any(isinstance(t, HoverTool) for t in el_tools):
+                    hover = True
         return list(set(tools))
 
 
@@ -1009,6 +1008,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
+
+        for cb in self.callbacks:
+            cb.initialize()
 
         return self.handles['plot']
 

@@ -60,11 +60,19 @@ class Callback(param.Parameterized):
 
 
     def initialize(self):
-        for handle in self.handles:
-            if handle not in self.plot.handles:
-                self.warning('Plotting handle for JS callback not found')
-                continue
-            self.set_customjs(self.plot.handles[handle])
+        plots = [self.plot]
+        if self.plot.subplots:
+            plots += list(self.plot.subplots.values())
+
+        found = []
+        for plot in plots:
+            for handle in self.handles:
+                if handle not in plot.handles or handle in found:
+                    continue
+                self.set_customjs(plot.handles[handle])
+                found.append(handle)
+        if len(found) != len(self.handles):
+            self.warning('Plotting handle for JS callback not found')
 
 
     def on_msg(self, msg):
