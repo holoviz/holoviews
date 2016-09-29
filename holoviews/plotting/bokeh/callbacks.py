@@ -10,7 +10,11 @@ from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
 from ..comms import JupyterCommJS
 
 
-def get_attributes(attributes):
+def attributes_js(attributes):
+    """
+    Generates JS code to look up attributes on JS objects from
+    an attributes specification dictionary.
+    """
     code = ''
     for key, attr_path in attributes.items():
         data_assign = "data['{key}'] = ".format(key=key)
@@ -23,6 +27,34 @@ def get_attributes(attributes):
 
 
 class Callback(param.Parameterized):
+    """
+    Provides a baseclass to define callbacks, which return data from
+    bokeh models such as the plot ranges or various tools. The callback
+    then makes this data available to any streams attached to it.
+
+    The defintion of a callback consists of a number of components:
+
+    * handles    :  The handles define which object the callback will be
+                    attached on.
+
+    * attributes :  The attributes define which attributes to send back
+                    to Python. They are defined as a dictionary mapping
+                    between the name under which the variable is made
+                    available to Python and the specification of the
+                    attribute. The specification should start with the
+                    variable name that is to be accessed and the
+                    location of the attribute separated by periods.
+                    All plotting handles such as tools, the x_range,
+                    y_range and (data)source can be addressed in this
+                    way.
+    * code        : Defines any additional JS code to be executed,
+                    which can modify the data object that is sent to
+                    the backend.
+
+    The callback can also define a _process_msg method, which can
+    modify the data sent by the callback before it is passed to the
+    streams.
+    """
 
     code = param.String(default="", doc="""
         Custom javascript code executed on the callback. The code
