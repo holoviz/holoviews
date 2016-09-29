@@ -166,12 +166,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
-        element_ids = self.hmap.traverse(lambda x: id(x), [Element])
-        self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
+        self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._init_callbacks()
 
 
     def _init_callbacks(self):
+        """
+        Initializes any callbacks for streams which have defined
+        the plotted object as a source.
+        """
         if not self.static or isinstance(self.hmap, DynamicMap):
             source = self.hmap
         else:
@@ -183,7 +186,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         cbs = []
         for cb, group in groupby(sorted(callbacks), lambda x: x[0]):
             cb_streams = [s for _, s in group]
-            cbs.append(cb(self, streams))
+            cbs.append(cb(self, streams, source))
         return cbs
 
 

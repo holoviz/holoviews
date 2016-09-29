@@ -53,10 +53,11 @@ class Callback(param.Parameterized):
     handles = []
     msgs=[]
 
-    def __init__(self, plot, streams, **params):
+    def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
         self.comm = JupyterCommJS(plot, on_msg=self.on_msg)
+        self.source = source
 
 
     def initialize(self):
@@ -91,11 +92,15 @@ class Callback(param.Parameterized):
     def set_customjs(self, cb_obj):
         # Generate callback JS code to get all the requested data
         self_callback = self.js_callback.format(comms_target=self.comm.target)
-        attributes = get_attributes(self.attributes)
+        attributes = attributes_js(self.attributes)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
+        handles = dict(self.plot.handles)
+        plots = [self.plot] + (self.plot.subplots.values()[::-1] if self.plot.subplots else [])
+        for plot in plots:
+            handles.update(plot.handles)
         # Set cb_obj
-        cb_obj.callback = CustomJS(args=self.plot.handles, code=code)
+        cb_obj.callback = CustomJS(args=handles, code=code)
 
 
 
