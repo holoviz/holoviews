@@ -189,8 +189,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Processes the list of tools to be supplied to the plot.
         """
+        if self.batched:
+            dims = self.hmap.last.kdims
+        else:
+            dims = list(self.overlay_dims.keys())
+        dims += element.dimensions()
         tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in element.dimensions()]
+                    for d in dims]
+
         cb_tools = []
         for cb in self.callbacks:
             for handle in cb.handles:
