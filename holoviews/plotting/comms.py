@@ -1,3 +1,4 @@
+import json
 import uuid
 
 from ipykernel.comm import Comm as IPyComm
@@ -68,8 +69,14 @@ class Comm(object):
         Decode received message before passing it to on_msg callback
         if it has been defined.
         """
-        if self._on_msg:
-            self._on_msg(self.decode(msg))
+        try:
+            if self._on_msg:
+                self._on_msg(self.decode(msg))
+        except Exception as e:
+            msg = {'msg_type': "Error", 'traceback': str(e)}
+        else:
+            msg = {'msg_type': "Ready"}
+        self.comm.send(json.dumps(msg))
 
 
 class JupyterComm(Comm):

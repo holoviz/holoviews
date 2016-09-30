@@ -74,6 +74,23 @@ class Callback(object):
     attributes = {}
 
     js_callback = """
+        function on_msg(msg){{
+          msg = JSON.parse(msg.content.data);
+          var comm = HoloViewsWidget.comms["{comms_target}"];
+          var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+          if (msg.msg_type == "Ready") {{
+            if (comm_state.event) {{
+              comm.send(comm_state.event);
+            }} else {{
+              comm_state.blocked = false;
+            }}
+            comm_state.timeout = Date.now();
+            comm_state.event = undefined;
+          }} else if (msg.msg_type == "Error") {{
+            console.log("Python failed with the following traceback:", msg['traceback'])
+          }}
+        }}
+
         var argstring = JSON.stringify(data);
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
@@ -82,12 +99,29 @@ class Callback(object):
             comm = comms["{comms_target}"];
           }} else {{
             comm = comm_manager.new_comm("{comms_target}", {{}}, {{}}, {{}});
-
-          comm_manager["{comms_target}"] = comm;
+            comm.on_msg(on_msg);
+            comm_manager["{comms_target}"] = comm;
             HoloViewsWidget.comms["{comms_target}"] = comm;
           }}
           comm_manager["{comms_target}"] = comm;
-          comm.send(argstring)
+        }} else {{
+          return
+        }}
+
+        var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+        if (comm_state === undefined) {{
+            comm_state = {{event: undefined, blocked: false, timeout: Date.now()}}
+            HoloViewsWidget.comm_state["{comms_target}"] = comm_state
+        }}
+
+        timeout = comm_state.timeout + {timeout};
+        if ((typeof _ === "undefined")  || _.isEmpty(data)) {{
+        }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
+            comm_state.event = argstring;
+        }} else {{
+            comm.send(argstring);
+            comm_state.blocked = true;
+            comm_state.timeout = Date.now();
         }}
     """
 
@@ -95,6 +129,9 @@ class Callback(object):
     handles = []
 
     _comm_type = JupyterCommJS
+
+    # Timeout if a comm message is swallowed
+    timeout = 20000
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -140,7 +177,8 @@ class Callback(object):
         """
 
         # Generate callback JS code to get all the requested data
-        self_callback = self.js_callback.format(comms_target=self.comm.target)
+        self_callback = self.js_callback.format(comms_target=self.comm.target,
+                                                timeout=self.timeout)
         attributes = attributes_js(self.attributes)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
