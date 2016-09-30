@@ -195,7 +195,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         if self.batched:
-            dims = self.hmap.last.kdims
+            dims = list(self.hmap.last.kdims)
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
