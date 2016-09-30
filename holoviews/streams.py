@@ -223,9 +223,11 @@ class RangeXY(Stream):
     Axis ranges along x- and y-axis in data coordinates.
     """
 
-    x_range = param.NumericTuple(default=(0, 1), constant=True)
+    x_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the x-axis of a plot in data coordinates""")
 
-    y_range = param.NumericTuple(default=(0, 1), constant=True)
+    y_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the y-axis of a plot in data coordinates""")
 
 
 class RangeX(Stream):
@@ -233,7 +235,8 @@ class RangeX(Stream):
     Axis range along x-axis in data coordinates.
     """
 
-    x_range = param.NumericTuple(default=(0, 1), constant=True)
+    x_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the x-axis of a plot in data coordinates""")
 
 
 class RangeY(Stream):
@@ -241,7 +244,8 @@ class RangeY(Stream):
     Axis range along y-axis in data coordinates.
     """
 
-    y_range = param.NumericTuple(default=(0, 1), constant=True)
+    y_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the y-axis of a plot in data coordinates""")
 
 
 class Bounds(Stream):
@@ -250,7 +254,9 @@ class Bounds(Stream):
     tuple of the left, bottom, right and top coordinates.
     """
 
-    bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True)
+    bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True,
+                                doc="""
+        Bounds defined as (left, bottom, top, right) tuple.""")
 
 
 class Selection1D(Stream):
@@ -258,7 +264,8 @@ class Selection1D(Stream):
     A stream representing a 1D selection of objects by their index.
     """
 
-    index = param.List(default=[])
+    index = param.List(default=[], doc="""
+        Indices into a 1D datastructure.""")
 
 
 class ParamValues(Stream):
