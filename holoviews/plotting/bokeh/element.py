@@ -755,14 +755,18 @@ class ColorbarPlot(ElementPlot):
 
 
     def _get_colormapper(self, dim, element, ranges, style):
+        # The initial colormapper instance is cached the first time
+        # and then only updated
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
-        colormapper = LogColorMapper if self.logz else LinearColorMapper
-        cmapper = colormapper(palette, low=low, high=high)
-
-        # The initial colormapper instance is cached the first time
-        # and then updated with the values from new instances
-        if 'color_mapper' not in self.handles:
+        if 'color_mapper' in self.handles:
+            cmapper = self.handles['color_mapper']
+            cmapper.low = low
+            cmapper.high = high
+            cmapper.palette = palette
+        else:
+            colormapper = LogColorMapper if self.logz else LinearColorMapper
+            cmapper = colormapper(palette, low=low, high=high)
             self.handles['color_mapper'] = cmapper
         return cmapper
 
@@ -779,14 +783,6 @@ class ColorbarPlot(ElementPlot):
 
     def _update_glyph(self, glyph, properties, mapping):
         allowed_properties = glyph.properties()
-        cmappers = [v.get('transform') for v in mapping.values()
-                    if isinstance(v, dict)]
-        cmappers.append(properties.pop('color_mapper', None))
-        for cm in cmappers:
-            if cm:
-                self.handles['color_mapper'].low = cm.low
-                self.handles['color_mapper'].high = cm.high
-                self.handles['color_mapper'].palette = cm.palette
         merged = dict(properties, **mapping)
         glyph.set(**{k: v for k, v in merged.items()
                      if k in allowed_properties})
