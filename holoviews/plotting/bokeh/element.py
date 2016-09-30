@@ -1,4 +1,5 @@
 from io import BytesIO
+from itertools import groupby
 
 import numpy as np
 import bokeh
@@ -14,6 +15,7 @@ try:
 except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.models import LogTicker, BasicTicker
+from bokeh.plotting.helpers import _known_tools as known_tools
 
 try:
     from bokeh import mpl
@@ -26,9 +28,9 @@ from ...core import (Store, HoloMap, Overlay, DynamicMap,
 from ...core.options import abbreviated_exception
 from ...core import util
 from ...element import RGB
+from ...streams import Stream
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
-from .callbacks import Callbacks
 from .plot import BokehPlot
 from .util import (mpl_to_bokeh, convert_datetime, update_plot,
                    bokeh_version, mplcmap_to_palette)
@@ -54,10 +56,6 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
-
-    callbacks = param.ClassSelector(class_=Callbacks, doc="""
-        Callbacks object defining any javascript callbacks applied
-        to the plot.""")
 
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
@@ -168,18 +166,56 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
-        element_ids = self.hmap.traverse(lambda x: id(x), [Element])
-        self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
+        self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
+        self.callbacks = self._construct_callbacks()
 
 
-    def _init_tools(self, element):
+    def _construct_callbacks(self):
+        """
+        Initializes any callbacks for streams which have defined
+        the plotted object as a source.
+        """
+        if not self.static or isinstance(self.hmap, DynamicMap):
+            source = self.hmap
+        else:
+            source = self.hmap.last
+        streams = Stream.registry.get(id(source), [])
+        registry = Stream._callbacks['bokeh']
+        callbacks = {(registry[type(stream)], stream) for stream in streams
+                     if type(stream) in registry and streams}
+        cbs = []
+        for cb, group in groupby(sorted(callbacks), lambda x: x[0]):
+            cb_streams = [s for _, s in group]
+            cbs.append(cb(self, cb_streams, source))
+        return cbs
+
+
+    def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tools = self.default_tools + self.tools
+        if self.batched:
+            dims = self.hmap.last.kdims
+        else:
+            dims = list(self.overlay_dims.keys())
+        dims += element.dimensions()
+        tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
+                    for d in dims]
+
+        callbacks = callbacks+self.callbacks
+        cb_tools = []
+        for cb in callbacks:
+            for handle in cb.handles:
+                if handle and handle in known_tools:
+                    if handle == 'hover':
+                        tool = HoverTool(tooltips=tooltips)
+                    else:
+                        tool = known_tools[handle]()
+                    cb_tools.append(tool)
+                    self.handles[handle] = tool
+
+        tools = cb_tools + self.default_tools + self.tools
         if 'hover' in tools:
-            tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                        for d in element.dimensions()]
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
         return tools
 
@@ -347,6 +383,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
+        self.handles['xaxis'] = plot.xaxis[0]
+        self.handles['x_range'] = plot.x_range
 
         if self.yaxis is None:
             plot.yaxis.visible = False
@@ -354,6 +392,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
+        self.handles['yaxis'] = plot.yaxis[0]
+        self.handles['y_range'] = plot.y_range
 
 
     def _axis_properties(self, axis, key, plot, dimension,
@@ -512,7 +552,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['plot'] = plot
 
         # Get data and initialize data source
-        empty = self.callbacks and self.callbacks.downsample
+        empty = False
         if self.batched:
             data, mapping = self.get_batched_data(element, ranges, empty)
         else:
@@ -533,9 +573,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
-        if self.callbacks:
-            self.callbacks(self)
-            self.callbacks.update(self)
+
+        if not self.batched:
+            for cb in self.callbacks:
+                cb.initialize()
+
         if not self.overlaid:
             self._process_legend()
         self.drawn = True
@@ -571,7 +613,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         plot = self.handles['plot']
         source = self.handles['source']
-        empty = (self.callbacks and self.callbacks.downsample) or empty
+        empty = False
         if self.batched:
             data, mapping = self.get_batched_data(element, ranges, empty)
         else:
@@ -585,8 +627,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
-        if self.callbacks:
-            self.callbacks.update(self)
 
 
     @property
@@ -933,14 +973,14 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         tools = []
         hover = False
         for key, subplot in self.subplots.items():
-                el = element.get(key)
-                if el is not None:
-                    el_tools = subplot._init_tools(el)
-                    el_tools = [t for t in el_tools
-                                if not (isinstance(t, HoverTool) and hover)]
-                    tools += el_tools
-                    if any(isinstance(t, HoverTool) for t in el_tools):
-                        hover = True
+            el = element.get(key)
+            if el is not None:
+                el_tools = subplot._init_tools(el, self.callbacks)
+                el_tools = [t for t in el_tools
+                            if not (isinstance(t, HoverTool) and hover)]
+                tools += el_tools
+                if any(isinstance(t, HoverTool) for t in el_tools):
+                    hover = True
         return list(set(tools))
 
 
@@ -977,6 +1017,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
+
+        for cb in self.callbacks:
+            cb.initialize()
 
         return self.handles['plot']
 

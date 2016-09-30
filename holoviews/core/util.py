@@ -954,7 +954,7 @@ def get_dynamic_item(map_obj, dimensions, key):
     and a corresponding key. The dimensions must be a subset
     of the map_obj key dimensions.
     """
-    if key == () and not dimensions:
+    if key == () and not dimensions or not map_obj.kdims:
         return key, map_obj[()]
     elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)

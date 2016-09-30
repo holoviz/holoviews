@@ -49,25 +49,6 @@ class PolygonPlot(ColorbarPlot, PathPlot):
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
 
-    def _init_tools(self, element):
-        """
-        Processes the list of tools to be supplied to the plot.
-        """
-        tools = self.default_tools + self.tools
-        if 'hover' not in tools:
-            return tools
-        tools.pop(tools.index('hover'))
-        if self.batched:
-            dims = self.hmap.last.kdims
-        else:
-            dims = list(self.overlay_dims.keys())
-        dims += element.vdims
-        tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in dims]
-        tools.append(HoverTool(tooltips=tooltips))
-        return tools
-
-
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
         ys = [] if empty else [path[:, 1] for path in element.data]

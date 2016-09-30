@@ -1,11 +1,10 @@
 import uuid
 
-import param
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
 
 
-class Comm(param.Parameterized):
+class Comm(object):
     """
     Comm encompasses any uni- or bi-directional connection between
     a python process and a frontend allowing passing of messages
@@ -119,7 +118,7 @@ class JupyterComm(Comm):
 
 
 
-class JupyterCommJS(Comm):
+class JupyterCommJS(JupyterComm):
     """
     JupyterCommJS provides a comms channel for the Jupyter notebook,
     which is initialized on the frontend. This allows sending events
@@ -149,7 +148,7 @@ class JupyterCommJS(Comm):
         """
         Initializes a Comms object
         """
-        super(JupyterComm, self).__init__(plot, target, on_msg)
+        super(JupyterCommJS, self).__init__(plot, target, on_msg)
         self.manager = get_ipython().kernel.comm_manager
         self.manager.register_target(self.target, self._handle_open)
 

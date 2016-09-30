@@ -13,13 +13,13 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                Scatter3D)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY
+from holoviews.plotting import comms
 
 # Standardize backend due to random inconsistencies
 try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
     from holoviews.plotting.mpl import OverlayPlot
-    from holoviews.plotting.comms import Comm
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None
@@ -27,6 +27,7 @@ except:
 try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
+    from holoviews.plotting.bokeh.callbacks import Callback
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
 except:
     bokeh_renderer = None
@@ -46,7 +47,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         if mpl_renderer is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
         self.default_comm, _ = mpl_renderer.comms['default']
-        mpl_renderer.comms['default'] = (Comm, '')
+        mpl_renderer.comms['default'] = (comms.Comm, '')
 
     def teardown(self):
         mpl_renderer.comms['default'] = (self.default_comm, '')
@@ -92,13 +93,17 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
-
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
+        Store.current_backend = 'bokeh'
+        Callback._comm_type = comms.Comm
+        self.default_comm, _ = bokeh_renderer.comms['default']
+        bokeh_renderer.comms['default'] = (comms.Comm, '')
 
     def teardown(self):
         Store.current_backend = self.previous_backend
+        Callback._comm_type = comms.JupyterCommJS
+        mpl_renderer.comms['default'] = (self.default_comm, '')
 
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
@@ -139,6 +144,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_spikes_colormapping(self):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
         self._test_colormapping(spikes, 1)
+
+
+    def test_stream_callback(self):
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        plot.callbacks[0].on_msg('{"x": 10, "y": -10}')
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.array([10]))
+        self.assertEqual(data['y'], np.array([-10]))
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):

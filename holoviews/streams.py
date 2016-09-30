@@ -5,8 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
-import uuid
-from collections import OrderedDict
+from collections import defaultdict
 from .core import util
 
 
@@ -74,8 +73,12 @@ class Stream(param.Parameterized):
     the parameter dictionary when the trigger classmethod is called.
     """
 
-    # Mapping from uuid to stream instance
-    registry = OrderedDict()
+    # Mapping from a source id to a list of streams
+    registry = defaultdict(list)
+
+    # Mapping to define callbacks by backend and Stream type.
+    # e.g. Stream._callbacks['bokeh'][Stream] = Callback
+    _callbacks = defaultdict(dict)
 
     @classmethod
     def trigger(cls, streams):
@@ -104,14 +107,6 @@ class Stream(param.Parameterized):
             subscriber(**dict(union))
 
 
-    @classmethod
-    def find(cls, obj):
-        """
-        Return a set of streams from the registry with a given source.
-        """
-        return set(v for v in cls.registry.values() if v.source is obj)
-
-
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
         Mapping allows multiple streams with similar event state to be
@@ -121,14 +116,25 @@ class Stream(param.Parameterized):
         datastructure that the stream receives events from, as supported
         by the plotting backend.
         """
-        self.source = source
+        self._source = source
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
 
-        self.uuid = uuid.uuid4().hex
         super(Stream, self).__init__(**params)
-        self.registry[self.uuid] = self
+        if source:
+            self.registry[id(source)].append(self)
+
+    @property
+    def source(self):
+        return self._source
+
+    @source.setter
+    def source(self, source):
+        if self._source:
+            raise Exception('source has already been defined on stream.')
+        self._source = source
+        self.registry[id(source)].append(self)
 
 
     @property
@@ -184,10 +190,6 @@ class PositionX(Stream):
     x = param.Number(default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionX, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
-
 
 class PositionY(Stream):
     """
@@ -200,10 +202,6 @@ class PositionY(Stream):
     y = param.Number(default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionY, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
-
 
 class PositionXY(Stream):
     """
@@ -213,18 +211,61 @@ class PositionXY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-
     x = param.Number(default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
     y = param.Number(default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
-        super(PositionXY, self).__init__(preprocessors=preprocessors, source=source,
-                                        subscribers=subscribers, **params)
+
+class RangeXY(Stream):
+    """
+    Axis ranges along x- and y-axis in data coordinates.
+    """
+
+    x_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the x-axis of a plot in data coordinates""")
+
+    y_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the y-axis of a plot in data coordinates""")
 
 
+class RangeX(Stream):
+    """
+    Axis range along x-axis in data coordinates.
+    """
+
+    x_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the x-axis of a plot in data coordinates""")
+
+
+class RangeY(Stream):
+    """
+    Axis range along y-axis in data coordinates.
+    """
+
+    y_range = param.NumericTuple(default=(0, 1), constant=True, doc="""
+      Range of the y-axis of a plot in data coordinates""")
+
+
+class Bounds(Stream):
+    """
+    A stream representing the bounds of a box selection as an
+    tuple of the left, bottom, right and top coordinates.
+    """
+
+    bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True,
+                                doc="""
+        Bounds defined as (left, bottom, top, right) tuple.""")
+
+
+class Selection1D(Stream):
+    """
+    A stream representing a 1D selection of objects by their index.
+    """
+
+    index = param.List(default=[], doc="""
+        Indices into a 1D datastructure.""")
 
 
 class ParamValues(Stream):

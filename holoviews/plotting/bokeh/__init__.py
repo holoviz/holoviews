@@ -17,7 +17,7 @@ except:
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .callbacks import Callbacks # noqa (API import)
+from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
