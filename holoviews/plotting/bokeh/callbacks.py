@@ -93,12 +93,13 @@ class Callback(object):
 
     # The plotting handle(s) to attach the JS callback on
     handles = []
-    msgs=[]
+
+    _comm_type = JupyterCommJS
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
-        self.comm = JupyterCommJS(plot, on_msg=self.on_msg)
+        self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
 
 
