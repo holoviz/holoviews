@@ -150,7 +150,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
-        print plot.document
         plot.callbacks[0].on_msg('{"x": 10, "y": -10}')
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.array([10]))
