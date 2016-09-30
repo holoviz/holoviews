@@ -165,7 +165,8 @@ def get_ids(obj):
 
 def replace_models(obj):
     """
-    Processes references replacing Model and HasProps objects.
+    Recursively processes references, replacing Models with there .ref
+    values and HasProps objects with their property values.
     """
     if isinstance(obj, Model):
         return obj.ref
@@ -181,9 +182,9 @@ def replace_models(obj):
 
 def to_references(doc):
     """
-    Convert the document to a dictionary of references.  Avoids
-    converting document to json and the performance penalty that
-    involves.
+    Convert the document to a dictionary of references. Avoids
+    unnecessary JSON serialization/deserialization within Python and
+    the corresponding performance penalty.
     """
     root_ids = []
     for r in doc._roots:

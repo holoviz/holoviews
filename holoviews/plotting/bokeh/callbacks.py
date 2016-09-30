@@ -14,6 +14,12 @@ def attributes_js(attributes):
     """
     Generates JS code to look up attributes on JS objects from
     an attributes specification dictionary.
+
+    Example:
+
+    Input  : {'x': 'cb_data.geometry.x'}
+
+    Output : data['x'] = cb_data['geometry']['x']
     """
     code = ''
     for key, attr_path in attributes.items():
@@ -26,7 +32,7 @@ def attributes_js(attributes):
     return code
 
 
-class Callback(param.Parameterized):
+class Callback(object):
     """
     Provides a baseclass to define callbacks, which return data from
     bokeh models such as the plot ranges or various tools. The callback
@@ -34,19 +40,26 @@ class Callback(param.Parameterized):
 
     The defintion of a callback consists of a number of components:
 
-    * handles    :  The handles define which object the callback will be
-                    attached on.
+    * handles    :  The handles define which plotting handles the
+                    callback will be attached on, e.g. this could be
+                    the x_range, y_range, a plotting tool or any other
+                    bokeh object that allows callbacks.
 
-    * attributes :  The attributes define which attributes to send back
-                    to Python. They are defined as a dictionary mapping
-                    between the name under which the variable is made
-                    available to Python and the specification of the
-                    attribute. The specification should start with the
-                    variable name that is to be accessed and the
-                    location of the attribute separated by periods.
+    * attributes :  The attributes define which attributes to send
+                    back to Python. They are defined as a dictionary
+                    mapping between the name under which the variable
+                    is made available to Python and the specification
+                    of the attribute. The specification should start
+                    with the variable name that is to be accessed and
+                    the location of the attribute separated by periods.
                     All plotting handles such as tools, the x_range,
                     y_range and (data)source can be addressed in this
-                    way.
+                    way, e.g. to get the start of the x_range as 'x'
+                    you can supply {'x': 'x_range.attributes.start'}.
+                    Additionally certain handles additionally make the
+                    cb_data and cb_obj variables available containing
+                    additional information about the event.
+
     * code        : Defines any additional JS code to be executed,
                     which can modify the data object that is sent to
                     the backend.
@@ -56,10 +69,7 @@ class Callback(param.Parameterized):
     streams.
     """
 
-    code = param.String(default="", doc="""
-        Custom javascript code executed on the callback. The code
-        has access to the plot, source and cb_obj and may modify
-        the data javascript object sent back to Python.""")
+    code = ""
 
     attributes = {}
 
@@ -121,7 +131,13 @@ class Callback(param.Parameterized):
         return msg
 
 
-    def set_customjs(self, cb_obj):
+    def set_customjs(self, handle):
+        """
+        Generates a CustomJS callback by generating the required JS
+        code and gathering all plotting handles and installs it on
+        the requested callback handle.
+        """
+
         # Generate callback JS code to get all the requested data
         self_callback = self.js_callback.format(comms_target=self.comm.target)
         attributes = attributes_js(self.attributes)
@@ -131,8 +147,8 @@ class Callback(param.Parameterized):
         plots = [self.plot] + (self.plot.subplots.values()[::-1] if self.plot.subplots else [])
         for plot in plots:
             handles.update(plot.handles)
-        # Set cb_obj
-        cb_obj.callback = CustomJS(args=handles, code=code)
+        # Set callback
+        handle.callback = CustomJS(args=handles, code=code)
 
 
 

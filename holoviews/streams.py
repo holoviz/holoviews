@@ -5,7 +5,6 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
-import uuid
 from collections import defaultdict
 from .core import util
 
@@ -74,9 +73,11 @@ class Stream(param.Parameterized):
     the parameter dictionary when the trigger classmethod is called.
     """
 
-    # Mapping from uuid to stream instance
+    # Mapping from a source id to a list of streams
     registry = defaultdict(list)
 
+    # Mapping to define callbacks by backend and Stream type.
+    # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
 
     @classmethod
@@ -120,10 +121,9 @@ class Stream(param.Parameterized):
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
 
-        self.uuid = uuid.uuid4().hex
         super(Stream, self).__init__(**params)
         if source:
-            self.registry[source].append(self)
+            self.registry[id(source)].append(self)
 
     @property
     def source(self):
@@ -134,7 +134,7 @@ class Stream(param.Parameterized):
         if self._source:
             raise Exception('source has already been defined on stream.')
         self._source = source
-        self.registry[source].append(self)
+        self.registry[id(source)].append(self)
 
 
     @property

@@ -167,10 +167,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         super(ElementPlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
-        self.callbacks = self._init_callbacks()
+        self.callbacks = self._construct_callbacks()
 
 
-    def _init_callbacks(self):
+    def _construct_callbacks(self):
         """
         Initializes any callbacks for streams which have defined
         the plotted object as a source.
@@ -179,14 +179,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             source = self.hmap
         else:
             source = self.hmap.last
-        streams = Stream.registry.get(source, [])
+        streams = Stream.registry.get(id(source), [])
         registry = Stream._callbacks['bokeh']
         callbacks = {(registry[type(stream)], stream) for stream in streams
                      if type(stream) in registry and streams}
         cbs = []
         for cb, group in groupby(sorted(callbacks), lambda x: x[0]):
             cb_streams = [s for _, s in group]
-            cbs.append(cb(self, streams, source))
+            cbs.append(cb(self, cb_streams, source))
         return cbs
 
 
@@ -574,8 +574,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
 
-        for cb in self.callbacks:
-            cb.initialize()
+        if not self.batched:
+            for cb in self.callbacks:
+                cb.initialize()
+
         if not self.overlaid:
             self._process_legend()
         self.drawn = True
