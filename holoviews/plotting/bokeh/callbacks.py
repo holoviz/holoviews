@@ -183,7 +183,8 @@ class Callback(object):
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
         handles = dict(self.plot.handles)
-        plots = [self.plot] + (self.plot.subplots.values()[::-1] if self.plot.subplots else [])
+        subplots = list(self.plot.subplots.values())[::-1] if self.plot.subplots else []
+        plots = [self.plot] + subplots
         for plot in plots:
             handles.update(plot.handles)
         # Set callback
