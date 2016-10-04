@@ -104,7 +104,9 @@ class Aggregate(ElementOperation):
     y_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y-axis.""")
 
-    streams = [RangeXY]
+    streams = param.List(default=[RangeXY], doc="""
+        List of streams that are applied if dynamic=True, allowing
+        for dynamic interaction with the plot.""")
 
     @classmethod
     def get_agg_data(cls, obj, category=None):

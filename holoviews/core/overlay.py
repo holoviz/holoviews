@@ -24,10 +24,10 @@ class Overlayable(object):
 
     def __mul__(self, other):
         if type(other).__name__ == 'DynamicMap':
-            from .operation import DynamicFunction
+            from .operation import Dynamic
             def dynamic_mul(element):
                 return self * element
-            return DynamicFunction(other, function=dynamic_mul)
+            return Dynamic(other, callable=dynamic_mul)
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)

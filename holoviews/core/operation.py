@@ -70,22 +70,27 @@ class Operation(param.ParameterizedFunction):
             raise ValueError("Extents across the overlay are inconsistent")
 
 
-class DynamicFunction(Operation):
+class Dynamic(Operation):
     """
-    Dynamically applies an operation the Elements in any HoloViews
-    object.  Will return a DynamicMap wrapping the original map
-    object, which will lazily evaluate when a key is requested.  By
-    default DynamicFunction itself applies a no-op, making the
-    DynamicFunction baseclass useful for converting existing HoloMaps
+    Dynamically applies a callable to the Elements in any HoloViews
+    object. Will return a DynamicMap wrapping the original map object,
+    which will lazily evaluate when a key is requested. By default
+    Dynamic applies a no-op, making it useful for converting HoloMaps
     to a DynamicMap.
+
+    Any supplied kwargs will be passed to the callable and any streams
+    will be instantiated on the returned DynamicMap.
     """
 
-    function = param.Callable(default=lambda x: x, doc="""
-        Function to apply to DynamicMap items dynamically.""")
+    callable = param.Callable(default=lambda x: x, doc="""
+        Function or ElementOperation to apply to DynamicMap items
+        dynamically.""")
 
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the function.""")
 
+    streams = param.List(default=[], doc="""
+        List of streams to attach to the returned DynamicMap""")
 
     def __call__(self, map_obj, **params):
         self.p = param.ParamOverrides(self, params)
@@ -94,16 +99,16 @@ class DynamicFunction(Operation):
             dmap = map_obj.clone(callback=callback, shared_data=False)
         else:
             dmap = self._make_dynamic(map_obj, callback)
-        if isinstance(self.p.function, ElementOperation) and self.p.function.streams:
-            return dmap.clone(streams=[s() for s in self.p.function.streams])
+        if isinstance(self.p.callable, ElementOperation):
+            return dmap.clone(streams=[s() for s in self.p.streams])
         return dmap
 
 
     def _process(self, element):
-        if isinstance(self.p.function, Operation):
-            return self.p.function.process_element(element, **self.p.kwargs)
+        if isinstance(self.p.callable, Operation):
+            return self.p.callable.process_element(element, **self.p.kwargs)
         else:
-            return self.p.function(element, **self.p.kwargs)
+            return self.p.callable(element, **self.p.kwargs)
 
 
     def _dynamic_operation(self, map_obj):
@@ -167,8 +172,6 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
-    streams = []
-
     def _process(self, view, key=None):
         """
         Process a single input element and outputs new single element
@@ -201,7 +204,9 @@ class ElementOperation(Operation):
             processed = GridSpace(grid_data, label=element.label,
                                   kdims=element.kdims)
         elif dynamic:
-            processed = DynamicFunction(element, function=self, kwargs=params)
+            streams = getattr(self, 'streams', [])
+            processed = Dynamic(element, streams=streams,
+                                callable=self, kwargs=params)
         elif isinstance(element, ViewableElement):
             processed = self._process(element)
         elif isinstance(element, DynamicMap):
