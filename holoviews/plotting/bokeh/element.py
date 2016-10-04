@@ -28,7 +28,7 @@ from ...core import (Store, HoloMap, Overlay, DynamicMap,
 from ...core.options import abbreviated_exception
 from ...core import util
 from ...element import RGB
-from ...streams import Stream
+from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot
@@ -660,8 +660,24 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             handles.append(plot.title)
 
         if self.current_frame:
-            if self.framewise or isinstance(self.hmap, DynamicMap):
-                handles += [plot.x_range, plot.y_range]
+            if self.framewise:
+                rangex, rangey = True, True
+            elif isinstance(self.hmap, DynamicMap):
+                rangex, rangey = True, True
+                for stream in self.hmap.streams:
+                    if isinstance(stream, RangeXY):
+                        rangex, rangey = False, False
+                        break
+                    elif isinstance(stream, RangeX):
+                        rangex = False
+                    elif isinstance(stream, RangeY):
+                        rangey = False
+            else:
+                rangex, rangey = False, False
+            if rangex:
+                handles += [plot.x_range]
+            if rangey:
+                handles += [plot.y_range]
         return handles
 
 
