@@ -248,3 +248,53 @@ class Shade(ElementOperation):
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:])
         return RGB(self.uint32_to_uint8(img.data), **params)
+
+
+
+
+class Datashade(ElementOperation):
+
+    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
+                                     default=ds.count())
+
+    cmap = param.ClassSelector(class_=(Iterable, Callable), doc="""
+        Iterable or callable which returns colors as hex colors.
+        Callable type must allow mapping colors between 0 and 1.""")
+
+    height = param.Integer(default=800, doc="""
+       The height of the aggregated image in pixels.""")
+
+    normalization = param.ObjectSelector(default='eq_hist',
+                                         objects=['linear', 'log',
+                                                  'eq_hist', 'cbrt'],
+                                         doc="""
+        The normalization operation applied before colormapping.""")
+
+    streams = param.List(default=[RangeXY], doc="""
+        List of streams that are applied if dynamic=True, allowing
+        for dynamic interaction with the plot.""")
+
+    width = param.Integer(default=600, doc="""
+       The width of the aggregated image in pixels.""")
+
+    x_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max x-value. Auto-ranges
+       if set to None.""")
+
+    y_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max y-value. Auto-ranges
+       if set to None.""")
+
+    x_sampling = param.Number(default=None, doc="""
+        Specifies the smallest allowed sampling interval along the y-axis.""")
+
+    y_sampling = param.Number(default=None, doc="""
+        Specifies the smallest allowed sampling interval along the y-axis.""")
+
+    def _process(self, element, key=None):
+        params = self.p.items()
+        agg_kwargs = {p: v for p, v in params if p in Aggregate.params()}
+        shade_kwargs = {p: v for p, v in params if p in Shade.params()}
+        aggregate = Aggregate.instance(**agg_kwargs).process_element(element)
+        shaded = Shade.instance(**shade_kwargs).process_element(aggregate)
+        return shaded
