@@ -68,19 +68,34 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
 
 
 class Aggregate(ElementOperation):
+    """
+    Aggregate implements 2D binning for any valid HoloViews Element
+    type using datashader. By default it will simply count the number
+    of values in each bin but custom aggregators can be supplied
+    implementing mean, max, min and other reduction operations.
+
+    The bins of the aggregate are defined by the width and height and
+    the x_range and y_range. If x_sampling or y_sampling are supplied
+    the operation will ensure that a bin is no smaller than the
+    minimum sampling distance.
+    """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
                                      default=ds.count())
 
-    height = param.Integer(default=800)
+    height = param.Integer(default=800, doc="""
+       The height of the aggregated image in pixels.""")
 
-    width = param.Integer(default=600)
+    width = param.Integer(default=600, doc="""
+       The width of the aggregated image in pixels.""")
 
-    x_range  = param.NumericTuple(default=None, length=2,
-                                  allow_None=True)
+    x_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max x-value. Auto-ranges
+       if set to None.""")
 
-    y_range  = param.NumericTuple(default=None, length=2,
-                                  allow_None=True)
+    y_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max y-value. Auto-ranges
+       if set to None.""")
 
     x_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y-axis.""")
@@ -90,12 +105,16 @@ class Aggregate(ElementOperation):
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
+        """
+        Reduces any Overlay or NdOverlay of Elements into a single
+        xarray Dataset that can be aggregated.
+        """
         paths = []
         kdims = obj.kdims
         vdims = obj.vdims
         x, y = obj.dimensions(label=True)[:2]
         if isinstance(obj, Path):
-            line = True
+            glyph = 'line'
             for p in obj.data:
                 df = pd.DataFrame(p, columns=obj.dimensions('key', True))
                 if isinstance(obj, Contours) and obj.vdims and obj.level:
@@ -103,7 +122,7 @@ class Aggregate(ElementOperation):
                 paths.append(df)
         elif isinstance(obj, CompositeOverlay):
             for key, el in obj.data.items():
-                x, y, element, line = cls.get_agg_data(el)
+                x, y, element, glyph = cls.get_agg_data(el)
                 df = element.dframe()
                 if isinstance(obj, NdOverlay):
                     df = df.assign(**dict(zip(obj.dimensions('key', True), key)))
@@ -111,31 +130,25 @@ class Aggregate(ElementOperation):
             kdims += element.kdims
             vdims = element.vdims
         elif isinstance(obj, Element):
-            line = isinstance(obj, Curve)
+            glyph = 'line' if isinstance(obj, Curve) else 'points'
             paths.append(obj.dframe())
-        if line:
+        if glyph == 'line':
             empty = paths[0][:1].copy()
             empty.loc[0, :] = (np.NaN,) * empty.shape[1]
             paths = [elem for path in paths for elem in (path, empty)][:-1]
         df = pd.concat(paths).reset_index(drop=True)
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
-        return x, y, Dataset(df, kdims=kdims, vdims=vdims), line
+        return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
     def _process(self, element, key=None):
         agg_fn = self.p.aggregator
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
-        x, y, data, line = self.get_agg_data(element, category)
+        x, y, data, glyph = self.get_agg_data(element, category)
 
-        if self.p.x_range:
-            xstart, xend = self.p.x_range
-        else:
-            xstart, xend = data.range(x)
-        if self.p.y_range:
-            ystart, yend = self.p.y_range
-        else:
-            ystart, yend = data.range(y)
+        xstart, xend = self.p.x_range if self.p.x_range else data.range(x)
+        ystart, yend = self.p.y_range if self.p.y_range else data.range(y)
 
         # Compute highest allowed sampling density
         width, height = self.p.width, self.p.height
@@ -148,31 +161,51 @@ class Aggregate(ElementOperation):
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=(xstart, xend), y_range=(ystart, yend))
+        return getattr(cvs, glyph)(data, x, y, self.p.aggregator)
 
-        if line:
-            return cvs.line(data, x, y, self.p.aggregator)
-        else:
-            return cvs.points(data, x, y, self.p.aggregator)
-            
-
-def uint32_to_uint8(img):
-    return np.flipud(img.view(dtype=np.uint8).reshape(img.shape + (4,)))
 
 
 class Shade(ElementOperation):
+    """
+    Shade applies a normalization function to the data and then
+    applies colormapping to an Image or NdOverlay of Images, returning
+    an RGB Element.
+    """
 
-    cmap = param.ClassSelector(class_=(Iterable, Callable))
+    cmap = param.ClassSelector(class_=(Iterable, Callable), doc="""
+        Iterable or callable which returns colors as hex colors.
+        Callable type must allow mapping colors between 0 and 1.""")
 
-    how = param.ObjectSelector(default='eq_hist', objects=['linear', 'log', 'eq_hist'])
+    normalization = param.ObjectSelector(default='eq_hist',
+                                         objects=['linear', 'log',
+                                                  'eq_hist', 'cbrt'],
+                                         doc="""
+        The normalization operation applied before colormapping.""")
+
 
     @classmethod
     def concatenate(cls, overlay):
+        """
+        Concatenates an NdOverlay of GridImage types into a single 3D
+        xarray Dataset.
+        """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
-        xarr = xr.concat([v.data.T for v in overlay.values()], dim=overlay.kdims[0].name)
-        params = dict(get_param_values(overlay.last), vdims=overlay.last.vdims,
+        xarr = xr.concat([v.data.T for v in overlay.values()],
+                         dim=overlay.kdims[0].name)
+        params = dict(get_param_values(overlay.last),
+                      vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
         return Dataset(xarr.T, **params)
+
+
+    @classmethod
+    def uint32_to_uint8(cls, img):
+        """
+        Cast uint32 RGB image to 4 uint8 channels.
+        """
+        return np.flipud(img.view(dtype=np.uint8).reshape(img.shape + (4,)))
+
 
     def _process(self, element, key=None):
         if isinstance(element, NdOverlay):
@@ -183,7 +216,10 @@ class Shade(ElementOperation):
 
         array = element.data[element.vdims[0].name]
         kdims = element.kdims
-        shade_opts = dict(how=self.p.how)
+
+        # Compute shading options depending on whether
+        # it is a categorical or regular aggregate
+        shade_opts = dict(how=self.p.normalization)
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
@@ -201,8 +237,9 @@ class Shade(ElementOperation):
             shade_opts['cmap'] = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
         else:
             shade_opts['cmap'] = self.p.cmap
+
+
         img = tf.shade(array, **shade_opts)
         params = dict(get_param_values(element), kdims=kdims,
-                      bounds=bounds)
-        params.pop('vdims')
-        return RGB(uint32_to_uint8(img.data), **params)
+                      bounds=bounds, vdims=RGB.vdims[:])
+        return RGB(self.uint32_to_uint8(img.data), **params)
