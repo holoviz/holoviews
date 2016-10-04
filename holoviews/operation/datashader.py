@@ -19,6 +19,7 @@ from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
 from ..core.util import get_param_values
 from ..element import GridImage, Path, Curve, Contours, RGB
+from ..streams import RangeXY
 
 
 @dispatch(Element)
@@ -102,6 +103,8 @@ class Aggregate(ElementOperation):
 
     y_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y-axis.""")
+
+    streams = [RangeXY]
 
     @classmethod
     def get_agg_data(cls, obj, category=None):

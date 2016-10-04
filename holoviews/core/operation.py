@@ -70,28 +70,40 @@ class Operation(param.ParameterizedFunction):
             raise ValueError("Extents across the overlay are inconsistent")
 
 
-class DynamicOperation(Operation):
+class DynamicFunction(Operation):
     """
-    Dynamically applies an operation to the elements of a HoloMap
-    or DynamicMap. Will return a DynamicMap wrapping the original
-    map object, which will lazily evaluate when a key is requested.
-    The _process method should be overridden in subclasses to apply
-    a specific operation, DynamicOperation itself applies a no-op,
-    making the DynamicOperation baseclass useful for converting
-    existing HoloMaps to a DynamicMap.
+    Dynamically applies an operation the Elements in any HoloViews
+    object.  Will return a DynamicMap wrapping the original map
+    object, which will lazily evaluate when a key is requested.  By
+    default DynamicFunction itself applies a no-op, making the
+    DynamicFunction baseclass useful for converting existing HoloMaps
+    to a DynamicMap.
     """
+
+    function = param.Callable(default=lambda x: x, doc="""
+        Function to apply to DynamicMap items dynamically.""")
+
+    kwargs = param.Dict(default={}, doc="""
+        Keyword arguments passed to the function.""")
+
 
     def __call__(self, map_obj, **params):
         self.p = param.ParamOverrides(self, params)
         callback = self._dynamic_operation(map_obj)
         if isinstance(map_obj, DynamicMap):
-            return map_obj.clone(callback=callback, shared_data=False)
+            dmap = map_obj.clone(callback=callback, shared_data=False)
         else:
-            return self._make_dynamic(map_obj, callback)
+            dmap = self._make_dynamic(map_obj, callback)
+        if isinstance(self.p.function, ElementOperation) and self.p.function.streams:
+            return dmap.clone(streams=[s() for s in self.p.function.streams])
+        return dmap
 
 
     def _process(self, element):
-        return element
+        if isinstance(self.p.function, Operation):
+            return self.p.function.process_element(element, **self.p.kwargs)
+        else:
+            return self.p.function(element, **self.p.kwargs)
 
 
     def _dynamic_operation(self, map_obj):
@@ -100,12 +112,14 @@ class DynamicOperation(Operation):
         Wraps an existing HoloMap or DynamicMap.
         """
         if not isinstance(map_obj, DynamicMap):
-            def dynamic_operation(*key):
+            def dynamic_operation(*key, **kwargs):
+                self.p.kwargs.update(kwargs)
                 return self._process(map_obj[key])
             return dynamic_operation
 
-        def dynamic_operation(*key):
+        def dynamic_operation(*key, **kwargs):
             key = key[0] if map_obj.mode == 'open' else key
+            self.p.kwargs.update(kwargs)
             _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
             return self._process(el)
 
@@ -117,31 +131,13 @@ class DynamicOperation(Operation):
         Accepts a HoloMap and a dynamic callback function creating
         an equivalent DynamicMap from the HoloMap.
         """
+        if isinstance(hmap, ViewableElement):
+            return DynamicMap(dynamic_fn, kdims=[])
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
         kdims = [d(values=list(set(values))) for d, values in
                  zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
-
-
-
-class DynamicFunction(DynamicOperation):
-    """
-    Dynamically applies a function to the Elements in a DynamicMap
-    or HoloMap. Must supply a HoloMap or DynamicMap type and will
-    return another DynamicMap type, which will apply the supplied
-    function with the supplied kwargs whenever a value is requested
-    from the map.
-    """
-
-    function = param.Callable(default=lambda x: x, doc="""
-        Function to apply to DynamicMap items dynamically.""")
-
-    kwargs = param.Dict(default={}, doc="""
-        Keyword arguments passed to the function.""")
-
-    def _process(self, element):
-        return self.p.function(element, **self.p.kwargs)
 
 
 
@@ -171,6 +167,7 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
+    streams = []
 
     def _process(self, view, key=None):
         """
@@ -182,7 +179,7 @@ class ElementOperation(Operation):
         raise NotImplementedError
 
 
-    def process_element(self, element, key, **params):
+    def process_element(self, element, key=None, **params):
         """
         The process_element method allows a single element to be
         operated on given an externally supplied key.
@@ -197,9 +194,7 @@ class ElementOperation(Operation):
                     isinstance(element, DynamicMap))
                    or self.p.dynamic is True)
 
-        if isinstance(element, ViewableElement):
-            processed = self._process(element)
-        elif isinstance(element, GridSpace):
+        if isinstance(element, GridSpace):
             # Initialize an empty axis layout
             grid_data = ((pos, self(cell, **params))
                          for pos, cell in element.items())
@@ -207,6 +202,8 @@ class ElementOperation(Operation):
                                   kdims=element.kdims)
         elif dynamic:
             processed = DynamicFunction(element, function=self, kwargs=params)
+        elif isinstance(element, ViewableElement):
+            processed = self._process(element)
         elif isinstance(element, DynamicMap):
             if any((not d.values) for d in element.kdims):
                 raise ValueError('Applying a non-dynamic operation requires '
