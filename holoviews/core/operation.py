@@ -107,7 +107,7 @@ class ElementOperation(Operation):
         raise NotImplementedError
 
 
-    def process_element(self, element, key=None, **params):
+    def process_element(self, element, key, **params):
         """
         The process_element method allows a single element to be
         operated on given an externally supplied key.
