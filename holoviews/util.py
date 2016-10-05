@@ -2,7 +2,7 @@ import param
 
 from .core import DynamicMap, ViewableElement
 from .core.operation import ElementOperation
-
+from .core import util
 
 class Dynamic(param.ParameterizedFunction):
     """
@@ -33,7 +33,13 @@ class Dynamic(param.ParameterizedFunction):
         else:
             dmap = self._make_dynamic(map_obj, callback)
         if isinstance(self.p.operation, ElementOperation):
-            return dmap.clone(streams=[s() for s in self.p.streams])
+            streams = []
+            for s in self.p.streams:
+                stream = s()
+                stream.update(**{k: self.p.operation.p.get(k) for k, v in
+                                 stream.contents.items()})
+                streams.append(stream)
+            return dmap.clone(streams=streams)
         return dmap
 
 
