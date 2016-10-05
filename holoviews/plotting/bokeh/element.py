@@ -4,6 +4,7 @@ from itertools import groupby
 import numpy as np
 import bokeh
 import bokeh.plotting
+from bokeh.core.properties import value
 from bokeh.models import Range, HoverTool, Renderer
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
@@ -373,6 +374,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             return dict(title=title, title_text_color='black', **title_font)
         else:
             title_font = self._fontsize('title', 'text_font_size')
+            title_font['text_font_size'] = value(title_font['text_font_size'])
             return dict(text=title, text_color='black', **title_font)
 
 
@@ -406,7 +408,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
             axis_props['axis_label'] = ''
-            axis_props['major_label_text_font_size'] = '0pt'
+            axis_props['major_label_text_font_size'] = value('0pt')
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
@@ -956,7 +958,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         plot.legend[0].set(**options)
         legend_fontsize = self._fontsize('legend', 'size').get('size',False)
         if legend_fontsize:
-            plot.legend[0].label_text_font_size = legend_fontsize
+            plot.legend[0].label_text_font_size = value(legend_fontsize)
 
         if self.legend_position not in self.legend_specs:
             plot.legend.location = self.legend_position
