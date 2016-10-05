@@ -133,6 +133,8 @@ class Callback(object):
     # Timeout if a comm message is swallowed
     timeout = 20000
 
+    _callbacks = {}
+
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
@@ -162,7 +164,8 @@ class Callback(object):
         if any(v is None for v in msg.values()):
             return
         for stream in self.streams:
-            stream.update(**msg)
+            stream.update(trigger=False, **msg)
+        Stream.trigger(self.streams)
 
 
     def _process_msg(self, msg):
@@ -188,7 +191,16 @@ class Callback(object):
         for plot in plots:
             handles.update(plot.handles)
         # Set callback
-        handle.callback = CustomJS(args=handles, code=code)
+        if id(handle.callback) in self._callbacks:
+            cb = self._callbacks[id(handle.callback)]
+            if isinstance(cb, type(self)):
+                cb.streams += self.streams
+            else:
+                handle.callback.code += code
+        else:
+            js_callback = CustomJS(args=handles, code=code)
+            self._callbacks[id(js_callback)] = self
+            handle.callback = js_callback
 
 
 

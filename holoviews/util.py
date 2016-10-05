@@ -1,10 +1,12 @@
+import inspect
+
 import param
 
 from .core import DynamicMap, ViewableElement
 from .core.operation import ElementOperation
 from .core.util import Aliases
 from .core import util
-
+from .streams import Stream
 
 class Dynamic(param.ParameterizedFunction):
     """
@@ -36,8 +38,12 @@ class Dynamic(param.ParameterizedFunction):
             dmap = self._make_dynamic(map_obj, callback)
         if isinstance(self.p.operation, ElementOperation):
             streams = []
-            for s in self.p.streams:
-                stream = s()
+            for stream in self.p.streams:
+                if inspect.isclass(stream) and issubclass(stream, Stream):
+                    stream = stream()
+                elif not isinstance(stream, Stream):
+                    raise ValueError('Stream must only contain Stream '
+                                     'classes or instances')
                 stream.update(**{k: self.p.operation.p.get(k) for k, v in
                                  stream.contents.items()})
                 streams.append(stream)

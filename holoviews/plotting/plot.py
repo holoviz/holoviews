@@ -486,7 +486,9 @@ class DimensionedPlot(Plot):
         """
         traverse_setter(self, '_force', True)
         key = self.current_key if self.current_key else self.keys[0]
-        stream_params = stream_parameters(self.streams)
+        dim_streams = [stream for stream in self.streams
+                       if any(c in self.dimensions for c in stream.contents)]
+        stream_params = stream_parameters(dim_streams)
         key = tuple(None if d in stream_params else k
                     for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
