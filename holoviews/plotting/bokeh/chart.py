@@ -231,6 +231,13 @@ class HistogramPlot(ElementPlot):
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
+    def get_extents(self, element, ranges):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
+        y0 = np.nanmin([0, y0])
+        y1 = np.nanmax([0, y1])
+        return (x0, y0, x1, y1)
+
+
 
 class SideHistogramPlot(HistogramPlot, ColorbarPlot):
 
