@@ -78,6 +78,12 @@ class ElementOperation(Operation):
     input, a processed holomap is returned as output where the
     individual elements have been transformed accordingly. An
     ElementOperation may turn overlays in new elements or vice versa.
+
+    An ElementOperation can be set to be dynamic, which will return a
+    DynamicMap with a callback that will apply the operation
+    dynamically. An ElementOperation may also supply a list of Stream
+    classes on the streams attribute, which can allow dynamic control
+    over the parameters on the operation.
     """
 
     dynamic = param.ObjectSelector(default='default',
