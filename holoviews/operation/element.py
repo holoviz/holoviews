@@ -545,10 +545,10 @@ class histogram(ElementOperation):
 
 
 
-class sample(ElementOperation):
+class decimate(ElementOperation):
     """
-    Samples a specified number of random rows from any column based
-    Element if the current view defined by the x_range and y_range
+    Decimates any column based Element to a specified number of random
+    rows if the current view defined by the x_range and y_range
     contains more than max_samples. By default the operation returns a
     DynamicMap with a RangeXY stream allowing dynamic downsampling.
     """
@@ -556,7 +556,7 @@ class sample(ElementOperation):
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
 
-    max_samples = param.Integer(default=800, doc="""
+    max_samples = param.Integer(default=1000, doc="""
         Maximum number of samples to display at the same time.""")
 
     random_seed = param.Integer(default=42, doc="""
