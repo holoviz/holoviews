@@ -1,5 +1,8 @@
 import json
 import uuid
+import sys
+import os
+import traceback
 
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
@@ -70,10 +73,16 @@ class Comm(object):
         if it has been defined.
         """
         try:
+            msg = self.decode(msg)
             if self._on_msg:
-                self._on_msg(self.decode(msg))
+                self._on_msg(msg)
         except Exception as e:
-            msg = {'msg_type': "Error", 'traceback': str(e)}
+            frame =traceback.extract_tb(sys.exc_info()[2])[-2]
+            fname,lineno,fn,text = frame
+            error_kwargs = dict(type=type(e).__name__, fn=fn, fname=fname,
+                                line=lineno, error=str(e))
+            error = '{fname} {fn} L{line}\n\t{type}: {error}'.format(**error_kwargs)
+            msg = {'msg_type': "Error", 'traceback': error}
         else:
             msg = {'msg_type': "Ready"}
         self.comm.send(json.dumps(msg))
