@@ -1,6 +1,6 @@
 import numpy as np
 from holoviews import Dimension, DynamicMap, Image, HoloMap
-from holoviews.core.operation import DynamicFunction
+from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
 frequencies =  np.linspace(0.5,2.0,5)
@@ -82,19 +82,19 @@ class DynamicTestSampledBounded(ComparisonTestCase):
 
 class DynamicTestOperation(ComparisonTestCase):
 
-    def test_dynamic_function(self):
+    def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
-        dmap_with_fn = DynamicFunction(dmap, function=lambda x: x.clone(x.data*2))
+        dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
 
-    def test_dynamic_function_with_kwargs(self):
+    def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
-        dmap_with_fn = DynamicFunction(dmap, function=fn, kwargs=dict(multiplier=3))
+        dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*3))
 
 
