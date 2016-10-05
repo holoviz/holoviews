@@ -17,7 +17,7 @@ from datashape import discover as dsdiscover
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
 from ..core.data import ArrayInterface, PandasInterface
-from ..core.util import get_param_values
+from ..core.util import get_param_values, basestring
 from ..element import GridImage, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
@@ -87,6 +87,9 @@ class Aggregate(ElementOperation):
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
                                      default=ds.count())
+
+    dynamic = param.Boolean(default=True, doc="""
+       Enables dynamic processing by default.""")
 
     height = param.Integer(default=800, doc="""
        The height of the aggregated image in pixels.""")
@@ -191,11 +194,13 @@ class Shade(ElementOperation):
         Iterable or callable which returns colors as hex colors.
         Callable type must allow mapping colors between 0 and 1.""")
 
-    normalization = param.ObjectSelector(default='eq_hist',
-                                         objects=['linear', 'log',
-                                                  'eq_hist', 'cbrt'],
-                                         doc="""
-        The normalization operation applied before colormapping.""")
+    normalization = param.ClassSelector(default='eq_hist',
+                                        class_=(basestring, Callable),
+                                        doc="""
+        The normalization operation applied before colormapping.
+        Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
+        and any valid transfer function that acces data, mask, nbins
+        arguments.""")
 
     @classmethod
     def concatenate(cls, overlay):
