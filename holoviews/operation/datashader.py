@@ -161,10 +161,10 @@ class Aggregate(ElementOperation):
 
         # Compute highest allowed sampling density
         width, height = self.p.width, self.p.height
-        if self.x_sampling:
+        if self.p.x_sampling:
             x_range = xend - xstart
             width = int(min([(x_range/self.p.x_sampling), width]))
-        if self.y_sampling:
+        if self.p.y_sampling:
             y_range = yend - ystart
             height = int(min([(y_range/self.p.y_sampling), height]))
 
