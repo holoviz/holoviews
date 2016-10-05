@@ -74,15 +74,20 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
 class Aggregate(ElementOperation):
     """
     Aggregate implements 2D binning for any valid HoloViews Element
-    type using datashader. By default it will simply count the number
-    of values in each bin but other aggregators can be supplied
-    implementing mean, max, min and other reduction operations.
+    type using datashader. I.e., this operation turns a HoloViews
+    Element or overlay of Elements into an hv.Image or an overlay of
+    hv.Images by rasterizing it, which provides a fixed-sized
+    representation independent of the original dataset size.
+
+    By default it will simply count the number of values in each bin
+    but other aggregators can be supplied implementing mean, max, min
+    and other reduction operations.
 
     The bins of the aggregate are defined by the width and height and
     the x_range and y_range. If x_sampling or y_sampling are supplied
-    the operation will ensure that a bin is no smaller than the
-    minimum sampling distance by reducing the width and height when
-    the zoomed in beyond the minimum sampling distance.
+    the operation will ensure that a bin is no smaller than theminimum
+    sampling distance by reducing the width and height when the zoomed
+    in beyond the minimum sampling distance.
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
@@ -199,7 +204,7 @@ class Shade(ElementOperation):
                                         doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
-        and any valid transfer function that has data, mask, nbins
+        and any valid transfer function that accepts data, mask, nbins
         arguments.""")
 
     @classmethod
