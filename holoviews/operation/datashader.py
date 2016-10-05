@@ -176,9 +176,15 @@ class Aggregate(ElementOperation):
 
 class Shade(ElementOperation):
     """
-    Shade applies a normalization function to the data and then
-    applies colormapping to an Image or NdOverlay of Images, returning
-    an RGB Element.
+    Shade applies a normalization function followed by colormapping to
+    an Image or NdOverlay of Images, returning an RGB Element.
+    The data must be in the form of a 2D or 3D DataArray, but NdOverlays
+    of 2D Images will be automatically converted to a 3D array.
+
+    In the 2D case data is normalized and colormapped, while a 3D
+    array representing categorical aggregates will be supplied a color
+    key for each category. The colormap (cmap) may be supplied as an
+    Iterable or a Callable.
     """
 
     cmap = param.ClassSelector(class_=(Iterable, Callable), doc="""
