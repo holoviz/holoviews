@@ -184,7 +184,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         callbacks = {(registry[type(stream)], stream) for stream in streams
                      if type(stream) in registry and streams}
         cbs = []
-        for cb, group in groupby(sorted(callbacks), lambda x: x[0]):
+        sorted_cbs = sorted(callbacks, key=lambda x: id(x[0]))
+        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
             cb_streams = [s for _, s in group]
             cbs.append(cb(self, cb_streams, source))
         return cbs
@@ -978,7 +979,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             plot.add_layout(plot.legend[0], leg_opts['pos'])
 
 
-    def _init_tools(self, element):
+    def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
