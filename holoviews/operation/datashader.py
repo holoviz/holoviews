@@ -199,7 +199,7 @@ class Shade(ElementOperation):
                                         doc="""
         The normalization operation applied before colormapping.
         Valid options include 'linear', 'log', 'eq_hist', 'cbrt',
-        and any valid transfer function that acces data, mask, nbins
+        and any valid transfer function that has data, mask, nbins
         arguments.""")
 
     @classmethod
