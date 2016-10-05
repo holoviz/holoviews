@@ -10,10 +10,17 @@ from param import _is_number
 
 from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator)
-from ..core.util import find_minmax, group_sanitizer, label_sanitizer
+from ..core.data import ArrayInterface, DictInterface
+from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
+from ..streams import RangeXY
+
+column_interfaces = [ArrayInterface, DictInterface]
+if pd:
+    from ..core.data import PandasInterface
+    column_interfaces.append(PandasInterface)
 
 
 def identity(x,k): return x
@@ -536,6 +543,66 @@ class histogram(ElementOperation):
 
         return (view << hist_view) if self.p.adjoin else hist_view
 
+
+
+class downsample_columns(ElementOperation):
+    """
+    Downsamples any column based Element by sampling a specified
+    number of random rows from the data if the current view defined by
+    the x_range and y_range contains more than max_samples. By default
+    the operation returns a DynamicMap with a RangeXY stream allowing
+    dynamic downsampling.
+    """
+
+    dynamic = param.Boolean(default=True, doc="""
+       Enables dynamic processing by default.""")
+
+    max_samples = param.Integer(default=800, doc="""
+        Maximum number of samples to display at the same time.""")
+
+    random_seed = param.Integer(default=42, doc="""
+        Seed used to initialize randomization.""")
+
+    streams = param.List(default=[RangeXY], doc="""
+        List of streams that are applied if dynamic=True, allowing
+        for dynamic interaction with the plot.""")
+
+    x_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max x-value. Auto-ranges
+       if set to None.""")
+
+    y_range  = param.NumericTuple(default=None, length=2, doc="""
+       The x_range as a tuple of min and max y-value. Auto-ranges
+       if set to None.""")
+
+    def _process(self, element, key=None):
+        if not isinstance(element, Dataset):
+            raise ValueError("Cannot downsample non-Dataset types.")
+        if element.interface not in column_interfaces:
+            element = plot.current_frame.clone(datatype=['dataframe', 'dictionary'])
+
+        xstart, xend = self.p.x_range if self.p.x_range else element.range(0)
+        ystart, yend = self.p.y_range if self.p.y_range else element.range(1)
+
+        # Slice element to current ranges
+        xdim, ydim = element.dimensions(label=True)[0:2]
+        sliced = element.select(**{xdim: (xstart, xend),
+                                   ydim: (ystart, yend)})
+
+        if len(sliced) > self.p.max_samples:
+            prng = np.random.RandomState(self.p.random_seed)
+            length = len(sliced)
+            if element.interface is PandasInterface:
+                data = sliced.data.sample(self.p.max_samples,
+                                          random_state=prng)
+            else:
+                inds = prng.choice(length, self.p.max_samples, False)
+                if isinstance(element.interface, DictInterface):
+                    data = {k: v[inds] for k, v in sliced.data.items()}
+                else:
+                    data = sliced.data[inds, :]
+            sliced = element.clone(data)
+        return sliced
 
 
 #==================#
