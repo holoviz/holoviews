@@ -53,7 +53,7 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 		}
 		this.timed = (Date.now() - this.time) * 1.1;
 		if (msg.msg_type == "execute_result") {
-			if (msg.content.data['text/plain'] === "'Complete'") {
+			if (msg.content.data['text/plain'].includes('Complete')) {
 				this.wait = false;
 				if (this.queue.length > 0) {
 					this.time = Date.now();
