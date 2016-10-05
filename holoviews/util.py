@@ -19,7 +19,7 @@ class Dynamic(param.ParameterizedFunction):
     """
 
     operation = param.Callable(default=lambda x: x, doc="""
-        Callable to apply to DynamicMap items dynamically.""")
+        Operation or user-defined callable to apply dynamically""")
 
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the function.""")
