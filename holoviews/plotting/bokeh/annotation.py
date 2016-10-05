@@ -44,6 +44,8 @@ class LineAnnotationPlot(ElementPlot):
 
     _update_handles = ['glyph']
 
+    _plot_methods = dict(single='Span')
+
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = {}, {}
         mapping['dimension'] = 'width' if isinstance(element, HLine) else 'height'

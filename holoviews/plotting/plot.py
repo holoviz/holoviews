@@ -559,8 +559,8 @@ class GenericElementPlot(DimensionedPlot):
             self.hmap = element
 
         plot_element = self.hmap.last
-        if self.batched:
-            plot_element = plot_element.last
+        if self.batched and not isinstance(self, GenericOverlayPlot):
+            plot_element = [el for el in plot_element if len(el) > 0][-1]
 
         top_level = keys is None
         if top_level:
@@ -851,7 +851,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
             if issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
-            elif self.batched:
+            elif self.batched and 'batched' in plottype._plot_methods:
                 opts['batched'] = self.batched
             if len(ordering) > self.legend_limit:
                 opts['show_legend'] = False

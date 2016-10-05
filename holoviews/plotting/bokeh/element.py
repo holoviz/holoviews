@@ -26,7 +26,7 @@ import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
                      CompositeOverlay, Element)
-from ...core.options import abbreviated_exception
+from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
@@ -539,7 +539,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        element = self.hmap.last
+        if self.batched:
+            element = [el for el in self.hmap.data.values() if len(el)][-1]
+        else:
+            element = self.hmap.last
         key = self.keys[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.current_ranges = ranges
@@ -1010,7 +1013,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
-        element = self._get_frame(key)
+        nonempty = [el for el in self.hmap.data.values() if len(el)]
+        if not nonempty:
+            raise SkipRendering('All Overlays empty, cannot initialize plot.')
+        element = nonempty[-1]
         ranges = self.compute_ranges(self.hmap, key, ranges)
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
