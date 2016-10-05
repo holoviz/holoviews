@@ -964,14 +964,23 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if self.legend_position not in self.legend_specs:
             plot.legend.location = self.legend_position
         plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
-        legends = plot.legend[0].legends
         new_legends = []
-        for label, l in legends:
-            if label in legend_labels:
-               continue
-            legend_labels.append(label)
-            new_legends.append((label, l))
-        plot.legend[0].legends[:] = new_legends
+        if bokeh_version > '0.12.2':
+            legends = plot.legend[0].items
+            for item in legends:
+                if item.label in legend_labels:
+                    continue
+                legend_labels.append(item.label)
+                new_legends.append(item)
+            plot.legend[0].items[:] = new_legends
+        else:
+            legends = plot.legend[0].legends
+            for label, l in legends:
+                if label in legend_labels:
+                    continue
+                legend_labels.append(label)
+                new_legends.append((label, l))
+            plot.legend[0].legends[:] = new_legends
         if self.legend_position in self.legend_specs:
             legend = plot.legend[0]
             plot.legend[:] = []
