@@ -268,6 +268,9 @@ class Selection1DCallback(Callback):
 
     handles = ['source']
 
+    def _process_msg(self, msg):
+        return {'index': [int(v) for v in msg['index']]}
+
 
 callbacks = Stream._callbacks['bokeh']
 
