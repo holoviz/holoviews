@@ -82,7 +82,7 @@ class ElementOperation(Operation):
     An ElementOperation can be set to be dynamic, which will return a
     DynamicMap with a callback that will apply the operation
     dynamically. An ElementOperation may also supply a list of Stream
-    classes on the streams attribute, which can allow dynamic control
+    classes on a streams parameter, which can allow dynamic control
     over the parameters on the operation.
     """
 
