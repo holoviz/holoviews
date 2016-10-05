@@ -2,7 +2,9 @@ import param
 
 from .core import DynamicMap, ViewableElement
 from .core.operation import ElementOperation
+from .core.util import Aliases
 from .core import util
+
 
 class Dynamic(param.ParameterizedFunction):
     """
