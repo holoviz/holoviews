@@ -556,7 +556,7 @@ class decimate(ElementOperation):
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
 
-    max_samples = param.Integer(default=1000, doc="""
+    max_samples = param.Integer(default=5000, doc="""
         Maximum number of samples to display at the same time.""")
 
     random_seed = param.Integer(default=42, doc="""
