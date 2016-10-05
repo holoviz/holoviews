@@ -196,8 +196,11 @@ class NdWidget(param.Parameterized):
 
 
     def update(self, key):
-        self.plot.update(key)
-        self.plot.push()
+        if not self.plot.dimensions:
+            self.plot.refresh()
+        else:
+            self.plot.update(key)
+            self.plot.push()
         return 'Complete'
 
 
