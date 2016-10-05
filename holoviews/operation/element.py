@@ -545,13 +545,12 @@ class histogram(ElementOperation):
 
 
 
-class downsample_columns(ElementOperation):
+class sample(ElementOperation):
     """
-    Downsamples any column based Element by sampling a specified
-    number of random rows from the data if the current view defined by
-    the x_range and y_range contains more than max_samples. By default
-    the operation returns a DynamicMap with a RangeXY stream allowing
-    dynamic downsampling.
+    Samples a specified number of random rows from any column based
+    Element if the current view defined by the x_range and y_range
+    contains more than max_samples. By default the operation returns a
+    DynamicMap with a RangeXY stream allowing dynamic downsampling.
     """
 
     dynamic = param.Boolean(default=True, doc="""
