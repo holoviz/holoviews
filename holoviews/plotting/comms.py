@@ -3,7 +3,10 @@ import uuid
 import sys
 import os
 import traceback
-from io import BytesIO
+try:
+    from StringIO import StringIO
+except:
+    from io import StringIO
 
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
@@ -22,7 +25,7 @@ class StandardOutput(list):
 
     def __enter__(self):
         self._stdout = sys.stdout
-        sys.stdout = self._stringio = BytesIO()
+        sys.stdout = self._stringio = StringIO()
         return self
 
     def __exit__(self, *args):
