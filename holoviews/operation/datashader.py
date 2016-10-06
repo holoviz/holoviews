@@ -96,10 +96,10 @@ class aggregate(ElementOperation):
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
 
-    height = param.Integer(default=800, doc="""
+    height = param.Integer(default=400, doc="""
        The height of the aggregated image in pixels.""")
 
-    width = param.Integer(default=600, doc="""
+    width = param.Integer(default=400, doc="""
        The width of the aggregated image in pixels.""")
 
     x_range  = param.NumericTuple(default=None, length=2, doc="""
