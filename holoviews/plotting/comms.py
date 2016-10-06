@@ -14,10 +14,10 @@ class StandardOutput(list):
     Context manager to capture standard output for any code it
     is wrapping and make it available as a list, e.g.:
 
-    >>> with StandardOutput as stdout:
-    ...   print("This gets captured")
-    ... print(stdout[0])
-    'This gets captured'
+    >>> with StandardOutput() as stdout:
+    ...   print('This gets captured')
+    >>> print(stdout[0])
+    This gets captured
     """
 
     def __enter__(self):
