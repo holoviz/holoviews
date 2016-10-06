@@ -79,6 +79,9 @@ class Callback(object):
           var comm = HoloViewsWidget.comms["{comms_target}"];
           var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
           if (msg.msg_type == "Ready") {{
+            if (msg.content) {{
+              console.log("Python callback returned following output:", msg.content);
+            }}
             if (comm_state.event) {{
               comm.send(comm_state.event);
             }} else {{
