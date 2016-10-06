@@ -239,7 +239,7 @@ class HistogramPlot(ElementPlot):
 
 
 
-class SideHistogramPlot(HistogramPlot, ColorbarPlot):
+class SideHistogramPlot(ColorbarPlot, HistogramPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
