@@ -3,7 +3,7 @@ import uuid
 import sys
 import os
 import traceback
-from cStringIO import StringIO
+from io import BytesIO
 
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
@@ -12,7 +12,7 @@ from IPython import get_ipython
 class Capturing(list):
     def __enter__(self):
         self._stdout = sys.stdout
-        sys.stdout = self._stringio = StringIO()
+        sys.stdout = self._stringio = BytesIO()
         return self
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
@@ -84,7 +84,7 @@ class Comm(object):
         if it has been defined.
         """
         try:
-            stdout = ''
+            stdout = []
             msg = self.decode(msg)
             if self._on_msg:
                 with Capturing() as stdout:
@@ -98,8 +98,9 @@ class Comm(object):
             error = '{fname} {fn} L{line}\n\t{type}: {error}'.format(**error_kwargs)
             msg = {'msg_type': "Error", 'traceback': '\n'.join([stdout, error])}
         else:
-            stdout = '\n\t'+'\n\t'.join(stdout)
-            msg = {'msg_type': "Ready", 'content': stdout}
+            if stdout:
+                stdout = '\n\t'+'\n\t'.join(stdout)
+            msg = {'msg_type': "Ready", 'content': stdout if stdout else ''}
         self.comm.send(json.dumps(msg))
 
 
