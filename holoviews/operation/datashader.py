@@ -71,9 +71,9 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
                          kdims=[dataset.get_dimension(column)])
 
 
-class Aggregate(ElementOperation):
+class aggregate(ElementOperation):
     """
-    Aggregate implements 2D binning for any valid HoloViews Element
+    aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
     Element or overlay of Elements into an hv.Image or an overlay of
     hv.Images by rasterizing it, which provides a fixed-sized
@@ -182,9 +182,9 @@ class Aggregate(ElementOperation):
 
 
 
-class Shade(ElementOperation):
+class shade(ElementOperation):
     """
-    Shade applies a normalization function followed by colormapping to
+    shade applies a normalization function followed by colormapping to
     an Image or NdOverlay of Images, returning an RGB Element.
     The data must be in the form of a 2D or 3D DataArray, but NdOverlays
     of 2D Images will be automatically converted to a 3D array.
@@ -231,6 +231,16 @@ class Shade(ElementOperation):
         return np.flipud(img.view(dtype=np.uint8).reshape(img.shape + (4,)))
 
 
+    @classmethod
+    def rgb2hex(cls, rgb):
+        """
+        Convert RGB(A) tuple to hex.
+        """
+        if len(rgb) > 3:
+            rgb = rgb[:-1]
+        return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
     def _process(self, element, key=None):
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
@@ -253,12 +263,13 @@ class Shade(ElementOperation):
                 shade_opts['color_key'] = [c for i, c in
                                            zip(range(categories), self.p.cmap)]
             else:
-                shade_opts['color_key'] = [self.p.cmap(s) for s in
-                                           np.linspace(0, 1, categories)]
+                colors = [self.p.cmap(s) for s in np.linspace(0, 1, categories)]
+                shade_opts['color_key'] = map(self.rgb2hex, colors)
         elif not self.p.cmap:
             pass
         elif isinstance(self.p.cmap, Callable):
-            shade_opts['cmap'] = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
+            colors = [self.p.cmap(s) for s in np.linspace(0, 1, 256)]
+            shade_opts['cmap'] = map(self.rgb2hex, colors)
         else:
             shade_opts['cmap'] = self.p.cmap
 
@@ -270,16 +281,16 @@ class Shade(ElementOperation):
 
 
 
-class Datashade(Aggregate, Shade):
+class datashade(aggregate, shade):
     """
-    Applies the Aggregate and Shade operations, aggregating all
+    Applies the aggregate and shade operations, aggregating all
     elements in the supplied object and then applying normalization
     and colormapping the aggregated data returning RGB elements.
 
-    See Aggregate and Shade operations for more details.
+    See aggregate and shade operations for more details.
     """
 
     def _process(self, element, key=None):
-        aggregate = Aggregate._process(self, element, key)
-        shaded = Shade._process(self, aggregate, key)
+        aggregate = aggregate._process(self, element, key)
+        shaded = shade._process(self, aggregate, key)
         return shaded
