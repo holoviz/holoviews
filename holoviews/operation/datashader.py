@@ -54,20 +54,20 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
     vdims = [dataset.get_dimension(column)(name) if column
              else Dimension('Count')]
 
-    aggregate = pandas_pipeline(dataset.dframe(), schema, canvas,
+    agg = pandas_pipeline(dataset.dframe(), schema, canvas,
                                 glyph, summary)
-    aggregate = aggregate.rename({'x_axis': kdims[0].name,
-                                  'y_axis': kdims[1].name})
+    agg = agg.rename({'x_axis': kdims[0].name,
+                      'y_axis': kdims[1].name})
 
     params = dict(get_param_values(dataset), kdims=kdims,
                   datatype=['xarray'], vdims=vdims)
 
-    if aggregate.ndim == 2:
-        return GridImage(aggregate, **params)
+    if agg.ndim == 2:
+        return GridImage(agg, **params)
     else:
-        return NdOverlay({c: GridImage(aggregate.sel(**{column: c}),
+        return NdOverlay({c: GridImage(agg.sel(**{column: c}),
                                        **params)
-                          for c in aggregate.coords[column].data},
+                          for c in agg.coords[column].data},
                          kdims=[dataset.get_dimension(column)])
 
 
@@ -291,6 +291,6 @@ class datashade(aggregate, shade):
     """
 
     def _process(self, element, key=None):
-        aggregate = aggregate._process(self, element, key)
-        shaded = shade._process(self, aggregate, key)
+        agg = aggregate._process(self, element, key)
+        shaded = shade._process(self, agg, key)
         return shaded
