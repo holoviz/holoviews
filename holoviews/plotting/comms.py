@@ -3,9 +3,20 @@ import uuid
 import sys
 import os
 import traceback
+from cStringIO import StringIO
 
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
+
+
+class Capturing(list):
+    def __enter__(self):
+        self._stdout = sys.stdout
+        sys.stdout = self._stringio = StringIO()
+        return self
+    def __exit__(self, *args):
+        self.extend(self._stringio.getvalue().splitlines())
+        sys.stdout = self._stdout
 
 
 class Comm(object):
@@ -73,18 +84,22 @@ class Comm(object):
         if it has been defined.
         """
         try:
+            stdout = ''
             msg = self.decode(msg)
             if self._on_msg:
-                self._on_msg(msg)
+                with Capturing() as stdout:
+                    self._on_msg(msg)
         except Exception as e:
             frame =traceback.extract_tb(sys.exc_info()[2])[-2]
             fname,lineno,fn,text = frame
             error_kwargs = dict(type=type(e).__name__, fn=fn, fname=fname,
                                 line=lineno, error=str(e))
+            stdout = '\n\t'+'\n\t'.join(stdout)
             error = '{fname} {fn} L{line}\n\t{type}: {error}'.format(**error_kwargs)
-            msg = {'msg_type': "Error", 'traceback': error}
+            msg = {'msg_type': "Error", 'traceback': '\n'.join([stdout, error])}
         else:
-            msg = {'msg_type': "Ready"}
+            stdout = '\n\t'+'\n\t'.join(stdout)
+            msg = {'msg_type': "Ready", 'content': stdout}
         self.comm.send(json.dumps(msg))
 
 
