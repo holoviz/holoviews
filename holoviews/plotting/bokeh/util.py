@@ -173,7 +173,8 @@ def replace_models(obj):
     elif isinstance(obj, HasProps):
         return obj.properties_with_values(include_defaults=False)
     elif isinstance(obj, dict):
-        return {k: replace_models(v) for k, v in obj.items()}
+        return {k: v if k in IGNORED_ATTRIBUTES else replace_models(v)
+                   for k, v in obj.items()}
     elif isinstance(obj, list):
         return [replace_models(v) for v in obj]
     else:
@@ -241,7 +242,7 @@ def compute_static_patch(document, models):
                                                          value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [delete_refs(e, IGNORED_MODELS)
+    events = [delete_refs(e, IGNORED_MODELS, ignored_attributes=IGNORED_ATTRIBUTES)
               for _, e in sorted(events, key=lambda x: x[0])]
     events = [e for e in events if all(i in requested_updates for i in get_ids(e))
               if 'new' in e]
@@ -252,7 +253,7 @@ def compute_static_patch(document, models):
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, models=[], attributes=[]):
+def delete_refs(obj, models=[], dropped_attributes=[], ignored_attributes=[]):
     """
     Recursively traverses the object and looks for models and model
     attributes to be deleted.
@@ -264,14 +265,18 @@ def delete_refs(obj, models=[], attributes=[]):
         for k, v in list(obj.items()):
             # Drop unneccessary attributes, i.e. those that do not
             # contain references to other objects.
-            if k in attributes or (k == 'attributes' and not get_ids(v)):
+            if k in dropped_attributes or (k == 'attributes' and not get_ids(v)):
                 continue
-            ref = delete_refs(v, models, attributes)
+            if k in ignored_attributes:
+                ref = v
+            else:
+                ref = delete_refs(v, models, dropped_attributes, ignored_attributes)
             if ref is not None:
                 new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, models, attributes) for v in obj]
+        objs = [delete_refs(v, models, dropped_attributes, ignored_attributes)
+                for v in obj]
         return [o for o in objs if o is not None]
     else:
         return obj
