@@ -98,6 +98,8 @@ class Comm(object):
             stdout = []
             msg = self.decode(msg)
             if self._on_msg:
+                # Comm swallows standard output so we need to capture
+                # it and then send it to the frontend
                 with StandardOutput() as stdout:
                     self._on_msg(msg)
         except Exception as e:
