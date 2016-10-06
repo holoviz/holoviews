@@ -9,11 +9,22 @@ from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
 
 
-class Capturing(list):
+class StandardOutput(list):
+    """
+    Context manager to capture standard output for any code it
+    is wrapping and make it available as a list, e.g.:
+
+    >>> with StandardOutput as stdout:
+    ...   print("This gets captured")
+    ... print(stdout[0])
+    'This gets captured'
+    """
+
     def __enter__(self):
         self._stdout = sys.stdout
         sys.stdout = self._stringio = BytesIO()
         return self
+
     def __exit__(self, *args):
         self.extend(self._stringio.getvalue().splitlines())
         sys.stdout = self._stdout
@@ -87,20 +98,21 @@ class Comm(object):
             stdout = []
             msg = self.decode(msg)
             if self._on_msg:
-                with Capturing() as stdout:
+                with StandardOutput() as stdout:
                     self._on_msg(msg)
         except Exception as e:
             frame =traceback.extract_tb(sys.exc_info()[2])[-2]
             fname,lineno,fn,text = frame
             error_kwargs = dict(type=type(e).__name__, fn=fn, fname=fname,
                                 line=lineno, error=str(e))
-            stdout = '\n\t'+'\n\t'.join(stdout)
             error = '{fname} {fn} L{line}\n\t{type}: {error}'.format(**error_kwargs)
-            msg = {'msg_type': "Error", 'traceback': '\n'.join([stdout, error])}
-        else:
             if stdout:
                 stdout = '\n\t'+'\n\t'.join(stdout)
-            msg = {'msg_type': "Ready", 'content': stdout if stdout else ''}
+                error = '\n'.join([stdout, error])
+            msg = {'msg_type': "Error", 'traceback': error}
+        else:
+            stdout = '\n\t'+'\n\t'.join(stdout) if stdout else ''
+            msg = {'msg_type': "Ready", 'content': stdout}
         self.comm.send(json.dumps(msg))
 
 
