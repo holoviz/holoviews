@@ -85,7 +85,9 @@ class Callback(object):
           }}
           comm_state.timeout = Date.now();
           comm_state.event = undefined;
-          if (msg.msg_type == "Error") {{
+          if ((msg.msg_type == "Ready") && msg.content) {{
+            console.log("Python callback returned following output:", msg.content);
+          }} else if (msg.msg_type == "Error") {{
             console.log("Python failed with the following traceback:", msg['traceback'])
           }}
         }}
