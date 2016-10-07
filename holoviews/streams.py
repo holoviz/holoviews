@@ -254,7 +254,7 @@ class Bounds(Stream):
     tuple of the left, bottom, right and top coordinates.
     """
 
-    bounds = param.NumericTuple(default=(0, 0, 1, 1), constant=True,
+    bounds = param.NumericTuple(default=None, constant=True, allow_None=True,
                                 doc="""
         Bounds defined as (left, bottom, top, right) tuple.""")
 
