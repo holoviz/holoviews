@@ -78,18 +78,14 @@ class Callback(object):
           msg = JSON.parse(msg.content.data);
           var comm = HoloViewsWidget.comms["{comms_target}"];
           var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
-          if (msg.msg_type == "Ready") {{
-            if (msg.content) {{
-              console.log("Python callback returned following output:", msg.content);
-            }}
-            if (comm_state.event) {{
-              comm.send(comm_state.event);
-            }} else {{
-              comm_state.blocked = false;
-            }}
-            comm_state.timeout = Date.now();
-            comm_state.event = undefined;
-          }} else if (msg.msg_type == "Error") {{
+          if (comm_state.event) {{
+            comm.send(comm_state.event);
+          }} else {{
+            comm_state.blocked = false;
+          }}
+          comm_state.timeout = Date.now();
+          comm_state.event = undefined;
+          if (msg.msg_type == "Error") {{
             console.log("Python failed with the following traceback:", msg['traceback'])
           }}
         }}
