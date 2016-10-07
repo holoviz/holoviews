@@ -136,7 +136,7 @@ class ElementOperation(Operation):
                                   kdims=element.kdims)
         elif dynamic:
             from ..util import Dynamic
-            streams = getattr(self, 'streams', [])
+            streams = getattr(self.p, 'streams', [])
             processed = Dynamic(element, streams=streams,
                                 operation=self, kwargs=params)
         elif isinstance(element, ViewableElement):

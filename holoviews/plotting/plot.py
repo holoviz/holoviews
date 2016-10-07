@@ -943,7 +943,7 @@ class GenericCompositePlot(DimensionedPlot):
         if not isinstance(key, tuple): key = (key,)
         nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
                                   list(x.data.keys())[min([key[0], len(x)-1])])
-        if key == self.current_key:
+        if key == self.current_key and not self._force:
             return self.current_frame
         else:
             self.current_key = key
