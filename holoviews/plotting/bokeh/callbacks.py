@@ -118,7 +118,7 @@ class Callback(object):
         }}
 
         timeout = comm_state.timeout + {timeout};
-        if ((typeof _ === "undefined")  || _.isEmpty(data)) {{
+        if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.event = argstring;
         }} else {{
