@@ -517,7 +517,7 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
-    clipping_colors = param.Dict(default={'NaN': ('w', 1)}, doc="""
+    clipping_colors = param.Dict(default={'NaN': (0, 0, 0, 1)}, doc="""
         Dictionary to specify colors for clipped values, allows setting
         color for NaN values and for values above and below the min and
         max value.""")
@@ -657,12 +657,16 @@ class ColorbarPlot(ElementPlot):
         # Define special out-of-range colors on colormap
         cmap_name = opts.pop('cmap', None)
         cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-        if 'max' in self.clipping_colors:
-            cmap.set_over(*util.wrap_tuple(self.clipping_colors['max']))
-        if 'min' in self.clipping_colors:
-            cmap.set_under(*util.wrap_tuple(self.clipping_colors['min']))
-        if 'NaN' in self.clipping_colors:
-            cmap.set_bad(*util.wrap_tuple(self.clipping_colors['NaN']))
+        colors = {}
+        for k, val in self.clipping_colors.items():
+            if isinstance(val, tuple):
+                colors[k] = {'color': val[:3],
+                             'alpha': val[3] if len(val) > 3 else 1}
+            elif isinstance(val, util.basestring):
+                colors[k] = {'color': val}
+        if 'max' in colors: cmap.set_over(colors['max'])
+        if 'min' in colors: cmap.set_under(colors['min'])
+        if 'NaN' in colors: cmap.set_bad(colors['NaN'])
         opts['cmap'] = cmap
 
 

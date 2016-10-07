@@ -753,6 +753,11 @@ class ColorbarPlot(ElementPlot):
         location, orientation, height, width, scale_alpha, title, title_props,
         margin, padding, background_fill_color and more.""")
 
+    clipping_colors = param.Dict(default={'NaN': (0, 0, 0, 1)}, doc="""
+        Dictionary to specify colors for clipped values, allows setting
+        color for NaN values and for values above and below the min and
+        max value.""")
+
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
@@ -796,14 +801,18 @@ class ColorbarPlot(ElementPlot):
                 return cmapper
             else:
                 return None
+        colors = self.clipping_colors
+        opts = {'low': low, 'high': high}
+        if 'max' in colors: opts['high_color'] = colors['max']
+        if 'min' in colors: opts['low_color'] = colors['min']
+        if 'NaN' in colors: opts['nan_color'] = colors['NaN']
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
-            cmapper.low = low
-            cmapper.high = high
             cmapper.palette = palette
+            cmapper.set(**opts)
         else:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
-            cmapper = colormapper(palette, low=low, high=high)
+            cmapper = colormapper(palette, **opts)
             self.handles['color_mapper'] = cmapper
             self.handles['color_dim'] = dim
         return cmapper
