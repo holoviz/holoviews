@@ -1,0 +1,2 @@
+include versioneer.py
+include holoviews/_version.py

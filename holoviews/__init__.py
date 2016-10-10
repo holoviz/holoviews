@@ -8,9 +8,6 @@ sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
 import param
 
-__version__ = param.Version(release=(1,6,2), fpath=__file__,
-                            commit="$Format:%h$", reponame='holoviews')
-
 from .core import archive                               # noqa (API import)
 from .core.dimension import OrderedDict, Dimension      # noqa (API import)
 from .core.boundingregion import BoundingBox            # noqa (API import)
@@ -81,3 +78,7 @@ def help(obj, visualization=True, ansi=True, backend='matplotlib',
         print((msg if visualization is False else '') + info)
     else:
         pydoc.help(obj)
+
+from ._version import get_versions
+__version__ = get_versions()['version']
+del get_versions
