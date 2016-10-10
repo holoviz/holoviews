@@ -148,7 +148,7 @@ class Dimension(param.Parameterized):
             all_params['name'] = long_name
 
         if not isinstance(params.get('values',None),basestring):
-            all_params['values'] = list(unique_array(params.get('values', [])))
+            all_params['values'] = sorted(list(unique_array(params.get('values', []))))
         elif params['values'] != 'initial':
             raise Exception("Values argument can only be set with the string 'initial'.")
         super(Dimension, self).__init__(**all_params)
