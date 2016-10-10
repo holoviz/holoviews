@@ -2,6 +2,7 @@
 Tests of plot instantiation (not display tests, just instantiation)
 """
 
+from collections import deque
 from unittest import SkipTest
 from io import BytesIO
 
@@ -12,7 +13,7 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import PositionXY
+from holoviews.streams import PositionXY, PositionX
 from holoviews.plotting import comms
 
 # Standardize backend due to random inconsistencies
@@ -46,11 +47,11 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         Store.current_backend = 'matplotlib'
         if mpl_renderer is None:
             raise SkipTest("Matplotlib required to test plot instantiation")
-        self.default_comm, _ = mpl_renderer.comms['default']
+        self.default_comm = mpl_renderer.comms['default']
         mpl_renderer.comms['default'] = (comms.Comm, '')
 
     def teardown(self):
-        mpl_renderer.comms['default'] = (self.default_comm, '')
+        mpl_renderer.comms['default'] = self.default_comm
         Store.current_backend = self.previous_backend
 
     def test_interleaved_overlay(self):
@@ -87,6 +88,19 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot = mpl_renderer.get_plot(errorbars)
         plot.initialize_plot()
 
+    def test_stream_callback_single_call(self):
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+        stream = PositionX()
+        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        plot = mpl_renderer.get_plot(dmap)
+        mpl_renderer(plot)
+        for i in range(20):
+            stream.update(x=i)
+        x, y = plot.handles['artist'].get_data()
+        self.assertEqual(x, np.arange(10))
+        self.assertEqual(y, np.arange(10, 20))
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
@@ -97,13 +111,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
         Callback._comm_type = comms.Comm
-        self.default_comm, _ = bokeh_renderer.comms['default']
+        self.default_comm = bokeh_renderer.comms['default']
         bokeh_renderer.comms['default'] = (comms.Comm, '')
 
     def teardown(self):
         Store.current_backend = self.previous_backend
         Callback._comm_type = comms.JupyterCommJS
-        mpl_renderer.comms['default'] = (self.default_comm, '')
+        mpl_renderer.comms['default'] = self.default_comm
 
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
@@ -156,16 +170,35 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(data['y'], np.array([-10]))
 
 
+    def test_stream_callback_single_call(self):
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+        stream = PositionX()
+        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        for i in range(20):
+            stream.update(x=i)
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.arange(10))
+        self.assertEqual(data['y'], np.arange(10, 20))
+
+
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
+        self.default_comm = bokeh_renderer.comms['default']
         if not plotly_renderer:
             raise SkipTest("Plotly required to test plot instantiation")
+        plotly_renderer.comms['default'] = (comms.Comm, '')
+
 
     def teardown(self):
         Store.current_backend = self.previous_backend
+        plotly_renderer.comms['default'] = self.default_comm
 
     def _get_plot_state(self, element):
         plot = plotly_renderer.get_plot(element)
@@ -219,3 +252,17 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         self.assertEqual(state['data'][3]['y'], np.array([1, 1]))
         self.assertEqual(state['data'][3]['xaxis'], 'x2')
         self.assertEqual(state['data'][3]['yaxis'], 'y2')
+
+    def test_stream_callback_single_call(self):
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+        stream = PositionX()
+        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        plot = plotly_renderer.get_plot(dmap)
+        plotly_renderer(plot)
+        for i in range(20):
+            stream.update(x=i)
+        state = plot.state
+        self.assertEqual(state['data'][0]['x'], np.arange(10))
+        self.assertEqual(state['data'][0]['y'], np.arange(10, 20))
