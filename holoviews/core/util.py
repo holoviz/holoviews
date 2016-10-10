@@ -957,7 +957,8 @@ def get_dynamic_item(map_obj, dimensions, key):
     dmaps = map_obj.traverse(lambda x: x, ['DynamicMap'])
     dmap = dmaps[0] if dmaps else map_obj
     if key == () and (not dimensions or not dmap.kdims):
-        return key, map_obj.map(lambda x: x[()], ['DynamicMap', 'HoloMap'])
+        return key, map_obj.map(lambda x: x[()], ['DynamicMap', 'HoloMap'],
+                                clone=False)
     elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
@@ -967,7 +968,8 @@ def get_dynamic_item(map_obj, dimensions, key):
         key_offset = max([key-map_obj.cache_size, 0])
         key = map_obj.keys()[min([key-key_offset,
                                   len(map_obj)-1])]
-        el = map_obj.map(lambda x: x[key], ['DynamicMap'])
+        el = map_obj.map(lambda x: x[key], ['DynamicMap'],
+                         clone=False)
     elif key >= map_obj.counter:
         el = next(map_obj)
         key = list(map_obj.keys())[-1]
