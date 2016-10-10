@@ -497,7 +497,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Disables legends if show_legend is disabled.
         """
         for l in self.handles['plot'].legend:
-            l.legends[:] = []
+            if bokeh_version > '0.12.2':
+                l.items[:] = []
+            else:
+                l.legends[:] = []
             l.border_line_alpha = 0
             l.background_fill_alpha = 0
 
@@ -941,11 +944,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     def _process_legend(self):
         plot = self.handles['plot']
         if not self.show_legend or len(plot.legend) == 0:
-            for l in plot.legend:
-                l.legends[:] = []
-                l.border_line_alpha = 0
-                l.background_fill_alpha = 0
-            return
+            return super(OverlayPlot, self)._process_legend()
 
         options = {}
         properties = self.lookup_options(self.hmap.last, 'style')[self.cyclic_index]
