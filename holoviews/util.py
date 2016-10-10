@@ -53,7 +53,9 @@ class Dynamic(param.ParameterizedFunction):
 
     def _process(self, element, key=None):
         if isinstance(self.p.operation, ElementOperation):
-            return self.p.operation.process_element(element, key, **self.p.kwargs)
+            kwargs = {k: v for k, v in self.p.kwargs
+                      if k in self.p.operation.params()}
+            return self.p.operation.process_element(element, key, **kwargs)
         else:
             return self.p.operation(element, **self.p.kwargs)
 
