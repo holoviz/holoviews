@@ -518,9 +518,12 @@ class ColorbarPlot(ElementPlot):
         Whether to draw a colorbar.""")
 
     clipping_colors = param.Dict(default={}, doc="""
-        Dictionary to specify colors for clipped values, allows setting
-        color for NaN values and for values above and below the min and
-        max value.""")
+        Dictionary to specify colors for clipped values, allows
+        setting color for NaN values and for values above and below
+        the min and max value. The min, max or NaN color may specify
+        an RGB(A) color as a color hex string of the form #FFFFFF or
+        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
+        the range 0-1 or a named HTML color.""")
 
     cbar_padding = param.Number(default=0.01, doc="""
         Padding between colorbar and other plots.""")
@@ -663,7 +666,12 @@ class ColorbarPlot(ElementPlot):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
             elif isinstance(val, util.basestring):
-                colors[k] = {'color': val}
+                color = val
+                alpha = 1
+                if color.startswith('#') and len(color) == 9:
+                    alpha = int(color[-2:], 16)/255.
+                    color = color[:-2]
+                colors[k] = {'color': color, 'alpha': alpha}
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
