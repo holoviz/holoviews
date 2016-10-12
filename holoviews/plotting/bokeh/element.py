@@ -205,10 +205,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     for d in dims]
 
         callbacks = callbacks+self.callbacks
-        cb_tools = []
+        cb_tools, tool_names = [], []
         for cb in callbacks:
             for handle in cb.handles:
                 if handle and handle in known_tools:
+                    tool_names.append(handle)
                     if handle == 'hover':
                         tool = HoverTool(tooltips=tooltips)
                     else:
@@ -216,7 +217,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tools = cb_tools + self.default_tools + self.tools
+        tools = [t for t in cb_tools + self.default_tools + self.tools
+                 if t not in tool_names]
         if 'hover' in tools:
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
         return tools
@@ -784,6 +786,16 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
+        if self.adjoined:
+            cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
+                                                         x.handles.get('color_mapper')))
+            cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
+            if cmappers:
+                cmapper = cmappers[0]
+                self.handles['color_mapper'] = cmapper
+                return cmapper
+            else:
+                return None
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
             cmapper.low = low
@@ -793,6 +805,7 @@ class ColorbarPlot(ElementPlot):
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             cmapper = colormapper(palette, low=low, high=high)
             self.handles['color_mapper'] = cmapper
+            self.handles['color_dim'] = dim
         return cmapper
 
 
