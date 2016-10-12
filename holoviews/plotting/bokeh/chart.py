@@ -348,7 +348,8 @@ class ErrorPlot(PathPlot):
 
 class SpikesPlot(PathPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, allow_None=True,
+                                      class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.5, doc="""
