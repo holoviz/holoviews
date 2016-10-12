@@ -205,10 +205,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     for d in dims]
 
         callbacks = callbacks+self.callbacks
-        cb_tools = []
+        cb_tools, tool_names = [], []
         for cb in callbacks:
             for handle in cb.handles:
                 if handle and handle in known_tools:
+                    tool_names.append(handle)
                     if handle == 'hover':
                         tool = HoverTool(tooltips=tooltips)
                     else:
@@ -216,8 +217,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tools = cb_tools + self.default_tools + self.tools
-        if 'hover' in tools:
+        tools = [t for t in cb_tools + self.default_tools + self.tools
+                 if t not in tool_names]
+        if 'hover' in tools+tool_names:
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
         return tools
 
