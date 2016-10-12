@@ -37,7 +37,7 @@ except ImportError:
 
 
 Collector.interval_hook = RunProgress
-AttrTree._disabled_prefixes = ['_repr_']
+AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
     """

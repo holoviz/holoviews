@@ -277,7 +277,7 @@ class LabelledData(param.Parameterized):
     label = param.String(default='', constant=True, doc="""
        Optional label describing the data, typically reflecting where
        or how it was measured. The label should allow a specific
-       measurement or dataset to be referenced for a given group..""")
+       measurement or dataset to be referenced for a given group.""")
 
     _deep_indexable = False
 
