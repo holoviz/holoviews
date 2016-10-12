@@ -517,7 +517,7 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
-    clipping_colors = param.Dict(default={'NaN': (0, 0, 0, 1)}, doc="""
+    clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows setting
         color for NaN values and for values above and below the min and
         max value.""")
@@ -664,9 +664,9 @@ class ColorbarPlot(ElementPlot):
                              'alpha': val[3] if len(val) > 3 else 1}
             elif isinstance(val, util.basestring):
                 colors[k] = {'color': val}
-        if 'max' in colors: cmap.set_over(colors['max'])
-        if 'min' in colors: cmap.set_under(colors['min'])
-        if 'NaN' in colors: cmap.set_bad(colors['NaN'])
+        if 'max' in colors: cmap.set_over(**colors['max'])
+        if 'min' in colors: cmap.set_under(**colors['min'])
+        if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
         opts['cmap'] = cmap
 
 

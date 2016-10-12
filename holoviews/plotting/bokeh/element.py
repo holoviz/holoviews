@@ -753,7 +753,7 @@ class ColorbarPlot(ElementPlot):
         location, orientation, height, width, scale_alpha, title, title_props,
         margin, padding, background_fill_color and more.""")
 
-    clipping_colors = param.Dict(default={'NaN': (0, 0, 0, 1)}, doc="""
+    clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows setting
         color for NaN values and for values above and below the min and
         max value.""")
