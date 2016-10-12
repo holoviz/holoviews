@@ -479,7 +479,7 @@ class histogram(ElementOperation):
       Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
 
     log = param.Boolean(default=False, doc="""
-      Whether to apply log scaling """)
+      Whether to use base 10 logarithmic samples for the bin edges.""")
 
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
