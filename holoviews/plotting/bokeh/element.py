@@ -753,6 +753,14 @@ class ColorbarPlot(ElementPlot):
         location, orientation, height, width, scale_alpha, title, title_props,
         margin, padding, background_fill_color and more.""")
 
+    clipping_colors = param.Dict(default={}, doc="""
+        Dictionary to specify colors for clipped values, allows
+        setting color for NaN values and for values above and below
+        the min and max value. The min, max or NaN color may specify
+        an RGB(A) color as a color hex string of the form #FFFFFF or
+        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
+        the range 0-1 or a named HTML color.""")
+
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
@@ -796,14 +804,23 @@ class ColorbarPlot(ElementPlot):
                 return cmapper
             else:
                 return None
+        colors = self.clipping_colors
+        opts = {'low': low, 'high': high}
+        color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
+        for name, opt in color_opts:
+            color = colors.get(name)
+            if not color:
+                continue
+            elif isinstance(color, tuple):
+                color = [int(c*255) if i<3 else c for i, c in enumerate(color)]
+            opts[opt] = color
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
-            cmapper.low = low
-            cmapper.high = high
             cmapper.palette = palette
+            cmapper.set(**opts)
         else:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
-            cmapper = colormapper(palette, low=low, high=high)
+            cmapper = colormapper(palette, **opts)
             self.handles['color_mapper'] = cmapper
             self.handles['color_dim'] = dim
         return cmapper
