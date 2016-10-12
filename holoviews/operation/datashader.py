@@ -220,7 +220,7 @@ class shade(ElementOperation):
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
-        return Dataset(xarr.T, **params)
+        return Dataset(xarr.T, datatype=['xarray'], **params)
 
 
     @classmethod
@@ -259,7 +259,7 @@ class shade(ElementOperation):
             categories = array.shape[-1]
             if not self.p.cmap:
                 pass
-            elif isinstance(self.p.cmap, Iterator):
+            elif isinstance(self.p.cmap, Iterable):
                 shade_opts['color_key'] = [c for i, c in
                                            zip(range(categories), self.p.cmap)]
             else:
