@@ -786,6 +786,16 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
+        if self.adjoined:
+            cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
+                                                         x.handles.get('color_mapper')))
+            cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
+            if cmappers:
+                cmapper = cmappers[0]
+                self.handles['color_mapper'] = cmapper
+                return cmapper
+            else:
+                return None
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
             cmapper.low = low
@@ -795,6 +805,7 @@ class ColorbarPlot(ElementPlot):
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             cmapper = colormapper(palette, low=low, high=high)
             self.handles['color_mapper'] = cmapper
+            self.handles['color_dim'] = dim
         return cmapper
 
 
