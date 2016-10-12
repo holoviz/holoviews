@@ -658,8 +658,7 @@ class ColorbarPlot(ElementPlot):
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
-        cmap_name = opts.pop('cmap', None)
-        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
+        cmap = copy.copy(plt.cm.get_cmap(opts.get('cmap')))
         colors = {}
         for k, val in self.clipping_colors.items():
             if isinstance(val, tuple):
