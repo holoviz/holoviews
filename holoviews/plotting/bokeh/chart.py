@@ -265,7 +265,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
 
     def get_data(self, element, ranges=None, empty=None):
         if self.invert_axes:
-            mapping = dict(top='left', bottom='right', left=0, right='top')
+            mapping = dict(top='right', bottom='left', left=0, right='top')
         else:
             mapping = dict(top='top', bottom=0, left='left', right='right')
 
