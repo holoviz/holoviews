@@ -6,7 +6,9 @@ try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
+from bokeh.models import (Circle, GlyphRenderer, ColumnDataSource,
+                          Range1d, CustomJS)
+from bokeh.models.tools import BoxSelectTool
 
 from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring, dimension_sanitizer
@@ -250,6 +252,17 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
     show_title = param.Boolean(default=False, doc="""
         Whether to display the plot title.""")
 
+    default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
+                                        'box_zoom', 'reset', 'box_select'],
+        doc="A list of plugin tools to use on the plot.")
+
+    _callback = """
+    color_mapper.low = cb_data['geometry']['y0'];
+    color_mapper.high = cb_data['geometry']['y1'];
+    source.trigger('change')
+    main_source.trigger('change')
+    """
+
     def get_data(self, element, ranges=None, empty=None):
         if self.invert_axes:
             mapping = dict(top='left', bottom='right', left=0, right='top')
@@ -271,6 +284,32 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        ret = super(SideHistogramPlot, self)._init_glyph(plot, mapping, properties)
+        if not 'field' in mapping.get('fill_color', {}):
+            return ret
+        dim = mapping['fill_color']['field']
+        sources = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
+                                                     x.handles.get('source')))
+        sources = [src for cdim, src in sources if cdim == dim]
+        tools = [t for t in self.handles['plot'].tools
+                 if isinstance(t, BoxSelectTool)]
+        if not tools or not sources:
+            return
+        box_select, main_source = tools[0], sources[0]
+        handles = {'color_mapper': self.handles['color_mapper'],
+                   'source': self.handles['source'],
+                   'main_source': main_source}
+        if box_select.callback:
+            box_select.callback.code += self._callback
+            box_select.callback.args.update(handles)
+        else:
+            box_select.callback = CustomJS(args=handles, code=self._callback)
+        return ret
 
 
 class ErrorPlot(PathPlot):
