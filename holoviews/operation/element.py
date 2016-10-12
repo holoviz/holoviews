@@ -478,6 +478,9 @@ class histogram(ElementOperation):
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
 
+    log = param.Boolean(default=False, doc="""
+      Whether to apply log scaling """)
+
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
@@ -518,16 +521,21 @@ class histogram(ElementOperation):
         if hist_range == (0, 0):
             hist_range = (0, 1)
         data = data[np.invert(np.isnan(data))]
+        if self.p.log:
+            bin_min = max([abs(hist_range[0]), data[data>0].min()])
+            edges = np.logspace(np.log10(bin_min), np.log10(hist_range[1]),
+                                self.p.num_bins+1)
+        else:
+            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
         try:
             hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
-                                       range=hist_range, weights=weights, bins=self.p.num_bins)
+                                       range=hist_range, weights=weights, bins=edges)
             if not normed and self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
                                             range=hist_range, bins=self.p.num_bins)
                 hist /= hist_mean
         except:
-            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
             hist = np.zeros(self.p.num_bins)
 
         hist[np.isnan(hist)] = 0
