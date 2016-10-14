@@ -74,7 +74,7 @@ class OptionError(Exception):
 
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
         msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(list(set(allowed_keywords)))))
+               % (repr(invalid_keyword), str(sorted(list(set(allowed_keywords))))))
         if path and group_name:
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
@@ -288,7 +288,7 @@ class Options(param.Parameterized):
 
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
-                         % (repr(invalid_kws), str(list(set(allowed_keywords)))))
+                         % (repr(invalid_kws), str(sorted(list(set(allowed_keywords))))))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
