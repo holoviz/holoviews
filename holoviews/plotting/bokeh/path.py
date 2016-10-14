@@ -28,8 +28,9 @@ class PathPlot(ElementPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        style = self.style.max_cycles(len(self.ordering))
         for key, el in element.data.items():
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
@@ -76,8 +77,9 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        style = self.style.max_cycles(len(self.ordering))
         for key, el in element.data.items():
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
