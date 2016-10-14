@@ -106,6 +106,9 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             subscriber(**dict(union))
 
+        for stream in streams:
+            stream.deactivate()
+
 
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
@@ -124,6 +127,15 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+
+    def deactivate(self):
+        """
+        Allows defining an action after the stream has been triggered,
+        e.g. resetting parameters on streams with transient events.
+        """
+        pass
+
 
     @property
     def source(self):
@@ -153,6 +165,7 @@ class Stream(param.Parameterized):
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
         """
+        self.activate()
         params = self.params().values()
         constants = [p.constant for p in params]
         for param in params:
@@ -160,9 +173,6 @@ class Stream(param.Parameterized):
         self.set_param(**kwargs)
         for (param, const) in zip(params, constants):
             param.constant = const
-
-        if trigger:
-            self.trigger([self])
 
 
     def __repr__(self):
