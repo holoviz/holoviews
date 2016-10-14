@@ -1119,7 +1119,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
-        if isinstance(self.hmap, DynamicMap) and items:
+        if not self.batched and isinstance(self.hmap, DynamicMap) and items:
             self.warning("Some Elements returned by the dynamic callback "
                          "were not initialized correctly and could not be "
                          "rendered.")
