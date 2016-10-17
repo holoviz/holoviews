@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Gitter|_ |MyBinder|_
+|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Conda|_ |Gitter|_ |MyBinder|_ 
 
 holoviews
 =========
@@ -107,3 +107,7 @@ Features
 
 .. |MyBinder| image::  http://mybinder.org/badge.svg
 .. _MyBinder: http://mybinder.org/repo/ioam/holoviews
+
+.. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
+.. _Conda: https://anaconda.org/ioam/holoviews
+
