@@ -99,8 +99,8 @@ Features
 .. |holoviewsDocs| image:: http://buildbot.holoviews.org:8010/png?builder=website
 .. _holoviewsDocs: http://buildbot.holoviews.org:8010/waterfall
 
-.. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
-.. _Downloads: https://pypi.python.org/pypi/holoviews
+.. |Downloads| image:: https://anaconda.org/ioam/holoviews/badges/downloads.svg
+.. _Downloads: https://anaconda.org/ioam/holoviews
 
 .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _Gitter: https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
