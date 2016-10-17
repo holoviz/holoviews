@@ -106,7 +106,7 @@ Features
 .. _Gitter: https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. |MyBinder| image::  http://mybinder.org/badge.svg
-.. _MyBinder: http://mybinder.org/repo/ioam/holoviews
+.. _MyBinder: http://mybinder.org/repo/ioam/holoviews-contrib
 
 .. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
 .. _Conda: https://anaconda.org/ioam/holoviews
