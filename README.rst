@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Conda|_ |Gitter|_ |MyBinder|_ 
+|PyPI|_ |Conda|_ |Downloads|_ |BuildStatus|_ |holoviewsDocs|_ |Coveralls|_ |Gitter|_ |MyBinder|_ 
 
 holoviews
 =========
