@@ -17,16 +17,24 @@ together with `Matplotlib <http://matplotlib.org/>`_ or
 Clone holoviews directly from GitHub with::
 
    git clone git://github.com/ioam/holoviews.git
-   
-Please visit `our website <http://ioam.github.com/holoviews/>`_ for
-official releases, installation instructions, documentation, and many detailed 
-`example notebooks and tutorials <http://holoviews.org/Tutorials>`_.
 
-For general discussion, we have a `gitter channel <https://gitter.im/ioam/holoviews>`_.
-In addition
-we have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
-describing current work-in-progress and experimental features. If you find any bugs or 
-have any feature suggestions please file a GitHub Issue or submit a pull request.
+Please visit `our website <http://ioam.github.com/holoviews/>`_
+for official releases, installation instructions, documentation,
+and many detailed `example notebooks and tutorials
+<http://holoviews.org/Tutorials>`_. Additional user contributed
+notebooks may be found in the `holoviews-contrib
+<https://github.com/ioam/holoviews-contrib>`_ repository
+including examples that may be run live on `mybinder.org
+<http://mybinder.org/repo/ioam/holoviews-contrib>`_.
+
+
+For general discussion, we have a `gitter channel
+<https://gitter.im/ioam/holoviews>`_.  In addition we have a
+`wiki page
+<https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
+describing current work-in-progress and experimental features. If
+you find any bugs or have any feature suggestions please file a
+GitHub Issue or submit a pull request.
 
 Features
 --------
