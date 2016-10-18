@@ -149,10 +149,16 @@ class notebook_extension(param.ParameterizedFunction):
                    if name in args or params.get(name, False)]
         if not imports or 'matplotlib' not in Store.renderers:
             imports = imports + [('matplotlib', 'mpl')]
+
+        args = list(args)
         for backend, imp in imports:
             try:
                 __import__('holoviews.plotting.%s' % imp)
             except ImportError:
+                if backend in args:
+                    args.pop(backend)
+                if backend in params:
+                    params.pop(backend)
                 self.warning("HoloViews %s backend could not be imported, "
                              "ensure %s is installed." % (backend, backend))
             finally:
