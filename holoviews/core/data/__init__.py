@@ -200,12 +200,10 @@ class Dataset(Element):
                 drange = util.max_range([drange, soft_range])
         else:
             drange = dim.soft_range
-        fixed_min = None if dim.range[0] is None else dim.range[0]
-        fixed_max = None if dim.range[1] is None else dim.range[1]
-        if fixed_min:
-            return (fixed_min, drange[1])
-        elif fixed_max:
-            return (drange[0], fixed_max)
+        if dim.range[0] is not None:
+            return (dim.range[0], drange[1])
+        elif dim.range[1] is not None:
+            return (drange[0], dim.range[1])
         else:
             return drange
 
