@@ -187,7 +187,7 @@ class Dataset(Element):
         object.
         """
         dim = self.get_dimension(dim)
-        if dim.range != (None, None):
+        if None not in dim.range:
             return dim.range
         elif dim in self.dimensions():
             if len(self):
@@ -197,11 +197,16 @@ class Dataset(Element):
         if data_range:
             soft_range = [r for r in dim.soft_range if r is not None]
             if soft_range:
-                return util.max_range([drange, soft_range])
-            else:
-                return drange
+                drange = util.max_range([drange, soft_range])
         else:
-            return dim.soft_range
+            drange = dim.soft_range
+        if dim.range[0] is not None:
+            return (dim.range[0], drange[1])
+        elif dim.range[1] is not None:
+            return (drange[0], dim.range[1])
+        else:
+            return drange
+
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
