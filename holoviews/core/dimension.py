@@ -858,21 +858,30 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
-        if dimension.range != (None, None):
+        if None not in dimension.range:
             return dimension.range
-        elif not data_range:
-            return (None, None)
-        soft_range = [r for r in dimension.soft_range
-                      if r is not None]
-        if dimension in self.kdims or dimension in self.vdims:
-            dim_vals = self.dimension_values(dimension.name)
-            return find_range(dim_vals, soft_range)
-        dname = dimension.name
-        match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
-        range_fn = lambda x: x.range(dname)
-        ranges = self.traverse(range_fn, [match_fn])
-        drange = max_range(ranges)
-        return drange
+        elif data_range:
+            if dimension in self.kdims or dimension in self.vdims:
+                dim_vals = self.dimension_values(dimension.name)
+                drange = find_range(dim_vals)
+            else:
+                dname = dimension.name
+                match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
+                range_fn = lambda x: x.range(dname)
+                ranges = self.traverse(range_fn, [match_fn])
+                drange = max_range(ranges)
+            soft_range = [r for r in dimension.soft_range if r is not None]
+            if soft_range:
+                drange = util.max_range([drange, soft_range])
+        else:
+            drange = dim.soft_range
+        if dimension.range[0] is not None:
+            return (dimension.range[0], drange[1])
+        elif dimension.range[1] is not None:
+            return (drange[0], dimension.range[1])
+        else:
+            return drange
+
 
     def __repr__(self):
         reprval = PrettyPrinter.pprint(self)

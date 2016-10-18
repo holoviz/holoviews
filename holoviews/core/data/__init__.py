@@ -189,12 +189,11 @@ class Dataset(Element):
         dim = self.get_dimension(dim)
         if None not in dim.range:
             return dim.range
-        elif dim in self.dimensions():
+        elif dim in self.dimensions() and data_range:
             if len(self):
                 drange = self.interface.range(self, dim)
             else:
                 drange = (np.NaN, np.NaN)
-        if data_range:
             soft_range = [r for r in dim.soft_range if r is not None]
             if soft_range:
                 drange = util.max_range([drange, soft_range])
