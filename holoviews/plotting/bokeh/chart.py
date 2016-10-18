@@ -369,6 +369,9 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
         if len(element.dimensions()) == 1:
             b, t = self.position, self.position+self.spike_length
+        else:
+            b = np.nanmin([0, b])
+            t = np.nanmax([0, t])
         return l, b, r, t
 
     def get_data(self, element, ranges=None, empty=False):
