@@ -34,7 +34,7 @@ install:
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
-  - pip install coveralls awscli
+  - pip install coveralls awscli deepdiff
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
@@ -63,7 +63,7 @@ before-script:
 
 script:
   - nosetests --with-doctest --with-coverage --cover-package=holoviews -a '!optional'
-  - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
+  - cd doc/nbpublisher; chmod +x test_notebooks.py; BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
   - coverage combine --append
