@@ -297,7 +297,7 @@ def traverse_setter(obj, attribute, value):
 
 
 # linear_kryw_0_100_c71 (aka "fire"):
-# A perceptualy uniform equivalent of matplotlib's "hot" colormap, from
+# A perceptually uniform equivalent of matplotlib's "hot" colormap, from
 # http://peterkovesi.com/projects/colourmaps
 
 fire_colors = linear_kryw_0_100_c71 = [\
