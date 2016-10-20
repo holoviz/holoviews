@@ -431,7 +431,7 @@ fire_colors = linear_kryw_0_100_c71 = [\
 [1,        0.99989,     0.93683   ],  [1,        1,           1         ]]
 
 # Bokeh palette
-fire = [b'#{0:02x}{1:02x}{2:02x}'.format(int(r*255),int(g*255),int(b*255)) for r,g,b in fire_colors]
+fire = ['#{0:02x}{1:02x}{2:02x}'.format(int(r*255),int(g*255),int(b*255)) for r,g,b in fire_colors]
 
 # Matplotlib colormap
 try:
