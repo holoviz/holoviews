@@ -156,7 +156,7 @@ class notebook_extension(param.ParameterizedFunction):
                 __import__('holoviews.plotting.%s' % imp)
             except ImportError:
                 if backend in args:
-                    args.pop(backend)
+                    args.pop(args.index(backend))
                 if backend in params:
                     params.pop(backend)
                 self.warning("HoloViews %s backend could not be imported, "
