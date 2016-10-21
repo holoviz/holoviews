@@ -17,6 +17,7 @@ def escape_vals(vals, escape_numerics=True):
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
+    # Ints formatted as floats to disambiguate with counter mode
     ints, floats = "%.1f", "%.11f"
 
     escaped = []
