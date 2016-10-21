@@ -17,10 +17,7 @@ def escape_vals(vals, escape_numerics=True):
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    if escape_numerics:
-        ints, floats = "'%.1f'", "'%.10f'"
-    else:
-        ints, floats = "%.1f", "%.10f"
+    ints, floats = "%.1f", "%.11f"
 
     escaped = []
     for v in vals:
@@ -28,10 +25,13 @@ def escape_vals(vals, escape_numerics=True):
             v = "'"+unicode(safe_unicode(v))+"'"
         elif isinstance(v, np.datetime64):
             v = "'"+str(v)+"'"
-        elif v % 1 == 0:
-            v = ints % v
         else:
-            v = floats % v
+            if v % 1 == 0:
+                v = ints % v
+            else:
+                v = (floats % v)[:-1]
+            if escape_numerics:
+                v = "'"+v+"'"
         escaped.append(v)
     return escaped
 
