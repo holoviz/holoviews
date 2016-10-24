@@ -31,7 +31,7 @@ from ...core import util
 from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update
+from ..util import dynamic_update, get_sources
 from .plot import BokehPlot
 from .util import (mpl_to_bokeh, convert_datetime, update_plot,
                    bokeh_version, mplcmap_to_palette)
@@ -177,15 +177,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         the plotted object as a source.
         """
         if not self.static or isinstance(self.hmap, DynamicMap):
-            source = self.hmap
+            sources = [(i, o) for i, o in get_sources(self.hmap)
+                       if i in [None, self.zorder]]
         else:
-            source = self.hmap.last
-        streams = Stream.registry.get(id(source), [])
-        registry = Stream._callbacks['bokeh']
-        callbacks = {(registry[type(stream)], stream) for stream in streams
-                     if type(stream) in registry and streams}
+            sources = [(self.zorder, self.hmap.last)]
+        cb_classes = set()
+        for _, source in sources:
+            streams = Stream.registry.get(id(source), [])
+            registry = Stream._callbacks['bokeh']
+            cb_classes |= {(registry[type(stream)], stream) for stream in streams
+                           if type(stream) in registry and streams}
         cbs = []
-        sorted_cbs = sorted(callbacks, key=lambda x: id(x[0]))
+        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):
             cb_streams = [s for _, s in group]
             cbs.append(cb(self, cb_streams, source))
@@ -560,6 +563,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if plot is None:
             plot = self._init_plot(key, style_element, ranges=ranges, plots=plots)
             self._init_axes(plot)
+        else:
+            self.handles['xaxis'] = plot.xaxis[0]
+            self.handles['x_range'] = plot.x_range
+            self.handles['y_axis'] = plot.yaxis[0]
+            self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
         # Get data and initialize data source
@@ -675,7 +683,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 rangex, rangey = True, True
             elif isinstance(self.hmap, DynamicMap):
                 rangex, rangey = True, True
-                for stream in self.hmap.streams:
+                callbacks = [cb for p in [self]+list(self.subplots.values())
+                             for cb in p.callbacks]
+                streams = [s for cb in callbacks for s in cb.streams]
+                for stream in streams:
                     if isinstance(stream, RangeXY):
                         rangex, rangey = False, False
                         break
