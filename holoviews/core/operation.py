@@ -14,7 +14,7 @@ from .dimension import ViewableElement
 from .element import Element, HoloMap, GridSpace, Collator
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
-from .spaces import DynamicMap
+from .spaces import DynamicMap, Callable
 from .traversal import unique_dimkeys
 from . import util
 
@@ -159,6 +159,10 @@ class ElementOperation(Operation):
             raise ValueError("Cannot process type %r" % type(element).__name__)
         return processed
 
+
+class OperationCallable(Callable):
+
+    operation = param.ClassSelector(class_=ElementOperation)
 
 
 class MapOperation(param.ParameterizedFunction):

@@ -120,12 +120,13 @@ class HoloMap(UniformNdMapping):
             map_obj = self if isinstance(self, DynamicMap) else other
             mode = map_obj.mode
 
-        def dynamic_mul(*key):
+        def dynamic_mul(*key, **kwargs):
             key = key[0] if mode == 'open' else key
             layers = []
             try:
                 if isinstance(self, DynamicMap):
-                    _, self_el = util.get_dynamic_item(self, dimensions, key)
+                    safe_key = () if not self.kdims else key
+                    _, self_el = util.get_dynamic_item(self, dimensions, safe_key)
                     if self_el is not None:
                         layers.append(self_el)
                 else:
@@ -134,7 +135,8 @@ class HoloMap(UniformNdMapping):
                 pass
             try:
                 if isinstance(other, DynamicMap):
-                    _, other_el = util.get_dynamic_item(other, dimensions, key)
+                    safe_key = () if not other.kdims else key
+                    _, other_el = util.get_dynamic_item(other, dimensions, safe_key)
                     if other_el is not None:
                         layers.append(other_el)
                 else:
@@ -142,11 +144,12 @@ class HoloMap(UniformNdMapping):
             except KeyError:
                 pass
             return Overlay(layers)
+        callback = Callable(callable_function=dynamic_mul, objects=[self, other])
         if map_obj:
-            return map_obj.clone(callback=dynamic_mul, shared_data=False,
-                                 kdims=dimensions)
+            return map_obj.clone(callback=callback, shared_data=False,
+                                 kdims=dimensions, streams=[])
         else:
-            return DynamicMap(callback=dynamic_mul, kdims=dimensions)
+            return DynamicMap(callback=callback, kdims=dimensions)
 
 
     def __mul__(self, other):
@@ -204,10 +207,13 @@ class HoloMap(UniformNdMapping):
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
             if isinstance(self, DynamicMap):
-                from ..util import Dynamic
-                def dynamic_mul(element):
+                def dynamic_mul(*args, **kwargs):
+                    element = self[args]
                     return element * other
-                return Dynamic(self, operation=dynamic_mul)
+                callback = Callable(callable_function=dynamic_mul,
+                                    objects=[self, other])
+                return self.clone(shared_data=False, callback=callback,
+                                  streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
@@ -392,6 +398,15 @@ class HoloMap(UniformNdMapping):
             else:
                 return histmaps[0]
 
+
+class Callable(param.Parameterized):
+
+    callable_function = param.Callable(default=lambda x: x)
+
+    objects = param.List(default=[])
+
+    def __call__(self, *args, **kwargs):
+        return self.callable_function(*args, **kwargs)
 
 
 class DynamicMap(HoloMap):
