@@ -928,7 +928,7 @@ class GenericCompositePlot(DimensionedPlot):
         if top_level:
             self.comm = self.init_comm(layout)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
-        self.streams = [s for streams in layout.traverse(lambda x: get_streams(streams),
+        self.streams = [s for streams in layout.traverse(lambda x: get_streams(x),
                                                          [DynamicMap])
                         for s in streams]
 
