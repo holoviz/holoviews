@@ -86,7 +86,8 @@ class Parser(object):
         for keyword in grouped:
             # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
             # Same for some of the other joining errors corrected here
-            for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='), (',:',':')]:
+            for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='),
+                              (',:',':'), (':,', ':'), (',,', ',')]:
                 keyword = keyword.replace(fst, snd)
             try:
                 kwargs.update(eval('dict(%s)' % keyword,
