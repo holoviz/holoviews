@@ -683,8 +683,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 rangex, rangey = True, True
             elif isinstance(self.hmap, DynamicMap):
                 rangex, rangey = True, True
-                callbacks = [cb for p in [self]+list(self.subplots.values())
-                             for cb in p.callbacks]
+                subplots = list(self.subplots.values()) if self.subplots else []
+                callbacks = [cb for p in [self]+subplots for cb in p.callbacks]
                 streams = [s for cb in callbacks for s in cb.streams]
                 for stream in streams:
                     if isinstance(stream, RangeXY):
