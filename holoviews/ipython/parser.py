@@ -43,6 +43,18 @@ class Parser(object):
         return kw[1:] if kw[0]==',' else kw
 
     @classmethod
+    def recurse_token(cls, token, inner):
+        recursed = []
+        for tok in token:
+            if isinstance(tok, list):
+                new_tok = [recurse_token(t, inner) if isinstance(t, list) else t
+                           for t in tok]
+                recursed.append((inner % ''.join(new_tok)))
+            else:
+                recursed.append(tok)
+        return recursed
+
+    @classmethod
     def collect_tokens(cls, parseresult, mode):
         """
         Collect the tokens from a (potentially) nested parse result.
@@ -53,6 +65,7 @@ class Parser(object):
         for token in parseresult.asList():
             # If value is a tuple, the token will be a list
             if isinstance(token, list):
+                token = cls.recurse_token(token, inner)
                 tokens[-1] = tokens[-1] + (inner % ''.join(token))
             else:
                 if token.strip() == ',': continue
