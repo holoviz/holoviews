@@ -108,7 +108,11 @@ class NdWidget(param.Parameterized):
         super(NdWidget, self).__init__(**params)
         self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        self.dimensions, self.keys = drop_streams(plot.streams,
+        streams = []
+        for stream in plot.streams:
+            if any(k in plot.dimensions for k in stream.contents):
+                streams.append(stream)
+        self.dimensions, self.keys = drop_streams(streams,
                                                   plot.dimensions,
                                                   plot.keys)
 

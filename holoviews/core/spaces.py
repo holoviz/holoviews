@@ -409,6 +409,19 @@ class Callable(param.Parameterized):
         return self.callable_function(*args, **kwargs)
 
 
+def get_streams(dmap):
+    """
+    Get streams from DynamicMap with Callable callback.
+    """
+    layer_streams = list(dmap.streams)
+    if not isinstance(dmap.callback, Callable):
+        return layer_streams
+    for o in dmap.callback.objects:
+        if isinstance(o, DynamicMap):
+            layer_streams += get_streams(o)
+    return layer_streams
+
+
 class DynamicMap(HoloMap):
     """
     A DynamicMap is a type of HoloMap where the elements are dynamically
@@ -704,7 +717,8 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
-            dimensionless = util.dimensionless_contents(self.streams, self.kdims)
+            dimensionless = util.dimensionless_contents(get_streams(self),
+                                                        self.kdims, False)
             if (dimensionless and not self._dimensionless_cache):
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
