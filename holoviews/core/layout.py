@@ -367,10 +367,6 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def _from_values(cls, val):
-        return reduce(lambda x,y: x+y, val).display('auto')
-
-    @classmethod
     def from_values(cls, val):
         """
         Returns a Layout given a list (or tuple) of viewable
@@ -379,15 +375,20 @@ class Layout(AttrTree, Dimensioned):
         collection = isinstance(val, (list, tuple))
         if type(val) is cls:
             return val
-        elif collection and len(val)>1:
-            return cls._from_values(val)
-        elif collection:
-            val = val[0]
-        group = group_sanitizer(val.group)
-        group = ''.join([group[0].upper(), group[1:]])
-        label = label_sanitizer(val.label if val.label else 'I')
-        label = ''.join([label[0].upper(), label[1:]])
-        return cls(items=[((group, label), val)])
+        elif not collection:
+            val = [val]
+        paths, items = [], []
+        count = 2
+        for v in val:
+            group = group_sanitizer(v.group)
+            group = ''.join([group[0].upper(), group[1:]])
+            label = label_sanitizer(v.label if v.label else 'I')
+            label = ''.join([label[0].upper(), label[1:]])
+            new_path, count = cls.new_path((group, label), v, paths, count)
+            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
+            paths.append(new_path)
+            items.append((new_path, v))
+        return cls(items=items)
 
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
