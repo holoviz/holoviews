@@ -1038,17 +1038,25 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        hover = False
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
-                el_tools = subplot._init_tools(el, self.callbacks)
-                el_tools = [t for t in el_tools
-                            if not (isinstance(t, HoverTool) and hover)]
-                tools += el_tools
-                if any(isinstance(t, HoverTool) for t in el_tools):
-                    hover = True
-        return list(set(tools))
+                ts = subplot._init_tools(el, self.callbacks)
+                for nt in ts:
+                    if isinstance(nt, basestring):
+                        if nt not in tools:
+                            tools.append(nt)
+                    else:
+                        duplicates = [t for t in tools
+                                      if isinstance(nt, type(t))]
+                        if duplicates:
+                            ncb = getattr(nt, 'callback', None)
+                            cb = getattr(duplicates[0], 'callback', None)
+                            if cb and ncb:
+                                cb.code += ncb.code
+                        else:
+                            tools.append(nt)
+        return tools
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
