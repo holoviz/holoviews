@@ -47,12 +47,13 @@ class Parser(object):
         recursed = []
         for tok in token:
             if isinstance(tok, list):
-                new_tok = [recurse_token(t, inner) if isinstance(t, list) else t
-                           for t in tok]
+                new_tok = [s for t in tok for s in
+                           (cls.recurse_token(t, inner)
+                            if isinstance(t, list) else [t])]
                 recursed.append((inner % ''.join(new_tok)))
             else:
                 recursed.append(tok)
-        return recursed
+        return inner % ''.join(recursed)
 
     @classmethod
     def collect_tokens(cls, parseresult, mode):
@@ -66,7 +67,7 @@ class Parser(object):
             # If value is a tuple, the token will be a list
             if isinstance(token, list):
                 token = cls.recurse_token(token, inner)
-                tokens[-1] = tokens[-1] + (inner % ''.join(token))
+                tokens[-1] = tokens[-1] + token
             else:
                 if token.strip() == ',': continue
                 tokens.append(cls._strip_commas(token))
@@ -100,7 +101,8 @@ class Parser(object):
             # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
             # Same for some of the other joining errors corrected here
             for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='),
-                              (',:',':'), (':,', ':'), (',,', ',')]:
+                              (',:',':'), (':,', ':'), (',,', ','),
+                              (',.', '.')]:
                 keyword = keyword.replace(fst, snd)
             try:
                 kwargs.update(eval('dict(%s)' % keyword,
