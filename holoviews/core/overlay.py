@@ -149,6 +149,14 @@ class Overlay(Layout, CompositeOverlay):
         return Overlay(items=self.relabel_item_paths(items)).display('all')
 
 
+    def collate(self):
+        """
+        Collates any objects in the Overlay resolving any issues
+        the recommended nesting structure.
+        """
+        return reduce(lambda x,y: x*y, self.values())
+
+
     def collapse(self, function):
         """
         Collapses all the Elements in the Overlay using the
