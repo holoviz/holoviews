@@ -4,7 +4,7 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, Store)
+                    GridSpace, NdLayout, Store, Overlay)
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, safe_unicode)
 
@@ -14,6 +14,9 @@ def displayable(obj):
     Predicate that returns whether the object is displayable or not
     (i.e whether the object obeys the nesting hierarchy
     """
+    if isinstance(obj, Overlay) and any(isinstance(o, (HoloMap, GridSpace))
+                                        for o in obj):
+        return False
     if isinstance(obj, HoloMap):
         return not (obj.type in [Layout, GridSpace, NdLayout])
     if isinstance(obj, (GridSpace, Layout, NdLayout)):
@@ -28,6 +31,16 @@ class Warning(param.Parameterized): pass
 display_warning = Warning(name='Warning')
 
 def collate(obj):
+    if isinstance(obj, Overlay):
+        nested_type = [type(o).__name__ for o in obj
+                       if isinstance(o, (HoloMap, GridSpace))][0]
+        display_warning.warning("Nesting %ss within an Overlay makes it difficult "
+                                "to access your data or control how it appears; "
+                                "we recommend calling .collate() on the Overlay "
+                                "in order to follow the recommended nesting "
+                                "structure shown in the Composing Data tutorial"
+                                "(http://git.io/vtIQh)" % nested_type)
+        return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
                                 "to access your data or control how it appears; "
