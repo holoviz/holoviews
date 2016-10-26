@@ -205,7 +205,7 @@ class ImagePlot(RasterPlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
-    style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
+    style_opts = ['alpha', 'cmap', 'clims', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
     _plot_methods = dict(single='pcolormesh')
