@@ -477,7 +477,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
-                  'cmap', 'vmin', 'vmax']
+                  'cmap', 'vmin', 'vmax', 'norm']
 
     _disabled_opts = ['size']
     _plot_methods = dict(single='scatter')
@@ -574,7 +574,7 @@ class VectorFieldPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot',
-                  'width','headwidth']
+                  'width','headwidth', 'norm']
 
     _plot_methods = dict(single='quiver')
 
