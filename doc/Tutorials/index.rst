@@ -6,7 +6,7 @@ The HoloViews tutorials are the best way to learn what HoloViews can do
 and how to use it.  The web site has static copies of each tutorial, but
 you may also try out live copies on `mybinder.org
 <http://mybinder.org/repo/ioam/holoviews-contrib>`_ where you can also
-explore many other examples from the `holoviews-contrib repository
+explore many other examples in our `contrib repository
 <https://github.com/ioam/holoviews-contrib>`_. Lastly, for the most
 responsive experience, you can install HoloViews and try out the
 `tutorial notebooks`_ for yourself.
