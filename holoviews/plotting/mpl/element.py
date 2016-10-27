@@ -4,8 +4,8 @@ import param
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.colors as mpl_colors
 from matplotlib import ticker
-from matplotlib import colors
 from matplotlib.dates import date2num
 
 from ...core import util
@@ -640,10 +640,10 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, len(np.unique(cs)))
         if self.logz:
             if self.symmetric:
-                norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
+                norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                          linthresh=clim[1]/np.e)
             else:
-                norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
+                norm = mpl_colors.LogNorm(vmin=clim[0], vmax=clim[1])
             opts['norm'] = norm
         opts['vmin'] = clim[0]
         opts['vmax'] = clim[1]
