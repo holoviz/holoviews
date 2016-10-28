@@ -7,10 +7,12 @@ import unittest
 
 import numpy as np
 
-from holoviews.core import Collator, HoloMap, NdOverlay
+from holoviews.core import Collator, HoloMap, NdOverlay, Overlay, GridSpace
 from holoviews.element import Curve
+from holoviews.element.comparison import ComparisonTestCase
 
-class TestCollation(unittest.TestCase):
+
+class TestCollation(ComparisonTestCase):
     def setUp(self):
         alphas, betas, deltas = 2, 2, 2
         Bs = list(range(100))
@@ -67,3 +69,14 @@ class TestCollation(unittest.TestCase):
         collated = collated()
         self.assertEqual(repr(collated), repr(layout))
         self.assertEqual(collated.dimensions(), layout.dimensions())
+
+    def test_overlay_hmap_collate(self):
+        hmap = HoloMap({i: Curve(np.arange(10)*i) for i in range(3)})
+        overlaid = Overlay([hmap, hmap, hmap]).collate()
+        self.assertEqual(overlaid, hmap*hmap*hmap)
+
+    def test_overlay_gridspace_collate(self):
+        grid = GridSpace({(i,j): Curve(np.arange(10)*i) for i in range(3)
+                          for j in range(3)})
+        overlaid = Overlay([grid, grid, grid]).collate()
+        self.assertEqual(overlaid, grid*grid*grid)
