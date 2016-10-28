@@ -9,7 +9,7 @@ you may also try out live copies on `mybinder.org
 explore many other examples in our `contrib repository
 <https://github.com/ioam/holoviews-contrib>`_. Lastly, for the most
 responsive experience, you can install HoloViews and try out the
-tutorial notebooks for yourself.
+`tutorial notebooks`_ for yourself.
 
 
 Introductory Tutorials
