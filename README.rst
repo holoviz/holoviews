@@ -1,4 +1,4 @@
-|BuildStatus|_ |holoviewsDocs|_ |PyPI|_ |License|_  |Coveralls|_ |Downloads|_ |Gitter|_ |MyBinder|_
+|PyPI|_ |Conda|_ |Downloads|_ |BuildStatus|_ |holoviewsDocs|_ |Coveralls|_ |Gitter|_ |MyBinder|_ 
 
 holoviews
 =========
@@ -17,16 +17,24 @@ together with `Matplotlib <http://matplotlib.org/>`_ or
 Clone holoviews directly from GitHub with::
 
    git clone git://github.com/ioam/holoviews.git
-   
-Please visit `our website <http://ioam.github.com/holoviews/>`_ for
-official releases, installation instructions, documentation, and many detailed 
-`example notebooks and tutorials <http://holoviews.org/Tutorials>`_.
 
-For general discussion, we have a `gitter channel <https://gitter.im/ioam/holoviews>`_.
-In addition
-we have a `wiki page <https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
-describing current work-in-progress and experimental features. If you find any bugs or 
-have any feature suggestions please file a GitHub Issue or submit a pull request.
+Please visit `our website <http://ioam.github.com/holoviews/>`_
+for official releases, installation instructions, documentation,
+and many detailed `example notebooks and tutorials
+<http://holoviews.org/Tutorials>`_. Additional user contributed
+notebooks may be found in the `holoviews-contrib
+<https://github.com/ioam/holoviews-contrib>`_ repository
+including examples that may be run live on `mybinder.org
+<http://mybinder.org/repo/ioam/holoviews-contrib>`_.
+
+
+For general discussion, we have a `gitter channel
+<https://gitter.im/ioam/holoviews>`_.  In addition we have a
+`wiki page
+<https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
+describing current work-in-progress and experimental features. If
+you find any bugs or have any feature suggestions please file a
+GitHub Issue or submit a pull request.
 
 Features
 --------
@@ -99,11 +107,15 @@ Features
 .. |holoviewsDocs| image:: http://buildbot.holoviews.org:8010/png?builder=website
 .. _holoviewsDocs: http://buildbot.holoviews.org:8010/waterfall
 
-.. |Downloads| image:: https://img.shields.io/pypi/dm/holoviews.svg
-.. _Downloads: https://pypi.python.org/pypi/holoviews
+.. |Downloads| image:: https://anaconda.org/ioam/holoviews/badges/downloads.svg
+.. _Downloads: https://anaconda.org/ioam/holoviews
 
 .. |Gitter| image:: https://badges.gitter.im/Join%20Chat.svg
 .. _Gitter: https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 
 .. |MyBinder| image::  http://mybinder.org/badge.svg
-.. _MyBinder: http://mybinder.org/repo/ioam/holoviews
+.. _MyBinder: http://mybinder.org/repo/ioam/holoviews-contrib
+
+.. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
+.. _Conda: https://anaconda.org/ioam/holoviews
+

@@ -186,11 +186,12 @@ class Callback(object):
         attributes = attributes_js(self.attributes)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
-        handles = dict(self.plot.handles)
+        handles = {}
         subplots = list(self.plot.subplots.values())[::-1] if self.plot.subplots else []
         plots = [self.plot] + subplots
         for plot in plots:
-            handles.update(plot.handles)
+            handles.update({k: v for k, v in plot.handles.items()
+                            if k in self.handles})
         # Set callback
         if id(handle.callback) in self._callbacks:
             cb = self._callbacks[id(handle.callback)]

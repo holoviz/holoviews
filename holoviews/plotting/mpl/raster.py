@@ -90,6 +90,14 @@ class RasterPlot(ColorbarPlot):
 
 class HeatMapPlot(RasterPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
+        Dictionary to specify colors for clipped values, allows
+        setting color for NaN values and for values above and below
+        the min and max value. The min, max or NaN color may specify
+        an RGB(A) color as a color hex string of the form #FFFFFF or
+        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
+        the range 0-1 or a named HTML color.""")
+
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
@@ -148,12 +156,8 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        data = element.raster
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        cmap_name = style.pop('cmap', None)
-        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-        cmap.set_bad('w', 1.)
-        style['cmap'] = cmap
+        mask = np.logical_not(np.isfinite(element.raster))
+        data = np.ma.array(element.raster, mask=mask)
         style['annotations'] = self._annotate_values(element)
         return [data], style, axis_kwargs
 
@@ -201,7 +205,7 @@ class ImagePlot(RasterPlot):
 
 class QuadMeshPlot(ColorbarPlot):
 
-    style_opts = ['alpha', 'cmap', 'clim', 'edgecolors', 'norm', 'shading',
+    style_opts = ['alpha', 'cmap', 'clims', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
 
     _plot_methods = dict(single='pcolormesh')

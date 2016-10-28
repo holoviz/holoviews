@@ -87,6 +87,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     kdims = param.List(default=[Dimension("Default")], constant=True)
 
+    vdims = param.List(default=[], bounds=(0, 0), constant=True)
+
     data_type = None          # Optional type checking of elements
     _deep_indexable = False
     _sorted = True

@@ -24,7 +24,7 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose bokeh pandas jupyter ipython=4.2.0 param matplotlib=1.5.1 xarray datashader
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose bokeh pandas jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray datashader
   - source activate test-environment
   - conda install -c conda-forge  -c scitools iris sip=4.18 plotly
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
@@ -34,7 +34,7 @@ install:
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
-  - pip install coveralls awscli
+  - pip install coveralls awscli deepdiff
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
@@ -63,7 +63,7 @@ before-script:
 
 script:
   - nosetests --with-doctest --with-coverage --cover-package=holoviews -a '!optional'
-  - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
+  - cd doc/nbpublisher; chmod +x test_notebooks.py; BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
   - coverage combine --append

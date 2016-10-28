@@ -205,10 +205,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     for d in dims]
 
         callbacks = callbacks+self.callbacks
-        cb_tools = []
+        cb_tools, tool_names = [], []
         for cb in callbacks:
             for handle in cb.handles:
                 if handle and handle in known_tools:
+                    tool_names.append(handle)
                     if handle == 'hover':
                         tool = HoverTool(tooltips=tooltips)
                     else:
@@ -216,7 +217,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     cb_tools.append(tool)
                     self.handles[handle] = tool
 
-        tools = cb_tools + self.default_tools + self.tools
+        tools = [t for t in cb_tools + self.default_tools + self.tools
+                 if t not in tool_names]
         if 'hover' in tools:
             tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
         return tools
@@ -751,6 +753,14 @@ class ColorbarPlot(ElementPlot):
         location, orientation, height, width, scale_alpha, title, title_props,
         margin, padding, background_fill_color and more.""")
 
+    clipping_colors = param.Dict(default={}, doc="""
+        Dictionary to specify colors for clipped values, allows
+        setting color for NaN values and for values above and below
+        the min and max value. The min, max or NaN color may specify
+        an RGB(A) color as a color hex string of the form #FFFFFF or
+        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
+        the range 0-1 or a named HTML color.""")
+
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
@@ -784,15 +794,35 @@ class ColorbarPlot(ElementPlot):
         # and then only updated
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
+        if self.adjoined:
+            cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
+                                                         x.handles.get('color_mapper')))
+            cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
+            if cmappers:
+                cmapper = cmappers[0]
+                self.handles['color_mapper'] = cmapper
+                return cmapper
+            else:
+                return None
+        colors = self.clipping_colors
+        opts = {'low': low, 'high': high}
+        color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
+        for name, opt in color_opts:
+            color = colors.get(name)
+            if not color:
+                continue
+            elif isinstance(color, tuple):
+                color = [int(c*255) if i<3 else c for i, c in enumerate(color)]
+            opts[opt] = color
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
-            cmapper.low = low
-            cmapper.high = high
             cmapper.palette = palette
+            cmapper.set(**opts)
         else:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
-            cmapper = colormapper(palette, low=low, high=high)
+            cmapper = colormapper(palette, **opts)
             self.handles['color_mapper'] = cmapper
+            self.handles['color_dim'] = dim
         return cmapper
 
 
@@ -1089,7 +1119,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
 
-        if isinstance(self.hmap, DynamicMap) and items:
+        if not self.batched and isinstance(self.hmap, DynamicMap) and items:
             self.warning("Some Elements returned by the dynamic callback "
                          "were not initialized correctly and could not be "
                          "rendered.")

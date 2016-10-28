@@ -597,6 +597,11 @@ class Dimensioned(LabelledData):
                                   for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(data, **params)
+        duplicates = [vd for vd in self.vdims if vd in self.kdims]
+        if duplicates:
+            duplicates = ', '.join([d.name for d in duplicates])
+            raise ValueError('Dimension(s) %s cannot be both key and '
+                             'value dimensions' % duplicates)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
@@ -858,21 +863,30 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
-        if dimension.range != (None, None):
+        if None not in dimension.range:
             return dimension.range
-        elif not data_range:
-            return (None, None)
-        soft_range = [r for r in dimension.soft_range
-                      if r is not None]
-        if dimension in self.kdims or dimension in self.vdims:
-            dim_vals = self.dimension_values(dimension.name)
-            return find_range(dim_vals, soft_range)
-        dname = dimension.name
-        match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
-        range_fn = lambda x: x.range(dname)
-        ranges = self.traverse(range_fn, [match_fn])
-        drange = max_range(ranges)
-        return drange
+        elif data_range:
+            if dimension in self.kdims or dimension in self.vdims:
+                dim_vals = self.dimension_values(dimension.name)
+                drange = find_range(dim_vals)
+            else:
+                dname = dimension.name
+                match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
+                range_fn = lambda x: x.range(dname)
+                ranges = self.traverse(range_fn, [match_fn])
+                drange = max_range(ranges)
+            soft_range = [r for r in dimension.soft_range if r is not None]
+            if soft_range:
+                drange = util.max_range([drange, soft_range])
+        else:
+            drange = dim.soft_range
+        if dimension.range[0] is not None:
+            return (dimension.range[0], drange[1])
+        elif dimension.range[1] is not None:
+            return (drange[0], dimension.range[1])
+        else:
+            return drange
+
 
     def __repr__(self):
         reprval = PrettyPrinter.pprint(self)

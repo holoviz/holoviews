@@ -363,7 +363,6 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         """
         subplots = {}
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
-        subplot_opts = dict(adjoined=layout)
         main_plot = None
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
@@ -371,6 +370,7 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             if element is None:
                 continue
 
+            subplot_opts = dict(adjoined=main_plot)
             # Options common for any subplot
             if type(element) in (NdLayout, Layout):
                 raise SkipRendering("Cannot plot nested Layouts.")

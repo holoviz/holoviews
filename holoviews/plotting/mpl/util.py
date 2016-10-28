@@ -53,11 +53,11 @@ def normalize_ratios(ratios):
 
 def compute_ratios(ratios, normalized=True):
     unpacked = unpack_adjoints(ratios)
-    if normalized:
-        unpacked = normalize_ratios(unpacked)
-    sorted_ratios = sorted(unpacked.items())
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
+        if normalized:
+            unpacked = normalize_ratios(unpacked)
+        sorted_ratios = sorted(unpacked.items())
         return np.nanmax(np.vstack([v for _, v in sorted_ratios]), axis=0)
 
 

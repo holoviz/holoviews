@@ -1,7 +1,8 @@
 import uuid, json
-from plotly.offline.offline import utils, get_plotlyjs
 
 import param
+with param.logging_level('CRITICAL'):
+    from plotly.offline.offline import utils, get_plotlyjs
 
 from ..renderer import Renderer, MIME_TYPES
 from ..widgets import NdWidget
