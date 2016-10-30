@@ -161,8 +161,14 @@ class ElementOperation(Operation):
 
 
 class OperationCallable(Callable):
+    """
+    OperationCallable allows wrapping an ElementOperation and the
+    objects it is processing to allow traversing the operations
+    applied on a DynamicMap.
+    """
 
-    operation = param.ClassSelector(class_=ElementOperation)
+    operation = param.ClassSelector(class_=ElementOperation, doc="""
+        The ElementOperation being wrapped.""")
 
 
 class MapOperation(param.ParameterizedFunction):

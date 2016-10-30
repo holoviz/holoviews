@@ -400,10 +400,19 @@ class HoloMap(UniformNdMapping):
 
 
 class Callable(param.Parameterized):
+    """
+    Callable allows wrapping callbacks on one or more DynamicMaps such
+    that the operation and the objects that are part of the operation
+    are made available. This allows traversing a DynamicMap that wraps
+    multiple operations and is primarily used to extracting any
+    streams attached to the object.
+    """
 
-    callable_function = param.Callable(default=lambda x: x)
+    callable_function = param.Callable(default=lambda x: x, doc="""
+         The callable function being wrapped.""")
 
-    objects = param.List(default=[])
+    objects = param.List(default=[], doc="""
+         The objects the callable function is processing.""")
 
     def __call__(self, *args, **kwargs):
         return self.callable_function(*args, **kwargs)
