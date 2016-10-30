@@ -309,7 +309,7 @@ def get_sources(obj, index=None):
     """
     if isinstance(obj, DynamicMap):
         if isinstance(obj.callback, Callable):
-            if len(obj.callback.objects) > 1:
+            if len(obj.callback.inputs) > 1:
                 layers = [(None, obj)]
             else:
                 layers = [(index, obj)]
@@ -318,7 +318,7 @@ def get_sources(obj, index=None):
     else:
         return [(index, obj)]
     index = 0 if index is None else int(index)
-    for o in obj.callback.objects:
+    for o in obj.callback.inputs:
         if isinstance(o, Overlay):
             layers.append((None, o))
             for i, o in enumerate(overlay):

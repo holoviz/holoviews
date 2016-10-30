@@ -144,7 +144,7 @@ class HoloMap(UniformNdMapping):
             except KeyError:
                 pass
             return Overlay(layers)
-        callback = Callable(callable_function=dynamic_mul, objects=[self, other])
+        callback = Callable(callable_function=dynamic_mul, inputs=[self, other])
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -211,7 +211,7 @@ class HoloMap(UniformNdMapping):
                     element = self[args]
                     return element * other
                 callback = Callable(callable_function=dynamic_mul,
-                                    objects=[self, other])
+                                    inputs=[self, other])
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -401,18 +401,18 @@ class HoloMap(UniformNdMapping):
 
 class Callable(param.Parameterized):
     """
-    Callable allows wrapping callbacks on one or more DynamicMaps such
-    that the operation and the objects that are part of the operation
-    are made available. This allows traversing a DynamicMap that wraps
-    multiple operations and is primarily used to extracting any
-    streams attached to the object.
+    Callable allows wrapping callbacks on one or more DynamicMaps
+    allowing their inputs (and in future outputs) to be defined.
+    This makes it possible to wrap DynamicMaps with streams and
+    makes it possible to traverse the graph of operations applied
+    to a DynamicMap.
     """
 
     callable_function = param.Callable(default=lambda x: x, doc="""
          The callable function being wrapped.""")
 
-    objects = param.List(default=[], doc="""
-         The objects the callable function is processing.""")
+    inputs = param.List(default=[], doc="""
+         The list of inputs the callable function is wrapping.""")
 
     def __call__(self, *args, **kwargs):
         return self.callable_function(*args, **kwargs)
@@ -425,7 +425,7 @@ def get_streams(dmap):
     layer_streams = list(dmap.streams)
     if not isinstance(dmap.callback, Callable):
         return layer_streams
-    for o in dmap.callback.objects:
+    for o in dmap.callback.inputs:
         if isinstance(o, DynamicMap):
             layer_streams += get_streams(o)
     return layer_streams
