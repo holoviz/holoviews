@@ -115,14 +115,22 @@ class Callback(object):
             HoloViewsWidget.comm_state["{comms_target}"] = comm_state
         }}
 
+        function trigger() {{
+            if (comm_state.event != undefined) {{
+               comm.send(comm_state.event);
+            }}
+            comm_state.event = undefined;
+        }}
+
         timeout = comm_state.timeout + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.event = argstring;
         }} else {{
-            comm.send(argstring);
+            comm_state.event = argstring;
+            setTimeout(trigger, 20);
             comm_state.blocked = true;
-            comm_state.timeout = Date.now();
+            comm_state.timeout = Date.now()+20;
         }}
     """
 
