@@ -22,13 +22,6 @@ from ..element import GridImage, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
 
-def is_df(obj):
-    """
-    Check if the Element is a Dataset type wrapping DataFrame-like data.
-    """
-    return isinstance(obj, Dataset) and obj.interface is PandasInterface
-
-
 @dispatch(Element)
 def discover(dataset):
     """
@@ -132,6 +125,7 @@ class aggregate(ElementOperation):
         kdims = obj.kdims
         vdims = obj.vdims
         x, y = obj.dimensions(label=True)[:2]
+        is_df = lambda x: isinstance(x, Dataset) and x.interface is PandasInterface
         if isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
