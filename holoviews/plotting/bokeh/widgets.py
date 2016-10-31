@@ -71,7 +71,7 @@ class BokehServerWidgets(param.Parameterized):
                         lookup = zip(values, labels)
                     else:
                         values = [(v, dim.pprint_value(v)) for v in dim.values]
-                        widget = Select(title=dim.pprint_label, value=dim_vals[0][0],
+                        widget = Select(title=dim.pprint_label, value=values[0][0],
                                         options=values)
                 else:
                     start = dim.soft_range[0] if dim.soft_range[0] else dim.range[0]
@@ -135,18 +135,15 @@ class BokehServerWidgets(param.Parameterized):
                 value = self.reverse_lookups[dim][new]
                 widget.value = value
             else:
-                widget.value = new
+                widget.value = float(new)
         else:
             if label:
                 text = self.lookups[dim][new]
                 label.value = text
         key = []
         for dim, (label, widget) in self.widgets.items():
-            if label:
-                if isinstance(label, AutocompleteInput):
-                    val = self.lookups[dim].keys()[widget.value]
-                else:
-                    val = new
+            if label and isinstance(label, AutocompleteInput):
+                val = list(self.lookups[dim].keys())[widget.value]
             else:
                 val = widget.value
             key.append(val)
