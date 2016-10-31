@@ -81,6 +81,18 @@ class BokehPlot(DimensionedPlot):
         raise NotImplementedError
 
 
+    def push(self):
+        """
+        Pushes updated plot data via the Comm.
+        """
+        if self.renderer.mode == 'server':
+            return
+        if self.comm is None:
+            raise Exception('Renderer does not have a comm.')
+        diff = self.renderer.diff(self)
+        self.comm.send(diff)
+
+
     def set_root(self, root):
         """
         Sets the current document on all subplots.

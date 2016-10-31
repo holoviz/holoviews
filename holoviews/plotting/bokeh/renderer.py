@@ -7,13 +7,14 @@ from param.parameterized import bothmethod
 from bokeh.charts import Chart
 from bokeh.document import Document
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook
+from bokeh.io import load_notebook, curdoc
 from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
                           WidgetBox, Div, DataTable, Tabs)
 from bokeh.plotting import Figure
 from bokeh.resources import CDN, INLINE
 
 from ...core import Store, HoloMap
+from ..comms import JupyterComm, Comm
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
 from .util import compute_static_patch, serialize_json
@@ -28,9 +29,15 @@ class BokehRenderer(Renderer):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
+    mode = param.ObjectSelector(default='default',
+                                objects=['default', 'server'], doc="""
+         Whether to render the DynamicMap in regular or server mode. """)
+
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
-                    'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto'],
+                            'server': ['html', 'json', 'auto']},
+                    'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
+                                'server': ['widgets', 'auto', None]}}
 
     webgl = param.Boolean(default=False, doc="""Whether to render plots with WebGL
         if bokeh version >=0.10""")
@@ -40,6 +47,9 @@ class BokehRenderer(Renderer):
 
     backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
+
+    comms = {'default': (JupyterComm, None),
+             'server': (Comm, None)}
 
     _loaded = False
 
@@ -52,7 +62,9 @@ class BokehRenderer(Renderer):
         plot, fmt =  self._validate(obj, fmt)
         info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
-        if isinstance(plot, tuple(self.widgets.values())):
+        if self.mode == 'server':
+            return self.server_doc(plot), info
+        elif isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
         elif fmt == 'html':
             html = self.figure_data(plot)
@@ -60,6 +72,16 @@ class BokehRenderer(Renderer):
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             return self.diff(plot), info
+
+
+    def server_doc(self, plot):
+        """
+        Get server document.
+        """
+        doc = curdoc()
+        plot.document = doc
+        doc.add_root(plot.state)
+        return doc
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
