@@ -29,6 +29,12 @@ class BokehRenderer(Renderer):
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
+    holomap = param.ObjectSelector(default='auto',
+                                   objects=['widgets', 'scrubber', 'server',
+                                            None, 'auto'], doc="""
+        Output render multi-frame (typically animated) format. If
+        None, no multi-frame rendering will occur.""")
+
     mode = param.ObjectSelector(default='default',
                                 objects=['default', 'server'], doc="""
          Whether to render the DynamicMap in regular or server mode. """)
@@ -37,13 +43,14 @@ class BokehRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'json', 'auto'],
                             'server': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
-                                'server': ['widgets', 'auto', None]}}
+                                'server': ['server', 'auto', None]}}
 
     webgl = param.Boolean(default=False, doc="""Whether to render plots with WebGL
         if bokeh version >=0.10""")
 
     widgets = {'scrubber': BokehScrubberWidget,
-               'widgets': BokehSelectionWidget}
+               'widgets': BokehSelectionWidget,
+               'server': BokehServerWidgets}
 
     backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
@@ -79,7 +86,10 @@ class BokehRenderer(Renderer):
         Get server document.
         """
         doc = curdoc()
-        plot.document = doc
+        if isinstance(plot, BokehServerWidgets):
+            plot.plot.document = doc
+        else:
+            plot.document = doc
         doc.add_root(plot.state)
         return doc
 

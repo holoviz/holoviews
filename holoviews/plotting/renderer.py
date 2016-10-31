@@ -299,7 +299,9 @@ class Renderer(Exporter):
         if not isinstance(plot, Plot):
             plot = self_or_cls.get_plot(plot)
         dynamic = plot.dynamic
-        if widget_type == 'auto':
+        if widget_type == 'server':
+            pass
+        elif widget_type == 'auto':
             isuniform = plot.uniform
             if not isuniform:
                 widget_type = 'scrubber'
