@@ -5,6 +5,8 @@ import param
 from .core import DynamicMap, ViewableElement
 from .core.operation import ElementOperation
 from .core.util import Aliases
+from .core.operation import OperationCallable
+from .core.spaces import Callable
 from .core import util
 from .streams import Stream
 
@@ -33,7 +35,8 @@ class Dynamic(param.ParameterizedFunction):
         self.p = param.ParamOverrides(self, params)
         callback = self._dynamic_operation(map_obj)
         if isinstance(map_obj, DynamicMap):
-            dmap = map_obj.clone(callback=callback, shared_data=False)
+            dmap = map_obj.clone(callback=callback, shared_data=False,
+                                 streams=[])
         else:
             dmap = self._make_dynamic(map_obj, callback)
         if isinstance(self.p.operation, ElementOperation):
@@ -44,7 +47,7 @@ class Dynamic(param.ParameterizedFunction):
                 elif not isinstance(stream, Stream):
                     raise ValueError('Stream must only contain Stream '
                                      'classes or instances')
-                stream.update(**{k: self.p.operation.p.get(k) for k, v in
+                stream.update(**{k: self.p.operation.p.get(k, v) for k, v in
                                  stream.contents.items()})
                 streams.append(stream)
             return dmap.clone(streams=streams)
@@ -69,15 +72,17 @@ class Dynamic(param.ParameterizedFunction):
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
                 return self._process(map_obj[key], key)
-            return dynamic_operation
-
-        def dynamic_operation(*key, **kwargs):
-            key = key[0] if map_obj.mode == 'open' else key
-            self.p.kwargs.update(kwargs)
-            _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
-            return self._process(el, key)
-
-        return dynamic_operation
+        else:
+            def dynamic_operation(*key, **kwargs):
+                key = key[0] if map_obj.mode == 'open' else key
+                self.p.kwargs.update(kwargs)
+                _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
+                return self._process(el, key)
+        if isinstance(self.p.operation, ElementOperation):
+            return OperationCallable(callable_function=dynamic_operation,
+                                     inputs=[map_obj], operation=self.p.operation)
+        else:
+            return Callable(callable_function=dynamic_operation, inputs=[map_obj])
 
 
     def _make_dynamic(self, hmap, dynamic_fn):

@@ -120,12 +120,13 @@ class HoloMap(UniformNdMapping):
             map_obj = self if isinstance(self, DynamicMap) else other
             mode = map_obj.mode
 
-        def dynamic_mul(*key):
+        def dynamic_mul(*key, **kwargs):
             key = key[0] if mode == 'open' else key
             layers = []
             try:
                 if isinstance(self, DynamicMap):
-                    _, self_el = util.get_dynamic_item(self, dimensions, key)
+                    safe_key = () if not self.kdims else key
+                    _, self_el = util.get_dynamic_item(self, dimensions, safe_key)
                     if self_el is not None:
                         layers.append(self_el)
                 else:
@@ -134,7 +135,8 @@ class HoloMap(UniformNdMapping):
                 pass
             try:
                 if isinstance(other, DynamicMap):
-                    _, other_el = util.get_dynamic_item(other, dimensions, key)
+                    safe_key = () if not other.kdims else key
+                    _, other_el = util.get_dynamic_item(other, dimensions, safe_key)
                     if other_el is not None:
                         layers.append(other_el)
                 else:
@@ -142,11 +144,12 @@ class HoloMap(UniformNdMapping):
             except KeyError:
                 pass
             return Overlay(layers)
+        callback = Callable(callable_function=dynamic_mul, inputs=[self, other])
         if map_obj:
-            return map_obj.clone(callback=dynamic_mul, shared_data=False,
-                                 kdims=dimensions)
+            return map_obj.clone(callback=callback, shared_data=False,
+                                 kdims=dimensions, streams=[])
         else:
-            return DynamicMap(callback=dynamic_mul, kdims=dimensions)
+            return DynamicMap(callback=callback, kdims=dimensions)
 
 
     def __mul__(self, other):
@@ -204,10 +207,13 @@ class HoloMap(UniformNdMapping):
             return self.clone(items, kdims=dimensions, label=self._label, group=self._group)
         elif isinstance(other, self.data_type):
             if isinstance(self, DynamicMap):
-                from ..util import Dynamic
-                def dynamic_mul(element):
+                def dynamic_mul(*args, **kwargs):
+                    element = self[args]
                     return element * other
-                return Dynamic(self, operation=dynamic_mul)
+                callback = Callable(callable_function=dynamic_mul,
+                                    inputs=[self, other])
+                return self.clone(shared_data=False, callback=callback,
+                                  streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
@@ -392,6 +398,38 @@ class HoloMap(UniformNdMapping):
             else:
                 return histmaps[0]
 
+
+class Callable(param.Parameterized):
+    """
+    Callable allows wrapping callbacks on one or more DynamicMaps
+    allowing their inputs (and in future outputs) to be defined.
+    This makes it possible to wrap DynamicMaps with streams and
+    makes it possible to traverse the graph of operations applied
+    to a DynamicMap.
+    """
+
+    callable_function = param.Callable(default=lambda x: x, doc="""
+         The callable function being wrapped.""")
+
+    inputs = param.List(default=[], doc="""
+         The list of inputs the callable function is wrapping.""")
+
+    def __call__(self, *args, **kwargs):
+        return self.callable_function(*args, **kwargs)
+
+
+def get_nested_streams(dmap):
+    """
+    Get all (potentially nested) streams from DynamicMap with Callable
+    callback.
+    """
+    layer_streams = list(dmap.streams)
+    if not isinstance(dmap.callback, Callable):
+        return layer_streams
+    for o in dmap.callback.inputs:
+        if isinstance(o, DynamicMap):
+            layer_streams += get_nested_streams(o)
+    return layer_streams
 
 
 class DynamicMap(HoloMap):
@@ -689,7 +727,8 @@ class DynamicMap(HoloMap):
 
         # Cache lookup
         try:
-            dimensionless = util.dimensionless_contents(self.streams, self.kdims)
+            dimensionless = util.dimensionless_contents(get_nested_streams(self),
+                                                        self.kdims, no_duplicates=False)
             if (dimensionless and not self._dimensionless_cache):
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)

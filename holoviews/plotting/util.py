@@ -4,7 +4,8 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, Store, Overlay)
+                    GridSpace, NdLayout, Store, Callable, Overlay)
+from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, safe_unicode)
 
@@ -295,9 +296,34 @@ def attach_streams(plot, obj):
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
-        for stream in dmap.streams:
+        for stream in get_nested_streams(dmap):
             stream._hidden_subscribers.append(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
+
+
+def get_sources(obj, index=None):
+    """
+    Traverses Callable graph to resolve sources on
+    DynamicMap objects, returning a list of sources
+    indexed by the Overlay layer.
+    """
+    layers = [(index, obj)]
+    if not isinstance(obj, DynamicMap) or not isinstance(obj.callback, Callable):
+        return layers
+    index = 0 if index is None else int(index)
+    for o in obj.callback.inputs:
+        if isinstance(o, Overlay):
+            layers.append((None, o))
+            for i, o in enumerate(overlay):
+                layers.append((index+i, o))
+            index += len(o)
+        elif isinstance(o, DynamicMap):
+            layers += get_sources(o, index)
+            index = layers[-1][0]+1
+        else:
+            layers.append((index, o))
+            index += 1
+    return layers
 
 
 def traverse_setter(obj, attribute, value):

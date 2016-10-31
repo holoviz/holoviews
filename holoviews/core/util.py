@@ -799,21 +799,21 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     return [name for name in names if name not in exclude]
 
 
-def dimensionless_contents(streams, kdims):
+def dimensionless_contents(streams, kdims, no_duplicates=True):
     """
     Return a list of stream parameters that have not been associated
     with any of the key dimensions.
     """
-    names = stream_parameters(streams)
+    names = stream_parameters(streams, no_duplicates)
     return [name for name in names if name not in kdims]
 
 
-def unbound_dimensions(streams, kdims):
+def unbound_dimensions(streams, kdims, no_duplicates=True):
     """
     Return a list of dimensions that have not been associated with
     any streams.
     """
-    params = stream_parameters(streams)
+    params = stream_parameters(streams, no_duplicates)
     return [d for d in kdims if d not in params]
 
 

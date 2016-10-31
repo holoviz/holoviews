@@ -22,7 +22,7 @@ from ..core.traversal import dimensionless_cache
 from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
-                   attach_streams, traverse_setter)
+                   attach_streams, traverse_setter, get_nested_streams)
 
 
 class Plot(param.Parameterized):
@@ -578,7 +578,10 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         if top_level:
             self.comm = self.init_comm(element)
-        self.streams = self.hmap.streams if isinstance(self.hmap, DynamicMap) else []
+        streams = []
+        if isinstance(self.hmap, DynamicMap):
+            streams = get_nested_streams(self.hmap)
+        self.streams = streams
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -928,9 +931,9 @@ class GenericCompositePlot(DimensionedPlot):
         if top_level:
             self.comm = self.init_comm(layout)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
-        self.streams = [s for streams in layout.traverse(lambda x: x.streams,
-                                                         [DynamicMap])
-                        for s in streams]
+        nested_streams = layout.traverse(lambda x: get_nested_streams(x),
+                                         [DynamicMap])
+        self.streams = [s for streams in nested_streams for s in streams]
 
 
     def _get_frame(self, key):
