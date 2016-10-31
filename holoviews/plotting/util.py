@@ -5,7 +5,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     GridSpace, NdLayout, Store, Callable, Overlay)
-from ..core.spaces import get_streams
+from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, safe_unicode)
 
@@ -296,7 +296,7 @@ def attach_streams(plot, obj):
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
-        for stream in get_streams(dmap):
+        for stream in get_nested_streams(dmap):
             stream._hidden_subscribers.append(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
 
@@ -307,16 +307,9 @@ def get_sources(obj, index=None):
     DynamicMap objects, returning a list of sources
     indexed by the Overlay layer.
     """
-    if isinstance(obj, DynamicMap):
-        if isinstance(obj.callback, Callable):
-            if len(obj.callback.inputs) > 1:
-                layers = [(None, obj)]
-            else:
-                layers = [(index, obj)]
-        else:
-            return [(index, obj)]
-    else:
-        return [(index, obj)]
+    layers = [(index, obj)]
+    if not isinstance(obj, DynamicMap) or not isinstance(obj.callback, Callable):
+        return layers
     index = 0 if index is None else int(index)
     for o in obj.callback.inputs:
         if isinstance(o, Overlay):
