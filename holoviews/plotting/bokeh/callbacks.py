@@ -229,10 +229,13 @@ class Callback(object):
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
-        self.comm = self._comm_type(plot, on_msg=self.on_msg)
+        if plot.renderer.mode != 'server':
+            self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.callbacks = []
+        self.plot_handles = {}
+        self._event_queue = []
 
 
     def initialize(self):
@@ -240,28 +243,45 @@ class Callback(object):
         if self.plot.subplots:
             plots += list(self.plot.subplots.values())
 
-        handles = self._get_plot_handles(plots)
+        self.plot_handles = self._get_plot_handles(plots)
         requested = {}
         for h in self.models+self.extra_models:
-            if h in handles:
-                requested[h] = handles[h]
+            if h in self.plot_handles:
+                requested[h] = self.plot_handles[h]
             elif h in self.extra_models:
                 print("Warning %s could not find the %s model. "
                       "The corresponding stream may not work.")
         self.handle_ids.update(self._get_stream_handle_ids(requested))
 
+        found = []
         for plot in plots:
             for handle_name in self.models:
-                if handle_name not in handles:
+                if handle_name not in self.plot_handles:
                     warn_args = (handle_name, type(self.plot).__name__,
                                  type(self).__name__)
-                    self.warning('%s handle not found on %s, cannot'
-                                 'attach %s callback' % warn_args)
+                    print('%s handle not found on %s, cannot '
+                          'attach %s callback' % warn_args)
                     continue
-                handle = handles[handle_name]
-                js_callback = self.get_customjs(requested)
-                self.set_customjs(js_callback, handle)
-                self.callbacks.append(js_callback)
+                handle = self.plot_handles[handle_name]
+
+                # Hash the plot handle with Callback type allowing multiple
+                # callbacks on one handle to be merged
+                cb_hash = (id(handle), id(type(self)))
+                if cb_hash in self._callbacks:
+                    # Merge callbacks if another callback has already been attached
+                    cb = self._callbacks[cb_hash]
+                    cb.streams += self.streams
+                    for k, v in self.handle_ids.items():
+                        cb.handle_ids[k].update(v)
+                    continue
+
+                if self.plot.renderer.mode == 'server':
+                    self.set_onchange(plot.handles[handle_name])
+                else:
+                    js_callback = self.get_customjs(requested)
+                    self.set_customjs(js_callback, handle)
+                    self.callbacks.append(js_callback)
+                self._callbacks[cb_hash] = self
 
 
     def _filter_msg(self, msg, ids):
@@ -278,7 +298,7 @@ class Callback(object):
             else:
                 filtered_msg[k] = v
         return filtered_msg
-
+    
 
     def on_msg(self, msg):
         for stream in self.streams:
@@ -330,7 +350,61 @@ class Callback(object):
         return stream_handle_ids
 
 
-    def get_customjs(self, references):
+    def on_change(self, attr, old, new):
+        """
+        Process change events adding timeout to process multiple concerted
+        value change at once rather than firing off multiple plot updates.
+        """
+        self._event_queue.append((attr, old, new))
+        if self.trigger not in self.plot.document._session_callbacks:
+            self.plot.document.add_timeout_callback(self.trigger, 50)
+
+
+    def trigger(self):
+        """
+        Trigger callback change event and triggering corresponding streams.
+        """
+        if not self._event_queue:
+            return
+
+        values = {}
+        for attr, path in self.attributes.items():
+            attr_path = path.split('.')
+            if attr_path[0] == 'cb_obj':
+                attr_path = self.models[0]
+            obj = self.plot_handles.get(attr_path[0])
+            if not obj:
+                raise Exception('Bokeh plot attribute %s could not be found' % path)
+            for p in attr_path[1:]:
+                if p == 'attributes':
+                    continue
+                if isinstance(obj, dict):
+                    obj = obj.get(p)
+                else:
+                    obj = getattr(obj, p, None)
+            values[attr] = obj
+        values = self._process_msg(values)
+        if any(v is None for v in values.values()):
+            return
+        for stream in self.streams:
+            stream.update(trigger=False, **values)
+        Stream.trigger(self.streams)
+        self._event_queue = []
+
+
+    def set_onchange(self, handle):
+        """
+        Set up on_change events for bokeh server interactions.
+        """
+        if self.events and bokeh_version >= '0.12.5':
+            for event in self.events:
+                handle.on_event(event, self.on_change)
+        elif self.change:
+            for change in self.change:
+                handle.on_change(change, self.on_change)
+
+
+    def set_customjs(self, handle, references):
         """
         Creates a CustomJS callback that will send the requested
         attributes back to python.
@@ -357,23 +431,11 @@ class Callback(object):
         the requested callback handle.
         """
 
-        # Hash the plot handle with Callback type allowing multiple
-        # callbacks on one handle to be merged
-        cb_hash = (id(handle), id(type(self)))
-        if cb_hash in self._callbacks:
-            # Merge callbacks if another callback has already been attached
-            cb = self._callbacks[cb_hash]
-            if isinstance(cb, type(self)):
-                cb.streams += self.streams
-                for k, v in self.handle_ids.items():
-                    cb.handle_ids[k].update(v)
-            return
-
         self._callbacks[cb_hash] = self
         if self.events and bokeh_version >= '0.12.5':
             for event in self.events:
                 handle.js_on_event(event, js_callback)
-        elif self.change and bokeh_version >= '0.12.5':
+        elif self.change:
             for change in self.change:
                 handle.js_on_change(change, js_callback)
         elif hasattr(handle, 'callback'):

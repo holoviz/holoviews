@@ -51,7 +51,7 @@ MIME_TYPES = {
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
     'html':  'text/html',
-    'json':  'text/json'
+    'json':  'text/json',
     'server': None
 }
 
