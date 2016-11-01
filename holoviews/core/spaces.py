@@ -425,11 +425,11 @@ def get_nested_streams(dmap):
     """
     layer_streams = list(dmap.streams)
     if not isinstance(dmap.callback, Callable):
-        return layer_streams
+        return list(set(layer_streams))
     for o in dmap.callback.inputs:
         if isinstance(o, DynamicMap):
             layer_streams += get_nested_streams(o)
-    return layer_streams
+    return list(set(layer_streams))
 
 
 class DynamicMap(HoloMap):
