@@ -933,7 +933,7 @@ class GenericCompositePlot(DimensionedPlot):
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
-        self.streams = [s for streams in nested_streams for s in streams]
+        self.streams = list(set([s for streams in nested_streams for s in streams]))
 
 
     def _get_frame(self, key):
