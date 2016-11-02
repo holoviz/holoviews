@@ -169,6 +169,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles = {} if plot is None else self.handles['plot']
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
+        self.static_source = False
 
 
     def _construct_callbacks(self):
@@ -619,7 +620,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         glyph = self.handles.get('glyph', None)
         if hasattr(glyph, 'visible'):
             glyph.visible = bool(element)
-        if not element:
+
+        if not element or (not self.dynamic and self.static):
             return
 
         style_element = element.last if self.batched else element
@@ -633,11 +635,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot = self.handles['plot']
         source = self.handles['source']
         empty = False
+        mapping = {}
+
+        # Cache frame object id to skip updating data if unchanged
+        previous_id = self.handles.get('previous_id', None)
         if self.batched:
-            data, mapping = self.get_batched_data(element, ranges, empty)
+            current_id = sum(element.traverse(lambda x: id(x.data), [Element]))
         else:
-            data, mapping = self.get_data(element, ranges, empty)
-        self._update_datasource(source, data)
+            current_id = id(element.data)
+        self.handles['previous_id'] = current_id
+        self.static_source = self.dynamic and (current_id == previous_id)
+        if not self.static_source:
+            if self.batched:
+                data, mapping = self.get_batched_data(element, ranges, empty)
+            else:
+                data, mapping = self.get_data(element, ranges, empty)
+            self._update_datasource(source, data)
 
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
@@ -657,18 +670,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.static and not self.dynamic:
             return handles
 
-        previous_id = self.handles.get('previous_id', None)
-        current_id = id(self.current_frame.data) if self.current_frame else None
         for handle in self._update_handles:
-            if (handle == 'source' and self.dynamic and
-                current_id == previous_id):
+            if (handle == 'source' and self.static_source):
                 continue
             if handle in self.handles:
                 handles.append(self.handles[handle])
-
-        # Cache frame object id to skip updating if unchanged
-        if self.dynamic:
-            self.handles['previous_id'] = current_id
 
         if self.overlaid:
             return handles
@@ -679,12 +685,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             handles.append(plot.title)
 
         if self.current_frame:
-            if self.framewise:
+            if not self.apply_ranges:
+                rangex, rangey = False, False
+            elif self.framewise:
                 rangex, rangey = True, True
             elif isinstance(self.hmap, DynamicMap):
                 rangex, rangey = True, True
-                subplots = list(self.subplots.values()) if self.subplots else []
-                callbacks = [cb for p in [self]+subplots for cb in p.callbacks]
+                callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
+                             for cb in cbs]
                 streams = [s for cb in callbacks for s in cb.streams]
                 for stream in streams:
                     if isinstance(stream, RangeXY):
