@@ -504,7 +504,7 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
 
-        self.counter = 0
+        self.counter = 0 # Still used for caching and generator keys
         if self.callback is None:
             raise Exception("A suitable callback must be "
                             "declared to create a DynamicMap")
