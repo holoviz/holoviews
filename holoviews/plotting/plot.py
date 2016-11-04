@@ -625,7 +625,7 @@ class GenericElementPlot(DimensionedPlot):
             return frame
 
         if isinstance(key, int):
-            key = self.hmap.data.keys()[min([key, len(self.hmap)-1])]
+            key = list(self.hmap.data.keys())[min([key, len(self.hmap)-1])]
 
         self.current_key = key
 

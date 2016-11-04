@@ -230,7 +230,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         Initializes a new plot object with the last available frame.
         """
         # Get element key and ranges for frame
-        return self.generate_plot(self.hmap.data.keys()[0], ranges)
+        return self.generate_plot(list(self.hmap.data.keys())[0], ranges)
 
     
     def generate_plot(self, key, ranges):
