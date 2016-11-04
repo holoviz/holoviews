@@ -550,7 +550,7 @@ class GenericElementPlot(DimensionedPlot):
                  overlay_dims={}, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
-        self.overlaid = overlaid and not batched
+        self.overlaid = overlaid
         self.batched = batched
         self.overlay_dims = overlay_dims
 
@@ -826,7 +826,7 @@ class GenericOverlayPlot(GenericElementPlot):
 
         subplots = OrderedDict()
         for (key, vmap) in zip(keys, vmaps):
-            opts = {}
+            opts = {'overlaid': overlay_type}
             if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
@@ -858,18 +858,19 @@ class GenericOverlayPlot(GenericElementPlot):
                 opts['show_legend'] = self.show_legend
             elif self.batched and 'batched' in plottype._plot_methods:
                 opts['batched'] = self.batched
+                opts['overlaid'] = self.overlaid
             if len(ordering) > self.legend_limit:
                 opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
+            passed_handles = {k: v for k, v in self.handles.items()
+                              if k in self._passed_handles}
             plotopts = dict(opts, cyclic_index=cyclic_index,
                             invert_axes=self.invert_axes,
                             dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
-                            overlaid=overlay_type, ranges=ranges,
-                            show_title=self.show_title, style=style,
-                            uniform=self.uniform, zorder=zorder,
-                            **{k: v for k, v in self.handles.items()
-                               if k in self._passed_handles})
+                            ranges=ranges, show_title=self.show_title,
+                            style=style, uniform=self.uniform,
+                            zorder=zorder, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
