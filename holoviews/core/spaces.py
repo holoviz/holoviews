@@ -764,8 +764,7 @@ class DynamicMap(HoloMap):
             raise Exception("The next() method should only be called in "
                             "one of the open modes.")
 
-        args = () if self.call_mode == 'generator' else (self.counter,)
-        retval = self._execute_callback(*args)
+        retval = self._execute_callback()
 
         (key, val) = (retval if isinstance(retval, tuple)
                       else (self.counter, retval))
