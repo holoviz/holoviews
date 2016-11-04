@@ -627,7 +627,7 @@ class GenericElementPlot(DimensionedPlot):
             return frame
 
         if isinstance(key, int):
-            key = self.hmap.keys()[min([key, len(self.hmap)-1])]
+            key = list(self.hmap.data.keys())[min([key, len(self.hmap)-1])]
 
         self.current_key = key
 
@@ -795,7 +795,7 @@ class GenericOverlayPlot(GenericElementPlot):
         else:
             mapwise_ranges = self.compute_ranges(holomap, None, None)
             frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
-                                        for key in holomap.keys()])
+                                        for key in holomap.data.keys()])
         ranges = frame_ranges.values()
 
         return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
