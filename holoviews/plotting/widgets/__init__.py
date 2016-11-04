@@ -273,11 +273,9 @@ class SelectionWidget(NdWidget):
             next_vals = {}
 
             # Hide widget if it has 1-to-1 mapping to next widget
-            visible = False
+            visible = True
             dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
             many_to_one = any(len(v) > 1 for v in dim_nesting)
-            if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
-                visible = True
 
             if self.plot.dynamic:
                 if dim.values:
@@ -314,6 +312,8 @@ class SelectionWidget(NdWidget):
                 else:
                     dim_vals = (dim.values if dim.values else
                                 list(unique_array(self.mock_obj.dimension_values(dim.name))))
+                    visible = visible and len(dim_vals) > 1
+
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
@@ -336,8 +336,6 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-                visible = visible and len(dim_vals) > 1
-
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
