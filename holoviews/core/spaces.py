@@ -612,6 +612,7 @@ class DynamicMap(HoloMap):
             self._validate_key(retval[0]) # Validated output key
             return (retval[0], self._style(retval[1]))
         else:
+            # Counter is the default key in generator call mode.
             self._validate_key((self.counter,))
             return (self.counter, self._style(retval))
 
