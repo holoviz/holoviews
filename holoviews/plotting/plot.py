@@ -332,7 +332,7 @@ class DimensionedPlot(Plot):
             elements = []
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
-            framewise = framewise or self.dynamic
+            framewise = framewise or self.dynamic or len(elements) == 1
             if group in ranges and (not framewise or ranges is not self.ranges):
                 continue
             elif not framewise: # Traverse to get all elements
@@ -340,8 +340,10 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
-            if not axiswise or ((not framewise or len(elements) == 1)
-                                and isinstance(obj, HoloMap)): # Compute new ranges
+            # Only compute ranges if not axiswise on a composite plot
+            # or not framewise on a Overlay or ElementPlot
+            if (not (axiswise and not isinstance(obj, HoloMap)) or
+                (not framewise and isinstance(obj, HoloMap))):
                 self._compute_group_range(group, elements, ranges)
         self.ranges.update(ranges)
         return ranges
