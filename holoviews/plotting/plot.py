@@ -862,16 +862,15 @@ class GenericOverlayPlot(GenericElementPlot):
             if len(ordering) > self.legend_limit:
                 opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
+            passed_handles = {k: v for k, v in self.handles.items()
+                              if k in self._passed_handles}
             plotopts = dict(opts, cyclic_index=cyclic_index,
                             invert_axes=self.invert_axes,
-                            dimensions=self.dimensions,
-                            keys=self.keys,
+                            dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
-                            zorder=zorder, **{k: v for k, v in
-                            self.handles.items() if k in
-                            self._passed_handles})
+                            zorder=zorder, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
