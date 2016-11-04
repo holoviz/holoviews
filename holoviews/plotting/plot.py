@@ -895,6 +895,7 @@ class GenericOverlayPlot(GenericElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
+                            renderer=self.renderer,
                             zorder=zorder, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)
