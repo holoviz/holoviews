@@ -462,16 +462,12 @@ class DynamicMap(HoloMap):
 
         For open mode where there is an unbounded key dimension, the
         return type can specify a key as well as element as the tuple
-        (key, element). If no key is supplied, a simple counter is used
-        instead.
+        (key, element).
 
         If the callback is a generator, open mode is used and next() is
-        simply called. If the callback is callable and in open mode, the
-        element counter value will be supplied as the single
-        argument. This can be used to avoid issues where multiple
-        elements in a Layout each call next() leading to uncontrolled
-        changes in simulator state (the counter can be used to indicate
-        simulation time across the layout).
+        simply called. Otherwise, the callable is invoked using
+        positional arguments based on the key dimensions and keyword
+        arguments based on the stream parameters.
     """)
 
     streams = param.List(default=[], doc="""
