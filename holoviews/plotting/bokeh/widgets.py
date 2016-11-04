@@ -20,6 +20,15 @@ class BokehServerWidgets(param.Parameterized):
     """
     """
 
+    basejs = param.String(default=None, doc="""
+        Defines the local CSS file to be loaded for this widget.""")
+
+    extensionjs = param.String(default=None, doc="""
+        Optional javascript extension file for a particular backend.""")
+
+    css = param.String(default=None, doc="""
+        Defines the local CSS file to be loaded for this widget.""")
+
     position = param.ObjectSelector(default='right',
         objects=['right', 'left', 'above', 'below'])
 
