@@ -19,6 +19,23 @@ from .pandas import PandasInterface
 
 
 class DaskInterface(PandasInterface):
+    """
+    The DaskInterface allows a Dataset objects to wrap a dask
+    DataFrame object. Using dask allows loading data lazily
+    and performing out-of-core operations on the data, making
+    it possible to work on datasets larger than memory.
+
+    The DaskInterface covers almost the complete API exposed
+    by the PandasInterface with two notable exceptions:
+
+    1) Sorting is not supported and any attempt at sorting will
+       be ignored with an warning.
+    2) Dask does not easily support adding a new column to an existing
+       dataframe unless it is a scalar, add_dimension will therefore
+       error when supplied a non-scalar value.
+    4) Not all functions can be easily applied to a dask dataframe so
+       some functions applied with aggregate and reduce will not work.
+    """
 
     types = (DataFrame,)
 
@@ -101,7 +118,6 @@ class DaskInterface(PandasInterface):
     def select(cls, columns, selection_mask=None, **selection):
         df = columns.data
         if selection_mask is not None:
-            print selection_mask
             return df[selection_mask]
         selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
@@ -197,7 +213,8 @@ class DaskInterface(PandasInterface):
         data = columns.data
         if dimension.name not in data.columns:
             if not np.isscalar(values):
-                err = 'Dask dataframe does not support assigning non-scalar value.'
+                err = ('Dask dataframe does not support assigning '
+                       'non-scalar value.')
                 raise NotImplementedError(err)
             data = data.assign(**{dimension.name: values})
         return data
