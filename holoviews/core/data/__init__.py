@@ -46,6 +46,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .dask import DaskInterface
+    datatypes.append('dask')
+except ImportError:
+    pass
+
 from ..dimension import Dimension
 from ..element import Element
 from ..spaces import HoloMap, DynamicMap

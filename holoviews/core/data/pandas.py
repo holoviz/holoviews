@@ -80,6 +80,16 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def validate(cls, dataset):
+        not_found = [d for d in dataset.dimensions(label=True)
+                     if d not in dataset.data.columns]
+        if not_found:
+            raise ValueError("Supplied data does not contain specified "
+                             "dimensions, the following dimensions were "
+                             "not found: %s" % repr(not_found))
+
+
+    @classmethod
     def range(cls, columns, dimension):
         column = columns.data[columns.get_dimension(dimension).name]
         if column.dtype.kind == 'O':
@@ -125,9 +135,10 @@ class PandasInterface(Interface):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', True)
-        reindexed = data.reindex(columns=cols+vdims)
+        reindexed = data[cols+vdims]
         if len(dimensions):
-            return reindexed.groupby(cols, sort=False).aggregate(function, **kwargs).reset_index()
+            grouped = reindexed.groupby(cols, sort=False)
+            return grouped.aggregate(function, **kwargs).reset_index()
         else:
             agg = reindexed.apply(function, **kwargs)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
@@ -185,11 +196,9 @@ class PandasInterface(Interface):
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
         data = columns.data[dim]
-        if util.dd and isinstance(data, util.dd.Series):
-            data = data.compute()
         if not expanded:
-            return util.unique_array(data)
-        return np.array(data)
+            return data.unique()
+        return data.values
 
 
     @classmethod
