@@ -61,7 +61,7 @@ class DaskInterface(PandasInterface):
             column = np.sort(column[column.notnull()].compute())
             return column[0], column[-1]
         else:
-            return (column.min().compute(), column.max().compute())
+            return dd.compute(column.min(), column.max())
 
     @classmethod
     def sort(cls, columns, by=[]):
@@ -138,11 +138,11 @@ class DaskInterface(PandasInterface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
-        groupby = columns.data.groupby(dimensions)
-        indices = columns.data[dimensions].compute().values
-        coords = list(util.unique_iterator((tuple(ind) for ind in indices)))
         data = []
-        for coord in coords:
+        groupby = columns.data.groupby(dimensions)
+        ind_array = columns.data[dimensions].compute().values
+        indices = (tuple(ind) for ind in ind_array)
+        for coord in util.unique_iterator(indices):
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
                 continue
             if len(coord) == 1:
@@ -227,6 +227,15 @@ class DaskInterface(PandasInterface):
     @classmethod
     def dframe(cls, columns, dimensions):
         return columns.data.compute()
+
+    @classmethod
+    def length(cls, dataset):
+        """
+        Length of dask dataframe is unknown, always return 1
+        for performance, use shape to compute dataframe shape.
+        """
+        return 1
+
 
 
 Interface.register(DaskInterface)
