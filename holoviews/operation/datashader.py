@@ -8,19 +8,22 @@ import pandas as pd
 import xarray as xr
 import datashader as ds
 import datashader.transfer_functions as tf
+import dask.dataframe as dd
 
 from datashader.core import bypixel
 from datashader.pandas import pandas_pipeline
+from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
 
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
-from ..core.data import ArrayInterface, PandasInterface
+from ..core.data import ArrayInterface, PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
 from ..element import GridImage, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
+DF_INTERFACES = [PandasInterface, DaskInterface]
 
 @dispatch(Element)
 def discover(dataset):
@@ -28,7 +31,7 @@ def discover(dataset):
     Allows datashader to correctly discover the dtypes of the data
     in a holoviews Element.
     """
-    if dataset.interface in [PandasInterface, ArrayInterface]:
+    if dataset.interface in DF_INTERFACES:
         return dsdiscover(dataset.data)
     else:
         return dsdiscover(dataset.dframe())
@@ -54,8 +57,13 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
     vdims = [dataset.get_dimension(column)(name) if column
              else Dimension('Count')]
 
-    agg = pandas_pipeline(dataset.data, schema, canvas,
-                          glyph, summary)
+    if dataset.interface is PandasInterface:
+        agg = pandas_pipeline(dataset.data, schema, canvas,
+                              glyph, summary)
+    elif dataset.interface is DaskInterface:
+        agg = dask_pipeline(dataset.data, schema, canvas,
+                            glyph, summary)
+
     agg = agg.rename({'x_axis': kdims[0].name,
                       'y_axis': kdims[1].name})
     return agg
@@ -125,8 +133,12 @@ class aggregate(ElementOperation):
         kdims = obj.kdims
         vdims = obj.vdims
         x, y = obj.dimensions(label=True)[:2]
-        is_df = lambda x: isinstance(x, Dataset) and x.interface is PandasInterface
-        if isinstance(obj, Path):
+        is_df = lambda x: isinstance(x, Dataset) and x.interface in DF_INTERFACES
+        if isinstance(obj, Dataset):
+            df = obj.data if is_df(obj) else obj.dframe()
+            paths.append(df)
+            glyph = 'line' if (pd.isnull(df[x]) & pd.isnull(df[y])).any() else 'points'
+        elif isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
                 df = pd.DataFrame(p, columns=obj.dimensions('key', True))
@@ -145,12 +157,19 @@ class aggregate(ElementOperation):
         elif isinstance(obj, Element):
             glyph = 'line' if isinstance(obj, Curve) else 'points'
             paths.append(obj.data if is_df(obj) else obj.dframe())
-        if glyph == 'line':
-            empty = paths[0][:1].copy()
-            empty.loc[0, :] = (np.NaN,) * empty.shape[1]
-            paths = [elem for path in paths for elem in (path, empty)][:-1]
         if len(paths) > 1:
-            df = pd.concat(paths).reset_index(drop=True)
+            if glyph == 'line':
+                path = paths[0][:1]
+                if isinstance(path, dd.DataFrame):
+                    path = path.compute()
+                empty = path.copy()
+                empty.loc[0, :] = (np.NaN,) * empty.shape[1]
+                paths = [elem for path in paths for elem in (path, empty)][:-1]
+            datasets = [Dataset(p) for p in paths]
+            if isinstance(paths[0], dd.DataFrame):
+                df = DaskInterface.concat(datasets)
+            else:
+                df = PandasInterface.concat(datasets)
         else:
             df = paths[0]
         if category and df[category].dtype.name != 'category':
