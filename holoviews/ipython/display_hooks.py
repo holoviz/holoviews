@@ -121,7 +121,8 @@ def display_hook(fn):
 
             return html
         except SkipRendering as e:
-            sys.stderr.write("Rendering process skipped: %s" % str(e))
+            if e.warn:
+                sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
             try: option_state(element, state=optstate)
