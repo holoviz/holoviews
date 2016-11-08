@@ -51,9 +51,9 @@ class SkipRendering(Exception):
     hooks fall back to a text repr. Used to skip rendering of
     DynamicMaps with exhausted element generators.
     """
-    def __init__(self, warn=True):
+    def __init__(self, message="", warn=True):
         self.warn = warn
-        super(SkipRendering, self).__init__()
+        super(SkipRendering, self).__init__(message)
 
 
 class OptionError(Exception):
