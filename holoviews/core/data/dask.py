@@ -169,14 +169,14 @@ class DaskInterface(PandasInterface):
                     'std': 'std', 'sum': 'sum', 'var': 'var'}
         if len(dimensions):
             groups = reindexed.groupby(cols, sort=False)
-            if (hasattr(function, 'func_name') and function.func_name in inbuilts):
-                agg = getattr(groups, inbuilts[function.func_name])()
+            if (function.__name__ in inbuilts):
+                agg = getattr(groups, inbuilts[function.__name__])()
             else:
-                agg = groups.apply(function, axis=1)
+                agg = groups.apply(function)
             return agg.reset_index()
         else:
-            if (hasattr(function, 'func_name') and function.func_name in inbuilts):
-                agg = getattr(reindexed, inbuilts[function.func_name])()
+            if (function.__name__ in inbuilts):
+                agg = getattr(reindexed, inbuilts[function.__name__])()
             else:
                 raise NotImplementedError
             return pd.DataFrame(agg.compute()).T
