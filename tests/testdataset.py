@@ -109,7 +109,7 @@ class HomogeneousColumnTypes(object):
     def test_dataset_add_dimensions_value_hm(self):
         table = self.dataset_hm.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_hm(self):
         table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
@@ -294,7 +294,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def test_dataset_add_dimensions_value_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, range(1,12))
