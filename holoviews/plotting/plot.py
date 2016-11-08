@@ -1016,7 +1016,7 @@ class GenericLayoutPlot(GenericCompositePlot):
         if not isinstance(layout, (NdLayout, Layout)):
             raise ValueError("GenericLayoutPlot only accepts Layout objects.")
         if len(layout.values()) == 0:
-            raise ValueError("Cannot display empty layout")
+            raise SkipRendering(warn=False)
 
         super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
