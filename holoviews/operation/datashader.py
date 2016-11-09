@@ -134,11 +134,7 @@ class aggregate(ElementOperation):
         vdims = obj.vdims
         x, y = obj.dimensions(label=True)[:2]
         is_df = lambda x: isinstance(x, Dataset) and x.interface in DF_INTERFACES
-        if isinstance(obj, Dataset):
-            df = obj.data if is_df(obj) else obj.dframe()
-            paths.append(df)
-            glyph = 'line' if (pd.isnull(df[x]) & pd.isnull(df[y])).any() else 'points'
-        elif isinstance(obj, Path):
+        if isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
                 df = pd.DataFrame(p, columns=obj.dimensions('key', True))
