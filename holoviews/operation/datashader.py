@@ -159,13 +159,14 @@ class aggregate(ElementOperation):
                 if isinstance(path, dd.DataFrame):
                     path = path.compute()
                 empty = path.copy()
-                empty.loc[0, :] = (np.NaN,) * empty.shape[1]
+                empty.iloc[0, :] = (np.NaN,) * empty.shape[1]
                 paths = [elem for path in paths for elem in (path, empty)][:-1]
-            datasets = [Dataset(p) for p in paths]
-            if isinstance(paths[0], dd.DataFrame):
-                df = DaskInterface.concat(datasets)
+            if all(isinstance(path, dd.DataFrame) for path in paths):
+                df = dd.concat(paths)
             else:
-                df = PandasInterface.concat(datasets)
+                paths = [path.compute() if isinstance(path, dd.DataFrame) else path
+                         for path in paths]
+                df = pd.concat(paths)
         else:
             df = paths[0]
         if category and df[category].dtype.name != 'category':
