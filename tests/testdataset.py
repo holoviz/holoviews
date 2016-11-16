@@ -15,6 +15,10 @@ try:
 except:
     pd = None
 
+try:
+    import dask.dataframe as dd
+except:
+    dd = None
 
 
 class HomogeneousColumnTypes(object):
@@ -105,7 +109,7 @@ class HomogeneousColumnTypes(object):
     def test_dataset_add_dimensions_value_hm(self):
         table = self.dataset_hm.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_hm(self):
         table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
@@ -259,7 +263,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.reduce(['y'], np.mean), reduced)
 
-    def test_column_aggregate_ht(self):
+    def test_dataset_aggregate_ht(self):
         aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
                              kdims=self.kdims[:1], vdims=self.vdims)
         self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
@@ -290,7 +294,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def test_dataset_add_dimensions_value_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, range(1,12))
@@ -383,6 +387,52 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = pd.DataFrame
         self.init_data()
 
+
+class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
+    """
+    Test of the pandas DaskDataset interface.
+    """
+
+    def setUp(self):
+        if dd is None:
+            raise SkipTest("dask not available")
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['dask']
+        self.data_instance_type = dd.DataFrame
+        self.init_data()
+
+    def test_dataset_reduce_ht(self):
+        reduced = Dataset({'Age': self.age,
+                           'Weight':self.weight,
+                           'Height':self.height},
+                          kdims=self.kdims[1:], vdims=self.vdims,
+                          datatype=['dataframe']).sort()
+        self.assertEqual(self.table.reduce(['Gender'], np.mean), reduced)
+
+    def test_dataset_aggregate_ht(self):
+        aggregated = Dataset({'Gender':['F', 'M'], 'Weight':[10, 16.5],
+                              'Height':[0.8, 0.7]},
+                             kdims=self.kdims[:1], vdims=self.vdims)
+        self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
+
+    # Disabled tests for NotImplemented methods
+    def test_dataset_add_dimensions_values_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_add_dimensions_values_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_string_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_boolean_index(self):
+        raise SkipTest("Not supported")
 
 
 class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
@@ -624,22 +674,22 @@ class IrisDatasetTest(GridDatasetTest):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_1D_reduce_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_2D_reduce_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_2D_aggregate_partial_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
 class XArrayDatasetTest(GridDatasetTest):
     """
@@ -655,10 +705,10 @@ class XArrayDatasetTest(GridDatasetTest):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
-        pass
+        raise SkipTest("Not supported")

@@ -46,6 +46,12 @@ try:
 except ImportError:
     pass
 
+try:
+    from .dask import DaskInterface
+    datatypes.append('dask')
+except ImportError:
+    pass
+
 from ..dimension import Dimension
 from ..element import Element
 from ..spaces import HoloMap, DynamicMap
@@ -311,7 +317,7 @@ class Dataset(Element):
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
         if value_select:
-            if len(data) == 1:
+            if data.shape[0] == 1:
                 return data[value_select][0]
             else:
                 return data.reindex(vdims=[value_select])

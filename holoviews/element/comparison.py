@@ -447,7 +447,7 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
-        if len(el1) != len(el2):
+        if el1.shape[0] != el2.shape[0]:
             raise AssertionError("%s not of matching length." % msg)
         dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
         for dim, d1, d2 in dimension_data:
