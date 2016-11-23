@@ -14,6 +14,7 @@ from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
+from .image import ImageInterface
 from .ndelement import NdElementInterface
 
 datatypes = ['array', 'dictionary', 'grid', 'ndelement']
@@ -284,11 +285,12 @@ class Dataset(Element):
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
-        data = self.interface.select(self, **selection)
+        data, kwargs = self.interface.select(self, **selection)
+
         if np.isscalar(data):
             return data
         else:
-            return self.clone(data)
+            return self.clone(data, **kwargs)
 
 
     def reindex(self, kdims=None, vdims=None):
@@ -403,11 +405,19 @@ class Dataset(Element):
                 combined = combined.add_dimension(dim, ndims+i, dvals, True)
             return combined
 
+        ndims = len(dimensions)
+        min_d, max_d = self.params('kdims').bounds
         if np.isscalar(aggregated):
             return aggregated
         else:
-            return self.clone(aggregated, kdims=kdims, vdims=vdims)
-
+            new_type = None if ndims >= min_d and ndims <= max_d else Dataset
+            try:
+                return self.clone(aggregated, kdims=kdims, vdims=vdims,
+                                  new_type=new_type)
+            except:
+                datatype = self.params('datatype').default
+                return self.clone(aggregated, kdims=kdims, vdims=vdims,
+                                  new_type=new_type, datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,

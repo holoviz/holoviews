@@ -185,7 +185,7 @@ class ArrayInterface(Interface):
         data = np.atleast_2d(dataset.data[selection_mask, :])
         if len(data) == 1 and indexed:
             data = data[0, dataset.ndims]
-        return data
+        return data, {}
 
 
     @classmethod

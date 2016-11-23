@@ -301,12 +301,12 @@ class CubeInterface(GridInterface):
         indexed = cls.indexed(dataset, selection)
         extracted = dataset.data.extract(constraint)
         if indexed and not extracted.dim_coords:
-            return extracted.data.item()
+            return extracted.data.item(), {}
         post_dim_coords = [c.name() for c in extracted.dim_coords]
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]
         for d in dropped:
             extracted = iris.util.new_axis(extracted, d)
-        return extracted
+        return extracted, {}
 
 
 Interface.register(CubeInterface)

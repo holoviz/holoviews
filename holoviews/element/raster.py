@@ -398,7 +398,7 @@ class HeatMap(Dataset, Element2D):
         return self.gridded.dimension_values(2, flat=False)
 
 
-class Image(SheetCoordinateSystem, Raster):
+class Image(Dataset, Element2D, SheetCoordinateSystem):
     """
     Image is the atomic unit as which 2D data is stored, along with
     its bounds object. The input data may be a numpy.matrix object or
@@ -408,8 +408,15 @@ class Image(SheetCoordinateSystem, Raster):
     access to the data, via the .data attribute.
     """
 
-    bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
+    datatype = param.List(default=['image', 'grid', 'xarray'])
+
+    bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
        The bounding region in sheet coordinates containing the data.""")
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
+        The label of the x- and y-dimension of the Raster in form
+        of a string or dimension object.""")
 
     group = param.String(default='Image', constant=True)
 
@@ -417,36 +424,77 @@ class Image(SheetCoordinateSystem, Raster):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-
     def __init__(self, data, bounds=None, extents=None, xdensity=None, ydensity=None, **params):
-        bounds = bounds if bounds is not None else BoundingBox()
-        if np.isscalar(bounds):
+        extents = extents if extents else (None, None, None, None)
+        if data is None: data = np.array([[0]])
+        Dataset.__init__(self, data, extents=extents, bounds=None, **params)
+
+        (dim1, dim2) = self.shape[1], self.shape[0]
+        l, r = self.range(0)
+        b, t = self.range(1)
+        if bounds is None and None in (l, b, r, t):
+            bounds = BoundingBox()
+        if bounds is None:
+            TOL = 10e-9
+            if not xdensity:
+                xvals = self.dimension_values(0, False)
+                xdiff = np.diff(xvals)
+                xunit = np.unique(np.floor(xdiff/TOL).astype(int))*TOL
+                if len(xunit) > 1:
+                    raise Exception('')
+                xdensity = 1./xunit[0]
+            if not ydensity:
+                yvals = self.dimension_values(1, False)
+                ydiff = np.diff(yvals)
+                yunit = np.unique(np.floor(ydiff/TOL).astype(int))*TOL
+                if len(xunit) > 1:
+                    raise Exception('')
+                ydensity = 1./yunit[0]
+            halfx, halfy = 0.5/xdensity, 0.5/ydensity
+            l, r = l-halfx, r+halfx
+            b, t = b-halfy, t+halfy
+            bounds = BoundingBox(points=((l, b), (r, t)))
+        elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
         elif isinstance(bounds, (tuple, list, np.ndarray)):
             l, b, r, t = bounds
             bounds = BoundingBox(points=((l, b), (r, t)))
-        if data is None: data = np.array([[0]])
-        l, b, r, t = bounds.lbrt()
-        extents = extents if extents else (None, None, None, None)
-        Element2D.__init__(self, data, extents=extents, bounds=bounds,
-                           **params)
 
-        (dim1, dim2) = self.data.shape[1], self.data.shape[0]
+        l, b, r, t = bounds.lbrt()
         xdensity = xdensity if xdensity else dim1/float(r-l)
         ydensity = ydensity if ydensity else dim2/float(t-b)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
 
-        if len(self.data.shape) == 3:
-            if self.data.shape[2] != len(self.vdims):
+        if len(self.shape) == 3:
+            if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
-                                 % (self.data.shape, len(self.vdims)))
+                                 % (self.shape, len(self.vdims)))
 
 
-    def _convert_element(self, data):
-        if isinstance(data, (Raster, HeatMap)):
-            return data.data
+    def select(self, selection_specs=None, **selection):
+        """
+        Allows selecting data by the slices, sets and scalar values
+        along a particular dimension. The indices should be supplied as
+        keywords mapping between the selected dimension and
+        value. Additionally selection_specs (taking the form of a list
+        of type.group.label strings, types or functions) may be
+        supplied, which will ensure the selection is only applied if the
+        specs match the selected object.
+        """
+        if selection_specs and not any(self.matches(sp) for sp in selection_specs):
+            return self
+
+        data, kwargs = self.interface.select(self, **selection)
+
+        if np.isscalar(data):
+            return data
         else:
-            return super(Image, self)._convert_element(data)
+            return self.clone(data, xdensity=self.xdensity,
+                              ydensity=self.ydensity, bounds=None, **kwargs)
+
+
+    def _coord2matrix(self, coord):
+        return self.sheet2matrixidx(*coord)
 
 
     def closest(self, coords=[], **kwargs):
@@ -486,96 +534,9 @@ class Image(SheetCoordinateSystem, Raster):
         else:
             return [getter(self.closest_cell_center(*el)) for el in coords]
 
-
-    def __getitem__(self, coords):
-        """
-        Slice the underlying numpy array in sheet coordinates.
-        """
-        if coords in self.dimensions(): return self.dimension_values(coords)
-        coords = util.process_ellipses(self,coords)
-        if coords is () or coords == slice(None, None):
-            return self
-
-        if not isinstance(coords, tuple):
-            coords = (coords, slice(None))
-        if len(coords) > (2 + self.depth):
-            raise KeyError("Can only slice %d dimensions" % 2 + self.depth)
-        elif len(coords) == 3 and coords[-1] not in [self.vdims[0].name, slice(None)]:
-            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
-
-        coords = coords[:2]
-        if not any([isinstance(el, slice) for el in coords]):
-            return self.data[self.sheet2matrixidx(*coords)]
-        if all([isinstance(c, slice) for c in coords]):
-            l, b, r, t = self.bounds.lbrt()
-            xcoords, ycoords = coords
-            xstart = l if xcoords.start is None else max(l, xcoords.start)
-            xend = r if xcoords.stop is None else min(r, xcoords.stop)
-            ystart = b if ycoords.start is None else max(b, ycoords.start)
-            yend = t if ycoords.stop is None else min(t, ycoords.stop)
-            bounds = BoundingBox(points=((xstart, ystart), (xend, yend)))
-        else:
-            raise KeyError('Indexing requires x- and y-slice ranges.')
-
-        return self.clone(Slice(bounds, self).submatrix(self.data),
-                          bounds=bounds)
-
-
-    def range(self, dim, data_range=True):
-        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
-        dim = self.get_dimension(dim_idx)
-        if None not in dim.range:
-            return dim.range
-        elif dim_idx in [0, 1]:
-            l, b, r, t = self.bounds.lbrt()
-            if dim_idx:
-                drange = (b, t)
-            else:
-                drange = (l, r)
-        elif dim_idx < len(self.vdims) + 2:
-            dim_idx -= 2
-            data = np.atleast_3d(self.data)[:, :, dim_idx]
-            drange = (np.nanmin(data), np.nanmax(data))
-        if data_range:
-            soft_range = [np.NaN if sr is None else sr for sr in dim.soft_range]
-            if soft_range:
-                drange = util.max_range([drange, soft_range])
-            ranges = zip(drange, dim.range)
-        else:
-            ranges = zip(dim.soft_range, dim.range)
-        return tuple(datar if dimr is None else dimr
-                     for datar, dimr in ranges)
-
-
-    def _coord2matrix(self, coord):
-        return self.sheet2matrixidx(*coord)
-
-
-    def dimension_values(self, dim, expanded=True, flat=True):
-        """
-        The set of samples available along a particular dimension.
-        """
-        dim_idx = self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
-            l, b, r, t = self.bounds.lbrt()
-            dim2, dim1 = self.data.shape[:2]
-            d1_half_unit = (r - l)/dim1/2.
-            d2_half_unit = (t - b)/dim2/2.
-            d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
-            d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
-            if expanded:
-                values = np.meshgrid(d2lin, d1lin)[abs(dim_idx-1)]
-                return values.flatten() if flat else values
-            else:
-                return d2lin if dim_idx else d1lin
-        elif dim_idx == 2:
-            # Raster arrays are stored with different orientation
-            # than expanded column format, reorient before expanding
-            data = np.flipud(self.data).T
-            return data.flatten() if flat else data
-        else:
-            super(Image, self).dimension_values(dim)
-
+    @property
+    def depth(self):
+        return len(self.vdims)
 
 
 class GridImage(Dataset, Element2D):

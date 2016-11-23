@@ -280,9 +280,9 @@ class GridInterface(DictInterface):
             data[vdim.name] = dataset.data[vdim.name][index]
 
         if indexed and len(data[dataset.vdims[0].name]) == 1:
-            return data[dataset.vdims[0].name][0]
+            return data[dataset.vdims[0].name][0], {}
 
-        return data
+        return data, {}
 
 
     @classmethod
