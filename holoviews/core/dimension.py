@@ -629,7 +629,7 @@ class Dimensioned(LabelledData):
     @property
     def ddims(self):
         "The list of deep dimensions"
-        if self._deep_indexable and len(self):
+        if self._deep_indexable and self:
             return self.values()[0].dimensions()
         else:
             return []
