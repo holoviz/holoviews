@@ -229,12 +229,8 @@ class DaskInterface(PandasInterface):
         return columns.data.compute()
 
     @classmethod
-    def length(cls, dataset):
-        """
-        Length of dask dataframe is unknown, always return 1
-        for performance, use shape to compute dataframe shape.
-        """
-        return 1
+    def nonzero(cls, dataset):
+        return True
 
 
 

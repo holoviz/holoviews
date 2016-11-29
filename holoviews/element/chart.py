@@ -309,12 +309,6 @@ class Points(Chart):
 
     _min_dims = 2                      # Minimum number of columns
 
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield tuple(self.data[i, ...])
-            i += 1
-
 
 
 class VectorField(Points):

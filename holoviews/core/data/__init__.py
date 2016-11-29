@@ -426,6 +426,10 @@ class Dataset(Element):
         """
         return self.interface.length(self)
 
+    def __nonzero__(self):
+        return self.interface.nonzero(self)
+
+    __bool__ = __nonzero__
 
     @property
     def shape(self):
