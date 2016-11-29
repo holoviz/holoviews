@@ -140,9 +140,16 @@ class DaskInterface(PandasInterface):
 
         data = []
         groupby = columns.data.groupby(dimensions)
-        ind_array = columns.data[dimensions].compute().values
-        indices = (tuple(ind) for ind in ind_array)
-        for coord in util.unique_iterator(indices):
+        if len(dimensions) == 1:
+            column = columns.data[dimensions[0]]
+            if column.dtype.name == 'category':
+                indices = ((ind,) for ind in column.cat.categories)
+            else:
+                indices = ((ind,) for ind in column.unique().compute())
+        else:
+            group_tuples = columns.data[dimensions].itertuple()
+            indices = util.unique_iterator(ind[1:] for ind in group_tuples)
+        for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
                 continue
             if len(coord) == 1:
