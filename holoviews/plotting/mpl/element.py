@@ -176,7 +176,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
 
                 if not subplots:
                     legend = axis.get_legend()
-                    if legend: legend.set_visible(self.show_legend)
+                    if legend:
+                        legend.set_visible(self.show_legend)
+                        self.handles["bbox_extra_artists"] += [legend]
                     axis.xaxis.grid(self.show_grid)
                     axis.yaxis.grid(self.show_grid)
 
