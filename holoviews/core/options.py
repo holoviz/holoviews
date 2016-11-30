@@ -1207,7 +1207,7 @@ class StoreOptions(object):
     def merge_options(cls, groups, options=None,**kwargs):
         """
         Given a full options dictionary and options groups specified
-        as a keywords such as return the full set of merged options:
+        as a keywords, return the full set of merged options:
 
         >>> options={'Curve':{'style':dict(color='b')}}
         >>> style={'Curve':{'linewidth':10 }}
