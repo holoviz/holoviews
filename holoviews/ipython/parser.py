@@ -283,6 +283,22 @@ class OptsSpec(Parser):
 
 
     @classmethod
+    def _update_options(cls, old_opts, new_opts):
+        """
+        Update the old_opts option dictionary with the options defined in
+        new_opts. Instead of a shallow update as would be performed by calling
+        old_opts.update(new_opts), this updates the dictionaries of all option
+        types separately.
+        """
+        for option_type, options in new_opts.items():
+            if option_type not in old_opts:
+                old_opts[option_type] = {}
+
+            old_opts[option_type].update(options)
+
+
+
+    @classmethod
     def parse(cls, line, ns={}):
         """
         Parse an options specification, returning a dictionary with
@@ -304,26 +320,32 @@ class OptsSpec(Parser):
 
             normalization = cls.process_normalization(group)
             if normalization is not None:
-                options['norm'] = Options(**normalization)
+                options['norm'] = normalization
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
                 opts = cls.todict(plotopts, 'brackets', ns=ns)
-                options['plot'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['plot'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
                 opts = cls.todict(styleopts, 'parens', ns=ns)
-                options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['style'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
             for pathspec in pathspecs:
-                # FIXME: This does not merge sub-dicts:
-                # Image (c='b') Image (s=3)
-                # results in Options(s=3).
                 if pathspec not in parse:
                     parse[pathspec] = {}
-                parse[pathspec].update(options)
-        return parse
+                cls._update_options(parse[pathspec], options)
+
+        return {
+            path: {
+                option_type: Options(**option_pairs)
+                for option_type, option_pairs
+                in options.items()
+            }
+            for path, options
+            in parse.items()
+        }
 
 
 
