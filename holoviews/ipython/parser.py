@@ -252,7 +252,6 @@ class OptsSpec(Parser):
                     framewise=framewise)
 
 
-
     @classmethod
     def _group_paths_without_options(cls, line_parse_result):
         """
@@ -279,7 +278,6 @@ class OptsSpec(Parser):
 
         if active_pathspecs:
             yield active_pathspecs, {}
-
 
 
     @classmethod
@@ -348,11 +346,9 @@ class OptsSpec(Parser):
         return {
             path: {
                 option_type: Options(**option_pairs)
-                for option_type, option_pairs
-                in options.items()
+                for option_type, option_pairs in options.items()
             }
-            for path, options
-            in parse.items()
+            for path, options in parse.items()
         }
 
 
