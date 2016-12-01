@@ -280,3 +280,10 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
                     'style':
                     Options(c='b')}}
         self.assertEqual(OptsSpec.parse(line), expected)
+
+    def test_combined_multiple_paths_merge_precedence(self):
+        line = "Image (s=0, c='b') Image (s=3)"
+        expected = {'Image':
+                    {'style':
+                     Options(c='b', s=3)}}
+        self.assertEqual(OptsSpec.parse(line), expected)
