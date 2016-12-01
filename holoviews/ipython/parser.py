@@ -254,6 +254,35 @@ class OptsSpec(Parser):
 
 
     @classmethod
+    def _group_paths_without_options(cls, line_parse_result):
+        """
+        Given a parsed options specification as a list of groups, combine
+        groups without options with the first subsequent group which has
+        options.
+        A line of the form
+            'A B C [opts] D E [opts_2]'
+        results in
+            [({A, B, C}, [opts]), ({D, E}, [opts_2])]
+        """
+        active_pathspecs = set()
+        for group in line_parse_result:
+            active_pathspecs.add(group['pathspec'])
+
+            has_options = (
+                'norm_options' in group or
+                'plot_options' in group or
+                'style_options' in group
+            )
+            if has_options:
+                yield active_pathspecs, group
+                active_pathspecs = set()
+
+        if active_pathspecs:
+            yield active_pathspecs, {}
+
+
+
+    @classmethod
     def parse(cls, line, ns={}):
         """
         Parse an options specification, returning a dictionary with
@@ -268,8 +297,9 @@ class OptsSpec(Parser):
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
 
+        grouped_paths = cls._group_paths_without_options(cls.opts_spec.parseString(line))
         parse = {}
-        for group in cls.opts_spec.parseString(line):
+        for pathspecs, group in grouped_paths:
             options = {}
 
             normalization = cls.process_normalization(group)
@@ -286,11 +316,13 @@ class OptsSpec(Parser):
                 opts = cls.todict(styleopts, 'parens', ns=ns)
                 options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
 
-            if group['pathspec'] in parse:
-                # Update in case same pathspec accidentally repeated by the user.
-                parse[group['pathspec']].update(options)
-            else:
-                parse[group['pathspec']] = options
+            for pathspec in pathspecs:
+                # FIXME: This does not merge sub-dicts:
+                # Image (c='b') Image (s=3)
+                # results in Options(s=3).
+                if pathspec not in parse:
+                    parse[pathspec] = {}
+                parse[pathspec].update(options)
         return parse
 
 
