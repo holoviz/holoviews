@@ -283,19 +283,29 @@ class OptsSpec(Parser):
 
 
     @classmethod
-    def _update_options(cls, old_opts, new_opts):
+    def _merge_options(cls, old_opts, new_opts):
         """
         Update the old_opts option dictionary with the options defined in
         new_opts. Instead of a shallow update as would be performed by calling
         old_opts.update(new_opts), this updates the dictionaries of all option
         types separately.
+
+        Given two dictionaries
+            old_opts = {'a': {'x': 'old', 'y': 'old'}}
+        and
+            new_opts = {'a': {'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+        this returns a dictionary
+            {'a': {'x': 'old', 'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
         """
+        merged = dict(old_opts)
+
         for option_type, options in new_opts.items():
-            if option_type not in old_opts:
-                old_opts[option_type] = {}
+            if option_type not in merged:
+                merged[option_type] = {}
 
-            old_opts[option_type].update(options)
+            merged[option_type].update(options)
 
+        return merged
 
 
     @classmethod
@@ -333,9 +343,7 @@ class OptsSpec(Parser):
                 options['style'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
             for pathspec in pathspecs:
-                if pathspec not in parse:
-                    parse[pathspec] = {}
-                cls._update_options(parse[pathspec], options)
+                parse[pathspec] = cls._merge_options(parse.get(pathspec, {}), options)
 
         return {
             path: {
