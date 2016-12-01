@@ -245,14 +245,18 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths(self):
-        line = "Image Curve [fig_inches=(3, 3) title_format='foo bar'] (c='b') Layout [string='foo'] Overlay"
+        line = "Image Curve {+framewise} [fig_inches=(3, 3) title_format='foo bar'] (c='b') Layout [string='foo'] Overlay"
         expected = {'Image':
-                    {'plot':
+                    {'norm':
+                     Options(framewise=True, axiswise=False),
+                     'plot':
                      Options(title_format='foo bar', fig_inches=(3, 3)),
                      'style':
                      Options(c='b')},
                     'Curve':
-                    {'plot':
+                    {'norm':
+                     Options(framewise=True, axiswise=False),
+                     'plot':
                      Options(title_format='foo bar', fig_inches=(3, 3)),
                      'style':
                      Options(c='b')},
@@ -264,13 +268,15 @@ class OptsSpecCombinedOptionsTests(ComparisonTestCase):
         self.assertEqual(OptsSpec.parse(line), expected)
 
     def test_combined_multiple_paths_merge(self):
-        line = "Image Curve [fig_inches=(3, 3)] Image (s=3)"
+        line = "Image Curve [fig_inches=(3, 3)] (c='b') Image (s=3)"
         expected = {'Image':
                     {'plot':
                      Options(fig_inches=(3, 3)),
                      'style':
-                     Options(s=3)},
+                     Options(c='b', s=3)},
                     'Curve':
                     {'plot':
-                     Options(fig_inches=(3, 3))}}
+                     Options(fig_inches=(3, 3)),
+                    'style':
+                    Options(c='b')}}
         self.assertEqual(OptsSpec.parse(line), expected)
