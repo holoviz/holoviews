@@ -201,14 +201,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
-        return [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                for d in dims]
+        return dims
 
     def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tooltips = self._hover_tooltips(element)
+        tooltip_dims = self._hover_tooltips(element)
+        tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
+                    for d in tooltip_dims]
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []

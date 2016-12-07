@@ -143,16 +143,14 @@ class CurvePlot(ElementPlot):
 
     def _hover_tooltips(self, element):
         if self.batched:
-            dims = list(self.hmap.last.kdims)
+            return list(self.hmap.last.kdims)
         else:
-            dims = list(self.overlay_dims.keys())
-        return [(d.pprint_label, '@'+dimension_sanitizer(d.name))
-                      for d in dims]
+            return list(self.overlay_dims.keys())
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
         data = defaultdict(list)
         opts = ['color', 'line_alpha', 'line_color']
-        for key, el in overlay.items():
+        for key, el in overlay.data.items():
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)

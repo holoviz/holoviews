@@ -22,11 +22,9 @@ class PathPlot(ElementPlot):
 
     def _hover_tooltips(self, element):
         if self.batched:
-            dims = list(self.hmap.last.kdims)
+            return list(self.hmap.last.kdims)
         else:
-            dims = list(self.overlay_dims.keys())
-        return [(d.pprint_label, '@'+dimension_sanitizer(d.name))
-                      for d in dims]
+            return list(self.overlay_dims.keys())
 
     def get_data(self, element, ranges=None, empty=False):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
@@ -57,6 +55,14 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
+
+    def _hover_tooltips(self, element):
+        if self.batched:
+            dims = list(self.hmap.last.kdims)
+        else:
+            dims = list(self.overlay_dims.keys())
+        dims += element.vdims
+        return dims
 
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
