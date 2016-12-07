@@ -20,6 +20,14 @@ class PathPlot(ElementPlot):
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
 
+    def _hover_tooltips(self, element):
+        if self.batched:
+            dims = list(self.hmap.last.kdims)
+        else:
+            dims = list(self.overlay_dims.keys())
+        return [(d.pprint_label, '@'+dimension_sanitizer(d.name))
+                      for d in dims]
+
     def get_data(self, element, ranges=None, empty=False):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         xs = [] if empty else [path[:, xidx] for path in element.data]
