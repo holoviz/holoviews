@@ -141,24 +141,40 @@ class CurvePlot(ElementPlot):
                  y: [] if empty else element.dimension_values(yidx)},
                 dict(x=x, y=y))
 
+    def _hover_tooltips(self, element):
+        if self.batched:
+            return list(self.hmap.last.kdims)
+        else:
+            return list(self.overlay_dims.keys())
+
     def get_batched_data(self, overlay, ranges=None, empty=False):
         data = defaultdict(list)
-        for key, el in overlay.items():
+        opts = ['color', 'line_alpha', 'line_color']
+        for key, el in overlay.data.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld)
+
+            # Add options
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))
             zorder = self.get_zorder(overlay, key, el)
-            for opt in self._mapping:
-                if opt in ['xs', 'ys']:
-                    index = {'xs': 0, 'ys': 1}[opt]
-                    val = el.dimension_values(index)
-                else:
-                    val = style[zorder].get(opt)
+            style = style[zorder]
+            for opt in opts:
+                if opt not in style:
+                    continue
+                val = style[opt]
                 if opt == 'color' and isinstance(val, tuple):
                     val = rgb2hex(val)
-                data[opt].append(val)
+                data[opt].append([val])
+
+            for d, k in zip(overlay.kdims, key):
+                sanitized = dimension_sanitizer(d.name)
+                data[sanitized].append([k])
         data = {opt: vals for opt, vals in data.items()
                 if not any(v is None for v in vals)}
-        return data, {k: k for k in data}
+        return data, dict(xs=elmapping['x'], ys=elmapping['y'],
+                          **{o: o for o in opts if o in data})
 
 
 class AreaPlot(PolygonPlot):

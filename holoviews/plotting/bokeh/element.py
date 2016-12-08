@@ -195,18 +195,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cbs.append(cb(self, cb_streams, source))
         return cbs
 
-
-    def _init_tools(self, element, callbacks=[]):
-        """
-        Processes the list of tools to be supplied to the plot.
-        """
+    def _hover_tooltips(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
+        return dims
+
+    def _init_tools(self, element, callbacks=[]):
+        """
+        Processes the list of tools to be supplied to the plot.
+        """
+        tooltip_dims = self._hover_tooltips(element)
         tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in dims]
+                    for d in tooltip_dims]
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -233,10 +236,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
         """
-        if 'hover' in self.default_tools + self.tools:
-            for d in element.dimensions(label=True):
-                sanitized = util.dimension_sanitizer(d)
-                data[sanitized] = [] if empty else element.dimension_values(d)
+        if 'hover' not in self.default_tools + self.tools:
+            return
+
+        for d in element.dimensions(label=True):
+            sanitized = util.dimension_sanitizer(d)
+            data[sanitized] = [] if empty else element.dimension_values(d)
+        for k, v in self.overlay_dims.items():
+            dim = util.dimension_sanitizer(k.name)
+            data[dim] = [v for _ in range(len(data.values()[0]))]
 
 
     def _axes_props(self, plots, subplots, element, ranges):
