@@ -235,6 +235,15 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         fig = plot.state
         assert len(fig.legend[0].items) == 0
 
+    def test_image_boolean_array(self):
+        img = Image(np.array([[True, False], [False, True]]))
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        source = plot.handles['source']
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 1)
+        self.assertEqual(source.data['image'][0],
+                         np.array([[0, 1], [1, 0]]))
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
