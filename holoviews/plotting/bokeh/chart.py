@@ -591,5 +591,8 @@ class BarPlot(ChartPlot):
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
         if not self.show_legend:
-            plot.legend[0].legends[:] = []
+            if bokeh_version > '0.12.2':
+                plot.legend[0].items[:] = []
+            else:
+                plot.legend[0].legends[:] = []
         return plot

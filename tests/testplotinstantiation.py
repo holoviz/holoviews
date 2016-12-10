@@ -11,7 +11,7 @@ from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
-                               Scatter3D, Path, Polygons)
+                               Scatter3D, Path, Polygons, Bars)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY, PositionX
 from holoviews.plotting import comms
@@ -227,6 +227,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
+
+    def test_bars_suppress_legend(self):
+        bars = Bars([('A', 1), ('B', 2)])(plot=dict(show_legend=False))
+        plot = bokeh_renderer.get_plot(bars)
+        plot.initialize_plot()
+        fig = plot.state
+        assert len(fig.legend[0].items) == 0
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
