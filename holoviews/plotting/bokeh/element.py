@@ -98,6 +98,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
+    show_frame = param.Boolean(default=True, doc="""
+        Whether or not to show a complete frame around the plot.""")
+
     show_grid = param.Boolean(default=True, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
@@ -341,6 +344,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = dict(plot_ranges)
         properties['x_axis_label'] = xlabel if 'x' in self.labelled else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.labelled else ' '
+
+        if not self.show_frame:
+            properties['outline_line_alpha'] = 0
 
         if self.show_title:
             title = self._format_title(key, separator=' ')
