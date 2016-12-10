@@ -130,7 +130,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         self.assertEqual(y, np.arange(10, 20))
 
     def test_points_non_numeric_size_warning(self):
-        data = (range(10), range(10), map(chr, range(94,104)))
+        data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
         points = Points(data, vdims=['z'])(plot=dict(size_index=2))
         with ParamLogStream() as log:
             plot = mpl_renderer.get_plot(points)
@@ -283,7 +283,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          np.array([[0, 1], [1, 0]]))
 
     def test_points_non_numeric_size_warning(self):
-        data = (range(10), range(10), map(chr, range(94,104)))
+        data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
         points = Points(data, vdims=['z'])(plot=dict(size_index=2))
         with ParamLogStream() as log:
             plot = bokeh_renderer.get_plot(points)
