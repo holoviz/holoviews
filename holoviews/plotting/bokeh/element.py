@@ -34,7 +34,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
 from .plot import BokehPlot
 from .util import (mpl_to_bokeh, convert_datetime, update_plot,
-                   bokeh_version, mplcmap_to_palette)
+                   bokeh_version, mplcmap_to_palette, py2js_tickformatter)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -450,17 +450,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if formatter:
                 msg = ('%s dimension formatter could not be '
                        'converted to tick formatter. ' % dimension.name)
-                try:
-                    formatter = FuncTickFormatter.from_py_func(formatter)
-                except RuntimeError:
-                    self.warning(msg+'Ensure Flexx is installed '
-                                 '("conda install -c bokeh flexx" or '
-                                 '"pip install flexx")')
-                except Exception as e:
-                    error = 'Pyscript raised an error: {0}'.format(e)
-                    error = error.replace('%', '%%')
-                    self.warning(msg+error)
-                else:
+                jsfunc = py2js_tickformatter(formatter, msg)
+                if jsfunc:
+                    formatter = FuncTickFormatter(code=jsfunc)
                     axis_props['formatter'] = formatter
         return axis_props
 
