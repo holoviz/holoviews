@@ -10,6 +10,7 @@ try:
 except ImportError:
     cm, colors = None, None
 
+import param
 import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
@@ -381,16 +382,16 @@ def py2js_tickformatter(formatter, msg=''):
     try:
         from flexx.pyscript import py2js
     except ImportError:
-        self.warning(msg+'Ensure Flexx is installed '
-                     '("conda install -c bokeh flexx" or '
-                     '"pip install flexx")')
+        param.main.warning(msg+'Ensure Flexx is installed '
+                           '("conda install -c bokeh flexx" or '
+                           '"pip install flexx")')
         return
     try:
         jscode = py2js(formatter, 'formatter')
     except Exception as e:
         error = 'Pyscript raised an error: {0}'.format(e)
         error = error.replace('%', '%%')
-        self.warning(msg+error)
+        param.main.warning(msg+error)
         return
 
     args = inspect.getargspec(formatter).args
