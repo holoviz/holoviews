@@ -50,8 +50,8 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  None,
-    'json':  None
+    'html':  'text/html',
+    'json':  'text/json'
 }
 
 static_template = """
