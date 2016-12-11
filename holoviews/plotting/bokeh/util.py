@@ -1,4 +1,4 @@
-import itertools
+import itertools, inspect, re
 from distutils.version import LooseVersion
 from collections import defaultdict
 
@@ -10,6 +10,7 @@ try:
 except ImportError:
     cm, colors = None, None
 
+import param
 import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
@@ -372,3 +373,31 @@ def pad_plots(plots, padding=0.85):
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     total_width = np.max([np.sum(row) for row in widths])
     return plots, total_width
+
+
+def py2js_tickformatter(formatter, msg=''):
+    """
+    Uses flexx.pyscript to compile a python tick formatter to JS code
+    """
+    try:
+        from flexx.pyscript import py2js
+    except ImportError:
+        param.main.warning(msg+'Ensure Flexx is installed '
+                           '("conda install -c bokeh flexx" or '
+                           '"pip install flexx")')
+        return
+    try:
+        jscode = py2js(formatter, 'formatter')
+    except Exception as e:
+        error = 'Pyscript raised an error: {0}'.format(e)
+        error = error.replace('%', '%%')
+        param.main.warning(msg+error)
+        return
+
+    args = inspect.getargspec(formatter).args
+    arg_define = 'var %s = tick;' % args[0] if args else ''
+    return_js = 'return formatter();\n'
+    jsfunc = '\n'.join([arg_define, jscode, return_js])
+    match = re.search('(function \(.*\))', jsfunc )
+    return jsfunc[:match.start()] + 'function ()' + jsfunc[match.end():]
+
