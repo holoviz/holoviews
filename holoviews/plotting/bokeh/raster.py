@@ -33,6 +33,9 @@ class RasterPlot(ColorbarPlot):
         if type(element) is Raster:
             b = t
 
+        if img.dtype.kind == 'b':
+            img = img.astype(np.int8)
+
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
             data = dict(image=[], x=[], y=[], dw=[], dh=[])
@@ -57,6 +60,9 @@ class ImagePlot(RasterPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         img = element.dimension_values(2, flat=False)
+        if img.dtype.kind == 'b':
+            img = img.astype(np.int8)
+
         l, b, r, t = element.bounds.lbrt()
         dh, dw = t-b, r-l
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')

@@ -830,6 +830,8 @@ class ColorbarPlot(ElementPlot):
             else:
                 return None
         colors = self.clipping_colors
+        if isinstance(low, (bool, np.bool_)): low = int(low)
+        if isinstance(high, (bool, np.bool_)): high = int(high)
         opts = {'low': low, 'high': high}
         color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
         for name, opt in color_opts:
