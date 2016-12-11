@@ -510,15 +510,15 @@ class PointPlot(ChartPlot, ColorbarPlot):
         sdim = element.get_dimension(self.size_index)
         if sdim:
             sizes = element.dimension_values(self.size_index)
-            if sizes.dtype.kind in ('i', 'f'):
-                style['s'] = compute_sizes(sizes, self.size_fn, self.scaling_factor,
-                                           self.scaling_method, ms)
-                ms = style.pop('s') if 's' in style else plt.rcParams['lines.markersize']
-            else:
+            ms = style['s'] if 's' in style else plt.rcParams['lines.markersize']
+            sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
+                                  self.scaling_method, ms)
+            if sizes is None:
                 eltype = type(element).__name__
                 self.warning('%s dimension is not numeric, cannot '
                              'use to scale %s size.' % (sdim, eltype))
-
+            else:
+                style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
 
 

@@ -73,16 +73,16 @@ class PointPlot(ColorbarPlot):
             else:
                 ms = style.get('size', np.sqrt(6))**2
                 sizes = element.dimension_values(self.size_index)
-                if sizes.dtype.kind in ('i', 'f'):
-                    sizes = compute_sizes(sizes, self.size_fn,
-                                          self.scaling_factor,
-                                          self.scaling_method, ms)
-                    data[map_key] = np.sqrt(sizes)
-                    mapping['size'] = map_key
-                else:
+                sizes = compute_sizes(sizes, self.size_fn,
+                                      self.scaling_factor,
+                                      self.scaling_method, ms)
+                if sizes is None:
                     eltype = type(element).__name__
                     self.warning('%s dimension is not numeric, cannot '
                                  'use to scale %s size.' % (sdim, eltype))
+                else:
+                    data[map_key] = np.sqrt(sizes)
+                    mapping['size'] = map_key
 
         data[dims[xidx]] = [] if empty else element.dimension_values(xidx)
         data[dims[yidx]] = [] if empty else element.dimension_values(yidx)
