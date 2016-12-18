@@ -50,8 +50,8 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  None,
-    'json':  None
+    'html':  'text/html',
+    'json':  'text/json'
 }
 
 static_template = """
@@ -361,12 +361,13 @@ class Renderer(Exporter):
             widget = obj
 
         html = self_or_cls.static_html(widget, fmt, template)
+        encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
         if isinstance(filename, BytesIO):
-            filename.write(html)
+            filename.write(encoded)
             filename.seek(0)
         else:
             with open(filename, 'w') as f:
-                f.write(html)
+                f.write(encoded)
 
 
     @classmethod
@@ -477,11 +478,11 @@ class Renderer(Exporter):
             rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
+        encoded = self_or_cls.encode(rendered)
         if isinstance(basename, BytesIO):
-            basename.write(data)
+            basename.write(encoded)
             basename.seek(0)
         else:
-            encoded = self_or_cls.encode(rendered)
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
                 f.write(encoded)
