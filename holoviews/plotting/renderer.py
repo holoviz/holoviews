@@ -478,11 +478,11 @@ class Renderer(Exporter):
             rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
+        encoded = self_or_cls.encode(rendered)
         if isinstance(basename, BytesIO):
-            basename.write(data)
+            basename.write(encoded)
             basename.seek(0)
         else:
-            encoded = self_or_cls.encode(rendered)
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
                 f.write(encoded)

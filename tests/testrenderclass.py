@@ -2,13 +2,17 @@
 """
 Test cases for rendering exporters
 """
+from __future__ import unicode_literals
+
 from io import BytesIO
 from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
 from holoviews import HoloMap, Image, ItemTable, Store
+from holoviews.core.util import unicode
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import Renderer
 
 from nose.plugins.attrib import attr
 
@@ -31,6 +35,20 @@ def digest_data(data):
     hashfn = sha256()
     hashfn.update(data)
     return hashfn.hexdigest()
+
+
+class TestRenderer(ComparisonTestCase):
+    """
+    Test the basic serializer and deserializer (i.e. using pickle),
+    including metadata access.
+    """
+
+    def test_renderer_encode_unicode_types(self):
+        mime_types = ['image/svg+xml', 'text/html', 'text/json']
+        for mime in mime_types:
+            info = {'mime_type': mime}
+            encoded = Renderer.encode(('Testing «ταБЬℓσ»: 1<2 & 4+1>3', info))
+            self.assertTrue(isinstance(encoded, bytes))
 
 
 @attr(optional=1)
@@ -107,7 +125,7 @@ class MPLRendererTest(ComparisonTestCase):
 
     def test_static_html_gif(self):
         data = self.renderer.static_html(self.map1, fmt='gif')
-        self.assertEqual(digest_data(data),
+        self.assertEqual(digest_data(normalize(data)),
                          '9d43822e0f368f3c673b19aaf66d22252849947b7dc4a157306c610c42d319b5')
 
     def test_export_widgets(self):
