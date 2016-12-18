@@ -361,12 +361,13 @@ class Renderer(Exporter):
             widget = obj
 
         html = self_or_cls.static_html(widget, fmt, template)
+        encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
         if isinstance(filename, BytesIO):
-            filename.write(html)
+            filename.write(encoded)
             filename.seek(0)
         else:
             with open(filename, 'w') as f:
-                f.write(html)
+                f.write(encoded)
 
 
     @classmethod
