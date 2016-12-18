@@ -8,7 +8,7 @@ from io import BytesIO
 
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
-                       NdOverlay, GridSpace)
+                       NdOverlay, GridSpace, HoloMap, Layout)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars)
@@ -29,6 +29,7 @@ try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback
+    from bokeh.models import Div
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
     from bokeh.models.tools import HoverTool
 except:
@@ -244,6 +245,64 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(cmapper.high, 1)
         self.assertEqual(source.data['image'][0],
                          np.array([[0, 1], [1, 0]]))
+
+    def test_layout_title(self):
+        hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        plot = bokeh_renderer.get_plot(hmap1+hmap2)
+        title = plot.handles['title']
+        self.assertIsInstance(title, Div)
+        text = "<span style='font-size: 16pt'><b>Default: 0</b></font>"
+        self.assertEqual(title.text, text)
+
+    def test_layout_title_fontsize(self):
+        hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        layout = Layout([hmap1, hmap2])(plot=dict(fontsize={'title': '12pt'}))
+        plot = bokeh_renderer.get_plot(layout)
+        title = plot.handles['title']
+        self.assertIsInstance(title, Div)
+        text = "<span style='font-size: 12pt'><b>Default: 0</b></font>"
+        self.assertEqual(title.text, text)
+
+    def test_layout_title_show_title_false(self):
+        hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        layout = Layout([hmap1, hmap2])(plot=dict(show_title=False))
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertTrue('title' not in plot.handles)
+
+    def test_layout_title_update(self):
+        hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
+        plot = bokeh_renderer.get_plot(hmap1+hmap2)
+        plot.update(1)
+        title = plot.handles['title']
+        self.assertIsInstance(title, Div)
+        text = "<span style='font-size: 16pt'><b>Default: 1</b></font>"
+        self.assertEqual(title.text, text)
+
+    def test_grid_title(self):
+        grid = GridSpace({(i, j): HoloMap({a: Image(np.random.rand(10,10))
+                                           for a in range(3)}, kdims=['X'])
+                          for i in range(2) for j in range(3)})
+        plot = bokeh_renderer.get_plot(grid)
+        title = plot.handles['title']
+        self.assertIsInstance(title, Div)
+        text = "<span style='font-size: 16pt'><b>X: 0</b></font>"
+        self.assertEqual(title.text, text)
+
+    def test_grid_title_update(self):
+        grid = GridSpace({(i, j): HoloMap({a: Image(np.random.rand(10,10))
+                                           for a in range(3)}, kdims=['X'])
+                          for i in range(2) for j in range(3)})
+        plot = bokeh_renderer.get_plot(grid)
+        plot.update(1)
+        title = plot.handles['title']
+        self.assertIsInstance(title, Div)
+        text = "<span style='font-size: 16pt'><b>X: 1</b></font>"
+        self.assertEqual(title.text, text)
+
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
