@@ -7,8 +7,7 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
-from holoviews.plotting.mpl.renderer import MPLRenderer
-from holoviews import HoloMap, Image, ItemTable
+from holoviews import HoloMap, Image, ItemTable, Store
 from holoviews.element.comparison import ComparisonTestCase
 
 from nose.plugins.attrib import attr
@@ -18,9 +17,15 @@ from .testwidgets import normalize
 try:
     # Standardize backend due to random inconsistencies
     from matplotlib import pyplot
+    from holoviews.plotting.mpl import MPLRenderer
     pyplot.switch_backend('agg')
 except:
-    pyplot = None
+    pass
+
+try:
+    from holoviews.plotting.bokeh import BokehRenderer
+except:
+    pass
 
 def digest_data(data):
     hashfn = sha256()
@@ -36,7 +41,7 @@ class MPLRendererTest(ComparisonTestCase):
     """
 
     def setUp(self):
-        if pyplot is None:
+        if 'matplotlib' not in Store.renderers:
             raise SkipTest("Matplotlib required to test widgets")
 
         self.basename = 'no-file'
@@ -104,9 +109,29 @@ class MPLRendererTest(ComparisonTestCase):
         data = self.renderer.static_html(self.map1, fmt='gif')
         self.assertEqual(digest_data(data),
                          '9d43822e0f368f3c673b19aaf66d22252849947b7dc4a157306c610c42d319b5')
+
     def test_export_widgets(self):
         bytesio = BytesIO()
         self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
         data = normalize(bytesio.read())
         self.assertEqual(digest_data(data),
                          '91bbc7b4efebd07b1ee595b902d9899b27f2c7e353dfc87c57c2dfd5d0404301')
+
+
+class BokehRendererTest(ComparisonTestCase):
+
+    def setUp(self):
+        if 'bokeh' not in Store.renderers:
+            raise SkipTest("Bokeh required to test widgets")
+        self.image1 = Image(np.array([[0,1],[2,3]]), label='Image1')
+        self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
+        self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
+        self.renderer = BokehRenderer.instance()
+
+    def test_save_html(self):
+        bytesio = BytesIO()
+        self.renderer.save(self.image1, bytesio)
+
+    def test_export_widgets(self):
+        bytesio = BytesIO()
+        self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
