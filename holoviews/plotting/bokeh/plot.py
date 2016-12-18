@@ -3,7 +3,8 @@ import numpy as np
 
 import param
 
-from bokeh.models import ColumnDataSource, VBox, HBox, GridPlot as BokehGridPlot
+from bokeh.models import (ColumnDataSource, VBox, HBox, Column,
+                          GridPlot as BokehGridPlot, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
@@ -153,7 +154,48 @@ class BokehPlot(DimensionedPlot):
 
 
 
-class GridPlot(BokehPlot, GenericCompositePlot):
+class CompositePlot(BokehPlot):
+    """
+    CompositePlot is an abstract baseclass for plot types that draw
+    render multiple axes. It implements methods to add an overall title
+    to such a plot.
+    """
+
+    fontsize = param.Parameter(default={'title': '16pt'}, allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'title': '15pt'}""")
+
+    _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
+
+    def _get_title(self, key):
+        title_div = None
+        title = self._format_title(key) if self.show_title else ''
+        if title:
+            fontsize = self._fontsize('title')
+            title_tags = self._title_template.format(title=title,
+                                                     **fontsize)
+            if 'title' in self.handles:
+                title_div = self.handles['title']
+            else:
+                title_div = Div()
+            title_div.text = title_tags
+        return title_div
+
+    @property
+    def current_handles(self):
+        """
+        Should return a list of plot objects that have changed and
+        should be updated.
+        """
+        return [self.handles['title']]
+
+
+
+class GridPlot(CompositePlot, GenericCompositePlot):
     """
     Plot a group of elements in a grid layout based on a GridSpace element
     object.
@@ -256,9 +298,14 @@ class GridPlot(BokehPlot, GenericCompositePlot):
                 plots[r].append(None)
                 passed_plots.append(None)
         if bokeh_version < '0.12':
-            self.handles['plot'] = BokehGridPlot(children=plots[::-1])
+            plot = BokehGridPlot(children=plots[::-1])
         else:
-            self.handles['plot'] = gridplot(plots[::-1])
+            plot = gridplot(plots[::-1])
+        title = self._get_title(self.keys[-1])
+        if title:
+            self.handles['title'] = title
+            plot = Column(title, plot)
+        self.handles['plot'] = plot
         self.handles['plots'] = plots
         if self.shared_datasource:
             self.sync_sources()
@@ -278,10 +325,13 @@ class GridPlot(BokehPlot, GenericCompositePlot):
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
+        title = self._get_title(key)
+        if title:
+            self.handles['title']
 
 
 
-class LayoutPlot(BokehPlot, GenericLayoutPlot):
+class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     shared_axes = param.Boolean(default=True, doc="""
         Whether axes should be shared across plots""")
@@ -505,6 +555,10 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
         else:
             layout_plot = BokehGridPlot(children=plots)
 
+        title = self._get_title(self.keys[-1])
+        if title:
+            self.handles['title'] = title
+            layout_plot = Column(title, layout_plot)
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
         if self.shared_datasource:
@@ -526,6 +580,10 @@ class LayoutPlot(BokehPlot, GenericLayoutPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
+        title = self._get_title(key)
+        if title:
+            self.handles['title'] = title
+
 
 
 class AdjointLayoutPlot(BokehPlot):
