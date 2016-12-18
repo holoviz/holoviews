@@ -320,7 +320,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             subplot = self.subplots.get(coord, None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-        self.handles['title'] = self._get_title(key)
+        title = self._get_title(key)
+        if title:
+            self.handles['title']
 
 
 
@@ -573,7 +575,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
-        self.handles['title'] = self._get_title(key)
+        title = self._get_title(key)
+        if title:
+            self.handles['title'] = title
 
 
 
