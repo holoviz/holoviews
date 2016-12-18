@@ -309,6 +309,9 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         width, height, _, _, _, _ = self.border_extents
         if self.aspect == 'equal':
             self.aspect = float(width/height)
+        # Note that streams are not supported on RasterGridPlot
+        # until that is implemented this stub is needed
+        self.streams = []
 
     def _finalize_artist(self, key):
         pass

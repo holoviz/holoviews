@@ -98,6 +98,8 @@ def compute_sizes(sizes, size_fn, scaling_factor, scaling_method, base_size):
     base size and size_fn, which will be applied before
     scaling.
     """
+    if sizes.dtype.kind not in ('i', 'f'):
+        return None
     if scaling_method == 'area':
         pass
     elif scaling_method == 'width':

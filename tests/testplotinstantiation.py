@@ -1,11 +1,14 @@
 """
 Tests of plot instantiation (not display tests, just instantiation)
 """
+from __future__ import unicode_literals
 
+import logging
 from collections import deque
 from unittest import SkipTest
-from io import BytesIO
+from io import BytesIO, StringIO
 
+import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace, HoloMap, Layout)
@@ -40,6 +43,29 @@ try:
     plotly_renderer = Store.renderers['plotly']
 except:
     plotly_renderer = None
+
+
+class ParamLogStream(object):
+    """
+    Context manager that replaces the param logger and captures
+    log messages in a StringIO stream.
+    """
+
+    def __enter__(self):
+        self.stream = StringIO()
+        self._handler = logging.StreamHandler(self.stream)
+        self._logger = logging.getLogger('testlogger')
+        for handler in self._logger.handlers:
+            self._logger.removeHandler(handler)
+        self._logger.addHandler(self._handler)
+        self._param_logger = param.parameterized.logger
+        param.parameterized.logger = self._logger
+        return self
+
+    def __exit__(self, *args):
+        param.parameterized.logger = self._param_logger
+        self._handler.close()
+        self.stream.seek(0)
 
 
 class TestMPLPlotInstantiation(ComparisonTestCase):
@@ -103,6 +129,17 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         x, y = plot.handles['artist'].get_data()
         self.assertEqual(x, np.arange(10))
         self.assertEqual(y, np.arange(10, 20))
+
+    def test_points_non_numeric_size_warning(self):
+        data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
+        points = Points(data, vdims=['z'])(plot=dict(size_index=2))
+        with ParamLogStream() as log:
+            plot = mpl_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ('%s: z dimension is not numeric, '
+                   'cannot use to scale Points size.\n' % plot.name)
+        self.assertEqual(log_msg, warning)
+
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
@@ -302,6 +339,17 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(title, Div)
         text = "<span style='font-size: 16pt'><b>X: 1</b></font>"
         self.assertEqual(title.text, text)
+
+    def test_points_non_numeric_size_warning(self):
+        data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
+        points = Points(data, vdims=['z'])(plot=dict(size_index=2))
+        with ParamLogStream() as log:
+            plot = bokeh_renderer.get_plot(points)
+        log_msg = log.stream.read()
+        warning = ('%s: z dimension is not numeric, '
+                   'cannot use to scale Points size.\n' % plot.name)
+        self.assertEqual(log_msg, warning)
+
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
