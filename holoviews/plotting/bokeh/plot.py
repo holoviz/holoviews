@@ -155,6 +155,11 @@ class BokehPlot(DimensionedPlot):
 
 
 class CompositePlot(BokehPlot):
+    """
+    CompositePlot is an abstract baseclass for plot types that draw
+    render multiple axes. It implements methods to add an overall title
+    to such a plot.
+    """
 
     fontsize = param.Parameter(default={'title': '16pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
