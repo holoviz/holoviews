@@ -42,7 +42,7 @@ class PlotlyRenderer(Renderer):
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
-    
+
     mode_formats = {'fig': {'default': ['html', 'json']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
 
@@ -92,7 +92,7 @@ class PlotlyRenderer(Renderer):
         config = {}
         config['showLink'] = False
         jconfig = json.dumps(config)
-    
+
         header = ('<script type="text/javascript">'
                   'window.PLOTLYENV=window.PLOTLYENV || {};'
                   '</script>')
@@ -160,4 +160,3 @@ def plotly_include():
             <script type="text/javascript">
             require=require_;requirejs=requirejs_; define=define_;
             </script>""".format(include=get_plotlyjs())
-
