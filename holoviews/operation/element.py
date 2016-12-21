@@ -699,9 +699,14 @@ class gridmatrix(param.ParameterizedFunction):
         The Element type used to display bivariate distributions
         of the data.""")
 
-    diagonal_type = param.Parameter(default=Histogram, doc="""
+    diagonal_type = param.Parameter(default=None, doc="""
        The Element type along the diagonal, may be a Histogram or any
-       other plot type which can visualize a univariate distribution.""")
+       other plot type which can visualize a univariate distribution.
+       This parameter overrides diagonal_operation.""")
+
+    diagonal_operation = param.Parameter(default=histogram, doc="""
+       The operation applied along the diagonal, may be a histogram-operation
+       or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
        If a HoloMap is supplied this will allow overlaying one or
@@ -740,16 +745,24 @@ class gridmatrix(param.ParameterizedFunction):
         permuted_dims = [(d1, d2) for d1 in dims
                          for d2 in dims[::-1]]
 
+        # Convert Histogram type to operation to avoid one case in the if below.
+        if p.diagonal_type is Histogram:
+            p.diagonal_type = None
+            p.diagonal_operation = histogram
+
         data = {}
         for d1, d2 in permuted_dims:
             if d1 == d2:
-                if p.diagonal_type is Histogram:
-                    bin_range = ranges.get(d1.name, element.range(d1))
-                    el = histogram(element, dimension=d1.name, bin_range=bin_range)
-                    el = el(norm=dict(axiswise=True, framewise=True))
-                else:
+                if p.diagonal_type is not None:
                     values = element.dimension_values(d1)
                     el = p.diagonal_type(values, vdims=[d1])
+                elif p.diagonal_operation is histogram or isinstance(p.diagonal_operation, histogram):
+                    bin_range = ranges.get(d1.name, element.range(d1))
+                    el = p.diagonal_operation(element,
+                                              dimension=d1.name,
+                                              bin_range=bin_range)(norm=dict(axiswise=True))
+                else:
+                    el = p.diagonal_operation(element, dimension=d1.name)
             else:
                 el = p.chart_type(el_data, kdims=[d1],
                                   vdims=[d2], datatype=['dataframe', 'dictionary'])
