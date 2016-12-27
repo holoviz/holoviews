@@ -1,5 +1,5 @@
 import numpy as np
-from holoviews import Dimension, DynamicMap, Image, HoloMap
+from holoviews import Dimension, DynamicMap, Image, HoloMap, Scatter, Curve
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -10,6 +10,40 @@ x,y = np.mgrid[-5:6, -5:6] * 0.1
 def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
 
+
+class DynamicMethods(ComparisonTestCase):
+
+    def test_deep_relabel_label(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).relabel(label='Test')
+        self.assertEqual(dmap.label, 'Test')
+        self.assertEqual(dmap[0].label, 'Test')
+
+    def test_deep_relabel_group(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).relabel(group='Test')
+        self.assertEqual(dmap.group, 'Test')
+        self.assertEqual(dmap[0].group, 'Test')
+
+    def test_redim_dimension_name(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(Default='New')
+        self.assertEqual(dmap.kdims[0].name, 'New')
+
+    def test_deep_redim_dimension_name(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(x='X')
+        self.assertEqual(dmap[0].kdims[0].name, 'X')
+
+    def test_deep_redim_dimension_name_with_spec(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(Image, x='X')
+        self.assertEqual(dmap[0].kdims[0].name, 'X')
+
+    def test_deep_map(self):
+        fn = lambda x: Scatter(np.random.rand(10,2)))
+        dmap = DynamicMap(fn).map(lambda x: Curve(x), Scatter)
+        self.assertIsInstance(dmap[0], Curve)
 
 
 class DynamicTestGeneratorOpen(ComparisonTestCase):

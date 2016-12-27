@@ -8,7 +8,7 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement
+from .dimension import OrderedDict, Dimension, ViewableElement, replace_dimensions
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay
@@ -793,6 +793,67 @@ class DynamicMap(HoloMap):
         self._cache(key, val)
         self.counter += 1
         return val
+
+
+    def map(self, map_fn, specs=None, clone=True):
+        """
+        Recursively replaces elements using a map function when the
+        specification applies.
+        """
+        if specs and not isinstance(specs, list): specs = [specs]
+        applies = specs is None or any(self.matches(spec) for spec in specs)
+        from ..util import Dynamic
+        def dynamic_map(obj):
+            return obj.map(map_fn, specs, clone)
+        mapped = Dynamic(self, operation=dynamic_map)
+        if applies:
+            return map_fn(mapped)
+        else:
+            return mapped
+
+
+    def relabel(self, label=None, group=None, depth=1):
+        """
+        Assign a new label and/or group to an existing LabelledData
+        object, creating a clone of the object with the new settings.
+        """
+        keywords = [('label',label), ('group',group)]
+        obj = self.clone(self.data,
+                         **{k:v for k,v in keywords if v is not None})
+        if depth > 0:
+            from ..util import Dynamic
+            def dynamic_relabel(obj):
+                return obj.relabel(group=group, label=label, depth=depth-1)
+            return Dynamic(self, operation=dynamic_relabel)
+        return obj
+
+
+    def redim(self, specs=None, **dimensions):
+        """
+        Replaces existing dimensions in an object with new dimensions
+        or changing specific attributes of a dimensions. Dimension
+        mapping should map between the old dimension name and a
+        dictionary of the new attributes, a completely new dimension
+        or a new string name.
+        """
+        if specs is None:
+            applies = True
+        else:
+            if not isinstance(specs, list):
+                specs = [specs]
+            applies = any(self.matches(spec) for spec in specs)
+
+        from ..util import Dynamic
+        def dynamic_redim(obj):
+            return obj.redim(specs, **dimensions)
+        redimmed = Dynamic(self, operation=dynamic_redim)
+
+        if applies:
+            kdims = replace_dimensions(self.kdims, dimensions)
+            vdims = replace_dimensions(self.vdims, dimensions)
+            return redimmed.clone(kdims=kdims, vdims=vdims)
+        else:
+            return redimmed
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
