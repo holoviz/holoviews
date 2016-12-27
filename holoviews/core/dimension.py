@@ -419,6 +419,7 @@ class LabelledData(param.Parameterized):
         Recursively replaces elements using a map function when the
         specification applies.
         """
+        if specs and not isinstance(specs, list): specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
         if self._deep_indexable:
