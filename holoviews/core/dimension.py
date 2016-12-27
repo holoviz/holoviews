@@ -344,13 +344,15 @@ class LabelledData(param.Parameterized):
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
-        keywords = [('label',label), ('group',group)]
-        obj = self.clone(self.data,
-                         **{k:v for k,v in keywords if v is not None})
+        new_data = self.data
         if (depth > 0) and getattr(obj, '_deep_indexable', False):
-            for k, v in obj.items():
-                obj[k] =  v.relabel(group=group, label=label, depth=depth-1)
-        return obj
+            new_data = []
+            for k, v in self.data.items():
+                relabelled = v.relabel(group=group, label=label, depth=depth-1)
+                new_data.append(k, relabelled)
+        keywords = [('label', label), ('group', group)]
+        kwargs = {k: v for k, v in keywords if v is not None}
+        return self.clone(new_data, **kwargs)
 
 
     def matches(self, spec):
