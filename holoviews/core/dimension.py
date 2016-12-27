@@ -345,11 +345,11 @@ class LabelledData(param.Parameterized):
         object, creating a clone of the object with the new settings.
         """
         new_data = self.data
-        if (depth > 0) and getattr(obj, '_deep_indexable', False):
+        if (depth > 0) and getattr(self, '_deep_indexable', False):
             new_data = []
             for k, v in self.data.items():
                 relabelled = v.relabel(group=group, label=label, depth=depth-1)
-                new_data.append(k, relabelled)
+                new_data.append((k, relabelled))
         keywords = [('label', label), ('group', group)]
         kwargs = {k: v for k, v in keywords if v is not None}
         return self.clone(new_data, **kwargs)

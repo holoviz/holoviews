@@ -41,7 +41,7 @@ class DynamicMethods(ComparisonTestCase):
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
     def test_deep_map(self):
-        fn = lambda x: Scatter(np.random.rand(10,2)))
+        fn = lambda x: Scatter(np.random.rand(10,2))
         dmap = DynamicMap(fn).map(lambda x: Curve(x), Scatter)
         self.assertIsInstance(dmap[0], Curve)
 
