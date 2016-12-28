@@ -16,13 +16,11 @@ class DynamicMethods(ComparisonTestCase):
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn).relabel(label='Test')
-        self.assertEqual(dmap.label, 'Test')
         self.assertEqual(dmap[0].label, 'Test')
 
     def test_deep_relabel_group(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn).relabel(group='Test')
-        self.assertEqual(dmap.group, 'Test')
         self.assertEqual(dmap[0].group, 'Test')
 
     def test_redim_dimension_name(self):
@@ -39,11 +37,6 @@ class DynamicMethods(ComparisonTestCase):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn).redim(Image, x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
-
-    def test_deep_map(self):
-        fn = lambda x: Scatter(np.random.rand(10,2))
-        dmap = DynamicMap(fn).map(lambda x: Curve(x), Scatter)
-        self.assertIsInstance(dmap[0], Curve)
 
 
 class DynamicTestGeneratorOpen(ComparisonTestCase):

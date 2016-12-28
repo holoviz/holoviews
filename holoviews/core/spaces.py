@@ -8,7 +8,7 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement, replace_dimensions
+from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay
@@ -358,7 +358,6 @@ class HoloMap(UniformNdMapping):
     def relabel(self, label=None, group=None, depth=1):
         # Identical to standard relabel method except for default depth of 1
         return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
-
 
 
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
@@ -795,37 +794,18 @@ class DynamicMap(HoloMap):
         return val
 
 
-    def map(self, map_fn, specs=None, clone=True):
-        """
-        Recursively replaces elements using a map function when the
-        specification applies.
-        """
-        if specs and not isinstance(specs, list): specs = [specs]
-        applies = specs is None or any(self.matches(spec) for spec in specs)
-        from ..util import Dynamic
-        def dynamic_map(obj):
-            return obj.map(map_fn, specs, clone)
-        mapped = Dynamic(self, operation=dynamic_map)
-        if applies:
-            return map_fn(mapped)
-        else:
-            return mapped
-
-
     def relabel(self, label=None, group=None, depth=1):
         """
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
-        keywords = [('label',label), ('group',group)]
-        obj = self.clone(self.data,
-                         **{k:v for k,v in keywords if v is not None})
+        relabelled = super(DynamicMap, self).relabel(label, group, depth)
         if depth > 0:
             from ..util import Dynamic
             def dynamic_relabel(obj):
                 return obj.relabel(group=group, label=label, depth=depth-1)
-            return Dynamic(self, operation=dynamic_relabel)
-        return obj
+            return Dynamic(relabelled, shared_data=True, operation=dynamic_relabel)
+        return relabelled
 
 
     def redim(self, specs=None, **dimensions):
@@ -836,24 +816,11 @@ class DynamicMap(HoloMap):
         dictionary of the new attributes, a completely new dimension
         or a new string name.
         """
-        if specs is None:
-            applies = True
-        else:
-            if not isinstance(specs, list):
-                specs = [specs]
-            applies = any(self.matches(spec) for spec in specs)
-
+        redimmed = super(DynamicMap, self).redim(specs, **dimensions)
         from ..util import Dynamic
         def dynamic_redim(obj):
             return obj.redim(specs, **dimensions)
-        redimmed = Dynamic(self, operation=dynamic_redim)
-
-        if applies:
-            kdims = replace_dimensions(self.kdims, dimensions)
-            vdims = replace_dimensions(self.vdims, dimensions)
-            return redimmed.clone(kdims=kdims, vdims=vdims)
-        else:
-            return redimmed
+        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
