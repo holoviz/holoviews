@@ -93,8 +93,7 @@ class BokehPlot(DimensionedPlot):
         """
         Update datasource with data for a new frame.
         """
-        for k, v in data.items():
-            source.data[k] = v
+        source.data.update(data)
 
     @property
     def state(self):
