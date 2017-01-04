@@ -401,20 +401,6 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = dd.DataFrame
         self.init_data()
 
-    def test_dataset_reduce_ht(self):
-        reduced = Dataset({'Age': self.age,
-                           'Weight':self.weight,
-                           'Height':self.height},
-                          kdims=self.kdims[1:], vdims=self.vdims,
-                          datatype=['dataframe']).sort()
-        self.assertEqual(self.table.reduce(['Gender'], np.mean), reduced)
-
-    def test_dataset_aggregate_ht(self):
-        aggregated = Dataset({'Gender':['F', 'M'], 'Weight':[10, 16.5],
-                              'Height':[0.8, 0.7]},
-                             kdims=self.kdims[:1], vdims=self.vdims)
-        self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
-
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
