@@ -10,7 +10,7 @@ from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
 from ..comms import JupyterCommJS
 
 
-def attributes_js(attributes):
+def attributes_js(attributes, handles):
     """
     Generates JS code to look up attributes on JS objects from
     an attributes specification dictionary.
@@ -28,7 +28,16 @@ def attributes_js(attributes):
         obj_name = attrs[0]
         attr_getters = ''.join(["['{attr}']".format(attr=attr)
                                 for attr in attrs[1:]])
-        code += ''.join([data_assign, obj_name, attr_getters, ';\n'])
+        if obj_name not in ['cb_obj', 'cb_data']:
+            assign_str = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'.format(
+                assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
+            )
+            code += 'if (({obj_name} != undefined) && ({obj_name}["id"] == "{id}")) {{ {assign} }}'.format(
+                obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
+                )
+        else:
+            assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
+            code += assign_str
     return code
 
 
@@ -151,6 +160,7 @@ class Callback(object):
         self.plot = plot
         self.streams = streams
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
+        self.stream_handles = defaultdict(list)
         self.source = source
 
 
@@ -172,11 +182,19 @@ class Callback(object):
 
     def on_msg(self, msg):
         msg = json.loads(msg)
-        msg = self._process_msg(msg)
-        if any(v is None for v in msg.values()):
-            return
         for stream in self.streams:
-            stream.update(trigger=False, **msg)
+            ids = self.stream_handles[stream]
+            sanitized_msg = {}
+            for k, v in msg.items():
+                if isinstance(v, dict) and 'id' in v:
+                    if v['id'] in ids:
+                        sanitized_msg[k] = v['value']
+                else:
+                    sanitized_msg[k] = v
+            processed_msg = self._process_msg(sanitized_msg)
+            if not processed_msg:
+                continue
+            stream.update(trigger=False, **processed_msg)
         Stream.trigger(self.streams)
 
 
@@ -195,8 +213,6 @@ class Callback(object):
         self_callback = self.js_callback.format(comms_target=self.comm.target,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
-        attributes = attributes_js(self.attributes)
-        code = 'var data = {};\n' + attributes + self.code + self_callback
 
         handles = {}
         subplots = list(self.plot.subplots.values())[::-1] if self.plot.subplots else []
@@ -204,14 +220,28 @@ class Callback(object):
         for plot in plots:
             handles.update({k: v for k, v in plot.handles.items()
                             if k in self.handles})
+
+        attributes = attributes_js(self.attributes, handles)
+        code = 'var data = {};\n' + attributes + self.code + self_callback
+
+        stream_handle_ids = defaultdict(list)
+        for stream in self.streams:
+            for h in self.handles:
+                if h in handles:
+                    handle_id = handles[h].ref['id']
+                    stream_handle_ids[stream].append(handle_id)
+
         # Set callback
         if id(handle.callback) in self._callbacks:
             cb = self._callbacks[id(handle.callback)]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
+                for k, v in stream_handle_ids.items():
+                    cb.stream_handles[k] += v
             else:
                 handle.callback.code += code
         else:
+            self.stream_handles.update(stream_handle_ids)
             js_callback = CustomJS(args=handles, code=code)
             self._callbacks[id(js_callback)] = self
             handle.callback = js_callback
@@ -249,8 +279,12 @@ class RangeXYCallback(Callback):
     handles = ['x_range', 'y_range']
 
     def _process_msg(self, msg):
-        return {'x_range': (msg['x0'], msg['x1']),
-                'y_range': (msg['y0'], msg['y1'])}
+        data = {}
+        if 'x0' in msg and 'x1' in msg:
+            data['x_range'] = (msg['x0'], msg['x1'])
+        if 'y0' in msg and 'y1' in msg:
+            data['y_range'] = (msg['y0'], msg['y1'])
+        return data
 
 
 class RangeXCallback(Callback):
@@ -261,7 +295,10 @@ class RangeXCallback(Callback):
     handles = ['x_range']
 
     def _process_msg(self, msg):
-        return {'x_range': (msg['x0'], msg['x1'])}
+        if 'x0' in msg and 'x1' in msg:
+            return {'x_range': (msg['x0'], msg['x1'])}
+        else:
+            return {}
 
 
 class RangeYCallback(Callback):
@@ -272,7 +309,10 @@ class RangeYCallback(Callback):
     handles = ['y_range']
 
     def _process_msg(self, msg):
-        return {'y_range': (msg['y0'], msg['y1'])}
+        if 'y0' in msg and 'y1' in msg:
+            return {'y_range': (msg['y0'], msg['y1'])}
+        else:
+            return {}
 
 
 class BoundsCallback(Callback):
@@ -285,7 +325,10 @@ class BoundsCallback(Callback):
     handles = ['box_select']
 
     def _process_msg(self, msg):
-        return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
+            return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        else:
+            return {}
 
 
 class Selection1DCallback(Callback):
@@ -295,7 +338,10 @@ class Selection1DCallback(Callback):
     handles = ['source']
 
     def _process_msg(self, msg):
-        return {'index': [int(v) for v in msg['index']]}
+        if 'index' in msg:
+            return {'index': [int(v) for v in msg['index']]}
+        else:
+            return {}
 
 
 callbacks = Stream._callbacks['bokeh']
