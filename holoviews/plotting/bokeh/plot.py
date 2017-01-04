@@ -190,7 +190,7 @@ class CompositePlot(BokehPlot):
         Should return a list of plot objects that have changed and
         should be updated.
         """
-        return [self.handles['title']]
+        return [self.handles['title']] if 'title' in self.handles else []
 
 
 
