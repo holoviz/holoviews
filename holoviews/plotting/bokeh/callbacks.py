@@ -188,6 +188,10 @@ class Callback(object):
 
 
     def on_msg(self, msg):
+        # For each stream check whether plot state is meant for it
+        # by checking that the IDs match the IDs of the stream's plot
+        # handles, dispatch only the part of the message meant for
+        # a particular stream
         for stream in self.streams:
             ids = self.stream_handles[stream]
             sanitized_msg = {}
@@ -230,6 +234,9 @@ class Callback(object):
         attributes = attributes_js(self.attributes, handles)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
+        # Gather the ids of the plotting handles attached to this callback
+        # This allows checking that a stream is not given the state
+        # of a plotting handle it wasn't attached to
         stream_handle_ids = defaultdict(list)
         for stream in self.streams:
             for h in self.handles:

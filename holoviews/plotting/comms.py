@@ -123,6 +123,9 @@ class Comm(object):
         else:
             stdout = '\n\t'+'\n\t'.join(stdout) if stdout else ''
             reply = {'msg_type': "Ready", 'content': stdout}
+
+        # Returning the comms_target in an ACK message ensures that
+        # the correct comms handle is unblocked
         if 'comms_target' in msg:
             reply['comms_target'] = msg.pop('comms_target', None)
         self.send(json.dumps(reply))
@@ -161,6 +164,10 @@ class JupyterComm(Comm):
 
     @classmethod
     def decode(cls, msg):
+        """
+        Decodes messages following Jupyter messaging protocol.
+        If JSON decoding fails data is assumed to be a regular string.
+        """
         data = msg['content']['data']
         try:
             data = json.loads(data)
