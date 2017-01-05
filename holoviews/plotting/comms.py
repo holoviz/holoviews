@@ -120,7 +120,7 @@ class Comm(object):
             reply = {'msg_type': "Ready", 'content': stdout}
         if 'comms_target' in msg:
             reply['comms_target'] = msg.pop('comms_target', None)
-        self.comm.send(json.dumps(reply))
+        self.send(json.dumps(reply))
 
 
 class JupyterComm(Comm):
