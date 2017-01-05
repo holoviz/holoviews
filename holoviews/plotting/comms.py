@@ -11,6 +11,11 @@ except:
 from ipykernel.comm import Comm as IPyComm
 from IPython import get_ipython
 
+if sys.version_info.major >= 3:
+    DecodeError = json.decoder.JSONDecodeError
+else:
+    DecodeError = ValueError
+
 
 class StandardOutput(list):
     """
@@ -159,9 +164,8 @@ class JupyterComm(Comm):
         data = msg['content']['data']
         try:
             data = json.loads(data)
-        except ValueError as e:
-            if e.message != "No JSON object could be decoded":
-                raise
+        except DecodeError:
+            pass
         return data
 
 
