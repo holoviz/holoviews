@@ -85,14 +85,20 @@ class Callback(object):
     js_callback = """
         function on_msg(msg){{
           msg = JSON.parse(msg.content.data);
-          var comm = HoloViewsWidget.comms["{comms_target}"];
-          var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+          if ("comms_target" in msg) {{
+            comms_target = msg["comms_target"]
+          }} else {{
+            comms_target = "{comms_target}"
+          }}
+          var comm = HoloViewsWidget.comms[comms_target];
+          var comm_state = HoloViewsWidget.comm_state[comms_target];
           if (comm_state.event) {{
             comm.send(comm_state.event);
+            comm_state.blocked = true;
+            comm_state.timeout = Date.now()+{debounce};
           }} else {{
             comm_state.blocked = false;
           }}
-          comm_state.timeout = Date.now();
           comm_state.event = undefined;
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
@@ -101,6 +107,7 @@ class Callback(object):
           }}
         }}
 
+        data['comms_target'] = "{comms_target}";
         var argstring = JSON.stringify(data);
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
@@ -181,7 +188,6 @@ class Callback(object):
 
 
     def on_msg(self, msg):
-        msg = json.loads(msg)
         for stream in self.streams:
             ids = self.stream_handles[stream]
             sanitized_msg = {}

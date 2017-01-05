@@ -114,11 +114,13 @@ class Comm(object):
             if stdout:
                 stdout = '\n\t'+'\n\t'.join(stdout)
                 error = '\n'.join([stdout, error])
-            msg = {'msg_type': "Error", 'traceback': error}
+            reply = {'msg_type': "Error", 'traceback': error}
         else:
             stdout = '\n\t'+'\n\t'.join(stdout) if stdout else ''
-            msg = {'msg_type': "Ready", 'content': stdout}
-        self.comm.send(json.dumps(msg))
+            reply = {'msg_type': "Ready", 'content': stdout}
+        if 'comms_target' in msg:
+            reply['comms_target'] = msg.pop('comms_target', None)
+        self.comm.send(json.dumps(reply))
 
 
 class JupyterComm(Comm):
@@ -154,7 +156,7 @@ class JupyterComm(Comm):
 
     @classmethod
     def decode(cls, msg):
-        return msg['content']['data']
+        return json.loads(msg['content']['data'])
 
 
     def send(self, data):
