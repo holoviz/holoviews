@@ -156,7 +156,13 @@ class JupyterComm(Comm):
 
     @classmethod
     def decode(cls, msg):
-        return json.loads(msg['content']['data'])
+        data = msg['content']['data']
+        try:
+            data = json.loads(data)
+        except ValueError as e:
+            if e.message != "No JSON object could be decoded":
+                raise
+        return data
 
 
     def send(self, data):
