@@ -9,7 +9,10 @@ python:
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
-    
+  flowdock:
+    secure: d32tzqLnUIJge2QyAMtseJWf0yRb3LenW77xzEGVUD+abzlTtoCBbQBIRaWjJn3V78wd3ogLinplnMnu46tsQi7Q2XWiKaxrWq2ZPVfVCbV88whFiYMmmwnj6DNJjl3CxfGQXgui/VyPg9fyaDp5TyZfNZa/gEdedkn1J5kIF3g=
+
+
 install:
   - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
