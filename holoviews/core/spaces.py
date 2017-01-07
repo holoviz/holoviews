@@ -798,7 +798,7 @@ class DynamicMap(HoloMap):
         objects by supplying the selection_specs as an iterable of
         type.group.label specs, types or functions.
         """
-        if selection_specs is not None and not isinstance(selection_specs, list):
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
         selection = super(DynamicMap, self).select(selection_specs, **kwargs)
         def dynamic_select(obj):
