@@ -469,14 +469,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         el = element.traverse(lambda x: x, [Element])
         dimensions = el[0].dimensions() if el else el.dimensions()
-        plot.set(**self._plot_properties(key, plot, element))
+        plot.update(**self._plot_properties(key, plot, element))
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
-        plot.xaxis[0].set(**props.get('x', {}))
-        plot.yaxis[0].set(**props.get('y', {}))
+        plot.xaxis[0].update(**props.get('x', {}))
+        plot.yaxis[0].update(**props.get('y', {}))
 
         if bokeh_version >= '0.12' and not self.overlaid:
-            plot.title.set(**self._title_properties(key, plot, element))
+            plot.title.update(**self._title_properties(key, plot, element))
 
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
@@ -545,8 +545,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        glyph.set(**{k: v for k, v in merged.items()
-                     if k in allowed_properties})
+        glyph.update(**{k: v for k, v in merged.items()
+                        if k in allowed_properties})
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -844,7 +844,7 @@ class ColorbarPlot(ElementPlot):
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
             cmapper.palette = palette
-            cmapper.set(**opts)
+            cmapper.update(**opts)
         else:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             cmapper = colormapper(palette, **opts)
@@ -866,8 +866,8 @@ class ColorbarPlot(ElementPlot):
     def _update_glyph(self, glyph, properties, mapping):
         allowed_properties = glyph.properties()
         merged = dict(properties, **mapping)
-        glyph.set(**{k: v for k, v in merged.items()
-                     if k in allowed_properties})
+        glyph.update(**{k: v for k, v in merged.items()
+                        if k in allowed_properties})
 
 
 class LegendPlot(ElementPlot):
@@ -936,7 +936,7 @@ class BokehMPLWrapper(ElementPlot):
         """
         Updates plot parameters on every frame
         """
-        plot.set(**self._plot_properties(key, plot, element))
+        plot.update(**self._plot_properties(key, plot, element))
 
     def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
         self.mplplot.update_frame(key, ranges)
@@ -1015,7 +1015,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         legend_labels = []
         if not plot.legend:
             return
-        plot.legend[0].set(**options)
+        plot.legend[0].update(**options)
         legend_fontsize = self._fontsize('legend', 'size').get('size',False)
         if legend_fontsize:
             plot.legend[0].label_text_font_size = value(legend_fontsize)
