@@ -462,16 +462,12 @@ class DynamicMap(HoloMap):
 
         For open mode where there is an unbounded key dimension, the
         return type can specify a key as well as element as the tuple
-        (key, element). If no key is supplied, a simple counter is used
-        instead.
+        (key, element).
 
         If the callback is a generator, open mode is used and next() is
-        simply called. If the callback is callable and in open mode, the
-        element counter value will be supplied as the single
-        argument. This can be used to avoid issues where multiple
-        elements in a Layout each call next() leading to uncontrolled
-        changes in simulator state (the counter can be used to indicate
-        simulation time across the layout).
+        simply called. Otherwise, the callable is invoked using
+        positional arguments based on the key dimensions and keyword
+        arguments based on the stream parameters.
     """)
 
     streams = param.List(default=[], doc="""
@@ -508,7 +504,7 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
 
-        self.counter = 0
+        self.counter = 0 # Still used for caching and generator keys
         if self.callback is None:
             raise Exception("A suitable callback must be "
                             "declared to create a DynamicMap")
@@ -542,16 +538,6 @@ class DynamicMap(HoloMap):
                 raise ValueError("Cannot set DynamicMap containing generator "
                                  "to sampled")
             return 'generator'
-        if self.sampled:
-            return 'key'
-        # Any unbounded kdim (any direction) implies open mode
-        for kdim in self.kdims:
-            if kdim.name in util.stream_parameters(self.streams):
-                return 'key'
-            if kdim.values:
-                continue
-            if None in kdim.range:
-                return 'counter'
         return 'key'
 
 
@@ -626,6 +612,7 @@ class DynamicMap(HoloMap):
             self._validate_key(retval[0]) # Validated output key
             return (retval[0], self._style(retval[1]))
         else:
+            # Counter is the default key in generator call mode.
             self._validate_key((self.counter,))
             return (self.counter, self._style(retval))
 
@@ -749,9 +736,6 @@ class DynamicMap(HoloMap):
         # Not a cross product and nothing cached so compute element.
         if cache is not None: return cache
         val = self._execute_callback(*tuple_key)
-        if self.call_mode == 'counter':
-            val = val[1]
-
         self._cache(tuple_key, val)
         return val
 
@@ -780,8 +764,7 @@ class DynamicMap(HoloMap):
             raise Exception("The next() method should only be called in "
                             "one of the open modes.")
 
-        args = () if self.call_mode == 'generator' else (self.counter,)
-        retval = self._execute_callback(*args)
+        retval = self._execute_callback()
 
         (key, val) = (retval if isinstance(retval, tuple)
                       else (self.counter, retval))
