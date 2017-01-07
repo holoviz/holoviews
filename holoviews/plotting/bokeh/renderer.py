@@ -61,8 +61,8 @@ class BokehRenderer(Renderer):
         doc_handler = add_to_document(plot.state)
         with doc_handler:
             doc = doc_handler._doc
-            target = plot.comm.target if plot.comm else None
-            div = notebook_div(plot.state, target)
+            comm_id = plot.comm.id if plot.comm else None
+            div = notebook_div(plot.state, comm_id)
         plot.document = doc
         doc.add_root(plot.state)
         return div

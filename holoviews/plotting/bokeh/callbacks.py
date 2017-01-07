@@ -94,9 +94,9 @@ class Callback(object):
     js_callback = """
         function on_msg(msg){{
           msg = JSON.parse(msg.content.data);
-          var comms_target = msg["comms_target"]
-          var comm = HoloViewsWidget.comms[comms_target];
-          var comm_state = HoloViewsWidget.comm_state[comms_target];
+          var comm_id = msg["comm_id"]
+          var comm = HoloViewsWidget.comms[comm_id];
+          var comm_state = HoloViewsWidget.comm_state[comm_id];
           if (comm_state.event) {{
             comm.send(comm_state.event);
             comm_state.blocked = true;
@@ -112,33 +112,33 @@ class Callback(object):
           }}
         }}
 
-        data['comms_target'] = "{comms_target}";
+        data['comm_id'] = "{comm_id}";
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comms = HoloViewsWidget.comms["{comms_target}"];
-          if (comms && ("{comms_target}" in comms)) {{
-            comm = comms["{comms_target}"];
+          var comms = HoloViewsWidget.comms["{comm_id}"];
+          if (comms && ("{comm_id}" in comms)) {{
+            comm = comms["{comm_id}"];
           }} else {{
-            comm = comm_manager.new_comm("{comms_target}", {{}}, {{}}, {{}});
+            comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
             comm.on_msg(on_msg);
-            comm_manager["{comms_target}"] = comm;
-            HoloViewsWidget.comms["{comms_target}"] = comm;
+            comm_manager["{comm_id}"] = comm;
+            HoloViewsWidget.comms["{comm_id}"] = comm;
           }}
-          comm_manager["{comms_target}"] = comm;
+          comm_manager["{comm_id}"] = comm;
         }} else {{
           return
         }}
 
-        var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+        var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
             comm_state = {{event: undefined, blocked: false, timeout: Date.now()}}
-            HoloViewsWidget.comm_state["{comms_target}"] = comm_state
+            HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
         function trigger() {{
             if (comm_state.event != undefined) {{
-               var comms_target = comm_state.event["comms_target"]
-               var comm = HoloViewsWidget.comms[comms_target];
+               var comm_id = comm_state.event["comm_id"]
+               var comm = HoloViewsWidget.comms[comm_id];
                comm.send(comm_state.event);
             }}
             comm_state.event = undefined;
@@ -267,7 +267,7 @@ class Callback(object):
         """
 
         # Generate callback JS code to get all the requested data
-        self_callback = self.js_callback.format(comms_target=self.comm.target,
+        self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
