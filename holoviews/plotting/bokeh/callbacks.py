@@ -131,6 +131,8 @@ class Callback(object):
 
         function trigger() {{
             if (comm_state.event != undefined) {{
+               comms_target = comm_state.event["comms_target"]
+               comm = HoloViewsWidget.comms[comms_target];
                comm.send(comm_state.event);
             }}
             comm_state.event = undefined;
