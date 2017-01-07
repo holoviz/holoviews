@@ -663,7 +663,10 @@ class DynamicMap(HoloMap):
 
         Each key inside the cross product is looked up in the cache
         (self.data) to check if the appropriate element is
-        available. Oherwise the element is computed accordingly.
+        available. Otherwise the element is computed accordingly.
+
+        The data_slice may specify slices into each value in the
+        the cross-product.
         """
         if self.mode != 'bounded': return None
         if not any(isinstance(el, (list, set)) for el in tuple_key):
@@ -689,15 +692,16 @@ class DynamicMap(HoloMap):
 
         if data_slice:
             from ..util import Dynamic
-            def dynamic_slice(obj):
-                return obj[data_slice]
-            return Dynamic(product, operation=dynamic_slice, shared_data=True)
+            return Dynamic(product, operation=lambda obj: obj[data_slice],
+                           shared_data=True)
         return product
 
 
     def _slice_bounded(self, tuple_key, data_slice):
         """
-        Slices bounded DynamicMaps by setting the soft_ranges on key dimensions.
+        Slices bounded DynamicMaps by setting the soft_ranges on
+        key dimensions and applies data slice to cached and dynamic
+        values.
         """
         slices = [el for el in tuple_key if isinstance(el, slice)]
         if any(el.step for el in slices):
@@ -721,12 +725,11 @@ class DynamicMap(HoloMap):
                 return self._dataslice(sliced, data_slice)
             else:
                 from ..util import Dynamic
-                def dynamic_slice(obj):
-                    return obj[data_slice]
                 if len(self):
                     slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
                     sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
-                return Dynamic(sliced, operation=dynamic_slice, shared_data=True)
+                return Dynamic(sliced, operation=lambda obj: obj[data_slice],
+                               shared_data=True)
         return sliced
 
 
@@ -734,21 +737,18 @@ class DynamicMap(HoloMap):
         """
         Return an element for any key chosen key (in'bounded mode') or
         for a previously generated key that is still in the cache
-        (for one of the 'open' modes)
+        (for one of the 'open' modes). Also allows for usual deep
+        slicing semantics by slicing values in the cache and applying
+        the deep slice to newly generated values.
         """
         # Split key dimensions and data slices
         if key is Ellipsis:
             return self
-        elif key == ():
-            map_slice, data_slice = (), ()
-        else:
-            map_slice, data_slice = self._split_index(key)
+        map_slice, data_slice = self._split_index(key)
         tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
 
         # Validation for bounded mode
         if self.mode == 'bounded':
-            # DynamicMap(...)[:] returns a new DynamicMap with the same cache
-            sliced = None
             sliced = self._slice_bounded(tuple_key, data_slice)
             if sliced is not None:
                 return sliced
@@ -787,11 +787,22 @@ class DynamicMap(HoloMap):
 
 
     def select(self, selection_specs=None, **kwargs):
+        """
+        Allows slicing or indexing into the DynamicMap objects by
+        supplying the dimension and index/slice as key value
+        pairs. Select descends recursively through the data structure
+        applying the key dimension selection and applies to dynamically
+        generated items by wrapping the callback.
+
+        The selection may also be selectively applied to specific
+        objects by supplying the selection_specs as an iterable of
+        type.group.label specs, types or functions.
+        """
+        if selection_specs is not None and not isinstance(selection_specs, list):
+            selection_specs = [selection_specs]
         selection = super(DynamicMap, self).select(selection_specs, **kwargs)
         def dynamic_select(obj):
             if selection_specs is not None:
-                if not isinstance(selection_specs, list):
-                    specs = [selection_specs]
                 matches = any(obj.matches(spec) for spec in selection_specs)
             else:
                 matches = True

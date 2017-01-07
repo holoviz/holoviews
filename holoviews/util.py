@@ -29,7 +29,7 @@ class Dynamic(param.ParameterizedFunction):
         Keyword arguments passed to the function.""")
 
     shared_data = param.Boolean(default=False, doc="""
-        Whether the cloned DynamicMap will share the same data.""")
+        Whether the cloned DynamicMap will share the same cache.""")
 
     streams = param.List(default=[], doc="""
         List of streams to attach to the returned DynamicMap""")
