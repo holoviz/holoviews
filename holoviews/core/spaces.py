@@ -790,6 +790,8 @@ class DynamicMap(HoloMap):
         selection = super(DynamicMap, self).select(selection_specs, **kwargs)
         def dynamic_select(obj):
             if selection_specs is not None:
+                if not isinstance(selection_specs, list):
+                    specs = [selection_specs]
                 matches = any(obj.matches(spec) for spec in selection_specs)
             else:
                 matches = True

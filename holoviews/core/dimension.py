@@ -763,6 +763,8 @@ class Dimensioned(LabelledData):
 
         # Check selection_spec applies
         if selection_specs is not None:
+            if not isinstance(selection_specs, list):
+                selection_specs = [selection_specs]
             matches = any(self.matches(spec)
                           for spec in selection_specs)
         else:
