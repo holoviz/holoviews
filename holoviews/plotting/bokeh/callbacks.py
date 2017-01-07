@@ -172,23 +172,19 @@ class Callback(object):
         if self.plot.subplots:
             plots += list(self.plot.subplots.values())
 
-        handles = {}
-        for plot in plots:
-            for k, v in plot.handles.items():
-                if k not in handles:
-                    handles[k] = v
-        self.handle_ids.update(self._get_handle_ids(handles))
+        handles = self._get_plot_handles(plots)
+        self.handle_ids.update(self._get_stream_handle_ids(handles))
 
-        found = []
         for plot in plots:
-            for handle in self.handles:
-                if handle not in plot.handles or handle in found:
+            for handle_name in self.handles:
+                if handle_name not in handles:
+                    warn_args = (handle_name, type(self.plot).__name__,
+                                 type(self).__name__)
+                    self.warning('%s handle not found on %s, cannot'
+                                 'attach %s callback' % warn_args)
                     continue
-                self.set_customjs(plot.handles[handle], handles)
-                found.append(handle)
-
-        if len(found) != len(self.handles):
-            self.warning('Plotting handle for JS callback not found')
+                handle = handles[handle_name]
+                self.set_customjs(handle, handles)
 
 
     def _filter_msg(self, msg, ids):
@@ -226,7 +222,19 @@ class Callback(object):
         return msg
 
 
-    def _get_handle_ids(self, handles):
+    def _get_plot_handles(self, plots):
+        """
+        Iterate over plots and find all unique plotting handles.
+        """
+        handles = {}
+        for plot in plots:
+            for k, v in plot.handles.items():
+                if k not in handles:
+                    handles[k] = v
+        return handles
+
+
+    def _get_stream_handle_ids(self, handles):
         """
         Gather the ids of the plotting handles attached to this callback
         This allows checking that a stream is not given the state
@@ -256,7 +264,8 @@ class Callback(object):
         attributes = attributes_js(self.attributes, references)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
-        # Set callback
+        # Merge callbacks if another callback has already been attached
+        # otherwise set it
         if id(handle.callback) in self._callbacks:
             cb = self._callbacks[id(handle.callback)]
             if isinstance(cb, type(self)):
