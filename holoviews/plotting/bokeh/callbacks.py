@@ -12,13 +12,23 @@ from ..comms import JupyterCommJS
 def attributes_js(attributes, handles):
     """
     Generates JS code to look up attributes on JS objects from
-    an attributes specification dictionary.
+    an attributes specification dictionary. If the specification
+    references a plotting particular plotting handle it will also
+    generate JS code to get the ID of the object.
 
-    Example:
+    Simple example (when referencing cb_data or cb_obj):
 
     Input  : {'x': 'cb_data.geometry.x'}
 
     Output : data['x'] = cb_data['geometry']['x']
+
+    Example referencing plot handle:
+
+    Input  : {'x0': 'x_range.attributes.start'}
+
+    Output : if ((x_range !== undefined)) {
+               data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
+             }
     """
     code = ''
     for key, attr_path in attributes.items():
@@ -31,7 +41,7 @@ def attributes_js(attributes, handles):
             assign_str = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'.format(
                 assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
             )
-            code += 'if (({obj_name} != undefined) && ({obj_name}["id"] == "{id}")) {{ {assign} }}'.format(
+            code += 'if (({obj_name} != undefined)) {{ {assign} }}'.format(
                 obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
                 )
         else:
