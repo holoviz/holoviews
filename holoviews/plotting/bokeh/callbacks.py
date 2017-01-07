@@ -239,7 +239,7 @@ class Callback(object):
         handles = {}
         for plot in plots:
             for k, v in plot.handles.items():
-                if k not in handles:
+                if k not in handles and k in self.handles:
                     handles[k] = v
         return handles
 
