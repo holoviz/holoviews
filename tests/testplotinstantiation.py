@@ -228,6 +228,22 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         Callback._comm_type = comms.JupyterCommJS
         mpl_renderer.comms['default'] = self.default_comm
 
+    def test_overlay_legend(self):
+        overlay = Curve(range(10), label='A') * Curve(range(10), label='B')
+        plot = bokeh_renderer.get_plot(overlay)
+        legend_labels = [l.label['value'] for l in plot.state.legend[0].items]
+        self.assertEqual(legend_labels, ['A', 'B'])
+
+    def test_overlay_update_sources(self):
+        hmap = HoloMap({i: (Curve(np.arange(i), label='A') *
+                            Curve(np.arange(i)*2, label='B'))
+                        for i in range(10, 13)})
+        plot = bokeh_renderer.get_plot(hmap)
+        plot.update((12,))
+        subplot1, subplot2 = plot.subplots.values()
+        self.assertEqual(subplot1.handles['source'].data['y'], np.arange(12))
+        self.assertEqual(subplot2.handles['source'].data['y'], np.arange(12)*2)
+
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
         plot = bokeh_renderer.get_plot(overlay)
