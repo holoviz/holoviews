@@ -654,7 +654,7 @@ class DynamicMap(HoloMap):
         return self
 
 
-    def _cross_product(self, tuple_key, cache):
+    def _cross_product(self, tuple_key, cache, data_slice):
         """
         Returns a new DynamicMap if the key (tuple form) expresses a
         cross product, otherwise returns None. The cache argument is a
@@ -682,6 +682,8 @@ class DynamicMap(HoloMap):
                 val = cache[key]
             else:
                 val = self._execute_callback(*key)
+            if data_slice:
+                val = self._dataslice(val, data_slice)
             data.append((key, val))
         return self.clone(data)
 
@@ -707,22 +709,43 @@ class DynamicMap(HoloMap):
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
-        tuple_key = util.wrap_tuple_streams(key, self.kdims, self.streams)
+        if key is Ellipsis:
+            return self
+        elif key == ():
+            map_slice, data_slice = (), ()
+        else:
+            map_slice, data_slice = self._split_index(key)
+        tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
 
         # Validation for bounded mode
         if self.mode == 'bounded':
             # DynamicMap(...)[:] returns a new DynamicMap with the same cache
-            if key == slice(None, None, None):
-                return self.clone(self)
-
+            sliced = None
             slices = [el for el in tuple_key if isinstance(el, slice)]
-            if any(el.step for el in slices):
+            if all(sl == slice(None, None, None) for sl in map_slice):
+                sliced = self.clone()
+            elif any(el.step for el in slices):
                 raise Exception("Slices cannot have a step argument "
                                 "in DynamicMap bounded mode ")
-            if len(slices) not in [0, len(tuple_key)]:
+            elif len(slices) not in [0, len(tuple_key)]:
                 raise Exception("Slices must be used exclusively or not at all")
-            if slices:
-                return  self._slice_bounded(tuple_key)
+            elif slices:
+                sliced = self._slice_bounded(tuple_key)
+
+            if sliced is None:
+                pass
+            elif not data_slice:
+                return sliced
+            elif not isinstance(sliced, DynamicMap):
+                return self._dataslice(sliced, data_slice)
+            else:
+                from ..util import Dynamic
+                def dynamic_slice(obj):
+                    return obj[data_slice]
+                if len(self):
+                    slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
+                    sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
+                return Dynamic(sliced, operation=dynamic_slice, shared_data=True)
 
         # Cache lookup
         try:
@@ -741,8 +764,13 @@ class DynamicMap(HoloMap):
                                "available cache in open interval mode.")
 
         # If the key expresses a cross product, compute the elements and return
-        product = self._cross_product(tuple_key, cache.data if cache else {})
+        product = self._cross_product(tuple_key, cache.data if cache else {}, data_slice)
         if product is not None:
+            if data_slice:
+                from ..util import Dynamic
+                def dynamic_slice(obj):
+                    return obj[data_slice]
+                return Dynamic(product, operation=dynamic_slice, shared_data=True)
             return product
 
         # Not a cross product and nothing cached so compute element.
@@ -751,6 +779,8 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'counter':
             val = val[1]
 
+        if data_slice:
+            val = self._dataslice(val, data_slice)
         self._cache(tuple_key, val)
         return val
 
