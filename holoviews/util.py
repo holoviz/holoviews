@@ -28,6 +28,9 @@ class Dynamic(param.ParameterizedFunction):
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the function.""")
 
+    shared_data = param.Boolean(default=False, doc="""
+        Whether the cloned DynamicMap will share the same cache.""")
+
     streams = param.List(default=[], doc="""
         List of streams to attach to the returned DynamicMap""")
 
@@ -35,7 +38,7 @@ class Dynamic(param.ParameterizedFunction):
         self.p = param.ParamOverrides(self, params)
         callback = self._dynamic_operation(map_obj)
         if isinstance(map_obj, DynamicMap):
-            dmap = map_obj.clone(callback=callback, shared_data=False,
+            dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
                                  streams=[])
         else:
             dmap = self._make_dynamic(map_obj, callback)

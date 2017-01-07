@@ -219,6 +219,9 @@ class MultiDimensionalMapping(Dimensioned):
         """
         if not isinstance(key, tuple):
             key = (key,)
+        elif key == ():
+            return (), ()
+
         if key[0] is Ellipsis:
             num_pad = self.ndims - len(key) + 1
             key = (slice(None),) * num_pad + key[1:]

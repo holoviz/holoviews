@@ -360,7 +360,6 @@ class HoloMap(UniformNdMapping):
         return super(HoloMap, self).relabel(label=label, group=group, depth=depth)
 
 
-
     def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
         histmaps = [self.clone(shared_data=False) for _ in
                     kwargs.get('dimension', range(1))]
@@ -655,7 +654,7 @@ class DynamicMap(HoloMap):
         return self
 
 
-    def _cross_product(self, tuple_key, cache):
+    def _cross_product(self, tuple_key, cache, data_slice):
         """
         Returns a new DynamicMap if the key (tuple form) expresses a
         cross product, otherwise returns None. The cache argument is a
@@ -664,7 +663,10 @@ class DynamicMap(HoloMap):
 
         Each key inside the cross product is looked up in the cache
         (self.data) to check if the appropriate element is
-        available. Oherwise the element is computed accordingly.
+        available. Otherwise the element is computed accordingly.
+
+        The data_slice may specify slices into each value in the
+        the cross-product.
         """
         if self.mode != 'bounded': return None
         if not any(isinstance(el, (list, set)) for el in tuple_key):
@@ -683,47 +685,73 @@ class DynamicMap(HoloMap):
                 val = cache[key]
             else:
                 val = self._execute_callback(*key)
+            if data_slice:
+                val = self._dataslice(val, data_slice)
             data.append((key, val))
-        return self.clone(data)
+        product = self.clone(data)
+
+        if data_slice:
+            from ..util import Dynamic
+            return Dynamic(product, operation=lambda obj: obj[data_slice],
+                           shared_data=True)
+        return product
 
 
-    def _slice_bounded(self, tuple_key):
+    def _slice_bounded(self, tuple_key, data_slice):
         """
-        Slices bounded DynamicMaps by setting the soft_ranges on key dimensions.
+        Slices bounded DynamicMaps by setting the soft_ranges on
+        key dimensions and applies data slice to cached and dynamic
+        values.
         """
-        cloned = self.clone(self)
+        slices = [el for el in tuple_key if isinstance(el, slice)]
+        if any(el.step for el in slices):
+            raise Exception("Slices cannot have a step argument "
+                            "in DynamicMap bounded mode ")
+        elif len(slices) not in [0, len(tuple_key)]:
+            raise Exception("Slices must be used exclusively or not at all")
+        elif not slices:
+            return None
+
+        sliced = self.clone(self)
         for i, slc in enumerate(tuple_key):
             (start, stop) = slc.start, slc.stop
-            if start is not None and start < cloned.kdims[i].range[0]:
+            if start is not None and start < sliced.kdims[i].range[0]:
                 raise Exception("Requested slice below defined dimension range.")
-            if stop is not None and stop > cloned.kdims[i].range[1]:
+            if stop is not None and stop > sliced.kdims[i].range[1]:
                 raise Exception("Requested slice above defined dimension range.")
-            cloned.kdims[i].soft_range = (start, stop)
-        return cloned
+            sliced.kdims[i].soft_range = (start, stop)
+        if data_slice:
+            if not isinstance(sliced, DynamicMap):
+                return self._dataslice(sliced, data_slice)
+            else:
+                from ..util import Dynamic
+                if len(self):
+                    slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
+                    sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
+                return Dynamic(sliced, operation=lambda obj: obj[data_slice],
+                               shared_data=True)
+        return sliced
 
 
     def __getitem__(self, key):
         """
         Return an element for any key chosen key (in'bounded mode') or
         for a previously generated key that is still in the cache
-        (for one of the 'open' modes)
+        (for one of the 'open' modes). Also allows for usual deep
+        slicing semantics by slicing values in the cache and applying
+        the deep slice to newly generated values.
         """
-        tuple_key = util.wrap_tuple_streams(key, self.kdims, self.streams)
+        # Split key dimensions and data slices
+        if key is Ellipsis:
+            return self
+        map_slice, data_slice = self._split_index(key)
+        tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
 
         # Validation for bounded mode
         if self.mode == 'bounded':
-            # DynamicMap(...)[:] returns a new DynamicMap with the same cache
-            if key == slice(None, None, None):
-                return self.clone(self)
-
-            slices = [el for el in tuple_key if isinstance(el, slice)]
-            if any(el.step for el in slices):
-                raise Exception("Slices cannot have a step argument "
-                                "in DynamicMap bounded mode ")
-            if len(slices) not in [0, len(tuple_key)]:
-                raise Exception("Slices must be used exclusively or not at all")
-            if slices:
-                return  self._slice_bounded(tuple_key)
+            sliced = self._slice_bounded(tuple_key, data_slice)
+            if sliced is not None:
+                return sliced
 
         # Cache lookup
         try:
@@ -742,7 +770,7 @@ class DynamicMap(HoloMap):
                                "available cache in open interval mode.")
 
         # If the key expresses a cross product, compute the elements and return
-        product = self._cross_product(tuple_key, cache.data if cache else {})
+        product = self._cross_product(tuple_key, cache.data if cache else {}, data_slice)
         if product is not None:
             return product
 
@@ -752,8 +780,42 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'counter':
             val = val[1]
 
+        if data_slice:
+            val = self._dataslice(val, data_slice)
         self._cache(tuple_key, val)
         return val
+
+
+    def select(self, selection_specs=None, **kwargs):
+        """
+        Allows slicing or indexing into the DynamicMap objects by
+        supplying the dimension and index/slice as key value
+        pairs. Select descends recursively through the data structure
+        applying the key dimension selection and applies to dynamically
+        generated items by wrapping the callback.
+
+        The selection may also be selectively applied to specific
+        objects by supplying the selection_specs as an iterable of
+        type.group.label specs, types or functions.
+        """
+        if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
+            selection_specs = [selection_specs]
+        selection = super(DynamicMap, self).select(selection_specs, **kwargs)
+        def dynamic_select(obj):
+            if selection_specs is not None:
+                matches = any(obj.matches(spec) for spec in selection_specs)
+            else:
+                matches = True
+            if matches:
+                return obj.select(**kwargs)
+            return obj
+
+        if not isinstance(selection, DynamicMap):
+            return dynamic_select(selection)
+        else:
+            from ..util import Dynamic
+            return Dynamic(selection, operation=dynamic_select,
+                           shared_data=True)
 
 
     def _cache(self, key, val):
@@ -793,6 +855,35 @@ class DynamicMap(HoloMap):
         self._cache(key, val)
         self.counter += 1
         return val
+
+
+    def relabel(self, label=None, group=None, depth=1):
+        """
+        Assign a new label and/or group to an existing LabelledData
+        object, creating a clone of the object with the new settings.
+        """
+        relabelled = super(DynamicMap, self).relabel(label, group, depth)
+        if depth > 0:
+            from ..util import Dynamic
+            def dynamic_relabel(obj):
+                return obj.relabel(group=group, label=label, depth=depth-1)
+            return Dynamic(relabelled, shared_data=True, operation=dynamic_relabel)
+        return relabelled
+
+
+    def redim(self, specs=None, **dimensions):
+        """
+        Replaces existing dimensions in an object with new dimensions
+        or changing specific attributes of a dimensions. Dimension
+        mapping should map between the old dimension name and a
+        dictionary of the new attributes, a completely new dimension
+        or a new string name.
+        """
+        redimmed = super(DynamicMap, self).redim(specs, **dimensions)
+        from ..util import Dynamic
+        def dynamic_redim(obj):
+            return obj.redim(specs, **dimensions)
+        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):

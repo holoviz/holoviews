@@ -344,13 +344,15 @@ class LabelledData(param.Parameterized):
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
-        keywords = [('label',label), ('group',group)]
-        obj = self.clone(self.data,
-                         **{k:v for k,v in keywords if v is not None})
-        if (depth > 0) and getattr(obj, '_deep_indexable', False):
-            for k, v in obj.items():
-                obj[k] =  v.relabel(group=group, label=label, depth=depth-1)
-        return obj
+        new_data = self.data
+        if (depth > 0) and getattr(self, '_deep_indexable', False):
+            new_data = []
+            for k, v in self.data.items():
+                relabelled = v.relabel(group=group, label=label, depth=depth-1)
+                new_data.append((k, relabelled))
+        keywords = [('label', label), ('group', group)]
+        kwargs = {k: v for k, v in keywords if v is not None}
+        return self.clone(new_data, **kwargs)
 
 
     def matches(self, spec):
@@ -417,6 +419,7 @@ class LabelledData(param.Parameterized):
         Recursively replaces elements using a map function when the
         specification applies.
         """
+        if specs and not isinstance(specs, list): specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
         if self._deep_indexable:
@@ -760,6 +763,8 @@ class Dimensioned(LabelledData):
 
         # Check selection_spec applies
         if selection_specs is not None:
+            if not isinstance(selection_specs, (list, tuple)):
+                selection_specs = [selection_specs]
             matches = any(self.matches(spec)
                           for spec in selection_specs)
         else:
@@ -767,8 +772,9 @@ class Dimensioned(LabelledData):
 
         # Apply selection to self
         if local_kwargs and matches:
-            ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
-                     else self.ndims)
+            ndims = self.ndims
+            if any(d in self.vdims for d in kwargs):
+                ndims = len(self.kdims+self.vdims)
             select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
