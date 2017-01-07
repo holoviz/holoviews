@@ -163,12 +163,7 @@ class JupyterComm(Comm):
         Decodes messages following Jupyter messaging protocol.
         If JSON decoding fails data is assumed to be a regular string.
         """
-        data = msg['content']['data']
-        try:
-            data = json.loads(data)
-        except ValueError:
-            pass
-        return data
+        return msg['content']['data']
 
 
     def send(self, data):

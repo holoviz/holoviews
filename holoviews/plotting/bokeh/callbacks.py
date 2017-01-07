@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 
 import param
@@ -108,7 +107,6 @@ class Callback(object):
         }}
 
         data['comms_target'] = "{comms_target}";
-        var argstring = JSON.stringify(data);
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
           var comms = HoloViewsWidget.comms["{comms_target}"];
@@ -141,9 +139,9 @@ class Callback(object):
         timeout = comm_state.timeout + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.event = argstring;
+            comm_state.event = data;
         }} else {{
-            comm_state.event = argstring;
+            comm_state.event = data;
             setTimeout(trigger, {debounce});
             comm_state.blocked = true;
             comm_state.timeout = Date.now()+{debounce};
