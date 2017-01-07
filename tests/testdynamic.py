@@ -38,6 +38,50 @@ class DynamicMethods(ComparisonTestCase):
         dmap = DynamicMap(fn).redim(Image, x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
+    def test_deep_getitem_bounded_kdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+
+    def test_deep_getitem_bounded_kdims_and_vdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[:, 5:10, 0:5][10], fn(10)[5:10, 0:5])
+
+    def test_deep_getitem_cross_product_and_slice(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[[10, 11, 12], 5:10],
+                         dmap.clone([(i, fn(i)[5:10]) for i in range(10, 13)]))
+
+    def test_deep_getitem_index_and_slice(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[10, 5:10], fn(10)[5:10])
+
+    def test_deep_getitem_cache_sliced(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap[10] # Add item to cache
+        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+
+    def test_deep_select_slice_kdim(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(x=(5, 10))[10], fn(10)[5:10])
+
+    def test_deep_select_slice_kdim_and_vdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(x=(5, 10), y=(0, 5))[10], fn(10)[5:10, 0:5])
+
+    def test_deep_select_slice_kdim_no_match(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
+
+
+
 
 class DynamicTestGeneratorOpen(ComparisonTestCase):
 
