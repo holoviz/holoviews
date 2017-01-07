@@ -84,11 +84,7 @@ class Callback(object):
     js_callback = """
         function on_msg(msg){{
           msg = JSON.parse(msg.content.data);
-          if ("comms_target" in msg) {{
-            comms_target = msg["comms_target"]
-          }} else {{
-            comms_target = "{comms_target}"
-          }}
+          var comms_target = msg["comms_target"]
           var comm = HoloViewsWidget.comms[comms_target];
           var comm_state = HoloViewsWidget.comm_state[comms_target];
           if (comm_state.event) {{
@@ -131,8 +127,8 @@ class Callback(object):
 
         function trigger() {{
             if (comm_state.event != undefined) {{
-               comms_target = comm_state.event["comms_target"]
-               comm = HoloViewsWidget.comms[comms_target];
+               var comms_target = comm_state.event["comms_target"]
+               var comm = HoloViewsWidget.comms[comms_target];
                comm.send(comm_state.event);
             }}
             comm_state.event = undefined;
