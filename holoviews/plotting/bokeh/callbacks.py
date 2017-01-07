@@ -1,4 +1,3 @@
-import json
 from collections import defaultdict
 
 import param
@@ -10,16 +9,26 @@ from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
 from ..comms import JupyterCommJS
 
 
-def attributes_js(attributes):
+def attributes_js(attributes, handles):
     """
     Generates JS code to look up attributes on JS objects from
-    an attributes specification dictionary.
+    an attributes specification dictionary. If the specification
+    references a plotting particular plotting handle it will also
+    generate JS code to get the ID of the object.
 
-    Example:
+    Simple example (when referencing cb_data or cb_obj):
 
     Input  : {'x': 'cb_data.geometry.x'}
 
     Output : data['x'] = cb_data['geometry']['x']
+
+    Example referencing plot handle:
+
+    Input  : {'x0': 'x_range.attributes.start'}
+
+    Output : if ((x_range !== undefined)) {
+               data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
+             }
     """
     code = ''
     for key, attr_path in attributes.items():
@@ -28,7 +37,16 @@ def attributes_js(attributes):
         obj_name = attrs[0]
         attr_getters = ''.join(["['{attr}']".format(attr=attr)
                                 for attr in attrs[1:]])
-        code += ''.join([data_assign, obj_name, attr_getters, ';\n'])
+        if obj_name not in ['cb_obj', 'cb_data']:
+            assign_str = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'.format(
+                assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
+            )
+            code += 'if (({obj_name} != undefined)) {{ {assign} }}'.format(
+                obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
+                )
+        else:
+            assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
+            code += assign_str
     return code
 
 
@@ -76,14 +94,16 @@ class Callback(object):
     js_callback = """
         function on_msg(msg){{
           msg = JSON.parse(msg.content.data);
-          var comm = HoloViewsWidget.comms["{comms_target}"];
-          var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+          var comm_id = msg["comm_id"]
+          var comm = HoloViewsWidget.comms[comm_id];
+          var comm_state = HoloViewsWidget.comm_state[comm_id];
           if (comm_state.event) {{
             comm.send(comm_state.event);
+            comm_state.blocked = true;
+            comm_state.timeout = Date.now()+{debounce};
           }} else {{
             comm_state.blocked = false;
           }}
-          comm_state.timeout = Date.now();
           comm_state.event = undefined;
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
@@ -92,31 +112,33 @@ class Callback(object):
           }}
         }}
 
-        var argstring = JSON.stringify(data);
+        data['comm_id'] = "{comm_id}";
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comms = HoloViewsWidget.comms["{comms_target}"];
-          if (comms && ("{comms_target}" in comms)) {{
-            comm = comms["{comms_target}"];
+          var comms = HoloViewsWidget.comms["{comm_id}"];
+          if (comms && ("{comm_id}" in comms)) {{
+            comm = comms["{comm_id}"];
           }} else {{
-            comm = comm_manager.new_comm("{comms_target}", {{}}, {{}}, {{}});
+            comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
             comm.on_msg(on_msg);
-            comm_manager["{comms_target}"] = comm;
-            HoloViewsWidget.comms["{comms_target}"] = comm;
+            comm_manager["{comm_id}"] = comm;
+            HoloViewsWidget.comms["{comm_id}"] = comm;
           }}
-          comm_manager["{comms_target}"] = comm;
+          comm_manager["{comm_id}"] = comm;
         }} else {{
           return
         }}
 
-        var comm_state = HoloViewsWidget.comm_state["{comms_target}"];
+        var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
             comm_state = {{event: undefined, blocked: false, timeout: Date.now()}}
-            HoloViewsWidget.comm_state["{comms_target}"] = comm_state
+            HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
         function trigger() {{
             if (comm_state.event != undefined) {{
+               var comm_id = comm_state.event["comm_id"]
+               var comm = HoloViewsWidget.comms[comm_id];
                comm.send(comm_state.event);
             }}
             comm_state.event = undefined;
@@ -125,9 +147,9 @@ class Callback(object):
         timeout = comm_state.timeout + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.event = argstring;
+            comm_state.event = data;
         }} else {{
-            comm_state.event = argstring;
+            comm_state.event = data;
             setTimeout(trigger, {debounce});
             comm_state.blocked = true;
             comm_state.timeout = Date.now()+{debounce};
@@ -152,6 +174,7 @@ class Callback(object):
         self.streams = streams
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
+        self.handle_ids = defaultdict(list)
 
 
     def initialize(self):
@@ -159,32 +182,84 @@ class Callback(object):
         if self.plot.subplots:
             plots += list(self.plot.subplots.values())
 
-        found = []
+        handles = self._get_plot_handles(plots)
+        self.handle_ids.update(self._get_stream_handle_ids(handles))
+
         for plot in plots:
-            for handle in self.handles:
-                if handle not in plot.handles or handle in found:
+            for handle_name in self.handles:
+                if handle_name not in handles:
+                    warn_args = (handle_name, type(self.plot).__name__,
+                                 type(self).__name__)
+                    self.warning('%s handle not found on %s, cannot'
+                                 'attach %s callback' % warn_args)
                     continue
-                self.set_customjs(plot.handles[handle])
-                found.append(handle)
-        if len(found) != len(self.handles):
-            self.warning('Plotting handle for JS callback not found')
+                handle = handles[handle_name]
+                self.set_customjs(handle, handles)
+
+
+    def _filter_msg(self, msg, ids):
+        """
+        Filter event values that do not originate from the plotting
+        handles associated with a particular stream using their
+        ids to match them.
+        """
+        filtered_msg = {}
+        for k, v in msg.items():
+            if isinstance(v, dict) and 'id' in v:
+                if v['id'] in ids:
+                    filtered_msg[k] = v['value']
+            else:
+                filtered_msg[k] = v
+        return filtered_msg
 
 
     def on_msg(self, msg):
-        msg = json.loads(msg)
-        msg = self._process_msg(msg)
-        if any(v is None for v in msg.values()):
-            return
         for stream in self.streams:
-            stream.update(trigger=False, **msg)
+            ids = self.handle_ids[stream]
+            filtered_msg = self._filter_msg(msg, ids)
+            processed_msg = self._process_msg(filtered_msg)
+            if not processed_msg:
+                continue
+            stream.update(trigger=False, **processed_msg)
         Stream.trigger(self.streams)
 
 
     def _process_msg(self, msg):
+        """
+        Subclassable method to preprocess JSON message in callback
+        before passing to stream.
+        """
         return msg
 
 
-    def set_customjs(self, handle):
+    def _get_plot_handles(self, plots):
+        """
+        Iterate over plots and find all unique plotting handles.
+        """
+        handles = {}
+        for plot in plots:
+            for k, v in plot.handles.items():
+                if k not in handles and k in self.handles:
+                    handles[k] = v
+        return handles
+
+
+    def _get_stream_handle_ids(self, handles):
+        """
+        Gather the ids of the plotting handles attached to this callback
+        This allows checking that a stream is not given the state
+        of a plotting handle it wasn't attached to
+        """
+        stream_handle_ids = defaultdict(list)
+        for stream in self.streams:
+            for h in self.handles:
+                if h in handles:
+                    handle_id = handles[h].ref['id']
+                    stream_handle_ids[stream].append(handle_id)
+        return stream_handle_ids
+
+
+    def set_customjs(self, handle, references):
         """
         Generates a CustomJS callback by generating the required JS
         code and gathering all plotting handles and installs it on
@@ -192,27 +267,25 @@ class Callback(object):
         """
 
         # Generate callback JS code to get all the requested data
-        self_callback = self.js_callback.format(comms_target=self.comm.target,
+        self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
-        attributes = attributes_js(self.attributes)
+
+        attributes = attributes_js(self.attributes, references)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
-        handles = {}
-        subplots = list(self.plot.subplots.values())[::-1] if self.plot.subplots else []
-        plots = [self.plot] + subplots
-        for plot in plots:
-            handles.update({k: v for k, v in plot.handles.items()
-                            if k in self.handles})
-        # Set callback
+        # Merge callbacks if another callback has already been attached
+        # otherwise set it
         if id(handle.callback) in self._callbacks:
             cb = self._callbacks[id(handle.callback)]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
+                for k, v in self.handle_ids.items():
+                    cb.handle_ids[k] += v
             else:
                 handle.callback.code += code
         else:
-            js_callback = CustomJS(args=handles, code=code)
+            js_callback = CustomJS(args=references, code=code)
             self._callbacks[id(js_callback)] = self
             handle.callback = js_callback
 
@@ -249,8 +322,12 @@ class RangeXYCallback(Callback):
     handles = ['x_range', 'y_range']
 
     def _process_msg(self, msg):
-        return {'x_range': (msg['x0'], msg['x1']),
-                'y_range': (msg['y0'], msg['y1'])}
+        data = {}
+        if 'x0' in msg and 'x1' in msg:
+            data['x_range'] = (msg['x0'], msg['x1'])
+        if 'y0' in msg and 'y1' in msg:
+            data['y_range'] = (msg['y0'], msg['y1'])
+        return data
 
 
 class RangeXCallback(Callback):
@@ -261,7 +338,10 @@ class RangeXCallback(Callback):
     handles = ['x_range']
 
     def _process_msg(self, msg):
-        return {'x_range': (msg['x0'], msg['x1'])}
+        if 'x0' in msg and 'x1' in msg:
+            return {'x_range': (msg['x0'], msg['x1'])}
+        else:
+            return {}
 
 
 class RangeYCallback(Callback):
@@ -272,7 +352,10 @@ class RangeYCallback(Callback):
     handles = ['y_range']
 
     def _process_msg(self, msg):
-        return {'y_range': (msg['y0'], msg['y1'])}
+        if 'y0' in msg and 'y1' in msg:
+            return {'y_range': (msg['y0'], msg['y1'])}
+        else:
+            return {}
 
 
 class BoundsCallback(Callback):
@@ -285,7 +368,10 @@ class BoundsCallback(Callback):
     handles = ['box_select']
 
     def _process_msg(self, msg):
-        return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
+            return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        else:
+            return {}
 
 
 class Selection1DCallback(Callback):
@@ -295,7 +381,10 @@ class Selection1DCallback(Callback):
     handles = ['source']
 
     def _process_msg(self, msg):
-        return {'index': [int(v) for v in msg['index']]}
+        if 'index' in msg:
+            return {'index': [int(v) for v in msg['index']]}
+        else:
+            return {}
 
 
 callbacks = Stream._callbacks['bokeh']

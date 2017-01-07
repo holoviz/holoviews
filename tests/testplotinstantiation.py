@@ -246,11 +246,21 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
-        plot.callbacks[0].on_msg('{"x": 10, "y": -10}')
+        plot.callbacks[0].on_msg({"x": 10, "y": -10})
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.array([10]))
         self.assertEqual(data['y'], np.array([-10]))
 
+    def test_stream_callback_with_ids(self):
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        hover = plot.state.select(type=HoverTool)[0]
+        plot.callbacks[0].on_msg({"x": {'id': hover.ref['id'], 'value': 10},
+                                  "y": {'id': hover.ref['id'], 'value': -10}})
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.array([10]))
+        self.assertEqual(data['y'], np.array([-10]))
 
     def test_stream_callback_single_call(self):
         def history_callback(x, history=deque(maxlen=10)):

@@ -46,8 +46,7 @@ class Comm(object):
 
     The template must accept three arguments:
 
-    * comms_target - A unique id to register to register as the
-                     comms target.
+    * id          -  A unique id to register to register the comm under.
     * msg_handler -  JS code which has the msg variable in scope and
                      performs appropriate action for the supplied message.
     * init_frame  -  The initial frame to render on the frontend.
@@ -55,11 +54,11 @@ class Comm(object):
 
     template = ''
 
-    def __init__(self, plot, target=None, on_msg=None):
+    def __init__(self, plot, id=None, on_msg=None):
         """
         Initializes a Comms object
         """
-        self.target = target if target else uuid.uuid4().hex
+        self.id = id if id else uuid.uuid4().hex
         self._plot = plot
         self._on_msg = on_msg
         self._comm = None
@@ -114,11 +113,16 @@ class Comm(object):
             if stdout:
                 stdout = '\n\t'+'\n\t'.join(stdout)
                 error = '\n'.join([stdout, error])
-            msg = {'msg_type': "Error", 'traceback': error}
+            reply = {'msg_type': "Error", 'traceback': error}
         else:
             stdout = '\n\t'+'\n\t'.join(stdout) if stdout else ''
-            msg = {'msg_type': "Ready", 'content': stdout}
-        self.comm.send(json.dumps(msg))
+            reply = {'msg_type': "Ready", 'content': stdout}
+
+        # Returning the comm_id in an ACK message ensures that
+        # the correct comms handle is unblocked
+        if 'comm_id' in msg:
+            reply['comm_id'] = msg.pop('comm_id', None)
+        self.send(json.dumps(reply))
 
 
 class JupyterComm(Comm):
@@ -136,11 +140,11 @@ class JupyterComm(Comm):
 
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
         comm_manager = Jupyter.notebook.kernel.comm_manager;
-        comm_manager.register_target("{comms_target}", function(comm) {{ comm.on_msg(msg_handler);}});
+        comm_manager.register_target("{comm_id}", function(comm) {{ comm.on_msg(msg_handler);}});
       }}
     </script>
 
-    <div id="fig_{comms_target}">
+    <div id="fig_{comm_id}">
       {init_frame}
     </div>
     """
@@ -148,12 +152,16 @@ class JupyterComm(Comm):
     def init(self):
         if self._comm:
             return
-        self._comm = IPyComm(target_name=self.target, data={})
+        self._comm = IPyComm(target_name=self.id, data={})
         self._comm.on_msg(self._handle_msg)
 
 
     @classmethod
     def decode(cls, msg):
+        """
+        Decodes messages following Jupyter messaging protocol.
+        If JSON decoding fails data is assumed to be a regular string.
+        """
         return msg['content']['data']
 
 
@@ -183,23 +191,23 @@ class JupyterCommJS(JupyterComm):
 
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
         var comm_manager = Jupyter.notebook.kernel.comm_manager;
-        comm = comm_manager.new_comm("{comms_target}", {{}}, {{}}, {{}}, "{comms_target}");
+        comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}}, "{comm_id}");
         comm.on_msg(msg_handler);
       }}
     </script>
 
-    <div id="fig_{comms_target}">
+    <div id="fig_{comm_id}">
       {init_frame}
     </div>
     """
 
-    def __init__(self, plot, target=None, on_msg=None):
+    def __init__(self, plot, id=None, on_msg=None):
         """
         Initializes a Comms object
         """
-        super(JupyterCommJS, self).__init__(plot, target, on_msg)
+        super(JupyterCommJS, self).__init__(plot, id, on_msg)
         self.manager = get_ipython().kernel.comm_manager
-        self.manager.register_target(self.target, self._handle_open)
+        self.manager.register_target(self.id, self._handle_open)
 
 
     def _handle_open(self, comm, msg):

@@ -14,7 +14,7 @@ from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 plotly_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{comms_target}')[0];
+var plot = $('#{comm_id}')[0];
 var data = JSON.parse(msg);
 $.each(data.data, function(i, obj) {{
   $.each(Object.keys(obj), function(j, key) {{
@@ -82,7 +82,7 @@ class PlotlyRenderer(Renderer):
         figure = plot.state
         if divuuid is None:
             if plot.comm:
-                divuuid = plot.comm.target
+                divuuid = plot.comm.id
             else:
                 divuuid = uuid.uuid4().hex
 
@@ -118,10 +118,10 @@ class PlotlyRenderer(Renderer):
 
         if comm and plot.comm is not None:
             comm, msg_handler = self.comms[self.mode]
-            msg_handler = msg_handler.format(comms_target=plot.comm.target)
+            msg_handler = msg_handler.format(comm_id=plot.comm.id)
             return comm.template.format(init_frame=joined,
                                         msg_handler=msg_handler,
-                                        comms_target=plot.comm.target)
+                                        comm_id=plot.comm.id)
         return joined
 
 
