@@ -685,22 +685,49 @@ class DynamicMap(HoloMap):
             if data_slice:
                 val = self._dataslice(val, data_slice)
             data.append((key, val))
-        return self.clone(data)
+        product = self.clone(data)
+
+        if data_slice:
+            from ..util import Dynamic
+            def dynamic_slice(obj):
+                return obj[data_slice]
+            return Dynamic(product, operation=dynamic_slice, shared_data=True)
+        return product
 
 
-    def _slice_bounded(self, tuple_key):
+    def _slice_bounded(self, tuple_key, data_slice):
         """
         Slices bounded DynamicMaps by setting the soft_ranges on key dimensions.
         """
-        cloned = self.clone(self)
+        slices = [el for el in tuple_key if isinstance(el, slice)]
+        if any(el.step for el in slices):
+            raise Exception("Slices cannot have a step argument "
+                            "in DynamicMap bounded mode ")
+        elif len(slices) not in [0, len(tuple_key)]:
+            raise Exception("Slices must be used exclusively or not at all")
+        elif not slices:
+            return None
+
+        sliced = self.clone(self)
         for i, slc in enumerate(tuple_key):
             (start, stop) = slc.start, slc.stop
-            if start is not None and start < cloned.kdims[i].range[0]:
+            if start is not None and start < sliced.kdims[i].range[0]:
                 raise Exception("Requested slice below defined dimension range.")
-            if stop is not None and stop > cloned.kdims[i].range[1]:
+            if stop is not None and stop > sliced.kdims[i].range[1]:
                 raise Exception("Requested slice above defined dimension range.")
-            cloned.kdims[i].soft_range = (start, stop)
-        return cloned
+            sliced.kdims[i].soft_range = (start, stop)
+        if data_slice:
+            if not isinstance(sliced, DynamicMap):
+                return self._dataslice(sliced, data_slice)
+            else:
+                from ..util import Dynamic
+                def dynamic_slice(obj):
+                    return obj[data_slice]
+                if len(self):
+                    slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
+                    sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
+                return Dynamic(sliced, operation=dynamic_slice, shared_data=True)
+        return sliced
 
 
     def __getitem__(self, key):
@@ -709,6 +736,7 @@ class DynamicMap(HoloMap):
         for a previously generated key that is still in the cache
         (for one of the 'open' modes)
         """
+        # Split key dimensions and data slices
         if key is Ellipsis:
             return self
         elif key == ():
@@ -721,31 +749,9 @@ class DynamicMap(HoloMap):
         if self.mode == 'bounded':
             # DynamicMap(...)[:] returns a new DynamicMap with the same cache
             sliced = None
-            slices = [el for el in tuple_key if isinstance(el, slice)]
-            if slices and all(sl == slice(None, None, None) for sl in slices):
-                sliced = self.clone()
-            elif any(el.step for el in slices):
-                raise Exception("Slices cannot have a step argument "
-                                "in DynamicMap bounded mode ")
-            elif len(slices) not in [0, len(tuple_key)]:
-                raise Exception("Slices must be used exclusively or not at all")
-            elif slices:
-                sliced = self._slice_bounded(tuple_key)
-
-            if sliced is None:
-                pass
-            elif not data_slice:
+            sliced = self._slice_bounded(tuple_key, data_slice)
+            if sliced is not None:
                 return sliced
-            elif not isinstance(sliced, DynamicMap):
-                return self._dataslice(sliced, data_slice)
-            else:
-                from ..util import Dynamic
-                def dynamic_slice(obj):
-                    return obj[data_slice]
-                if len(self):
-                    slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
-                    sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
-                return Dynamic(sliced, operation=dynamic_slice, shared_data=True)
 
         # Cache lookup
         try:
@@ -766,11 +772,6 @@ class DynamicMap(HoloMap):
         # If the key expresses a cross product, compute the elements and return
         product = self._cross_product(tuple_key, cache.data if cache else {}, data_slice)
         if product is not None:
-            if data_slice:
-                from ..util import Dynamic
-                def dynamic_slice(obj):
-                    return obj[data_slice]
-                return Dynamic(product, operation=dynamic_slice, shared_data=True)
             return product
 
         # Not a cross product and nothing cached so compute element.
