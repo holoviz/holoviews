@@ -770,8 +770,9 @@ class Dimensioned(LabelledData):
 
         # Apply selection to self
         if local_kwargs and matches:
-            ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
-                     else self.ndims)
+            ndims = self.ndims
+            if any(d in self.vdims for d in kwargs):
+                ndims = len(self.kdims+self.vdims)
             select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':

@@ -722,7 +722,7 @@ class DynamicMap(HoloMap):
             # DynamicMap(...)[:] returns a new DynamicMap with the same cache
             sliced = None
             slices = [el for el in tuple_key if isinstance(el, slice)]
-            if all(sl == slice(None, None, None) for sl in map_slice):
+            if slices and all(sl == slice(None, None, None) for sl in slices):
                 sliced = self.clone()
             elif any(el.step for el in slices):
                 raise Exception("Slices cannot have a step argument "
@@ -783,6 +783,25 @@ class DynamicMap(HoloMap):
             val = self._dataslice(val, data_slice)
         self._cache(tuple_key, val)
         return val
+
+
+    def select(self, selection_specs=None, **kwargs):
+        selection = super(DynamicMap, self).select(selection_specs, **kwargs)
+        def dynamic_select(obj):
+            if selection_specs is not None:
+                matches = any(obj.matches(spec) for spec in selection_specs)
+            else:
+                matches = True
+            if matches:
+                return obj.select(**kwargs)
+            return obj
+
+        if not isinstance(selection, DynamicMap):
+            return dynamic_select(selection)
+        else:
+            from ..util import Dynamic
+            return Dynamic(selection, operation=dynamic_select,
+                           shared_data=True)
 
 
     def _cache(self, key, val):
