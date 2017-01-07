@@ -167,8 +167,8 @@ class Callback(object):
         self.plot = plot
         self.streams = streams
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
-        self.stream_handles = defaultdict(list)
         self.source = source
+        self.handle_ids = defaultdict(list)
 
 
     def initialize(self):
@@ -176,32 +176,46 @@ class Callback(object):
         if self.plot.subplots:
             plots += list(self.plot.subplots.values())
 
+        handles = {}
+        for plot in plots:
+            for k, v in plot.handles.items():
+                if k not in handles:
+                    handles[k] = v
+        self.handle_ids.update(self._get_handle_ids(handles))
+
         found = []
         for plot in plots:
             for handle in self.handles:
                 if handle not in plot.handles or handle in found:
                     continue
-                self.set_customjs(plot.handles[handle])
+                self.set_customjs(plot.handles[handle], handles)
                 found.append(handle)
+
         if len(found) != len(self.handles):
             self.warning('Plotting handle for JS callback not found')
 
 
+    def _filter_msg(self, msg, ids):
+        """
+        Filter event values that do not originate from the plotting
+        handles associated with a particular stream using their
+        ids to match them.
+        """
+        filtered_msg = {}
+        for k, v in msg.items():
+            if isinstance(v, dict) and 'id' in v:
+                if v['id'] in ids:
+                    filtered_msg[k] = v['value']
+            else:
+                filtered_msg[k] = v
+        return filtered_msg
+
+
     def on_msg(self, msg):
-        # For each stream check whether plot state is meant for it
-        # by checking that the IDs match the IDs of the stream's plot
-        # handles, dispatch only the part of the message meant for
-        # a particular stream
         for stream in self.streams:
-            ids = self.stream_handles[stream]
-            sanitized_msg = {}
-            for k, v in msg.items():
-                if isinstance(v, dict) and 'id' in v:
-                    if v['id'] in ids:
-                        sanitized_msg[k] = v['value']
-                else:
-                    sanitized_msg[k] = v
-            processed_msg = self._process_msg(sanitized_msg)
+            ids = self.handle_ids[stream]
+            filtered_msg = self._filter_msg(msg, ids)
+            processed_msg = self._process_msg(filtered_msg)
             if not processed_msg:
                 continue
             stream.update(trigger=False, **processed_msg)
@@ -209,10 +223,29 @@ class Callback(object):
 
 
     def _process_msg(self, msg):
+        """
+        Subclassable method to preprocess JSON message in callback
+        before passing to stream.
+        """
         return msg
 
 
-    def set_customjs(self, handle):
+    def _get_handle_ids(self, handles):
+        """
+        Gather the ids of the plotting handles attached to this callback
+        This allows checking that a stream is not given the state
+        of a plotting handle it wasn't attached to
+        """
+        stream_handle_ids = defaultdict(list)
+        for stream in self.streams:
+            for h in self.handles:
+                if h in handles:
+                    handle_id = handles[h].ref['id']
+                    stream_handle_ids[stream].append(handle_id)
+        return stream_handle_ids
+
+
+    def set_customjs(self, handle, references):
         """
         Generates a CustomJS callback by generating the required JS
         code and gathering all plotting handles and installs it on
@@ -224,38 +257,20 @@ class Callback(object):
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
-        handles = {}
-        subplots = list(self.plot.subplots.values())[::-1] if self.plot.subplots else []
-        plots = [self.plot] + subplots
-        for plot in plots:
-            handles.update({k: v for k, v in plot.handles.items()
-                            if k in self.handles})
-
-        attributes = attributes_js(self.attributes, handles)
+        attributes = attributes_js(self.attributes, references)
         code = 'var data = {};\n' + attributes + self.code + self_callback
-
-        # Gather the ids of the plotting handles attached to this callback
-        # This allows checking that a stream is not given the state
-        # of a plotting handle it wasn't attached to
-        stream_handle_ids = defaultdict(list)
-        for stream in self.streams:
-            for h in self.handles:
-                if h in handles:
-                    handle_id = handles[h].ref['id']
-                    stream_handle_ids[stream].append(handle_id)
 
         # Set callback
         if id(handle.callback) in self._callbacks:
             cb = self._callbacks[id(handle.callback)]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
-                for k, v in stream_handle_ids.items():
-                    cb.stream_handles[k] += v
+                for k, v in self.handle_ids.items():
+                    cb.handle_ids[k] += v
             else:
                 handle.callback.code += code
         else:
-            self.stream_handles.update(stream_handle_ids)
-            js_callback = CustomJS(args=handles, code=code)
+            js_callback = CustomJS(args=references, code=code)
             self._callbacks[id(js_callback)] = self
             handle.callback = js_callback
 
