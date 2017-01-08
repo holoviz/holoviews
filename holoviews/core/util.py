@@ -663,19 +663,12 @@ def is_cyclic(graph):
     return any(visit(v) for v in graph)
 
 
-def one_to_one(graph):
-    """Return True if graph contains only one to one mappings."""
-    start, end = set(), set()
-    for s, e in graph.items():
-        if len(e) == 0:
-            start.add(s)
-            continue
-        e = e[0]
-        if len(e) > 1 or s in start or e in end:
-            return False
-        start.add(s)
-        end.add(e)
-    return True
+def one_to_one(graph, nodes):
+    """Return True if graph contains only one to one mappings.
+    Pass a graph as a dictionary mapping of edges for each node and
+    a list of all nodes."""
+    edges = itertools.chain.from_iterable(graph.values())
+    return len(graph) == len(nodes) and len(set(edges)) == len(nodes)
 
 
 def get_overlay_spec(o, k, v):

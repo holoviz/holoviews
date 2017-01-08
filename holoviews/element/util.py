@@ -111,12 +111,12 @@ class categorical_aggregate2d(ElementOperation):
         for group in grouped:
             vals = group.dimension_values(ydim)
             if len(vals) == 1:
-                orderings[vals[0]] = []
+                orderings[vals[0]] = [vals[0]]
             else:
                 for i in range(len(vals)-1):
                     p1, p2 = vals[i:i+2]
                     orderings[p1] = [p2]
-        if one_to_one(orderings):
+        if one_to_one(orderings, d2keys):
             d2keys = np.sort(d2keys)
         elif not is_cyclic(orderings):
             d2keys = list(itertools.chain(*sort_topologically(orderings)))
