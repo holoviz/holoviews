@@ -138,6 +138,5 @@ class categorical_aggregate2d(ElementOperation):
         grid_data = {xdim: d1keys, ydim: d2keys}
         for vdim in vdims:
             grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
-        grid_type = 'xarray' if xr else 'grid'
         return agg.clone(grid_data, datatype=self.p.datatype)
 
