@@ -1,7 +1,9 @@
+import itertools
+
 import numpy as np
 
 from ..core import Dataset, OrderedDict
-from ..core.util import pd, is_nan
+from ..core.util import pd, is_nan, sort_topologically
 
 try:
     import dask
@@ -69,30 +71,34 @@ def get_2d_aggregate(obj):
     d1keys = obj.dimension_values(xdim, False)
     d2keys = obj.dimension_values(ydim, False)
 
-    is_sorted = np.array_equal(np.sort(d1keys), d1keys)
-    if is_sorted:
-        grouped = obj.groupby(xdim, container_type=OrderedDict,
-                              group_type=Dataset).values()
-        for group in grouped:
-            d2vals = group.dimension_values(ydim)
-            is_sorted &= np.array_equal(d2vals, np.sort(d2vals))
+    # Determine global orderings of y-values using topological sort
+    grouped = obj.groupby(xdim, container_type=OrderedDict,
+                          group_type=Dataset).values()
+    orderings = OrderedDict()
+    for group in grouped:
+        vals = group.dimension_values(ydim)
+        if len(vals) == 1:
+            orderings[vals[0]] = []
+        else:
+            for i in range(len(vals)-1):
+                p1, p2 = vals[i:i+2]
+                orderings[p1] = [p2]
+    d2keys = list(itertools.chain(*sort_topologically(orderings)))
 
-    if is_sorted:
-        d1keys, d2keys = np.sort(d1keys), np.sort(d2keys)
+    # Pad data with NaNs
     coords = [(d1, d2) + (np.NaN,)*nvdims for d2 in d2keys for d1 in d1keys]
-
     dtype = 'dataframe' if pd else 'dictionary'
     dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
     concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
     agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
+
+    # Convert data to a gridded dataset
     shape = (len(d2keys), len(d1keys))
     grid_data = {xdim: d1keys, ydim: d2keys}
-
     for vdim in dims[2:]:
         data = agg.dimension_values(vdim).reshape(shape)
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         grid_data[vdim] = data
-
     grid_type = 'xarray' if xr else 'grid'
     return agg.clone(grid_data, datatype=[grid_type])
 

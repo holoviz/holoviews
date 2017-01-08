@@ -610,11 +610,11 @@ def sort_topologically(graph):
     [set([1, 2]), set([3, 4]), set([5, 6])]
     """
     levels_by_name = {}
-    names_by_level = defaultdict(set)
+    names_by_level = defaultdict(list)
 
     def add_level_to_name(name, level):
         levels_by_name[name] = level
-        names_by_level[level].add(name)
+        names_by_level[level].append(name)
 
 
     def walk_depth_first(name):
