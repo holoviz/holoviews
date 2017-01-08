@@ -607,7 +607,7 @@ def sort_topologically(graph):
     }
 
     sort_topologically(graph)
-    [set([1, 2]), set([3, 4]), set([5, 6])]
+    [[1, 2], [3, 4], [5, 6]]
     """
     levels_by_name = {}
     names_by_level = defaultdict(list)
@@ -646,6 +646,37 @@ def sort_topologically(graph):
     return list(itertools.takewhile(lambda x: x is not None,
                                     (names_by_level.get(i, None)
                                      for i in itertools.count())))
+
+
+def is_cyclic(graph):
+    """Return True if the directed graph g has a cycle."""
+    path = set()
+
+    def visit(vertex):
+        path.add(vertex)
+        for neighbour in graph.get(vertex, ()):
+            if neighbour in path or visit(neighbour):
+                return True
+        path.remove(vertex)
+        return False
+
+    return any(visit(v) for v in graph)
+
+
+def one_to_one(graph):
+    """Return True if graph contains only one to one mappings."""
+    start, end = set(), set()
+    for s, e in graph.items():
+        if len(e) == 0:
+            start.add(s)
+            continue
+        e = e[0]
+        if len(e) > 1 or s in start or e in end:
+            return False
+        start.add(s)
+        end.add(e)
+    return True
+
 
 def get_overlay_spec(o, k, v):
     """

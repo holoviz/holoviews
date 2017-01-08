@@ -5,7 +5,8 @@ import numpy as np
 
 from ..core import Dataset, OrderedDict
 from ..core.operation import ElementOperation
-from ..core.util import pd, is_nan, sort_topologically, cartesian_product
+from ..core.util import (pd, is_nan, sort_topologically,
+                         cartesian_product, is_cyclic, one_to_one)
 
 try:
     import dask
@@ -107,19 +108,17 @@ class categorical_aggregate2d(ElementOperation):
         grouped = obj.groupby(xdim, container_type=OrderedDict,
                               group_type=Dataset).values()
         orderings = OrderedDict()
-        is_sorted = np.array_equal(np.sort(d1keys), d1keys)
         for group in grouped:
             vals = group.dimension_values(ydim)
             if len(vals) == 1:
                 orderings[vals[0]] = []
             else:
-                is_sorted &= np.array_equal(np.sort(vals), vals)
                 for i in range(len(vals)-1):
                     p1, p2 = vals[i:i+2]
                     orderings[p1] = [p2]
-        if is_sorted:
+        if one_to_one(orderings):
             d2keys = np.sort(d2keys)
-        else:
+        elif not is_cyclic(orderings):
             d2keys = list(itertools.chain(*sort_topologically(orderings)))
 
         # Pad data with NaNs
