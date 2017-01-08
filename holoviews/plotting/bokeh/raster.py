@@ -9,7 +9,7 @@ except ImportError:
 
 from ...core.util import cartesian_product, is_nan, unique_array
 from ...element import Image, Raster, RGB
-from ...element.util importget_2d_aggregate
+from ...element.util import get_2d_aggregate
 from ..renderer import SkipRendering
 from ..util import map_colors
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
@@ -137,7 +137,8 @@ class HeatmapPlot(ColorbarPlot):
     def _axes_props(self, plots, subplots, element, ranges):
         dims = element.dimensions()
         labels = self._get_axis_labels(dims)
-        xvals, yvals = [np.sort(unique_array(element.dimension_values(i, False)))
+        agg = element.gridded
+        xvals, yvals = [unique_array(agg.dimension_values(i, False))
                         for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
@@ -146,7 +147,7 @@ class HeatmapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)[:3]
-        aggregate = get_2d_aggregate(element).sort()
+        aggregate = get_2d_aggregate(element)
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:

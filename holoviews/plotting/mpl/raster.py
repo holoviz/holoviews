@@ -114,7 +114,7 @@ class HeatMapPlot(RasterPlot):
 
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
-        aggregate = get_2d_aggregate(element)
+        aggregate = element.gridded
         vals = aggregate.dimension_values(2)
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
@@ -131,7 +131,8 @@ class HeatMapPlot(RasterPlot):
 
     def _compute_ticks(self, element, ranges):
         xdim, ydim = element.kdims
-        dim1_keys, dim2_keys = [np.sort(unique_array(element.dimension_values(i, False)))
+        agg = element.gridded
+        dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
                                 for i in range(2)]
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xpos = np.linspace(.5, num_x-0.5, num_x)
@@ -154,11 +155,9 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        shape = tuple(len(unique_array(element.dimension_values(i)))
-                      for i in range(2))
-        aggregate = get_2d_aggregate(element).sort()
-        data = np.flipud(aggregate.dimension_values(2).reshape(shape[::-1]))
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        aggregate = element.gridded
+        data = np.flipud(aggregate.dimension_values(2, flat=False))
+        shape = data.shape
         cmap_name = style.pop('cmap', None)
         cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
         cmap.set_bad('w', 1.)

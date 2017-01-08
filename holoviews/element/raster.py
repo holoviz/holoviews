@@ -365,7 +365,6 @@ class QuadMesh(Raster):
             return super(QuadMesh, self).dimension_values(idx)
 
 
-
 class HeatMap(Dataset, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
@@ -384,16 +383,16 @@ class HeatMap(Dataset, Element2D):
 
     depth = 1
 
+    def __init__(self, data, **params):
+        super(HeatMap, self).__init__(data, **params)
+        self.gridded = get_2d_aggregate(self)
+
     @property
     def raster(self):
         self.warning("The .raster attribute on HeatMap is deprecated, "
                      "the 2D aggregate is now computed dynamically "
                      "during plotting.")
-        shape = tuple(len(util.unique_array(self.dimension_values(i)))
-                      for i in range(2))
-        aggregate = get_2d_aggregate(self).sort()
-        data = np.flipud(aggregate.dimension_values(2).reshape(shape[::-1]))
-        return np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        return self.gridded.dimension_values(2, flat=False)
 
 
 class Image(SheetCoordinateSystem, Raster):

@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..core import Dataset
+from ..core import Dataset, OrderedDict
 from ..core.util import pd, is_nan
 
 try:
@@ -56,10 +56,31 @@ def get_2d_aggregate(obj):
         return obj
     elif obj.ndims > 2:
         raise Exception("Cannot aggregate more than two dimensions")
+    xdim = obj.kdims[0]
+    ydim = obj.kdims[1]
     d1keys = obj.dimension_values(0, False)
+    d1sorted = np.array_equal(np.sort(d1keys), d1keys)
     d2keys = obj.dimension_values(1, False)
+    is_sorted = d1sorted
+    if d1sorted:
+        grouped = obj.groupby(xdim, container_type=OrderedDict,
+                              group_type=Dataset).values()
+        for group in grouped:
+            d2vals = group.dimension_values(ydim)
+            is_sorted &= np.array_equal(d2vals, np.sort(d2vals))
+    if is_sorted:
+        d1keys, d2keys = np.sort(d1keys), np.sort(d2keys)
     coords = [(d1, d2) + (np.NaN,)*len(obj.vdims) for d1 in d1keys for d2 in d2keys]
     dtype = 'dataframe' if pd else 'dictionary'
     dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
     concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
-    return concat_data.aggregate(obj.kdims, reduce_fn)
+    agg = concat_data.aggregate(obj.kdims, reduce_fn)
+    shape = tuple(len((obj.dimension_values(i, expanded=False)))
+                      for i in range(2))[::-1]
+    grid_data = {xdim.name: d1keys, ydim.name: d2keys}
+    for vdim in agg.vdims:
+        data = agg.dimension_values(vdim).reshape(shape)
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        grid_data[vdim.name] = data
+    return obj.clone(grid_data)
+
