@@ -14,7 +14,7 @@ from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges, toarray, get_2d_aggregate
+from .util import compute_edges, toarray, categorical_aggregate2d
 
 try:
     from ..core.data import PandasInterface
@@ -385,7 +385,7 @@ class HeatMap(Dataset, Element2D):
 
     def __init__(self, data, **params):
         super(HeatMap, self).__init__(data, **params)
-        self.gridded = get_2d_aggregate(self)
+        self.gridded = categorical_aggregate2d(self)
 
     @property
     def raster(self):

@@ -1,8 +1,10 @@
 import itertools
 
+import param
 import numpy as np
 
 from ..core import Dataset, OrderedDict
+from ..core.operation import ElementOperation
 from ..core.util import pd, is_nan, sort_topologically
 
 try:
@@ -54,51 +56,80 @@ def reduce_fn(x):
     return np.NaN
 
 
-def get_2d_aggregate(obj):
+class categorical_aggregate2d(ElementOperation):
     """
-    Generates a categorical 2D aggregate by inserting NaNs at all
-    cross-product locations that do not already have a value assigned.
-    Returns a 2D gridded Dataset object.
+    Generates a gridded Dataset of 2D aggregate arrays indexed by the
+    first two dimensions of the passed Element, turning all remaining
+    dimensions into value dimensions. The key dimensions of the
+    gridded array are treated as categorical indices. Useful for data
+    indexed by two independent categorical variables such as a table
+    of population values indexed by country and year. Data that is
+    indexed by continuous dimensions should be binned before
+    aggregation. The aggregation will retain the global sorting order
+    of both dimensions.
+
+    >> table = Table([('USA', 2000, 282.2), ('UK', 2005, 58.89)],
+                     kdims=['Country', 'Year'], vdims=['Population'])
+    >> categorical_aggregate2d(table)
+    Dataset({'Country': ['USA', 'UK'], 'Year': [2000, 2005],
+             'Population': [[ 282.2 , np.NaN], [np.NaN,   58.89]]},
+            kdims=['Country', 'Year'], vdims=['Population'])
     """
-    if obj.interface.gridded:
-        return obj
-    elif obj.ndims > 2:
-        raise Exception("Cannot aggregate more than two dimensions")
 
-    dims = obj.dimensions(label=True)
-    xdim, ydim = dims[:2]
-    nvdims = len(dims) - 2
-    d1keys = obj.dimension_values(xdim, False)
-    d2keys = obj.dimension_values(ydim, False)
+    datatype = param.List(['xarray', 'grid'] if xr else ['grid'], doc="""
+        The grid interface types to use when constructing the gridded Dataset.""")
 
-    # Determine global orderings of y-values using topological sort
-    grouped = obj.groupby(xdim, container_type=OrderedDict,
-                          group_type=Dataset).values()
-    orderings = OrderedDict()
-    for group in grouped:
-        vals = group.dimension_values(ydim)
-        if len(vals) == 1:
-            orderings[vals[0]] = []
+    def _process(self, obj, key=None):
+        """
+        Generates a categorical 2D aggregate by inserting NaNs at all
+        cross-product locations that do not already have a value assigned.
+        Returns a 2D gridded Dataset object.
+        """
+        if isinstance(obj, Dataset) and obj.interface.gridded:
+            return obj
+        elif obj.ndims > 2:
+            raise ValueError("Cannot aggregate more than two dimensions")
+        elif len(obj.dimensions()) < 3:
+            raise ValueError("Must have at two dimensions to aggregate over"
+                             "and one value dimension to aggregate on.")
+
+        dims = obj.dimensions(label=True)
+        xdim, ydim = dims[:2]
+        nvdims = len(dims) - 2
+        d1keys = obj.dimension_values(xdim, False)
+        d2keys = obj.dimension_values(ydim, False)
+
+        # Determine global orderings of y-values using topological sort
+        grouped = obj.groupby(xdim, container_type=OrderedDict,
+                              group_type=Dataset).values()
+        orderings = OrderedDict()
+        is_sorted = np.array_equal(np.sort(d1keys), d1keys)
+        for group in grouped:
+            vals = group.dimension_values(ydim)
+            is_sorted &= np.array_equal(np.sort(vals), vals)
+            if len(vals) == 1:
+                orderings[vals[0]] = []
+            else:
+                for i in range(len(vals)-1):
+                    p1, p2 = vals[i:i+2]
+                    orderings[p1] = [p2]
+        if is_sorted:
+            d2keys = np.sort(d2keys)
         else:
-            for i in range(len(vals)-1):
-                p1, p2 = vals[i:i+2]
-                orderings[p1] = [p2]
-    d2keys = list(itertools.chain(*sort_topologically(orderings)))
+            d2keys = list(itertools.chain(*sort_topologically(orderings)))
 
-    # Pad data with NaNs
-    coords = [(d1, d2) + (np.NaN,)*nvdims for d2 in d2keys for d1 in d1keys]
-    dtype = 'dataframe' if pd else 'dictionary'
-    dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
-    concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
-    agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
+        # Pad data with NaNs
+        coords = [(d1, d2) + (np.NaN,)*nvdims for d2 in d2keys for d1 in d1keys]
+        dtype = 'dataframe' if pd else 'dictionary'
+        dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
+        concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
+        agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
 
-    # Convert data to a gridded dataset
-    shape = (len(d2keys), len(d1keys))
-    grid_data = {xdim: d1keys, ydim: d2keys}
-    for vdim in dims[2:]:
-        data = agg.dimension_values(vdim).reshape(shape)
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        grid_data[vdim] = data
-    grid_type = 'xarray' if xr else 'grid'
-    return agg.clone(grid_data, datatype=[grid_type])
+        # Convert data to a gridded dataset
+        shape = (len(d2keys), len(d1keys))
+        grid_data = {xdim: d1keys, ydim: d2keys}
+        for vdim in dims[2:]:
+            grid_data[vdim] = agg.dimension_values(vdim).reshape(shape)
+        grid_type = 'xarray' if xr else 'grid'
+        return agg.clone(grid_data, datatype=self.p.datatype)
 
