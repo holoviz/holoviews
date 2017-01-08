@@ -154,13 +154,13 @@ class HeatmapPlot(ColorbarPlot):
             zvals = aggregate.dimension_values(z)
             xvals, yvals = [[str(v) for v in aggregate.dimension_values(i)]
                             for i in range(2)]
-            data = {x: xvals, y: yvals, z: zvals}
+            data = {x: xvals, y: yvals, 'zvalues': zvals}
 
         if 'hover' in self.tools+self.default_tools:
-            for vdim in element.vdims[1:]:
-                data[vdim.name] = ['' if is_nan(v) else v
+            for vdim in element.vdims:
+                data[vdim.name] = ['-' if is_nan(v) else vdim.pprint_value(v)
                                    for v in aggregate.dimension_values(vdim)]
-        return (data, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper},
+        return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
                        'height': 1, 'width': 1})
 
 

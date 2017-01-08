@@ -8,7 +8,7 @@ import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator, unique_array
+from ...core.util import match_spec, max_range, unique_iterator, unique_array, is_nan
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
@@ -121,8 +121,7 @@ class HeatMapPlot(RasterPlot):
         plot_coords = product(xpos, ypos)
         annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
-            text = val_dim.pprint_value(v)
-            text = '' if v is np.nan else text
+            text = '-' if is_nan(v) else val_dim.pprint_value(v)
             annotations[plot_coord] = text
         return annotations
 
