@@ -14,7 +14,7 @@ from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges, toarray
+from .util import compute_edges, toarray, get_2d_aggregate
 
 try:
     from ..core.data import PandasInterface
@@ -383,6 +383,17 @@ class HeatMap(Dataset, Element2D):
     vdims = param.List(default=[Dimension('z')])
 
     depth = 1
+
+    @property
+    def raster(self):
+        self.warning("The .raster attribute on HeatMap is deprecated, "
+                     "the 2D aggregate is now computed dynamically "
+                     "during plotting.")
+        shape = tuple(len(util.unique_array(self.dimension_values(i)))
+                      for i in range(2))
+        aggregate = get_2d_aggregate(self).sort()
+        data = np.flipud(aggregate.dimension_values(2).reshape(shape[::-1]))
+        return np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
 
 
 class Image(SheetCoordinateSystem, Raster):
