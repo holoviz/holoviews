@@ -5,7 +5,7 @@ import numpy as np
 
 from ..core import Dataset, OrderedDict
 from ..core.operation import ElementOperation
-from ..core.util import pd, is_nan, sort_topologically
+from ..core.util import pd, is_nan, sort_topologically, cartesian_product
 
 try:
     import dask
@@ -93,11 +93,15 @@ class categorical_aggregate2d(ElementOperation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        dims = obj.dimensions(label=True)
-        xdim, ydim = dims[:2]
+        dim_labels = obj.dimensions(label=True)
+        dims = obj.dimensions()
+        kdims, vdims = dims[:2], dims[2:]
+        xdim, ydim = dim_labels[:2]
         nvdims = len(dims) - 2
         d1keys = obj.dimension_values(xdim, False)
         d2keys = obj.dimension_values(ydim, False)
+        shape = (len(d2keys), len(d1keys))
+        nsamples = np.product(shape)
 
         # Determine global orderings of y-values using topological sort
         grouped = obj.groupby(xdim, container_type=OrderedDict,
@@ -106,10 +110,10 @@ class categorical_aggregate2d(ElementOperation):
         is_sorted = np.array_equal(np.sort(d1keys), d1keys)
         for group in grouped:
             vals = group.dimension_values(ydim)
-            is_sorted &= np.array_equal(np.sort(vals), vals)
             if len(vals) == 1:
                 orderings[vals[0]] = []
             else:
+                is_sorted &= np.array_equal(np.sort(vals), vals)
                 for i in range(len(vals)-1):
                     p1, p2 = vals[i:i+2]
                     orderings[p1] = [p2]
@@ -119,17 +123,21 @@ class categorical_aggregate2d(ElementOperation):
             d2keys = list(itertools.chain(*sort_topologically(orderings)))
 
         # Pad data with NaNs
-        coords = [(d1, d2) + (np.NaN,)*nvdims for d2 in d2keys for d1 in d1keys]
+        ys, xs = cartesian_product([d2keys, d1keys])
+        data = {xdim: xs.flatten(), ydim: ys.flatten()}
+        for vdim in vdims:
+            values = np.empty(nsamples)
+            values[:] = np.NaN
+            data[vdim.name] = values
         dtype = 'dataframe' if pd else 'dictionary'
-        dense_data = Dataset(coords, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
+        dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
         agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
 
         # Convert data to a gridded dataset
-        shape = (len(d2keys), len(d1keys))
         grid_data = {xdim: d1keys, ydim: d2keys}
-        for vdim in dims[2:]:
-            grid_data[vdim] = agg.dimension_values(vdim).reshape(shape)
+        for vdim in vdims:
+            grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
         grid_type = 'xarray' if xr else 'grid'
         return agg.clone(grid_data, datatype=self.p.datatype)
 
