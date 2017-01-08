@@ -113,8 +113,7 @@ class HeatMapPlot(RasterPlot):
 
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
-        aggregate = element.gridded
-        vals = aggregate.dimension_values(2)
+        vals = element.dimension_values(2)
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
         xpos = np.linspace(0.5, num_x-0.5, num_x)
