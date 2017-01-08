@@ -56,7 +56,7 @@ class RasterPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
 
-        if element.depth != 1:
+        if isinstance(element, RGB):
             style.pop('cmap', None)
 
         data = element.data

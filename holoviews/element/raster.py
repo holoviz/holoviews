@@ -381,8 +381,6 @@ class HeatMap(Dataset, Element2D):
 
     vdims = param.List(default=[Dimension('z')])
 
-    depth = 1
-
     def __init__(self, data, **params):
         super(HeatMap, self).__init__(data, **params)
         self.gridded = categorical_aggregate2d(self)
