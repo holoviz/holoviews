@@ -10,7 +10,6 @@ from ...core import CompositeOverlay, Element
 from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator, unique_array
 from ...element.raster import Image, Raster, RGB
-from ...element.util import get_2d_aggregate
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
 
