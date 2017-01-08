@@ -137,8 +137,7 @@ class HeatmapPlot(ColorbarPlot):
         dims = element.dimensions()
         labels = self._get_axis_labels(dims)
         agg = element.gridded
-        xvals, yvals = [unique_array(agg.dimension_values(i, False))
-                        for i in range(2)]
+        xvals, yvals = [agg.dimension_values(i, False) for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}

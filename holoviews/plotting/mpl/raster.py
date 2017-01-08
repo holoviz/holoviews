@@ -153,16 +153,12 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        aggregate = element.gridded
-        data = np.flipud(aggregate.dimension_values(2, flat=False))
+        data = np.flipud(element.gridded.dimension_values(2, flat=False))
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         shape = data.shape
-        cmap_name = style.pop('cmap', None)
-        cmap = copy.copy(plt.cm.get_cmap('gray' if cmap_name is None else cmap_name))
-        cmap.set_bad('w', 1.)
-        style['cmap'] = cmap
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[0], 0, shape[1])
-        style['annotations'] = self._annotate_values(aggregate)
+        style['annotations'] = self._annotate_values(element.gridded)
         return [data], style, axis_kwargs
 
 
