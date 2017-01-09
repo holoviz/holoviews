@@ -649,7 +649,10 @@ def sort_topologically(graph):
 
 
 def is_cyclic(graph):
-    """Return True if the directed graph g has a cycle."""
+    """
+    Return True if the directed graph g has a cycle. The directed graph
+    should be represented as adictionary mapping of edges for each node.
+    """
     path = set()
 
     def visit(vertex):
@@ -664,9 +667,11 @@ def is_cyclic(graph):
 
 
 def one_to_one(graph, nodes):
-    """Return True if graph contains only one to one mappings.
-    Pass a graph as a dictionary mapping of edges for each node and
-    a list of all nodes."""
+    """
+    Return True if graph contains only one to one mappings. The
+    directed graph should be represented as a dictionary mapping of
+    edges for each node. Nodes should be passed a simple list.
+    """
     edges = itertools.chain.from_iterable(graph.values())
     return len(graph) == len(nodes) and len(set(edges)) == len(nodes)
 
