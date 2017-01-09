@@ -96,9 +96,11 @@ class Comm(object):
         Decode received message before passing it to on_msg callback
         if it has been defined.
         """
+        comm_id = None
         try:
             stdout = []
             msg = self.decode(msg)
+            comm_id = msg.pop('comm_id', None)
             if self._on_msg:
                 # Comm swallows standard output so we need to capture
                 # it and then send it to the frontend
@@ -120,8 +122,8 @@ class Comm(object):
 
         # Returning the comm_id in an ACK message ensures that
         # the correct comms handle is unblocked
-        if 'comm_id' in msg:
-            reply['comm_id'] = msg.pop('comm_id', None)
+        if comm_id:
+            reply['comm_id'] = comm_id
         self.send(json.dumps(reply))
 
 
