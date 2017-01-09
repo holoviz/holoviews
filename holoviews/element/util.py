@@ -80,6 +80,63 @@ class categorical_aggregate2d(ElementOperation):
     datatype = param.List(['xarray', 'grid'] if xr else ['grid'], doc="""
         The grid interface types to use when constructing the gridded Dataset.""")
 
+    def _get_coords(self, obj):
+        """
+        Get the coordinates of the 2D aggregate, maintaining the correct
+        sorting order.
+        """
+        xdim, ydim = obj.dimensions(label=True)[:2]
+        xcoords = obj.dimension_values(xdim, False)
+        ycoords = obj.dimension_values(ydim, False)
+
+        # Determine global orderings of y-values using topological sort
+        grouped = obj.groupby(xdim, container_type=OrderedDict,
+                              group_type=Dataset).values()
+        orderings = OrderedDict()
+        for group in grouped:
+            vals = group.dimension_values(ydim)
+            if len(vals) == 1:
+                orderings[vals[0]] = [vals[0]]
+            else:
+                for i in range(len(vals)-1):
+                    p1, p2 = vals[i:i+2]
+                    orderings[p1] = [p2]
+        if one_to_one(orderings, ycoords):
+            ycoords = np.sort(ycoords)
+        elif not is_cyclic(orderings):
+            ycoords = list(itertools.chain(*sort_topologically(orderings)))
+        return xcoords, ycoords
+
+
+    def _aggregate_dataset(self, obj, xcoords, ycoords):
+        """
+        Generates a gridded Dataset from a column-based dataset and
+        lists of xcoords and ycoords
+        """
+        dim_labels = obj.dimensions(label=True)
+        vdims = obj.dimensions()[2:]
+        xdim, ydim = dim_labels[:2]
+        shape = (len(ycoords), len(xcoords))
+        nsamples = np.product(shape)
+
+        ys, xs = cartesian_product([ycoords, xcoords])
+        data = {xdim: xs.flatten(), ydim: ys.flatten()}
+        for vdim in vdims:
+            values = np.empty(nsamples)
+            values[:] = np.NaN
+            data[vdim.name] = values
+        dtype = 'dataframe' if pd else 'dictionary'
+        dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
+        concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
+        agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
+
+        # Convert data to a gridded dataset
+        grid_data = {xdim: xcoords, ydim: ycoords}
+        for vdim in vdims:
+            grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
+        return agg.clone(grid_data, datatype=self.p.datatype)
+
+
     def _process(self, obj, key=None):
         """
         Generates a categorical 2D aggregate by inserting NaNs at all
@@ -94,48 +151,7 @@ class categorical_aggregate2d(ElementOperation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        dim_labels = obj.dimensions(label=True)
-        dims = obj.dimensions()
-        kdims, vdims = dims[:2], dims[2:]
-        xdim, ydim = dim_labels[:2]
-        nvdims = len(dims) - 2
-        d1keys = obj.dimension_values(xdim, False)
-        d2keys = obj.dimension_values(ydim, False)
-        shape = (len(d2keys), len(d1keys))
-        nsamples = np.product(shape)
-
-        # Determine global orderings of y-values using topological sort
-        grouped = obj.groupby(xdim, container_type=OrderedDict,
-                              group_type=Dataset).values()
-        orderings = OrderedDict()
-        for group in grouped:
-            vals = group.dimension_values(ydim)
-            if len(vals) == 1:
-                orderings[vals[0]] = [vals[0]]
-            else:
-                for i in range(len(vals)-1):
-                    p1, p2 = vals[i:i+2]
-                    orderings[p1] = [p2]
-        if one_to_one(orderings, d2keys):
-            d2keys = np.sort(d2keys)
-        elif not is_cyclic(orderings):
-            d2keys = list(itertools.chain(*sort_topologically(orderings)))
-
-        # Pad data with NaNs
-        ys, xs = cartesian_product([d2keys, d1keys])
-        data = {xdim: xs.flatten(), ydim: ys.flatten()}
-        for vdim in vdims:
-            values = np.empty(nsamples)
-            values[:] = np.NaN
-            data[vdim.name] = values
-        dtype = 'dataframe' if pd else 'dictionary'
-        dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
-        concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
-        agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
-
-        # Convert data to a gridded dataset
-        grid_data = {xdim: d1keys, ydim: d2keys}
-        for vdim in vdims:
-            grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
-        return agg.clone(grid_data, datatype=self.p.datatype)
-
+        if not isinstance(obj, Dataset):
+            obj = Dataset(obj)
+        xcoords, ycoords = self._get_coords(obj)
+        return self._aggregate_dataset(obj, xcoords, ycoords)
