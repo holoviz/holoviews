@@ -742,13 +742,18 @@ class DynamicMap(HoloMap):
         the deep slice to newly generated values.
         """
         # Split key dimensions and data slices
+        sample = False
         if key is Ellipsis:
             return self
-        map_slice, data_slice = self._split_index(key)
+        elif isinstance(key, (list, set)) and all(isinstance(v, tuple) for v in key):
+            map_slice, data_slice = key, ()
+            sample = True
+        else:
+            map_slice, data_slice = self._split_index(key)
         tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
 
         # Validation for bounded mode
-        if self.mode == 'bounded':
+        if self.mode == 'bounded' and not sample:
             sliced = self._slice_bounded(tuple_key, data_slice)
             if sliced is not None:
                 return sliced
