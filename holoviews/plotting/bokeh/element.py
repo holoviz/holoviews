@@ -64,6 +64,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
+    finalize_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing an axis.
+        The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
+
     fontsize = param.Parameter(default={'title': '12pt'}, allow_None=True,  doc="""
        Specifies various fontsizes of the displayed text.
 
@@ -548,6 +553,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         glyph.update(**{k: v for k, v in merged.items()
                         if k in allowed_properties})
 
+    def _execute_hooks(self, element):
+        """
+        Executes finalize hooks
+        """
+        for hook in self.finalize_hooks:
+            try:
+                hook(self, element)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
@@ -606,6 +621,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if not self.overlaid:
             self._process_legend()
+        self._execute_hooks(element)
+
         self.drawn = True
 
         return plot
@@ -665,6 +682,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
+
+        self._execute_hooks(element)
 
 
     @property
@@ -1107,6 +1126,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for cb in self.callbacks:
             cb.initialize()
 
+        self._execute_hooks(element)
+
         return self.handles['plot']
 
 
@@ -1154,3 +1175,5 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)
+
+        self._execute_hooks(element)
