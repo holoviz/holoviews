@@ -607,14 +607,14 @@ def sort_topologically(graph):
     }
 
     sort_topologically(graph)
-    [set([1, 2]), set([3, 4]), set([5, 6])]
+    [[1, 2], [3, 4], [5, 6]]
     """
     levels_by_name = {}
-    names_by_level = defaultdict(set)
+    names_by_level = defaultdict(list)
 
     def add_level_to_name(name, level):
         levels_by_name[name] = level
-        names_by_level[level].add(name)
+        names_by_level[level].append(name)
 
 
     def walk_depth_first(name):
@@ -646,6 +646,35 @@ def sort_topologically(graph):
     return list(itertools.takewhile(lambda x: x is not None,
                                     (names_by_level.get(i, None)
                                      for i in itertools.count())))
+
+
+def is_cyclic(graph):
+    """
+    Return True if the directed graph g has a cycle. The directed graph
+    should be represented as adictionary mapping of edges for each node.
+    """
+    path = set()
+
+    def visit(vertex):
+        path.add(vertex)
+        for neighbour in graph.get(vertex, ()):
+            if neighbour in path or visit(neighbour):
+                return True
+        path.remove(vertex)
+        return False
+
+    return any(visit(v) for v in graph)
+
+
+def one_to_one(graph, nodes):
+    """
+    Return True if graph contains only one to one mappings. The
+    directed graph should be represented as a dictionary mapping of
+    edges for each node. Nodes should be passed a simple list.
+    """
+    edges = itertools.chain.from_iterable(graph.values())
+    return len(graph) == len(nodes) and len(set(edges)) == len(nodes)
+
 
 def get_overlay_spec(o, k, v):
     """
@@ -996,3 +1025,13 @@ def dt64_to_dt(dt64):
     """
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
     return dt.datetime.utcfromtimestamp(ts)
+
+
+def is_nan(x):
+    """
+    Checks whether value is NaN on arbitrary types
+    """
+    try:
+        return np.isnan(x)
+    except:
+        return False

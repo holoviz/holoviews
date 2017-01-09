@@ -8,7 +8,7 @@ import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator
+from ...core.util import match_spec, max_range, unique_iterator, unique_array, is_nan
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot
@@ -56,7 +56,7 @@ class RasterPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         xticks, yticks = self._compute_ticks(element, ranges)
 
-        if element.depth != 1:
+        if isinstance(element, RGB):
             style.pop('cmap', None)
 
         data = element.data
@@ -105,7 +105,7 @@ class HeatMapPlot(RasterPlot):
         handles = {}
         for plot_coord, text in annotations.items():
             handles[plot_coord] = ax.annotate(text, xy=plot_coord,
-                                              xycoords='axes fraction',
+                                              xycoords='data',
                                               horizontalalignment='center',
                                               verticalalignment='center')
         return handles
@@ -113,38 +113,34 @@ class HeatMapPlot(RasterPlot):
 
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
-        vals = np.rot90(element.raster, 3).flatten()
+        vals = element.dimension_values(2)
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         num_x, num_y = len(d1uniq), len(d2uniq)
-        xstep, ystep = 1.0/num_x, 1.0/num_y
-        xpos = np.linspace(xstep/2., 1.0-xstep/2., num_x)
-        ypos = np.linspace(ystep/2., 1.0-ystep/2., num_y)
+        xpos = np.linspace(0.5, num_x-0.5, num_x)
+        ypos = np.linspace(0.5, num_y-0.5, num_y)
         plot_coords = product(xpos, ypos)
         annotations = {}
         for plot_coord, v in zip(plot_coords, vals):
-            text = val_dim.pprint_value(v)
-            text = '' if v is np.nan else text
+            text = '-' if is_nan(v) else val_dim.pprint_value(v)
             annotations[plot_coord] = text
         return annotations
 
 
     def _compute_ticks(self, element, ranges):
         xdim, ydim = element.kdims
-        dim1_keys, dim2_keys = [element.dimension_values(i, False)
+        agg = element.gridded
+        dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
                                 for i in range(2)]
         num_x, num_y = len(dim1_keys), len(dim2_keys)
-        x0, y0, x1, y1 = element.extents
-        xstep, ystep = ((x1-x0)/num_x, (y1-y0)/num_y)
-        xpos = np.linspace(x0+xstep/2., x1-xstep/2., num_x)
-        ypos = np.linspace(y0+ystep/2., y1-ystep/2., num_y)
+        xpos = np.linspace(.5, num_x-0.5, num_x)
+        ypos = np.linspace(.5, num_y-0.5, num_y)
         xlabels = [xdim.pprint_value(k) for k in dim1_keys]
         ylabels = [ydim.pprint_value(k) for k in dim2_keys]
         return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        l, r, b, t = plot_kwargs['extent']
-        ax.set_aspect(float(r - l)/(t-b))
+        ax.set_aspect(plot_kwargs.pop('aspect', 1))
 
         handles = {}
         annotations = plot_kwargs.pop('annotations', None)
@@ -156,18 +152,21 @@ class HeatMapPlot(RasterPlot):
 
     def get_data(self, element, ranges, style):
         _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
-        mask = np.logical_not(np.isfinite(element.raster))
-        data = np.ma.array(element.raster, mask=mask)
-        style['annotations'] = self._annotate_values(element)
+        data = np.flipud(element.gridded.dimension_values(2, flat=False))
+        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        shape = data.shape
+        style['aspect'] = shape[0]/shape[1]
+        style['extent'] = (0, shape[0], 0, shape[1])
+        style['annotations'] = self._annotate_values(element.gridded)
         return [data], style, axis_kwargs
 
 
     def update_handles(self, key, axis, element, ranges, style):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
-        l, r, b, t = style['extent']
         im.set_data(data[0])
-        im.set_extent((l, r, b, t))
+        shape = data[0].shape
+        im.set_extent((0, shape[1], 0, shape[0]))
         im.set_clim((style['vmin'], style['vmax']))
         if 'norm' in style:
             im.norm = style['norm']

@@ -4,8 +4,8 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    GridSpace, NdLayout, Store, Callable, Overlay)
-from ..core.spaces import get_nested_streams
+                    Overlay, GridSpace, NdLayout, Store, Dataset)
+from ..core.spaces import get_nested_streams, Callable
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, safe_unicode)
 

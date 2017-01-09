@@ -1,7 +1,13 @@
 import numpy as np
 import param
 
-from ...core.util import cartesian_product
+from bokeh.models.mappers import LinearColorMapper
+try:
+    from bokeh.models.mappers import LogColorMapper
+except ImportError:
+    LogColorMapper = None
+
+from ...core.util import cartesian_product, is_nan, unique_array
 from ...element import Image, Raster, RGB
 from ..renderer import SkipRendering
 from ..util import map_colors
@@ -130,27 +136,31 @@ class HeatmapPlot(ColorbarPlot):
     def _axes_props(self, plots, subplots, element, ranges):
         dims = element.dimensions()
         labels = self._get_axis_labels(dims)
-        xvals, yvals = [element.dimension_values(i, False)
-                        for i in range(2)]
+        agg = element.gridded
+        xvals, yvals = [agg.dimension_values(i, False) for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
         plot_ranges = {'x_range': [str(x) for x in xvals],
                        'y_range': [str(y) for y in yvals]}
         return ('auto', 'auto'), labels, plot_ranges
 
-
     def get_data(self, element, ranges=None, empty=False):
-        x, y, z = element.dimensions(label=True)
+        x, y, z = element.dimensions(label=True)[:3]
+        aggregate = element.gridded
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if empty:
-            data = {x: [], y: [], z: [], 'color': []}
+            data = {x: [], y: [], z: []}
         else:
-            zvals = np.rot90(element.raster, 3).flatten()
-            xvals, yvals = [[str(v) for v in element.dimension_values(i)]
+            zvals = aggregate.dimension_values(z)
+            xvals, yvals = [[str(v) for v in aggregate.dimension_values(i)]
                             for i in range(2)]
-            data = {x: xvals, y: yvals, z: zvals}
+            data = {x: xvals, y: yvals, 'zvalues': zvals}
 
-        return (data, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper},
+        if 'hover' in self.tools+self.default_tools:
+            for vdim in element.vdims:
+                data[vdim.name] = ['-' if is_nan(v) else vdim.pprint_value(v)
+                                   for v in aggregate.dimension_values(vdim)]
+        return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
                        'height': 1, 'width': 1})
 
 

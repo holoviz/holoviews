@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews import Curve, Path, Histogram
+from holoviews import Dataset, Curve, Path, Histogram, HeatMap
 from holoviews.element.comparison import ComparisonTestCase
 
 class ElementConstructorTest(ComparisonTestCase):
@@ -44,3 +44,31 @@ class ElementConstructorTest(ComparisonTestCase):
 
     def test_chart_yvalues_construct(self):
         self.assertEqual(Histogram(self.sin), self.histogram)
+
+    def test_heatmap_construct(self):
+        hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])
+        dataset = Dataset({'x': ['A', 'B'], 'y': ['a', 'b'], 'z': [[1, np.NaN], [np.NaN, 2]]},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(hmap.gridded, dataset)
+
+    def test_heatmap_construct_unsorted(self):
+        hmap = HeatMap([('B', 'b', 2), ('A', 'a', 1)])
+        dataset = Dataset({'x': ['B', 'A'], 'y': ['b', 'a'], 'z': [[2, np.NaN], [np.NaN, 1]]},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(hmap.gridded, dataset)
+
+    def test_heatmap_construct_partial_sorted(self):
+        data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
+        hmap = HeatMap(data)
+        dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['c', 'b', 'a'],
+                           'z': [[0, 2, np.NaN], [np.NaN, 0, 0], [0, np.NaN, 2]]},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(hmap.gridded, dataset)
+
+    def test_heatmap_construct_and_sort(self):
+        data = [(chr(65+i),chr(97+j), i*j) for i in range(3) for j in [2, 0, 1] if i!=j]
+        hmap = HeatMap(data).sort()
+        dataset = Dataset({'x': ['A', 'B', 'C'], 'y': ['a', 'b', 'c'],
+                           'z': [[np.NaN, 0, 0], [0, np.NaN, 2], [0, 2, np.NaN]]},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(hmap.gridded, dataset)
