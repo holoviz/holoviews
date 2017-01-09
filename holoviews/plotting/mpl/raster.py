@@ -127,7 +127,7 @@ class HeatMapPlot(RasterPlot):
 
 
     def _compute_ticks(self, element, ranges):
-        xdim, ydim = element.kdims
+        xdim, ydim = element.dimensions()[:2]
         agg = element.gridded
         dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
                                 for i in range(2)]
