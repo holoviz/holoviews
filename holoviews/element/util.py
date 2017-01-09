@@ -127,14 +127,15 @@ class categorical_aggregate2d(ElementOperation):
             data[vdim.name] = values
         dtype = 'dataframe' if pd else 'dictionary'
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
-        concat_data = obj.interface.concatenate([dense_data, Dataset(obj)], datatype=dtype)
-        agg = concat_data.reindex([xdim, ydim]).aggregate([xdim, ydim], reduce_fn)
+        concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
+        agg = concat_data.reindex([xdim, ydim], vdims).aggregate([xdim, ydim], reduce_fn)
 
         # Convert data to a gridded dataset
         grid_data = {xdim: xcoords, ydim: ycoords}
         for vdim in vdims:
             grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
-        return agg.clone(grid_data, datatype=self.p.datatype)
+        return agg.clone(grid_data, kdims=[xdim, ydim], vdims=vdims,
+                         datatype=self.p.datatype)
 
 
     def _process(self, obj, key=None):
@@ -151,7 +152,7 @@ class categorical_aggregate2d(ElementOperation):
             raise ValueError("Must have at two dimensions to aggregate over"
                              "and one value dimension to aggregate on.")
 
-        if not isinstance(obj, Dataset):
-            obj = Dataset(obj)
+        dtype = 'dataframe' if pd else 'dictionary'
+        obj = Dataset(obj, datatype=[dtype])
         xcoords, ycoords = self._get_coords(obj)
         return self._aggregate_dataset(obj, xcoords, ycoords)
