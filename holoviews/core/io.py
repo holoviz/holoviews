@@ -31,7 +31,7 @@ from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
-def sanitizer(name, replacements={':':'colon_', '/':'slash_', '\\':'backslash_'}):
+def sanitizer(name, replacements={':':'_', '/':'_', '\\':'_'}):
     """
     String sanitizer to avoid problematic characters in filenames.
     """
