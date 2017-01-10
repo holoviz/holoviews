@@ -31,8 +31,14 @@ from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
-def escape(val, sep=os.sep, replacement='-sep-'):
-    return val.replace(sep, replacement)
+def sanitizer(name, replacements={':':'colon_', '/':'slash_', '\\':'backslash_'}):
+    """
+    String sanitizer to avoid problematic characters in filenames.
+    """
+    for k,v in replacements.items():
+        name = name.replace(k,v)
+    return name
+
 
 class Reference(param.Parameterized):
     """
@@ -695,12 +701,14 @@ class FileArchive(Archive):
             dimensions = dimensions if dimensions else ''
 
             hashfn.update(obj_str.encode('utf-8'))
+            label = sanitizer(getattr(obj, 'label', 'no-label'))
+            group = sanitizer(getattr(obj, 'group', 'no-group'))
             format_values = {'timestamp': '{timestamp}',
                              'dimensions': dimensions,
-                             'group':   escape(getattr(obj, 'group', 'no-group')),
-                             'label':   escape(getattr(obj, 'label', 'no-label')),
+                             'group':   group,
+                             'label':   label,
                              'type':    obj.__class__.__name__,
-                             'obj':     obj_str,
+                             'obj':     sanitizer(obj_str),
                              'SHA':     hashfn.hexdigest()}
 
             filename = self._format(self.filename_formatter,
@@ -772,7 +780,7 @@ class FileArchive(Archive):
         while (new_name, ext) in existing:
             new_name = basename+'-'+str(counter)
             counter += 1
-        return (escape(new_name), ext)
+        return (sanitizer(new_name), ext)
 
 
     def _truncate_name(self, basename, ext='', tail=10, join='...', maxlen=None):
