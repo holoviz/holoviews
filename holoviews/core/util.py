@@ -160,7 +160,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     transforms = param.List(default=[capitalize_unicode_name], doc="""
        List of string transformation functions to apply after
        filtering and substitution in order to further compress the
-       unicode name. For instance, the defaultcapitalize_unicode_name
+       unicode name. For instance, the default capitalize_unicode_name
        function will turn the string "capital delta" into "Delta".""")
 
     disallowed = param.List(default=['trait_names', '_ipython_display_',
