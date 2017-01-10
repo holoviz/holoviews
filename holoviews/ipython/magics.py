@@ -256,12 +256,20 @@ class OutputMagic(OptionsMagic):
     #==========================#
 
     last_backend = None
+    backend_list = [] # List of possible backends
 
     def missing_dependency_exception(value, keyword, allowed):
         raise Exception("Format %r does not appear to be supported." % value)
 
     def missing_backend_exception(value, keyword, allowed):
-        raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
+        if value in OutputMagic.backend_list:
+            raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
+        else:
+            raise ValueError("Backend %r does not exist" % value)
+
+
+        raise ValueError(OutputMagic.backend_list, value)
+        # raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
 
     custom_exceptions = {'holomap':missing_dependency_exception,
                          'backend': missing_backend_exception }
@@ -398,7 +406,8 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def initialize(cls):
+    def initialize(cls, backend_list):
+        cls.backend_list = backend_list
         backend = cls.options.get('backend', cls.defaults['backend'])
         if backend in Store.renderers:
             cls.options = dict(cls.defaults)
