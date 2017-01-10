@@ -31,6 +31,9 @@ from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
+def escape(val, sep=os.sep, replacement='-sep-'):
+    return val.replace(sep, replacement)
+
 class Reference(param.Parameterized):
     """
     A Reference allows access to an object to be deferred until it is
@@ -694,8 +697,8 @@ class FileArchive(Archive):
             hashfn.update(obj_str.encode('utf-8'))
             format_values = {'timestamp': '{timestamp}',
                              'dimensions': dimensions,
-                             'group':   getattr(obj, 'group', 'no-group'),
-                             'label':   getattr(obj, 'label', 'no-label'),
+                             'group':   escape(getattr(obj, 'group', 'no-group')),
+                             'label':   escape(getattr(obj, 'label', 'no-label')),
                              'type':    obj.__class__.__name__,
                              'obj':     obj_str,
                              'SHA':     hashfn.hexdigest()}
@@ -769,7 +772,7 @@ class FileArchive(Archive):
         while (new_name, ext) in existing:
             new_name = basename+'-'+str(counter)
             counter += 1
-        return (new_name, ext)
+        return (escape(new_name), ext)
 
 
     def _truncate_name(self, basename, ext='', tail=10, join='...', maxlen=None):
