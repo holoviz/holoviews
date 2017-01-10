@@ -260,7 +260,11 @@ class OutputMagic(OptionsMagic):
     def missing_dependency_exception(value, keyword, allowed):
         raise Exception("Format %r does not appear to be supported." % value)
 
-    custom_exceptions = {'holomap':missing_dependency_exception}
+    def missing_backend_exception(value, keyword, allowed):
+        raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
+
+    custom_exceptions = {'holomap':missing_dependency_exception,
+                         'backend': missing_backend_exception }
 
     # Counter for nbagg figures
     nbagg_counter = 0
