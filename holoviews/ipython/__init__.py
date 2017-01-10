@@ -186,7 +186,7 @@ class notebook_extension(param.ParameterizedFunction):
             ip = get_ipython() if ip is None else ip # noqa (get_ipython)
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputMagic.initialize()
+            OutputMagic.initialize(list( self._backends.keys()))
             set_display_hooks(ip)
             notebook_extension._loaded = True
 
