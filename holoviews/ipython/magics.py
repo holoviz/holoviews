@@ -360,7 +360,9 @@ class OutputMagic(OptionsMagic):
         prev_backend = Store.current_backend
         renderer = Store.renderers[Store.current_backend]
         prev_backend += ':%s' % renderer.mode
-        if not backend or backend == prev_backend:
+
+        available = backend in Store.renderers.keys()
+        if (not backend) or (not available) or backend == prev_backend:
             return options
 
         cls._backend_options[prev_backend] = cls.options
