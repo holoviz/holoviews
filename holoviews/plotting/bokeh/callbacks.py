@@ -56,7 +56,7 @@ class Callback(object):
     bokeh models such as the plot ranges or various tools. The callback
     then makes this data available to any streams attached to it.
 
-    The defintion of a callback consists of a number of components:
+    The definition of a callback consists of a number of components:
 
     * handles    :  The handles define which plotting handles the
                     callback will be attached on, e.g. this could be
