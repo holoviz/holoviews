@@ -267,10 +267,6 @@ class OutputMagic(OptionsMagic):
         else:
             raise ValueError("Backend %r does not exist" % value)
 
-
-        raise ValueError(OutputMagic.backend_list, value)
-        # raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
-
     custom_exceptions = {'holomap':missing_dependency_exception,
                          'backend': missing_backend_exception }
 
