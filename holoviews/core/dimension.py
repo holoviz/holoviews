@@ -901,6 +901,9 @@ class Dimensioned(LabelledData):
         else:
             return str(reprval)
 
+    def __str__(self):
+        return repr(self)
+
     def __unicode__(self):
         return unicode(PrettyPrinter.pprint(self))
 
