@@ -212,8 +212,8 @@ class InfoPrinter(object):
     @classmethod
     def object_info(cls, obj, name, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
-        url = ('https://ioam.github.io/holoviews/Tutorials/Elements.html#{obj}'
-               if element else 'https://ioam.github.io/holoviews/Tutorials/Containers.html#{obj}')
+        url = ('http://holoviews.org/Tutorials/Elements.html#{obj}'
+               if element else 'http://holoviews.org/Tutorials/Containers.html#{obj}')
         link = url.format(obj=name)
 
         msg = ("\nOnline example: {link}"
