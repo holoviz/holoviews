@@ -547,6 +547,8 @@ class GenericElementPlot(DimensionedPlot):
     # plot and a 'batched' method to draw multiple Elements at once
     _plot_methods = {}
 
+    _inherited_options = []
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
                  overlay_dims={}, **params):
@@ -573,6 +575,8 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
+        inherited = self._traverse_options(plot_element, 'plot', self._inherited_options)
+        plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
