@@ -1,1 +1,2 @@
  __init__.py export-subst
+holoviews/_version.py export-subst
