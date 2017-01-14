@@ -575,7 +575,7 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
-        inherited = self._traverse_options(plot_element, 'plot', self._inherited_options)
+        inherited = self._traverse_options(plot_element, 'plot', self._inherited_options, defaults=False)
         plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
