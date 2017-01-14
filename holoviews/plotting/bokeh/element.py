@@ -1009,7 +1009,6 @@ class BokehMPLRawWrapper(BokehMPLWrapper):
 
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
-
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
@@ -1017,10 +1016,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     _update_handles = ['source']
 
-    _inherited_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
+    _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
-                          'show_grid', 'show_legend', 'logx', 'logy', 'xticks',
-                          'yticks', 'xrotation', 'yrotation', 'lod', 'title_format']
+                          'show_grid', 'logx', 'logy', 'xticks',
+                          'yticks', 'xrotation', 'yrotation', 'lod',
+                          'border', 'invert_xaxis', 'invert_yaxis']
 
     def _process_legend(self):
         plot = self.handles['plot']

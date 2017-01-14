@@ -547,10 +547,10 @@ class GenericElementPlot(DimensionedPlot):
     # plot and a 'batched' method to draw multiple Elements at once
     _plot_methods = {}
 
-    # Declares the options that are inherited from sub-elements of the
+    # Declares the options that are propagated from sub-elements of the
     # plot, mostly useful for inheriting options from individual
     # Elements on an OverlayPlot. Enabled by default in v1.7.
-    _inherited_options = []
+    _propagate_options = []
     v17_option_propagation = True
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
@@ -581,7 +581,7 @@ class GenericElementPlot(DimensionedPlot):
         plot_opts = self.lookup_options(plot_element, 'plot').options
         if self.v17_option_propagation:
             inherited = self._traverse_options(plot_element, 'plot',
-                                               self._inherited_options,
+                                               self._propagate_options,
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 

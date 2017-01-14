@@ -725,11 +725,12 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
 
     _passed_handles = ['fig', 'axis']
 
-    _inherited_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
+    _propagate_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
                           'labelled', 'bgcolor', 'fontsize', 'invert_axes',
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation'
-                          'zrotation']
+                          'zrotation', 'invert_xaxis', 'invert_yaxis',
+                          'invert_zaxis']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
