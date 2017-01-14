@@ -149,7 +149,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
-        if self.zorder == 0 and key is not None:
+        if not self.overlaid and key is not None:
             if self.bgcolor:
                 if LooseVersion(mpl.__version__) <= '1.5.9':
                     axis.set_axis_bgcolor(self.bgcolor)
@@ -724,6 +724,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
 
     _passed_handles = ['fig', 'axis']
+
+    _propagate_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
+                          'labelled', 'bgcolor', 'fontsize', 'invert_axes',
+                          'show_frame', 'show_grid', 'logx', 'logy', 'logz',
+                          'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation'
+                          'zrotation', 'invert_xaxis', 'invert_yaxis',
+                          'invert_zaxis']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:
