@@ -149,7 +149,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
-        if self.zorder == 0 and key is not None:
+        if not self.overlaid and key is not None:
             if self.bgcolor:
                 if LooseVersion(mpl.__version__) <= '1.5.9':
                     axis.set_axis_bgcolor(self.bgcolor)
