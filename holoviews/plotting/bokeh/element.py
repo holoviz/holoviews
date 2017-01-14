@@ -1020,7 +1020,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     _inherited_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'show_legend', 'logx', 'logy', 'xticks',
-                          'yticks', 'xrotation', 'yrotation']
+                          'yticks', 'xrotation', 'yrotation', 'lod', 'title_format']
 
     def _process_legend(self):
         plot = self.handles['plot']
