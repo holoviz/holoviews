@@ -156,7 +156,7 @@ class HeatMapPlot(RasterPlot):
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
-        style['extent'] = (0, shape[0], 0, shape[1])
+        style['extent'] = (0, shape[1], 0, shape[0])
         style['annotations'] = self._annotate_values(element.gridded)
         return [data], style, axis_kwargs
 
