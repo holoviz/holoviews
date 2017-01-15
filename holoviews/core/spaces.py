@@ -413,8 +413,22 @@ class Callable(param.Parameterized):
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
+    def __init__(self, **params):
+        super(Callable, self).__init__(**params)
+        self._memoized = {}
+
     def __call__(self, *args, **kwargs):
-        return self.callable_function(*args, **kwargs)
+        inputs = [inp for inp in self.inputs if isinstance(inp, DynamicMap)]
+        streams = [s for inp in inputs for s in get_nested_streams(inp)]
+        values = tuple(tuple(sorted(s.contents.items())) for s in streams)
+        key = args + tuple(sorted(kwargs.items())) + values
+
+        if key in self._memoized:
+            return self._memoized[key]
+        else:
+            ret = self.callable_function(*args, **kwargs)
+            self._memoized = {key : ret}
+            return ret
 
 
 def get_nested_streams(dmap):
@@ -500,6 +514,8 @@ class DynamicMap(HoloMap):
        """)
 
     def __init__(self, callback, initial_items=None, **params):
+        if not isinstance(callback, Callable) and not isinstance(callback, types.GeneratorType):
+            callback = Callable(callable_function=callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         # Set source to self if not already specified
