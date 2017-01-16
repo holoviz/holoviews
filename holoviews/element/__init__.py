@@ -15,23 +15,23 @@ class ElementConversion(DataConversion):
     types.
     """
 
-    def bars(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Bars, kdims, vdims, mdims, **kwargs)
+    def bars(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Bars, kdims, vdims, groupby, **kwargs)
 
-    def box(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(BoxWhisker, kdims, vdims, mdims, **kwargs)
+    def box(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(BoxWhisker, kdims, vdims, groupby, **kwargs)
 
-    def bivariate(self, kdims=None, vdims=None, mdims=None, **kwargs):
+    def bivariate(self, kdims=None, vdims=None, groupby=None, **kwargs):
         from ..interface.seaborn import Bivariate
-        return self(Bivariate, kdims, vdims, mdims, **kwargs)
+        return self(Bivariate, kdims, vdims, groupby, **kwargs)
 
-    def curve(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Curve, kdims, vdims, mdims, sort=True, **kwargs)
+    def curve(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Curve, kdims, vdims, groupby, sort=True, **kwargs)
 
-    def errorbars(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(ErrorBars, kdims, vdims, mdims, sort=True, **kwargs)
+    def errorbars(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(ErrorBars, kdims, vdims, groupby, sort=True, **kwargs)
 
-    def distribution(self, dim=None, mdims=[], **kwargs):
+    def distribution(self, dim=None, groupby=[], **kwargs):
         from ..interface.seaborn import Distribution
         if dim is None:
             if self._element.vdims:
@@ -39,9 +39,9 @@ class ElementConversion(DataConversion):
             else:
                 raise Exception('Must supply an explicit value dimension '
                                 'if no value dimensions are defined ')
-        if mdims:
-            reindexed = self._element.reindex(mdims, [dim])
-            return reindexed.groupby(mdims, HoloMap, Distribution, **kwargs)
+        if groupby:
+            reindexed = self._element.reindex(groupby, [dim])
+            return reindexed.groupby(groupby, HoloMap, Distribution, **kwargs)
         else:
             element = self._element
             params = dict(vdims=[element.get_dimension(dim)],
@@ -51,44 +51,44 @@ class ElementConversion(DataConversion):
             return Distribution((element.dimension_values(dim),),
                                 **dict(params, **kwargs))
 
-    def heatmap(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(HeatMap, kdims, vdims, mdims, **kwargs)
+    def heatmap(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(HeatMap, kdims, vdims, groupby, **kwargs)
 
-    def image(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(GridImage, kdims, vdims, mdims, **kwargs)
+    def image(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(GridImage, kdims, vdims, groupby, **kwargs)
 
-    def points(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Points, kdims, vdims, mdims, **kwargs)
+    def points(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Points, kdims, vdims, groupby, **kwargs)
 
-    def raster(self, kdims=None, vdims=None, mdims=None, **kwargs):
+    def raster(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Raster(heatmap.data, **dict(self._element.get_param_values(onlychanged=True)))
 
-    def regression(self, kdims=None, vdims=None, mdims=None, **kwargs):
+    def regression(self, kdims=None, vdims=None, groupby=None, **kwargs):
         from ..interface.seaborn import Regression
-        return self(Regression, kdims, vdims, mdims, **kwargs)
+        return self(Regression, kdims, vdims, groupby, **kwargs)
 
-    def scatter(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Scatter, kdims, vdims, mdims, **kwargs)
+    def scatter(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Scatter, kdims, vdims, groupby, **kwargs)
 
-    def scatter3d(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Scatter3D, kdims, vdims, mdims, **kwargs)
+    def scatter3d(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Scatter3D, kdims, vdims, groupby, **kwargs)
 
-    def spikes(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Spikes, kdims, vdims, mdims, **kwargs)
+    def spikes(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Spikes, kdims, vdims, groupby, **kwargs)
 
-    def spread(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Spread, kdims, vdims, mdims, sort=True, **kwargs)
+    def spread(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Spread, kdims, vdims, groupby, sort=True, **kwargs)
 
-    def surface(self, kdims=None, vdims=None, mdims=None, **kwargs):
+    def surface(self, kdims=None, vdims=None, groupby=None, **kwargs):
         heatmap = self.heatmap(kdims, vdims, **kwargs)
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
-    def trisurface(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(Trisurface, kdims, vdims, mdims, **kwargs)
+    def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Trisurface, kdims, vdims, groupby, **kwargs)
 
-    def vectorfield(self, kdims=None, vdims=None, mdims=None, **kwargs):
-        return self(VectorField, kdims, vdims, mdims, **kwargs)
+    def vectorfield(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(VectorField, kdims, vdims, groupby, **kwargs)
 
 
 Dataset._conversion_interface = ElementConversion
