@@ -18,7 +18,7 @@ def escape_vals(vals, escape_numerics=True):
     unicode for safety.
     """
     # Ints formatted as floats to disambiguate with counter mode
-    ints, floats = "%.1f", "%.11f"
+    ints, floats = "%.1f", "%.10f"
 
     escaped = []
     for v in vals:
