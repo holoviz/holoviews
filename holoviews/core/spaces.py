@@ -406,8 +406,8 @@ class Callable(param.Parameterized):
     makes it possible to traverse the graph of operations applied
     to a DynamicMap. Additionally a Callable will memoize the last
     returned value based on the arguments to the function and the
-    state of all streams on its inputs, avoiding calling the function
-    unncessarily.
+    state of all streams on its inputs, to avoid calling the function
+    unnecessarily.
     """
 
     callable_function = param.Callable(default=lambda x: x, doc="""
@@ -421,8 +421,8 @@ class Callable(param.Parameterized):
         self._memoized = {}
 
     def __call__(self, *args, **kwargs):
-        inputs = [inp for inp in self.inputs if isinstance(inp, DynamicMap)]
-        streams = [s for inp in inputs for s in get_nested_streams(inp)]
+        inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
+        streams = [s for i in inputs for s in get_nested_streams(i)]
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
@@ -517,7 +517,7 @@ class DynamicMap(HoloMap):
        """)
 
     def __init__(self, callback, initial_items=None, **params):
-        if not isinstance(callback, Callable) and not isinstance(callback, types.GeneratorType):
+        if not isinstance(callback, (Callable, types.GeneratorType)):
             callback = Callable(callable_function=callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
