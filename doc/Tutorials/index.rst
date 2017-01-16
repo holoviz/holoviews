@@ -70,10 +70,6 @@ There are additional tutorials detailing other features of HoloViews:
   `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming,
   panning, and selection linked automatically between plots.
 
-* `Pandas Conversion: <Pandas_Conversion.html>`_
-  Using the DFrame conversion wrapper of HoloViews to convert pandas
-  dataframes into HoloViews components.
-
 * `Pandas and Seaborn: <Pandas_Seaborn.html>`_
   Specialized visualizations provided by pandas and seaborn.
 
@@ -117,7 +113,6 @@ extend HoloViews and apply it to real world data see the `Examples
    Continuous Coordinates <Continuous_Coordinates>
    Composing Data <Composing_Data>
    Bokeh Backend <Bokeh_Backend>
-   Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
    Matplotlib Elements <Elements>
    Bokeh Elements <Bokeh_Elements>
