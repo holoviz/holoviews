@@ -14,6 +14,7 @@ from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
+from ...core.overlay import NdOverlay, Overlay
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
@@ -108,7 +109,7 @@ Store.register({Curve: CurvePlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
-		Spikes: SpikesPlot,
+                Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Area: AreaPlot,
 
