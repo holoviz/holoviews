@@ -922,7 +922,7 @@ class Store(object):
 
     @classmethod
     def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
-             recursive=False, pattern=None):
+             recursive=False, pattern=None, elements=[]):
         """
         Show information about a particular object or component class
         including the applicable style and plot options. Returns None if
@@ -934,7 +934,8 @@ class Store(object):
         info = None
         if parameterized_object or parameterized_class:
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
-                                    visualization=visualization, pattern=pattern)
+                                    visualization=visualization,
+                                    pattern=pattern, elements=elements)
 
         if parameterized_object and recursive:
             hierarchy = obj.traverse(lambda x: type(x))
