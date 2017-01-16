@@ -404,7 +404,10 @@ class Callable(param.Parameterized):
     allowing their inputs (and in future outputs) to be defined.
     This makes it possible to wrap DynamicMaps with streams and
     makes it possible to traverse the graph of operations applied
-    to a DynamicMap.
+    to a DynamicMap. Additionally a Callable will memoize the last
+    returned value based on the arguments to the function and the
+    state of all streams on its inputs, to avoid calling the function
+    unnecessarily.
     """
 
     callable_function = param.Callable(default=lambda x: x, doc="""
@@ -413,8 +416,22 @@ class Callable(param.Parameterized):
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
+    def __init__(self, **params):
+        super(Callable, self).__init__(**params)
+        self._memoized = {}
+
     def __call__(self, *args, **kwargs):
-        return self.callable_function(*args, **kwargs)
+        inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
+        streams = [s for i in inputs for s in get_nested_streams(i)]
+        values = tuple(tuple(sorted(s.contents.items())) for s in streams)
+        key = args + tuple(sorted(kwargs.items())) + values
+
+        if key in self._memoized:
+            return self._memoized[key]
+        else:
+            ret = self.callable_function(*args, **kwargs)
+            self._memoized = {key : ret}
+            return ret
 
 
 def get_nested_streams(dmap):
@@ -500,6 +517,8 @@ class DynamicMap(HoloMap):
        """)
 
     def __init__(self, callback, initial_items=None, **params):
+        if not isinstance(callback, (Callable, types.GeneratorType)):
+            callback = Callable(callable_function=callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         # Set source to self if not already specified
@@ -514,7 +533,6 @@ class DynamicMap(HoloMap):
 
         self.call_mode = self._validate_mode()
         self.mode = 'bounded' if self.call_mode == 'key' else 'open'
-        self._dimensionless_cache = False
 
 
     def _initial_key(self):
@@ -762,7 +780,7 @@ class DynamicMap(HoloMap):
         try:
             dimensionless = util.dimensionless_contents(get_nested_streams(self),
                                                         self.kdims, no_duplicates=False)
-            if (dimensionless and not self._dimensionless_cache):
+            if dimensionless:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
             # Return selected cache items in a new DynamicMap

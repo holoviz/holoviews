@@ -1,5 +1,6 @@
 import numpy as np
 from holoviews import Dimension, DynamicMap, Image, HoloMap, Scatter, Curve
+from holoviews.streams import PositionXY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -202,3 +203,26 @@ class DynamicTestOverlay(ComparisonTestCase):
         dynamic_overlay = dmap * hmap
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
+
+    def test_dynamic_overlay_memoization(self):
+        """Tests that Callable memoizes unchanged callbacks"""
+        def fn(x, y):
+            return Scatter([(x, y)])
+        dmap = DynamicMap(fn, kdims=[], streams=[PositionXY()])
+
+        counter = [0]
+        def fn2(x, y):
+            counter[0] += 1
+            return Image(np.random.rand(10, 10))
+        dmap2 = DynamicMap(fn2, kdims=[], streams=[PositionXY()])
+
+        overlaid = dmap * dmap2
+        overlay = overlaid[()]
+        self.assertEqual(overlay.Scatter.I, fn(0, 0))
+
+        dmap.event(x=1, y=2)
+        overlay = overlaid[()]
+        # Ensure dmap return value was updated
+        self.assertEqual(overlay.Scatter.I, fn(1, 2))
+        # Ensure dmap2 callback was called only once
+        self.assertEqual(counter[0], 1)
