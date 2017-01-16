@@ -81,6 +81,7 @@ class InfoPrinter(object):
     ansi_escape = re.compile(r'\x1b[^m]*m')
     ppager = ParamPager()
     store = None
+    elements = []
 
     @classmethod
     def get_parameter_info(cls, obj, ansi=False,  show_values=True,
@@ -126,11 +127,13 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def info(cls, obj, ansi=False, backend='matplotlib', visualization=True, pattern=None):
+    def info(cls, obj, ansi=False, backend='matplotlib', visualization=True,
+             pattern=None, elements=[]):
         """
         Show information about an object in the given category. ANSI
         color codes may be enabled or disabled.
         """
+        cls.elements = elements
         ansi_escape = re.compile(r'\x1b[^m]*m')
 
         isclass = isinstance(obj, type)
@@ -216,7 +219,8 @@ class InfoPrinter(object):
                if element else 'http://holoviews.org/Tutorials/Containers.html#{obj}')
         link = url.format(obj=name)
 
-        msg = ("\nOnline example: {link}"
+        link = None if element and (name not in cls.elements) else link
+        msg = ("\nOnline example: {link}" if link else ''
                + "\nHelp for the data object: holoviews.help({obj})"
                + " or holoviews.help(<{lower}_instance>)")
 
