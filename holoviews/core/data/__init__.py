@@ -71,12 +71,12 @@ class DataConversion(object):
     def __call__(self, new_type, kdims=None, vdims=None, groupby=None,
                  sort=False, **kwargs):
         """
-        Generic conversion method for Column based types. Supply the
-        Columns based type to convert to and optionally the key
-        dimensions (kdims), value dimensions (vdims) and the
-        dimensions.  to group over. Converted Columns can be
-        automatically sorted via the sort option and kwargs can be
-        passed through.
+        Generic conversion method for Dataset based Element
+        types. Supply the Dataset Element type to convert to and
+        optionally the key dimensions (kdims), value dimensions
+        (vdims) and the dimensions.  to group over. Converted Columns
+        can be automatically sorted via the sort option and kwargs can
+        bepassed through.
         """
         if 'mdims' in kwargs:
             if groupby:
