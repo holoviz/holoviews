@@ -31,12 +31,12 @@ from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
 
 
-def sanitizer(name, replacements={':':'_', '/':'_', '\\':'_'}):
+def sanitizer(name, replacements=[(':','_'), ('/','_'), ('\\','_')]):
     """
     String sanitizer to avoid problematic characters in filenames.
     """
-    for k,v in replacements.items():
-        name = name.replace(k,v)
+    for old,new in replacements:
+        name = name.replace(old,new)
     return name
 
 
