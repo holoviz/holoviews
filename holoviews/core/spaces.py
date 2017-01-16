@@ -404,7 +404,10 @@ class Callable(param.Parameterized):
     allowing their inputs (and in future outputs) to be defined.
     This makes it possible to wrap DynamicMaps with streams and
     makes it possible to traverse the graph of operations applied
-    to a DynamicMap.
+    to a DynamicMap. Additionally a Callable will memoize the last
+    returned value based on the arguments to the function and the
+    state of all streams on its inputs, avoiding calling the function
+    unncessarily.
     """
 
     callable_function = param.Callable(default=lambda x: x, doc="""
