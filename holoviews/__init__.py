@@ -61,7 +61,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def help(obj, visualization=True, ansi=True, backend='matplotlib',
+def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
     """
     Extended version of the built-in help that supports parameterized
@@ -73,6 +73,7 @@ def help(obj, visualization=True, ansi=True, backend='matplotlib',
     If ansi is set to False, all ANSI color
     codes are stripped out.
     """
+    backend = backend if backend else Store.current_backend
     info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
                       recursive=recursive, pattern=pattern, elements=elements_list)
 
