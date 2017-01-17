@@ -68,25 +68,38 @@ class DataConversion(object):
     def __init__(self, element):
         self._element = element
 
-    def __call__(self, new_type, kdims=None, vdims=None, mdims=None,
+    def __call__(self, new_type, kdims=None, vdims=None, groupby=None,
                  sort=False, **kwargs):
         """
-        Generic conversion method for Column based types. Supply the
-        Columns based type to convert to and optionally the
-        key dimensions (kdims), value dimensions (vdims) and HoloMap
-        key dimensions (mdims). Converted Columns can be automatically
-        sorted via the sort option and kwargs can be passed through.
+        Generic conversion method for Dataset based Element
+        types. Supply the Dataset Element type to convert to and
+        optionally the key dimensions (kdims), value dimensions
+        (vdims) and the dimensions.  to group over. Converted Columns
+        can be automatically sorted via the sort option and kwargs can
+        bepassed through.
         """
+        if 'mdims' in kwargs:
+            if groupby:
+                raise ValueError('Cannot supply both mdims and groupby')
+            else:
+                self._element.warning("'mdims' keyword has been renamed "
+                                      "to groupby; the name mdims is "
+                                      "deprecated and will be removed "
+                                      "after version 1.7.")
+                groupby = kwargs['mdims']
+
         if kdims is None:
             kdims = self._element.kdims
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
             vdims = self._element.vdims
         if vdims and not isinstance(vdims, list): vdims = [vdims]
-        if mdims is None:
-            mdims = [d for d in self._element.kdims if d not in kdims+vdims]
+        if groupby is None:
+            groupby = [d for d in self._element.kdims if d not in kdims+vdims]
+        elif groupby and not isinstance(groupby, list):
+            groupby = [groupby]
 
-        selected = self._element.reindex(mdims+kdims, vdims)
+        selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
                   'vdims': [selected.get_dimension(vd) for vd in vdims],
                   'label': selected.label}
@@ -96,7 +109,7 @@ class DataConversion(object):
         if len(kdims) == selected.ndims:
             element = new_type(selected, **params)
             return element.sort() if sort else element
-        group = selected.groupby(mdims, container_type=HoloMap,
+        group = selected.groupby(groupby, container_type=HoloMap,
                                  group_type=new_type, **params)
         if sort:
             return group.map(lambda x: x.sort(), [new_type])
