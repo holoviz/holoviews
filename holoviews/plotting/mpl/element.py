@@ -149,7 +149,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         axis = self.handles['axis']
 
         subplots = list(self.subplots.values()) if self.subplots else []
-        if not self.overlaid and key is not None:
+        if self.zorder == 0 and key is not None:
             if self.bgcolor:
                 if LooseVersion(mpl.__version__) <= '1.5.9':
                     axis.set_axis_bgcolor(self.bgcolor)
@@ -157,7 +157,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_facecolor(self.bgcolor)
               
             # Apply title
-            title = None if self.zorder > 0 else self._format_title(key)
+            title = self._format_title(key)
             if self.show_title and title is not None:
                 fontsize = self._fontsize('title')
                 self.handles['title'] = axis.set_title(title, **fontsize)
