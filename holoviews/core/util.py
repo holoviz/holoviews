@@ -758,12 +758,17 @@ def get_spec(obj):
 
 def find_file(folder, filename):
     """
-    Find a file given folder and filename.
+    Find a file given folder and filename. If the filename can be
+    resolved directly returns otherwise walks the supplied folder.
     """
     matches = []
+    if os.path.isabs(filename) and os.path.isfile(filename):
+        return filename
     for root, _, filenames in os.walk(folder):
-        for filename in fnmatch.filter(filenames, filename):
-            matches.append(os.path.join(root, filename))
+        for fn in fnmatch.filter(filenames, filename):
+            matches.append(os.path.join(root, fn))
+    if not matches:
+        raise IOError('File %s could not be found' % filename)
     return matches[-1]
 
 
