@@ -122,8 +122,8 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle(), size=point_size)
-options.Points = Options('style', color=Cycle(), size=point_size)
+options.Scatter = Options('style', color=Cycle(), size=point_size, cmap='hot')
+options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
