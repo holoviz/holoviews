@@ -32,17 +32,22 @@ except ImportError:
 class HashGenerator(json.JSONEncoder):
     """
     Extends JSONEncoder to generate a hashable string for as many types
-    of key as possible. These keys are supplied by widgets and Stream
-    parameters and may be nested. If an unrecognized object type is
-    supplied, the objects id is used - this may be an issue when dealing
-    with mutable objects. For this reason, it is important to support
-    common mutable types such as pandas Dataframes and numpy arrays
-    (supported).
+    of object as possible including nested objects and objects that are
+    not normally hashable. The purpose of this class is to generate
+    unique strings that once hashed are suitable for memoization.
+
+    By default JSONEncoder supports booleans, numbers, strings, lists,
+    tuples and dictionaries. In order to support other types such as
+    sets, datetime objects and mutable objects such as pandas Dataframes
+    or numpy arrays, HashGenerator has to convert these types to
+    datastructures that can normally be represented as JSON.
+
+    Support for other object types may need to be introduced in
+    future. By default, unrecognized object types are represented by
+    their id.
 
     One limitation of this approach is that dictionaries with composite
     keys (e.g tuples) are not supported due to the JSON spec.
-
-    Used by keyhash to help memoize DynamicMap output.
     """
     string_hashable = (dt.datetime,)
     repr_hashable = ()
