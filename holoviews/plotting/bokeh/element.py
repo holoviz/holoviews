@@ -5,7 +5,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.models import Range, HoverTool, Renderer
+from bokeh.models import Range, HoverTool, Renderer, Range1d
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
@@ -489,8 +489,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_ranges(self, element, ranges):
-        l, b, r, t = self.get_extents(element, ranges)
         plot = self.handles['plot']
+        l, b, r, t = self.get_extents(element, ranges)
+
         if self.invert_axes:
             l, b, r, t = b, l, t, r
         if l == r:
@@ -503,10 +504,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             t += offset
 
         # Ensure that it never sets a NaN value
-        if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
-        if isinstance(l, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
-        if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
-        if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
+        if isinstance(plot.x_range, Range1d):
+            if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
+            if isinstance(l, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
+        if isinstance(plot.y_range, Range1d):
+            if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
+            if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
 
 
     def _process_legend(self):

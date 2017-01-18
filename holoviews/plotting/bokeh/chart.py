@@ -14,7 +14,7 @@ from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
-from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
+from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
@@ -459,7 +459,7 @@ class SideSpikesPlot(SpikesPlot):
 
 
 
-class ChartPlot(ElementPlot):
+class ChartPlot(LegendPlot):
     """
     ChartPlot creates and updates Bokeh high-level Chart instances.
     The current implementation requires creating a new Chart for each
@@ -488,6 +488,9 @@ class ChartPlot(ElementPlot):
         with abbreviated_exception():
             plot = self._init_chart(init_element, ranges)
 
+        if plot.legend:
+            self._process_legend(plot)
+
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
                                            if isinstance(r, GlyphRenderer)]
@@ -498,6 +501,21 @@ class ChartPlot(ElementPlot):
 
         return plot
 
+    def _process_legend(self, plot):
+        legend = plot.legend[0]
+        if not self.show_legend:
+            legend.items[:] = []
+        else:
+            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+            pos = self.legend_position
+            if pos in self.legend_specs:
+                opts = self.legend_specs[pos]
+                plot.legend[:] = []
+                legend.plot = None
+                legend.location = opts['loc']
+                plot.add_layout(legend, opts['pos'])
+            else:
+                legend.location = pos
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
@@ -561,10 +579,6 @@ class BoxPlot(ChartPlot):
                             values=element.dimensions('value', True)[0],
                             **properties)
 
-        # Disable outliers for now as they cannot be consistently updated.
-        plot.renderers = [r for r in plot.renderers
-                          if not (isinstance(r, GlyphRenderer) and
-                                  isinstance(r.glyph, Circle))]
         return plot
 
 
@@ -597,9 +611,4 @@ class BarPlot(ChartPlot):
         crange = Range1d(*ranges.get(vdim))
         plot = Bar(element.dframe(), values=vdim,
                    continuous_range=crange, **kwargs)
-        if not self.show_legend:
-            if bokeh_version > '0.12.2':
-                plot.legend[0].items[:] = []
-            else:
-                plot.legend[0].legends[:] = []
         return plot
