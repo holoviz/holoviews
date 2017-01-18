@@ -429,7 +429,7 @@ class Callable(param.Parameterized):
 
         hashed_key = util.keyhash(key)
         ret = self._memoized.get(hashed_key, None)
-        if ret is None:
+        if hashed_key and ret is None:
             ret = self.callable_function(*args, **kwargs)
             self._memoized = {hashed_key : ret}
         return ret
