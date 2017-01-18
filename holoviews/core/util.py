@@ -70,13 +70,13 @@ class HashableJSON(json.JSONEncoder):
 
 
 
-def deephash(key):
+def deephash(obj):
     """
-    Given a key, return a hash using HashableJSON. This hash is not
+    Given an object, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
     """
     try:
-        json_str = json.dumps(key, cls=HashableJSON, sort_keys=True)
+        json_str = json.dumps(obj, cls=HashableJSON, sort_keys=True)
         return hash(json_str)
     except:
         return None
