@@ -407,7 +407,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     def _init_axes(self, plot):
         if self.xaxis is None:
             plot.xaxis.visible = False
-        elif self.xaxis == 'top':
+        elif 'top' in self.xaxis:
             plot.above = plot.below
             plot.below = []
             plot.xaxis[:] = plot.above
@@ -416,7 +416,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if self.yaxis is None:
             plot.yaxis.visible = False
-        elif self.yaxis == 'right':
+        elif 'right' in self.yaxis:
             plot.right = plot.left
             plot.left = []
             plot.yaxis[:] = plot.right
@@ -424,7 +424,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['y_range'] = plot.y_range
 
 
-    def _axis_properties(self, axis, key, plot, dimension,
+    def _axis_properties(self, axis, key, plot, dimension=None,
                          ax_mapping={'x': 0, 'y': 1}):
         """
         Returns a dictionary of axis properties depending
@@ -474,6 +474,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         el = element.traverse(lambda x: x, [Element])
         dimensions = el[0].dimensions() if el else el.dimensions()
+        if not len(dimensions) >= 2:
+            dimensions = dimensions+[None]
         plot.update(**self._plot_properties(key, plot, element))
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
