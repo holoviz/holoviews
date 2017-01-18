@@ -70,7 +70,7 @@ class HashableJSON(json.JSONEncoder):
 
 
 
-def keyhash(key, as_string=False):
+def deephash(key, as_string=False):
     """
     Given a key, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.

@@ -427,7 +427,7 @@ class Callable(param.Parameterized):
         key = args + tuple(sorted(kwargs.items())) + values
 
 
-        hashed_key = util.keyhash(key)
+        hashed_key = util.deephash(key)
         ret = self._memoized.get(hashed_key, None)
         if hashed_key and ret is None:
             ret = self.callable_function(*args, **kwargs)
