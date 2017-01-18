@@ -60,10 +60,10 @@ class HashableJSON(json.JSONEncoder):
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
-            return sorted(obj.to_dict().items())
+            return sorted(list(obj.to_dict().items()))
         elif isinstance(obj, self.string_hashable):
             return str(obj)
-        elif isinstance(obj, self.repr_hashables):
+        elif isinstance(obj, self.repr_hashable):
             return repr(obj)
         try:
             return hash(obj)
