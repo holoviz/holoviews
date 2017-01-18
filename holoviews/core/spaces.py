@@ -426,12 +426,13 @@ class Callable(param.Parameterized):
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
-        if key in self._memoized:
-            return self._memoized[key]
-        else:
+
+        hashed_key = util.keyhash(key)
+        ret = self._memoized.get(hashed_key, None)
+        if ret is None:
             ret = self.callable_function(*args, **kwargs)
-            self._memoized = {key : ret}
-            return ret
+            self._memoized = {hashed_key : ret}
+        return ret
 
 
 def get_nested_streams(dmap):
