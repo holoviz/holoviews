@@ -76,8 +76,7 @@ def deephash(obj):
     architecture, Python version or platform independent.
     """
     try:
-        json_str = json.dumps(obj, cls=HashableJSON, sort_keys=True)
-        return hash(json_str)
+        return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
     except:
         return None
 
