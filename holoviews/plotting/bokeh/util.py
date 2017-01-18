@@ -43,7 +43,8 @@ markers = {'s': {'marker': 'square'},
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
                   'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
-                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
+                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter',
+                  'CategoricalTickFormatter']
 
 # List of attributes that can safely be dropped from the references
 IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y']
