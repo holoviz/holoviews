@@ -29,7 +29,7 @@ except ImportError:
 
 
 
-class HashGenerator(json.JSONEncoder):
+class HashableJSON(json.JSONEncoder):
     """
     Extends JSONEncoder to generate a hashable string for as many types
     of object as possible including nested objects and objects that are
@@ -39,7 +39,7 @@ class HashGenerator(json.JSONEncoder):
     By default JSONEncoder supports booleans, numbers, strings, lists,
     tuples and dictionaries. In order to support other types such as
     sets, datetime objects and mutable objects such as pandas Dataframes
-    or numpy arrays, HashGenerator has to convert these types to
+    or numpy arrays, HashableJSON has to convert these types to
     datastructures that can normally be represented as JSON.
 
     Support for other object types may need to be introduced in
@@ -72,11 +72,11 @@ class HashGenerator(json.JSONEncoder):
 
 def keyhash(key, as_string=False):
     """
-    Given a key, return a hash using HashGenerator. This hash is not
+    Given a key, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
     """
     try:
-        json_str = json.dumps(key, cls=HashGenerator, sort_keys=True)
+        json_str = json.dumps(key, cls=HashableJSON, sort_keys=True)
         return json_str if as_string else hash(json_str)
     except:
         return None
