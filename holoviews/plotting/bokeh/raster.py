@@ -17,6 +17,9 @@ from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb, mpl_to_bokeh
 
 class RasterPlot(ColorbarPlot):
 
+    show_grid = param.Boolean(default=True, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
