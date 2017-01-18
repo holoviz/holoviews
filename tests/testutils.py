@@ -111,22 +111,22 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_nested_mixed_equality(self):
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', 1:True},
+                np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', 1:True},
+                np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_inequality(self):
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', 2:True},
+                np.array([1,2,3]), {'a':'b', '2':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
-                np.array([1,2,3]), {'a':'b', 1:True},
+                np.array([1,2,3]), {'a':'b', '1':True},
                 OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
