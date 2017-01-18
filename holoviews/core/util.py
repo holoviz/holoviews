@@ -70,14 +70,14 @@ class HashableJSON(json.JSONEncoder):
 
 
 
-def deephash(key, as_string=False):
+def deephash(key):
     """
     Given a key, return a hash using HashableJSON. This hash is not
     architecture, Python version or platform independent.
     """
     try:
         json_str = json.dumps(key, cls=HashableJSON, sort_keys=True)
-        return json_str if as_string else hash(json_str)
+        return hash(json_str)
     except:
         return None
 
