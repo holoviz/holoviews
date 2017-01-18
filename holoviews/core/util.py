@@ -34,7 +34,9 @@ class HashableJSON(json.JSONEncoder):
     Extends JSONEncoder to generate a hashable string for as many types
     of object as possible including nested objects and objects that are
     not normally hashable. The purpose of this class is to generate
-    unique strings that once hashed are suitable for memoization.
+    unique strings that once hashed are suitable for use in memoization
+    and other cases where deep equality must be tested without storing
+    the entire object.
 
     By default JSONEncoder supports booleans, numbers, strings, lists,
     tuples and dictionaries. In order to support other types such as
