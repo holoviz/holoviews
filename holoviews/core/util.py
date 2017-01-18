@@ -9,6 +9,8 @@ from collections import defaultdict
 import numpy as np
 import param
 
+import json
+
 try:
     from cyordereddict import OrderedDict
 except:
@@ -23,6 +25,57 @@ try:
     import dask.dataframe as dd
 except ImportError:
     dd = None
+
+
+
+
+class HashGenerator(json.JSONEncoder):
+    """
+    Extends JSONEncoder to generate a hashable string for as many types
+    of key as possible. These keys are supplied by widgets and Stream
+    parameters and may be nested. If an unrecognized object type is
+    supplied, the objects id is used - this may be an issue when dealing
+    with mutable objects. For this reason, it is important to support
+    common mutable types such as pandas Dataframes and numpy arrays
+    (supported).
+
+    One limitation of this approach is that dictionaries with composite
+    keys (e.g tuples) are not supported due to the JSON spec.
+
+    Used by keyhash to help memoize DynamicMap output.
+    """
+    string_hashable = (dt.datetime,)
+    repr_hashable = ()
+
+    def default(self, obj):
+        if isinstance(obj, set):
+            return hash(frozenset(obj))
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
+            return sorted(obj.to_dict().items())
+        elif isinstance(obj, self.string_hashable):
+            return str(obj)
+        elif isinstance(obj, self.repr_hashables):
+            return repr(obj)
+        try:
+            return hash(obj)
+        except:
+            return id(obj)
+
+
+
+def keyhash(key, as_string=False):
+    """
+    Given a key, return a hash using HashGenerator. This hash is not
+    architecture, Python version or platform independent.
+    """
+    try:
+        json_str = json.dumps(key, cls=HashGenerator, sort_keys=True)
+        return json_str if as_string else hash(json_str)
+    except:
+        return None
+
 
 # Python3 compatibility
 import types
