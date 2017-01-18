@@ -6,9 +6,15 @@ import sys, math
 import unittest
 from unittest import SkipTest
 
+import datetime
 import numpy as np
+from collections import OrderedDict
+try:
+    import pandas as pd
+except:
+    pd = None
 
-from holoviews.core.util import sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams
+from holoviews.core.util import sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams, deephash
 from holoviews import Dimension
 from holoviews.streams import PositionXY
 from holoviews.element.comparison import ComparisonTestCase
@@ -16,6 +22,114 @@ from holoviews.element.comparison import ComparisonTestCase
 py_version = sys.version_info.major
 
 sanitize_identifier = sanitize_identifier_fn.instance()
+
+
+class TestDeepHash(ComparisonTestCase):
+    """
+    Tests of deephash function used for memoization.
+    """
+
+    def test_deephash_list_equality(self):
+        self.assertEqual(deephash([1,2,3]), deephash([1,2,3]))
+
+    def test_deephash_list_inequality(self):
+        obj1 = [1,2,3]
+        obj2 = [1,2,3,4]
+        self.assertNotEqual(deephash(obj1), deephash(obj2))
+
+    def test_deephash_set_equality(self):
+        self.assertEqual(deephash(set([1,2,3])), deephash(set([1,3,2])))
+
+    def test_deephash_set_inequality(self):
+        self.assertNotEqual(deephash(set([1,2,3])), deephash(set([1,3,4])))
+
+    def test_deephash_dict_equality(self):
+        self.assertEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'a'}))
+
+    def test_deephash_dict_equality(self):
+        self.assertNotEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'c'}))
+
+    def test_deephash_odict_equality(self):
+        odict1 = OrderedDict([(1,'a'), (2,'b')])
+        odict2 = OrderedDict([(1,'a'), (2,'b')])
+        self.assertEqual(deephash(odict1), deephash(odict2))
+
+    def test_deephash_odict_equality(self):
+        odict1 = OrderedDict([(1,'a'), (2,'b')])
+        odict2 = OrderedDict([(1,'a'), (2,'c')])
+        self.assertNotEqual(deephash(odict1), deephash(odict2))
+
+    def test_deephash_numpy_equality(self):
+        self.assertEqual(deephash(np.array([1,2,3])),
+                         deephash(np.array([1,2,3])))
+
+    def test_deephash_numpy_inequality(self):
+        arr1 = np.array([1,2,3])
+        arr2 = np.array([1,2,4])
+        self.assertNotEqual(deephash(arr1), deephash(arr2))
+
+    def test_deephash_dataframe_equality(self):
+        if pd is None: raise SkipTest
+        self.assertEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
+                         deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})))
+
+    def test_deephash_dataframe_inequality(self):
+        if pd is None: raise SkipTest
+        self.assertNotEqual(deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,6]})),
+                            deephash(pd.DataFrame({'a':[1,2,3],'b':[4,5,8]})))
+
+    def test_deephash_series_equality(self):
+        if pd is None: raise SkipTest
+        self.assertEqual(deephash(pd.Series([1,2,3])),
+                         deephash(pd.Series([1,2,3])))
+
+    def test_deephash_series_inequality(self):
+        if pd is None: raise SkipTest
+        self.assertNotEqual(deephash(pd.Series([1,2,3])),
+                            deephash(pd.Series([1,2,7])))
+
+    def test_deephash_datetime_equality(self):
+        dt1 = datetime.datetime(1,2,3)
+        dt2 = datetime.datetime(1,2,3)
+        self.assertEqual(deephash(dt1), deephash(dt2))
+
+    def test_deephash_datetime_inequality(self):
+        dt1 = datetime.datetime(1,2,3)
+        dt2 = datetime.datetime(1,2,5)
+        self.assertNotEqual(deephash(dt1), deephash(dt2))
+
+    def test_deephash_nested_native_equality(self):
+        obj1 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
+        obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
+        self.assertEqual(deephash(obj1), deephash(obj2))
+
+    def test_deephash_nested_native_inequality(self):
+        obj1 = [[1,2], (3,6,7, [False]), 'a', 9.2, 42, {1:3,2:'c'}]
+        obj2 = [[1,2], (3,6,7, [True]), 'a', 9.2, 42, {1:3,2:'c'}]
+        self.assertNotEqual(deephash(obj1), deephash(obj2))
+
+    def test_deephash_nested_mixed_equality(self):
+        obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
+                pd.DataFrame({'a':[1,2],'b':[3,4]}),
+                np.array([1,2,3]), {'a':'b', '1':True},
+                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+        obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
+                pd.DataFrame({'a':[1,2],'b':[3,4]}),
+                np.array([1,2,3]), {'a':'b', '1':True},
+                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+        self.assertEqual(deephash(obj1), deephash(obj2))
+
+    def test_deephash_nested_mixed_inequality(self):
+        obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
+                pd.DataFrame({'a':[1,2],'b':[3,4]}),
+                np.array([1,2,3]), {'a':'b', '2':True},
+                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+        obj2 = [datetime.datetime(1,2,3), set([1,2,3]),
+                pd.DataFrame({'a':[1,2],'b':[3,4]}),
+                np.array([1,2,3]), {'a':'b', '1':True},
+                OrderedDict([(1,'a'),(2,'b')]), np.int64(34)]
+        self.assertNotEqual(deephash(obj1), deephash(obj2))
+
 
 class TestAllowablePrefix(ComparisonTestCase):
     """

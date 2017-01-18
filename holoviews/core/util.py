@@ -9,6 +9,8 @@ from collections import defaultdict
 import numpy as np
 import param
 
+import json
+
 try:
     from cyordereddict import OrderedDict
 except:
@@ -23,6 +25,63 @@ try:
     import dask.dataframe as dd
 except ImportError:
     dd = None
+
+
+
+
+class HashableJSON(json.JSONEncoder):
+    """
+    Extends JSONEncoder to generate a hashable string for as many types
+    of object as possible including nested objects and objects that are
+    not normally hashable. The purpose of this class is to generate
+    unique strings that once hashed are suitable for use in memoization
+    and other cases where deep equality must be tested without storing
+    the entire object.
+
+    By default JSONEncoder supports booleans, numbers, strings, lists,
+    tuples and dictionaries. In order to support other types such as
+    sets, datetime objects and mutable objects such as pandas Dataframes
+    or numpy arrays, HashableJSON has to convert these types to
+    datastructures that can normally be represented as JSON.
+
+    Support for other object types may need to be introduced in
+    future. By default, unrecognized object types are represented by
+    their id.
+
+    One limitation of this approach is that dictionaries with composite
+    keys (e.g tuples) are not supported due to the JSON spec.
+    """
+    string_hashable = (dt.datetime,)
+    repr_hashable = ()
+
+    def default(self, obj):
+        if isinstance(obj, set):
+            return hash(frozenset(obj))
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
+            return repr(sorted(list(obj.to_dict().items())))
+        elif isinstance(obj, self.string_hashable):
+            return str(obj)
+        elif isinstance(obj, self.repr_hashable):
+            return repr(obj)
+        try:
+            return hash(obj)
+        except:
+            return id(obj)
+
+
+
+def deephash(obj):
+    """
+    Given an object, return a hash using HashableJSON. This hash is not
+    architecture, Python version or platform independent.
+    """
+    try:
+        return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
+    except:
+        return None
+
 
 # Python3 compatibility
 import types
