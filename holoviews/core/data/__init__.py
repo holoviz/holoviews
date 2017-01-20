@@ -148,9 +148,16 @@ class Dataset(Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
-        initialized = Interface.initialize(type(self), data,
-                                           kwargs.get('kdims'),
-                                           kwargs.get('vdims'),
+
+        kdims, vdims = None, None
+        if 'kdims' in kwargs:
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['kdims']]
+        if 'vdims' in kwargs:
+            vdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['vdims']]
+
+        initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
         super(Dataset, self).__init__(data, **dict(extra_kws, **dict(kwargs, **dims)))
@@ -478,7 +485,7 @@ class Dataset(Element):
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
-        dim = self.get_dimension(dim, strict=True).name
+        dim = self.get_dimension(dim, strict=True).alias
         return self.interface.values(self, dim, expanded, flat)
 
 
