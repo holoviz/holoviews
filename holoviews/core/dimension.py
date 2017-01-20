@@ -142,10 +142,12 @@ class Dimension(param.Parameterized):
             existing_params = {'name': name}
 
         all_params = dict(existing_params, **params)
+        alias = all_params['name']
         if isinstance(all_params['name'], tuple):
             alias, long_name = all_params['name']
             dimension_sanitizer.add_aliases(**{alias:long_name})
             all_params['name'] = long_name
+        self.alias = alias
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -645,6 +647,7 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
+        label = 'long' if label in [True, 'long'] else ('short' if label else None)
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
@@ -664,7 +667,8 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [dim.name if label else dim for dim in dims]
+        return [(dim.name if label == 'long' else dim.alias)
+                if label else dim for dim in dims]
 
 
     def get_dimension(self, dimension, default=None, strict=False):
