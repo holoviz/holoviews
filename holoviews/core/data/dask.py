@@ -70,7 +70,8 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        data = columns.data[dim]
+        dim = columns.get_dimension(dim)
+        data = columns.data[dim.alias]
         if not expanded:
             data = data.unique()
         return data.compute().values
@@ -88,7 +89,8 @@ class DaskInterface(PandasInterface):
             if isinstance(k, tuple):
                 k = slice(*k)
             masks = []
-            series = dataset.data[dim]
+            alias = dataset.get_dimension(dim).alias
+            series = dataset.data[alias]
             if isinstance(k, slice):
                 if k.start is not None:
                     masks.append(k.start <= series)

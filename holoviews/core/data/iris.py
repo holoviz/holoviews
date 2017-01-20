@@ -78,17 +78,17 @@ class CubeInterface(GridInterface):
             ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
-            vdim = vdims[0].alias if isinstance(vdims[0], Dimension) else vdims[0]
+            vdim = vdims[0] if isinstance(vdims[0], Dimension) else Dimension(vdims[0])
             if isinstance(data, tuple):
                 value_array = data[-1]
-                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
+                data = {d: vals for d, vals in zip(kdim_names + [vdim.alias], data)}
             elif isinstance(data, dict):
-                value_array = data[vdim]
-            coords = [(iris.coords.DimCoord(data[kd.alias], long_name=kd.name,
+                value_array = data[vdim.alias]
+            coords = [(iris.coords.DimCoord(data[kd.alias], long_name=kd.alias,
                                             units=kd.unit), ndims-n-1)
                       for n, kd in enumerate(kdims)]
             try:
-                data = iris.cube.Cube(value_array, long_name=vdim,
+                data = iris.cube.Cube(value_array, long_name=vdim.alias,
                                       dim_coords_and_dims=coords)
             except:
                 pass
@@ -121,9 +121,10 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
+        dim = dataset.get_dimension(dim)
         if expanded:
-            return util.expand_grid_coords(dataset, dim)
-        data = dataset.data.coords(dim)[0].points
+            return util.expand_grid_coords(dataset, dim.alias)
+        data = dataset.data.coords(dim.alias)[0].points
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -141,7 +142,7 @@ class CubeInterface(GridInterface):
             data = cls.canonicalize(dataset, data, coord_names)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim, expanded=True)
+            data = cls.coords(dataset, dim.alias, expanded=True)
             return data.flatten() if flat else data
         else:
             return cls.coords(dataset, dim.alias, ordered=True)
@@ -198,7 +199,8 @@ class CubeInterface(GridInterface):
         """
         Computes the range along a particular dimension.
         """
-        values = dataset.dimension_values(dimension, False)
+        dim = dataset.get_dimension(dimension)
+        values = dataset.dimension_values(dim.alias, False)
         return (np.nanmin(values), np.nanmax(values))
 
 

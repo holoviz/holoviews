@@ -121,7 +121,7 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
-        group_by = [d.alias for d in dimensions]
+        group_by = [d.alias for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
                 columns.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
@@ -196,7 +196,8 @@ class PandasInterface(Interface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        data = columns.data[dim]
+        dim = columns.get_dimension(dim)
+        data = columns.data[dim.alias]
         if not expanded:
             return data.unique()
         return data.values
@@ -226,6 +227,7 @@ class PandasInterface(Interface):
     @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
+            dimensions = [columns.get_dimension(d).alias for d in dimensions]
             return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()

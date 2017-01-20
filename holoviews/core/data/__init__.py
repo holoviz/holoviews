@@ -485,7 +485,7 @@ class Dataset(Element):
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
-        dim = self.get_dimension(dim, strict=True).alias
+        dim = self.get_dimension(dim, strict=True)
         return self.interface.values(self, dim, expanded, flat)
 
 

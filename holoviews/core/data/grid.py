@@ -162,16 +162,16 @@ class GridInterface(DictInterface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
+        dim = dataset.get_dimension(dim)
         if dim in dataset.vdims:
-            dim = dataset.get_dimension(dim)
             data = dataset.data.get(dim.alias)
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim, expanded=True)
+            data = cls.coords(dataset, dim.alias, expanded=True)
             return data.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim, ordered=True)
+            return cls.coords(dataset, dim.alias, ordered=True)
 
 
     @classmethod
@@ -320,7 +320,7 @@ class GridInterface(DictInterface):
                      for kdim in dataset.kdims if kdim not in kdims)
         for vdim in dataset.vdims:
             data[vdim.alias] = np.atleast_1d(function(dataset.data[vdim.alias],
-                                                     axis=axes, **kwargs))
+                                                      axis=axes, **kwargs))
 
         return data
 

@@ -113,8 +113,11 @@ class DictInterface(Interface):
 
     @classmethod
     def array(cls, dataset, dimensions):
-        if not dimensions: dimensions = dataset.dimensions(label='alias')
-        return np.column_stack(dataset.data[dim] for dim in dimensions)
+        if not dimensions:
+            dimensions = dataset.dimensions(label='alias')
+        else:
+            dimensions = [dataset.get_dimensions(d).alias for d in dimensions]
+        return np.column_stack(dataset.data[dim.alias] for dim in dimensions)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
@@ -145,6 +148,7 @@ class DictInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[]):
+        by = [dataset.get_dimension(d).alias for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
         else:
@@ -155,7 +159,8 @@ class DictInterface(Interface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        values = np.array(dataset.data.get(dataset.get_dimension(dim).alias))
+        dim = dataset.get_dimension(dim).alias
+        values = np.array(dataset.data.get(dim))
         if not expanded:
             return util.unique_array(values)
         return values
@@ -163,9 +168,9 @@ class DictInterface(Interface):
 
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
-        # DataFrame based tables don't need to be reindexed
-        return OrderedDict([(d.alias, dataset.dimension_values(d))
-                            for d in kdims+vdims])
+        dimensions = [dataset.get_dimension(d).alias for d in kdims+vdims]
+        return OrderedDict([(d, dataset.dimension_values(d))
+                            for d in dimensions])
 
 
     @classmethod
