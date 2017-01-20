@@ -221,6 +221,14 @@ class Dimension(param.Parameterized):
                     if not isinstance(value, list)])
 
 
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.alias = self.name
+
+
     def __str__(self):
         return self.pprint_label
 
