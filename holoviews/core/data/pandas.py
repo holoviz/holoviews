@@ -49,7 +49,7 @@ class PandasInterface(Interface):
             # Then use defined data type
             kdims = kdims if kdims else kdim_param.default
             vdims = vdims if vdims else vdim_param.default
-            columns = [d.name if isinstance(d, Dimension) else d
+            columns = [d.alias if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
 
             if ((isinstance(data, dict) and all(c in data for c in columns)) or
@@ -81,7 +81,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label=True)
+        not_found = [d for d in dataset.dimensions(label='alias')
                      if d not in dataset.data.columns]
         if not_found:
             raise ValueError("Supplied data does not contain specified "
@@ -91,7 +91,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, columns, dimension):
-        column = columns.data[columns.get_dimension(dimension).name]
+        column = columns.data[columns.get_dimension(dimension).alias]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
                         LooseVersion(pd.__version__) < '0.17.0'):
@@ -121,8 +121,9 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        group_by = [d.alias for d in dimensions]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(dimensions, sort=False)]
+                columns.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False):
                 return container_type(data, kdims=index_dims)
@@ -133,8 +134,8 @@ class PandasInterface(Interface):
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
-        cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
+        cols = [d.alias for d in columns.kdims if d in dimensions]
+        vdims = columns.dimensions('value', label='alias')
         reindexed = data[cols+vdims]
         if len(dimensions):
             grouped = reindexed.groupby(cols, sort=False)
@@ -164,7 +165,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        column_renames = {k: v.name for k, v in dimensions.items()}
+        column_renames = {k: v.alias for k, v in dimensions.items()}
         return dataset.data.rename(columns=column_renames)
 
 
@@ -173,7 +174,7 @@ class PandasInterface(Interface):
         import pandas as pd
         if not isinstance(by, list): by = [by]
         if not by: by = range(columns.ndims)
-        cols = [columns.get_dimension(d).name for d in by]
+        cols = [columns.get_dimension(d).alias for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
@@ -189,7 +190,7 @@ class PandasInterface(Interface):
         indexed = cls.indexed(columns, selection)
         df = df.ix[selection_mask]
         if indexed and len(df) == 1:
-            return df[columns.vdims[0].name].iloc[0]
+            return df[columns.vdims[0].alias].iloc[0]
         return df
 
 
@@ -217,8 +218,8 @@ class PandasInterface(Interface):
     @classmethod
     def add_dimension(cls, columns, dimension, dim_pos, values, vdim):
         data = columns.data.copy()
-        if dimension.name not in data:
-            data.insert(dim_pos, dimension.name, values)
+        if dimension.alias not in data:
+            data.insert(dim_pos, dimension.alias, values)
         return data
 
 

@@ -50,7 +50,7 @@ class GridInterface(DictInterface):
             raise ValueError('GridInterface interface requires at least '
                              'one value dimension.')
 
-        dimensions = [d.name if isinstance(d, Dimension) else
+        dimensions = [d.alias if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
@@ -59,14 +59,14 @@ class GridInterface(DictInterface):
                             'dictionary or tuple')
 
         for dim in kdims+vdims:
-            name = dim.name if isinstance(dim, Dimension) else dim
+            name = dim.alias if isinstance(dim, Dimension) else dim
             if name not in data:
                 raise ValueError("Values for dimension %s not found" % dim)
             if not isinstance(data[name], np.ndarray):
                 data[name] = np.array(data[name])
 
-        kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
-        vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
+        kdim_names = [d.alias if isinstance(d, Dimension) else d for d in kdims]
+        vdim_names = [d.alias if isinstance(d, Dimension) else d for d in vdims]
         expected = tuple([len(data[kd]) for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
@@ -98,7 +98,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims])
+        return np.product([len(dataset.data[d.alias]) for d in dataset.kdims])
 
 
     @classmethod
@@ -111,7 +111,7 @@ class GridInterface(DictInterface):
         dim = dataset.get_dimension(dim)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
-        data = dataset.data[dim.name]
+        data = dataset.data[dim.alias]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -129,7 +129,7 @@ class GridInterface(DictInterface):
         dimensions of the dataset.
         """
         if coord_dims is None:
-            coord_dims = dataset.dimensions('key', True)[::-1]
+            coord_dims = dataset.dimensions('key', label='alias')[::-1]
 
         # Reorient data
         invert = False
@@ -147,7 +147,7 @@ class GridInterface(DictInterface):
         dims = [name for name in coord_dims[::-1]
                 if isinstance(cls.coords(dataset, name), np.ndarray)]
         dropped = [dims.index(d) for d in dims if d not in dataset.kdims]
-        inds = [dims.index(kd.name) for kd in dataset.kdims]
+        inds = [dims.index(kd.alias) for kd in dataset.kdims]
         inds += dropped
         if inds:
             data = data.transpose(inds)
@@ -164,7 +164,7 @@ class GridInterface(DictInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         if dim in dataset.vdims:
             dim = dataset.get_dimension(dim)
-            data = dataset.data.get(dim.name)
+            data = dataset.data.get(dim.alias)
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
@@ -189,19 +189,19 @@ class GridInterface(DictInterface):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        keys = [dataset.data[d.name] for d in dimensions]
+        keys = [dataset.data[d.alias] for d in dimensions]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in zip(*util.cartesian_product(keys)):
             group_data = cls.select(dataset, **dict(zip(dim_names, unique_key)))
             if np.isscalar(group_data):
-                group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
+                group_data = {dataset.vdims[0].alias: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
             else:
                 for vdim in dataset.vdims:
-                    group_data[vdim.name] = np.squeeze(group_data[vdim.name])
+                    group_data[vdim.alias] = np.squeeze(group_data[vdim.alias])
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
 
@@ -246,7 +246,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        dimensions = dataset.dimensions('key', label=True)
+        dimensions = dataset.dimensions('key', label='alias')
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
         if val_dims:
             raise IndexError('Cannot slice value dimensions in compressed format, '
@@ -269,10 +269,10 @@ class GridInterface(DictInterface):
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
         for vdim in dataset.vdims:
-            data[vdim.name] = dataset.data[vdim.name][index]
+            data[vdim.alias] = dataset.data[vdim.alias][index]
 
-        if indexed and len(data[dataset.vdims[0].name]) == 1:
-            return data[dataset.vdims[0].name][0]
+        if indexed and len(data[dataset.vdims[0].alias]) == 1:
+            return data[dataset.vdims[0].alias][0]
 
         return data
 
@@ -283,8 +283,8 @@ class GridInterface(DictInterface):
         Samples the gridded data into dataset of samples.
         """
         ndims = dataset.ndims
-        dimensions = dataset.dimensions(label=True)
-        arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
+        dimensions = dataset.dimensions(label='alias')
+        arrays = [dataset.data[vdim.alias] for vdim in dataset.vdims]
         data = defaultdict(list)
 
         first_sample = util.wrap_tuple(samples[0])
@@ -307,19 +307,19 @@ class GridInterface(DictInterface):
                 data[d].append(arr)
             for vdim, array in zip(dataset.vdims, arrays):
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
-                data[vdim.name].append(array.flat[flat_index])
+                data[vdim.alias].append(array.flat[flat_index])
         concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
         return concatenated
 
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+        kdims = [kd.alias if isinstance(kd, Dimension) else kd for kd in kdims]
         data = {kdim: dataset.data[kdim] for kdim in kdims}
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
         for vdim in dataset.vdims:
-            data[vdim.name] = np.atleast_1d(function(dataset.data[vdim.name],
+            data[vdim.alias] = np.atleast_1d(function(dataset.data[vdim.alias],
                                                      axis=axes, **kwargs))
 
         return data
@@ -328,7 +328,7 @@ class GridInterface(DictInterface):
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
-        if dropped_kdims and any(len(dataset.data[kd.name]) > 1 for kd in dropped_kdims):
+        if dropped_kdims and any(len(dataset.data[kd.alias]) > 1 for kd in dropped_kdims):
             raise ValueError('Compressed format does not allow dropping key dimensions '
                              'which are not constant.')
         if (any(kd for kd in kdims if kd not in dataset.kdims) or
@@ -346,12 +346,12 @@ class GridInterface(DictInterface):
             dropped_axes = tuple(dataset.ndims-joined_dims.index(d)-1
                                  for d in dropped_kdims)
             for vdim in vdims:
-                vdata = data[vdim.name]
+                vdata = data[vdim.alias]
                 if len(axes) > 1:
                     vdata = vdata.transpose(axes[::-1])
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
-                data[vdim.name] = vdata
+                data[vdim.alias] = vdata
         return data
 
 
@@ -359,7 +359,7 @@ class GridInterface(DictInterface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
-        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        dim = dimension.alias if isinstance(dimension, Dimension) else dimension
         return dict(dataset.data, **{dim: values})
 
 

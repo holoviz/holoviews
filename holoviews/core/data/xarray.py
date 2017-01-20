@@ -21,13 +21,13 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim).alias
         return dataset.data[name].dtype.type
 
 
     @classmethod
     def dtype(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim).alias
         return dataset.data[name].dtype
 
 
@@ -46,7 +46,7 @@ class XArrayInterface(GridInterface):
                 vdim = vdim_param.default[0]
             vdims = [vdim]
             kdims = [Dimension(d) for d in data.dims[::-1]]
-            data = xr.Dataset({vdim.name: data})
+            data = xr.Dataset({vdim.alias: data})
         elif not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
@@ -57,16 +57,16 @@ class XArrayInterface(GridInterface):
             vdims = [vd if isinstance(vd, Dimension) else Dimension(vd)
                      for vd in vdims]
             if isinstance(data, tuple):
-                data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
+                data = {d.alias: vals for d, vals in zip(kdims + vdims, data)}
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
-            coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
+            coords = [(kd.alias, data[kd.alias]) for kd in kdims][::-1]
             arrays = {}
             for vdim in vdims:
-                arr = data[vdim.name]
+                arr = data[vdim.alias]
                 if not isinstance(arr, xr.DataArray):
                     arr = xr.DataArray(arr, coords=coords)
-                arrays[vdim.name] = arr
+                arrays[vdim.alias] = arr
             try:
                 data = xr.Dataset(arrays)
             except:
@@ -85,7 +85,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension).name
+        dim = dataset.get_dimension(dimension).alias
         if dim in dataset.data:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
@@ -113,7 +113,7 @@ class XArrayInterface(GridInterface):
         # https://github.com/pydata/xarray/pull/818 is merged.
         if len(dimensions) == 1:
             data = [(k, group_type(v, **group_kwargs)) for k, v in
-                    dataset.data.groupby(dimensions[0])]
+                    dataset.data.groupby(index_dims[0].alias)]
         else:
             unique_iters = [cls.values(dataset, d, False) for d in dimensions]
             indexes = zip(*[vals.flat for vals in util.cartesian_product(unique_iters)])
@@ -170,8 +170,8 @@ class XArrayInterface(GridInterface):
         the interface, return a simple scalar.
         """
         if (len(data.data_vars) == 1 and
-            len(data[dataset.vdims[0].name].shape) == 0):
-            return data[dataset.vdims[0].name].item()
+            len(data[dataset.vdims[0].alias].shape) == 0):
+            return data[dataset.vdims[0].alias].item()
         return data
 
 
@@ -184,7 +184,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        renames = {k: v.name for k, v in dimensions.items()}
+        renames = {k: v.alias for k, v in dimensions.items()}
         return dataset.data.rename(renames)
 
     @classmethod
@@ -213,21 +213,21 @@ class XArrayInterface(GridInterface):
         data = dataset.data.sel(**validated)
 
         # Restore constant dimensions
-        dropped = {d.name: np.atleast_1d(data[d.name])
+        dropped = {d.alias: np.atleast_1d(data[d.alias])
                    for d in dataset.kdims
-                   if not data[d.name].data.shape}
+                   if not data[d.alias].data.shape}
         if dropped:
             data = data.assign_coords(**dropped)
 
         indexed = cls.indexed(dataset, selection)
         if (indexed and len(data.data_vars) == 1 and
-            len(data[dataset.vdims[0].name].shape) == 0):
-            return data[dataset.vdims[0].name].item()
+            len(data[dataset.vdims[0].alias].shape) == 0):
+            return data[dataset.vdims[0].alias].item()
         return data
 
     @classmethod
     def length(cls, dataset):
-        return np.product(dataset[dataset.vdims[0].name].shape)
+        return np.product(dataset[dataset.vdims[0].alias].shape)
     
     @classmethod
     def dframe(cls, dataset, dimensions):
@@ -244,7 +244,7 @@ class XArrayInterface(GridInterface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
-        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        dim = dimension.alias if isinstance(dimension, Dimension) else dimension
         arr = xr.DataArray(values, coords=dataset.data.coords, name=dim,
                            dims=dataset.data.dims)
         return dataset.data.assign(**{dim: arr})

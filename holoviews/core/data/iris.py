@@ -70,21 +70,21 @@ class CubeInterface(GridInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims:
-            kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+            kdim_names = [kd.alias if isinstance(kd, Dimension) else kd for kd in kdims]
         else:
-            kdim_names = [kd.name for kd in eltype.kdims]
+            kdim_names = [kd.alias for kd in eltype.kdims]
 
         if not isinstance(data, iris.cube.Cube):
             ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
-            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+            vdim = vdims[0].alias if isinstance(vdims[0], Dimension) else vdims[0]
             if isinstance(data, tuple):
                 value_array = data[-1]
                 data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
             elif isinstance(data, dict):
                 value_array = data[vdim]
-            coords = [(iris.coords.DimCoord(data[kd.name], long_name=kd.name,
+            coords = [(iris.coords.DimCoord(data[kd.alias], long_name=kd.name,
                                             units=kd.unit), ndims-n-1)
                       for n, kd in enumerate(kdims)]
             try:
@@ -98,7 +98,7 @@ class CubeInterface(GridInterface):
         if kdims:
             coords = []
             for kd in kdims:
-                coord = data.coords(kd.name if isinstance(kd, Dimension) else kd)
+                coord = data.coords(kd.alias if isinstance(kd, Dimension) else kd)
                 if len(coord) == 0:
                     raise ValueError('Key dimension %s not found in '
                                      'Iris cube.' % kd)
@@ -144,7 +144,7 @@ class CubeInterface(GridInterface):
             data = cls.coords(dataset, dim, expanded=True)
             return data.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim.name, ordered=True)
+            return cls.coords(dataset, dim.alias, ordered=True)
 
 
     @classmethod
@@ -154,7 +154,7 @@ class CubeInterface(GridInterface):
         does not need to be reindexed, the Element can simply
         reorder its key dimensions.
         """
-        dropped = {d.name: cls.values(dataset, d, False)[0]
+        dropped = {d.alias: cls.values(dataset, d, False)[0]
                    for d in dataset.kdims if d not in kdims
                    and len(cls.values(dataset, d, False)) == 1}
         if dropped:
@@ -174,7 +174,7 @@ class CubeInterface(GridInterface):
         """
         if not isinstance(dims, list): dims = [dims]
         dims = [dataset.get_dimension(d) for d in dims]
-        constraints = [d.name for d in dims]
+        constraints = [d.alias for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
 
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
@@ -198,8 +198,7 @@ class CubeInterface(GridInterface):
         """
         Computes the range along a particular dimension.
         """
-        dim = dataset.get_dimension(dimension)
-        values = dataset.dimension_values(dim, False)
+        values = dataset.dimension_values(dimension, False)
         return (np.nanmin(values), np.nanmax(values))
 
 
@@ -211,10 +210,10 @@ class CubeInterface(GridInterface):
         new_dataset = dataset.data.copy()
         for name, new_dim in dimensions.items():
             if name == new_dataset.name():
-                new_dataset.rename(new_dim.name)
+                new_dataset.rename(new_dim.alias)
             for coord in new_dataset.dim_coords:
                 if name == coord.name():
-                    coord.rename(new_dim.name)
+                    coord.rename(new_dim.alias)
         return new_dataset
 
 
@@ -262,7 +261,7 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def select_to_constraint(cls, selection):
+    def select_to_constraint(cls, dataset, selection):
         """
         Transform a selection dictionary to an iris Constraint.
         """
@@ -272,7 +271,8 @@ class CubeInterface(GridInterface):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
                 constraint = iris.util.between(*constraint, rh_inclusive=False)
-            constraint_kwargs[dim] = constraint
+            dim = dataset.get_dimension(dim)
+            constraint_kwargs[dim.alias] = constraint
         return iris.Constraint(**constraint_kwargs)
 
 
@@ -281,7 +281,7 @@ class CubeInterface(GridInterface):
         """
         Apply a selection to the data.
         """
-        constraint = cls.select_to_constraint(selection)
+        constraint = cls.select_to_constraint(dataset, selection)
         pre_dim_coords = [c.name() for c in dataset.data.dim_coords]
         indexed = cls.indexed(dataset, selection)
         extracted = dataset.data.extract(constraint)
