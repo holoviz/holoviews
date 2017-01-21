@@ -332,7 +332,7 @@ class Dataset(Element):
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            return self.clone(self.interface.select(self, selection_mask=slices))
+            return self.clone(self.select(selection_mask=slices))
         elif slices in [(), Ellipsis]:
             return self
         if not isinstance(slices, tuple): slices = (slices,)

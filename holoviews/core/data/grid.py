@@ -141,7 +141,7 @@ class GridInterface(DictInterface):
                 invert = True
             else:
                 slices.append(slice(None))
-        data = data.__getitem__(slices) if invert else data
+        data = data[slices] if invert else data
 
         # Transpose data
         dims = [name for name in coord_dims[::-1]
