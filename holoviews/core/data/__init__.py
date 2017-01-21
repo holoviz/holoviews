@@ -378,10 +378,10 @@ class Dataset(Element):
             raise ValueError("The aggregate method requires a function to be specified")
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
-        aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
+        kdims = [self.get_dimension(d) for d in dimensions]
+        aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
-        kdims = [self.get_dimension(d) for d in dimensions]
         vdims = self.vdims
         if spreadfn:
             error = self.interface.aggregate(self, dimensions, spreadfn)
