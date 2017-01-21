@@ -697,6 +697,7 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
+        name_map.update({dim.alias: dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:
@@ -715,10 +716,9 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            if dim in self.kdims+self.vdims:
-                return (self.kdims+self.vdims).index(dim)
-            return self.dimensions().index(dim)
-        except ValueError:
+            dimensions = self.kdims+self.vdims
+            return [i for i, d in enumerate(dimensions) if d == dim][0]
+        except IndexError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
 
