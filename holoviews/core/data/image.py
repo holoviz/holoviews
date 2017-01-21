@@ -4,6 +4,7 @@ from ..boundingregion import BoundingRegion, BoundingBox
 from ..dimension import Dimension
 from ..ndmapping import OrderedDict
 from ..sheetcoords import SheetCoordinateSystem, Slice
+from .. import util
 from .grid import GridInterface
 from .interface import Interface
 
@@ -25,15 +26,22 @@ class ImageInterface(GridInterface):
         if vdims is None:
             vdims = eltype.vdims
 
-        dimensions = [d.name if isinstance(d, Dimension) else
+        kwargs = {}
+        dimensions = [d.alias if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
+        if isinstance(data, tuple):
+            data = dict(zip(dimensions, data))
+        if isinstance(data, dict):
+            l, r = util.bound_range(np.asarray(data[kdims[0].alias]), None)
+            b, t = util.bound_range(np.asarray(data[kdims[1].alias]), None)
+            kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
+            if len(vdims) == 1:
+                data = np.asarray(data[vdims[0].alias])
+            else:
+                data = np.dstack([data[vd.alias] for vd in vdims])
         if not isinstance(data, np.ndarray) or data.ndim != 2:
-            raise ValueError('ImageIntereface expects a 2D array.')
+            raise ValueError('ImageInterface expects a 2D array.')
 
-        if kdims is None:
-            kdims = eltype.kdims
-        if vdims is None:
-            vdims = eltype.vdims
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 

@@ -432,27 +432,15 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         (dim1, dim2) = self.shape[1], self.shape[0]
         l, r = self.range(0)
         b, t = self.range(1)
-        if bounds is None and None in (l, b, r, t):
+        if self.bounds is not None:
+            bounds = self.bounds
+        elif bounds is None and None in (l, b, r, t):
             bounds = BoundingBox()
         if bounds is None:
-            TOL = 10e-9
-            if not xdensity:
-                xvals = self.dimension_values(0, False)
-                xdiff = np.diff(xvals)
-                xunit = np.unique(np.floor(xdiff/TOL).astype(int))*TOL
-                if len(xunit) > 1:
-                    raise Exception('')
-                xdensity = 1./xunit[0]
-            if not ydensity:
-                yvals = self.dimension_values(1, False)
-                ydiff = np.diff(yvals)
-                yunit = np.unique(np.floor(ydiff/TOL).astype(int))*TOL
-                if len(xunit) > 1:
-                    raise Exception('')
-                ydensity = 1./yunit[0]
-            halfx, halfy = 0.5/xdensity, 0.5/ydensity
-            l, r = l-halfx, r+halfx
-            b, t = b-halfy, t+halfy
+            xvals = self.dimension_values(0, False)
+            l, r = util.bound_range(xvals, xdensity)
+            yvals = self.dimension_values(0, False)
+            b, t = util.bound_range(yvals, ydensity)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)

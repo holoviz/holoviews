@@ -1210,3 +1210,16 @@ def is_nan(x):
         return np.isnan(x)
     except:
         return False
+
+
+def bound_range(vals, density, TOL=10e-8):
+    low, high = vals.min(), vals.max()
+    if not density:
+        diff = np.diff(vals)
+        unit = np.unique(np.floor(diff/TOL).astype(int))*TOL
+        print vals, unit
+        if len(unit) > 1:
+            raise ValueError('Data is not sampled on a grid.')
+        density = 1./unit[0]
+    halfd = 0.5/density
+    return low-halfd, high+halfd
