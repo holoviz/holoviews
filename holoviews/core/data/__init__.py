@@ -243,7 +243,7 @@ class Dataset(Element):
         dimensions and a key value scalar or sequence of the same length
         as the existing keys.
         """
-        if isinstance(dimension, str):
+        if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
