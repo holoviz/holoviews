@@ -52,12 +52,14 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
+        elif d.alias in overrides:
+            override = overrides[d.alias]
         else:
             override = None
 
         if override is None:
             replaced.append(d)
-        elif isinstance(override, basestring):
+        elif isinstance(override, (basestring, tuple)):
             replaced.append(d(override))
         elif isinstance(override, Dimension):
             replaced.append(override)
