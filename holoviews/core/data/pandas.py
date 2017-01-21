@@ -172,8 +172,6 @@ class PandasInterface(Interface):
     @classmethod
     def sort(cls, columns, by=[]):
         import pandas as pd
-        if not isinstance(by, list): by = [by]
-        if not by: by = range(columns.ndims)
         cols = [columns.get_dimension(d).alias for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or

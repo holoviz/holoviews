@@ -67,10 +67,7 @@ class XArrayInterface(GridInterface):
                 if not isinstance(arr, xr.DataArray):
                     arr = xr.DataArray(arr, coords=coords)
                 arrays[vdim.alias] = arr
-            try:
-                data = xr.Dataset(arrays)
-            except:
-                pass
+            data = xr.Dataset(arrays)
         else:
             if vdims is None:
                 vdims = list(data.data_vars.keys())

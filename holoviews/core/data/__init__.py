@@ -202,6 +202,8 @@ class Dataset(Element):
         Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
+        if not isinstance(by, list): by = [by]
+
         sorted_columns = self.interface.sort(self, by)
         return self.clone(sorted_columns)
 

@@ -246,14 +246,15 @@ class GridInterface(DictInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        dimensions = dataset.dimensions('key', label='alias')
+        dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
         if val_dims:
             raise IndexError('Cannot slice value dimensions in compressed format, '
                              'convert to expanded format before slicing.')
 
         indexed = cls.indexed(dataset, selection)
-        selection = [(d, selection.get(d)) for d in dimensions]
+        selection = [(d, selection.get(d.name, selection.get(d.alias)))
+                      for d in dimensions]
         data = {}
         value_select = []
         for dim, ind in selection:
@@ -264,7 +265,7 @@ class GridInterface(DictInterface):
             else:
                 values = values[mask]
             value_select.append(mask)
-            data[dim] = values
+            data[dim.alias] = values
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])

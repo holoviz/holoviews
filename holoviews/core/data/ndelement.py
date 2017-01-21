@@ -27,7 +27,7 @@ class NdElementInterface(Interface):
             kdims = kdims if kdims else element_params['kdims'].default
             vdims = vdims if vdims else element_params['vdims'].default
 
-        dimensions = [d.name if isinstance(d, Dimension) else
+        dimensions = [d.alias if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
@@ -94,7 +94,7 @@ class NdElementInterface(Interface):
 
     @classmethod
     def sort(cls, columns, by=[]):
-        if not len(by): by = columns.dimensions('key', True)
+        if not len(by): by = columns.dimensions('alias', True)
         return columns.data.sort(by)
 
     @classmethod
