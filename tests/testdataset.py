@@ -38,6 +38,8 @@ class HomogeneousColumnTypes(object):
         self.y_ints = [i*2 for i in range(11)]
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
 
     def tearDown(self):
         Dataset.datatype = self.restore_datatype
@@ -109,22 +111,35 @@ class HomogeneousColumnTypes(object):
         self.assertEqual(redimmed.dimension_values('Time'),
                          self.dataset_hm.dimension_values('x'))
 
+    def test_dataset_redim_hm_kdim_alias(self):
+        redimmed = self.dataset_hm_alias.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_hm_alias.dimension_values('x'))
+
     def test_dataset_redim_hm_vdim(self):
         redimmed = self.dataset_hm.redim(y='Value')
         self.assertEqual(redimmed.dimension_values('Value'),
                          self.dataset_hm.dimension_values('y'))
 
     def test_dataset_redim_hm_vdim_alias(self):
-        redimmed = self.dataset_hm.redim(y=Dimension(('val', 'Value')))
+        redimmed = self.dataset_hm_alias.redim(y=Dimension(('val', 'Value')))
         self.assertEqual(redimmed.dimension_values('Value'),
-                         self.dataset_hm.dimension_values('y'))
+                         self.dataset_hm_alias.dimension_values('y'))
 
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 10, 20]))
 
+    def test_dataset_sample_hm_alias(self):
+        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
+        self.assertEqual(samples, np.array([0, 10, 20]))
+
     def test_dataset_array_hm(self):
         self.assertEqual(self.dataset_hm.array(),
+                         np.column_stack([self.xs, self.y_ints]))
+
+    def test_dataset_array_hm_alias(self):
+        self.assertEqual(self.dataset_hm_alias.array(),
                          np.column_stack([self.xs, self.y_ints]))
 
     def test_dataset_add_dimensions_value_hm(self):
@@ -145,7 +160,7 @@ class HomogeneousColumnTypes(object):
     def test_dataset_slice_hm_alias(self):
         dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
                                 kdims=[('x', 'X')], vdims=[('y', 'Y')])
-        self.assertEqual(self.dataset_hm[5:9].redim(x='X', y='Y'), dataset_slice)
+        self.assertEqual(self.dataset_hm_alias[5:9], dataset_slice)
 
     def test_dataset_slice_fn_hm(self):
         dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
@@ -594,6 +609,8 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.y_ints = [i*2 for i in range(11)]
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = [[0, 1], [2, 3], [4, 5]]
@@ -869,6 +886,10 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sample_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sample_hm_alias(self):
+        raise SkipTest("Not supported")
+
+
 class XArrayDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
@@ -892,4 +913,7 @@ class XArrayDatasetTest(GridDatasetTest):
         raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sample_hm_alias(self):
         raise SkipTest("Not supported")
