@@ -6,7 +6,7 @@ from unittest import SkipTest
 from itertools import product
 
 import numpy as np
-from holoviews import Dataset, NdElement, HoloMap, Dimension
+from holoviews import Dataset, NdElement, HoloMap, Dimension, Image
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -47,7 +47,7 @@ class HomogeneousColumnTypes(object):
         self.restore_datatype = Dataset.datatype
         self.data_instance_type = None
 
-    def init_data(self):
+    def init_column_data(self):
         self.xs = range(11)
         self.xs_2 = [el**2 for el in self.xs]
 
@@ -224,7 +224,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     Tests for data formats that all dataset to have varied types
     """
 
-    def init_data(self):
+    def init_column_data(self):
         self.kdims = ['Gender', 'Age']
         self.vdims = ['Weight', 'Height']
         self.gender, self.age = ['M','M','F'], [10,16,12]
@@ -239,7 +239,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                                     'weight':self.weight, 'height':self.height},
                                    kdims=self.alias_kdims, vdims=self.alias_vdims)
 
-        super(HeterogeneousColumnTypes, self).init_data()
+        super(HeterogeneousColumnTypes, self).init_column_data()
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
         self.dataset_ht = Dataset({'x':self.xs, 'y':self.ys},
@@ -515,7 +515,7 @@ class ArrayDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['array']
         self.data_instance_type = np.ndarray
-        self.init_data()
+        self.init_column_data()
 
 
 class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
@@ -529,7 +529,7 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['dataframe']
         self.data_instance_type = pd.DataFrame
-        self.init_data()
+        self.init_column_data()
 
 
 class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
@@ -543,7 +543,7 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['dask']
         self.data_instance_type = dd.DataFrame
-        self.init_data()
+        self.init_column_data()
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -577,7 +577,7 @@ class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['dictionary']
         self.data_instance_type = (dict, cyODict, OrderedDict)
-        self.init_data()
+        self.init_column_data()
 
 
 
@@ -590,7 +590,7 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['ndelement']
         self.data_instance_type = NdElement
-        self.init_data()
+        self.init_column_data()
 
     # Literal formats that have been previously been supported but
     # currently are only supported via NdElement.
@@ -602,7 +602,7 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.assertTrue(isinstance(dataset.data, NdElement))
 
 
-class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
+class GridTests(object):
     """
     Test of the Grid array interface
     """
@@ -624,18 +624,20 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                                   kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
                                         kdims=[('x', 'X')], vdims=[('y', 'Y')])
+
+    def init_grid_data(self):
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = [[0, 1], [2, 3], [4, 5]]
-        self.dataset_grid = Dataset((self.grid_xs, self.grid_ys,
-                                     self.grid_zs), kdims=['x', 'y'],
-                                    vdims=['z'])
-        self.dataset_grid_alias = Dataset((self.grid_xs, self.grid_ys,
-                                           self.grid_zs), kdims=[('x', 'X'), ('y', 'Y')],
-                                          vdims=[('z', 'Z')])
-        self.dataset_grid_inv = Dataset((self.grid_xs[::-1], self.grid_ys[::-1],
+        self.dataset_grid = self.eltype((self.grid_xs, self.grid_ys,
                                          self.grid_zs), kdims=['x', 'y'],
                                         vdims=['z'])
+        self.dataset_grid_alias = self.eltype((self.grid_xs, self.grid_ys,
+                                               self.grid_zs), kdims=[('x', 'X'), ('y', 'Y')],
+                                              vdims=[('z', 'Z')])
+        self.dataset_grid_inv = self.eltype((self.grid_xs[::-1], self.grid_ys[::-1],
+                                             self.grid_zs), kdims=['x', 'y'],
+                                            vdims=['z'])
 
     def test_canonical_vdim(self):
         x = np.array([ 0.  ,  0.75,  1.5 ])
@@ -736,6 +738,18 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(self.dataset_grid_inv.dimension_values(2, flat=False),
                          expanded_zs)
 
+
+
+class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
+
+    def setUp(self):
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['grid']
+        self.eltype = Dataset
+        self.data_instance_type = dict
+        self.init_grid_data()
+        self.init_column_data()
+
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         exception = "None of the available storage backends "\
@@ -772,6 +786,35 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
             Dataset(NdElement(zip(self.xs, self.xs_2),
                               kdims=['x'], vdims=['x2']))
 
+    def test_dataset_sort_vdim_hm(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.dataset_hm.sort('y')
+
+    def test_dataset_sort_vdim_hm_alias(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.dataset_hm.sort('y')
+
+    def test_dataset_groupby(self):
+        self.assertEqual(self.dataset_hm.groupby('x').keys(), list(self.xs))
+
+    def test_dataset_add_dimensions_value_hm(self):
+        with self.assertRaisesRegexp(Exception, 'Cannot add key dimension to a dense representation.'):
+            self.dataset_hm.add_dimension('z', 1, 0)
+
+    def test_dataset_add_dimensions_values_hm(self):
+        table =  self.dataset_hm.add_dimension('z', 1, range(1,12), vdim=True)
+        self.assertEqual(table.vdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_dataset_add_dimensions_values_hm_alias(self):
+        table =  self.dataset_hm.add_dimension(('z', 'Z'), 1, range(1,12), vdim=True)
+        self.assertEqual(table.vdims[1], 'Z')
+        self.compare_arrays(table.dimension_values('Z'), np.array(list(range(1,12))))
+
     def test_dataset_2D_aggregate_partial_hm(self):
         array = np.random.rand(11, 11)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
@@ -803,35 +846,6 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                          np.mean(array))
         self.assertEqual(np.array(dataset.reduce(['X', 'Y'], np.mean)),
                          np.mean(array))
-
-    def test_dataset_add_dimensions_value_hm(self):
-        with self.assertRaisesRegexp(Exception, 'Cannot add key dimension to a dense representation.'):
-            self.dataset_hm.add_dimension('z', 1, 0)
-
-    def test_dataset_add_dimensions_values_hm(self):
-        table =  self.dataset_hm.add_dimension('z', 1, range(1,12), vdim=True)
-        self.assertEqual(table.vdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
-
-    def test_dataset_add_dimensions_values_hm_alias(self):
-        table =  self.dataset_hm.add_dimension(('z', 'Z'), 1, range(1,12), vdim=True)
-        self.assertEqual(table.vdims[1], 'Z')
-        self.compare_arrays(table.dimension_values('Z'), np.array(list(range(1,12))))
-
-    def test_dataset_sort_vdim_hm(self):
-        exception = ('Compressed format cannot be sorted, either instantiate '
-                     'in the desired order or use the expanded format.')
-        with self.assertRaisesRegexp(Exception, exception):
-            self.dataset_hm.sort('y')
-
-    def test_dataset_sort_vdim_hm_alias(self):
-        exception = ('Compressed format cannot be sorted, either instantiate '
-                     'in the desired order or use the expanded format.')
-        with self.assertRaisesRegexp(Exception, exception):
-            self.dataset_hm.sort('y')
-
-    def test_dataset_groupby(self):
-        self.assertEqual(self.dataset_hm.groupby('x').keys(), list(self.xs))
 
     def test_dataset_groupby_dynamic(self):
         array = np.random.rand(11, 11)
@@ -905,8 +919,10 @@ class IrisDatasetTest(GridDatasetTest):
         import iris
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['cube']
+        self.eltype = Dataset
         self.data_instance_type = iris.cube.Cube
-        self.init_data()
+        self.init_column_data()
+        self.init_grid_data()
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -963,8 +979,10 @@ class XArrayDatasetTest(GridDatasetTest):
         import xarray
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['xarray']
+        self.eltype = Dataset
         self.data_instance_type = xarray.Dataset
-        self.init_data()
+        self.init_column_data()
+        self.init_grid_data()
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -981,3 +999,16 @@ class XArrayDatasetTest(GridDatasetTest):
 
     def test_dataset_sample_hm_alias(self):
         raise SkipTest("Not supported")
+
+
+class RasterDatasetTest(GridTests, ComparisonTestCase):
+    """
+    Tests for Iris interface
+    """
+
+    def setUp(self):
+        self.restore_datatype = Dataset.datatype
+        self.eltype = Image
+        Dataset.datatype = ['image']
+        self.data_instance_type = dict
+        self.init_grid_data()
