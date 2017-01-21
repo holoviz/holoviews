@@ -49,6 +49,9 @@ class ImageInterface(GridInterface):
     def validate(cls, dataset):
         pass
 
+    @classmethod
+    def redim(cls, dataset, dimensions):
+        return dataset.data
 
     @classmethod
     def range(cls, obj, dim):
@@ -102,7 +105,7 @@ class ImageInterface(GridInterface):
         """
         selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
                      for k, sel in selection.items()}
-        coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
+        coords = tuple(selection[kd.alias] if kd.alias in selection else slice(None)
                        for kd in dataset.kdims)
         if not any([isinstance(el, slice) for el in coords]):
             data = dataset.data[dataset.sheet2matrixidx(*coords)]
@@ -137,11 +140,11 @@ class ImageInterface(GridInterface):
     @classmethod
     def length(cls, dataset):
         return np.product(dataset.data.shape)
-    
+
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+        kdims = [kd.alias if isinstance(kd, Dimension) else kd for kd in kdims]
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
         
@@ -150,7 +153,7 @@ class ImageInterface(GridInterface):
             return data
         elif len(axes) == 1:
             return {kdims[0]: cls.values(dataset, axes[0], expanded=False),
-                    dataset.vdims[0].name: data}
+                    dataset.vdims[0].alias: data}
 
 
 Interface.register(ImageInterface)
