@@ -344,7 +344,7 @@ class Dataset(Element):
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
-            raise Exception("%r is not an available value dimension'" % slices[self.ndims])
+            raise Exception("%r is not an available value dimension" % slices[self.ndims])
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)

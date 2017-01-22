@@ -429,7 +429,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         if data is None: data = np.array([[0]])
         Dataset.__init__(self, data, extents=extents, bounds=None, **params)
 
-        (dim1, dim2) = self.shape[1], self.shape[0]
+        (dim2, dim1) = self.interface.shape(self)[:2]
         l, r = self.range(0)
         b, t = self.range(1)
         if self.bounds is not None:
@@ -438,9 +438,9 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             bounds = BoundingBox()
         if bounds is None:
             xvals = self.dimension_values(0, False)
-            l, r = util.bound_range(xvals, xdensity)
+            l, r, xdensity = util.bound_range(xvals, xdensity)
             yvals = self.dimension_values(0, False)
-            b, t = util.bound_range(yvals, ydensity)
+            b, t, ydensity = util.bound_range(yvals, ydensity)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
@@ -478,7 +478,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             return data
         else:
             return self.clone(data, xdensity=self.xdensity,
-                              ydensity=self.ydensity, bounds=None, **kwargs)
+                              ydensity=self.ydensity, **kwargs)
 
 
     def _coord2matrix(self, coord):

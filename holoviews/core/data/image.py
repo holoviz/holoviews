@@ -32,18 +32,24 @@ class ImageInterface(GridInterface):
         if isinstance(data, tuple):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
-            l, r = util.bound_range(np.asarray(data[kdims[0].alias]), None)
-            b, t = util.bound_range(np.asarray(data[kdims[1].alias]), None)
+            l, r, xdensity = util.bound_range(np.asarray(data[kdims[0].alias]), None)
+            b, t, ydensity = util.bound_range(np.asarray(data[kdims[1].alias]), None)
+            kwargs['xdensity'] = xdensity
+            kwargs['ydensity'] = ydensity
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
                 data = np.asarray(data[vdims[0].alias])
             else:
                 data = np.dstack([data[vd.alias] for vd in vdims])
-        if not isinstance(data, np.ndarray) or data.ndim != 2:
+        if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
 
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
+
+    @classmethod
+    def shape(cls, dataset):
+        return dataset.data.shape
 
     @classmethod
     def validate(cls, dataset):
@@ -52,6 +58,10 @@ class ImageInterface(GridInterface):
     @classmethod
     def redim(cls, dataset, dimensions):
         return dataset.data
+
+    @classmethod
+    def reindex(cls, columns, kdims=None, vdims=None):
+        return columns.data
 
     @classmethod
     def range(cls, obj, dim):
@@ -108,7 +118,7 @@ class ImageInterface(GridInterface):
         coords = tuple(selection[kd.alias] if kd.alias in selection else slice(None)
                        for kd in dataset.kdims)
         if not any([isinstance(el, slice) for el in coords]):
-            data = dataset.data[dataset.sheet2matrixidx(*coords)]
+            return dataset.data[dataset.sheet2matrixidx(*coords)], {}
         xidx, yidx = coords
         l, b, r, t = dataset.bounds.lbrt()
         xunit = (1./dataset.xdensity)

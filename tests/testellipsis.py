@@ -28,7 +28,7 @@ class TestEllipsisCharts(ComparisonTestCase):
         try:
             hv.Scatter(range(10))[...,'Non-existent']
         except Exception as e:
-            if str(e) != "'Non-existent' is not an available value dimension'":
+            if str(e) != "'Non-existent' is not an available value dimension":
                 raise AssertionError("Incorrect exception raised.")
 
     def test_points_ellipsis_slice_y(self):
@@ -107,7 +107,7 @@ class TestEllipsisRaster(ComparisonTestCase):
         try:
             hv.Image(data)[...,'Non-existent']
         except Exception as e:
-            if str(e) != repr("'z' is the only selectable value dimension"):
+            if str(e) != "'Non-existent' is not an available value dimension":
                 raise AssertionError("Unexpected exception.")
 
     def test_rgb_ellipsis_slice_value(self):
