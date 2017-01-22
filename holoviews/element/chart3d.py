@@ -32,17 +32,6 @@ class Surface(Image, Element3D):
         Image.__init__(self, data, extents=extents, **params)
 
 
-    def range(self, dim, data_range=True):
-        dim_idx = self.get_dimension_index(dim)
-        if dim_idx in [0, 1]:
-            l, b, r, t = self.bounds.lbrt()
-            if dim_idx == 0:
-                return (l, r)
-            elif dim_idx == 1:
-                return (b, t)
-        return super(Image, self).range(dim, data_range=data_range)
-
-
 
 class Trisurface(Element3D, Scatter):
     """
