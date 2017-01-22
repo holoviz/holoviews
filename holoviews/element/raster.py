@@ -113,11 +113,12 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
         if np.isscalar(data):
             return data
         else:
-            return self.clone(data, xdensity=self.xdensity,
-                              ydensity=self.ydensity, **kwargs)
+            return self.clone(data, **dict(dict(xdensity=self.xdensity,
+                                                ydensity=self.ydensity),
+                                           **kwargs))
 
 
-    def sample(self, samples=[], **kwargs):
+    def sample(self, samples=[], closest=True, **kwargs):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
@@ -132,7 +133,24 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
             return Curve(self.select(**kwargs).columns(),
                          kdims=kdims, vdims=self.vdims)
         elif kwargs:
-            return self.clone(self.select(**kwargs).columns(), new_type=Dataset)
+            selected = self.select(**kwargs)
+            if isinstance(selected, Dataset):
+                return self.clone(selected.columns(), new_type=Dataset)
+            elif np.isscalar(selected):
+                data = [kwargs.get(d.name, kwargs.get(d.alias)) for d in self.dimensions()]
+                data[self.ndims] = selected
+                return self.clone([tuple(data)], new_type=Dataset)
+        lens = {len(util.wrap_tuple(s)) for s in samples}
+        if len(lens) > 1:
+            raise IndexError('Sample coordinates must all be of the same length.')
+        if closest:
+            length = list(lens)[0]
+            if length == 1:
+                samples = self.closest(**{self.kdims[0].alias: samples})
+                if np.isscalar(samples): samples = [samples]
+            else:
+                samples = self.closest(samples)
+        samples = [util.wrap_tuple(s) for s in samples]
         return self.clone(self.interface.sample(self, samples), new_type=Dataset)
 
 
@@ -168,7 +186,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
                 if np.isscalar(v):
                     coords.append((0, v) if idx else (v, 0))
                 else:
-                    if isinstance(coords, tuple):
+                    if isinstance(v, list):
                         coords = [(0, c) if idx else (c, 0) for c in v]
                     if len(coords) not in [0, len(v)]:
                         raise ValueError("Length of samples must match")

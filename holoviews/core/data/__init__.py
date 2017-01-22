@@ -189,6 +189,7 @@ class Dataset(Element):
 
         super(Dataset, self).__setstate__(state)
 
+
     def closest(self, coords):
         """
         Given single or multiple samples along the first key dimension
@@ -198,7 +199,6 @@ class Dataset(Element):
             NotImplementedError("Closest method currently only "
                                 "implemented for 1D Elements")
 
-        if not isinstance(coords, list): coords = [coords]
         xs = self.dimension_values(0)
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
         return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
@@ -356,13 +356,23 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[]):
+    def sample(self, samples=[], closest=True):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
-        just the selected samples.
+        just the selected samples. Alternatively may supply kwargs
+        to sample a co-ordinate on an object.
         """
-        return self.clone(self.interface.sample(self, samples))
+        samples = [util.wrap_tuple(s) for s in samples]
+        if len({len(s) for s in samples}) > 1:
+            raise IndexError('Sample coordinates must all be of the same length.')
+
+        if closest:
+            try:
+                samples = self.closest(samples)
+            except NotImplementedError:
+                pass
+        return self.clone(self.interface.sample(self, samples), new_type=Dataset)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):

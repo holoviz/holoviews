@@ -127,10 +127,14 @@ class ImageInterface(GridInterface):
                        for kd in dataset.kdims)
         if not any([isinstance(el, slice) for el in coords]):
             return dataset.data[dataset.sheet2matrixidx(*coords)], {}
+
+        # Compute new bounds
+        ys, xs = dataset.data.shape[:2]
         xidx, yidx = coords
         l, b, r, t = dataset.bounds.lbrt()
-        xunit = (1./dataset.xdensity)
-        yunit = (1./dataset.ydensity)    
+        xdensity, ydensity = dataset.xdensity, dataset.ydensity
+        xunit = (1./xdensity)
+        yunit = (1./ydensity)
         if isinstance(xidx, slice):
             l = l if xidx.start is None else max(l, xidx.start)
             r = r if xidx.stop is None else min(r, xidx.stop)
@@ -138,22 +142,64 @@ class ImageInterface(GridInterface):
             b = b if yidx.start is None else max(b, yidx.start)
             t = t if yidx.stop is None else min(t, yidx.stop)
         bounds = BoundingBox(points=((l, b), (r, t)))
+
+        # Apply new bounds
         slc = Slice(bounds, dataset)
         data = slc.submatrix(dataset.data)
+
+        # Apply scalar and list indices
+        kwargs = {}
         l, b, r, t = slc.compute_bounds(dataset).lbrt()
         if not isinstance(xidx, slice):
-            xc, _ = dataset.closest_cell_center(xidx, b)
-            l, r = xc-xunit/2, xc+xunit/2
-            _, x = dataset.sheet2matrixidx(xidx, b)
-            data = data[:, x][:, np.newaxis]
+            if not isinstance(xidx, (list, set)): xidx = [xidx]
+            if len(xidx) > 1:
+                xdensity = xdensity*(float(len(xidx))/xs)
+                kwargs['xdensity'] = xdensity
+            idxs = []
+            ls, rs = [], []
+            for idx in xidx:
+                xc, _ = dataset.closest_cell_center(idx, b)
+                ls.append(xc-xunit/2)
+                rs.append(xc+xunit/2)
+                _, x = dataset.sheet2matrixidx(idx, b)
+                idxs.append(x)
+            l, r = np.min(ls), np.max(rs)
+            data = data[:, np.array(idxs)]
         elif not isinstance(yidx, slice):
-            _, yc = dataset.closest_cell_center(l, yidx)
-            b, t = yc-yunit/2, yc+yunit/2
-            y, _ = dataset.sheet2matrixidx(l, yidx)
-            data = data[y, :][np.newaxis, :]
-        bounds = BoundingBox(points=((l, b), (r, t)))
-        return data, {'bounds': bounds}
+            if not isinstance(yidx, (set, list)): yidx = [yidx]
+            if len(yidx) > 1:
+                ydensity = ydensity*(float(len(yidx))/ys)
+                kwargs['ydensity'] = ydensity
+            idxs = []
+            bs, ts = [], []
+            for idx in yidx:
+                _, yc = dataset.closest_cell_center(l, idx)
+                bs.append(yc-yunit/2)
+                ts.append(yc+yunit/2)
+                y, _ = dataset.sheet2matrixidx(l, idx)
+                idxs.append(y)
+            b, t = np.min(bs), np.max(ts)
+            data = data[np.array(idxs), :]
+        kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
+        return data, kwargs
 
+
+    @classmethod
+    def sample(cls, dataset, samples=[]):
+        """
+        Sample the Raster along one or both of its dimensions,
+        returning a reduced dimensionality type, which is either
+        a ItemTable, Curve or Scatter. If two dimension samples
+        and a new_xaxis is provided the sample will be the value
+        of the sampled unit indexed by the value in the new_xaxis
+        tuple.
+        """
+        if len(samples[0]) == 1:
+            return dataset.select(**{dataset.kdims[0].alias:
+                                     [s[0] for s in samples]}).columns()
+        else:
+            return [c+(dataset.data[dataset._coord2matrix(c)],)
+                    for c in samples]
 
     @classmethod
     def length(cls, dataset):
