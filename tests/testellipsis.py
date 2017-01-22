@@ -87,14 +87,15 @@ class TestEllipsisRaster(ComparisonTestCase):
     def test_raster_ellipsis_slice_value(self):
         data = np.random.rand(10,10)
         sliced = hv.Raster(data)[...,'z']
-        self.assertEqual(sliced.data, data)
+        self.assertEqual(sliced.data, np.flipud(data))
 
     def test_raster_ellipsis_slice_value_missing(self):
         data = np.random.rand(10,10)
         try:
             hv.Raster(data)[...,'Non-existent']
         except Exception as e:
-            if str(e) != repr("'z' is the only selectable value dimension"):
+            print(e)
+            if str(e) != "'Non-existent' is not an available value dimension":
                 raise AssertionError("Unexpected exception.")
 
     def test_image_ellipsis_slice_value(self):

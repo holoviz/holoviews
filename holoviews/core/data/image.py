@@ -33,13 +33,18 @@ class ImageInterface(GridInterface):
         if isinstance(data, tuple):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
-            l, r, xdensity = util.bound_range(np.asarray(data[kdims[0].alias]), None)
-            b, t, ydensity = util.bound_range(np.asarray(data[kdims[1].alias]), None)
+            xs, ys = np.asarray(data[kdims[0].alias]), np.asarray(data[kdims[1].alias])
+            l, r, xdensity, invertx = util.bound_range(xs, None)
+            b, t, ydensity, inverty = util.bound_range(ys, None)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
-                data = np.asarray(data[vdims[0].alias])
+                data = np.flipud(np.asarray(data[vdims[0].alias]))
             else:
-                data = np.dstack([data[vd.alias] for vd in vdims])
+                data = np.dstack([np.flipud(data[vd.alias]) for vd in vdims])
+            if invertx:
+                data = data[:, ::-1]
+            if inverty:
+                data = data[::-1, :]
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
 
@@ -103,8 +108,10 @@ class ImageInterface(GridInterface):
             # than expanded column format, reorient before expanding
             if dataset.data.ndim > 2:
                 data = dataset.data[:, :, dim_idx-dataset.ndims]
+            else:
+                data = dataset.data
             data = np.flipud(data)
-            return data.flatten() if flat else data
+            return data.T.flatten() if flat else data
         else:
             return None
 

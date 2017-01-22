@@ -1219,11 +1219,15 @@ def bound_range(vals, density, TOL=10e-9):
     tolerance.
     """
     low, high = vals.min(), vals.max()
+    invert = False
+    diff = np.diff(vals)
+    if diff.max() < 0:
+        invert = True
+        diff = -diff
     if not density:
-        diff = np.diff(vals)
         unit = np.unique(np.round(diff/TOL).astype(int))*TOL
         if len(unit) > 1:
             raise ValueError('Data is not sampled on a grid.')
         density = 1./unit[0]
     halfd = 0.5/density
-    return low-halfd, high+halfd, density
+    return low-halfd, high+halfd, density, invert

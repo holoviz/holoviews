@@ -67,9 +67,9 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
             bounds = BoundingBox()
         if bounds is None:
             xvals = self.dimension_values(0, False)
-            l, r, xdensity = util.bound_range(xvals, xdensity)
+            l, r, xdensity, _ = util.bound_range(xvals, xdensity)
             yvals = self.dimension_values(0, False)
-            b, t, ydensity = util.bound_range(yvals, ydensity)
+            b, t, ydensity, _ = util.bound_range(yvals, ydensity)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
@@ -375,7 +375,7 @@ class HSV(RGB):
         data = [self.dimension_values(d, flat=False)
                 for d in self.vdims]
 
-        hsv = self.hsv_to_rgb(*data[:2])
+        hsv = self.hsv_to_rgb(*data[:3])
         if len(self.vdims) == 4:
             hsv += (data[3],)
 
