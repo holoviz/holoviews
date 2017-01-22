@@ -39,10 +39,10 @@ class RasterPlot(ColorbarPlot):
             img = img.astype(np.int8)
 
         l, b, r, t = element.bounds.lbrt()
+        dh, dw = t-b, r-l
         if type(element) is Raster:
             b = t
 
-        dh, dw = t-b, r-l
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
             data = dict(image=[], x=[], y=[], dw=[], dh=[])
