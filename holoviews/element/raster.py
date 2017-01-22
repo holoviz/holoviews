@@ -6,9 +6,9 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import ArrayInterface, DictInterface
-from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Dataset)
+from ..core.data import ArrayInterface, NdElementInterface, DictInterface
+from ..core import (Dimension, NdMapping, Element2D, HoloMap,
+                    Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
@@ -479,6 +479,12 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         else:
             return self.clone(data, xdensity=self.xdensity,
                               ydensity=self.ydensity, **kwargs)
+
+
+    def groupby(self, dimensions=[], container_type=HoloMap, group_type=Dataset,
+                dynamic=False, **kwargs):
+        return super(Image, self).groupby(dimensions, container_type, group_type,
+                                          dynamic, **kwargs)
 
 
     def sample(self, samples=[], **kwargs):
