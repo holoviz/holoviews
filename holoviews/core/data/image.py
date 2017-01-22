@@ -2,7 +2,8 @@ import numpy as np
 
 from ..boundingregion import BoundingRegion, BoundingBox
 from ..dimension import Dimension
-from ..ndmapping import OrderedDict
+from ..element import Element
+from ..ndmapping import OrderedDict, NdMapping, item_check
 from ..sheetcoords import SheetCoordinateSystem, Slice
 from .. import util
 from .grid import GridInterface
@@ -150,6 +151,45 @@ class ImageInterface(GridInterface):
     @classmethod
     def length(cls, dataset):
         return np.product(dataset.data.shape)
+
+
+    @classmethod
+    def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
+        # Get dimensions information
+        dimensions = [dataset.get_dimension(d) for d in dim_names]
+        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(dataset))
+            group_kwargs['kdims'] = kdims
+        group_kwargs.update(kwargs)
+
+        if len(dimensions) == 1:
+            didx = dataset.get_dimension_index(dimensions[0])
+            coords = dataset.dimension_values(dimensions[0], False)
+            xvals = dataset.dimension_values(abs(didx-1), False)
+            samples = [(i, slice(None)) if didx else (slice(None), i)
+                       for i in range(dataset.data.shape[abs(didx-1)])]
+            if didx:
+                samples = samples[::-1]
+                data = dataset.data
+            else:
+                data = dataset.data[::-1, :]
+            groups = [(c, group_type((xvals, data[s]), **group_kwargs))
+                       for s, c in zip(samples, coords)]
+        else:
+            data = zip(*[dataset.dimension_values(i) for i in range(len(dataset.dimensions()))])
+            groups = [(g[:dataset.ndims], group_type([g[dataset.ndims:]], **group_kwargs))
+                      for g in data]
+
+        if issubclass(container_type, NdMapping):
+            with item_check(False):
+                return container_type(groups, kdims=dimensions)
+        else:
+            return container_type(grouped_data)
 
 
     @classmethod
