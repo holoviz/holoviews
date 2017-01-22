@@ -52,8 +52,8 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
-        elif d.alias in overrides:
-            override = overrides[d.alias]
+        elif d.key in overrides:
+            override = overrides[d.key]
         else:
             override = None
 
@@ -149,7 +149,7 @@ class Dimension(param.Parameterized):
             alias, long_name = all_params['name']
             dimension_sanitizer.add_aliases(**{alias:long_name})
             all_params['name'] = long_name
-        self.alias = alias
+        self.key = alias
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -228,7 +228,7 @@ class Dimension(param.Parameterized):
         Compatibility for pickles before alias attribute was introduced.
         """
         super(Dimension, self).__setstate__(d)
-        self.alias = self.name
+        self.key = self.name
 
 
     def __str__(self):
@@ -677,7 +677,7 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [(dim.name if label == 'long' else dim.alias)
+        return [(dim.name if label == 'long' else dim.key)
                 if label else dim for dim in dims]
 
 
@@ -699,7 +699,7 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
-        name_map.update({dim.alias: dim for dim in all_dims})
+        name_map.update({dim.key: dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:

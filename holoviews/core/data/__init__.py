@@ -475,7 +475,7 @@ class Dataset(Element):
         kdims = replace_dimensions(self.kdims, dimensions)
         vdims = replace_dimensions(self.vdims, dimensions)
         zipped_dims = zip(self.kdims+self.vdims, kdims+vdims)
-        renames = {pk.alias: nk for pk, nk in zipped_dims if pk != nk}
+        renames = {pk.key: nk for pk, nk in zipped_dims if pk != nk}
         data = self.data
         if renames:
             data = self.interface.redim(self, renames)
