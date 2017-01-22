@@ -762,12 +762,12 @@ class HSV(RGB):
         """
         Conversion from HSV to RGB.
         """
-        hsv = self.hsv_to_rgb(self.data[:,:,0],
-                              self.data[:,:,1],
-                              self.data[:,:,2])
+        data = [self.dimension_values(d, flat=False)
+                for d in self.vdims]
+
+        hsv = self.hsv_to_rgb(*data[:2])
         if len(self.vdims) == 4:
-            hsv += (self.data[:,:,3],)
+            hsv += (data[3],)
 
         return RGB(np.dstack(hsv), bounds=self.bounds,
-                   group=self.group,
-                   label=self.label)
+                   group=self.group, label=self.label)

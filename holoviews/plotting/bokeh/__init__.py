@@ -53,7 +53,7 @@ associations = {Overlay: OverlayPlot,
                 VectorField: VectorFieldPlot,
 
                 # Rasters
-                Image: RasterPlot,
+                Image: ImagePlot,
                 GridImage: ImagePlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,

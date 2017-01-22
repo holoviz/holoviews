@@ -90,12 +90,12 @@ class RGBPlot(RasterPlot):
     _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges=None, empty=False):
-        data, mapping = super(RGBPlot, self).get_data(element, ranges, empty)
-        img = data['image'][0]
+        l, b, r, t = element.bounds.lbrt()
+        dh, dw = t-b, r-l
 
-        if empty:
-            data['image'] = []
-        elif img.ndim == 3:
+        img = np.dstack([element.dimension_values(d, flat=False).T
+                         for d in element.vdims])
+        if img.ndim == 3:
             if img.shape[2] == 3: # alpha channel not included
                 alpha = np.ones(img.shape[:2])
                 if img.dtype.name == 'uint8':
@@ -106,9 +106,14 @@ class RGBPlot(RasterPlot):
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
-            data['image'] = [img]
-        return data, mapping
 
+        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        if empty:
+            data = dict(image=[], x=[], y=[], dw=[], dh=[])
+        else:
+            data = dict(image=[img], x=[l],
+                        y=[b], dw=[dw], dh=[dh])
+        return (data, mapping)
 
     def _glyph_properties(self, plot, element, source, ranges):
         return ElementPlot._glyph_properties(self, plot, element,
