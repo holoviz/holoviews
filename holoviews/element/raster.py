@@ -481,6 +481,25 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
                               ydensity=self.ydensity, **kwargs)
 
 
+    def sample(self, samples=[], **kwargs):
+        """
+        Allows sampling of Dataset as an iterator of coordinates
+        matching the key dimensions, returning a new object containing
+        just the selected samples. Alternatively may supply kwargs
+        to sample a co-ordinate on an object.
+        """
+        if kwargs and samples:
+            raise Exception('Supply explicit list of samples or kwargs, not both.')
+        if len(kwargs) == 1 and self.ndims == 2 and self.interface.gridded:
+            dim, val = list(kwargs.items())[0]
+            kdims = [d for d in self.kdims if d != dim]
+            return Curve(self.select(**kwargs).columns(),
+                         kdims=kdims, vdims=self.vdims)
+        elif kwargs:
+            return self.clone(self.select(**kwargs).columns(), new_type=Dataset)
+        return self.clone(self.interface.sample(self, samples), new_type=Dataset)
+
+
     def _coord2matrix(self, coord):
         return self.sheet2matrixidx(*coord)
 
