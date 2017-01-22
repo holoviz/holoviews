@@ -35,8 +35,6 @@ class ImageInterface(GridInterface):
         if isinstance(data, dict):
             l, r, xdensity = util.bound_range(np.asarray(data[kdims[0].alias]), None)
             b, t, ydensity = util.bound_range(np.asarray(data[kdims[1].alias]), None)
-            kwargs['xdensity'] = xdensity
-            kwargs['ydensity'] = ydensity
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
                 data = np.asarray(data[vdims[0].alias])
@@ -45,7 +43,7 @@ class ImageInterface(GridInterface):
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
 
-        return data, {'kdims':kdims, 'vdims':vdims}, {}
+        return data, {'kdims':kdims, 'vdims':vdims}, kwargs
 
 
     @classmethod
@@ -100,13 +98,15 @@ class ImageInterface(GridInterface):
                 return values.flatten() if flat else values
             else:
                 return d2lin if dim_idx else d1lin
-        elif dim_idx == 2:
+        elif dataset.ndims <= dim_idx < len(dataset.dimensions()):
             # Raster arrays are stored with different orientation
             # than expanded column format, reorient before expanding
-            data = np.flipud(dataset.data)
+            if dataset.data.ndim > 2:
+                data = dataset.data[:, :, dim_idx-dataset.ndims]
+            data = np.flipud(data)
             return data.flatten() if flat else data
         else:
-            return None, None
+            return None
 
 
     @classmethod

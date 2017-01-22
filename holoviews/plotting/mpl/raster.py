@@ -59,16 +59,13 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, RGB):
             style.pop('cmap', None)
 
-        if isinstance(element, Image):
-            l, b, r, t = element.bounds.lbrt()
-        else:
-            l, b, r, t = element.extents
+        l, b, r, t = element.bounds.lbrt()
         if self.invert_yaxis and type(element) is Raster:
             b, t = t, b
 
         if isinstance(element, RGB):
             rgb = element.rgb
-            data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False).T)
+            data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False))
                               for d in rgb.vdims])
         else:
             data = np.flipud(element.dimension_values(2, flat=False))
@@ -154,14 +151,17 @@ class HeatMapPlot(RasterPlot):
 
 
     def get_data(self, element, ranges, style):
-        _, style, axis_kwargs = super(HeatMapPlot, self).get_data(element, ranges, style)
+        xticks, yticks = self._compute_ticks(element, ranges)
+
         data = np.flipud(element.gridded.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
         style['annotations'] = self._annotate_values(element.gridded)
-        return [data], style, axis_kwargs
+        vdim = element.vdims[0]
+        self._norm_kwargs(element, ranges, style, vdim)
+        return [data], style, {'xticks': xticks, 'yticks': yticks}
 
 
     def update_handles(self, key, axis, element, ranges, style):
