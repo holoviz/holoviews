@@ -36,7 +36,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
     specified.
     """
 
-    datatype = param.List(default=['image', 'grid', 'xarray'])
+    datatype = param.List(default=['image', 'grid', 'xarray', 'dataframe', 'dictionary'])
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
        The bounding region in sheet coordinates containing the data.""")
@@ -90,7 +90,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
     def _wrap_data(self, data, bounds):
         if isinstance(data, np.ndarray):
             coords = [np.arange(s) for s in data.shape[::-1]]
-            data = tuple(coords + [data])
+            data = tuple(coords + [np.flipud(data)])
             return data, None
         return data, bounds
 
@@ -204,6 +204,20 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
             return getter(self.closest_cell_center(*coords))
         else:
             return [getter(self.closest_cell_center(*el)) for el in coords]
+
+
+    def table(self, datatype=None):
+        """
+        Converts the data Element to a Table, optionally may
+        specify a supported data type. The default data types
+        are 'numpy' (for homogeneous data), 'dataframe', and
+        'dictionary'.
+        """
+        if datatype and not isinstance(datatype, list):
+            datatype = [datatype]
+        from ..element import Table
+        return self.clone(self.columns(), new_type=Table,
+                          **(dict(datatype=datatype) if datatype else {}))
 
 
 class Image(Raster):
