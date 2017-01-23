@@ -354,11 +354,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                              kdims=self.kdims[:1], vdims=self.vdims)
         self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
 
-    def test_dataset_aggregate_ht(self):
-        aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
-                             kdims=self.kdims[:1], vdims=self.vdims)
-        self.compare_dataset(self.alias_table.aggregate('Gender', np.mean), aggregated)
-
     def test_dataset_aggregate_ht_alias(self):
         aggregated = Dataset({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]},
                              kdims=self.alias_kdims[:1], vdims=self.alias_vdims)

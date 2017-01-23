@@ -87,7 +87,7 @@ class Interface(param.Parameterized):
 
     @classmethod
     def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label='key')
+        not_found = [d for d in dataset.dimensions(label='name')
                      if d not in dataset.data]
         if not_found:
             raise ValueError("Supplied data does not contain specified "

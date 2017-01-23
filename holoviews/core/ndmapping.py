@@ -350,10 +350,10 @@ class MultiDimensionalMapping(Dimensioned):
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         "Returns the values along the specified dimension."
-        dimension = self.get_dimension(dimension, strict=True).name
+        dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
-        if dimension in self.dimensions(label=True):
+        if dimension in self.dimensions():
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)

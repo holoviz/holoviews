@@ -52,8 +52,8 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
-        elif d.key in overrides:
-            override = overrides[d.key]
+        elif d.label in overrides:
+            override = overrides[d.label]
         else:
             override = None
 
@@ -144,12 +144,13 @@ class Dimension(param.Parameterized):
             existing_params = {'name': name}
 
         all_params = dict(existing_params, **params)
-        alias = all_params['name']
-        if isinstance(all_params['name'], tuple):
-            alias, long_name = all_params['name']
+        name = all_params['name']
+        long_name = name
+        if isinstance(name, tuple):
+            alias, long_name = name
             dimension_sanitizer.add_aliases(**{alias:long_name})
-            all_params['name'] = long_name
-        self.key = alias
+            all_params['name'] = alias
+        self.label = long_name
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -173,7 +174,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return safe_unicode(self.name) + safe_unicode(unit)
+        return safe_unicode(self.label) + safe_unicode(unit)
 
 
     def pprint_value(self, value):
@@ -210,7 +211,7 @@ class Dimension(param.Parameterized):
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return title_format.format(name=self.name, val=value, unit=unit)
+        return title_format.format(name=self.label, val=value, unit=unit)
 
 
     def __hash__(self):
@@ -228,7 +229,7 @@ class Dimension(param.Parameterized):
         Compatibility for pickles before alias attribute was introduced.
         """
         super(Dimension, self).__setstate__(d)
-        self.key = self.name
+        self.label = self.name
 
 
     def __str__(self):
@@ -237,8 +238,8 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, dimension_sanitizer(self.name)]
-        return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
+        dim_matches = [self.name, self.label, dimension_sanitizer(self.label), dimension_sanitizer(self.name)]
+        return other.label in dim_matches if isinstance(other, Dimension) else other in dim_matches
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
@@ -657,7 +658,7 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
-        label = 'long' if label in [True, 'long'] else ('short' if label else None)
+        label = 'long' if label in [True, 'label'] else ('short' if label else None)
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
@@ -677,7 +678,7 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [(dim.name if label == 'long' else dim.key)
+        return [(dim.label if label == 'long' else dim.name)
                 if label else dim for dim in dims]
 
 
@@ -699,7 +700,8 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
-        name_map.update({dim.key: dim for dim in all_dims})
+        name_map.update({dim.label: dim for dim in all_dims})
+        name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:
@@ -810,18 +812,16 @@ class Dimensioned(LabelledData):
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
             val_dim = ['value'] if selection.vdims else []
-            key_dims = selection.dimensions('key', label=True) + val_dim
+            key_dims = selection.dimensions('key') + val_dim
             if any(kw in key_dims for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
+            print selection
             for k, v in selection.items():
                 val_dim = ['value'] if v.vdims else []
-                dims = list(zip(*[(dimension_sanitizer(kd), kd)
-                                  for kd in v.dimensions('key', label=True)]))
-                kdims, skdims = dims if dims else ([], [])
-                key_dims = list(kdims) + list(skdims) + val_dim
+                key_dims = self.kdims + val_dim
                 if any(kw in key_dims for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
                 else:
