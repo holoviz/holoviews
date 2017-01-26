@@ -73,6 +73,15 @@ class HLine(Annotation):
     def __init__(self, y, **params):
         super(HLine, self).__init__(y, **params)
 
+    def dimension_values(self, dimension):
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return []
+        elif index == 1:
+            return [self.data]
+        else:
+            return super(HLine, self).dimension_values(dimension)
+
 
 
 class Spline(Annotation):
