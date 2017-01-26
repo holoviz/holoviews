@@ -126,7 +126,7 @@ class Element(ViewableElement, Composable, Overlayable):
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
             reduce_map = [(d, function) for d in self.kdims]
-        reduced = [(self.get_dimension(d).name, fn)
+        reduced = [(self.get_dimension(d, strict=True).name, fn)
                    for d, fn in reduce_map]
         grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(reduced, lambda x: x[1])]
         return grouped[0]
@@ -175,7 +175,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def array(self, dimensions=[]):
         if dimensions:
-            dims = [self.get_dimension(d) for d in dimensions]
+            dims = [self.get_dimension(d, strict=True) for d in dimensions]
         else:
             dims = [d for d in self.kdims + self.vdims if d != 'Index']
         columns, types = [], []
@@ -319,8 +319,8 @@ class NdElement(NdMapping, Tabular):
         elif kdims is None:
             kdims = [d for d in self.dimensions() if d not in vdims]
         if 'Index' not in kdims: kdims = ['Index'] + kdims
-        key_dims = [self.get_dimension(k) for k in kdims]
-        val_dims = [self.get_dimension(v) for v in vdims]
+        key_dims = [self.get_dimension(k, strict=True) for k in kdims]
+        val_dims = [self.get_dimension(v, strict=True) for v in vdims]
 
         kidxs = [(i, k in self.kdims, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]

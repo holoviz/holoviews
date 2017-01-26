@@ -33,7 +33,7 @@ class Surface(Image, Element3D):
 
 
     def range(self, dim, data_range=True):
-        dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
+        dim_idx = self.get_dimension_index(dim)
         if dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
             if dim_idx == 0:

@@ -29,7 +29,7 @@ class DictInterface(Interface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim, strict=True).name
         return dataset.data[name].dtype.type
 
     @classmethod
@@ -235,7 +235,7 @@ class DictInterface(Interface):
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [dataset.get_dimension(d).name for d in kdims]
+        kdims = [dataset.get_dimension(d, strict=True).name for d in kdims]
         vdims = dataset.dimensions('value', label='name')
         groups = cls.groupby(dataset, kdims, list, OrderedDict)
         aggregated = OrderedDict([(k, []) for k in kdims+vdims])

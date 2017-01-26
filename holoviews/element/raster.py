@@ -336,12 +336,12 @@ class QuadMesh(Raster):
                      for i in [1, 0])
 
 
-    def range(self, dimension):
+    def range(self, dimension, data_range=True):
         idx = self.get_dimension_index(dimension)
-        if idx in [0, 1]:
+        if data_range and idx in [0, 1]:
             data = self.data[idx]
             return np.min(data), np.max(data)
-        elif idx == 2:
+        elif data_range and idx == 2:
             data = self.data[idx]
             return np.nanmin(data), np.nanmax(data)
         super(QuadMesh, self).range(dimension)

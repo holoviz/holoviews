@@ -21,13 +21,13 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim, strict=True).name
         return dataset.data[name].dtype.type
 
 
     @classmethod
     def dtype(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim, strict=True).name
         return dataset.data[name].dtype
 
 
@@ -82,7 +82,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension).name
+        dim = dataset.get_dimension(dimension, strict=True).name
         if dim in dataset.data:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
@@ -95,7 +95,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        index_dims = [dataset.get_dimension(d) for d in dimensions]
+        index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims
                         if kdim not in index_dims]
 
@@ -128,7 +128,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
-        dim = dataset.get_dimension(dim).name
+        dim = dataset.get_dimension(dim, strict=True).name
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = np.atleast_1d(dataset.data[dim].data)
@@ -139,7 +139,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         if dim in dataset.vdims:
             coord_dims = dataset.data[dim.name].dims
@@ -160,7 +160,7 @@ class XArrayInterface(GridInterface):
         elif not dimensions:
             return dataset.data.apply(function)
         else:
-            dim = dataset.get_dimension(dimensions[0])
+            dim = dataset.get_dimension(dimensions[0], strict=True)
             return dataset.data.groupby(dim.name).apply(function)
 
 
@@ -200,7 +200,7 @@ class XArrayInterface(GridInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
         for k, v in selection.items():
-            dim = dataset.get_dimension(k).name
+            dim = dataset.get_dimension(k, strict=True).name
             if isinstance(v, slice):
                 v = (v.start, v.stop)
             if isinstance(v, set):
@@ -233,7 +233,8 @@ class XArrayInterface(GridInterface):
     
     @classmethod
     def dframe(cls, dataset, dimensions):
-        dimensions = [dataset.get_dimension(d).name for d in dimensions]
+        dimensions = [dataset.get_dimension(d, strict=True).name
+                      for d in dimensions]
         if dimensions:
             return dataset.reindex(columns=dimensions)
         else:

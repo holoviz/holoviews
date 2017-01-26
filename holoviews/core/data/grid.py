@@ -108,7 +108,7 @@ class GridInterface(DictInterface):
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim.name]
@@ -162,7 +162,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims:
             data = dataset.data.get(dim.name)
             data = cls.canonicalize(dataset, data)
@@ -177,7 +177,7 @@ class GridInterface(DictInterface):
     @classmethod
     def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
         # Get dimensions information
-        dimensions = [dataset.get_dimension(d) for d in dim_names]
+        dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
 
         # Update the kwargs appropriately for Element group types

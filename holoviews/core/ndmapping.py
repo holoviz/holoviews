@@ -282,7 +282,7 @@ class MultiDimensionalMapping(Dimensioned):
             return self
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
-        dimensions = [self.get_dimension(d) for d in dimensions]
+        dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         sort = not self._sorted
         with item_check(False):
             return util.ndmapping_groupby(self, dimensions, container_type,

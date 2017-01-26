@@ -121,7 +121,7 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
             return util.expand_grid_coords(dataset, dim.name)
         data = dataset.data.coords(dim.name)[0].points
@@ -135,7 +135,7 @@ class CubeInterface(GridInterface):
         """
         Returns an array of the values along the supplied dimension.
         """
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims:
             coord_names = [c.name() for c in dataset.data.dim_coords]
             data = dataset.data.copy().data
@@ -174,7 +174,7 @@ class CubeInterface(GridInterface):
         break up a high-dimensional dataset into smaller viewable chunks.
         """
         if not isinstance(dims, list): dims = [dims]
-        dims = [dataset.get_dimension(d) for d in dims]
+        dims = [dataset.get_dimension(d, strict=True) for d in dims]
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
 
@@ -199,7 +199,7 @@ class CubeInterface(GridInterface):
         """
         Computes the range along a particular dimension.
         """
-        dim = dataset.get_dimension(dimension)
+        dim = dataset.get_dimension(dimension, strict=True)
         values = dataset.dimension_values(dim.name, False)
         return (np.nanmin(values), np.nanmax(values))
 
@@ -273,7 +273,7 @@ class CubeInterface(GridInterface):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
                 constraint = iris.util.between(*constraint, rh_inclusive=False)
-            dim = dataset.get_dimension(dim)
+            dim = dataset.get_dimension(dim, strict=True)
             constraint_kwargs[dim.name] = constraint
         return iris.Constraint(**constraint_kwargs)
 

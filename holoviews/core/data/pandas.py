@@ -26,7 +26,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def dimension_type(cls, columns, dim):
-        name = columns.get_dimension(dim).name
+        name = columns.get_dimension(dim, strict=True).name
         idx = list(columns.data.columns).index(name)
         return columns.data.dtypes[idx].type
 
@@ -91,7 +91,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, columns, dimension):
-        column = columns.data[columns.get_dimension(dimension).name]
+        column = columns.data[columns.get_dimension(dimension, strict=True).name]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
                         LooseVersion(pd.__version__) < '0.17.0'):
@@ -111,7 +111,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        index_dims = [columns.get_dimension(d) for d in dimensions]
+        index_dims = [columns.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
 
@@ -172,7 +172,7 @@ class PandasInterface(Interface):
     @classmethod
     def sort(cls, columns, by=[]):
         import pandas as pd
-        cols = [columns.get_dimension(d).name for d in by]
+        cols = [columns.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
@@ -194,7 +194,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        dim = columns.get_dimension(dim)
+        dim = columns.get_dimension(dim, strict=True)
         data = columns.data[dim.name]
         if not expanded:
             return data.unique()
@@ -225,7 +225,8 @@ class PandasInterface(Interface):
     @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
-            dimensions = [columns.get_dimension(d).name for d in dimensions]
+            dimensions = [columns.get_dimension(d, strict=True).name
+                          for d in dimensions]
             return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()
