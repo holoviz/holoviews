@@ -120,18 +120,15 @@ class Element(ViewableElement, Composable, Overlayable):
         if len(set(reduce_map.values())) > 1:
             raise Exception("Cannot define reduce operations with more than "
                             "one function at a time.")
-        sanitized_dict = {dimension_sanitizer(kd): kd
-                          for kd in self.dimensions('key', True)}
         if reduce_map:
             reduce_map = reduce_map.items()
         if dimensions:
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
             reduce_map = [(d, function) for d in self.kdims]
-        reduced = [(d.name if isinstance(d, Dimension) else d, fn)
+        reduced = [(self.get_dimension(d).name, fn)
                    for d, fn in reduce_map]
-        sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
-        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(sanitized, lambda x: x[1])]
+        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(reduced, lambda x: x[1])]
         return grouped[0]
 
 

@@ -145,12 +145,11 @@ class Dimension(param.Parameterized):
 
         all_params = dict(existing_params, **params)
         name = all_params['name']
-        long_name = name
+        label = name
         if isinstance(name, tuple):
-            alias, long_name = name
-            dimension_sanitizer.add_aliases(**{alias:long_name})
-            all_params['name'] = alias
-        self.label = long_name
+            name, label = name
+            all_params['name'] = name
+        self.label = label
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -238,8 +237,13 @@ class Dimension(param.Parameterized):
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, self.label, dimension_sanitizer(self.label), dimension_sanitizer(self.name)]
-        return other.label in dim_matches if isinstance(other, Dimension) else other in dim_matches
+        dim_matches = [self.name, self.label, dimension_sanitizer(self.label)]
+        if self is other:
+            return True
+        elif isinstance(other, Dimension):
+            return bool({other.name, other.label} & set(dim_matches))
+        else:
+            return other in dim_matches
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
@@ -811,18 +815,15 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            val_dim = ['value'] if selection.vdims else []
-            key_dims = selection.dimensions('key') + val_dim
-            if any(kw in key_dims for kw in kwargs):
+            dimensions = selection.dimensions() + ['value']
+            if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
-            print selection
             for k, v in selection.items():
-                val_dim = ['value'] if v.vdims else []
-                key_dims = self.kdims + val_dim
-                if any(kw in key_dims for kw in kwargs):
+                dimensions = v.dimensions() + ['value']
+                if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
