@@ -662,7 +662,13 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
-        label = 'long' if label in [True, 'label'] else ('short' if label else None)
+        if label in ['name', True]:
+            label = 'short'
+        elif label == 'label':
+            label = 'long'
+        elif label:
+            raise ValueError("label needs to be one of True, False, 'name' or 'label'")
+
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
