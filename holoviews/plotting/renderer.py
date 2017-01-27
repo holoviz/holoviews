@@ -407,10 +407,15 @@ class Renderer(Exporter):
 
         # Join all the js widget code into one string
         path = os.path.dirname(os.path.abspath(__file__))
-        widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
-                             for f in basejs + extensionjs
-                             if f is not None )
-        widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
+
+        def open_and_read(path, f):
+            with open(find_file(path, f), 'r') as f:
+                txt = f.read()
+            return txt
+
+        widgetjs = '\n'.join(open_and_read(path, f)
+                             for f in basejs + extensionjs if f is not None)
+        widgetcss = '\n'.join(open_and_read(path, f) 
                               for f in css if f is not None)
 
         dependencies = {}
