@@ -346,7 +346,7 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
-def pad_plots(plots, padding=0.85):
+def pad_plots(plots, table_padding=0.85, tabs_padding=1.2):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a WidgetBox with appropriate
@@ -360,10 +360,11 @@ def pad_plots(plots, padding=0.85):
                 width = np.max([p.width if isinstance(p, DataTable) else
                                 t.child.plot_width for t in p.tabs])
                 for p in p.tabs:
-                    p.width = int(padding*width)
+                    p.width = width
+                width = int(tabs_padding*width)
             elif isinstance(p, DataTable):
                 width = p.width
-                p.width = int(padding*width)
+                p.width = int(table_padding*width)
             elif p:
                 width = p.plot_width
             else:
