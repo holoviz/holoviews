@@ -344,7 +344,7 @@ class Layout(AttrTree, Dimensioned):
                     paths[paths.index(path)] = new_path
                 path = path + (int_to_roman(count),)
             else:
-                path = path[:-1] + (int_to_roman(count-1),)
+                path = path[:-1] + (int_to_roman(count),)
             counts[path[:-1]] += 1
         return path
 
