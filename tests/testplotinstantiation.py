@@ -245,7 +245,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         points = Points(np.random.rand(100, 2))
         plot = bokeh_renderer.get_plot(points.hist())
         plot.initialize_plot()
-        adjoint_plot = plot.subplots.values()[0]
+        adjoint_plot = list(plot.subplots.values())[0]
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
         self.assertTrue('color_mapper' not in main_plot.handles)
@@ -257,7 +257,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         img = Image(np.sin(x**2+y**2), bounds=(-1,-1,1,1))
         plot = bokeh_renderer.get_plot(img.hist())
         plot.initialize_plot()
-        adjoint_plot = plot.subplots.values()[0]
+        adjoint_plot = list(plot.subplots.values())[0]
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
         self.assertIs(main_plot.handles['color_mapper'],
@@ -272,7 +272,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                            mean_weighted=True)
         plot = bokeh_renderer.get_plot(adjoint)
         plot.initialize_plot()
-        adjoint_plot = plot.subplots.values()[0]
+        adjoint_plot = list(plot.subplots.values())[0]
         main_plot = adjoint_plot.subplots['main']
         right_plot = adjoint_plot.subplots['right']
         top_plot = adjoint_plot.subplots['top']
