@@ -241,6 +241,36 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
         self._test_colormapping(spikes, 1)
 
+    def test_side_histogram_cmapper(self):
+        """Assert histogram shares colormapper"""
+        x,y = np.mgrid[-50:51, -50:51] * 0.1
+        img = Image(np.sin(x**2+y**2), bounds=(-1,-1,1,1))
+        plot = bokeh_renderer.get_plot(img.hist())
+        plot.initialize_plot()
+        adjoint_plot = plot.subplots.values()[0]
+        main_plot = adjoint_plot.subplots['main']
+        right_plot = adjoint_plot.subplots['right']
+        self.assertIs(main_plot.handles['color_mapper'],
+                      right_plot.handles['color_mapper'])
+        self.assertEqual(main_plot.handles['color_dim'], img.vdims[0])
+
+    def test_side_histogram_cmapper_weighted(self):
+        """Assert weighted histograms share colormapper"""
+        x,y = np.mgrid[-50:51, -50:51] * 0.1
+        img = Image(np.sin(x**2+y**2), bounds=(-1,-1,1,1))
+        adjoint = img.hist(dimension=['x', 'y'], weight_dimension='z',
+                           mean_weighted=True)
+        plot = bokeh_renderer.get_plot(adjoint)
+        plot.initialize_plot()
+        adjoint_plot = plot.subplots.values()[0]
+        main_plot = adjoint_plot.subplots['main']
+        right_plot = adjoint_plot.subplots['right']
+        top_plot = adjoint_plot.subplots['top']
+        self.assertIs(main_plot.handles['color_mapper'],
+                      right_plot.handles['color_mapper'])
+        self.assertIs(main_plot.handles['color_mapper'],
+                      top_plot.handles['color_mapper'])
+        self.assertEqual(main_plot.handles['color_dim'], img.vdims[0])
 
     def test_stream_callback(self):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
