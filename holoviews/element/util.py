@@ -93,15 +93,18 @@ class categorical_aggregate2d(ElementOperation):
         grouped = obj.groupby(xdim, container_type=OrderedDict,
                               group_type=Dataset).values()
         orderings = OrderedDict()
+        sort = True
         for group in grouped:
-            vals = group.dimension_values(ydim)
+            vals = group.dimension_values(ydim, False)
             if len(vals) == 1:
                 orderings[vals[0]] = [vals[0]]
             else:
                 for i in range(len(vals)-1):
                     p1, p2 = vals[i:i+2]
                     orderings[p1] = [p2]
-        if one_to_one(orderings, ycoords):
+            if sort:
+                sort = (np.diff(vals)>=0).all()
+        if sort or one_to_one(orderings, ycoords):
             ycoords = np.sort(ycoords)
         elif not is_cyclic(orderings):
             ycoords = list(itertools.chain(*sort_topologically(orderings)))
