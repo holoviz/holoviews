@@ -241,6 +241,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
         self._test_colormapping(spikes, 1)
 
+    def test_side_histogram_no_cmapper(self):
+        points = Points(np.random.rand(100, 2))
+        plot = bokeh_renderer.get_plot(points.hist())
+        plot.initialize_plot()
+        adjoint_plot = plot.subplots.values()[0]
+        main_plot = adjoint_plot.subplots['main']
+        right_plot = adjoint_plot.subplots['right']
+        self.assertTrue('color_mapper' not in main_plot.handles)
+        self.assertTrue('color_mapper' not in right_plot.handles)
+
     def test_side_histogram_cmapper(self):
         """Assert histogram shares colormapper"""
         x,y = np.mgrid[-50:51, -50:51] * 0.1
