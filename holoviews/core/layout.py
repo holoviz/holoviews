@@ -7,6 +7,7 @@ to act as supplementary elements.
 
 from functools import reduce
 from itertools import chain
+from collections import defaultdict
 
 import numpy as np
 
@@ -329,22 +330,23 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def new_path(cls, path, item, paths, count):
+    def new_path(cls, path, item, paths, counts):
         sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
         path = tuple(fn(p) for (p, fn) in zip(path, sanitizers))
         while any(path[:i] in paths or path in [p[:i] for p in paths]
                   for i in range(1,len(path)+1)):
             path = path[:2]
             pl = len(path)
+            count = counts[path[:-1]]
             if (pl == 1 and not item.label) or (pl == 2 and item.label):
                 new_path = path + (int_to_roman(count-1),)
                 if path in paths:
                     paths[paths.index(path)] = new_path
                 path = path + (int_to_roman(count),)
             else:
-                path = path[:-1] + (int_to_roman(count),)
-            count += 1
-        return path, count
+                path = path[:-1] + (int_to_roman(count-1),)
+            counts[path[:-1]] += 1
+        return path
 
 
     @classmethod
@@ -357,9 +359,9 @@ class Layout(AttrTree, Dimensioned):
         identifiers if necessary.
         """
         paths, path_items = [], []
-        count = 2
+        counts = defaultdict(lambda: 2)
         for path, item in items:
-            new_path, count = cls.new_path(path, item, paths, count)
+            new_path = cls.new_path(path, item, paths, counts)
             new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
             path_items.append(item)
             paths.append(new_path)
@@ -367,7 +369,7 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def _unpack_paths(cls, objs, paths, items, count=2):
+    def _unpack_paths(cls, objs, paths, items, counts):
         """
         Recursively unpacks lists and Layout-like objects, accumulating
         into the supplied list of items.
@@ -376,13 +378,13 @@ class Layout(AttrTree, Dimensioned):
             objs = objs.values()
         for v in objs:
             if isinstance(v, cls):
-                cls._unpack_paths(v, paths, items, count)
+                cls._unpack_paths(v, paths, items, counts)
                 continue
             group = group_sanitizer(v.group)
             group = ''.join([group[0].upper(), group[1:]])
             label = label_sanitizer(v.label if v.label else 'I')
             label = ''.join([label[0].upper(), label[1:]])
-            new_path, count = cls.new_path((group, label), v, paths, count)
+            new_path = cls.new_path((group, label), v, paths, counts)
             new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
             paths.append(new_path)
             items.append((new_path, v))
@@ -400,7 +402,8 @@ class Layout(AttrTree, Dimensioned):
         elif not collection:
             val = [val]
         paths, items = [], []
-        cls._unpack_paths(val, paths, items)
+        counts = defaultdict(lambda: 2)
+        cls._unpack_paths(val, paths, items, counts)
         return cls(items=items)
 
 
