@@ -4,6 +4,7 @@ Tests of plot instantiation (not display tests, just instantiation)
 from __future__ import unicode_literals
 
 import logging
+import datetime as dt
 from collections import deque
 from unittest import SkipTest
 from io import BytesIO, StringIO
@@ -14,7 +15,7 @@ from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace, HoloMap, Layout)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
-                               Scatter3D, Path, Polygons, Bars)
+                               Scatter3D, Path, Polygons, Bars, BoxWhisker)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY, PositionX
 from holoviews.plotting import comms
@@ -32,7 +33,7 @@ try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback
-    from bokeh.models import Div
+    from bokeh.models import Div, ColumnDataSource
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
     from bokeh.models.tools import HoverTool
 except:
@@ -360,6 +361,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                    'cannot use to scale Points size.\n' % plot.name)
         self.assertEqual(log_msg, warning)
 
+    def test_box_whisker_datetime(self):
+        times = np.arange(dt.datetime(2017,1,1), dt.datetime(2017,2,1),
+                          dt.timedelta(days=1))
+        box = BoxWhisker((times, np.random.rand(len(times))), kdims=['Date'])
+        plot = bokeh_renderer.get_plot(box)
+        formatted = [box.kdims[0].pprint_value(t).replace(':', ';') for t in times]
+        self.assertTrue(all('Date' in cds.data for cds in
+                            plot.state.select(ColumnDataSource)))
+        self.assertTrue(cds.data['Date'][0] in formatted for cds in
+                        plot.state.select(ColumnDataSource))
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
