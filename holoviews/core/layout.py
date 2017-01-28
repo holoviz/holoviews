@@ -367,6 +367,28 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
+    def _unpack_paths(cls, objs, paths, items, count=2):
+        """
+        Recursively unpacks lists and Layout-like objects, accumulating
+        into the supplied list of items.
+        """
+        if isinstance(objs, cls):
+            objs = objs.values()
+        for v in objs:
+            if isinstance(v, cls):
+                cls._unpack_paths(v, paths, items, count)
+                continue
+            group = group_sanitizer(v.group)
+            group = ''.join([group[0].upper(), group[1:]])
+            label = label_sanitizer(v.label if v.label else 'I')
+            label = ''.join([label[0].upper(), label[1:]])
+            new_path, count = cls.new_path((group, label), v, paths, count)
+            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
+            paths.append(new_path)
+            items.append((new_path, v))
+
+
+    @classmethod
     def from_values(cls, val):
         """
         Returns a Layout given a list (or tuple) of viewable
@@ -378,16 +400,7 @@ class Layout(AttrTree, Dimensioned):
         elif not collection:
             val = [val]
         paths, items = [], []
-        count = 2
-        for v in val:
-            group = group_sanitizer(v.group)
-            group = ''.join([group[0].upper(), group[1:]])
-            label = label_sanitizer(v.label if v.label else 'I')
-            label = ''.join([label[0].upper(), label[1:]])
-            new_path, count = cls.new_path((group, label), v, paths, count)
-            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
-            paths.append(new_path)
-            items.append((new_path, v))
+        cls._unpack_paths(val, paths, items)
         return cls(items=items)
 
 
