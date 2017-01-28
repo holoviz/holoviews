@@ -136,15 +136,34 @@ class HeatmapPlot(ColorbarPlot):
     _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    def _axes_props(self, plots, subplots, element, ranges):
-        dims = element.dimensions()
-        labels = self._get_axis_labels(dims)
-        agg = element.gridded
-        xvals, yvals = [agg.dimension_values(i, False) for i in range(2)]
+    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar',
+                        'xaxis', 'yaxis', 'x_range', 'y_range']
+
+    def _get_factors(self, element):
+        xdim, ydim = element.dimensions()[:2]
+        xvals, yvals = [element.gridded.dimension_values(i, False)
+                        for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
-        plot_ranges = {'x_range': [str(x) for x in xvals],
-                       'y_range': [str(y) for y in yvals]}
+        return ([xdim.pprint_value(x) for x in xvals],
+                [ydim.pprint_value(y) for y in yvals])
+
+
+    def _axes_props(self, plots, subplots, element, ranges):
+        labels = self._get_axis_labels(element.dimensions())
+        x_range, y_range = self._get_factors(element)
+        plot_ranges = {'x_range': x_range, 'y_range': y_range}
         return ('auto', 'auto'), labels, plot_ranges
+
+
+    def _update_plot(self, key, plot, element=None):
+        """
+        Updates plot parameters on every frame
+        """
+        super(HeatmapPlot, self)._update_plot(key, plot, element)
+        x_range, y_range = self._get_factors(element)
+        self.handles['x_range'].factors = x_range
+        self.handles['y_range'].factors = y_range
+
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)[:3]

@@ -103,7 +103,10 @@ class categorical_aggregate2d(ElementOperation):
                     p1, p2 = vals[i:i+2]
                     orderings[p1] = [p2]
             if sort:
-                sort = (np.diff(vals)>=0).all()
+                if vals.dtype.kind in ('i', 'f'):
+                    sort = (np.diff(vals)>=0).all()
+                else:
+                    sort = np.array_equal(np.sort(vals), vals)
         if sort or one_to_one(orderings, ycoords):
             ycoords = np.sort(ycoords)
         elif not is_cyclic(orderings):

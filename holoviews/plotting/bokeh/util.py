@@ -42,16 +42,17 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
-                  'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
-                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter',
+                  'BasicTicker', 'BasicTickFormatter', 'FixedTicker',
+                  'FuncTickFormatter', 'LogTickFormatter',
                   'CategoricalTickFormatter']
 
 # List of attributes that can safely be dropped from the references
-IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y']
+IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y', 'factors']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
-                  'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
+                  'Plot', 'Range1d', 'FactorRange', 'CategoricalAxis',
+                  'LinearAxis', 'ColumnDataSource']
 
 
 def rgb2hex(rgb):
