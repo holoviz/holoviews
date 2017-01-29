@@ -156,9 +156,9 @@ class Text(Annotation):
     fontsize, alignment and rotation.
     """
 
-    x = param.Number(default=0, doc="The x-position of the text.")
+    x = param.Parameter(default=0, doc="The x-position of the text.")
 
-    y = param.Number(default=0, doc="The y-position of text.")
+    y = param.Parameter(default=0, doc="The y-position of text.")
 
     text = param.String(default='', doc="The text to be displayed.")
 
