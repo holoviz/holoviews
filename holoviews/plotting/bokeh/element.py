@@ -1180,8 +1180,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 xfs, yfs = sp._get_factors(el)
                 xfactors.append(xfs)
                 yfactors.append(yfs)
-        xfactors = np.concatenate(xfactors)
-        yfactors = np.concatenate(yfactors)
+        if xfactors:
+            xfactors = np.concatenate(xfactors)
+        if yfactors:
+            yfactors = np.concatenate(yfactors)
         return util.unique_array(xfactors), util.unique_array(yfactors)
 
 
