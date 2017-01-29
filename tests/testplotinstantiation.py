@@ -14,7 +14,7 @@ from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace, HoloMap, Layout)
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
-                               Scatter3D, Path, Polygons, Bars)
+                               Scatter3D, Path, Polygons, Bars, Text)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY, PositionX
 from holoviews.plotting import comms
@@ -32,7 +32,7 @@ try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback
-    from bokeh.models import Div
+    from bokeh.models import Div, FactorRange, Range1d
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
     from bokeh.models.tools import HoverTool
 except:
@@ -360,6 +360,117 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                    'cannot use to scale Points size.\n' % plot.name)
         self.assertEqual(log_msg, warning)
 
+    def test_curve_categorical_xaxis(self):
+        curve = Curve((['A', 'B', 'C'], [1,2,3]))
+        plot = bokeh_renderer.get_plot(curve)
+        x_range = plot.handles['x_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+
+    def test_curve_categorical_xaxis_invert_axes(self):
+        curve = Curve((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(curve)
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+
+    def test_points_categorical_xaxis(self):
+        points = Points((['A', 'B', 'C'], (1,2,3)))
+        plot = bokeh_renderer.get_plot(points)
+        x_range = plot.handles['x_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+
+    def test_points_categorical_xaxis_invert_axes(self):
+        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(points)
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+
+    def test_points_overlay_categorical_xaxis(self):
+        points = Points((['A', 'B', 'C'], (1,2,3)))
+        points2 = Points((['B', 'C', 'D'], (1,2,3)))
+        plot = bokeh_renderer.get_plot(points*points2)
+        x_range = plot.handles['x_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
+
+    def test_points_overlay_categorical_xaxis_invert_axes(self):
+        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        points2 = Points((['B', 'C', 'D'], (1,2,3)))
+        plot = bokeh_renderer.get_plot(points*points2)
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D'])
+
+    def test_heatmap_categorical_axes_string_int(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])
+        plot = bokeh_renderer.get_plot(hmap)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B'])
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, [1, 2])
+
+    def test_heatmap_categorical_axes_string_int_inverted(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(hmap)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, [1, 2])
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B'])
+
+    def test_heatmap_points_categorical_axes_string_int(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])
+        points = Points([('A', 2), ('B', 1),  ('C', 3)])
+        plot = bokeh_renderer.get_plot(hmap*points)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C'])
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, [1, 2, 3])
+
+    def test_heatmap_points_categorical_axes_string_int_inverted(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
+        points = Points([('A', 2), ('B', 1),  ('C', 3)])
+        plot = bokeh_renderer.get_plot(hmap*points)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, [1, 2, 3])
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B', 'C'])
+
+    def test_points_errorbars_text_ndoverlay_categorical_xaxis(self):
+        overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))
+                             for i in range(5)})
+        error = ErrorBars([(el['x'][0], np.mean(el['y']), np.std(el['y']))
+                           for el in overlay])
+        text = Text('C', 0, 'Test')
+        plot = bokeh_renderer.get_plot(overlay*error*text)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
+        self.assertIsInstance(y_range, Range1d)
+
+    def test_points_errorbars_text_ndoverlay_categorical_xaxis_invert_axes(self):
+        overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))
+                             for i in range(5)})
+        error = ErrorBars([(el['x'][0], np.mean(el['y']), np.std(el['y']))
+                           for el in overlay])(plot=dict(invert_axes=True))
+        text = Text('C', 0, 'Test')
+        plot = bokeh_renderer.get_plot(overlay*error*text)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, Range1d)
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
