@@ -841,6 +841,8 @@ class ColorbarPlot(ElementPlot):
     def _get_colormapper(self, dim, element, ranges, style):
         # The initial colormapper instance is cached the first time
         # and then only updated
+        if dim is None:
+            return None
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         if self.adjoined:
