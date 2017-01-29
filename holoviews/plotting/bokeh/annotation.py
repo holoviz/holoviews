@@ -20,6 +20,7 @@ class TextPlot(ElementPlot):
             data = dict(x=[element.y], y=[element.x])
         else:
             data = dict(x=[element.x], y=[element.y])
+        self._clean_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
         return (data, mapping)
 

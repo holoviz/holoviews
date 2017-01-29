@@ -371,6 +371,7 @@ class ErrorPlot(PathPlot):
             data = dict(xs=err_ys, ys=err_xs)
         else:
             data = dict(xs=err_xs, ys=err_ys)
+        self._clean_data(data, ('xs', 'ys'), element.dimensions())
         return (data, dict(self._mapping))
 
 
