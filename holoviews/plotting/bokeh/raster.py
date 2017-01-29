@@ -159,9 +159,9 @@ class HeatmapPlot(ColorbarPlot):
         else:
             xdim, ydim = aggregate.dimensions()[:2]
             xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
-            if xvals.dtype.kind not in 'iO':
+            if xvals.dtype.kind not in 'iOS':
                 xvals = [xdim.pprint_value(xv) for xv in xvals]
-            if yvals.dtype.kind not in 'iO':
+            if yvals.dtype.kind not in 'iOS':
                 yvals = [ydim.pprint_value(yv) for yv in yvals]
             data = {x: xvals, y: yvals, 'zvalues': zvals}
 

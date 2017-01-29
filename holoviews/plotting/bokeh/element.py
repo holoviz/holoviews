@@ -550,7 +550,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         ranges = [self.handles['%s_range' % ax] for ax in 'xy']
         for i, col in enumerate(cols):
             column = data[col]
-            if isinstance(ranges[i], FactorRange) and column.dtype.kind not in 'iO':
+            if (isinstance(ranges[i], FactorRange) and
+                (isinstance(column, list) or column.dtype.kind not in 'iOS')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
