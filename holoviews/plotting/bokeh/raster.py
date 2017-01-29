@@ -140,13 +140,7 @@ class HeatmapPlot(ColorbarPlot):
     _categorical = True
 
     def _get_factors(self, element):
-        xdim, ydim = element.dimensions()[:2]
-        xvals, yvals = [element.gridded.dimension_values(i, False)
-                        for i in range(2)]
-        if self.invert_yaxis: yvals = yvals[::-1]
-        return ([x if xvals.dtype.kind in 'iOS' else xdim.pprint_value(x) for x in xvals],
-                [y if yvals.dtype.kind in 'iOS' else ydim.pprint_value(y) for y in yvals])
-
+        return super(HeatmapPlot, self)._get_factors(element.gridded)
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)[:3]
