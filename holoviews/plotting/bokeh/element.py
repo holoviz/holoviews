@@ -523,21 +523,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 offset = abs(l*0.1 if l else 0.5)
                 l -= offset
                 r += offset
+
+            if self.invert_xaxis: l, r = r, l
             if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
             if isinstance(r, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
         elif isinstance(x_range, FactorRange):
-            x_range.factors = list(xfactors)
+            xfactors = list(xfactors)
+            if self.invert_xaxis: xfactors = xfactors[::-1]
+            x_range.factors = xfactors
 
         if isinstance(plot.y_range, Range1d):
             if b == t:
                 offset = abs(b*0.1 if b else 0.5)
                 b -= offset
                 t += offset
+            if self.invert_yaxis: b, t = t, b
             if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
             if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
         elif isinstance(y_range, FactorRange):
-            y_range.factors = list(yfactors)
-
+            yfactors = list(yfactors)
+            if self.invert_yaxis: yfactors = yfactors[::-1]
+            y_range.factors = yfactors
 
     def _clean_data(self, data, cols, dims):
         """
