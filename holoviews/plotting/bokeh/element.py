@@ -325,7 +325,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if y_axis_type == 'datetime':
                     low = convert_datetime(low)
                     high = convert_datetime(high)
-                elif not (util.is_number(low) and util.is_number(high)):
+                elif any(isinstance(y, util.basestring) for y in (low, high)):
                     plot_ranges['y_range'] = FactorRange()
                     categorical = True
                 elif low == high and low is not None:
@@ -551,7 +551,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'iOS')):
+                (isinstance(column, list) or column.dtype.kind not in 'iOSU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
@@ -563,9 +563,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
-        return ([x if xvals.dtype.kind in 'iOS' else xdim.pprint_value(x) for x in xvals],
-                [y if yvals.dtype.kind in 'iOS' else ydim.pprint_value(y) for y in yvals])
-
+        coords =  ([x if xvals.dtype.kind in 'iOSU' else xdim.pprint_value(x) for x in xvals],
+                   [y if yvals.dtype.kind in 'iOSU' else ydim.pprint_value(y) for y in yvals])
+        if self.invert_axes: coords = coords[::-1]
+        return coords
 
     def _process_legend(self):
         """

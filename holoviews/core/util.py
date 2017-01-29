@@ -458,7 +458,7 @@ def max_range(ranges):
             if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
-            if arr.dtype.kind in 'OS':
+            if arr.dtype.kind in 'OSU':
                 arr = np.sort([v for v in arr.flat if not is_nan(v)])
                 return arr[0], arr[-1]
             if arr.dtype.kind in 'M':
