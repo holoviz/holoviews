@@ -314,7 +314,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     plot_ranges['x_range'] = [low, high]
 
         if self.invert_xaxis:
-            plot_ranges['x_ranges'] = plot_ranges['x_ranges'][::-1]
+            x_range = plot_ranges['x_range']
+            if isinstance(x_range, Range1d):
+                plot_ranges['x_range'] = x_range.__class__(start=x_range.end,
+                                                           end=x_range.start)
+            elif not isinstance(x_range, (Range, FactorRange)):
+                plot_ranges['x_range'] = x_range[::-1]
 
         categorical = False
         if not 'y_range' in plot_ranges:
@@ -334,12 +339,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     high += offset
                 if not categorical and all(y is not None and np.isfinite(y) for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
+
         if self.invert_yaxis:
             yrange = plot_ranges['y_range']
-            if isinstance(yrange, Range):
+            if isinstance(yrange, Range1d):
                 plot_ranges['y_range'] = yrange.__class__(start=yrange.end,
                                                           end=yrange.start)
-            else:
+            elif not isinstance(yrange, (Range, FactorRange)):
                 plot_ranges['y_range'] = yrange[::-1]
 
         categorical = any(self.traverse(lambda x: x._categorical))
@@ -519,27 +525,31 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xfactors, yfactors = self._get_factors(element)
 
         if isinstance(x_range, Range1d):
-            if l == r:
+            if l == r and l is not None:
                 offset = abs(l*0.1 if l else 0.5)
                 l -= offset
                 r += offset
 
             if self.invert_xaxis: l, r = r, l
-            if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
-            if isinstance(r, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
+            if l is not None and (isinstance(l, np.datetime64) or np.isfinite(l)):
+                plot.x_range.start = l
+            if r is not None and (isinstance(r, np.datetime64) or np.isfinite(r)):
+                plot.x_range.end   = r
         elif isinstance(x_range, FactorRange):
             xfactors = list(xfactors)
             if self.invert_xaxis: xfactors = xfactors[::-1]
             x_range.factors = xfactors
 
         if isinstance(plot.y_range, Range1d):
-            if b == t:
+            if b == t and b is not None:
                 offset = abs(b*0.1 if b else 0.5)
                 b -= offset
                 t += offset
             if self.invert_yaxis: b, t = t, b
-            if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
-            if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
+            if b is not None and (isinstance(l, np.datetime64) or np.isfinite(b)):
+                plot.y_range.start = b
+            if t is not None and (isinstance(l, np.datetime64) or np.isfinite(t)):
+                plot.y_range.end   = t
         elif isinstance(y_range, FactorRange):
             yfactors = list(yfactors)
             if self.invert_yaxis: yfactors = yfactors[::-1]
@@ -568,11 +578,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        if self.invert_yaxis: yvals = yvals[::-1]
-        coords =  ([x if xvals.dtype.kind in 'iOSU' else xdim.pprint_value(x) for x in xvals],
-                   [y if yvals.dtype.kind in 'iOSU' else ydim.pprint_value(y) for y in yvals])
+        coords = ([x if xvals.dtype.kind in 'iOSU' else xdim.pprint_value(x) for x in xvals],
+                  [y if yvals.dtype.kind in 'iOSU' else ydim.pprint_value(y) for y in yvals])
         if self.invert_axes: coords = coords[::-1]
         return coords
+
 
     def _process_legend(self):
         """

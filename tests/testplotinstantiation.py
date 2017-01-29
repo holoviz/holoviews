@@ -396,6 +396,14 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
 
+    def test_points_overlay_categorical_xaxis_invert_axis(self):
+        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_xaxis=True))
+        points2 = Points((['B', 'C', 'D'], (1,2,3)))
+        plot = bokeh_renderer.get_plot(points*points2)
+        x_range = plot.handles['x_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'][::-1])
+
     def test_points_overlay_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
@@ -413,6 +421,17 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(x_range.factors, ['A', 'B'])
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, [1, 2])
+
+    def test_heatmap_categorical_axes_string_int_invert_xyaxis(self):
+        opts = dict(invert_xaxis=True, invert_yaxis=True)
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=opts)
+        plot = bokeh_renderer.get_plot(hmap)
+        x_range = plot.handles['x_range']
+        y_range = plot.handles['y_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, ['A', 'B'][::-1])
+        self.assertIsInstance(y_range, FactorRange)
+        self.assertEqual(y_range.factors, [1, 2][::-1])
 
     def test_heatmap_categorical_axes_string_int_inverted(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
