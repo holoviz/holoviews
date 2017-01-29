@@ -45,12 +45,12 @@ class Annotation(Element2D):
         return self.clone(self.data, extents=(xstart, ystart, xstop, ystop))
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
-            return [self.data if np.isscalar(self.data) else self.data[index]]
+            return np.array([self.data if np.isscalar(self.data) else self.data[index]])
         elif index == 1:
-            return [] if np.isscalar(self.data) else [self.data[1]]
+            return [] if np.isscalar(self.data) else np.array([self.data[1]])
         else:
             return super(Annotation, self).dimension_values(dimension)
 
@@ -97,10 +97,10 @@ class Spline(Annotation):
         super(Spline, self).__init__(spline_points, **params)
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
-            return [point[index] for point in self.data[0]]
+            return np.array([point[index] for point in self.data[0]])
         else:
             return super(Spline, self).dimension_values(dimension)
 
