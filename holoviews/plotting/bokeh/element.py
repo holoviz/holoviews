@@ -5,7 +5,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.models import Range, HoverTool, Renderer, Range1d
+from bokeh.models import Range, HoverTool, Renderer, Range1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
 
@@ -170,6 +170,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # Any entries should be existing keys in the handles
     # instance attribute.
     _update_handles = ['source', 'glyph']
+    _categorical = False
 
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
@@ -293,6 +294,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
         l, b, r, t = self.get_extents(range_el, ranges)
 
+        categorical = False
         if not 'x_range' in plot_ranges:
             if 'x_range' in ranges:
                 plot_ranges['x_range'] = ranges['x_range']
@@ -301,16 +303,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if x_axis_type == 'datetime':
                     low = convert_datetime(low)
                     high = convert_datetime(high)
+                elif any(isinstance(x, util.basestring) for x in (low, high)):
+                    plot_ranges['x_range'] = FactorRange()
+                    categorical = True
                 elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
-                if all(x is not None and np.isfinite(x) for x in (low, high)):
+                if not categorical and all(x is not None and np.isfinite(x) for x in (low, high)):
                     plot_ranges['x_range'] = [low, high]
 
         if self.invert_xaxis:
             plot_ranges['x_ranges'] = plot_ranges['x_ranges'][::-1]
 
+        categorical = False
         if not 'y_range' in plot_ranges:
             if 'y_range' in ranges:
                 plot_ranges['y_range'] = ranges['y_range']
@@ -319,11 +325,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if y_axis_type == 'datetime':
                     low = convert_datetime(low)
                     high = convert_datetime(high)
+                elif not (util.is_number(low) and util.is_number(high)):
+                    plot_ranges['y_range'] = FactorRange()
+                    categorical = True
                 elif low == high and low is not None:
                     offset = low*0.1 if low else 0.5
                     low -= offset
                     high += offset
-                if all(y is not None and np.isfinite(y) for y in (low, high)):
+                if not categorical and all(y is not None and np.isfinite(y) for y in (low, high)):
                     plot_ranges['y_range'] = [low, high]
         if self.invert_yaxis:
             yrange = plot_ranges['y_range']
@@ -332,6 +341,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                                           end=yrange.start)
             else:
                 plot_ranges['y_range'] = yrange[::-1]
+
+        categorical = any(self.traverse(lambda x: x._categorical))
+        if categorical:
+            x_axis_type, y_axis_type = 'auto', 'auto'
+            plot_ranges['x_range'] = FactorRange()
+            plot_ranges['y_range'] = FactorRange()
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -492,26 +507,63 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_ranges(self, element, ranges):
         plot = self.handles['plot']
-        l, b, r, t = self.get_extents(element, ranges)
+        x_range = self.handles['x_range']
+        y_range = self.handles['y_range']
 
-        if self.invert_axes:
-            l, b, r, t = b, l, t, r
-        if l == r:
-            offset = abs(l*0.1 if l else 0.5)
-            l -= offset
-            r += offset
-        if b == t:
-            offset = abs(b*0.1 if b else 0.5)
-            b -= offset
-            t += offset
+        if any(isinstance(r, Range1d) for r in [x_range, y_range]):
+            l, b, r, t = self.get_extents(element, ranges)
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
 
-        # Ensure that it never sets a NaN value
-        if isinstance(plot.x_range, Range1d):
+        if any(isinstance(r, FactorRange) for r in [x_range, y_range]):
+            xfactors, yfactors = self._get_factors(element)
+
+        if isinstance(x_range, Range1d):
+            if l == r:
+                offset = abs(l*0.1 if l else 0.5)
+                l -= offset
+                r += offset
             if isinstance(l, np.datetime64) or np.isfinite(l): plot.x_range.start = l
-            if isinstance(l, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
+            if isinstance(r, np.datetime64) or np.isfinite(r): plot.x_range.end   = r
+        elif isinstance(x_range, FactorRange):
+            x_range.factors = list(xfactors)
+
         if isinstance(plot.y_range, Range1d):
+            if b == t:
+                offset = abs(b*0.1 if b else 0.5)
+                b -= offset
+                t += offset
             if isinstance(l, np.datetime64) or np.isfinite(b): plot.y_range.start = b
             if isinstance(l, np.datetime64) or np.isfinite(t): plot.y_range.end   = t
+        elif isinstance(y_range, FactorRange):
+            y_range.factors = list(yfactors)
+
+
+    def _clean_data(self, data, cols, dims):
+        """
+        Cleans the data before instantiating the datasource to handle
+        categorical axes correctly.
+        """
+        if self.invert_axes:
+            cols = cols[::-1]
+            dims = dims[:2][::-1]
+        ranges = [self.handles['%s_range' % ax] for ax in 'xy']
+        for i, col in enumerate(cols):
+            column = data[col]
+            if isinstance(ranges[i], FactorRange) and column.dtype.kind not in 'iO':
+                data[col] = [dims[i].pprint_value(v) for v in column]
+
+
+    def _get_factors(self, element):
+        """
+        Get factors for categorical axes.
+        """
+        xdim, ydim = element.dimensions()[:2]
+        xvals, yvals = [element.dimension_values(i, False)
+                        for i in range(2)]
+        if self.invert_yaxis: yvals = yvals[::-1]
+        return ([x if xvals.dtype.kind in 'iOS' else xdim.pprint_value(x) for x in xvals],
+                [y if yvals.dtype.kind in 'iOS' else ydim.pprint_value(y) for y in yvals])
 
 
     def _process_legend(self):
@@ -619,6 +671,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_glyph(glyph, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
+            self._update_ranges(style_element, ranges)
 
         if not self.batched:
             for cb in self.callbacks:
@@ -1096,6 +1149,19 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         return list(set(tools))
 
 
+    def _get_factors(self, overlay):
+        xfactors, yfactors = [], []
+        for k, sp in self.subplots.items():
+            el = overlay.data.get(k)
+            if el is not None:
+                xfs, yfs = sp._get_factors(el)
+                xfactors.append(xfs)
+                yfactors.append(yfs)
+        xfactors = np.concatenate(xfactors)
+        yfactors = np.concatenate(yfactors)
+        return util.unique_array(xfactors), util.unique_array(yfactors)
+
+
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         key = self.keys[-1]
         nonempty = [el for el in self.hmap.data.values() if len(el)]
@@ -1106,9 +1172,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if plot is None and not self.tabs and not self.batched:
             plot = self._init_plot(key, element, ranges=ranges, plots=plots)
             self._init_axes(plot)
+        self.handles['plot'] = plot
+
         if plot and not self.overlaid:
             self._update_plot(key, plot, element)
-        self.handles['plot'] = plot
+            self._update_ranges(element, ranges)
 
         panels = []
         for key, subplot in self.subplots.items():

@@ -138,31 +138,15 @@ class HeatmapPlot(ColorbarPlot):
 
     _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar',
                         'xaxis', 'yaxis', 'x_range', 'y_range']
+    _categorical = True
 
     def _get_factors(self, element):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.gridded.dimension_values(i, False)
                         for i in range(2)]
         if self.invert_yaxis: yvals = yvals[::-1]
-        return ([xdim.pprint_value(x) for x in xvals],
-                [ydim.pprint_value(y) for y in yvals])
-
-
-    def _axes_props(self, plots, subplots, element, ranges):
-        labels = self._get_axis_labels(element.dimensions())
-        x_range, y_range = self._get_factors(element)
-        plot_ranges = {'x_range': x_range, 'y_range': y_range}
-        return ('auto', 'auto'), labels, plot_ranges
-
-
-    def _update_plot(self, key, plot, element=None):
-        """
-        Updates plot parameters on every frame
-        """
-        super(HeatmapPlot, self)._update_plot(key, plot, element)
-        x_range, y_range = self._get_factors(element)
-        self.handles['x_range'].factors = x_range
-        self.handles['y_range'].factors = y_range
+        return ([x if xvals.dtype.kind in 'iOS' else xdim.pprint_value(x) for x in xvals],
+                [y if yvals.dtype.kind in 'iOS' else ydim.pprint_value(y) for y in yvals])
 
 
     def get_data(self, element, ranges=None, empty=False):
@@ -173,9 +157,12 @@ class HeatmapPlot(ColorbarPlot):
         if empty:
             data = {x: [], y: [], z: []}
         else:
-            zvals = aggregate.dimension_values(z)
-            xvals, yvals = [[str(v) for v in aggregate.dimension_values(i)]
-                            for i in range(2)]
+            xdim, ydim = aggregate.dimensions()[:2]
+            xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
+            if xvals.dtype.kind not in 'iO':
+                xvals = [xdim.pprint_value(xv) for xv in xvals]
+            if yvals.dtype.kind not in 'iO':
+                yvals = [ydim.pprint_value(yv) for yv in yvals]
             data = {x: xvals, y: yvals, 'zvalues': zvals}
 
         if 'hover' in self.tools+self.default_tools:
