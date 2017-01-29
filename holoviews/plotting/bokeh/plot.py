@@ -457,7 +457,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                 layout_dimensions=layout_dimensions,
                                 ranges=ranges, subplot=True,
                                 uniform=self.uniform, layout_num=num,
-                                **plotopts)
+                                **dict({'shared_axes': self.shared_axes},
+                                       **plotopts))
             subplots[pos] = subplot
             if isinstance(plot_type, type) and issubclass(plot_type, GenericCompositePlot):
                 adjoint_clone[pos] = subplots[pos].layout
