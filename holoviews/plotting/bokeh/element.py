@@ -768,6 +768,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if bokeh_version >= '0.12':
             handles.append(plot.title)
 
+        for ax in 'xy':
+            key = '%s_range' % ax
+            if isinstance(self.handles[key], FactorRange):
+                handles.append(self.handles[key])
+
         if self.current_frame:
             if not self.apply_ranges:
                 rangex, rangey = False, False

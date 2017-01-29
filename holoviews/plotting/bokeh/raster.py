@@ -136,8 +136,7 @@ class HeatmapPlot(ColorbarPlot):
     _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar',
-                        'xaxis', 'yaxis', 'x_range', 'y_range']
+    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar']
     _categorical = True
 
     def _get_factors(self, element):
