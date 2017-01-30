@@ -29,7 +29,7 @@ class DictInterface(Interface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim).key
         return dataset.data[name].dtype.type
 
     @classmethod
@@ -40,7 +40,7 @@ class DictInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        dimensions = [d.name if isinstance(d, Dimension) else
+        dimensions = [d.key if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
@@ -81,7 +81,7 @@ class DictInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        dimensions = dataset.dimensions(label=True)
+        dimensions = dataset.dimensions(label='key')
         not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
             raise ValueError('Following dimensions not found in data: %s' % not_found)
@@ -113,12 +113,15 @@ class DictInterface(Interface):
 
     @classmethod
     def array(cls, dataset, dimensions):
-        if not dimensions: dimensions = dataset.dimensions(label=True)
-        return np.column_stack(dataset.data[dim] for dim in dimensions)
+        if not dimensions:
+            dimensions = dataset.dimensions(label='key')
+        else:
+            dimensions = [dataset.get_dimensions(d).key for d in dimensions]
+        return np.column_stack(dataset.data[dim.key] for dim in dimensions)
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        dim = dimension.key if isinstance(dimension, Dimension) else dimension
         data = list(dataset.data.items())
         if isinstance(values, util.basestring) or not hasattr(values, '__iter__'):
             values = np.array([values]*len(dataset))
@@ -127,7 +130,7 @@ class DictInterface(Interface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
-        return OrderedDict([(dimensions.get(k, dataset.get_dimension(k)).name, v)
+        return OrderedDict([(dimensions.get(k, dataset.get_dimension(k)).key, v)
                             for k,v in dataset.data.items()])
 
     @classmethod
@@ -145,6 +148,7 @@ class DictInterface(Interface):
 
     @classmethod
     def sort(cls, dataset, by=[]):
+        by = [dataset.get_dimension(d).key for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
         else:
@@ -155,7 +159,8 @@ class DictInterface(Interface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        values = np.array(dataset.data.get(dataset.get_dimension(dim).name))
+        dim = dataset.get_dimension(dim).key
+        values = np.array(dataset.data.get(dim))
         if not expanded:
             return util.unique_array(values)
         return values
@@ -163,9 +168,9 @@ class DictInterface(Interface):
 
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
-        # DataFrame based tables don't need to be reindexed
-        return OrderedDict([(d.name, dataset.dimension_values(d))
-                            for d in kdims+vdims])
+        dimensions = [dataset.get_dimension(d).key for d in kdims+vdims]
+        return OrderedDict([(d, dataset.dimension_values(d))
+                            for d in dimensions])
 
 
     @classmethod
@@ -184,14 +189,14 @@ class DictInterface(Interface):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        keys = [tuple(dataset.data[d.name][i] for d in dimensions)
+        keys = [tuple(dataset.data[d.key][i] for d in dimensions)
                 for i in range(len(dataset))]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
         for unique_key in util.unique_iterator(keys):
             mask = cls.select_mask(dataset, dict(zip(dimensions, unique_key)))
-            group_data = OrderedDict(((d.name, dataset[d.name][mask]) for d in kdims+vdims))
+            group_data = OrderedDict(((d.key, dataset[d.key][mask]) for d in kdims+vdims))
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((unique_key, group_data))
 
@@ -210,7 +215,7 @@ class DictInterface(Interface):
         data = OrderedDict((k, list(compress(v, selection_mask)))
                            for k, v in dataset.data.items())
         if indexed and len(list(data.values())[0]) == 1:
-            return data[dataset.vdims[0].name][0]
+            return data[dataset.vdims[0].key][0]
         return data
 
 
@@ -221,7 +226,7 @@ class DictInterface(Interface):
             sample_mask = True
             if np.isscalar(sample): sample = [sample]
             for i, v in enumerate(sample):
-                name = dataset.get_dimension(i).name
+                name = dataset.get_dimension(i).key
                 sample_mask &= (np.array(dataset.data[name])==v)
             mask |= sample_mask
         return {k: np.array(col)[mask]
@@ -230,8 +235,8 @@ class DictInterface(Interface):
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [dataset.get_dimension(d).name for d in kdims]
-        vdims = dataset.dimensions('value', True)
+        kdims = [dataset.get_dimension(d).key for d in kdims]
+        vdims = dataset.dimensions('value', label='key')
         groups = cls.groupby(dataset, kdims, list, OrderedDict)
         aggregated = OrderedDict([(k, []) for k in kdims+vdims])
 

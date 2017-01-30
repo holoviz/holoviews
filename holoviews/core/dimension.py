@@ -52,12 +52,14 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
+        elif d.key in overrides:
+            override = overrides[d.key]
         else:
             override = None
 
         if override is None:
             replaced.append(d)
-        elif isinstance(override, basestring):
+        elif isinstance(override, (basestring, tuple)):
             replaced.append(d(override))
         elif isinstance(override, Dimension):
             replaced.append(override)
@@ -142,10 +144,12 @@ class Dimension(param.Parameterized):
             existing_params = {'name': name}
 
         all_params = dict(existing_params, **params)
+        alias = all_params['name']
         if isinstance(all_params['name'], tuple):
             alias, long_name = all_params['name']
             dimension_sanitizer.add_aliases(**{alias:long_name})
             all_params['name'] = long_name
+        self.key = alias
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -217,6 +221,14 @@ class Dimension(param.Parameterized):
         """
         return sum([hash(value) for _, value in self.get_param_values()
                     if not isinstance(value, list)])
+
+
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.key = self.name
 
 
     def __str__(self):
@@ -645,6 +657,7 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
+        label = 'long' if label in [True, 'long'] else ('short' if label else None)
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
@@ -664,7 +677,8 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [dim.name if label else dim for dim in dims]
+        return [(dim.name if label == 'long' else dim.key)
+                if label else dim for dim in dims]
 
 
     def get_dimension(self, dimension, default=None, strict=False):
@@ -685,6 +699,7 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
+        name_map.update({dim.key: dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:
@@ -703,10 +718,9 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            if dim in self.kdims+self.vdims:
-                return (self.kdims+self.vdims).index(dim)
-            return self.dimensions().index(dim)
-        except ValueError:
+            dimensions = self.kdims+self.vdims
+            return [i for i, d in enumerate(dimensions) if d == dim][0]
+        except IndexError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
 

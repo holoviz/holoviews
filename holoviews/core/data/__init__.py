@@ -148,9 +148,16 @@ class Dataset(Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
-        initialized = Interface.initialize(type(self), data,
-                                           kwargs.get('kdims'),
-                                           kwargs.get('vdims'),
+
+        kdims, vdims = None, None
+        if 'kdims' in kwargs:
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['kdims']]
+        if 'vdims' in kwargs:
+            vdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['vdims']]
+
+        initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
         super(Dataset, self).__init__(data, **dict(extra_kws, **dict(kwargs, **dims)))
@@ -195,6 +202,8 @@ class Dataset(Element):
         Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
+        if not isinstance(by, list): by = [by]
+
         sorted_columns = self.interface.sort(self, by)
         return self.clone(sorted_columns)
 
@@ -234,7 +243,7 @@ class Dataset(Element):
         dimensions and a key value scalar or sequence of the same length
         as the existing keys.
         """
-        if isinstance(dimension, str):
+        if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
@@ -369,10 +378,10 @@ class Dataset(Element):
             raise ValueError("The aggregate method requires a function to be specified")
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
-        aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
+        kdims = [self.get_dimension(d) for d in dimensions]
+        aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
-        kdims = [self.get_dimension(d) for d in dimensions]
         vdims = self.vdims
         if spreadfn:
             error = self.interface.aggregate(self, dimensions, spreadfn)
@@ -466,7 +475,7 @@ class Dataset(Element):
         kdims = replace_dimensions(self.kdims, dimensions)
         vdims = replace_dimensions(self.vdims, dimensions)
         zipped_dims = zip(self.kdims+self.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+        renames = {pk.key: nk for pk, nk in zipped_dims if pk != nk}
         data = self.data
         if renames:
             data = self.interface.redim(self, renames)
@@ -478,7 +487,7 @@ class Dataset(Element):
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
-        dim = self.get_dimension(dim, strict=True).name
+        dim = self.get_dimension(dim, strict=True)
         return self.interface.values(self, dim, expanded, flat)
 
 

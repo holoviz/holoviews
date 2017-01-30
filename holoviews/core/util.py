@@ -1077,7 +1077,7 @@ def expand_grid_coords(dataset, dim):
     dataset into an ND-array matching the dimensionality of
     the dataset.
     """
-    arrays = [dataset.interface.coords(dataset, d.name, True)
+    arrays = [dataset.interface.coords(dataset, d.key, True)
               for d in dataset.kdims]
     idx = dataset.get_dimension_index(dim)
     return cartesian_product(arrays)[idx]

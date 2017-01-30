@@ -29,7 +29,7 @@ class ArrayInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        dimensions = [d.name if isinstance(d, Dimension) else
+        dimensions = [d.key if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
