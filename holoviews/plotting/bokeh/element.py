@@ -790,7 +790,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         for ax in 'xy':
             key = '%s_range' % ax
-            if isinstance(self.handles[key], FactorRange):
+            if isinstance(self.handles.get(key), FactorRange):
                 handles.append(self.handles[key])
 
         if self.current_frame:
