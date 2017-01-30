@@ -570,7 +570,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'iSU')):
+                (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
@@ -581,8 +581,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([x if xvals.dtype.kind in 'iSU' else xdim.pprint_value(x) for x in xvals],
-                  [y if yvals.dtype.kind in 'iSU' else ydim.pprint_value(y) for y in yvals])
+        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals],
+                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y) for y in yvals])
         if self.invert_axes: coords = coords[::-1]
         return coords
 

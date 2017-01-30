@@ -381,6 +381,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
+    def test_points_categorical_xaxis_mixed_type(self):
+        points = Points(range(10))
+        points2 = Points((['A', 'B', 'C', 1, 2.0], (1, 2, 3, 4, 5)))
+        plot = bokeh_renderer.get_plot(points*points2)
+        x_range = plot.handles['x_range']
+        self.assertIsInstance(x_range, FactorRange)
+        self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(points)
@@ -420,7 +427,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B'])
         self.assertIsInstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, [1, 2])
+        self.assertEqual(y_range.factors, ['1', '2'])
 
     def test_heatmap_categorical_axes_string_int_invert_xyaxis(self):
         opts = dict(invert_xaxis=True, invert_yaxis=True)
@@ -431,7 +438,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B'][::-1])
         self.assertIsInstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, [1, 2][::-1])
+        self.assertEqual(y_range.factors, ['1', '2'][::-1])
 
     def test_heatmap_categorical_axes_string_int_inverted(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
@@ -439,7 +446,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, [1, 2])
+        self.assertEqual(x_range.factors, ['1', '2'])
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B'])
 
@@ -452,7 +459,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
         self.assertIsInstance(y_range, FactorRange)
-        self.assertEqual(y_range.factors, [1, 2, 3])
+        self.assertEqual(y_range.factors, ['1', '2', '3'])
 
     def test_heatmap_points_categorical_axes_string_int_inverted(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
@@ -461,7 +468,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         self.assertIsInstance(x_range, FactorRange)
-        self.assertEqual(x_range.factors, [1, 2, 3])
+        self.assertEqual(x_range.factors, ['1', '2', '3'])
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C'])
 
