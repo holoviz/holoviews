@@ -555,10 +555,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if self.invert_yaxis: yfactors = yfactors[::-1]
             y_range.factors = yfactors
 
-    def _clean_data(self, data, cols, dims):
+
+    def _categorize_data(self, data, cols, dims):
         """
-        Cleans the data before instantiating the datasource to handle
-        categorical axes correctly.
+        Transforms non-string or integer types in datasource if the
+        axis to be plotted on is categorical. Accepts the column data
+        sourcec data, the columns corresponding to the axes and the
+        dimensions for each axis, changing the data inplace.
         """
         if self.invert_axes:
             cols = cols[::-1]
@@ -567,7 +570,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for i, col in enumerate(cols):
             column = data[col]
             if (isinstance(ranges[i], FactorRange) and
-                (isinstance(column, list) or column.dtype.kind not in 'iOSU')):
+                (isinstance(column, list) or column.dtype.kind not in 'iSU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
 
@@ -578,8 +581,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([x if xvals.dtype.kind in 'iOSU' else xdim.pprint_value(x) for x in xvals],
-                  [y if yvals.dtype.kind in 'iOSU' else ydim.pprint_value(y) for y in yvals])
+        coords = ([x if xvals.dtype.kind in 'iSU' else xdim.pprint_value(x) for x in xvals],
+                  [y if yvals.dtype.kind in 'iSU' else ydim.pprint_value(y) for y in yvals])
         if self.invert_axes: coords = coords[::-1]
         return coords
 

@@ -87,7 +87,7 @@ class PointPlot(ColorbarPlot):
         xdim, ydim = dims[xidx], dims[yidx]
         data[xdim] = [] if empty else element.dimension_values(xidx)
         data[ydim] = [] if empty else element.dimension_values(yidx)
-        self._clean_data(data, (xdim, ydim), element.dimensions())
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
         self._get_hover_data(data, element, empty)
         return data, mapping
 
@@ -148,7 +148,7 @@ class CurvePlot(ElementPlot):
         y = element.get_dimension(yidx).name
         data = {x: [] if empty else element.dimension_values(xidx),
                 y: [] if empty else element.dimension_values(yidx)}
-        self._clean_data(data, (x, y), element.dimensions())
+        self._categorize_data(data, (x, y), element.dimensions())
         return (data, dict(x=x, y=y))
 
     def _hover_tooltips(self, element):
@@ -371,7 +371,7 @@ class ErrorPlot(PathPlot):
             data = dict(xs=err_ys, ys=err_xs)
         else:
             data = dict(xs=err_xs, ys=err_ys)
-        self._clean_data(data, ('xs', 'ys'), element.dimensions())
+        self._categorize_data(data, ('xs', 'ys'), element.dimensions())
         return (data, dict(self._mapping))
 
 
