@@ -24,6 +24,7 @@ if bokeh_version >= '0.12':
     from bokeh.layouts import WidgetBox
 
 from ...core.options import abbreviated_exception
+from ...core.overlay import Overlay
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -346,7 +347,7 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
-def pad_plots(plots, padding=0.85):
+def pad_plots(plots, table_padding=0.85, tabs_padding=1.2):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a WidgetBox with appropriate
@@ -360,10 +361,11 @@ def pad_plots(plots, padding=0.85):
                 width = np.max([p.width if isinstance(p, DataTable) else
                                 t.child.plot_width for t in p.tabs])
                 for p in p.tabs:
-                    p.width = int(padding*width)
+                    p.width = width
+                width = int(tabs_padding*width)
             elif isinstance(p, DataTable):
                 width = p.width
-                p.width = int(padding*width)
+                p.width = int(table_padding*width)
             elif p:
                 width = p.plot_width
             else:
@@ -402,3 +404,25 @@ def py2js_tickformatter(formatter, msg=''):
     match = re.search('(function \(.*\))', jsfunc )
     return jsfunc[:match.start()] + 'function ()' + jsfunc[match.end():]
 
+
+def get_tab_title(key, frame, overlay):
+    """
+    Computes a title for bokeh tabs from the key in the overlay, the
+    element and the containing (Nd)Overlay.
+    """
+    if isinstance(overlay, Overlay):
+        if frame is not None:
+            title = []
+            if frame.label:
+                title.append(frame.label)
+                if frame.group != frame.params('group').default:
+                    title.append(frame.group)
+            else:
+                title.append(frame.group)
+        else:
+            title = key
+        title = ' '.join(title)
+    else:
+        title = ' | '.join([d.pprint_value_string(k) for d, k in
+                            zip(overlay.kdims, key)])
+    return title
