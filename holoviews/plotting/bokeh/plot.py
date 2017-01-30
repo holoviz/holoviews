@@ -533,14 +533,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         if adjoined:
             plots = layout_padding(plots)
 
-        # Determine the most appropriate composite plot type
-        # If the object cannot be displayed in a single layout
-        # it will be split into Tabs, for 1-row or 1-column
-        # Layouts we use the vplot and hplots.
-        # If there is a table and multiple rows and columns
-        # everything will be forced to a vertical layout
+        # Wrap in appropriate layout model
         if self.tabs:
-            panels = [Panel(child=child, title=str(tab_titles.get(r, c)))
+            panels = [Panel(child=child, title=str(tab_titles.get((r, c))))
                       for r, row in enumerate(plots)
                       for c, child in enumerate(row)
                       if child is not None]

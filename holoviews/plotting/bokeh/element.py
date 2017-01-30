@@ -33,7 +33,7 @@ from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
 from .plot import BokehPlot
-from .util import (mpl_to_bokeh, convert_datetime, update_plot,
+from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
                    bokeh_version, mplcmap_to_palette, py2js_tickformatter)
 
 if bokeh_version >= '0.12':
@@ -920,6 +920,8 @@ class ColorbarPlot(ElementPlot):
     def _get_colormapper(self, dim, element, ranges, style):
         # The initial colormapper instance is cached the first time
         # and then only updated
+        if dim is None:
+            return None
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         if self.adjoined:
@@ -1208,20 +1210,17 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         panels = []
         for key, subplot in self.subplots.items():
+            frame = None
             if self.tabs: subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
-            if self.batched:
-                self.handles['plot'] = child
-            if self.tabs:
-                if self.hmap.type is Overlay:
-                    title = ' '.join(key)
-                else:
-                    title = ', '.join([d.pprint_value_string(k) for d, k in
-                                       zip(self.hmap.last.kdims, key)])
-                panels.append(Panel(child=child, title=title))
             if isinstance(element, CompositeOverlay):
                 frame = element.get(key, None)
                 subplot.current_frame = frame
+            if self.batched:
+                self.handles['plot'] = child
+            if self.tabs:
+                title = get_tab_title(key, frame, self.hmap.last)
+                panels.append(Panel(child=child, title=title))
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)

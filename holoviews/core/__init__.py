@@ -25,6 +25,11 @@ Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 
+try:
+    import pandas as pd
+    Dimension.type_formatters[pd.tslib.Timestamp] = "%Y-%m-%d %H:%M:%S"
+except:
+    pass
 
 def public(obj):
     if not isinstance(obj, type): return False

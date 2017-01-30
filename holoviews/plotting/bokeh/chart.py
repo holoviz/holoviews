@@ -303,7 +303,8 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
 
-        dim = element.get_dimension(0)
+        color_dims = self.adjoined.traverse(lambda x: x.handles.get('color_dim'))
+        dim = color_dims[0] if color_dims else None
         cmapper = self._get_colormapper(dim, element, {}, {})
         if cmapper:
             data[dim.name] = [] if empty else element.dimension_values(dim)
@@ -566,24 +567,29 @@ class BoxPlot(ChartPlot):
     """
     BoxPlot generates a box and whisker plot from a BoxWhisker
     Element. This allows plotting the median, mean and various
-    percentiles. Displaying outliers is currently not supported
-    as they cannot be consistently updated.
+    percentiles.
     """
 
-    style_opts = ['color', 'whisker_color'] + line_properties
+    style_opts = ['color', 'whisker_color', 'marker'] + line_properties
 
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
-        dframe = element.dframe()
         label = element.dimensions('key', True)
-        if len(element.dimensions()) == 1:
+        dframe = element.dframe()
+
+        # Fix for displaying datetimes which are not handled by bokeh
+        for kd in element.kdims:
+            col = dframe[kd.name]
+            if col.dtype.kind in ('M',):
+                dframe[kd.name] = [kd.pprint_value(v).replace(':', ';')
+                                   for v in col]
+
+        if not element.kdims:
             dframe[''] = ''
             label = ['']
-        plot = BokehBoxPlot(dframe, label=label,
-                            values=element.dimensions('value', True)[0],
-                            **properties)
 
-        return plot
+        return BokehBoxPlot(dframe, label=label, values=element.vdims[0].name,
+                            **properties)
 
 
 class BarPlot(ChartPlot):
