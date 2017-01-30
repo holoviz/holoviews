@@ -50,7 +50,7 @@ class TestAliases(ComparisonTestCase):
         im = hv.Image(self.data1,
                      kdims=[('Lambda', '$\Lambda$'),
                             ('Joules', 'Energy ($J$)')])
-        self.assertEqual(im.kdims[0].name, '$\Lambda$')
-        self.assertEqual(im.kdims[1].name, 'Energy ($J$)')
+        self.assertEqual(im.kdims[0].label, '$\Lambda$')
+        self.assertEqual(im.kdims[1].label, 'Energy ($J$)')
         sliced = im.select(Lambda=(-0.2, 0.2), Joules=(-0.3, 0.3))
         self.assertEqual(sliced.shape, (6,4))

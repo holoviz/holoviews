@@ -999,9 +999,11 @@ class DynamicMap(HoloMap):
     def overlay(self, dimensions=None, **kwargs):
         if dimensions is None:
             dimensions = self.kdims
-        if not isinstance(dimensions, (list, tuple)):
-            dimensions = [dimensions]
-        dimensions = [self.get_dimension(d) for d in dimensions]
+        else:
+            if not isinstance(dimensions, (list, tuple)):
+                dimensions = [dimensions]
+            dimensions = [self.get_dimension(d, strict=True)
+                          for d in dimensions]
         dims = [d for d in self.kdims if d not in dimensions]
         return self.groupby(dims, group_type=NdOverlay)
 

@@ -26,7 +26,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def dimension_type(cls, columns, dim):
-        name = columns.get_dimension(dim).name
+        name = columns.get_dimension(dim, strict=True).name
         idx = list(columns.data.columns).index(name)
         return columns.data.dtypes[idx].type
 
@@ -81,7 +81,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label=True)
+        not_found = [d for d in dataset.dimensions(label='name')
                      if d not in dataset.data.columns]
         if not_found:
             raise ValueError("Supplied data does not contain specified "
@@ -91,7 +91,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def range(cls, columns, dimension):
-        column = columns.data[columns.get_dimension(dimension).name]
+        column = columns.data[columns.get_dimension(dimension, strict=True).name]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
                         LooseVersion(pd.__version__) < '0.17.0'):
@@ -111,7 +111,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        index_dims = [columns.get_dimension(d) for d in dimensions]
+        index_dims = [columns.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
 
@@ -121,8 +121,9 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(dimensions, sort=False)]
+                columns.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False):
                 return container_type(data, kdims=index_dims)
@@ -134,7 +135,7 @@ class PandasInterface(Interface):
     def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
+        vdims = columns.dimensions('value', label='name')
         reindexed = data[cols+vdims]
         if len(dimensions):
             grouped = reindexed.groupby(cols, sort=False)
@@ -171,9 +172,7 @@ class PandasInterface(Interface):
     @classmethod
     def sort(cls, columns, by=[]):
         import pandas as pd
-        if not isinstance(by, list): by = [by]
-        if not by: by = range(columns.ndims)
-        cols = [columns.get_dimension(d).name for d in by]
+        cols = [columns.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
@@ -195,7 +194,8 @@ class PandasInterface(Interface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        data = columns.data[dim]
+        dim = columns.get_dimension(dim, strict=True)
+        data = columns.data[dim.name]
         if not expanded:
             return data.unique()
         return data.values
@@ -225,6 +225,8 @@ class PandasInterface(Interface):
     @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
+            dimensions = [columns.get_dimension(d, strict=True).name
+                          for d in dimensions]
             return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()

@@ -108,7 +108,7 @@ class GridInterface(DictInterface):
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim.name]
@@ -129,7 +129,7 @@ class GridInterface(DictInterface):
         dimensions of the dataset.
         """
         if coord_dims is None:
-            coord_dims = dataset.dimensions('key', True)[::-1]
+            coord_dims = dataset.dimensions('key', label='name')[::-1]
 
         # Reorient data
         invert = False
@@ -162,22 +162,22 @@ class GridInterface(DictInterface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims:
-            dim = dataset.get_dimension(dim)
             data = dataset.data.get(dim.name)
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim, expanded=True)
+            data = cls.coords(dataset, dim.name, expanded=True)
             return data.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim, ordered=True)
+            return cls.coords(dataset, dim.name, ordered=True)
 
 
     @classmethod
     def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
         # Get dimensions information
-        dimensions = [dataset.get_dimension(d) for d in dim_names]
+        dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
 
         # Update the kwargs appropriately for Element group types
@@ -246,14 +246,15 @@ class GridInterface(DictInterface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        dimensions = dataset.dimensions('key', label=True)
+        dimensions = dataset.kdims
         val_dims = [vdim for vdim in dataset.vdims if vdim in selection]
         if val_dims:
             raise IndexError('Cannot slice value dimensions in compressed format, '
                              'convert to expanded format before slicing.')
 
         indexed = cls.indexed(dataset, selection)
-        selection = [(d, selection.get(d)) for d in dimensions]
+        selection = [(d, selection.get(d.name, selection.get(d.label)))
+                      for d in dimensions]
         data = {}
         value_select = []
         for dim, ind in selection:
@@ -264,7 +265,7 @@ class GridInterface(DictInterface):
             else:
                 values = values[mask]
             value_select.append(mask)
-            data[dim] = values
+            data[dim.name] = values
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
@@ -283,7 +284,7 @@ class GridInterface(DictInterface):
         Samples the gridded data into dataset of samples.
         """
         ndims = dataset.ndims
-        dimensions = dataset.dimensions(label=True)
+        dimensions = dataset.dimensions(label='name')
         arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
         data = defaultdict(list)
 
@@ -320,7 +321,7 @@ class GridInterface(DictInterface):
                      for kdim in dataset.kdims if kdim not in kdims)
         for vdim in dataset.vdims:
             data[vdim.name] = np.atleast_1d(function(dataset.data[vdim.name],
-                                                     axis=axes, **kwargs))
+                                                      axis=axes, **kwargs))
 
         return data
 

@@ -70,7 +70,8 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        data = columns.data[dim]
+        dim = columns.get_dimension(dim)
+        data = columns.data[dim.name]
         if not expanded:
             data = data.unique()
         return data.compute().values
@@ -88,7 +89,8 @@ class DaskInterface(PandasInterface):
             if isinstance(k, tuple):
                 k = slice(*k)
             masks = []
-            series = dataset.data[dim]
+            alias = dataset.get_dimension(dim).name
+            series = dataset.data[alias]
             if isinstance(k, slice):
                 if k.start is not None:
                     masks.append(k.start <= series)
@@ -139,15 +141,16 @@ class DaskInterface(PandasInterface):
         group_kwargs.update(kwargs)
 
         data = []
-        groupby = columns.data.groupby(dimensions)
-        if len(dimensions) == 1:
-            column = columns.data[dimensions[0]]
+        group_by = [d.name for d in index_dims]
+        groupby = columns.data.groupby(group_by)
+        if len(group_by) == 1:
+            column = columns.data[group_by[0]]
             if column.dtype.name == 'category':
                 indices = ((ind,) for ind in column.cat.categories)
             else:
                 indices = ((ind,) for ind in column.unique().compute())
         else:
-            group_tuples = columns.data[dimensions].itertuple()
+            group_tuples = columns.data[group_by].itertuple()
             indices = util.unique_iterator(ind[1:] for ind in group_tuples)
         for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
@@ -161,12 +164,12 @@ class DaskInterface(PandasInterface):
                 return container_type(data, kdims=index_dims)
         else:
             return container_type(data)
-    
+
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
+        vdims = columns.dimensions('value', label='name')
         dtypes = data.dtypes
         numeric = [c for c, dtype in zip(dtypes.index, dtypes.values)
                    if dtype.kind in 'iufc' and c in vdims]
@@ -203,7 +206,7 @@ class DaskInterface(PandasInterface):
     @classmethod
     def sample(cls, columns, samples=[]):
         data = columns.data
-        dims = columns.dimensions('key', label=True)
+        dims = columns.dimensions('key', label='name')
         mask = None
         for sample in samples:
             if np.isscalar(sample): sample = [sample]

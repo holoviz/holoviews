@@ -100,8 +100,8 @@ class DataConversion(object):
             groupby = [groupby]
 
         selected = self._element.reindex(groupby+kdims, vdims)
-        params = {'kdims': [selected.get_dimension(kd) for kd in kdims],
-                  'vdims': [selected.get_dimension(vd) for vd in vdims],
+        params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
+                  'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
         if selected.group != selected.params()['group'].default:
             params['group'] = selected.group
@@ -148,9 +148,16 @@ class Dataset(Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
-        initialized = Interface.initialize(type(self), data,
-                                           kwargs.get('kdims'),
-                                           kwargs.get('vdims'),
+
+        kdims, vdims = None, None
+        if 'kdims' in kwargs:
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['kdims']]
+        if 'vdims' in kwargs:
+            vdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
+                     for kd in kwargs['vdims']]
+
+        initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
         super(Dataset, self).__init__(data, **dict(extra_kws, **dict(kwargs, **dims)))
@@ -195,6 +202,8 @@ class Dataset(Element):
         Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
+        if not isinstance(by, list): by = [by]
+
         sorted_columns = self.interface.sort(self, by)
         return self.clone(sorted_columns)
 
@@ -206,7 +215,9 @@ class Dataset(Element):
         object.
         """
         dim = self.get_dimension(dim)
-        if None not in dim.range:
+        if dim is None:
+            return (None, None)
+        elif None not in dim.range:
             return dim.range
         elif dim in self.dimensions() and data_range:
             if len(self):
@@ -234,7 +245,7 @@ class Dataset(Element):
         dimensions and a key value scalar or sequence of the same length
         as the existing keys.
         """
-        if isinstance(dimension, str):
+        if isinstance(dimension, (util.basestring, tuple)):
             dimension = Dimension(dimension)
 
         if dimension.name in self.kdims:
@@ -282,12 +293,12 @@ class Dataset(Element):
         if kdims is None:
             key_dims = [d for d in self.kdims if not vdims or d not in vdims]
         else:
-            key_dims = [self.get_dimension(k) for k in kdims]
+            key_dims = [self.get_dimension(k, strict=True) for k in kdims]
 
         if vdims is None:
             val_dims = [d for d in self.vdims if not kdims or d not in kdims]
         else:
-            val_dims = [self.get_dimension(v) for v in vdims]
+            val_dims = [self.get_dimension(v, strict=True) for v in vdims]
 
         data = self.interface.reindex(self, key_dims, val_dims)
         return self.clone(data, kdims=key_dims, vdims=val_dims)
@@ -369,10 +380,10 @@ class Dataset(Element):
             raise ValueError("The aggregate method requires a function to be specified")
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
-        aggregated = self.interface.aggregate(self, dimensions, function, **kwargs)
+        kdims = [self.get_dimension(d, strict=True) for d in dimensions]
+        aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
-        kdims = [self.get_dimension(d) for d in dimensions]
         vdims = self.vdims
         if spreadfn:
             error = self.interface.aggregate(self, dimensions, spreadfn)
@@ -478,7 +489,7 @@ class Dataset(Element):
         Returns the values along a particular dimension. If unique
         values are requested will return only unique values.
         """
-        dim = self.get_dimension(dim, strict=True).name
+        dim = self.get_dimension(dim, strict=True)
         return self.interface.values(self, dim, expanded, flat)
 
 
@@ -499,13 +510,15 @@ class Dataset(Element):
         Returns the data in the form of a DataFrame.
         """
         if dimensions:
-            dimensions = [self.get_dimension(d).name for d in dimensions]
+            dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
         return self.interface.dframe(self, dimensions)
 
 
     def columns(self, dimensions=None):
-        if dimensions is None: dimensions = self.dimensions()
-        dimensions = [self.get_dimension(d) for d in dimensions]
+        if dimensions is None:
+            dimensions = self.dimensions()
+        else:
+            dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         return {d.name: self.dimension_values(d) for d in dimensions}
 
 

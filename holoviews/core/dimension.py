@@ -52,12 +52,14 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
+        elif d.label in overrides:
+            override = overrides[d.label]
         else:
             override = None
 
         if override is None:
             replaced.append(d)
-        elif isinstance(override, basestring):
+        elif isinstance(override, (basestring, tuple)):
             replaced.append(d(override))
         elif isinstance(override, Dimension):
             replaced.append(override)
@@ -142,10 +144,12 @@ class Dimension(param.Parameterized):
             existing_params = {'name': name}
 
         all_params = dict(existing_params, **params)
-        if isinstance(all_params['name'], tuple):
-            alias, long_name = all_params['name']
-            dimension_sanitizer.add_aliases(**{alias:long_name})
-            all_params['name'] = long_name
+        name = all_params['name']
+        label = name
+        if isinstance(name, tuple):
+            name, label = name
+            all_params['name'] = name
+        self.label = label
 
         if not isinstance(params.get('values', None), basestring):
             all_params['values'] = sorted(list(unique_array(params.get('values', []))))
@@ -169,7 +173,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return safe_unicode(self.name) + safe_unicode(unit)
+        return safe_unicode(self.label) + safe_unicode(unit)
 
 
     def pprint_value(self, value):
@@ -206,7 +210,7 @@ class Dimension(param.Parameterized):
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return title_format.format(name=self.name, val=value, unit=unit)
+        return title_format.format(name=self.label, val=value, unit=unit)
 
 
     def __hash__(self):
@@ -219,14 +223,27 @@ class Dimension(param.Parameterized):
                     if not isinstance(value, list)])
 
 
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.label = self.name
+
+
     def __str__(self):
         return self.pprint_label
 
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, dimension_sanitizer(self.name)]
-        return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
+        dim_matches = [self.name, self.label, dimension_sanitizer(self.label)]
+        if self is other:
+            return True
+        elif isinstance(other, Dimension):
+            return bool({other.name, other.label} & set(dim_matches))
+        else:
+            return other in dim_matches
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
@@ -645,6 +662,13 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
+        if label in ['name', True]:
+            label = 'short'
+        elif label == 'label':
+            label = 'long'
+        elif label:
+            raise ValueError("label needs to be one of True, False, 'name' or 'label'")
+
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
@@ -664,7 +688,8 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [dim.name if label else dim for dim in dims]
+        return [(dim.label if label == 'long' else dim.name)
+                if label else dim for dim in dims]
 
 
     def get_dimension(self, dimension, default=None, strict=False):
@@ -685,6 +710,8 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
+        name_map.update({dim.label: dim for dim in all_dims})
+        name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:
@@ -703,10 +730,9 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            if dim in self.kdims+self.vdims:
-                return (self.kdims+self.vdims).index(dim)
-            return self.dimensions().index(dim)
-        except ValueError:
+            dimensions = self.kdims+self.vdims
+            return [i for i, d in enumerate(dimensions) if d == dim][0]
+        except IndexError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
 
@@ -795,20 +821,15 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            val_dim = ['value'] if selection.vdims else []
-            key_dims = selection.dimensions('key', label=True) + val_dim
-            if any(kw in key_dims for kw in kwargs):
+            dimensions = selection.dimensions() + ['value']
+            if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                val_dim = ['value'] if v.vdims else []
-                dims = list(zip(*[(dimension_sanitizer(kd), kd)
-                                  for kd in v.dimensions('key', label=True)]))
-                kdims, skdims = dims if dims else ([], [])
-                key_dims = list(kdims) + list(skdims) + val_dim
-                if any(kw in key_dims for kw in kwargs):
+                dimensions = v.dimensions() + ['value']
+                if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
