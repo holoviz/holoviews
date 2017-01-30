@@ -872,12 +872,12 @@ class Dimensioned(LabelledData):
         if None not in dimension.range:
             return dimension.range
         elif data_range:
-            if dimension in self.kdims or dimension in self.vdims:
+            if dimension in self.kdims+self.vdims:
                 dim_vals = self.dimension_values(dimension.name)
                 drange = find_range(dim_vals)
             else:
                 dname = dimension.name
-                match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
+                match_fn = lambda x: dname in x.kdims + x.vdims
                 range_fn = lambda x: x.range(dname)
                 ranges = self.traverse(range_fn, [match_fn])
                 drange = max_range(ranges)

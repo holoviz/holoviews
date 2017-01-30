@@ -27,7 +27,7 @@ class BokehRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
 
-    webgl = param.Boolean(default=True, doc="""Whether to render plots with WebGL
+    webgl = param.Boolean(default=False, doc="""Whether to render plots with WebGL
         if bokeh version >=0.10""")
 
     widgets = {'scrubber': BokehScrubberWidget,

@@ -136,15 +136,11 @@ class HeatmapPlot(ColorbarPlot):
     _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    def _axes_props(self, plots, subplots, element, ranges):
-        dims = element.dimensions()
-        labels = self._get_axis_labels(dims)
-        agg = element.gridded
-        xvals, yvals = [agg.dimension_values(i, False) for i in range(2)]
-        if self.invert_yaxis: yvals = yvals[::-1]
-        plot_ranges = {'x_range': [str(x) for x in xvals],
-                       'y_range': [str(y) for y in yvals]}
-        return ('auto', 'auto'), labels, plot_ranges
+    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar']
+    _categorical = True
+
+    def _get_factors(self, element):
+        return super(HeatmapPlot, self)._get_factors(element.gridded)
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = element.dimensions(label=True)[:3]
@@ -154,9 +150,12 @@ class HeatmapPlot(ColorbarPlot):
         if empty:
             data = {x: [], y: [], z: []}
         else:
-            zvals = aggregate.dimension_values(z)
-            xvals, yvals = [[str(v) for v in aggregate.dimension_values(i)]
-                            for i in range(2)]
+            xdim, ydim = aggregate.dimensions()[:2]
+            xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
+            if xvals.dtype.kind not in 'SU':
+                xvals = [xdim.pprint_value(xv) for xv in xvals]
+            if yvals.dtype.kind not in 'SU':
+                yvals = [ydim.pprint_value(yv) for yv in yvals]
             data = {x: xvals, y: yvals, 'zvalues': zvals}
 
         if 'hover' in self.tools+self.default_tools:

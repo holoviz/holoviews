@@ -7,7 +7,7 @@ try:
 except:
     Bar, BokehBoxPlot = None, None
 from bokeh.models import (Circle, GlyphRenderer, ColumnDataSource,
-                          Range1d, CustomJS)
+                          Range1d, CustomJS, FactorRange)
 from bokeh.models.tools import BoxSelectTool
 
 from ...element import Raster, Points, Polygons, Spikes
@@ -84,8 +84,10 @@ class PointPlot(ColorbarPlot):
                     data[map_key] = np.sqrt(sizes)
                     mapping['size'] = map_key
 
-        data[dims[xidx]] = [] if empty else element.dimension_values(xidx)
-        data[dims[yidx]] = [] if empty else element.dimension_values(yidx)
+        xdim, ydim = dims[xidx], dims[yidx]
+        data[xdim] = [] if empty else element.dimension_values(xidx)
+        data[ydim] = [] if empty else element.dimension_values(yidx)
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
         self._get_hover_data(data, element, empty)
         return data, mapping
 
@@ -144,9 +146,10 @@ class CurvePlot(ElementPlot):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
-        return ({x: [] if empty else element.dimension_values(xidx),
-                 y: [] if empty else element.dimension_values(yidx)},
-                dict(x=x, y=y))
+        data = {x: [] if empty else element.dimension_values(xidx),
+                y: [] if empty else element.dimension_values(yidx)}
+        self._categorize_data(data, (x, y), element.dimensions())
+        return (data, dict(x=x, y=y))
 
     def _hover_tooltips(self, element):
         if self.batched:
@@ -369,6 +372,7 @@ class ErrorPlot(PathPlot):
             data = dict(xs=err_ys, ys=err_xs)
         else:
             data = dict(xs=err_xs, ys=err_ys)
+        self._categorize_data(data, ('xs', 'ys'), element.dimensions())
         return (data, dict(self._mapping))
 
 

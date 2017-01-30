@@ -458,6 +458,9 @@ def max_range(ranges):
             if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
+            if arr.dtype.kind in 'OSU':
+                arr = np.sort([v for v in arr.flat if not is_nan(v)])
+                return arr[0], arr[-1]
             if arr.dtype.kind in 'M':
                 return arr[:, 0].min(), arr[:, 1].max()
             return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
@@ -492,10 +495,14 @@ def max_extents(extents, zrange=False):
             upper = [v for v in arr[uidx] if v is not None]
             if lower and isinstance(lower[0], np.datetime64):
                 extents[lidx] = np.min(lower)
+            elif any(isinstance(l, basestring) for l in lower):
+                extents[lidx] = np.sort(lower)[0]
             elif lower:
                 extents[lidx] = np.nanmin(lower)
             if upper and isinstance(upper[0], np.datetime64):
                 extents[uidx] = np.max(upper)
+            elif any(isinstance(u, basestring) for u in upper):
+                extents[uidx] = np.sort(upper)[-1]
             elif upper:
                 extents[uidx] = np.nanmax(upper)
     return tuple(extents)
