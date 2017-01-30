@@ -201,7 +201,7 @@ class aggregate(ElementOperation):
             name = column
         vdims = [element.get_dimension(column)(name) if column
                  else Dimension('Count')]
-        params = dict(get_param_values(element), kdims=[element.dimensions()[0:2]],
+        params = dict(get_param_values(element), kdims=element.dimensions()[:2],
                       datatype=['xarray'], vdims=vdims)
 
         agg = getattr(cvs, glyph)(data, x, y, self.p.aggregator)
