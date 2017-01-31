@@ -692,9 +692,8 @@ class gridmatrix(param.ParameterizedFunction):
             if d1 == d2:
                 if p.diagonal_type is Histogram:
                     bin_range = ranges.get(d1.name, element.range(d1))
-                    el = element.hist(dimension=d1.name,
-                                      bin_range=bin_range,
-                                      adjoin=False)(norm=dict(axiswise=True, framewise=True))
+                    el = histogram(element, dimension=d1.name, bin_range=bin_range)
+                    el = el(norm=dict(axiswise=True, framewise=True))
                 else:
                     values = element.dimension_values(d1)
                     el = p.diagonal_type(values, vdims=[d1])

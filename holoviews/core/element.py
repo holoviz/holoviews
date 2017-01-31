@@ -39,8 +39,7 @@ class Element(ViewableElement, Composable, Overlayable):
         hists = []
         for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
-                             adjoin=False, individually=individually,
-                             dimension=d, **kwargs)
+                             individually=individually, dimension=d, **kwargs)
             hists.append(hist)
         if adjoin:
             layout = self
