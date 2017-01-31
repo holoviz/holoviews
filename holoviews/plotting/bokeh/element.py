@@ -25,7 +25,7 @@ except ImportError:
 import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
-                     CompositeOverlay, Element)
+                     CompositeOverlay, Element, Dimension)
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import RGB
@@ -208,7 +208,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
-            dims = list(self.overlay_dims.keys())
+            dims = [(d.pprint_label, d.pprint_value(v))
+                    for d, v in self.overlay_dims.items()]
         dims += element.dimensions()
         return dims, {}
 
@@ -217,8 +218,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tooltips, hover_opts = self._hover_opts(element)
-        tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in tooltips]
+        tooltips = [(ttp.pprint_label, '@'+util.dimension_sanitizer(ttp.name))
+                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -251,10 +252,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for d in element.dimensions(label=True):
             sanitized = util.dimension_sanitizer(d)
             data[sanitized] = [] if empty else element.dimension_values(d)
-        for k, v in self.overlay_dims.items():
-            dim = util.dimension_sanitizer(k.name)
-            data[dim] = [v for _ in range(len(data.values()[0]))]
-
 
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
