@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
+from numbers import Number
 from collections import defaultdict
 from .core import util
 
@@ -199,7 +200,7 @@ class PositionX(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.Number(default=0, doc="""
+    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
 
@@ -211,7 +212,7 @@ class PositionY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    y = param.Number(default=0, doc="""
+    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
 
@@ -223,10 +224,10 @@ class PositionXY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.Number(default=0, doc="""
+    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
-    y = param.Number(default=0, doc="""
+    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
 
