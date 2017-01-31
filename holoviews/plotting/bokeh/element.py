@@ -208,8 +208,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
-            dims = [(d.pprint_label, d.pprint_value(v))
-                    for d, v in self.overlay_dims.items()]
+            dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
         return dims, {}
 
@@ -252,6 +251,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for d in element.dimensions(label=True):
             sanitized = util.dimension_sanitizer(d)
             data[sanitized] = [] if empty else element.dimension_values(d)
+
+        for k, v in self.overlay_dims.items():
+            dim = util.dimension_sanitizer(k.name)
+            data[dim] = [v for _ in range(len(data.values()[0]))]
+
 
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element

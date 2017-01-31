@@ -158,9 +158,7 @@ class CurvePlot(ElementPlot):
             dims = list(self.hmap.last.kdims)
             line_policy = 'prev'
         else:
-            dims = [(d.pprint_label, d.pprint_value(v))
-                    for d, v in self.overlay_dims.items()]
-            dims += element.dimensions()
+            dims = list(self.overlay_dims.keys())+element.dimensions()
             line_policy = 'nearest'
         return dims, dict(line_policy=line_policy)
 

@@ -24,8 +24,7 @@ class PathPlot(ElementPlot):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
-            dims = [(d.pprint_label, d.pprint_value(v))
-                    for d, v in self.overlay_dims.items()]
+            dims = list(self.overlay_dims.keys())
         return dims, {}
 
     def get_data(self, element, ranges=None, empty=False):
