@@ -464,7 +464,7 @@ class histogram(ElementOperation):
     dimension.
     """
 
-    bin_range = param.NumericTuple(default=(0, 0), doc="""
+    bin_range = param.NumericTuple(default=None, length=2,  doc="""
       Specifies the range within which to compute the bins.""")
 
     dimension = param.String(default=None, doc="""
