@@ -55,31 +55,31 @@ class ElementOperationTests(ComparisonTestCase):
         self.assertEqual(op_contours, img*ndoverlay)
 
     def test_points_histogram(self):
-        points = Points(range(10))
+        points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3)
-        hist = Histogram(([1.5, 0., 1.5], [0., 0.33333333, 0.66666667, 1.]))
+        hist = Histogram(([0.1, 0.1, 0.133333], [0, 3, 6, 9]))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_bin_range(self):
-        points = Points(range(10))
+        points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, bin_range=(0, 3))
         hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_not_normed(self):
-        points = Points(range(10))
+        points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, normed=False)
-        hist = Histogram(([1.,  0., 1.], [0., 0.33333333, 0.66666667, 1.]))
+        hist = Histogram(([3, 3, 4], [0, 3, 6, 9]))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_weighted(self):
-        points = Points(range(10))
+        points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y')
-        hist = Histogram(([0.,  0., 3.], [0., 0.33333333, 0.66666667, 1.]), vdims=['y'])
+        hist = Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
     
     def test_points_histogram_mean_weighted(self):
-        points = Points(range(10))
+        points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y', mean_weighted=True)
-        hist = Histogram(([0.,  0., 1.], [0., 0.33333333, 0.66666667, 1.]), vdims=['y'])
+        hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
