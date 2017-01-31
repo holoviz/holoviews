@@ -462,22 +462,16 @@ class histogram(ElementOperation):
     Returns a Histogram of the input element data, binned into
     num_bins over the bin_range (if specified) along the specified
     dimension.
-
-    If adjoin is True, the histogram will be returned adjoined to the
-    Element as a side-plot.
     """
-
-    adjoin = param.Boolean(default=True, doc="""
-      Whether to adjoin the histogram to the ViewableElement.""")
 
     bin_range = param.NumericTuple(default=(0, 0), doc="""
       Specifies the range within which to compute the bins.""")
 
     dimension = param.String(default=None, doc="""
-      Along which dimension of the ViewableElement to compute the histogram.""")
+      Along which dimension of the Element to compute the histogram.""")
 
     individually = param.Boolean(default=True, doc="""
-      Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
+      Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
     log = param.Boolean(default=False, doc="""
       Whether to use base 10 logarithmic samples for the bin edges.""")
@@ -547,10 +541,8 @@ class histogram(ElementOperation):
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
-        hist_view = Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
-                              label=view.label, **params)
-
-        return (view << hist_view) if self.p.adjoin else hist_view
+        return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
+                         label=view.label, **params)
 
 
 
