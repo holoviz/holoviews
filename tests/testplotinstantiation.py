@@ -188,7 +188,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '0'), ('x', '@x'), ('y', '@y')], 'nearest')
+        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'), ('y', '@y')], 'nearest')
 
     def test_points_overlay_hover(self):
         obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},

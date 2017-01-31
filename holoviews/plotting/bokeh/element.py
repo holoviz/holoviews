@@ -254,7 +254,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
-            data[dim] = [v for _ in range(len(data.values()[0]))]
+            data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
     def _axes_props(self, plots, subplots, element, ranges):
