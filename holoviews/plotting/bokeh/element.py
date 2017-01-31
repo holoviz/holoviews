@@ -204,21 +204,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cbs.append(cb(self, cb_streams, source))
         return cbs
 
-    def _hover_tooltips(self, element):
+    def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
-        return dims
+        return dims, {}
 
     def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tooltip_dims = self._hover_tooltips(element)
+        tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in tooltip_dims]
+                    for d in tooltips]
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -227,7 +227,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
-                        tool = HoverTool(tooltips=tooltips)
+                        tool = HoverTool(tooltips=tooltips, **hover_opts)
                     else:
                         tool = known_tools[handle]()
                     cb_tools.append(tool)
@@ -236,7 +236,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
         if 'hover' in tools:
-            tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
+            tools[tools.index('hover')] = HoverTool(tooltips=tooltips, **hover_opts)
         return tools
 
 

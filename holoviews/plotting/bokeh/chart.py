@@ -151,11 +151,14 @@ class CurvePlot(ElementPlot):
         self._categorize_data(data, (x, y), element.dimensions())
         return (data, dict(x=x, y=y))
 
-    def _hover_tooltips(self, element):
+    def _hover_opts(self, element):
         if self.batched:
-            return list(self.hmap.last.kdims)
+            dims = list(self.hmap.last.kdims)
+            line_policy = 'prev'
         else:
-            return list(self.overlay_dims.keys())
+            dims = element.dimensions()+list(self.overlay_dims.keys())
+            line_policy = 'nearest'
+        return dims dict(line_policy=line_policy)
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
         data = defaultdict(list)
