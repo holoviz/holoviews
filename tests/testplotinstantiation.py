@@ -166,15 +166,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (0, 0, 98, 98))
 
-    def _test_hover_info(self, element, tooltips):
+    def _test_hover_info(self, element, tooltips, line_policy='prev'):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
         hover = fig.select(dict(type=HoverTool))
         self.assertTrue(len(hover))
         self.assertEqual(hover[0].tooltips, tooltips)
+        self.assertEqual(hover[0].line_policy, line_policy)
 
-    def test_curve_overlay_hover(self):
+    def test_curve_overlay_hover_batched(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']},
@@ -182,6 +183,12 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         obj = obj(plot=opts)
         self._test_hover_info(obj, [('Test', '@Test')])
 
+    def test_curve_overlay_hover(self):
+        obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
+                        kdims=['Test'])
+        opts = {'Curve': {'tools': ['hover']}}
+        obj = obj(plot=opts)
+        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'), ('y', '@y')], 'nearest')
 
     def test_points_overlay_hover(self):
         obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},
@@ -207,7 +214,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
         self._test_hover_info(obj, [('Test', '@Test'), ('z', '@z')])
-
 
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)

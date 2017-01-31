@@ -25,7 +25,7 @@ except ImportError:
 import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
-                     CompositeOverlay, Element)
+                     CompositeOverlay, Element, Dimension)
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import RGB
@@ -204,21 +204,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cbs.append(cb(self, cb_streams, source))
         return cbs
 
-    def _hover_tooltips(self, element):
+    def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
-        return dims
+        return dims, {}
 
     def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
         """
-        tooltip_dims = self._hover_tooltips(element)
-        tooltips = [(d.pprint_label, '@'+util.dimension_sanitizer(d.name))
-                    for d in tooltip_dims]
+        tooltips, hover_opts = self._hover_opts(element)
+        tooltips = [(ttp.pprint_label, '@'+util.dimension_sanitizer(ttp.name))
+                    if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -227,7 +227,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
-                        tool = HoverTool(tooltips=tooltips)
+                        tool = HoverTool(tooltips=tooltips, **hover_opts)
                     else:
                         tool = known_tools[handle]()
                     cb_tools.append(tool)
@@ -236,7 +236,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
         if 'hover' in tools:
-            tools[tools.index('hover')] = HoverTool(tooltips=tooltips)
+            tools[tools.index('hover')] = HoverTool(tooltips=tooltips, **hover_opts)
         return tools
 
 
@@ -245,15 +245,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
         """
-        if 'hover' not in self.default_tools + self.tools:
+        if not any(isinstance(t, HoverTool) for t in self.state.tools):
             return
 
         for d in element.dimensions(label=True):
             sanitized = util.dimension_sanitizer(d)
             data[sanitized] = [] if empty else element.dimension_values(d)
+
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
-            data[dim] = [v for _ in range(len(data.values()[0]))]
+            data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
     def _axes_props(self, plots, subplots, element, ranges):

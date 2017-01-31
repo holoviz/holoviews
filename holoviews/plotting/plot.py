@@ -847,7 +847,7 @@ class GenericOverlayPlot(GenericElementPlot):
             else:
                 if not isinstance(key, tuple): key = (key,)
                 style_key = group_fn(vmap) + key
-                opts['overlay_dims'] = OrderedDict(zip(vmap.last.kdims, key))
+                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
 
             if self.batched:
                 vtype = type(vmap.last.last)
