@@ -1,6 +1,7 @@
 import numpy as np
 import param
 
+from bokeh.models import HoverTool
 from bokeh.models.mappers import LinearColorMapper
 try:
     from bokeh.models.mappers import LogColorMapper
@@ -158,7 +159,7 @@ class HeatmapPlot(ColorbarPlot):
                 yvals = [ydim.pprint_value(yv) for yv in yvals]
             data = {x: xvals, y: yvals, 'zvalues': zvals}
 
-        if 'hover' in self.tools+self.default_tools:
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
             for vdim in element.vdims:
                 data[vdim.name] = ['-' if is_nan(v) else vdim.pprint_value(v)
                                    for v in aggregate.dimension_values(vdim)]

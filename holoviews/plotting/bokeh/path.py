@@ -80,7 +80,7 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             mapping['fill_color'] = {'field': cdim.name,
                                      'transform': cmapper}
 
-        if 'hover' in self.tools+self.default_tools:
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
             dim_name = util.dimension_sanitizer(element.vdims[0].name)
             for k, v in self.overlay_dims.items():
                 dim = util.dimension_sanitizer(k.name)

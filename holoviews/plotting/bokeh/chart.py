@@ -7,7 +7,7 @@ try:
 except:
     Bar, BokehBoxPlot = None, None
 from bokeh.models import (Circle, GlyphRenderer, ColumnDataSource,
-                          Range1d, CustomJS, FactorRange)
+                          Range1d, CustomJS, FactorRange, HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
 from ...element import Raster, Points, Polygons, Spikes
@@ -148,8 +148,7 @@ class CurvePlot(ElementPlot):
         y = element.get_dimension(yidx).name
         data = {x: [] if empty else element.dimension_values(xidx),
                 y: [] if empty else element.dimension_values(yidx)}
-        if not self.batched and 'hover' in self.tools+self.default_tools:
-            self._get_hover_data(data, element, empty)
+        self._get_hover_data(data, element, empty)
         self._categorize_data(data, (x, y), element.dimensions())
         return (data, dict(x=x, y=y))
 
@@ -432,7 +431,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             mapping['color'] = {'field': cdim.name,
                                 'transform': cmapper}
 
-        if 'hover' in self.tools+self.default_tools and not empty:
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
             for d in dims:
                 data[dimension_sanitizer(d)] = element.dimension_values(d)
 
