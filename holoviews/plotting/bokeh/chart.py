@@ -148,13 +148,9 @@ class CurvePlot(ElementPlot):
         y = element.get_dimension(yidx).name
         data = {x: [] if empty else element.dimension_values(xidx),
                 y: [] if empty else element.dimension_values(yidx)}
-
-        self._categorize_data(data, (x, y), element.dimensions())
-
         if not self.batched and 'hover' in self.tools+self.default_tools:
-            for k, v in self.overlay_dims.items():
-                dim = dimension_sanitizer(k.name)
-                data[dim] = [v for _ in range(len(data.values()[0]))]
+            self._get_hover_data(data, element, empty)
+        self._categorize_data(data, (x, y), element.dimensions())
         return (data, dict(x=x, y=y))
 
     def _hover_opts(self, element):
