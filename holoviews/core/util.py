@@ -849,7 +849,8 @@ def is_dataframe(data):
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)
-    if data.group != data.params()['group'].default:
+    if (data.group != data.params()['group'].default and not
+        isinstance(type(data).group, property)):
         params['group'] = data.group
     return params
 
