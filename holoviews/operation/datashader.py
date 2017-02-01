@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from collections import Callable, Iterable
+import warnings
 
 import param
 import numpy as np
@@ -309,8 +310,9 @@ class shade(ElementOperation):
         else:
             shade_opts['cmap'] = self.p.cmap
 
-
-        img = tf.shade(array, **shade_opts)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
+            img = tf.shade(array, **shade_opts)
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:])
         return RGB(self.uint32_to_uint8(img.data), **params)
