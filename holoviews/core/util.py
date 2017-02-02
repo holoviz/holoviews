@@ -16,8 +16,11 @@ try:
 except:
     from collections import OrderedDict
 
+datetime_types = (np.datetime64, dt.datetime)
+
 try:
     import pandas as pd # noqa (optional import)
+    datetime_types = datetime_types + (pd.tslib.Timestamp,)
 except ImportError:
     pd = None
 
@@ -493,13 +496,13 @@ def max_extents(extents, zrange=False):
         for lidx, uidx in inds:
             lower = [v for v in arr[lidx] if v is not None]
             upper = [v for v in arr[uidx] if v is not None]
-            if lower and isinstance(lower[0], np.datetime64):
+            if lower and isinstance(lower[0], datetime_types):
                 extents[lidx] = np.min(lower)
             elif any(isinstance(l, basestring) for l in lower):
                 extents[lidx] = np.sort(lower)[0]
             elif lower:
                 extents[lidx] = np.nanmin(lower)
-            if upper and isinstance(upper[0], np.datetime64):
+            if upper and isinstance(upper[0], datetime_types):
                 extents[uidx] = np.max(upper)
             elif any(isinstance(u, basestring) for u in upper):
                 extents[uidx] = np.sort(upper)[-1]
