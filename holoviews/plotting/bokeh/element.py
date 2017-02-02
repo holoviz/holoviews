@@ -294,66 +294,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
         l, b, r, t = self.get_extents(range_el, ranges)
-
-        categorical = False
-        if not 'x_range' in plot_ranges:
-            if 'x_range' in ranges:
-                plot_ranges['x_range'] = ranges['x_range']
-            else:
-                low, high = (b, t) if self.invert_axes else (l, r)
-                if x_axis_type == 'datetime':
-                    low = convert_datetime(low)
-                    high = convert_datetime(high)
-                elif any(isinstance(x, util.basestring) for x in (low, high)):
-                    plot_ranges['x_range'] = FactorRange()
-                    categorical = True
-                elif low == high and low is not None:
-                    offset = low*0.1 if low else 0.5
-                    low -= offset
-                    high += offset
-                if not categorical and all(x is not None and np.isfinite(x) for x in (low, high)):
-                    plot_ranges['x_range'] = [low, high]
-
-        if self.invert_xaxis:
-            x_range = plot_ranges['x_range']
-            if isinstance(x_range, Range1d):
-                plot_ranges['x_range'] = x_range.__class__(start=x_range.end,
-                                                           end=x_range.start)
-            elif not isinstance(x_range, (Range, FactorRange)):
-                plot_ranges['x_range'] = x_range[::-1]
-
-        categorical = False
-        if not 'y_range' in plot_ranges:
-            if 'y_range' in ranges:
-                plot_ranges['y_range'] = ranges['y_range']
-            else:
-                low, high = (l, r) if self.invert_axes else (b, t)
-                if y_axis_type == 'datetime':
-                    low = convert_datetime(low)
-                    high = convert_datetime(high)
-                elif any(isinstance(y, util.basestring) for y in (low, high)):
-                    plot_ranges['y_range'] = FactorRange()
-                    categorical = True
-                elif low == high and low is not None:
-                    offset = low*0.1 if low else 0.5
-                    low -= offset
-                    high += offset
-                if not categorical and all(y is not None and np.isfinite(y) for y in (low, high)):
-                    plot_ranges['y_range'] = [low, high]
-
-        if self.invert_yaxis:
-            yrange = plot_ranges['y_range']
-            if isinstance(yrange, Range1d):
-                plot_ranges['y_range'] = yrange.__class__(start=yrange.end,
-                                                          end=yrange.start)
-            elif not isinstance(yrange, (Range, FactorRange)):
-                plot_ranges['y_range'] = yrange[::-1]
+        if self.invert_axes:
+            l, b, r, t = b, l, t, r
 
         categorical = any(self.traverse(lambda x: x._categorical))
-        if categorical:
-            x_axis_type, y_axis_type = 'auto', 'auto'
+        categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
+        categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
+
+        if categorical or categorical_x:
+            x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
+        elif 'x_range' not in plot_ranges:
+            plot_ranges['x_range'] = Range1d()
+
+        if categorical or categorical_y:
+            y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
+        elif 'y_range' not in plot_ranges:
+            plot_ranges['y_range'] = Range1d()
+
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -524,7 +483,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 l, b, r, t = b, l, t, r
 
         xfactors, yfactors = None, None
-        if any(isinstance(r, FactorRange) for r in [x_range, y_range]):
+        if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         self._update_range(x_range, l, r, xfactors, self.invert_xaxis)
         self._update_range(y_range, b, t, yfactors, self.invert_yaxis)
@@ -537,7 +496,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 offset = abs(low*0.1 if low else 0.5)
                 low -= offset
                 high += offset
-            if self.invert_yaxis: low, high = high, low
+            if invert: low, high = high, low
             if low is not None and (isinstance(low, util.datetime_types)
                                     or np.isfinite(low)):
                 axis_range.start = low
