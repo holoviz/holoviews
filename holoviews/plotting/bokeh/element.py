@@ -281,12 +281,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if plot.yaxis[0].axis_label == xlabel:
                     plot_ranges['x_range'] = plot.y_range
 
-        if el.get_dimension_type(0) is np.datetime64:
+        if el.get_dimension_type(0) in util.datetime_types:
             x_axis_type = 'datetime'
         else:
             x_axis_type = 'log' if self.logx else 'auto'
 
-        if len(dims) > 1 and el.get_dimension_type(1) is np.datetime64:
+        if len(dims) > 1 and el.get_dimension_type(1) in util.datetime_types:
             y_axis_type = 'datetime'
         else:
             y_axis_type = 'log' if self.logy else 'auto'
@@ -294,66 +294,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
         l, b, r, t = self.get_extents(range_el, ranges)
-
-        categorical = False
-        if not 'x_range' in plot_ranges:
-            if 'x_range' in ranges:
-                plot_ranges['x_range'] = ranges['x_range']
-            else:
-                low, high = (b, t) if self.invert_axes else (l, r)
-                if x_axis_type == 'datetime':
-                    low = convert_datetime(low)
-                    high = convert_datetime(high)
-                elif any(isinstance(x, util.basestring) for x in (low, high)):
-                    plot_ranges['x_range'] = FactorRange()
-                    categorical = True
-                elif low == high and low is not None:
-                    offset = low*0.1 if low else 0.5
-                    low -= offset
-                    high += offset
-                if not categorical and all(x is not None and np.isfinite(x) for x in (low, high)):
-                    plot_ranges['x_range'] = [low, high]
-
-        if self.invert_xaxis:
-            x_range = plot_ranges['x_range']
-            if isinstance(x_range, Range1d):
-                plot_ranges['x_range'] = x_range.__class__(start=x_range.end,
-                                                           end=x_range.start)
-            elif not isinstance(x_range, (Range, FactorRange)):
-                plot_ranges['x_range'] = x_range[::-1]
-
-        categorical = False
-        if not 'y_range' in plot_ranges:
-            if 'y_range' in ranges:
-                plot_ranges['y_range'] = ranges['y_range']
-            else:
-                low, high = (l, r) if self.invert_axes else (b, t)
-                if y_axis_type == 'datetime':
-                    low = convert_datetime(low)
-                    high = convert_datetime(high)
-                elif any(isinstance(y, util.basestring) for y in (low, high)):
-                    plot_ranges['y_range'] = FactorRange()
-                    categorical = True
-                elif low == high and low is not None:
-                    offset = low*0.1 if low else 0.5
-                    low -= offset
-                    high += offset
-                if not categorical and all(y is not None and np.isfinite(y) for y in (low, high)):
-                    plot_ranges['y_range'] = [low, high]
-
-        if self.invert_yaxis:
-            yrange = plot_ranges['y_range']
-            if isinstance(yrange, Range1d):
-                plot_ranges['y_range'] = yrange.__class__(start=yrange.end,
-                                                          end=yrange.start)
-            elif not isinstance(yrange, (Range, FactorRange)):
-                plot_ranges['y_range'] = yrange[::-1]
+        if self.invert_axes:
+            l, b, r, t = b, l, t, r
 
         categorical = any(self.traverse(lambda x: x._categorical))
-        if categorical:
-            x_axis_type, y_axis_type = 'auto', 'auto'
+        categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
+        categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
+
+        if categorical or categorical_x:
+            x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
+        elif 'x_range' not in plot_ranges:
+            plot_ranges['x_range'] = Range1d()
+
+        if categorical or categorical_y:
+            y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
+        elif 'y_range' not in plot_ranges:
+            plot_ranges['y_range'] = Range1d()
+
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
 
@@ -517,44 +476,37 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
 
+        l, b, r, t = None, None, None, None
         if any(isinstance(r, Range1d) for r in [x_range, y_range]):
             l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
 
-        if any(isinstance(r, FactorRange) for r in [x_range, y_range]):
+        xfactors, yfactors = None, None
+        if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
+        self._update_range(x_range, l, r, xfactors, self.invert_xaxis)
+        self._update_range(y_range, b, t, yfactors, self.invert_yaxis)
 
-        if isinstance(x_range, Range1d):
-            if l == r and l is not None:
-                offset = abs(l*0.1 if l else 0.5)
-                l -= offset
-                r += offset
 
-            if self.invert_xaxis: l, r = r, l
-            if l is not None and (isinstance(l, np.datetime64) or np.isfinite(l)):
-                plot.x_range.start = l
-            if r is not None and (isinstance(r, np.datetime64) or np.isfinite(r)):
-                plot.x_range.end   = r
-        elif isinstance(x_range, FactorRange):
-            xfactors = list(xfactors)
-            if self.invert_xaxis: xfactors = xfactors[::-1]
-            x_range.factors = xfactors
-
-        if isinstance(plot.y_range, Range1d):
-            if b == t and b is not None:
-                offset = abs(b*0.1 if b else 0.5)
-                b -= offset
-                t += offset
-            if self.invert_yaxis: b, t = t, b
-            if b is not None and (isinstance(l, np.datetime64) or np.isfinite(b)):
-                plot.y_range.start = b
-            if t is not None and (isinstance(l, np.datetime64) or np.isfinite(t)):
-                plot.y_range.end   = t
-        elif isinstance(y_range, FactorRange):
-            yfactors = list(yfactors)
-            if self.invert_yaxis: yfactors = yfactors[::-1]
-            y_range.factors = yfactors
+    def _update_range(self, axis_range, low, high, factors, invert):
+        if isinstance(axis_range, Range1d):
+            if (low == high and low is not None and
+                not isinstance(high, util.datetime_types)):
+                offset = abs(low*0.1 if low else 0.5)
+                low -= offset
+                high += offset
+            if invert: low, high = high, low
+            if low is not None and (isinstance(low, util.datetime_types)
+                                    or np.isfinite(low)):
+                axis_range.start = low
+            if high is not None and (isinstance(high, util.datetime_types)
+                                     or np.isfinite(high)):
+                axis_range.end = high
+        elif isinstance(axis_range, FactorRange):
+            factors = list(factors)
+            if invert: factors = factors[::-1]
+            axis_range.factors = factors
 
 
     def _categorize_data(self, data, cols, dims):

@@ -13,6 +13,7 @@ import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
                        NdOverlay, GridSpace, HoloMap, Layout)
+from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars, Text,
@@ -141,6 +142,46 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         warning = ('%s: z dimension is not numeric, '
                    'cannot use to scale Points size.\n' % plot.name)
         self.assertEqual(log_msg, warning)
+
+    def test_curve_datetime64(self):
+        dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        curve = Curve((dates, np.random.rand(10)))
+        plot = mpl_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735973.0))
+
+    def test_curve_pandas_timestamps(self):
+        if not pd:
+            raise SkipError("Pandas not available")
+        dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
+        curve = Curve((dates, np.random.rand(10)))
+        plot = mpl_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735973.0))
+
+    def test_curve_dt_datetime(self):
+        dates = [dt.datetime(2016,1,i) for i in range(1, 11)]
+        curve = Curve((dates, np.random.rand(10)))
+        plot = mpl_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735973.0))
+
+    def test_curve_heterogeneous_datetime_types_overlay(self):
+        dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
+        curve_dt64 = Curve((dates64, np.random.rand(10)))
+        curve_dt = Curve((dates, np.random.rand(10)))
+        plot = mpl_renderer.get_plot(curve_dt*curve_dt64)
+        self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735974.0))
+
+    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
+        if not pd:
+            raise SkipError("Pandas not available")
+        dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
+        dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
+        curve_dt64 = Curve((dates64, np.random.rand(10)))
+        curve_dt = Curve((dates, np.random.rand(10)))
+        curve_pd = Curve((dates_pd, np.random.rand(10)))
+        plot = mpl_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
+        self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735976.0))
 
 
 
@@ -556,6 +597,51 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                             plot.state.select(ColumnDataSource)))
         self.assertTrue(cds.data['Date'][0] in formatted for cds in
                         plot.state.select(ColumnDataSource))
+
+    def test_curve_datetime64(self):
+        dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        curve = Curve((dates, np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
+        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+
+    def test_curve_pandas_timestamps(self):
+        if not pd:
+            raise SkipError("Pandas not available")
+        dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
+        curve = Curve((dates, np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
+        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+
+    def test_curve_dt_datetime(self):
+        dates = [dt.datetime(2016,1,i) for i in range(1, 11)]
+        curve = Curve((dates, np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
+        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 10)))
+
+    def test_curve_heterogeneous_datetime_types_overlay(self):
+        dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
+        curve_dt64 = Curve((dates64, np.random.rand(10)))
+        curve_dt = Curve((dates, np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(curve_dt*curve_dt64)
+        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
+        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 11)))
+
+    def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
+        if not pd:
+            raise SkipError("Pandas not available")
+        dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
+        dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
+        dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
+        curve_dt64 = Curve((dates64, np.random.rand(10)))
+        curve_dt = Curve((dates, np.random.rand(10)))
+        curve_pd = Curve((dates_pd, np.random.rand(10)))
+        plot = bokeh_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
+        self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
+        self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):

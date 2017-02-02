@@ -709,8 +709,14 @@ class GenericElementPlot(DimensionedPlot):
         if getattr(self, 'shared_axes', False) and self.subplot:
             return util.max_extents([range_extents, extents], self.projection == '3d')
         else:
-            return tuple(l1 if l2 is None or not np.isfinite(l2) else
-                         l2 for l1, l2 in zip(range_extents, extents))
+            max_extent = []
+            for l1, l2 in zip(range_extents, extents):
+                if (isinstance(l2, util.datetime_types)
+                    or (l2 is not None and np.isfinite(l2))):
+                    max_extent.append(l2)
+                else:
+                    max_extent.append(l1)
+            return tuple(max_extent)
 
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
