@@ -730,7 +730,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         col_widthratios, row_heightratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            _, view = layout_items.get((r, c), (None, None))
+            _, view = layout_items.get((c, r) if self.transpose else (r, c), (None, None))
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
