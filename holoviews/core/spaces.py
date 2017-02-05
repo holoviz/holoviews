@@ -171,7 +171,8 @@ class HoloMap(UniformNdMapping):
             # dimension labels for the new view
             self_in_other = self_set.issubset(other_set)
             other_in_self = other_set.issubset(self_set)
-            dimensions = self.kdims
+            dims = [other.kdims, self.kdims] if self_in_other else [self.kdims, other.kdims]
+            dimensions = util.merge_dimensions(dims)
 
             if self_in_other and other_in_self: # superset of each other
                 keys = self._dimension_keys() + other._dimension_keys()

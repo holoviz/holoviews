@@ -14,7 +14,10 @@ try:
 except:
     pd = None
 
-from holoviews.core.util import sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams, deephash
+from holoviews.core.util import (
+    sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
+    deephash, merge_dimensions
+)
 from holoviews import Dimension
 from holoviews.streams import PositionXY
 from holoviews.element.comparison import ComparisonTestCase
@@ -447,3 +450,16 @@ class TestWrapTupleStreams(unittest.TestCase):
                                     [Dimension('x'), Dimension('y')],
                                     [PositionXY(x=0,y=5)])
         self.assertEqual(result, (0,5))
+
+
+class TestMergeDimensions(unittest.TestCase):
+
+    def test_merge_dimensions(self):
+        dimensions = merge_dimensions([[Dimension('A')], [Dimension('A'), Dimension('B')]])
+        self.assertEqual(dimensions, [Dimension('A'), Dimension('B')])
+
+    def test_merge_dimensions_with_values(self):
+        dimensions = merge_dimensions([[Dimension('A', values=[0, 1])],
+                                       [Dimension('A', values=[1, 2]), Dimension('B')]])
+        self.assertEqual(dimensions, [Dimension('A'), Dimension('B')])
+        self.assertEqual(dimensions[0].values, [0, 1, 2])

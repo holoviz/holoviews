@@ -608,6 +608,23 @@ def python2sort(x,key=None):
     return itertools.chain.from_iterable(sorted(group, key=key) for group in groups)
 
 
+def merge_dimensions(dimensions_list):
+    """
+    Merges lists of fully or partially overlapping dimensions by
+    combining their values.
+    """
+    dvalues = defaultdict(list)
+    dimensions = []
+    for dims in dimensions_list:
+        for d in dims:
+            dvalues[d.name].append(d.values)
+            if d not in dimensions:
+                dimensions.append(d)
+    dvalues = {k: list(unique_iterator(itertools.chain(*vals)))
+               for k, vals in dvalues.items()}
+    return [d(values=dvalues.get(d.name, [])) for d in dimensions]
+
+
 def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
     """
     Sorts data by key using usual Python tuple sorting semantics
