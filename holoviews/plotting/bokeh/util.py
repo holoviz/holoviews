@@ -17,7 +17,7 @@ from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import GlyphRenderer, Model, HasProps
+from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row, ToolbarBox)
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
 if bokeh_version >= '0.12':
@@ -348,6 +348,30 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
+def pad_width(model):
+    """
+    Computes the width of a model and sets up appropriate padding
+    for Tabs and DataTable types.
+    """
+    if isinstance(model, Row):
+        width = np.max([pad_width(child) for child in model.children])
+    elif isinstance(model, Column):
+        width = np.sum([pad_width(child) for child in model.children])
+    elif isinstance(model, Tabs):
+        width = np.max([pad_width(t) for t in model.tabs])
+        for model in model.tabs:
+            model.width = width
+            width = int(tabs_padding*width)
+    elif isinstance(model, DataTable):
+        width = model.width
+        model.width = int(table_padding*width)
+    elif model:
+        width = model.plot_width
+    else:
+        width = 0
+    return width
+
+
 def pad_plots(plots, table_padding=0.85, tabs_padding=1.2):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
@@ -358,25 +382,26 @@ def pad_plots(plots, table_padding=0.85, tabs_padding=1.2):
     for row in plots:
         row_widths = []
         for p in row:
-            if isinstance(p, Tabs):
-                width = np.max([p.width if isinstance(p, DataTable) else
-                                t.child.plot_width for t in p.tabs])
-                for p in p.tabs:
-                    p.width = width
-                width = int(tabs_padding*width)
-            elif isinstance(p, DataTable):
-                width = p.width
-                p.width = int(table_padding*width)
-            elif p:
-                width = p.plot_width
-            else:
-                width = 0
+            width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
     plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     total_width = np.max([np.sum(row) for row in widths])
     return plots, total_width
+
+
+def filter_toolboxes(plots):
+    """
+    Filters out toolboxes out of a list of plots to be able to compose
+    them into a larger plot.
+    """
+    if isinstance(plots, list):
+        plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'children'):
+        plots.children = [filter_toolboxes(child) for child in plots.children
+                          if not isinstance(child, ToolbarBox)]
+    return plots
 
 
 def py2js_tickformatter(formatter, msg=''):
