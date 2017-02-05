@@ -348,23 +348,28 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
-def pad_width(model):
+def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     """
     Computes the width of a model and sets up appropriate padding
     for Tabs and DataTable types.
     """
     if isinstance(model, Row):
-        width = np.max([pad_width(child) for child in model.children])
+        vals = [pad_width(child) for child in model.children]
+        width = np.max([v for v in vals if v is not None])
     elif isinstance(model, Column):
-        width = np.sum([pad_width(child) for child in model.children])
+        vals = [pad_width(child) for child in model.children]
+        width = np.sum([v for v in vals if v is not None])
     elif isinstance(model, Tabs):
-        width = np.max([pad_width(t) for t in model.tabs])
+        vals = [pad_width(t) for t in model.tabs]
+        width = np.max([v for v in vals if v is not None])
         for model in model.tabs:
             model.width = width
             width = int(tabs_padding*width)
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
+    elif isinstance(model, WidgetBox):
+        width = model.width
     elif model:
         width = model.plot_width
     else:
@@ -372,7 +377,7 @@ def pad_width(model):
     return width
 
 
-def pad_plots(plots, table_padding=0.85, tabs_padding=1.2):
+def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a WidgetBox with appropriate

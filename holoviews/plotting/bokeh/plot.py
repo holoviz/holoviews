@@ -284,8 +284,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
     def initialize_plot(self, ranges=None, plots=[]):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        plots = [[] for r in range(self.cols)]
         passed_plots = list(plots)
+        plots = [[] for r in range(self.cols)]
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
             r = i % self.cols
             subplot = self.subplots.get(wrap_tuple(coord), None)
@@ -421,8 +421,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
             subplot_opts = dict(adjoined=main_plot)
             # Options common for any subplot
-            if type(element) in (NdLayout, Layout):
-                raise SkipRendering("Cannot plot nested Layouts.")
             vtype = element.type if isinstance(element, HoloMap) else element.__class__
             plot_type = Store.registry[self.renderer.backend].get(vtype, None)
             plotopts = self.lookup_options(element, 'plot').options
@@ -468,10 +466,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         return subplots, adjoint_clone
 
 
-    def initialize_plot(self, ranges=None):
+    def initialize_plot(self, plots=None, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+        passed_plots = [] if plots is None else plots
         plots = [[] for _ in range(self.rows)]
-        passed_plots = []
         tab_titles = {}
         insert_rows, insert_cols = [], []
         adjoined = False

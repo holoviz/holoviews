@@ -37,10 +37,11 @@ try:
     from holoviews.plotting.bokeh.callbacks import Callback
     from bokeh.models import (
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
-        ToolbarBox, Figure, Spacer
+        ToolbarBox, Spacer
     )
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
     from bokeh.models.tools import HoverTool
+    from bokeh.plotting import Figure
 except:
     bokeh_renderer = None
 
@@ -676,18 +677,19 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         grid1, grid2 = grid1.children[0], grid2.children[0]
         self.assertIsInstance(grid1, Column)
         self.assertIsInstance(grid2, Column)
-        self.assertEqual(len(grid1.children), 2)
-        grow1, grow2 = grid1.children
-        self.assertIsInstance(grow1, Row)
-        self.assertIsInstance(grow2, Row)
-        self.assertEqual(len(grow1.children), 2)
-        self.assertEqual(len(grow2.children), 2)
-        gfig1, gfig2 = grow1.children
-        gfig3, gfig3 = grow2.children
-        self.assertIsInstance(grow1, Figure)
-        self.assertIsInstance(grow2, Figure)
-        self.assertIsInstance(grow3, Figure)
-        self.assertIsInstance(grow4, Figure)
+        for grid in [grid1, grid2]:
+            self.assertEqual(len(grid.children), 2)
+            grow1, grow2 = grid.children
+            self.assertIsInstance(grow1, Row)
+            self.assertIsInstance(grow2, Row)
+            self.assertEqual(len(grow1.children), 2)
+            self.assertEqual(len(grow2.children), 2)
+            gfig1, gfig2 = grow1.children
+            gfig3, gfig4 = grow2.children
+            self.assertIsInstance(gfig1, Figure)
+            self.assertIsInstance(gfig2, Figure)
+            self.assertIsInstance(gfig3, Figure)
+            self.assertIsInstance(gfig4, Figure)
 
         # Check the row of Curve and a spacer
         self.assertEqual(len(row2.children), 2)
