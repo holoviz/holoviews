@@ -1030,6 +1030,11 @@ class GenericLayoutPlot(GenericCompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
+    transpose = param.Boolean(default=False, doc="""
+        Whether to transpose the layout when plotting. Switches
+        from row-based left-to-right and top-to-bottom scanline order
+        to column-based top-to-bottom and left-to-right order.""")
+
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):
             raise ValueError("GenericLayoutPlot only accepts Layout objects.")
@@ -1038,6 +1043,6 @@ class GenericLayoutPlot(GenericCompositePlot):
 
         super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
-        self.rows, self.cols = layout.shape
+        self.rows, self.cols = layout.shape[::-1] if self.transpose else layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))

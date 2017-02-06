@@ -361,7 +361,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         layout_subplots, layouts, paths = {}, {}, {}
         for r, c in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            key, view = layout_items.get((r, c), (None, None))
+            key, view = layout_items.get((c, r) if self.transpose else (r, c), (None, None))
             view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = view
             paths[r, c] = key
