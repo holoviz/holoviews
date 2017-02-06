@@ -35,9 +35,13 @@ try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback
-    from bokeh.models import Div, ColumnDataSource, FactorRange, Range1d
+    from bokeh.models import (
+        Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
+        ToolbarBox, Spacer
+    )
     from bokeh.models.mappers import LinearColorMapper, LogColorMapper
     from bokeh.models.tools import HoverTool
+    from bokeh.plotting import Figure
 except:
     bokeh_renderer = None
 
@@ -665,6 +669,56 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
+    def test_layout_gridspaces(self):
+        layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
+                             for j in range(2,4)}) +
+                  GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
+                             for j in range(2,4)}) +
+                  Curve(range(10))).cols(2)
+        layout_plot = bokeh_renderer.get_plot(layout)
+        plot = layout_plot.state
+
+        # Unpack until getting down to two rows
+        self.assertIsInstance(plot, Column)
+        self.assertEqual(len(plot.children), 2)
+        toolbar, column = plot.children
+        self.assertIsInstance(toolbar, ToolbarBox)
+        self.assertIsInstance(column, Column)
+        self.assertEqual(len(column.children), 2)
+        row1, row2 = column.children
+        self.assertIsInstance(row1, Row)
+        self.assertIsInstance(row2, Row)
+
+        # Check the row of GridSpaces
+        self.assertEqual(len(row1.children), 2)
+        grid1, grid2 = row1.children
+        self.assertIsInstance(grid1, Column)
+        self.assertIsInstance(grid2, Column)
+        self.assertEqual(len(grid1.children), 1)
+        self.assertEqual(len(grid2.children), 1)
+        grid1, grid2 = grid1.children[0], grid2.children[0]
+        self.assertIsInstance(grid1, Column)
+        self.assertIsInstance(grid2, Column)
+        for grid in [grid1, grid2]:
+            self.assertEqual(len(grid.children), 2)
+            grow1, grow2 = grid.children
+            self.assertIsInstance(grow1, Row)
+            self.assertIsInstance(grow2, Row)
+            self.assertEqual(len(grow1.children), 2)
+            self.assertEqual(len(grow2.children), 2)
+            gfig1, gfig2 = grow1.children
+            gfig3, gfig4 = grow2.children
+            self.assertIsInstance(gfig1, Figure)
+            self.assertIsInstance(gfig2, Figure)
+            self.assertIsInstance(gfig3, Figure)
+            self.assertIsInstance(gfig4, Figure)
+
+        # Check the row of Curve and a spacer
+        self.assertEqual(len(row2.children), 2)
+        fig, spacer = row2.children
+        self.assertIsInstance(fig, Figure)
+        self.assertIsInstance(spacer, Spacer)
+
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
@@ -678,6 +732,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(layout(plot=dict(transpose=True)))
         positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
+
 
 
 
