@@ -183,6 +183,28 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot = mpl_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
         self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735976.0))
 
+    def test_layout_instantiate_subplots(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = mpl_renderer.get_plot(layout)
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
+        for i, pos in enumerate(positions):
+            adjoint = plot.subplots[pos]
+            if 'main' in adjoint.subplots:
+                self.assertEqual(adjoint.subplots['main'].layout_num, i+1)
+
+    def test_layout_instantiate_subplots_transposed(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = mpl_renderer.get_plot(layout(plot=dict(transpose=True)))
+        positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
+        nums = [1, 5, 2, 6, 3, 7, 4, 8]
+        for pos, num in zip(positions, nums):
+            adjoint = plot.subplots[pos]
+            if 'main' in adjoint.subplots:
+                self.assertEqual(adjoint.subplots['main'].layout_num, num)
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
@@ -643,6 +665,21 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
+    def test_layout_instantiate_subplots(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = bokeh_renderer.get_plot(layout)
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
+
+    def test_layout_instantiate_subplots_transposed(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = bokeh_renderer.get_plot(layout(plot=dict(transpose=True)))
+        positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
+
+
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
@@ -725,3 +762,17 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         state = plot.state
         self.assertEqual(state['data'][0]['x'], np.arange(10))
         self.assertEqual(state['data'][0]['y'], np.arange(10, 20))
+
+    def test_layout_instantiate_subplots(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = plotly_renderer.get_plot(layout)
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
+
+    def test_layout_instantiate_subplots_transposed(self):
+        layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
+                  Curve(range(10)) + Curve(range(10)))
+        plot = plotly_renderer.get_plot(layout(plot=dict(transpose=True)))
+        positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+        self.assertEqual(sorted(plot.subplots.keys()), positions)
