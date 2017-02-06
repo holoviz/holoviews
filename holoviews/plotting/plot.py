@@ -1031,7 +1031,9 @@ class GenericLayoutPlot(GenericCompositePlot):
     """
 
     transpose = param.Boolean(default=False, doc="""
-        Whether to transpose the layout when plotting""")
+        Whether to transpose the layout when plotting. Switches
+        from row-based left-to-right and top-to-bottom scanline order
+        to column-based top-to-bottom and left-to-right order.""")
 
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):

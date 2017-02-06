@@ -876,6 +876,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             empty = isinstance(obj.main, Empty)
             if empty:
                 obj = AdjointLayout([])
+            elif self.transpose:
+                layout_count = (c*self.rows+(r+1))
             else:
                 layout_count += 1
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
