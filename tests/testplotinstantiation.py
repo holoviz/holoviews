@@ -649,7 +649,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
     def setUp(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
-        self.default_comm = bokeh_renderer.comms['default']
+        self.default_comm = plotly_renderer.comms['default']
         if not plotly_renderer:
             raise SkipTest("Plotly required to test plot instantiation")
         plotly_renderer.comms['default'] = (comms.Comm, '')
