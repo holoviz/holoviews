@@ -611,7 +611,16 @@ def python2sort(x,key=None):
 def merge_dimensions(dimensions_list):
     """
     Merges lists of fully or partially overlapping dimensions by
-    combining their values.
+    merging their values.
+
+    >>> from holoviews import Dimension
+    >>> dim_list = [[Dimension('A', values=[1, 2, 3]), Dimension('B')],
+    ...             [Dimension('A', values=[2, 3, 4])]]
+    >>> dimensions = merge_dimensions(dim_list)
+    >>> dimensions
+    [Dimension('A'), Dimension('B')]
+    >>> dimensions[0].values
+    [1, 2, 3, 4]
     """
     dvalues = defaultdict(list)
     dimensions = []
