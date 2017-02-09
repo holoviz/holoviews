@@ -3,8 +3,7 @@ import numpy as np
 
 import param
 
-from bokeh.models import (ColumnDataSource, VBox, HBox, Column,
-                          GridPlot as BokehGridPlot, Div)
+from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
@@ -20,6 +19,8 @@ from .util import bokeh_version, layout_padding, pad_plots, filter_toolboxes
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
+else:
+    from bokeh.models import GridPlot as BokehGridPlot
 
 
 class BokehPlot(DimensionedPlot):
