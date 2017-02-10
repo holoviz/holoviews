@@ -151,10 +151,7 @@ class ElementOperation(Operation):
         elif isinstance(element, HoloMap):
             mapped_items = [(k, self._process(el, key=k))
                             for k, el in element.items()]
-            refval = mapped_items[0][1]
-            processed = element.clone(mapped_items,
-                                      group=refval.group,
-                                      label=refval.label)
+            processed = element.clone(mapped_items)
         else:
             raise ValueError("Cannot process type %r" % type(element).__name__)
         return processed
