@@ -2,6 +2,11 @@ language: python
 
 sudo: false
 
+env:
+  global:
+    - secure: LOJSKM6CwBDN3+m9js+Z4Nb4QXHjYcihl6qGsaDd5CCppERBmRTJSx90d7fLQYpoUmSftYwlu6uG05drZDvFCP/JuoIoNkv2Id448sqGJbuMrLnrdL0UrMv0i6X93PafuClvUXmgMVJr9wutiZCjbYBtqm4nsCLpONkJZ0iZEVI=
+    - secure: WEpTtaW+r+wsFUa7d4NdO28+Ufeud4EkgxqGIMZNkgE+uTiedWn/04OmN98d7TXYibYTiejo5Gv105s8qaQYQXIyzxiI3PD/QiqiLgAvyU+NpmlgWQYosvLfZuII65YK2BLSafDYsQ8Y468SsCCGG+EPiTJ7K5LWm8/8Py6/70g=
+
 python:
   - "2.7"
   - "3.5"
