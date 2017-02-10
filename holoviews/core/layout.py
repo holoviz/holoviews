@@ -338,6 +338,7 @@ class Layout(AttrTree, Dimensioned):
             path = path[:2]
             pl = len(path)
             count = counts[path[:-1]]
+            counts[path[:-1]] += 1
             if (pl == 1 and not item.label) or (pl == 2 and item.label):
                 new_path = path + (int_to_roman(count-1),)
                 if path in paths:
@@ -345,7 +346,6 @@ class Layout(AttrTree, Dimensioned):
                 path = path + (int_to_roman(count),)
             else:
                 path = path[:-1] + (int_to_roman(count),)
-            counts[path[:-1]] += 1
         return path
 
 
@@ -374,10 +374,10 @@ class Layout(AttrTree, Dimensioned):
         Recursively unpacks lists and Layout-like objects, accumulating
         into the supplied list of items.
         """
-        if isinstance(objs, cls):
+        if type(objs) is cls:
             objs = objs.values()
         for v in objs:
-            if isinstance(v, cls):
+            if type(v) is cls:
                 cls._unpack_paths(v, paths, items, counts)
                 continue
             group = group_sanitizer(v.group)
