@@ -72,6 +72,7 @@ script:
   - coverage combine --append
 
 after_script:
+  - shopt -s expand_aliases
   - alias decode="tr '[N-ZA-Mn-za-m]' '[A-Za-z]'"
   - export AWS_SECRET_ACCESS_KEY=`echo udgGztmYyyKZ5iP2PVe+ROGZo/TI0M2QcoafOJGD | decode`
   - export AWS_ACCESS_KEY_ID=`echo NXVNVUCXF3UPHSKNG7ND | decode`
