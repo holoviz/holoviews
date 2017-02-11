@@ -7,7 +7,7 @@ to act as supplementary elements.
 
 from functools import reduce
 from itertools import chain
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import numpy as np
 
@@ -333,39 +333,16 @@ class Layout(AttrTree, Dimensioned):
     def new_path(cls, path, item, paths, counts):
         sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
         path = tuple(fn(p) for (p, fn) in zip(path, sanitizers))
-        while any(path[:i] in paths or path in [p[:i] for p in paths]
-                  for i in range(1,len(path)+1)):
+        while path in paths:
             path = path[:2]
             pl = len(path)
             count = counts[path[:-1]]
             counts[path[:-1]] += 1
             if (pl == 1 and not item.label) or (pl == 2 and item.label):
-                new_path = path + (int_to_roman(count-1),)
-                if path in paths:
-                    paths[paths.index(path)] = new_path
-                path = path + (int_to_roman(count),)
+                path = path + (int_to_roman(count-1),)
             else:
                 path = path[:-1] + (int_to_roman(count),)
         return path
-
-
-    @classmethod
-    def relabel_item_paths(cls, items):
-        """
-        Given a list of path items (list of tuples where each element
-        is a (path, element) pair), generate a new set of path items that
-        guarantees that no paths clash. This uses the element labels as
-        appropriate and automatically generates roman numeral
-        identifiers if necessary.
-        """
-        paths, path_items = [], []
-        counts = defaultdict(lambda: 2)
-        for path, item in items:
-            new_path = cls.new_path(path, item, paths, counts)
-            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
-            path_items.append(item)
-            paths.append(new_path)
-        return list(zip(paths, path_items))
 
 
     @classmethod
@@ -389,6 +366,25 @@ class Layout(AttrTree, Dimensioned):
             paths.append(new_path)
             items.append((new_path, v))
 
+    @classmethod
+    def _initial_paths(cls, vals, paths=None):
+        if paths is None:
+            paths = []
+
+        for v in vals:
+            if type(v) is cls:
+                cls._initial_paths(v.values(), paths)
+                continue
+            group = group_sanitizer(v.group)
+            group = ''.join([group[0].upper(), group[1:]])
+            if v.label:
+                label = label_sanitizer(v.label)
+                label = ''.join([label[0].upper(), label[1:]])
+                path = (group, label)
+            else:
+                path = (group,)
+            paths.append(path)
+        return paths
 
     @classmethod
     def from_values(cls, val):
@@ -401,7 +397,10 @@ class Layout(AttrTree, Dimensioned):
             return val
         elif not collection:
             val = [val]
-        paths, items = [], []
+        paths = cls._initial_paths(val)
+        path_counter = Counter(paths)
+        paths = [k for k, v in path_counter.items() if v > 1]
+        items = []
         counts = defaultdict(lambda: 2)
         cls._unpack_paths(val, paths, items, counts)
         return cls(items=items)
@@ -518,9 +517,7 @@ class Layout(AttrTree, Dimensioned):
 
 
     def __add__(self, other):
-        other = self.from_values(other)
-        items = list(self.data.items()) + list(other.data.items())
-        return Layout(items=self.relabel_item_paths(items)).display('all')
+        return Layout.from_values([self, other]).display('all')
 
 
 

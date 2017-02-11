@@ -36,10 +36,7 @@ class Overlayable(object):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
-        self_item = [((self.group, self.label if self.label else 'I'), self)]
-        other_items = (other.items() if isinstance(other, Overlay)
-                       else [((other.group, other.label if other.label else 'I'), other)])
-        return Overlay(items=Overlay.relabel_item_paths(list(self_item) + list(other_items)))
+        return Overlay.from_values([self, other])
 
 
 
@@ -142,15 +139,9 @@ class Overlay(Layout, CompositeOverlay):
 
 
     def __mul__(self, other):
-        if isinstance(other, Overlay):
-            items = list(self.data.items()) + list(other.data.items())
-        elif isinstance(other, ViewableElement):
-            label = other.label if other.label else 'I'
-            items = list(self.data.items()) + [((other.group, label), other)]
-        elif isinstance(other, UniformNdMapping):
+        if isinstance(other, UniformNdMapping):
             raise NotImplementedError
-
-        return Overlay(items=self.relabel_item_paths(items)).display('all')
+        return Overlay.from_values([self, other])
 
 
     def collate(self):
