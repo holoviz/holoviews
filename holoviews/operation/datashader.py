@@ -342,32 +342,32 @@ class dynspread(ElementOperation):
     pixels using a specified compositing operator. This can be useful
     to make sparse plots more visible. Dynamic spreading determines
     how many pixels to spread based on a density heuristic.
+
+    See the datashader documentation for more detail:
+
+    http://datashader.readthedocs.io/en/latest/api.html#datashader.transfer_functions.dynspread
     """
 
     how = param.ObjectSelector(default='source',
                                objects=['source', 'over',
-                                        'saturate', 'add'],
-                               doc="""
-        The name of the compositing operator to use when 
-        combining pixels.       
-    """)
+                                        'saturate', 'add'], doc="""
+        The name of the compositing operator to use when combining
+        pixels.""")
 
-    max_px = param.Integer(default=2, doc="""
-        Maximum number of pixels to spread on all sides.
-    """)
-
+    max_px = param.Integer(default=3, doc="""
+        Maximum number of pixels to spread on all sides.""")
     
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
-        The shape to spread by. Options are 'circle' [default] or
-        'square'.
-    """)
+        The shape to spread by. Options are 'circle' [default] or 'square'.""")
 
-    threshold = param.Number(default=0.8, doc="""
-        A tuning parameter in the range [0, 1]. Indicates
-        the minimum value for the density heuristic.
-    """)
-    
+    threshold = param.Number(default=0.5, bounds=(0,1), doc="""
+        When spreading, determines how far to spread.
+        Spreading starts at 1 pixel, and stops when the fraction
+        of adjacent non-empty pixels reaches this threshold.
+        Higher values give more spreading, up to the max_px
+        allowed.""")
+
     @classmethod
     def uint8_to_uint32(cls, img):
         shape = img.shape
