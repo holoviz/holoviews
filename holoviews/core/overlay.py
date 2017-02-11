@@ -100,11 +100,6 @@ class Overlay(Layout, CompositeOverlay):
     Layout and CompositeOverlay.
     """
 
-    @classmethod
-    def _from_values(cls, val):
-        return reduce(lambda x,y: x*y, val).map(lambda x: x.display('auto'), [Overlay])
-
-
     def __init__(self, items=None, group=None, label=None, **params):
         view_params = ViewableElement.params().keys()
         self.__dict__['_fixed'] = False
@@ -135,11 +130,11 @@ class Overlay(Layout, CompositeOverlay):
 
 
     def __add__(self, other):
-        return Layout.from_values(self) + Layout.from_values(other)
+        return Layout.from_values([self, other])
 
 
     def __mul__(self, other):
-        if isinstance(other, UniformNdMapping):
+        if not isinstance(other, ViewableElement):
             raise NotImplementedError
         return Overlay.from_values([self, other])
 
