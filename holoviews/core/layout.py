@@ -331,17 +331,17 @@ class Layout(AttrTree, Dimensioned):
 
     @classmethod
     def new_path(cls, path, item, paths, counts):
-        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
-        path = tuple(fn(p) for (p, fn) in zip(path, sanitizers))
+        sanitizers = [group_sanitizer, label_sanitizer]
+        capitalize = lambda x: x[0].upper() + x[1:]
+        path = tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
         while path in paths:
             path = path[:2]
             pl = len(path)
             count = counts[path[:-1]]
             counts[path[:-1]] += 1
-            if (pl == 1 and not item.label) or (pl == 2 and item.label):
-                path = path + (int_to_roman(count-1),)
-            else:
-                path = path[:-1] + (int_to_roman(count),)
+            path = path + (int_to_roman(count),)
+        if len(path) == 1:
+            path = path + (int_to_roman(counts.get(path, 1)),)
         return path
 
 
@@ -357,60 +357,56 @@ class Layout(AttrTree, Dimensioned):
             if type(v) is cls:
                 cls._unpack_paths(v, paths, items, counts)
                 continue
-            group = group_sanitizer(v.group)
-            group = ''.join([group[0].upper(), group[1:]])
-            label = label_sanitizer(v.label if v.label else 'I')
-            label = ''.join([label[0].upper(), label[1:]])
-            new_path = cls.new_path((group, label), v, paths, counts)
-            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
+            path = (v.group, v.label) if v.label else (v.group,)
+            new_path = cls.new_path(path, v, paths, counts)
             paths.append(new_path)
             items.append((new_path, v))
+
 
     @classmethod
     def _initial_paths(cls, vals, paths=None):
         if paths is None:
             paths = []
-
+        capitalize = lambda x: x[0].upper() + x[1:]
         for v in vals:
             if type(v) is cls:
                 cls._initial_paths(v.values(), paths)
                 continue
-            group = group_sanitizer(v.group)
-            group = ''.join([group[0].upper(), group[1:]])
+            path  = (capitalize(group_sanitizer(v.group)),)
             if v.label:
-                label = label_sanitizer(v.label)
-                label = ''.join([label[0].upper(), label[1:]])
-                path = (group, label)
-            else:
-                path = (group,)
+                path = path + (capitalize(label_sanitizer(v.label)),)
             paths.append(path)
         return paths
 
+
     @classmethod
-    def from_values(cls, val):
+    def _process_items(cls, vals):
+        if type(vals) is cls:
+            return vals
+        elif not isinstance(vals, (list, tuple)):
+            vals = [vals]
+        paths = cls._initial_paths(vals)
+        path_counter = Counter(paths)
+        paths, items = [k for k, v in path_counter.items() if v > 1], []
+        counts = defaultdict(lambda: 1)
+        cls._unpack_paths(vals, paths, items, counts)
+        return items
+
+
+    @classmethod
+    def from_values(cls, vals):
         """
         Returns a Layout given a list (or tuple) of viewable
         elements or just a single viewable element.
         """
-        collection = isinstance(val, (list, tuple))
-        if type(val) is cls:
-            return val
-        elif not collection:
-            val = [val]
-        paths = cls._initial_paths(val)
-        path_counter = Counter(paths)
-        paths = [k for k, v in path_counter.items() if v > 1]
-        items = []
-        counts = defaultdict(lambda: 2)
-        cls._unpack_paths(val, paths, items, counts)
-        return cls(items=items)
+        return cls(items=cls._process_items(vals))
 
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4
         if items and all(isinstance(item, Dimensioned) for item in items):
-            items = self.from_values(items).data
+            items = self._process_items(items)
         params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
