@@ -330,15 +330,19 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def new_path(cls, path, item, paths, counts):
+    def _get_path(cls, item):
+        path = (item.group, item.label) if item.label else (item.group,)
         sanitizers = [group_sanitizer, label_sanitizer]
         capitalize = lambda x: x[0].upper() + x[1:]
-        path = tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+        return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+
+
+    @classmethod
+    def new_path(cls, item, paths, counts):
+        path = cls._get_path(item)
         while path in paths:
-            path = path[:2]
-            pl = len(path)
-            count = counts[path[:-1]]
-            counts[path[:-1]] += 1
+            count = counts[path]
+            counts[path] += 1
             path = path + (int_to_roman(count),)
         if len(path) == 1:
             path = path + (int_to_roman(counts.get(path, 1)),)
@@ -357,8 +361,7 @@ class Layout(AttrTree, Dimensioned):
             if type(v) is cls:
                 cls._unpack_paths(v, paths, items, counts)
                 continue
-            path = (v.group, v.label) if v.label else (v.group,)
-            new_path = cls.new_path(path, v, paths, counts)
+            new_path = cls.new_path(v, paths, counts)
             paths.append(new_path)
             items.append((new_path, v))
 
@@ -367,22 +370,18 @@ class Layout(AttrTree, Dimensioned):
     def _initial_paths(cls, vals, paths=None):
         if paths is None:
             paths = []
-        capitalize = lambda x: x[0].upper() + x[1:]
         for v in vals:
             if type(v) is cls:
                 cls._initial_paths(v.values(), paths)
                 continue
-            path  = (capitalize(group_sanitizer(v.group)),)
-            if v.label:
-                path = path + (capitalize(label_sanitizer(v.label)),)
-            paths.append(path)
+            paths.append(cls._get_path(v))
         return paths
 
 
     @classmethod
     def _process_items(cls, vals):
         if type(vals) is cls:
-            return vals
+            return vals.data
         elif not isinstance(vals, (list, tuple)):
             vals = [vals]
         paths = cls._initial_paths(vals)
