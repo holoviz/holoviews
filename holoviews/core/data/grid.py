@@ -189,11 +189,11 @@ class GridInterface(DictInterface):
         group_kwargs.update(kwargs)
 
         # Find all the keys along supplied dimensions
-        keys = [dataset.data[d.name] for d in dimensions]
+        keys = [dataset.dimension_values(d.name, False) for d in dimensions]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
-        for unique_key in zip(*util.cartesian_product(keys)):
+        for unique_key in zip(*(arr.flat for arr in util.cartesian_product(keys))):
             group_data = cls.select(dataset, **dict(zip(dim_names, unique_key)))
             if np.isscalar(group_data):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
