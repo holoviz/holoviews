@@ -105,7 +105,13 @@ class MPLPlot(DimensionedPlot):
                                for i in self.fig_inches]
         else:
             self.fig_inches *= self.fig_scale
-        fig, axis = self._init_axis(fig, axis)
+        rc_params = self.fig_rcparams
+        if self.fig_latex:
+            self.fig_rcparams['text.usetex'] = True
+
+        with mpl.rc_context(rc=self.fig_rcparams):
+            fig, axis = self._init_axis(fig, axis)
+
         self.handles['fig'] = fig
         self.handles['axis'] = axis
 
@@ -122,27 +128,22 @@ class MPLPlot(DimensionedPlot):
         a new figure.
         """
         if not fig and self._create_fig:
-            rc_params = self.fig_rcparams
-            if self.fig_latex:
-                rc_params['text.usetex'] = True
-            with mpl.rc_context(rc=rc_params):
-                fig = plt.figure()
-                l, b, r, t = self.fig_bounds
-                inches = self.fig_inches
-                fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-                fig.patch.set_alpha(self.fig_alpha)
-                if isinstance(inches, (tuple, list)):
-                    inches = list(inches)
-                    if inches[0] is None:
-                        inches[0] = inches[1]
-                    elif inches[1] is None:
-                        inches[1] = inches[0]
-                    fig.set_size_inches(list(inches))
-                else:
-                    fig.set_size_inches([inches, inches])
-                axis = fig.add_subplot(111, projection=self.projection)
-                axis.set_aspect('auto')
-
+            fig = plt.figure()
+            l, b, r, t = self.fig_bounds
+            inches = self.fig_inches
+            fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
+            fig.patch.set_alpha(self.fig_alpha)
+            if isinstance(inches, (tuple, list)):
+                inches = list(inches)
+                if inches[0] is None:
+                    inches[0] = inches[1]
+                elif inches[1] is None:
+                    inches[1] = inches[0]
+                fig.set_size_inches(list(inches))
+            else:
+                fig.set_size_inches([inches, inches])
+            axis = fig.add_subplot(111, projection=self.projection)
+            axis.set_aspect('auto')
         return fig, axis
 
 
@@ -208,10 +209,6 @@ class MPLPlot(DimensionedPlot):
         return anim
 
     def update(self, key):
-        rc_params = self.fig_rcparams
-        if self.fig_latex:
-            rc_params['text.usetex'] = True
-        mpl.rcParams.update(rc_params)
         if len(self) == 1 and key == 0 and not self.drawn:
             return self.initialize_plot()
         return self.__getitem__(key)
@@ -297,7 +294,10 @@ class GridPlot(CompositePlot):
         self.cols, self.rows = layout.shape
         self.fig_inches = self._get_size()
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
-        self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
+
+        with mpl.rc_context(rc=self.fig_rcparams):
+            self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
+                                                                             ranges, create_axes)
 
 
     def _get_size(self):
@@ -709,7 +709,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout=layout, **params)
-        self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
+        with mpl.rc_context(rc=self.fig_rcparams):
+            self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
 
     def _compute_gridspec(self, layout):
