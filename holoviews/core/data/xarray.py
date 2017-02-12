@@ -114,7 +114,7 @@ class XArrayInterface(GridInterface):
                     dataset.data.groupby(index_dims[0].name)]
         else:
             unique_iters = [cls.values(dataset, d, False) for d in group_by]
-            indexes = zip(*[vals.flat for vals in util.cartesian_product(unique_iters)])
+            indexes = zip(*util.cartesian_product(unique_iters))
             data = [(k, group_type(dataset.data.sel(**dict(zip(group_by, k))),
                                    **group_kwargs))
                     for k in indexes]
