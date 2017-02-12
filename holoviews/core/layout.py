@@ -28,7 +28,7 @@ class Composable(object):
     """
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     def __lshift__(self, other):
@@ -213,7 +213,7 @@ class AdjointLayout(Dimensioned):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     def __len__(self):
@@ -269,7 +269,7 @@ class NdLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     @property
