@@ -1057,13 +1057,17 @@ class ndmapping_groupby(param.ParameterizedFunction):
         return container_type(groups, kdims=dimensions)
 
 
-def cartesian_product(arrays):
+def cartesian_product(arrays, flat=True, copy=False):
     """
-    Computes the cartesian product of a list of 1D arrays
-    returning arrays matching the shape defined by all
-    supplied dimensions.
+    Efficient cartesian product of a list of 1D arrays returning the
+    expanded array views for each dimensions. By default arrays are
+    flattened, which may be controlled with the flat flag. The array
+    views can be turned into regular arrays with the copy flag.
     """
-    return np.broadcast_arrays(*np.ix_(*arrays))
+    arrays = np.broadcast_arrays(*np.ix_(*arrays))
+    if flat:
+        return tuple(arr.flatten() if copy else arr.flat for arr in arrays)
+    return tuple(arr.copy() if copy else arr for arr in arrays)
 
 
 def arglexsort(arrays):
@@ -1117,7 +1121,7 @@ def expand_grid_coords(dataset, dim):
     arrays = [dataset.interface.coords(dataset, d.name, True)
               for d in dataset.kdims]
     idx = dataset.get_dimension_index(dim)
-    return cartesian_product(arrays)[idx]
+    return cartesian_product(arrays, flat=False)[idx]
 
 
 def dt64_to_dt(dt64):

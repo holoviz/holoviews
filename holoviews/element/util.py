@@ -125,8 +125,8 @@ class categorical_aggregate2d(ElementOperation):
         shape = (len(ycoords), len(xcoords))
         nsamples = np.product(shape)
 
-        ys, xs = cartesian_product([ycoords, xcoords])
-        data = {xdim: xs.flatten(), ydim: ys.flatten()}
+        ys, xs = cartesian_product([ycoords, xcoords], copy=True)
+        data = {xdim: xs, ydim: ys}
         for vdim in vdims:
             values = np.empty(nsamples)
             values[:] = np.NaN

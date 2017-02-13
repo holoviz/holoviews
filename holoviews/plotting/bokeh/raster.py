@@ -189,10 +189,9 @@ class QuadMeshPlot(ColorbarPlot):
             yvals = element.dimension_values(1, False)
             widths = np.diff(element.data[0])
             heights = np.diff(element.data[1])
-            xs, ys = cartesian_product([xvals, yvals])
-            ws, hs = cartesian_product([widths, heights])
-            data = {x: xs.flatten(), y: ys.flatten(), z: zvals,
-                    'widths': ws.flatten(), 'heights': hs.flatten()}
+            xs, ys = cartesian_product([xvals, yvals], copy=True)
+            ws, hs = cartesian_product([widths, heights], copy=True)
+            data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
 
         return (data, {'x': x, 'y': y,
                        'fill_color': {'field': z, 'transform': cmapper},

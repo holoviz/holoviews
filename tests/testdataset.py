@@ -3,6 +3,8 @@ Tests for the Dataset Element types.
 """
 
 from unittest import SkipTest
+from itertools import product
+
 import numpy as np
 from holoviews import Dataset, NdElement, HoloMap, Dimension
 from holoviews.element.comparison import ComparisonTestCase
@@ -833,6 +835,15 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                         kdims=[('y', 'Y')], vdims=[('z', 'Z')])
         self.assertEqual(grouped[0], first)
 
+    def test_dataset_groupby_multiple_dims(self):
+        dataset = Dataset((range(8), range(8), range(8), range(8),
+                           np.random.rand(8, 8, 8, 8)),
+                          kdims=['a', 'b', 'c', 'd'], vdims=['Value'])
+        grouped = dataset.groupby(['c', 'd'])
+        keys = list(product(range(8), range(8)))
+        self.assertEqual(list(grouped.keys()), keys)
+        for c, d in keys:
+            self.assertEqual(grouped[c, d], dataset.select(c=c, d=d).reindex(['a', 'b']))
 
 
 class IrisDatasetTest(GridDatasetTest):
