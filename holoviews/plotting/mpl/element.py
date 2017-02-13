@@ -160,7 +160,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             title = self._format_title(key)
             if self.show_title and title is not None:
                 fontsize = self._fontsize('title')
-                self.handles['title'] = axis.set_title(title, **fontsize)
+                if 'title' in self.handles:
+                    self.handles['title'].set_text(title)
+                else:
+                    self.handles['title'] = axis.set_title(title, **fontsize)
 
             # Apply subplot label
             self._subplot_label(axis)
