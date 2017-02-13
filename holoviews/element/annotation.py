@@ -167,7 +167,7 @@ class Arrow(Annotation):
         elif index == 1:
             return np.array([self.y])
         else:
-            return super(Text, self).dimension_values(dimension)
+            return super(Arrow, self).dimension_values(dimension)
 
 
 
