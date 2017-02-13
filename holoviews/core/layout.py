@@ -331,15 +331,19 @@ class Layout(AttrTree, Dimensioned):
 
     @classmethod
     def _get_path(cls, item):
-        path = (item.group, item.label) if item.label else (item.group,)
         sanitizers = [group_sanitizer, label_sanitizer]
         capitalize = lambda x: x[0].upper() + x[1:]
+        if isinstance(item, tuple):
+            path, item = item
+            new_path = cls._get_path(item)
+            path = path[:2] if item.label and path[1] == new_path[1] else path[:1]
+        else:
+            path = (item.group, item.label) if item.label else (item.group,)
         return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
 
 
     @classmethod
-    def new_path(cls, item, paths, counts):
-        path = cls._get_path(item)
+    def new_path(cls, path, paths, counts):
         while path in paths:
             count = counts[path]
             counts[path] += 1
@@ -356,25 +360,28 @@ class Layout(AttrTree, Dimensioned):
         into the supplied list of items.
         """
         if type(objs) is cls:
-            objs = objs.values()
-        for v in objs:
-            if type(v) is cls:
-                cls._unpack_paths(v, paths, items, counts)
+            objs = objs.items()
+        for item in objs:
+            path, obj = item if isinstance(item, tuple) else (None, item)
+            if type(obj) is cls:
+                cls._unpack_paths(obj, paths, items, counts)
                 continue
-            new_path = cls.new_path(v, paths, counts)
+            path = cls._get_path(item)
+            new_path = cls.new_path(path, paths, counts)
             paths.append(new_path)
-            items.append((new_path, v))
+            items.append((new_path, obj))
 
 
     @classmethod
-    def _initial_paths(cls, vals, paths=None):
+    def _initial_paths(cls, items, paths=None):
         if paths is None:
             paths = []
-        for v in vals:
-            if type(v) is cls:
-                cls._initial_paths(v.values(), paths)
+        for item in items:
+            path, item = item if isinstance(item, tuple) else (None, item)
+            if type(item) is cls:
+                cls._initial_paths(item.items(), paths)
                 continue
-            paths.append(cls._get_path(v))
+            paths.append(cls._get_path(item))
         return paths
 
 
