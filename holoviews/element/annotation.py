@@ -30,6 +30,8 @@ class Annotation(Element2D):
     def __init__(self, data, **params):
         super(Annotation, self).__init__(data, **params)
 
+    def __len__(self):
+        return 1
 
     def __getitem__(self, key):
         if key in self.dimensions(): return self.dimension_values(key)
