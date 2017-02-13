@@ -13,6 +13,7 @@ from bokeh.models.tools import BoxSelectTool
 from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
+from ...operation import interpolate_curve
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
 from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
@@ -138,11 +139,20 @@ class PointPlot(ColorbarPlot):
 
 class CurvePlot(ElementPlot):
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     style_opts = ['color'] + line_properties
     _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
     def get_data(self, element, ranges=None, empty=False):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
@@ -562,9 +572,7 @@ class ChartPlot(LegendPlot):
 
     @property
     def current_handles(self):
-        plot = self.handles['plot']
-        sources = plot.select(type=ColumnDataSource)
-        return sources
+        return self.state.select(type=(ColumnDataSource, Range1d))
 
 
 class BoxPlot(ChartPlot):
@@ -594,6 +602,15 @@ class BoxPlot(ChartPlot):
 
         return BokehBoxPlot(dframe, label=label, values=element.vdims[0].name,
                             **properties)
+
+
+    def _update_chart(self, key, element, ranges):
+        super(BoxPlot, self)._update_chart(key, element, ranges)
+        vdim = element.vdims[0].name
+        start, end = ranges[vdim]
+        self.state.y_range.start = start
+        self.state.y_range.end = end
+
 
 
 class BarPlot(ChartPlot):

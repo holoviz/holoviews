@@ -1,10 +1,11 @@
 import numpy as np
 
 from holoviews import (HoloMap, NdOverlay, Image, Contours, Polygons, Points,
-                       Histogram)
+                       Histogram, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
-                                         gradient, contours, histogram)
+                                         gradient, contours, histogram,
+                                         interpolate_curve)
 
 class ElementOperationTests(ComparisonTestCase):
     """
@@ -83,3 +84,18 @@ class ElementOperationTests(ComparisonTestCase):
         op_hist = histogram(points, num_bins=3, weight_dimension='y', mean_weighted=True)
         hist = Histogram(([1.,  4., 7.5], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
+
+    def test_interpolate_curve_pre(self):
+        interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-pre')
+        curve = Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
+        self.assertEqual(interpolated, curve)
+
+    def test_interpolate_curve_mid(self):
+        interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-mid')
+        curve = Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
+        self.assertEqual(interpolated, curve)
+
+    def test_interpolate_curve_post(self):
+        interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-post')
+        curve = Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
+        self.assertEqual(interpolated, curve)

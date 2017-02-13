@@ -3,6 +3,7 @@ import plotly.graph_objs as go
 from plotly.tools import FigureFactory as FF
 
 from ...core import util
+from ...operation import interpolate_curve
 from .element import ElementPlot, ColorbarPlot
 
 
@@ -41,11 +42,20 @@ class PointPlot(ScatterPlot):
 
 class CurvePlot(ElementPlot):
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     graph_obj = go.Scatter
 
     style_opts = ['color', 'dash', 'width']
 
     def graph_options(self, element, ranges):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         opts = super(CurvePlot, self).graph_options(element, ranges)
         opts['mode'] = 'lines'
         style = self.style[self.cyclic_index]

@@ -605,6 +605,59 @@ class decimate(ElementOperation):
         return sliced
 
 
+
+
+class interpolate_curve(ElementOperation):
+    """
+    Resamples a Curve using the defined interpolation method, e.g.
+    to represent changes in y-values as steps.
+    """
+
+    interpolation = param.ObjectSelector(objects=['steps-pre', 'steps-mid',
+                                                  'steps-post', 'linear'],
+                                         default='steps-mid', doc="""
+       Controls the transition point of the step along the x-axis.""")
+
+    @classmethod
+    def pts_to_prestep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x) - 1))
+        steps[0, 0::2] = x
+        steps[0, 1::2] = steps[0, 0:-2:2]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 2::2]
+        return steps
+
+    @classmethod
+    def pts_to_midstep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x)))
+        x = np.asanyarray(x)
+        steps[0, 1:-1:2] = steps[0, 2::2] = (x[:-1] + x[1:]) / 2
+        steps[0, 0], steps[0, -1] = x[0], x[-1]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 0::2]
+        return steps
+
+    @classmethod
+    def pts_to_poststep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x) - 1))
+        steps[0, 0::2] = x
+        steps[0, 1::2] = steps[0, 2::2]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 0:-2:2]
+        return steps
+
+    def _process(self, element, key=None):
+        INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
+                             'steps-mid': self.pts_to_midstep,
+                             'steps-post': self.pts_to_poststep}
+        if self.p.interpolation not in INTERPOLATE_FUNCS:
+            return element
+        x, y = element.dimension_values(0), element.dimension_values(1)
+        array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
+        dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
+        return element.clone((array[0, :], array[1, :])+dvals)
+
+
 #==================#
 # Other operations #
 #==================#

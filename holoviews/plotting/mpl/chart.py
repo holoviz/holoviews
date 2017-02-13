@@ -14,6 +14,7 @@ from ...core import OrderedDict, Dimension
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
+from ...operation import interpolate_curve
 from ..util import compute_sizes, get_sideplot_ranges, map_colors
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -41,6 +42,13 @@ class CurvePlot(ChartPlot):
         Whether to let matplotlib automatically compute tick marks
         or to allow the user to control tick marks.""")
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     relative_labels = param.Boolean(default=False, doc="""
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
@@ -59,6 +67,8 @@ class CurvePlot(ChartPlot):
     _plot_methods = dict(single='plot')
 
     def get_data(self, element, ranges, style):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
