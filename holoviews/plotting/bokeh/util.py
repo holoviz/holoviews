@@ -65,7 +65,7 @@ def rgb2hex(rgb):
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
-def mplcmap_to_palette(cmap):
+def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
@@ -73,6 +73,8 @@ def mplcmap_to_palette(cmap):
         raise ValueError("Using cmaps on objects requires matplotlib.")
     with abbreviated_exception():
         colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+        if ncolors:
+            return [rgb2hex(colormap(i)) for i in np.linspace(0, 1, ncolors)]
         return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
 

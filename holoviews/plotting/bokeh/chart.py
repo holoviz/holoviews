@@ -20,7 +20,7 @@ from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 
-class PointPlot(ColorbarPlot):
+class PointPlot(LegendPlot, ColorbarPlot):
 
     color_index = param.ClassSelector(default=3, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -58,10 +58,22 @@ class PointPlot(ColorbarPlot):
         mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
+        xdim, ydim = dims[xidx], dims[yidx]
+        data[xdim] = [] if empty else element.dimension_values(xidx)
+        data[ydim] = [] if empty else element.dimension_values(yidx)
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
+
         cdim = element.get_dimension(self.color_index)
         if cdim:
-            mapper = self._get_colormapper(cdim, element, ranges, style)
-            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            cdata = data[cdim.name] if cdim.name in data else element.dimension_values(cdim)
+            factors = None
+            if isinstance(cdata, list) or cdata.dtype.kind in 'OSU':
+                factors = list(np.unique(cdata))
+            mapper = self._get_colormapper(cdim, element, ranges, style,
+                                           factors)
+            data[cdim.name] = cdata
+            if factors is not None:
+                mapping['legend'] = {'field': cdim.name}
             mapping['color'] = {'field': cdim.name,
                                 'transform': mapper}
 
@@ -85,10 +97,6 @@ class PointPlot(ColorbarPlot):
                     data[map_key] = np.sqrt(sizes)
                     mapping['size'] = map_key
 
-        xdim, ydim = dims[xidx], dims[yidx]
-        data[xdim] = [] if empty else element.dimension_values(xidx)
-        data[ydim] = [] if empty else element.dimension_values(yidx)
-        self._categorize_data(data, (xdim, ydim), element.dimensions())
         self._get_hover_data(data, element, empty)
         return data, mapping
 
@@ -519,22 +527,6 @@ class ChartPlot(LegendPlot):
         self.drawn = True
 
         return plot
-
-    def _process_legend(self, plot):
-        legend = plot.legend[0]
-        if not self.show_legend:
-            legend.items[:] = []
-        else:
-            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
-            pos = self.legend_position
-            if pos in self.legend_specs:
-                opts = self.legend_specs[pos]
-                plot.legend[:] = []
-                legend.plot = None
-                legend.location = opts['loc']
-                plot.add_layout(legend, opts['pos'])
-            else:
-                legend.location = pos
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
