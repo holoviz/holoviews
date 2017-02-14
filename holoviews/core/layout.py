@@ -314,6 +314,16 @@ class Layout(AttrTree, Dimensioned):
 
     _deep_indexable = True
 
+    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
+        self.__dict__['_display'] = 'auto'
+        self.__dict__['_max_cols'] = 4
+        if items and all(isinstance(item, Dimensioned) for item in items):
+            items = self._process_items(items)
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
+        AttrTree.__init__(self, items, identifier, parent, **kwargs)
+        Dimensioned.__init__(self, self.data, **params)
+
+
     @classmethod
     def collate(cls, data, kdims=None, key_dimensions=None):
         kdims = key_dimensions if (kdims is None) else kdims
@@ -329,38 +339,12 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def _unpack_paths(cls, objs, items, counts):
+    def from_values(cls, vals):
         """
-        Recursively unpacks lists and Layout-like objects, accumulating
-        into the supplied list of items.
+        Returns a Layout given a list (or tuple) of viewable
+        elements or just a single viewable element.
         """
-        if type(objs) is cls:
-            objs = objs.items()
-        for item in objs:
-            path, obj = item if isinstance(item, tuple) else (None, item)
-            if type(obj) is cls:
-                cls._unpack_paths(obj, items, counts)
-                continue
-            path = get_path(item)
-            new_path = make_path_unique(path, counts)
-            items.append((new_path, obj))
-
-
-    @classmethod
-    def _initial_paths(cls, items, paths=None):
-        """
-        Recurses the passed items finding paths for each. Useful for
-        determining which paths are not unique and have to be resolved.
-        """
-        if paths is None:
-            paths = []
-        for item in items:
-            path, item = item if isinstance(item, tuple) else (None, item)
-            if type(item) is cls:
-                cls._initial_paths(item.items(), paths)
-                continue
-            paths.append(get_path(item))
-        return paths
+        return cls(items=cls._process_items(vals))
 
 
     @classmethod
@@ -384,22 +368,38 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def from_values(cls, vals):
+    def _initial_paths(cls, items, paths=None):
         """
-        Returns a Layout given a list (or tuple) of viewable
-        elements or just a single viewable element.
+        Recurses the passed items finding paths for each. Useful for
+        determining which paths are not unique and have to be resolved.
         """
-        return cls(items=cls._process_items(vals))
+        if paths is None:
+            paths = []
+        for item in items:
+            path, item = item if isinstance(item, tuple) else (None, item)
+            if type(item) is cls:
+                cls._initial_paths(item.items(), paths)
+                continue
+            paths.append(get_path(item))
+        return paths
 
 
-    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
-        self.__dict__['_display'] = 'auto'
-        self.__dict__['_max_cols'] = 4
-        if items and all(isinstance(item, Dimensioned) for item in items):
-            items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
-        AttrTree.__init__(self, items, identifier, parent, **kwargs)
-        Dimensioned.__init__(self, self.data, **params)
+    @classmethod
+    def _unpack_paths(cls, objs, items, counts):
+        """
+        Recursively unpacks lists and Layout-like objects, accumulating
+        into the supplied list of items.
+        """
+        if type(objs) is cls:
+            objs = objs.items()
+        for item in objs:
+            path, obj = item if isinstance(item, tuple) else (None, item)
+            if type(obj) is cls:
+                cls._unpack_paths(obj, items, counts)
+                continue
+            path = get_path(item)
+            new_path = make_path_unique(path, counts)
+            items.append((new_path, obj))
 
 
     @property
