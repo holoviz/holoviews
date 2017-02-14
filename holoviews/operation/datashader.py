@@ -16,12 +16,13 @@ from datashader.pandas import pandas_pipeline
 from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
+import datashader.transfer_functions as tf
 
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
 from ..core.data import ArrayInterface, PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
-from ..element import GridImage, Path, Curve, Contours, RGB
+from ..element import GridImage, Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
 DF_INTERFACES = [PandasInterface, DaskInterface]
@@ -216,7 +217,6 @@ class aggregate(ElementOperation):
 
 
 
-
 class shade(ElementOperation):
     """
     shade applies a normalization function followed by colormapping to
@@ -332,3 +332,70 @@ class datashade(aggregate, shade):
         agg = aggregate._process(self, element, key)
         shaded = shade._process(self, agg, key)
         return shaded
+
+
+
+class dynspread(ElementOperation):
+    """
+    Spreading expands each pixel in an Image based Element a certain
+    number of pixels on all sides according to a given shape, merging
+    pixels using a specified compositing operator. This can be useful
+    to make sparse plots more visible. Dynamic spreading determines
+    how many pixels to spread based on a density heuristic.
+
+    See the datashader documentation for more detail:
+
+    http://datashader.readthedocs.io/en/latest/api.html#datashader.transfer_functions.dynspread
+    """
+
+    how = param.ObjectSelector(default='source',
+                               objects=['source', 'over',
+                                        'saturate', 'add'], doc="""
+        The name of the compositing operator to use when combining
+        pixels.""")
+
+    max_px = param.Integer(default=3, doc="""
+        Maximum number of pixels to spread on all sides.""")
+    
+    shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
+                                 doc="""
+        The shape to spread by. Options are 'circle' [default] or 'square'.""")
+
+    threshold = param.Number(default=0.5, bounds=(0,1), doc="""
+        When spreading, determines how far to spread.
+        Spreading starts at 1 pixel, and stops when the fraction
+        of adjacent non-empty pixels reaches this threshold.
+        Higher values give more spreading, up to the max_px
+        allowed.""")
+
+    @classmethod
+    def uint8_to_uint32(cls, img):
+        shape = img.shape
+        flat_shape = np.multiply.reduce(shape[:2])
+        rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
+        return rgb
+
+    def _apply_dynspread(self, array):
+        img = tf.Image(array)
+        return tf.dynspread(img, max_px=self.p.max_px,
+                            threshold=self.p.threshold,
+                            how=self.p.how, shape=self.p.shape).data
+
+    def _process(self, element, key=None):
+        if not isinstance(element, (Image, GridImage)):
+            raise ValueError('dynspread can only be applied to Image Elements.')
+
+        if isinstance(element, GridImage):
+            new_data = {kd.name: element.dimension_values(kd, expanded=False)
+                        for kd in element.kdims}
+            for vd in element.vdims:
+                array = element.dimension_values(vd, flat=False)
+                new_data[vd.name] = self._apply_dynspread(array)
+            return element.clone(element.data)
+        else:
+            img = np.flipud(element.data)
+            isrgb = isinstance(element, RGB)
+            data = self.uint8_to_uint32(img) if isrgb else img
+            array = self._apply_dynspread(data)
+            img = datashade.uint32_to_uint8(array) if isrgb else np.flipud(array)
+            return element.clone(img)
