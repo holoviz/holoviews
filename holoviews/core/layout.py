@@ -16,8 +16,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import (int_to_roman, sanitize_identifier, group_sanitizer,
-                   label_sanitizer, unique_array)
+from .util import (unique_array, get_path, make_path_unique)
 from . import traversal
 
 
@@ -330,31 +329,7 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def _get_path(cls, item):
-        sanitizers = [group_sanitizer, label_sanitizer]
-        capitalize = lambda x: x[0].upper() + x[1:]
-        if isinstance(item, tuple):
-            path, item = item
-            new_path = cls._get_path(item)
-            path = path[:2] if item.label and path[1] == new_path[1] else path[:1]
-        else:
-            path = (item.group, item.label) if item.label else (item.group,)
-        return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
-
-
-    @classmethod
-    def new_path(cls, path, paths, counts):
-        while path in paths:
-            count = counts[path]
-            counts[path] += 1
-            path = path + (int_to_roman(count),)
-        if len(path) == 1:
-            path = path + (int_to_roman(counts.get(path, 1)),)
-        return path
-
-
-    @classmethod
-    def _unpack_paths(cls, objs, paths, items, counts):
+    def _unpack_paths(cls, objs, items, counts):
         """
         Recursively unpacks lists and Layout-like objects, accumulating
         into the supplied list of items.
@@ -364,16 +339,19 @@ class Layout(AttrTree, Dimensioned):
         for item in objs:
             path, obj = item if isinstance(item, tuple) else (None, item)
             if type(obj) is cls:
-                cls._unpack_paths(obj, paths, items, counts)
+                cls._unpack_paths(obj, items, counts)
                 continue
-            path = cls._get_path(item)
-            new_path = cls.new_path(path, paths, counts)
-            paths.append(new_path)
+            path = get_path(item)
+            new_path = make_path_unique(path, counts)
             items.append((new_path, obj))
 
 
     @classmethod
     def _initial_paths(cls, items, paths=None):
+        """
+        Recurses the passed items finding paths for each. Useful for
+        determining which paths are not unique and have to be resolved.
+        """
         if paths is None:
             paths = []
         for item in items:
@@ -381,21 +359,27 @@ class Layout(AttrTree, Dimensioned):
             if type(item) is cls:
                 cls._initial_paths(item.items(), paths)
                 continue
-            paths.append(cls._get_path(item))
+            paths.append(get_path(item))
         return paths
 
 
     @classmethod
     def _process_items(cls, vals):
+        """
+        Processes a list of Labelled types unpacking any objects of
+        the same type (e.g. a Layout) and finding unique paths for
+        all the items in the list.
+        """
         if type(vals) is cls:
             return vals.data
         elif not isinstance(vals, (list, tuple)):
             vals = [vals]
         paths = cls._initial_paths(vals)
         path_counter = Counter(paths)
-        paths, items = [k for k, v in path_counter.items() if v > 1], []
+        items = []
         counts = defaultdict(lambda: 1)
-        cls._unpack_paths(vals, paths, items, counts)
+        counts.update({k: 1 for k, v in path_counter.items() if v > 1})
+        cls._unpack_paths(vals, items, counts)
         return items
 
 

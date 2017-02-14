@@ -4,7 +4,7 @@ import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import numpy as np
 import param
@@ -1002,6 +1002,41 @@ def unpack_group(group, getter):
             yield (wrap_tuple(key), obj)
 
 
+def capitalize(string):
+    """
+    Capitalizes the first letter of a string.
+    """
+    return string[0].upper() + string[1:]
+
+
+def get_path(item):
+    """
+    Gets a path from an Labelled object or from a tuple of an existing
+    path and a labelled object. The path strings are sanitized and
+    capitalized.
+    """
+    sanitizers = [group_sanitizer, label_sanitizer]
+    if isinstance(item, tuple):
+        path, item = item
+        new_path = get_path(item)
+        path = path[:2] if item.label and path[1] == new_path[1] else path[:1]
+    else:
+        path = (item.group, item.label) if item.label else (item.group,)
+    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+
+
+def make_path_unique(path, counts):
+    """
+    Given a path, a list of existing paths and counts for each of the
+    existing paths.
+    """
+    while path in counts:
+        count = counts[path]
+        counts[path] += 1
+        path = path + (int_to_roman(count),)
+    if len(path) == 1:
+        path = path + (int_to_roman(counts.get(path, 1)),)
+    return path
 
 
 class ndmapping_groupby(param.ParameterizedFunction):
