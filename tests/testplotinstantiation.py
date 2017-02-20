@@ -39,7 +39,8 @@ try:
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
         ToolbarBox, Spacer
     )
-    from bokeh.models.mappers import LinearColorMapper, LogColorMapper
+    from bokeh.models.mappers import (LinearColorMapper, LogColorMapper,
+                                      CategoricalColorMapper)
     from bokeh.models.tools import HoverTool
     from bokeh.plotting import Figure
 except:
@@ -296,6 +297,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_points_colormapping(self):
         points = Points(np.random.rand(10, 4), vdims=['a', 'b'])
         self._test_colormapping(points, 3)
+
+    def test_points_colormapping_categorical(self):
+        points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
+                         vdims=['a', 'b'])
+        plot = bokeh_renderer.get_plot(points)
+        plot.initialize_plot()
+        fig = plot.state
+        cmapper = plot.handles['color_mapper']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, list(points['b']))
 
     def test_image_colormapping(self):
         img = Image(np.random.rand(10, 10))(plot=dict(logz=True))
