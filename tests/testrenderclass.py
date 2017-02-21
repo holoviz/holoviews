@@ -9,7 +9,7 @@ from hashlib import sha256
 from unittest import SkipTest
 import numpy as np
 
-from holoviews import HoloMap, Image, ItemTable, Store
+from holoviews import HoloMap, Image, ItemTable, Store, GridSpace, Table
 from holoviews.core.util import unicode
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
@@ -153,3 +153,36 @@ class BokehRendererTest(ComparisonTestCase):
     def test_export_widgets(self):
         bytesio = BytesIO()
         self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
+
+    def test_get_size_single_plot(self):
+        plot = self.renderer.get_plot(self.image1)
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (300, 300))
+
+    def test_get_size_row_plot(self):
+        plot = self.renderer.get_plot(self.image1+self.image2)
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (600, 300))
+
+    def test_get_size_column_plot(self):
+        plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (300, 600))
+
+    def test_get_size_grid_plot(self):
+        grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
+        plot = self.renderer.get_plot(grid)
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (360, 360))
+
+    def test_get_size_table(self):
+        table = Table(range(10), kdims=['x'])
+        plot = self.renderer.get_plot(table)
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (400, 300))
+
+    def test_get_size_tables_in_layout(self):
+        table = Table(range(10), kdims=['x'])
+        plot = self.renderer.get_plot(table+table)
+        w, h = self.renderer.get_size(plot)
+        self.assertEqual((w, h), (680, 300))
