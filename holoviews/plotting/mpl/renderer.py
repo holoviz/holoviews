@@ -137,8 +137,8 @@ class MPLRenderer(Renderer):
     @bothmethod
     def get_size(self_or_cls, plot):
         w, h = plot.state.get_size_inches()
-        dpi = plot.state.dpi
-        return (w*dpi, h*dpi)
+        dpi = self_or_cls.dpi if self_or_cls.dpi else plot.state.dpi
+        return (int(w*dpi), int(h*dpi))
 
 
     def diff(self, plot):
