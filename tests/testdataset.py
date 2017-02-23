@@ -6,7 +6,7 @@ from unittest import SkipTest
 from itertools import product
 
 import numpy as np
-from holoviews import Dataset, NdElement, HoloMap, Dimension
+from holoviews import Dataset, HoloMap, Dimension
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -53,12 +53,6 @@ class HomogeneousColumnTypes(object):
         "Tests support for arrays (homogeneous)"
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
-
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.xs_2),
-                                    kdims=['x'], vdims=['x2']))
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dataframe_init_hm(self):
@@ -233,11 +227,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     # Test the constructor to be supported by all interfaces supporting
     # heterogeneous column types.
-
-    def test_dataset_ndelement_init_ht(self):
-        "Tests support for heterogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.ys), kdims=['x'], vdims=['y']))
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
@@ -566,28 +555,6 @@ class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.init_data()
 
 
-
-class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
-    """
-    Test of the NdDataset interface (mostly for backwards compatibility)
-    """
-
-    def setUp(self):
-        self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['ndelement']
-        self.data_instance_type = NdElement
-        self.init_data()
-
-    # Literal formats that have been previously been supported but
-    # currently are only supported via NdElement.
-
-    def test_dataset_double_zip_init(self):
-        dataset = Dataset(zip(zip(self.gender, self.age),
-                              zip(self.weight, self.height)),
-                          kdims=self.kdims, vdims=self.vdims)
-        self.assertTrue(isinstance(dataset.data, NdElement))
-
-
 class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the Grid array interface
@@ -747,14 +714,6 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         with self.assertRaisesRegexp(Exception, exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
-
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
-            Dataset(NdElement(zip(self.xs, self.xs_2),
-                              kdims=['x'], vdims=['x2']))
 
     def test_dataset_2D_aggregate_partial_hm(self):
         array = np.random.rand(11, 11)

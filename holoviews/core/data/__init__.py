@@ -14,14 +14,13 @@ from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
-from .ndelement import NdElementInterface
 
-datatypes = ['array', 'dictionary', 'grid', 'ndelement']
+datatypes = ['array', 'dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
-    datatypes = ['array', 'dataframe', 'dictionary', 'grid', 'ndelement']
+    datatypes = ['array', 'dataframe', 'dictionary', 'grid']
     DFColumns = PandasInterface
 except ImportError:
     pass
@@ -167,7 +166,7 @@ class Dataset(Element):
     def __setstate__(self, state):
         """
         Restores OrderedDict based Dataset objects, converting them to
-        the up-to-date NdElement format.
+        the up-to-date Dataset format.
         """
         self.__dict__ = state
         if isinstance(self.data, OrderedDict):
@@ -536,5 +535,4 @@ class Dataset(Element):
 Columns      = Dataset
 ArrayColumns = ArrayInterface
 DictColumns  = DictInterface
-NdColumns    = NdElementInterface
 GridColumns  = GridInterface

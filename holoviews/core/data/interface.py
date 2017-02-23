@@ -1,7 +1,7 @@
 import param
 import numpy as np
 
-from ..element import Element, NdElement
+from ..element import Element
 from .. import util
 
 
@@ -51,9 +51,7 @@ class Interface(param.Parameterized):
             vdims = pvals.get('vdims') if vdims is None else vdims
 
         # Process Element data
-        if isinstance(data, NdElement):
-            kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif hasattr(data, 'interface') and issubclass(data.interface, Interface):
+        if hasattr(data, 'interface') and issubclass(data.interface, Interface):
             data = data.data
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)

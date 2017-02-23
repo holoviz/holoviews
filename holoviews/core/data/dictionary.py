@@ -10,7 +10,7 @@ import numpy as np
 
 from .interface import Interface
 from ..dimension import Dimension
-from ..element import Element, NdElement
+from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check
 from .. import util
@@ -44,8 +44,7 @@ class DictInterface(Interface):
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
-        elif ((util.is_dataframe(data) and all(d in data for d in dimensions)) or
-              (isinstance(data, NdElement) and all(d in data.dimensions() for d in dimensions))):
+        elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
