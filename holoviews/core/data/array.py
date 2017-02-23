@@ -131,7 +131,7 @@ class ArrayInterface(Interface):
         data = dataset.data
 
         # Get dimension objects, labels, indexes and data
-        dimensions = [dataset.get_dimension(d) for d in dimensions]
+        dimensions = [dataset.get_dimension(d, strict=True) for d in dimensions]
         dim_idxs = [dataset.get_dimension_index(d) for d in dimensions]
         ndims = len(dimensions)
         kdims = [kdim for kdim in dataset.kdims

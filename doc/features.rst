@@ -51,6 +51,9 @@ ________
 
 **Integration with third-party libraries**  
 
-* Flexible interface to both the `pandas and Seaborn libraries <Tutorials/Pandas_Seaborn.html>`_
-* Immediately visualize pandas data as any HoloViews object.
-* Seamlessly combine and animate your Seaborn plots in HoloViews rich, compositional data-structures.
+* Works natively with data in Python data structures, 
+  `Pandas <http://dev.holoviews.org/Tutorials/Columnar_Data.html>`_ dataframes, and
+  Numpy and `xarray <http://geo.holoviews.org/Gridded_Datasets_I.html>`_ multidimensional arrays.
+* Includes visualizations from `Seaborn <Tutorials/Pandas_Seaborn.html>`_.
+* Seamlessly animate your Seaborn plots in HoloViews rich, compositional data-structures.
+* Combine plots rendered by Seaborn, Matplotlib, and Bokeh in the same document, as needed

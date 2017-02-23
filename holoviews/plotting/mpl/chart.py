@@ -14,7 +14,8 @@ from ...core import OrderedDict, Dimension
 from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges
+from ...operation import interpolate_curve
+from ..util import compute_sizes, get_sideplot_ranges, map_colors
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -41,6 +42,13 @@ class CurvePlot(ChartPlot):
         Whether to let matplotlib automatically compute tick marks
         or to allow the user to control tick marks.""")
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     relative_labels = param.Boolean(default=False, doc="""
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
@@ -59,6 +67,8 @@ class CurvePlot(ChartPlot):
     _plot_methods = dict(single='plot')
 
     def get_data(self, element, ranges, style):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
@@ -110,7 +120,7 @@ class ErrorPlot(ChartPlot):
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
         yerr = element.array(dimensions=dims[2:4])
-        style['yerr'] = yerr.T if len(dims) > 3 else yerr
+        style['yerr'] = yerr.T if len(dims) > 3 else yerr[:, 0]
         return (xs, ys), style, {}
 
 
@@ -477,7 +487,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
-                  'cmap', 'vmin', 'vmax']
+                  'cmap', 'vmin', 'vmax', 'norm']
 
     _disabled_opts = ['size']
     _plot_methods = dict(single='scatter')
@@ -493,17 +503,32 @@ class PointPlot(ChartPlot, ColorbarPlot):
         color = style.pop('color', None)
         if cdim:
             cs = element.dimension_values(self.color_index)
-            style['c'] = cs
+            # Check if numeric otherwise treat as categorical
+            if cs.dtype.kind in 'if':
+                crange = ranges.get(cdim.name, element.range(cdim.name))
+                style['c'] = cs
+            else:
+                categories = np.unique(cs)
+                xsorted = np.argsort(categories)
+                ypos = np.searchsorted(categories[xsorted], cs)
+                style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
         elif color:
             style['c'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
-        if element.get_dimension(self.size_index):
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
             sizes = element.dimension_values(self.size_index)
-            ms = style.pop('s') if 's' in style else plt.rcParams['lines.markersize']
-            style['s'] = compute_sizes(sizes, self.size_fn, self.scaling_factor,
-                                       self.scaling_method, ms)
+            ms = style['s'] if 's' in style else plt.rcParams['lines.markersize']
+            sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
+                                  self.scaling_method, ms)
+            if sizes is None:
+                eltype = type(element).__name__
+                self.warning('%s dimension is not numeric, cannot '
+                             'use to scale %s size.' % (sdim, eltype))
+            else:
+                style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
 
 
@@ -566,7 +591,7 @@ class VectorFieldPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot',
-                  'width','headwidth']
+                  'width','headwidth', 'norm']
 
     _plot_methods = dict(single='quiver')
 
@@ -879,7 +904,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, allow_None=True,
+                                      class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -898,9 +924,12 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
     def get_extents(self, element, ranges):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
-        ndims = len(element.dimensions(label=True))
-        max_length = t if ndims > 1 else self.spike_length
-        return (l, self.position, r, self.position+max_length)
+        if len(element.dimensions()) == 1:
+            b, t = self.position, self.position+self.spike_length
+        else:
+            b = np.nanmin([0, b])
+            t = np.nanmax([0, t])
+        return l, b, r, t
 
 
     def get_data(self, element, ranges, style):

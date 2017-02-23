@@ -1,4 +1,4 @@
-import itertools
+import itertools, inspect, re
 from distutils.version import LooseVersion
 from collections import defaultdict
 
@@ -10,19 +10,21 @@ try:
 except ImportError:
     cm, colors = None, None
 
+import param
 import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
+from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import GlyphRenderer
+from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row, ToolbarBox)
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
-
 if bokeh_version >= '0.12':
     from bokeh.layouts import WidgetBox
 
 from ...core.options import abbreviated_exception
+from ...core.overlay import Overlay
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -41,15 +43,17 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
-                  'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
-                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
+                  'BasicTicker', 'BasicTickFormatter', 'FixedTicker',
+                  'FuncTickFormatter', 'LogTickFormatter',
+                  'CategoricalTickFormatter']
 
 # List of attributes that can safely be dropped from the references
-IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y']
+IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y', 'factors']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
-                  'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
+                  'Plot', 'Range1d', 'FactorRange', 'CategoricalAxis',
+                  'LinearAxis', 'ColumnDataSource']
 
 
 def rgb2hex(rgb):
@@ -146,36 +150,6 @@ def convert_datetime(time):
     return time.astype('datetime64[s]').astype(float)*1000
 
 
-def models_to_json(models):
-    """
-    Convert list of bokeh models into json to update plot(s).
-    """
-    json_data, ids = [], []
-    for plotobj in models:
-        if plotobj.ref['id'] in ids:
-            continue
-        else:
-            ids.append(plotobj.ref['id'])
-        json = plotobj.to_json(False)
-        json.pop('tool_events', None)
-        json.pop('renderers', None)
-        json_data.append({'id': plotobj.ref['id'],
-                          'type': plotobj.ref['type'],
-                          'data': json})
-    return json_data
-
-
-def refs(json):
-    """
-    Finds all the references to other objects in the json
-    representation of a bokeh Document.
-    """
-    result = {}
-    for obj in json['roots']['references']:
-        result[obj['id']] = obj
-    return result
-
-
 def get_ids(obj):
     """
     Returns a list of all ids in the supplied object.  Useful for
@@ -191,6 +165,41 @@ def get_ids(obj):
         ids = [(v,) if k == 'id' else get_ids(v)
                for k, v in obj.items() if not k in IGNORED_ATTRIBUTES]
     return list(itertools.chain(*ids))
+
+
+def replace_models(obj):
+    """
+    Recursively processes references, replacing Models with there .ref
+    values and HasProps objects with their property values.
+    """
+    if isinstance(obj, Model):
+        return obj.ref
+    elif isinstance(obj, HasProps):
+        return obj.properties_with_values(include_defaults=False)
+    elif isinstance(obj, dict):
+        return {k: v if k in IGNORED_ATTRIBUTES else replace_models(v)
+                   for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [replace_models(v) for v in obj]
+    else:
+        return obj
+
+
+def to_references(doc):
+    """
+    Convert the document to a dictionary of references. Avoids
+    unnecessary JSON serialization/deserialization within Python and
+    the corresponding performance penalty.
+    """
+    root_ids = []
+    for r in doc._roots:
+        root_ids.append(r._id)
+
+    references = {}
+    for obj in doc._references_json(doc._all_models.values()):
+        obj = replace_models(obj)
+        references[obj['id']] = obj
+    return references
 
 
 def compute_static_patch(document, models):
@@ -215,7 +224,7 @@ def compute_static_patch(document, models):
     ensure that only the references between objects are sent without
     duplicating any of the data.
     """
-    references = refs(document.to_json())
+    references = to_references(document)
     model_ids = [m.ref['id'] for m in models]
 
     requested_updates = []
@@ -237,7 +246,7 @@ def compute_static_patch(document, models):
                                                          value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [delete_refs(e, IGNORED_MODELS)
+    events = [delete_refs(e, IGNORED_MODELS, ignored_attributes=IGNORED_ATTRIBUTES)
               for _, e in sorted(events, key=lambda x: x[0])]
     events = [e for e in events if all(i in requested_updates for i in get_ids(e))
               if 'new' in e]
@@ -248,7 +257,7 @@ def compute_static_patch(document, models):
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, models=[], attributes=[]):
+def delete_refs(obj, models=[], dropped_attributes=[], ignored_attributes=[]):
     """
     Recursively traverses the object and looks for models and model
     attributes to be deleted.
@@ -260,14 +269,18 @@ def delete_refs(obj, models=[], attributes=[]):
         for k, v in list(obj.items()):
             # Drop unneccessary attributes, i.e. those that do not
             # contain references to other objects.
-            if k in attributes or (k == 'attributes' and not get_ids(v)):
+            if k in dropped_attributes or (k == 'attributes' and not get_ids(v)):
                 continue
-            ref = delete_refs(v, models, attributes)
+            if k in ignored_attributes:
+                ref = v
+            else:
+                ref = delete_refs(v, models, dropped_attributes, ignored_attributes)
             if ref is not None:
                 new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, models, attributes) for v in obj]
+        objs = [delete_refs(v, models, dropped_attributes, ignored_attributes)
+                for v in obj]
         return [o for o in objs if o is not None]
     else:
         return obj
@@ -335,7 +348,36 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
-def pad_plots(plots, padding=0.85):
+def pad_width(model, table_padding=0.85, tabs_padding=1.2):
+    """
+    Computes the width of a model and sets up appropriate padding
+    for Tabs and DataTable types.
+    """
+    if isinstance(model, Row):
+        vals = [pad_width(child) for child in model.children]
+        width = np.max([v for v in vals if v is not None])
+    elif isinstance(model, Column):
+        vals = [pad_width(child) for child in model.children]
+        width = np.sum([v for v in vals if v is not None])
+    elif isinstance(model, Tabs):
+        vals = [pad_width(t) for t in model.tabs]
+        width = np.max([v for v in vals if v is not None])
+        for model in model.tabs:
+            model.width = width
+            width = int(tabs_padding*width)
+    elif isinstance(model, DataTable):
+        width = model.width
+        model.width = int(table_padding*width)
+    elif isinstance(model, WidgetBox):
+        width = model.width
+    elif model:
+        width = model.plot_width
+    else:
+        width = 0
+    return width
+
+
+def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a WidgetBox with appropriate
@@ -345,21 +387,73 @@ def pad_plots(plots, padding=0.85):
     for row in plots:
         row_widths = []
         for p in row:
-            if isinstance(p, Tabs):
-                width = np.max([p.width if isinstance(p, DataTable) else
-                                t.child.plot_width for t in p.tabs])
-                for p in p.tabs:
-                    p.width = int(padding*width)
-            elif isinstance(p, DataTable):
-                width = p.width
-                p.width = int(padding*width)
-            elif p:
-                width = p.plot_width
-            else:
-                width = 0
+            width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
     plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     total_width = np.max([np.sum(row) for row in widths])
     return plots, total_width
+
+
+def filter_toolboxes(plots):
+    """
+    Filters out toolboxes out of a list of plots to be able to compose
+    them into a larger plot.
+    """
+    if isinstance(plots, list):
+        plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'children'):
+        plots.children = [filter_toolboxes(child) for child in plots.children
+                          if not isinstance(child, ToolbarBox)]
+    return plots
+
+
+def py2js_tickformatter(formatter, msg=''):
+    """
+    Uses flexx.pyscript to compile a python tick formatter to JS code
+    """
+    try:
+        from flexx.pyscript import py2js
+    except ImportError:
+        param.main.warning(msg+'Ensure Flexx is installed '
+                           '("conda install -c bokeh flexx" or '
+                           '"pip install flexx")')
+        return
+    try:
+        jscode = py2js(formatter, 'formatter')
+    except Exception as e:
+        error = 'Pyscript raised an error: {0}'.format(e)
+        error = error.replace('%', '%%')
+        param.main.warning(msg+error)
+        return
+
+    args = inspect.getargspec(formatter).args
+    arg_define = 'var %s = tick;' % args[0] if args else ''
+    return_js = 'return formatter();\n'
+    jsfunc = '\n'.join([arg_define, jscode, return_js])
+    match = re.search('(function \(.*\))', jsfunc )
+    return jsfunc[:match.start()] + 'function ()' + jsfunc[match.end():]
+
+
+def get_tab_title(key, frame, overlay):
+    """
+    Computes a title for bokeh tabs from the key in the overlay, the
+    element and the containing (Nd)Overlay.
+    """
+    if isinstance(overlay, Overlay):
+        if frame is not None:
+            title = []
+            if frame.label:
+                title.append(frame.label)
+                if frame.group != frame.params('group').default:
+                    title.append(frame.group)
+            else:
+                title.append(frame.group)
+        else:
+            title = key
+        title = ' '.join(title)
+    else:
+        title = ' | '.join([d.pprint_value_string(k) for d, k in
+                            zip(overlay.kdims, key)])
+    return title

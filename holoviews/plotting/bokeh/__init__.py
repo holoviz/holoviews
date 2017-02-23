@@ -17,7 +17,7 @@ except:
 from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .callbacks import Callbacks # noqa (API import)
+from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
@@ -124,9 +124,9 @@ options = Store.options(backend='bokeh')
 options.Curve = Options('style', color=Cycle(), line_width=2)
 options.Scatter = Options('style', color=Cycle(), size=point_size)
 options.Points = Options('style', color=Cycle(), size=point_size)
+options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
-options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')

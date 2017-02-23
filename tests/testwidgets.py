@@ -17,6 +17,7 @@ except:
     raise SkipTest("Matplotlib required to test widgets")
 
 from holoviews import Image, HoloMap
+from holoviews.core.util import unicode
 from holoviews.plotting.mpl import RasterPlot
 
 def digest_data(data):
@@ -32,10 +33,15 @@ filters += [re.compile('new [A-Za-z]*ScrubberWidget\([a-z0-9_, "]+')]
 filters += [re.compile('new [A-Za-z]*SelectionWidget\([a-z0-9_, "]+')]
 
 def normalize(data):
+    if isinstance(data, bytes):
+        data = data.decode('utf8')
     for f in filters:
         data = re.sub(f, '[CLEARED]', data)
     # Hack around inconsistencies in jinja between Python 2 and 3
-    return data.replace('0.0', '0').replace('1.0', '1')
+    data = data.replace('0.0', '0').replace('1.0', '1')
+    if isinstance(data, unicode):
+        data = data.encode('utf8')
+    return data
 
 @attr(optional=1)
 class TestWidgets(IPTestCase):

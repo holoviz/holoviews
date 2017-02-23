@@ -118,7 +118,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Dataset):
+class Bars(Dataset, Element2D):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
@@ -309,12 +309,6 @@ class Points(Chart):
 
     _min_dims = 2                      # Minimum number of columns
 
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield tuple(self.data[i, ...])
-            i += 1
-
 
 
 class VectorField(Points):
@@ -373,7 +367,7 @@ class Spikes(Chart):
 
     group = param.String(default='Spikes', constant=True)
 
-    kdims = param.List(default=[Dimension('x')])
+    kdims = param.List(default=[Dimension('x')], bounds=(1, 1))
 
     vdims = param.List(default=[])
 

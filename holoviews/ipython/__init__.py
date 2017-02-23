@@ -37,7 +37,7 @@ except ImportError:
 
 
 Collector.interval_hook = RunProgress
-AttrTree._disabled_prefixes = ['_repr_']
+AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
     """
@@ -141,17 +141,24 @@ class notebook_extension(param.ParameterizedFunction):
 
     # Mapping between backend name and module name
     _backends = {'matplotlib': 'mpl',
-                 'bokeh': 'bokeh'}
+                 'bokeh': 'bokeh',
+                 'plotly': 'plotly'}
 
     def __call__(self, *args, **params):
         imports = [(name, b) for name, b in self._backends.items()
                    if name in args or params.get(name, False)]
-        if not imports:
-            imports.append(('matplotlib', 'mpl'))
+        if not imports or 'matplotlib' not in Store.renderers:
+            imports = imports + [('matplotlib', 'mpl')]
+
+        args = list(args)
         for backend, imp in imports:
             try:
                 __import__('holoviews.plotting.%s' % imp)
             except ImportError:
+                if backend in args:
+                    args.pop(args.index(backend))
+                if backend in params:
+                    params.pop(backend)
                 self.warning("HoloViews %s backend could not be imported, "
                              "ensure %s is installed." % (backend, backend))
             finally:
@@ -179,7 +186,7 @@ class notebook_extension(param.ParameterizedFunction):
             ip = get_ipython() if ip is None else ip # noqa (get_ipython)
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputMagic.initialize()
+            OutputMagic.initialize(list( self._backends.keys()))
             set_display_hooks(ip)
             notebook_extension._loaded = True
 

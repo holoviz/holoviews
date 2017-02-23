@@ -24,18 +24,19 @@ class Overlayable(object):
 
     def __mul__(self, other):
         if type(other).__name__ == 'DynamicMap':
-            from .operation import DynamicFunction
-            def dynamic_mul(element):
+            from .spaces import Callable
+            def dynamic_mul(*args, **kwargs):
+                element = other[args]
                 return self * element
-            return DynamicFunction(other, function=dynamic_mul)
+            callback = Callable(callable_function=dynamic_mul,
+                                inputs=[self, other])
+            return other.clone(shared_data=False, callback=callback,
+                               streams=[])
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
 
-        self_item = [((self.group, self.label if self.label else 'I'), self)]
-        other_items = (other.items() if isinstance(other, Overlay)
-                       else [((other.group, other.label if other.label else 'I'), other)])
-        return Overlay(items=Overlay.relabel_item_paths(list(self_item) + list(other_items)))
+        return Overlay.from_values([self, other])
 
 
 
@@ -99,11 +100,6 @@ class Overlay(Layout, CompositeOverlay):
     Layout and CompositeOverlay.
     """
 
-    @classmethod
-    def _from_values(cls, val):
-        return reduce(lambda x,y: x*y, val).map(lambda x: x.display('auto'), [Overlay])
-
-
     def __init__(self, items=None, group=None, label=None, **params):
         view_params = ViewableElement.params().keys()
         self.__dict__['_fixed'] = False
@@ -134,19 +130,21 @@ class Overlay(Layout, CompositeOverlay):
 
 
     def __add__(self, other):
-        return Layout.from_values(self) + Layout.from_values(other)
+        return Layout.from_values([self, other])
 
 
     def __mul__(self, other):
-        if isinstance(other, Overlay):
-            items = list(self.data.items()) + list(other.data.items())
-        elif isinstance(other, ViewableElement):
-            label = other.label if other.label else 'I'
-            items = list(self.data.items()) + [((other.group, label), other)]
-        elif isinstance(other, UniformNdMapping):
+        if not isinstance(other, ViewableElement):
             raise NotImplementedError
+        return Overlay.from_values([self, other])
 
-        return Overlay(items=self.relabel_item_paths(items)).display('all')
+
+    def collate(self):
+        """
+        Collates any objects in the Overlay resolving any issues
+        the recommended nesting structure.
+        """
+        return reduce(lambda x,y: x*y, self.values())
 
 
     def collapse(self, function):

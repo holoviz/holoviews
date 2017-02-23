@@ -27,7 +27,7 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.6.2",
+    version="1.7dev5",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -49,10 +49,12 @@ setup_args.update(dict(
                 "holoviews.plotting",
                 "holoviews.plotting.mpl",
                 "holoviews.plotting.bokeh",
+                "holoviews.plotting.plotly",
                 "holoviews.plotting.widgets"],
     package_data={'holoviews.ipython': ['*.html'],
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js', '*.css'],
+                  'holoviews.plotting.plotly': ['*.js'],
                   'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css']},
     classifiers = [
         "License :: OSI Approved :: BSD License",

@@ -80,7 +80,10 @@ class Plot3D(ColorbarPlot):
         if self.disable_axes:
             axis.set_axis_off()
 
-        axis.set_axis_bgcolor(self.bgcolor)
+        if LooseVersion(mpl.__version__) <= '1.5.9':
+            axis.set_axis_bgcolor(self.bgcolor)
+        else:
+            axis.set_facecolor(self.bgcolor)
         return super(Plot3D, self)._finalize_axis(key, **kwargs)
 
 
@@ -163,7 +166,8 @@ class SurfacePlot(Plot3D):
         Valid values are 'surface', 'wireframe' and 'contour'.""")
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
-                  'linewidth', 'facecolors', 'rstride', 'cstride']
+                  'linewidth', 'facecolors', 'rstride', 'cstride',
+                  'norm']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
@@ -193,7 +197,8 @@ class TrisurfacePlot(Plot3D):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
+    style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor',
+                  'norm']
 
     _plot_methods = dict(single='plot_trisurf')
 

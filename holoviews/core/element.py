@@ -39,8 +39,7 @@ class Element(ViewableElement, Composable, Overlayable):
         hists = []
         for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
-                             adjoin=False, individually=individually,
-                             dimension=d, **kwargs)
+                             individually=individually, dimension=d, **kwargs)
             hists.append(hist)
         if adjoin:
             layout = self
@@ -120,18 +119,15 @@ class Element(ViewableElement, Composable, Overlayable):
         if len(set(reduce_map.values())) > 1:
             raise Exception("Cannot define reduce operations with more than "
                             "one function at a time.")
-        sanitized_dict = {dimension_sanitizer(kd): kd
-                          for kd in self.dimensions('key', True)}
         if reduce_map:
             reduce_map = reduce_map.items()
         if dimensions:
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
             reduce_map = [(d, function) for d in self.kdims]
-        reduced = [(d.name if isinstance(d, Dimension) else d, fn)
+        reduced = [(self.get_dimension(d, strict=True).name, fn)
                    for d, fn in reduce_map]
-        sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
-        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(sanitized, lambda x: x[1])]
+        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(reduced, lambda x: x[1])]
         return grouped[0]
 
 
@@ -178,7 +174,7 @@ class Element(ViewableElement, Composable, Overlayable):
 
     def array(self, dimensions=[]):
         if dimensions:
-            dims = [self.get_dimension(d) for d in dimensions]
+            dims = [self.get_dimension(d, strict=True) for d in dimensions]
         else:
             dims = [d for d in self.kdims + self.vdims if d != 'Index']
         columns, types = [], []
@@ -322,8 +318,8 @@ class NdElement(NdMapping, Tabular):
         elif kdims is None:
             kdims = [d for d in self.dimensions() if d not in vdims]
         if 'Index' not in kdims: kdims = ['Index'] + kdims
-        key_dims = [self.get_dimension(k) for k in kdims]
-        val_dims = [self.get_dimension(v) for v in vdims]
+        key_dims = [self.get_dimension(k, strict=True) for k in kdims]
+        val_dims = [self.get_dimension(v, strict=True) for v in vdims]
 
         kidxs = [(i, k in self.kdims, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]
@@ -483,9 +479,8 @@ class NdElement(NdMapping, Tabular):
 
     def dimension_values(self, dim, expanded=True, flat=True):
         dim = self.get_dimension(dim, strict=True)
-        value_dims = self.dimensions('value', label=True)
-        if dim.name in value_dims:
-            index = value_dims.index(dim.name)
+        if dim in self.vdims:
+            index = self.get_dimension_index(dim) - self.ndims
             vals = np.array([v[index] for v in self.data.values()])
             return vals if expanded else unique_array(vals)
         else:

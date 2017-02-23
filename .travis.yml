@@ -4,12 +4,15 @@ sudo: false
 
 python:
   - "2.7"
-  - "3.4"
+  - "3.5"
 
 notifications:
   email:
     on_failure: change # [always|never|change] default: always
-    
+  flowdock:
+    secure: d32tzqLnUIJge2QyAMtseJWf0yRb3LenW77xzEGVUD+abzlTtoCBbQBIRaWjJn3V78wd3ogLinplnMnu46tsQi7Q2XWiKaxrWq2ZPVfVCbV88whFiYMmmwnj6DNJjl3CxfGQXgui/VyPg9fyaDp5TyZfNZa/gEdedkn1J5kIF3g=
+
+
 install:
   - SITE_PACKAGES=`pip --version | cut -d ' ' -f 4`
   - if [[ "$TRAVIS_PYTHON_VERSION" == "2.7" ]]; then
@@ -24,8 +27,9 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -c scitools -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose matplotlib bokeh pandas jupyter ipython=4.2.0 param iris xarray
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy numpy freetype nose bokeh=0.12.3 pandas jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray datashader
   - source activate test-environment
+  - conda install -c conda-forge  -c scitools iris sip=4.18 plotly flexx
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
@@ -33,7 +37,7 @@ install:
   - python setup.py install
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
-  - pip install coveralls awscli
+  - pip install coveralls awscli deepdiff
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
       echo "Attempting to find any associated pull request";
       CURRENT_BUILD=$(curl -s -X GET "https://api.travis-ci.org/repos/ioam/holoviews/builds?number=$TRAVIS_BUILD_NUMBER");
@@ -51,7 +55,7 @@ install:
   - cd ./doc/reference_data
   - echo "Attempting to checkout $REF_DATA_BRANCH branch"
   - if [ $(git branch -a --list *origin/$REF_DATA_BRANCH | wc -l) -eq 1 ] ; then
-      git checkout $REF_DATA_BRANCH;
+      git checkout origin/$REF_DATA_BRANCH;
     else
       echo "Using the master branch reference data";
     fi
@@ -62,12 +66,16 @@ before-script:
 
 script:
   - nosetests --with-doctest --with-coverage --cover-package=holoviews -a '!optional'
-  - cd doc/nbpublisher; chmod +x test_notebooks.py; ./test_notebooks.py
+  - cd doc/nbpublisher; chmod +x test_notebooks.py; BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
-  - coverage combine
+  - coverage combine --append
 
 after_script:
+  - shopt -s expand_aliases
+  - alias decode="tr '[N-ZA-Mn-za-m]' '[A-Za-z]'"
+  - export AWS_SECRET_ACCESS_KEY=`echo udgGztmYyyKZ5iP2PVe+ROGZo/TI0M2QcoafOJGD | decode`
+  - export AWS_ACCESS_KEY_ID=`echo NXVNVUCXF3UPHSKNG7ND | decode`
   - if [ "$TRAVIS_BRANCH" == 'master' ]; then
       cd doc/test_data;
       zip -r test_data.zip *;

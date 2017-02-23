@@ -8,7 +8,8 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.util import (dimension_sanitizer, safe_unicode,
-                          unique_array, unicode, isnumeric)
+                          unique_array, unicode, isnumeric,
+                          wrap_tuple_streams, drop_streams)
 from ...core.traversal import hierarchical
 
 def escape_vals(vals, escape_numerics=True):
@@ -16,10 +17,8 @@ def escape_vals(vals, escape_numerics=True):
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    if escape_numerics:
-        ints, floats = "'%.1f'", "'%.10f'"
-    else:
-        ints, floats = "%.1f", "%.10f"
+    # Ints formatted as floats to disambiguate with counter mode
+    ints, floats = "%.1f", "%.10f"
 
     escaped = []
     for v in vals:
@@ -27,10 +26,13 @@ def escape_vals(vals, escape_numerics=True):
             v = "'"+unicode(safe_unicode(v))+"'"
         elif isinstance(v, np.datetime64):
             v = "'"+str(v)+"'"
-        elif v % 1 == 0:
-            v = ints % v
         else:
-            v = floats % v
+            if v % 1 == 0:
+                v = ints % v
+            else:
+                v = (floats % v)[:-1]
+            if escape_numerics:
+                v = "'"+v+"'"
         escaped.append(v)
     return escaped
 
@@ -104,10 +106,15 @@ class NdWidget(param.Parameterized):
 
     def __init__(self, plot, renderer=None, **params):
         super(NdWidget, self).__init__(**params)
-        self.id = uuid.uuid4().hex
+        self.id = plot.comm.id if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        self.dimensions = plot.dimensions
-        self.keys = plot.keys
+        streams = []
+        for stream in plot.streams:
+            if any(k in plot.dimensions for k in stream.contents):
+                streams.append(stream)
+        self.dimensions, self.keys = drop_streams(streams,
+                                                  plot.dimensions,
+                                                  plot.keys)
 
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
@@ -189,11 +196,17 @@ class NdWidget(param.Parameterized):
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css)
+            return self.renderer.html(self.plot, figure_format, css=css,
+                                      comm=False)
 
 
     def update(self, key):
-        return self._plot_figure(key)
+        if not self.plot.dimensions:
+            self.plot.refresh()
+        else:
+            self.plot.update(key)
+            self.plot.push()
+        return 'Complete'
 
 
 
@@ -260,11 +273,9 @@ class SelectionWidget(NdWidget):
             next_vals = {}
 
             # Hide widget if it has 1-to-1 mapping to next widget
-            visible = False
+            visible = True
             dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
             many_to_one = any(len(v) > 1 for v in dim_nesting)
-            if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
-                visible = True
 
             if self.plot.dynamic:
                 if dim.values:
@@ -301,6 +312,8 @@ class SelectionWidget(NdWidget):
                 else:
                     dim_vals = (dim.values if dim.values else
                                 list(unique_array(self.mock_obj.dimension_values(dim.name))))
+                    visible = visible and len(dim_vals) > 1
+
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
                     next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
@@ -323,8 +336,6 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-                visible = visible and len(dim_vals) > 1
-
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
@@ -369,4 +380,10 @@ class SelectionWidget(NdWidget):
         if self.plot.dynamic:
             key = tuple(dim.values[k] if dim.values else k
                         for dim, k in zip(self.mock_obj.kdims, tuple(key)))
-        return self._plot_figure(key)
+            key = [key[self.dimensions.index(kdim)] if kdim in self.dimensions else None
+                   for kdim in self.plot.dimensions]
+            key = wrap_tuple_streams(tuple(key), self.plot.dimensions,
+                                     self.plot.streams)
+        self.plot.update(key)
+        self.plot.push()
+        return 'Complete'

@@ -1,6 +1,7 @@
 import numpy as np
-from holoviews import Dimension, DynamicMap, Image, HoloMap
-from holoviews.core.operation import DynamicFunction
+from holoviews import Dimension, DynamicMap, Image, HoloMap, Scatter, Curve
+from holoviews.streams import PositionXY
+from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
 frequencies =  np.linspace(0.5,2.0,5)
@@ -9,6 +10,77 @@ x,y = np.mgrid[-5:6, -5:6] * 0.1
 
 def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
+
+
+class DynamicMethods(ComparisonTestCase):
+
+    def test_deep_relabel_label(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).relabel(label='Test')
+        self.assertEqual(dmap[0].label, 'Test')
+
+    def test_deep_relabel_group(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).relabel(group='Test')
+        self.assertEqual(dmap[0].group, 'Test')
+
+    def test_redim_dimension_name(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(Default='New')
+        self.assertEqual(dmap.kdims[0].name, 'New')
+
+    def test_deep_redim_dimension_name(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(x='X')
+        self.assertEqual(dmap[0].kdims[0].name, 'X')
+
+    def test_deep_redim_dimension_name_with_spec(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim(Image, x='X')
+        self.assertEqual(dmap[0].kdims[0].name, 'X')
+
+    def test_deep_getitem_bounded_kdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+
+    def test_deep_getitem_bounded_kdims_and_vdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[:, 5:10, 0:5][10], fn(10)[5:10, 0:5])
+
+    def test_deep_getitem_cross_product_and_slice(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[[10, 11, 12], 5:10],
+                         dmap.clone([(i, fn(i)[5:10]) for i in range(10, 13)]))
+
+    def test_deep_getitem_index_and_slice(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap[10, 5:10], fn(10)[5:10])
+
+    def test_deep_getitem_cache_sliced(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap[10] # Add item to cache
+        self.assertEqual(dmap[:, 5:10][10], fn(10)[5:10])
+
+    def test_deep_select_slice_kdim(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(x=(5, 10))[10], fn(10)[5:10])
+
+    def test_deep_select_slice_kdim_and_vdims(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(x=(5, 10), y=(0, 5))[10], fn(10)[5:10, 0:5])
+
+    def test_deep_select_slice_kdim_no_match(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
+
 
 
 
@@ -82,19 +154,19 @@ class DynamicTestSampledBounded(ComparisonTestCase):
 
 class DynamicTestOperation(ComparisonTestCase):
 
-    def test_dynamic_function(self):
+    def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
-        dmap_with_fn = DynamicFunction(dmap, function=lambda x: x.clone(x.data*2))
+        dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
 
-    def test_dynamic_function_with_kwargs(self):
+    def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
-        dmap_with_fn = DynamicFunction(dmap, function=fn, kwargs=dict(multiplier=3))
+        dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*3))
 
 
@@ -131,3 +203,26 @@ class DynamicTestOverlay(ComparisonTestCase):
         dynamic_overlay = dmap * hmap
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
+
+    def test_dynamic_overlay_memoization(self):
+        """Tests that Callable memoizes unchanged callbacks"""
+        def fn(x, y):
+            return Scatter([(x, y)])
+        dmap = DynamicMap(fn, kdims=[], streams=[PositionXY()])
+
+        counter = [0]
+        def fn2(x, y):
+            counter[0] += 1
+            return Image(np.random.rand(10, 10))
+        dmap2 = DynamicMap(fn2, kdims=[], streams=[PositionXY()])
+
+        overlaid = dmap * dmap2
+        overlay = overlaid[()]
+        self.assertEqual(overlay.Scatter.I, fn(0, 0))
+
+        dmap.event(x=1, y=2)
+        overlay = overlaid[()]
+        # Ensure dmap return value was updated
+        self.assertEqual(overlay.Scatter.I, fn(1, 2))
+        # Ensure dmap2 callback was called only once
+        self.assertEqual(counter[0], 1)

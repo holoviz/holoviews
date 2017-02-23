@@ -13,6 +13,7 @@ from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys
+from ..core.io import FileArchive
 from .magics import OutputMagic, OptsMagic
 
 # To assist with debugging of display hooks
@@ -89,6 +90,13 @@ def last_frame(obj):
 # Display hooks #
 #===============#
 
+def option_state(element, state=None):
+    # Temporary fix to avoid issues with DynamicMap traversal
+    DynamicMap._deep_indexable = False
+    optstate = StoreOptions.state(element,state=state)
+    DynamicMap._deep_indexable = True
+    return optstate
+
 
 def display_hook(fn):
     @wraps(fn)
@@ -96,7 +104,7 @@ def display_hook(fn):
         global FULL_TRACEBACK
         if Store.current_backend is None:
             return
-        optstate = StoreOptions.state(element)
+        optstate = option_state(element)
         try:
             html = fn(element,
                       max_frames=OutputMagic.options['max_frames'],
@@ -105,17 +113,19 @@ def display_hook(fn):
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                holoviews.archive.add(element, html=html)
+                if type(holoviews.archive) is not FileArchive:
+                    holoviews.archive.add(element, html=html)
             filename = OutputMagic.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
 
             return html
         except SkipRendering as e:
-            sys.stderr.write("Rendering process skipped: %s" % str(e))
+            if e.warn:
+                sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
-            try:    StoreOptions.state(element, state=optstate)
+            try: option_state(element, state=optstate)
             except: pass
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
@@ -126,7 +136,7 @@ def display_hook(fn):
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
-            try:    StoreOptions.state(element, state=optstate)
+            try: option_state(element, state=optstate)
             except: pass
             raise
     return wrapped

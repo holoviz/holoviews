@@ -3,8 +3,10 @@ Tests for the Dataset Element types.
 """
 
 from unittest import SkipTest
+from itertools import product
+
 import numpy as np
-from holoviews import Dataset, NdElement, HoloMap
+from holoviews import Dataset, NdElement, HoloMap, Dimension
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -15,6 +17,10 @@ try:
 except:
     pd = None
 
+try:
+    import dask.dataframe as dd
+except:
+    dd = None
 
 
 class HomogeneousColumnTypes(object):
@@ -34,6 +40,8 @@ class HomogeneousColumnTypes(object):
         self.y_ints = [i*2 for i in range(11)]
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
 
     def tearDown(self):
         Dataset.datatype = self.restore_datatype
@@ -61,6 +69,14 @@ class HomogeneousColumnTypes(object):
                           kdims=['x'], vdims=[ 'x2'])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
+    def test_dataset_dataframe_init_hm_alias(self):
+        "Tests support for homogeneous DataFrames"
+        if pd is None:
+            raise SkipTest("Pandas not available")
+        dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+                          kdims=[('x', 'X-label')], vdims=[('x2', 'X2-label')])
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
     # Properties and information
 
     def test_dataset_shape(self):
@@ -83,29 +99,55 @@ class HomogeneousColumnTypes(object):
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.sort('y'), dataset_sorted)
 
+    def test_dataset_sort_vdim_hm_alias(self):
+        xs_2 = np.array(self.xs_2)
+        dataset = Dataset(np.column_stack([self.xs, -xs_2]),
+                          kdims=[('x', 'X-label')], vdims=[('y', 'Y-label')])
+        dataset_sorted = Dataset(np.column_stack([self.xs[::-1], -xs_2[::-1]]),
+                                 kdims=[('x', 'X-label')], vdims=[('y', 'Y-label')])
+        self.assertEqual(dataset.sort('y'), dataset_sorted)
+        self.assertEqual(dataset.sort('Y-label'), dataset_sorted)
 
     def test_dataset_redim_hm_kdim(self):
         redimmed = self.dataset_hm.redim(x='Time')
         self.assertEqual(redimmed.dimension_values('Time'),
                          self.dataset_hm.dimension_values('x'))
 
+    def test_dataset_redim_hm_kdim_alias(self):
+        redimmed = self.dataset_hm_alias.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_hm_alias.dimension_values('x'))
+
     def test_dataset_redim_hm_vdim(self):
         redimmed = self.dataset_hm.redim(y='Value')
         self.assertEqual(redimmed.dimension_values('Value'),
                          self.dataset_hm.dimension_values('y'))
 
+    def test_dataset_redim_hm_vdim_alias(self):
+        redimmed = self.dataset_hm_alias.redim(y=Dimension(('val', 'Value')))
+        self.assertEqual(redimmed.dimension_values('Value'),
+                         self.dataset_hm_alias.dimension_values('y'))
+
     def test_dataset_sample_hm(self):
         samples = self.dataset_hm.sample([0, 5, 10]).dimension_values('y')
+        self.assertEqual(samples, np.array([0, 10, 20]))
+
+    def test_dataset_sample_hm_alias(self):
+        samples = self.dataset_hm_alias.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 10, 20]))
 
     def test_dataset_array_hm(self):
         self.assertEqual(self.dataset_hm.array(),
                          np.column_stack([self.xs, self.y_ints]))
 
+    def test_dataset_array_hm_alias(self):
+        self.assertEqual(self.dataset_hm_alias.array(),
+                         np.column_stack([self.xs, self.y_ints]))
+
     def test_dataset_add_dimensions_value_hm(self):
         table = self.dataset_hm.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_hm(self):
         table =  self.dataset_hm.add_dimension('z', 1, range(1,12))
@@ -117,6 +159,11 @@ class HomogeneousColumnTypes(object):
                                 kdims=['x'], vdims=['y'])
         self.assertEqual(self.dataset_hm[5:9], dataset_slice)
 
+    def test_dataset_slice_hm_alias(self):
+        dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
+                                kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        self.assertEqual(self.dataset_hm_alias[5:9], dataset_slice)
+
     def test_dataset_slice_fn_hm(self):
         dataset_slice = Dataset({'x':range(5, 9), 'y':[2 * i for i in range(5, 9)]},
                                 kdims=['x'], vdims=['y'])
@@ -125,6 +172,11 @@ class HomogeneousColumnTypes(object):
     def test_dataset_1D_reduce_hm(self):
         dataset = Dataset({'x':self.xs, 'y':self.y_ints}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.reduce('x', np.mean), 10)
+
+    def test_dataset_1D_reduce_hm_alias(self):
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints}, kdims=[('x', 'X')],
+                          vdims=[('y', 'Y')])
+        self.assertEqual(dataset.reduce('X', np.mean), 10)
 
     def test_dataset_2D_reduce_hm(self):
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z':[el ** 2 for el in self.y_ints]},
@@ -167,6 +219,12 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                               'Weight':self.weight, 'Height':self.height},
                              kdims=self.kdims, vdims=self.vdims)
 
+        self.alias_kdims = [('gender', 'Gender'), ('age', 'Age')]
+        self.alias_vdims = [('weight', 'Weight'), ('height', 'Height')]
+        self.alias_table = Dataset({'gender':self.gender, 'age':self.age,
+                                    'weight':self.weight, 'height':self.height},
+                                   kdims=self.alias_kdims, vdims=self.alias_vdims)
+
         super(HeterogeneousColumnTypes, self).init_data()
         self.ys = np.linspace(0, 1, 11)
         self.zs = np.sin(self.xs)
@@ -188,6 +246,14 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
+    def test_dataset_dataframe_init_ht_alias(self):
+        "Tests support for heterogeneous DataFrames"
+        if pd is None:
+            raise SkipTest("Pandas not available")
+        dataset = Dataset(pd.DataFrame({'x':self.xs, 'y':self.ys}),
+                          kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
     # Test literal formats
 
     def test_dataset_expanded_dimvals_ht(self):
@@ -202,8 +268,16 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         dataset = Dataset((self.xs, self.ys), kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
+    def test_dataset_tuple_init_alias(self):
+        dataset = Dataset((self.xs, self.ys), kdims=[('x', 'X')], vdims=[('y', 'Y')])
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
     def test_dataset_simple_zip_init(self):
         dataset = Dataset(zip(self.xs, self.ys), kdims=['x'], vdims=['y'])
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
+    def test_dataset_simple_zip_init_alias(self):
+        dataset = Dataset(zip(self.xs, self.ys), kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_zip_init(self):
@@ -212,8 +286,18 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
+    def test_dataset_zip_init_alias(self):
+        dataset = self.alias_table.clone(zip(self.gender, self.age,
+                                             self.weight, self.height))
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
     def test_dataset_odict_init(self):
         dataset = Dataset(OrderedDict(zip(self.xs, self.ys)), kdims=['A'], vdims=['B'])
+        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
+
+    def test_dataset_odict_init_alias(self):
+        dataset = Dataset(OrderedDict(zip(self.xs, self.ys)),
+                          kdims=[('a', 'A')], vdims=[('b', 'B')])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dict_init(self):
@@ -221,6 +305,14 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     # Operations
+
+    def test_dataset_redim_with_alias_dframe(self):
+        test_df = pd.DataFrame({'x': range(10), 'y': range(0,20,2)})
+        dataset = Dataset(test_df, kdims=[('x', 'X-label')], vdims=['y'])
+        redim_df = pd.DataFrame({'X': range(10), 'y': range(0,20,2)})
+        dataset_redim = Dataset(redim_df, kdims=['X'], vdims=['y'])
+        self.assertEqual(dataset.redim(**{'X-label':'X'}), dataset_redim)
+        self.assertEqual(dataset.redim(**{'x':'X'}), dataset_redim)
 
     def test_dataset_sort_vdim_ht(self):
         dataset = Dataset({'x':self.xs, 'y':-self.ys},
@@ -259,10 +351,15 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.reduce(['y'], np.mean), reduced)
 
-    def test_column_aggregate_ht(self):
+    def test_dataset_aggregate_ht(self):
         aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
                              kdims=self.kdims[:1], vdims=self.vdims)
         self.compare_dataset(self.table.aggregate(['Gender'], np.mean), aggregated)
+
+    def test_dataset_aggregate_ht_alias(self):
+        aggregated = Dataset({'gender':['M', 'F'], 'weight':[16.5, 10], 'height':[0.7, 0.8]},
+                             kdims=self.alias_kdims[:1], vdims=self.alias_vdims)
+        self.compare_dataset(self.alias_table.aggregate('Gender', np.mean), aggregated)
 
     def test_dataset_2D_aggregate_partial_ht(self):
         dataset = Dataset({'x':self.xs, 'y':self.ys, 'z':self.zs},
@@ -270,7 +367,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         reduced = Dataset({'x':self.xs, 'z':self.zs},
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean), reduced)
-
 
     def test_dataset_groupby(self):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
@@ -280,6 +376,16 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=['Gender'])
         self.assertEqual(self.table.groupby(['Gender']), grouped)
 
+    def test_dataset_groupby_alias(self):
+        group1 = {'age':[10,16], 'weight':[15,18], 'height':[0.8,0.6]}
+        group2 = {'age':[12], 'weight':[10], 'height':[0.8]}
+        grouped = HoloMap([('M', Dataset(group1, kdims=[('age', 'Age')],
+                                         vdims=self.alias_vdims)),
+                           ('F', Dataset(group2, kdims=[('age', 'Age')],
+                                         vdims=self.alias_vdims))],
+                          kdims=[('gender', 'Gender')])
+        self.assertEqual(self.alias_table.groupby('Gender'), grouped)
+
     def test_dataset_groupby_dynamic(self):
         grouped_dataset = self.table.groupby('Gender', dynamic=True)
         self.assertEqual(grouped_dataset['M'],
@@ -287,10 +393,22 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         self.assertEqual(grouped_dataset['F'],
                          self.table.select(Gender='F').reindex(['Age']))
 
+    def test_dataset_groupby_dynamic_alias(self):
+        grouped_dataset = self.alias_table.groupby('Gender', dynamic=True)
+        self.assertEqual(grouped_dataset['M'],
+                         self.alias_table.select(gender='M').reindex(['Age']))
+        self.assertEqual(grouped_dataset['F'],
+                         self.alias_table.select(gender='F').reindex(['Age']))
+
     def test_dataset_add_dimensions_value_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, 0)
         self.assertEqual(table.kdims[1], 'z')
-        self.compare_arrays(table.dimension_values('z'), np.zeros(len(table)))
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
+
+    def test_dataset_add_dimensions_value_ht_alias(self):
+        table = self.dataset_ht.add_dimension(('z', 'Z'), 1, 0)
+        self.assertEqual(table.kdims[1], 'z')
+        self.compare_arrays(table.dimension_values('z'), np.zeros(table.shape[0]))
 
     def test_dataset_add_dimensions_values_ht(self):
         table = self.dataset_ht.add_dimension('z', 1, range(1,12))
@@ -312,6 +430,22 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                            'Weight':[15,18], 'Height':[0.8,0.6]},
                           kdims=self.kdims, vdims=self.vdims)
         self.assertEquals(row, indexed)
+
+    def test_dataset_select_rows_gender_male(self):
+        row = self.table.select(Gender='M')
+        indexed = Dataset({'Gender':['M', 'M'], 'Age':[10, 16],
+                           'Weight':[15,18], 'Height':[0.8,0.6]},
+                          kdims=self.kdims, vdims=self.vdims)
+        self.assertEquals(row, indexed)
+
+    def test_dataset_select_rows_gender_male_alias(self):
+        row = self.alias_table.select(Gender='M')
+        alias_row = self.alias_table.select(gender='M')
+        indexed = Dataset({'gender':['M', 'M'], 'age':[10, 16],
+                           'weight':[15,18], 'height':[0.8,0.6]},
+                          kdims=self.alias_kdims, vdims=self.alias_vdims)
+        self.assertEquals(row, indexed)
+        self.assertEquals(alias_row, indexed)
 
     def test_dataset_index_row_age(self):
         indexed = Dataset({'Gender':['F'], 'Age':[12],
@@ -384,6 +518,41 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.init_data()
 
 
+class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
+    """
+    Test of the pandas DaskDataset interface.
+    """
+
+    def setUp(self):
+        if dd is None:
+            raise SkipTest("dask not available")
+        self.restore_datatype = Dataset.datatype
+        Dataset.datatype = ['dask']
+        self.data_instance_type = dd.DataFrame
+        self.init_data()
+
+    # Disabled tests for NotImplemented methods
+    def test_dataset_add_dimensions_values_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_add_dimensions_values_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_hm_alias(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_string_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_boolean_index(self):
+        raise SkipTest("Not supported")
+
 
 class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
@@ -437,18 +606,42 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.y_ints = [i*2 for i in range(11)]
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
         self.grid_zs = [[0, 1], [2, 3], [4, 5]]
         self.dataset_grid = Dataset((self.grid_xs, self.grid_ys,
                                      self.grid_zs), kdims=['x', 'y'],
                                     vdims=['z'])
+        self.dataset_grid_alias = Dataset((self.grid_xs, self.grid_ys,
+                                           self.grid_zs), kdims=[('x', 'X'), ('y', 'Y')],
+                                          vdims=[('z', 'Z')])
         self.dataset_grid_inv = Dataset((self.grid_xs[::-1], self.grid_ys[::-1],
                                          self.grid_zs), kdims=['x', 'y'],
                                         vdims=['z'])
 
+    def test_canonical_vdim(self):
+        x = np.array([ 0.  ,  0.75,  1.5 ])
+        y = np.array([ 1.5 ,  0.75,  0.  ])
+        z = np.array([[ 0.06925999,  0.05800389,  0.05620127],
+                      [ 0.06240918,  0.05800931,  0.04969735],
+                      [ 0.05376789,  0.04669417,  0.03880118]])
+        dataset = Dataset((x, y, z), kdims=['x', 'y'], vdims=['z'])
+        canonical = np.array([[ 0.05376789,  0.04669417,  0.03880118],
+                              [ 0.06240918,  0.05800931,  0.04969735],
+                              [ 0.06925999,  0.05800389,  0.05620127]])
+        self.assertEqual(dataset.dimension_values('z', flat=False),
+                         canonical)
+
     def test_dataset_dim_vals_grid_kdims_xs(self):
         self.assertEqual(self.dataset_grid.dimension_values(0, expanded=False),
+                         np.array([0, 1]))
+
+    def test_dataset_dim_vals_grid_kdims_xs_alias(self):
+        self.assertEqual(self.dataset_grid_alias.dimension_values('x', expanded=False),
+                         np.array([0, 1]))
+        self.assertEqual(self.dataset_grid_alias.dimension_values('X', expanded=False),
                          np.array([0, 1]))
 
     def test_dataset_dim_vals_grid_kdims_xs_inv(self):
@@ -545,6 +738,16 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
+    def test_dataset_dataframe_init_hm_alias(self):
+        "Tests support for homogeneous DataFrames"
+        if pd is None:
+            raise SkipTest("Pandas not available")
+        exception = "None of the available storage backends "\
+         "were able to support the supplied data format."
+        with self.assertRaisesRegexp(Exception, exception):
+            Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
+                    kdims=['x'], vdims=['x2'])
+
     def test_dataset_ndelement_init_hm(self):
         "Tests support for homogeneous NdElement (backwards compatibility)"
         exception = "None of the available storage backends "\
@@ -561,11 +764,28 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                          Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
                                  kdims=['x'], vdims=['z']))
 
+    def test_dataset_2D_aggregate_partial_hm_alias(self):
+        array = np.random.rand(11, 11)
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
+        self.assertEqual(dataset.aggregate(['X'], np.mean),
+                         Dataset({'x':self.xs, 'z': np.mean(array, axis=0)},
+                                 kdims=[('x', 'X')], vdims=[('z', 'Z')]))
+
     def test_dataset_2D_reduce_hm(self):
         array = np.random.rand(11, 11)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(np.array(dataset.reduce(['x', 'y'], np.mean)),
+                         np.mean(array))
+
+    def test_dataset_2D_reduce_hm_alias(self):
+        array = np.random.rand(11, 11)
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
+        self.assertEqual(np.array(dataset.reduce(['x', 'y'], np.mean)),
+                         np.mean(array))
+        self.assertEqual(np.array(dataset.reduce(['X', 'Y'], np.mean)),
                          np.mean(array))
 
     def test_dataset_add_dimensions_value_hm(self):
@@ -577,7 +797,18 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(table.vdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
 
+    def test_dataset_add_dimensions_values_hm_alias(self):
+        table =  self.dataset_hm.add_dimension(('z', 'Z'), 1, range(1,12), vdim=True)
+        self.assertEqual(table.vdims[1], 'Z')
+        self.compare_arrays(table.dimension_values('Z'), np.array(list(range(1,12))))
+
     def test_dataset_sort_vdim_hm(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.dataset_hm.sort('y')
+
+    def test_dataset_sort_vdim_hm_alias(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
         with self.assertRaisesRegexp(Exception, exception):
@@ -595,6 +826,24 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
                         kdims=['y'], vdims=['z'])
         self.assertEqual(grouped[0], first)
 
+    def test_dataset_groupby_dynamic_alias(self):
+        array = np.random.rand(11, 11)
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
+        grouped = dataset.groupby('X', dynamic=True)
+        first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
+                        kdims=[('y', 'Y')], vdims=[('z', 'Z')])
+        self.assertEqual(grouped[0], first)
+
+    def test_dataset_groupby_multiple_dims(self):
+        dataset = Dataset((range(8), range(8), range(8), range(8),
+                           np.random.rand(8, 8, 8, 8)),
+                          kdims=['a', 'b', 'c', 'd'], vdims=['Value'])
+        grouped = dataset.groupby(['c', 'd'])
+        keys = list(product(range(8), range(8)))
+        self.assertEqual(list(grouped.keys()), keys)
+        for c, d in keys:
+            self.assertEqual(grouped[c, d], dataset.select(c=c, d=d).reindex(['a', 'b']))
 
 
 class IrisDatasetTest(GridDatasetTest):
@@ -611,22 +860,41 @@ class IrisDatasetTest(GridDatasetTest):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_add_dimensions_values_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_1D_reduce_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_1D_reduce_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_2D_reduce_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_2D_reduce_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_2D_aggregate_partial_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_2D_aggregate_partial_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_sample_hm_alias(self):
+        raise SkipTest("Not supported")
+
 
 class XArrayDatasetTest(GridDatasetTest):
     """
@@ -642,10 +910,16 @@ class XArrayDatasetTest(GridDatasetTest):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_vdim_hm_alias(self):
+        raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
-        pass
+        raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
-        pass
+        raise SkipTest("Not supported")
+
+    def test_dataset_sample_hm_alias(self):
+        raise SkipTest("Not supported")

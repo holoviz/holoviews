@@ -16,7 +16,6 @@ from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from ..util import get_dynamic_mode, initialize_sampled
-from .renderer import MPLRenderer
 from .util import compute_ratios, fix_aspect
 
 
@@ -30,7 +29,8 @@ class MPLPlot(DimensionedPlot):
     via the anim() method.
     """
 
-    renderer = MPLRenderer
+    backend = 'matplotlib'
+
     sideplots = {}
 
     fig_alpha = param.Number(default=1.0, bounds=(0, 1), doc="""
@@ -105,7 +105,13 @@ class MPLPlot(DimensionedPlot):
                                for i in self.fig_inches]
         else:
             self.fig_inches *= self.fig_scale
-        fig, axis = self._init_axis(fig, axis)
+        rc_params = self.fig_rcparams
+        if self.fig_latex:
+            self.fig_rcparams['text.usetex'] = True
+
+        with mpl.rc_context(rc=self.fig_rcparams):
+            fig, axis = self._init_axis(fig, axis)
+
         self.handles['fig'] = fig
         self.handles['axis'] = axis
 
@@ -122,27 +128,22 @@ class MPLPlot(DimensionedPlot):
         a new figure.
         """
         if not fig and self._create_fig:
-            rc_params = self.fig_rcparams
-            if self.fig_latex:
-                rc_params['text.usetex'] = True
-            with mpl.rc_context(rc=rc_params):
-                fig = plt.figure()
-                l, b, r, t = self.fig_bounds
-                inches = self.fig_inches
-                fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
-                fig.patch.set_alpha(self.fig_alpha)
-                if isinstance(inches, (tuple, list)):
-                    inches = list(inches)
-                    if inches[0] is None:
-                        inches[0] = inches[1]
-                    elif inches[1] is None:
-                        inches[1] = inches[0]
-                    fig.set_size_inches(list(inches))
-                else:
-                    fig.set_size_inches([inches, inches])
-                axis = fig.add_subplot(111, projection=self.projection)
-                axis.set_aspect('auto')
-
+            fig = plt.figure()
+            l, b, r, t = self.fig_bounds
+            inches = self.fig_inches
+            fig.subplots_adjust(left=l, bottom=b, right=r, top=t)
+            fig.patch.set_alpha(self.fig_alpha)
+            if isinstance(inches, (tuple, list)):
+                inches = list(inches)
+                if inches[0] is None:
+                    inches[0] = inches[1]
+                elif inches[1] is None:
+                    inches[1] = inches[0]
+                fig.set_size_inches(list(inches))
+            else:
+                fig.set_size_inches([inches, inches])
+            axis = fig.add_subplot(111, projection=self.projection)
+            axis.set_aspect('auto')
         return fig, axis
 
 
@@ -208,10 +209,6 @@ class MPLPlot(DimensionedPlot):
         return anim
 
     def update(self, key):
-        rc_params = self.fig_rcparams
-        if self.fig_latex:
-            rc_params['text.usetex'] = True
-        mpl.rcParams.update(rc_params)
         if len(self) == 1 and key == 0 and not self.drawn:
             return self.initialize_plot()
         return self.__getitem__(key)
@@ -281,23 +278,11 @@ class GridPlot(CompositePlot):
         Rotation angle of the yticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None,
-                 keys=None, dimensions=None, layout_num=1, **params):
+                 layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
-        self.layout = layout
-        self.cols, self.rows = layout.shape
-        self.layout_num = layout_num
-        extra_opts = self.lookup_options(layout, 'plot').options
-        if not keys or not dimensions:
-            dimensions, keys = traversal.unique_dimkeys(layout)
-        if 'uniform' not in params:
-            params['uniform'] = traversal.uniform(layout)
-        dynamic, sampled = get_dynamic_mode(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
-        super(GridPlot, self).__init__(keys=keys, dimensions=dimensions,
-                                       dynamic=dynamic,
-                                       **dict(extra_opts, **params))
+        super(GridPlot, self).__init__(layout, layout_num=layout_num,
+                                       ranges=ranges, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
@@ -306,9 +291,13 @@ class GridPlot(CompositePlot):
             grid_kwargs = {'left': l, 'right': l+w, 'bottom': b, 'top': b+h}
             self.position = (l, b, w, h)
 
+        self.cols, self.rows = layout.shape
         self.fig_inches = self._get_size()
         self._layoutspec = gridspec.GridSpec(self.rows, self.cols, **grid_kwargs)
-        self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis, ranges, create_axes)
+
+        with mpl.rc_context(rc=self.fig_rcparams):
+            self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
+                                                                             ranges, create_axes)
 
 
     def _get_size(self):
@@ -566,7 +555,7 @@ class GridPlot(CompositePlot):
 
 
 
-class AdjointLayoutPlot(CompositePlot):
+class AdjointLayoutPlot(MPLPlot):
     """
     LayoutPlot allows placing up to three Views in a number of
     predefined and fixed layouts, which are defined by the layout_dict
@@ -709,20 +698,19 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
       Specifies the space between horizontally adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
-    vspace = param.Number(default=0.1, doc="""
+    vspace = param.Number(default=0.3, doc="""
       Specifies the space between vertically adjacent elements in the grid.
       Default value is set conservatively to avoid overlap of subplots.""")
 
     fontsize = param.Parameter(default={'title':16}, allow_None=True)
 
     # Whether to enable fix for non-square figures
-    # Will be enabled by default in v1.7
-    # If enabled default vspace should be increased to 0.3
-    v17_layout_format = False
+    v17_layout_format = True
 
     def __init__(self, layout, **params):
         super(LayoutPlot, self).__init__(layout=layout, **params)
-        self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
+        with mpl.rc_context(rc=self.fig_rcparams):
+            self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
 
 
     def _compute_gridspec(self, layout):
@@ -743,7 +731,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         col_widthratios, row_heightratios = {}, {}
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
-            _, view = layout_items.get((r, c), (None, None))
+            _, view = layout_items.get((c, r) if self.transpose else (r, c), (None, None))
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
@@ -889,6 +877,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             empty = isinstance(obj.main, Empty)
             if empty:
                 obj = AdjointLayout([])
+            elif self.transpose:
+                layout_count = (c*self.rows+(r+1))
             else:
                 layout_count += 1
             subaxes = [plt.subplot(self.gs[ind], projection=proj)
@@ -1056,7 +1046,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                     cbar_plot._draw_colorbar(redraw=False)
             adjoined = self.traverse(specs=[AdjointLayoutPlot])
             for adjoined in adjoined:
-                adjoined.adjust_positions(redraw=False)
+                if len(adjoined.subplots) > 1:
+                    adjoined.adjust_positions(redraw=False)
         return self._finalize_axis(None)
 
 

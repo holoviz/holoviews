@@ -8,6 +8,7 @@ from collections import defaultdict
 from operator import itemgetter
 
 from .dimension import Dimension, OrderedDict
+from .util import merge_dimensions
 
 try:
     import itertools.izip as zip
@@ -56,8 +57,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     subset = all(g1 <= g2 or g1 >= g2 for g1 in dgroups for g2 in dgroups)
     # Find unique keys
     if subset:
-        dims = OrderedDict([(dim.name, dim) for dim_group in dim_groups
-                            for dim in dim_group]).values()
+        dims = merge_dimensions(dim_groups)
         all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
     else:
         all_dims = [default_dim]

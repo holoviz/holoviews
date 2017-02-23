@@ -6,18 +6,21 @@ try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-from bokeh.models import Circle, GlyphRenderer, ColumnDataSource, Range1d
+from bokeh.models import (Circle, GlyphRenderer, ColumnDataSource,
+                          Range1d, CustomJS, FactorRange, HoverTool)
+from bokeh.models.tools import BoxSelectTool
 
 from ...element import Raster, Points, Polygons, Spikes
-from ...core.util import max_range, basestring
+from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
+from ...operation import interpolate_curve
 from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
-from .element import ElementPlot, line_properties, fill_properties
+from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 
-class PointPlot(ElementPlot):
+class PointPlot(ColorbarPlot):
 
     color_index = param.ClassSelector(default=3, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -33,7 +36,7 @@ class PointPlot(ElementPlot):
       Determines whether the `scaling_factor` should be applied to
       the width or area of each point (default: "area").""")
 
-    scaling_factor = param.Number(default=1, bounds=(1, None), doc="""
+    scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
 
@@ -55,47 +58,51 @@ class PointPlot(ElementPlot):
         mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
-        cmap = style.get('palette', style.get('cmap', None))
         cdim = element.get_dimension(self.color_index)
-        if cdim and cmap:
-            map_key = 'color_' + cdim.name
-            mapping['color'] = map_key
-            if empty:
-                data[map_key] = []
-            else:
-                cmap = get_cmap(cmap)
-                colors = element.dimension_values(self.color_index)
-                crange = ranges.get(cdim.name, element.range(cdim.name))
-                data[map_key] = map_colors(colors, crange, cmap)
+        if cdim:
+            mapper = self._get_colormapper(cdim, element, ranges, style)
+            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            mapping['color'] = {'field': cdim.name,
+                                'transform': mapper}
 
         sdim = element.get_dimension(self.size_index)
         if sdim:
             map_key = 'size_' + sdim.name
-            mapping['size'] = map_key
             if empty:
                 data[map_key] = []
+                mapping['size'] = map_key
             else:
                 ms = style.get('size', np.sqrt(6))**2
                 sizes = element.dimension_values(self.size_index)
-                data[map_key] = np.sqrt(compute_sizes(sizes, self.size_fn,
-                                                      self.scaling_factor,
-                                                      self.scaling_method, ms))
+                sizes = compute_sizes(sizes, self.size_fn,
+                                      self.scaling_factor,
+                                      self.scaling_method, ms)
+                if sizes is None:
+                    eltype = type(element).__name__
+                    self.warning('%s dimension is not numeric, cannot '
+                                 'use to scale %s size.' % (sdim, eltype))
+                else:
+                    data[map_key] = np.sqrt(sizes)
+                    mapping['size'] = map_key
 
-        data[dims[xidx]] = [] if empty else element.dimension_values(xidx)
-        data[dims[yidx]] = [] if empty else element.dimension_values(yidx)
+        xdim, ydim = dims[xidx], dims[yidx]
+        data[xdim] = [] if empty else element.dimension_values(xidx)
+        data[ydim] = [] if empty else element.dimension_values(yidx)
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
         self._get_hover_data(data, element, empty)
         return data, mapping
 
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        style = self.style.max_cycles(len(self.ordering))
         for key, el in element.items():
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))
             self.set_param(**self.lookup_options(el, 'plot').options)
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
-            if 'color' not in eldata:
+            if 'color' not in elmapping:
                 zorder = self.get_zorder(element, key, el)
                 val = style[zorder].get('color')
                 elmapping['color'] = 'color'
@@ -125,40 +132,73 @@ class PointPlot(ElementPlot):
         else:
             plot_method = self._plot_methods.get('batched' if self.batched else 'single')
             renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
         return renderer, renderer.glyph
 
 
 class CurvePlot(ElementPlot):
+
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
 
     style_opts = ['color'] + line_properties
     _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
     def get_data(self, element, ranges=None, empty=False):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
-        return ({x: [] if empty else element.dimension_values(xidx),
-                 y: [] if empty else element.dimension_values(yidx)},
-                dict(x=x, y=y))
+        data = {x: [] if empty else element.dimension_values(xidx),
+                y: [] if empty else element.dimension_values(yidx)}
+        self._get_hover_data(data, element, empty)
+        self._categorize_data(data, (x, y), element.dimensions())
+        return (data, dict(x=x, y=y))
+
+    def _hover_opts(self, element):
+        if self.batched:
+            dims = list(self.hmap.last.kdims)
+            line_policy = 'prev'
+        else:
+            dims = list(self.overlay_dims.keys())+element.dimensions()
+            line_policy = 'nearest'
+        return dims, dict(line_policy=line_policy)
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
-        style = self.style.max_cycles(len(self.ordering))
         data = defaultdict(list)
-        for key, el in overlay.items():
+        opts = ['color', 'line_alpha', 'line_color']
+        for key, el in overlay.data.items():
+            eldata, elmapping = self.get_data(el, ranges, empty)
+            for k, eld in eldata.items():
+                data[k].append(eld)
+
+            # Add options
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))
             zorder = self.get_zorder(overlay, key, el)
-            for opt in self._mapping:
-                if opt in ['xs', 'ys']:
-                    index = {'xs': 0, 'ys': 1}[opt]
-                    val = el.dimension_values(index)
-                else:
-                    val = style[zorder].get(opt)
+            style = style[zorder]
+            for opt in opts:
+                if opt not in style:
+                    continue
+                val = style[opt]
                 if opt == 'color' and isinstance(val, tuple):
                     val = rgb2hex(val)
-                data[opt].append(val)
+                data[opt].append([val])
+
+            for d, k in zip(overlay.kdims, key):
+                sanitized = dimension_sanitizer(d.name)
+                data[sanitized].append([k])
         data = {opt: vals for opt, vals in data.items()
                 if not any(v is None for v in vals)}
-        return data, {k: k for k in data}
+        return data, dict(xs=elmapping['x'], ys=elmapping['y'],
+                          **{o: o for o in opts if o in data})
 
 
 class AreaPlot(PolygonPlot):
@@ -235,8 +275,15 @@ class HistogramPlot(ElementPlot):
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
+    def get_extents(self, element, ranges):
+        x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
+        y0 = np.nanmin([0, y0])
+        y1 = np.nanmax([0, y1])
+        return (x0, y0, x1, y1)
 
-class SideHistogramPlot(HistogramPlot):
+
+
+class SideHistogramPlot(ColorbarPlot, HistogramPlot):
 
     style_opts = HistogramPlot.style_opts + ['cmap']
 
@@ -247,9 +294,20 @@ class SideHistogramPlot(HistogramPlot):
     show_title = param.Boolean(default=False, doc="""
         Whether to display the plot title.""")
 
+    default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
+                                        'box_zoom', 'reset', 'box_select'],
+        doc="A list of plugin tools to use on the plot.")
+
+    _callback = """
+    color_mapper.low = cb_data['geometry']['y0'];
+    color_mapper.high = cb_data['geometry']['y1'];
+    source.trigger('change')
+    main_source.trigger('change')
+    """
+
     def get_data(self, element, ranges=None, empty=None):
         if self.invert_axes:
-            mapping = dict(top='left', bottom='right', left=0, right='top')
+            mapping = dict(top='right', bottom='left', left=0, right='top')
         else:
             mapping = dict(top='top', bottom=0, left='left', right='right')
 
@@ -259,22 +317,42 @@ class SideHistogramPlot(HistogramPlot):
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
 
-        dim = element.get_dimension(0).name
-        main = self.adjoined.main
-        range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        vals = element.dimension_values(dim)
-        if isinstance(range_item, (Raster, Points, Polygons, Spikes)):
-            style = self.lookup_options(range_item, 'style')[self.cyclic_index]
-        else:
-            style = {}
-
-        if 'cmap' in style or 'palette' in style:
-            cmap = get_cmap(style.get('cmap', style.get('palette', None)))
-            data['color'] = [] if empty else map_colors(vals, main_range, cmap)
-            mapping['fill_color'] = 'color'
+        color_dims = self.adjoined.traverse(lambda x: x.handles.get('color_dim'))
+        dim = color_dims[0] if color_dims else None
+        cmapper = self._get_colormapper(dim, element, {}, {})
+        if cmapper:
+            data[dim.name] = [] if empty else element.dimension_values(dim)
+            mapping['fill_color'] = {'field': dim.name,
+                                     'transform': cmapper}
         self._get_hover_data(data, element, empty)
         return (data, mapping)
 
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        ret = super(SideHistogramPlot, self)._init_glyph(plot, mapping, properties)
+        if not 'field' in mapping.get('fill_color', {}):
+            return ret
+        dim = mapping['fill_color']['field']
+        sources = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
+                                                     x.handles.get('source')))
+        sources = [src for cdim, src in sources if cdim == dim]
+        tools = [t for t in self.handles['plot'].tools
+                 if isinstance(t, BoxSelectTool)]
+        if not tools or not sources:
+            return
+        box_select, main_source = tools[0], sources[0]
+        handles = {'color_mapper': self.handles['color_mapper'],
+                   'source': self.handles['source'],
+                   'main_source': main_source}
+        if box_select.callback:
+            box_select.callback.code += self._callback
+            box_select.callback.args.update(handles)
+        else:
+            box_select.callback = CustomJS(args=handles, code=self._callback)
+        return ret
 
 
 class ErrorPlot(PathPlot):
@@ -308,12 +386,14 @@ class ErrorPlot(PathPlot):
             data = dict(xs=err_ys, ys=err_xs)
         else:
             data = dict(xs=err_xs, ys=err_ys)
+        self._categorize_data(data, ('xs', 'ys'), element.dimensions())
         return (data, dict(self._mapping))
 
 
-class SpikesPlot(PathPlot):
+class SpikesPlot(PathPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, allow_None=True,
+                                      class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.5, doc="""
@@ -331,48 +411,41 @@ class SpikesPlot(PathPlot):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
         if len(element.dimensions()) == 1:
             b, t = self.position, self.position+self.spike_length
+        else:
+            b = np.nanmin([0, b])
+            t = np.nanmax([0, t])
         return l, b, r, t
-
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
         pos = self.position
+        mapping = dict(xs='xs', ys='ys')
         if empty:
-            xs, ys, keys = [], [], []
-            mapping = dict(xs=dims[0], ys=dims[1] if len(dims) > 1 else 'heights')
+            xs, ys = [], []
         elif len(dims) > 1:
-            xs, ys = zip(*(((x, x), (pos, pos+y))
-                           for x, y in element.array()))
-            mapping = dict(xs=dims[0], ys=dims[1])
-            keys = (dims[0], dims[1])
+            xs, ys = zip(*(((x, x), (pos+y, pos))
+                           for x, y in element.array(dims[:2])))
         else:
             height = self.spike_length
-            xs, ys = zip(*(((x[0], x[0]), (pos, pos+height))
-                           for x in element.array()))
-            mapping = dict(xs=dims[0], ys='heights')
-            keys = (dims[0], 'heights')
+            xs, ys = zip(*(((x[0], x[0]), (pos+height, pos))
+                           for x in element.array(dims[:1])))
 
-        if not empty and self.invert_axes: keys = keys[::-1]
-        data = dict(zip(keys, (xs, ys)))
-
-        cmap = style.get('palette', style.get('cmap', None))
+        if not empty and self.invert_axes: xs, ys = ys, xs
+        data = dict(zip(('xs', 'ys'), (xs, ys)))
         cdim = element.get_dimension(self.color_index)
-        if cdim and cmap:
-            map_key = 'color_' + cdim.name
-            mapping['color'] = map_key
-            if empty:
-                colors = []
-            else:
-                cmap = get_cmap(cmap)
-                cvals = element.dimension_values(cdim)
-                crange = ranges.get(cdim.name, None)
-                colors = map_colors(cvals, crange, cmap)
-            data[map_key] = colors
+        if cdim:
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
+            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            mapping['color'] = {'field': cdim.name,
+                                'transform': cmapper}
+
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
+            for d in dims:
+                data[dimension_sanitizer(d)] = element.dimension_values(d)
 
         return data, mapping
-
 
 
 class SideSpikesPlot(SpikesPlot):
@@ -405,7 +478,7 @@ class SideSpikesPlot(SpikesPlot):
 
 
 
-class ChartPlot(ElementPlot):
+class ChartPlot(LegendPlot):
     """
     ChartPlot creates and updates Bokeh high-level Chart instances.
     The current implementation requires creating a new Chart for each
@@ -434,6 +507,9 @@ class ChartPlot(ElementPlot):
         with abbreviated_exception():
             plot = self._init_chart(init_element, ranges)
 
+        if plot.legend:
+            self._process_legend(plot)
+
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
                                            if isinstance(r, GlyphRenderer)]
@@ -444,6 +520,21 @@ class ChartPlot(ElementPlot):
 
         return plot
 
+    def _process_legend(self, plot):
+        legend = plot.legend[0]
+        if not self.show_legend:
+            legend.items[:] = []
+        else:
+            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+            pos = self.legend_position
+            if pos in self.legend_specs:
+                opts = self.legend_specs[pos]
+                plot.legend[:] = []
+                legend.plot = None
+                legend.location = opts['loc']
+                plot.add_layout(legend, opts['pos'])
+            else:
+                legend.location = pos
 
     def update_frame(self, key, ranges=None, plot=None, element=None):
         """
@@ -481,37 +572,45 @@ class ChartPlot(ElementPlot):
 
     @property
     def current_handles(self):
-        plot = self.handles['plot']
-        sources = plot.select(type=ColumnDataSource)
-        return sources
+        return self.state.select(type=(ColumnDataSource, Range1d))
 
 
 class BoxPlot(ChartPlot):
     """
     BoxPlot generates a box and whisker plot from a BoxWhisker
     Element. This allows plotting the median, mean and various
-    percentiles. Displaying outliers is currently not supported
-    as they cannot be consistently updated.
+    percentiles.
     """
 
-    style_opts = ['color', 'whisker_color'] + line_properties
+    style_opts = ['color', 'whisker_color', 'marker'] + line_properties
 
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
-        dframe = element.dframe()
         label = element.dimensions('key', True)
-        if len(element.dimensions()) == 1:
+        dframe = element.dframe()
+
+        # Fix for displaying datetimes which are not handled by bokeh
+        for kd in element.kdims:
+            col = dframe[kd.name]
+            if col.dtype.kind in ('M',):
+                dframe[kd.name] = [kd.pprint_value(v).replace(':', ';')
+                                   for v in col]
+
+        if not element.kdims:
             dframe[''] = ''
             label = ['']
-        plot = BokehBoxPlot(dframe, label=label,
-                            values=element.dimensions('value', True)[0],
+
+        return BokehBoxPlot(dframe, label=label, values=element.vdims[0].name,
                             **properties)
 
-        # Disable outliers for now as they cannot be consistently updated.
-        plot.renderers = [r for r in plot.renderers
-                          if not (isinstance(r, GlyphRenderer) and
-                                  isinstance(r.glyph, Circle))]
-        return plot
+
+    def _update_chart(self, key, element, ranges):
+        super(BoxPlot, self)._update_chart(key, element, ranges)
+        vdim = element.vdims[0].name
+        start, end = ranges[vdim]
+        self.state.y_range.start = start
+        self.state.y_range.end = end
+
 
 
 class BarPlot(ChartPlot):

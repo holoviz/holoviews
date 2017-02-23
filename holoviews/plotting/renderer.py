@@ -11,12 +11,13 @@ from contextlib import contextmanager
 import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
-from ..core.util import find_file, unicode
+from ..core.util import find_file, unicode, unbound_dimensions
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from .. import DynamicMap
 from . import Plot
+from .comms import JupyterComm
 from .util import displayable, collate
 
 from param.parameterized import bothmethod
@@ -49,8 +50,8 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  None,
-    'json':  None
+    'html':  'text/html',
+    'json':  'text/json'
 }
 
 static_template = """
@@ -129,6 +130,11 @@ class Renderer(Exporter):
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
 
+    # Define comms class and message handler for each mode
+    # The Comm opens a communication channel and the message
+    # handler defines how the message is processed on the frontend
+    comms = {'default': (JupyterComm, None)}
+
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
 
@@ -149,7 +155,7 @@ class Renderer(Exporter):
 
 
     @bothmethod
-    def get_plot(self_or_cls, obj):
+    def get_plot(self_or_cls, obj, renderer=None):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
@@ -170,10 +176,12 @@ class Renderer(Exporter):
                 except StopIteration: # Exhausted DynamicMap
                     raise SkipRendering("DynamicMap generator exhausted.")
 
+        if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
-            plot = self_or_cls.plotting_class(obj)(obj, **plot_opts)
+            plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
+                                                   **plot_opts)
             plot.update(0)
         else:
             plot = obj
@@ -187,14 +195,16 @@ class Renderer(Exporter):
         """
         if isinstance(obj, tuple(self.widgets.values())):
             return obj, 'html'
-        plot = self.get_plot(obj)
+        plot = self.get_plot(obj, renderer=self)
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]
 
         if fmt in ['auto', None]:
-            if ((len(plot) == 1 and not plot.dynamic)
-                or (len(plot) > 1 and self.holomap is None)):
+            if (((len(plot) == 1 and not plot.dynamic)
+                or (len(plot) > 1 and self.holomap is None) or
+                (plot.dynamic and len(plot.keys[0]) == 0)) or
+                not unbound_dimensions(plot.streams, plot.dimensions, no_duplicates=False)):
                 fmt = fig_formats[0] if self.fig=='auto' else self.fig
             else:
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
@@ -243,12 +253,14 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None):
+    def html(self, obj, fmt=None, css=None, comm=True, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
+        The comm argument defines whether the HTML output includes
+        code to initialize a Comm, if the plot supplies one.
         """
         plot, fmt =  self._validate(obj, fmt)
-        figdata, _ = self(plot, fmt)
+        figdata, _ = self(plot, fmt, **kwargs)
         if css is None: css = self.css
 
         if fmt in ['html', 'json']:
@@ -268,7 +280,15 @@ class Renderer(Exporter):
         b64 = base64.b64encode(figdata).decode("utf-8")
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-        return tag.format(src=src, mime_type=mime_type, css=css)
+        html = tag.format(src=src, mime_type=mime_type, css=css)
+        if comm and plot.comm is not None:
+            comm, msg_handler = self.comms[self.mode]
+            msg_handler = msg_handler.format(comm_id=plot.comm.id)
+            return comm.template.format(init_frame=html,
+                                        msg_handler=msg_handler,
+                                        comm_id=plot.comm.id)
+        else:
+            return html
 
 
     def static_html(self, obj, fmt=None, template=None):
@@ -341,12 +361,13 @@ class Renderer(Exporter):
             widget = obj
 
         html = self_or_cls.static_html(widget, fmt, template)
+        encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
         if isinstance(filename, BytesIO):
-            filename.write(html)
+            filename.write(encoded)
             filename.seek(0)
         else:
             with open(filename, 'w') as f:
-                f.write(html)
+                f.write(encoded)
 
 
     @classmethod
@@ -386,10 +407,15 @@ class Renderer(Exporter):
 
         # Join all the js widget code into one string
         path = os.path.dirname(os.path.abspath(__file__))
-        widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
-                             for f in basejs + extensionjs
-                             if f is not None )
-        widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
+
+        def open_and_read(path, f):
+            with open(find_file(path, f), 'r') as f:
+                txt = f.read()
+            return txt
+
+        widgetjs = '\n'.join(open_and_read(path, f)
+                             for f in basejs + extensionjs if f is not None)
+        widgetcss = '\n'.join(open_and_read(path, f) 
                               for f in css if f is not None)
 
         dependencies = {}
@@ -457,11 +483,11 @@ class Renderer(Exporter):
             rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
+        encoded = self_or_cls.encode(rendered)
         if isinstance(basename, BytesIO):
-            basename.write(data)
+            basename.write(encoded)
             basename.seek(0)
         else:
-            encoded = self_or_cls.encode(rendered)
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
                 f.write(encoded)

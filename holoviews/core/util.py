@@ -4,18 +4,23 @@ import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
-from collections import defaultdict
+from collections import defaultdict, Counter
 
 import numpy as np
 import param
+
+import json
 
 try:
     from cyordereddict import OrderedDict
 except:
     from collections import OrderedDict
 
+datetime_types = (np.datetime64, dt.datetime)
+
 try:
     import pandas as pd # noqa (optional import)
+    datetime_types = datetime_types + (pd.tslib.Timestamp,)
 except ImportError:
     pd = None
 
@@ -23,6 +28,63 @@ try:
     import dask.dataframe as dd
 except ImportError:
     dd = None
+
+
+
+
+class HashableJSON(json.JSONEncoder):
+    """
+    Extends JSONEncoder to generate a hashable string for as many types
+    of object as possible including nested objects and objects that are
+    not normally hashable. The purpose of this class is to generate
+    unique strings that once hashed are suitable for use in memoization
+    and other cases where deep equality must be tested without storing
+    the entire object.
+
+    By default JSONEncoder supports booleans, numbers, strings, lists,
+    tuples and dictionaries. In order to support other types such as
+    sets, datetime objects and mutable objects such as pandas Dataframes
+    or numpy arrays, HashableJSON has to convert these types to
+    datastructures that can normally be represented as JSON.
+
+    Support for other object types may need to be introduced in
+    future. By default, unrecognized object types are represented by
+    their id.
+
+    One limitation of this approach is that dictionaries with composite
+    keys (e.g tuples) are not supported due to the JSON spec.
+    """
+    string_hashable = (dt.datetime,)
+    repr_hashable = ()
+
+    def default(self, obj):
+        if isinstance(obj, set):
+            return hash(frozenset(obj))
+        elif isinstance(obj, np.ndarray):
+            return obj.tolist()
+        if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
+            return repr(sorted(list(obj.to_dict().items())))
+        elif isinstance(obj, self.string_hashable):
+            return str(obj)
+        elif isinstance(obj, self.repr_hashable):
+            return repr(obj)
+        try:
+            return hash(obj)
+        except:
+            return id(obj)
+
+
+
+def deephash(obj):
+    """
+    Given an object, return a hash using HashableJSON. This hash is not
+    architecture, Python version or platform independent.
+    """
+    try:
+        return hash(json.dumps(obj, cls=HashableJSON, sort_keys=True))
+    except:
+        return None
+
 
 # Python3 compatibility
 import types
@@ -160,7 +222,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     transforms = param.List(default=[capitalize_unicode_name], doc="""
        List of string transformation functions to apply after
        filtering and substitution in order to further compress the
-       unicode name. For instance, the defaultcapitalize_unicode_name
+       unicode name. For instance, the default capitalize_unicode_name
        function will turn the string "capital delta" into "Delta".""")
 
     disallowed = param.List(default=['trait_names', '_ipython_display_',
@@ -399,6 +461,9 @@ def max_range(ranges):
             if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
+            if arr.dtype.kind in 'OSU':
+                arr = np.sort([v for v in arr.flat if not is_nan(v)])
+                return arr[0], arr[-1]
             if arr.dtype.kind in 'M':
                 return arr[:, 0].min(), arr[:, 1].max()
             return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
@@ -431,12 +496,16 @@ def max_extents(extents, zrange=False):
         for lidx, uidx in inds:
             lower = [v for v in arr[lidx] if v is not None]
             upper = [v for v in arr[uidx] if v is not None]
-            if lower and isinstance(lower[0], np.datetime64):
+            if lower and isinstance(lower[0], datetime_types):
                 extents[lidx] = np.min(lower)
+            elif any(isinstance(l, basestring) for l in lower):
+                extents[lidx] = np.sort(lower)[0]
             elif lower:
                 extents[lidx] = np.nanmin(lower)
-            if upper and isinstance(upper[0], np.datetime64):
+            if upper and isinstance(upper[0], datetime_types):
                 extents[uidx] = np.max(upper)
+            elif any(isinstance(u, basestring) for u in upper):
+                extents[uidx] = np.sort(upper)[-1]
             elif upper:
                 extents[uidx] = np.nanmax(upper)
     return tuple(extents)
@@ -494,7 +563,9 @@ def unique_array(arr):
     """
     Returns an array of unique values in the input order
     """
-    if pd:
+    if not len(arr):
+        return arr
+    elif pd:
         return pd.unique(arr)
     else:
         _, uniq_inds = np.unique(arr, return_index=True)
@@ -535,6 +606,32 @@ def python2sort(x,key=None):
         else:  # did not break, make new group
             groups.append([item])
     return itertools.chain.from_iterable(sorted(group, key=key) for group in groups)
+
+
+def merge_dimensions(dimensions_list):
+    """
+    Merges lists of fully or partially overlapping dimensions by
+    merging their values.
+
+    >>> from holoviews import Dimension
+    >>> dim_list = [[Dimension('A', values=[1, 2, 3]), Dimension('B')],
+    ...             [Dimension('A', values=[2, 3, 4])]]
+    >>> dimensions = merge_dimensions(dim_list)
+    >>> dimensions
+    [Dimension('A'), Dimension('B')]
+    >>> dimensions[0].values
+    [1, 2, 3, 4]
+    """
+    dvalues = defaultdict(list)
+    dimensions = []
+    for dims in dimensions_list:
+        for d in dims:
+            dvalues[d.name].append(d.values)
+            if d not in dimensions:
+                dimensions.append(d)
+    dvalues = {k: list(unique_iterator(itertools.chain(*vals)))
+               for k, vals in dvalues.items()}
+    return [d(values=dvalues.get(d.name, [])) for d in dimensions]
 
 
 def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
@@ -606,14 +703,14 @@ def sort_topologically(graph):
     }
 
     sort_topologically(graph)
-    [set([1, 2]), set([3, 4]), set([5, 6])]
+    [[1, 2], [3, 4], [5, 6]]
     """
     levels_by_name = {}
-    names_by_level = defaultdict(set)
+    names_by_level = defaultdict(list)
 
     def add_level_to_name(name, level):
         levels_by_name[name] = level
-        names_by_level[level].add(name)
+        names_by_level[level].append(name)
 
 
     def walk_depth_first(name):
@@ -645,6 +742,35 @@ def sort_topologically(graph):
     return list(itertools.takewhile(lambda x: x is not None,
                                     (names_by_level.get(i, None)
                                      for i in itertools.count())))
+
+
+def is_cyclic(graph):
+    """
+    Return True if the directed graph g has a cycle. The directed graph
+    should be represented as adictionary mapping of edges for each node.
+    """
+    path = set()
+
+    def visit(vertex):
+        path.add(vertex)
+        for neighbour in graph.get(vertex, ()):
+            if neighbour in path or visit(neighbour):
+                return True
+        path.remove(vertex)
+        return False
+
+    return any(visit(v) for v in graph)
+
+
+def one_to_one(graph, nodes):
+    """
+    Return True if graph contains only one to one mappings. The
+    directed graph should be represented as a dictionary mapping of
+    edges for each node. Nodes should be passed a simple list.
+    """
+    edges = itertools.chain.from_iterable(graph.values())
+    return len(graph) == len(nodes) and len(set(edges)) == len(nodes)
+
 
 def get_overlay_spec(o, k, v):
     """
@@ -728,12 +854,17 @@ def get_spec(obj):
 
 def find_file(folder, filename):
     """
-    Find a file given folder and filename.
+    Find a file given folder and filename. If the filename can be
+    resolved directly returns otherwise walks the supplied folder.
     """
     matches = []
+    if os.path.isabs(filename) and os.path.isfile(filename):
+        return filename
     for root, _, filenames in os.walk(folder):
-        for filename in fnmatch.filter(filenames, filename):
-            matches.append(os.path.join(root, filename))
+        for fn in fnmatch.filter(filenames, filename):
+            matches.append(os.path.join(root, fn))
+    if not matches:
+        raise IOError('File %s could not be found' % filename)
     return matches[-1]
 
 
@@ -748,7 +879,8 @@ def is_dataframe(data):
 def get_param_values(data):
     params = dict(kdims=data.kdims, vdims=data.vdims,
                   label=data.label)
-    if data.group != data.params()['group'].default:
+    if (data.group != data.params()['group'].default and not
+        isinstance(type(data).group, property)):
         params['group'] = data.group
     return params
 
@@ -779,6 +911,70 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+
+def stream_parameters(streams, no_duplicates=True, exclude=['name']):
+    """
+    Given a list of streams, return a flat list of parameter name,
+    excluding those listed in the exclude list.
+
+    If no_duplicates is enabled, a KeyError will be raised if there are
+    parameter name clashes across the streams.
+    """
+    param_groups = [s.contents.keys() for s in streams]
+    names = [name for group in param_groups for name in group]
+
+    if no_duplicates:
+        clashes = set([n for n in names if names.count(n) > 1])
+        if clashes:
+            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+    return [name for name in names if name not in exclude]
+
+
+def dimensionless_contents(streams, kdims, no_duplicates=True):
+    """
+    Return a list of stream parameters that have not been associated
+    with any of the key dimensions.
+    """
+    names = stream_parameters(streams, no_duplicates)
+    return [name for name in names if name not in kdims]
+
+
+def unbound_dimensions(streams, kdims, no_duplicates=True):
+    """
+    Return a list of dimensions that have not been associated with
+    any streams.
+    """
+    params = stream_parameters(streams, no_duplicates)
+    return [d for d in kdims if d not in params]
+
+
+def wrap_tuple_streams(unwrapped, kdims, streams):
+    """
+    Fills in tuple keys with dimensioned stream values as appropriate.
+    """
+    param_groups = [(s.contents.keys(), s) for s in streams]
+    pairs = [(name,s)  for (group, s) in param_groups for name in group]
+    substituted = []
+    for pos,el in enumerate(wrap_tuple(unwrapped)):
+        if el is None and pos < len(kdims):
+            matches = [(name,s) for (name,s) in pairs if name==kdims[pos].name]
+            if len(matches) == 1:
+                (name, stream) = matches[0]
+                el = stream.contents[name]
+        substituted.append(el)
+    return tuple(substituted)
+
+
+def drop_streams(streams, kdims, keys):
+    """
+    Drop any dimensionsed streams from the keys and kdims.
+    """
+    stream_params = stream_parameters(streams)
+    inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
+                       if kdim not in stream_params])
+    return dims, [tuple(key[ind] for ind in inds) for key in keys]
+
+
 def itervalues(obj):
     "Get value iterator from dictionary for Python 2 and 3"
     return iter(obj.values()) if sys.version_info.major == 3 else obj.itervalues()
@@ -807,6 +1003,46 @@ def unpack_group(group, getter):
             yield (wrap_tuple(key), obj)
 
 
+def capitalize(string):
+    """
+    Capitalizes the first letter of a string.
+    """
+    return string[0].upper() + string[1:]
+
+
+def get_path(item):
+    """
+    Gets a path from an Labelled object or from a tuple of an existing
+    path and a labelled object. The path strings are sanitized and
+    capitalized.
+    """
+    sanitizers = [group_sanitizer, label_sanitizer]
+    if isinstance(item, tuple):
+        path, item = item
+        if item.label:
+            if len(path) > 1 and item.label == path[1]:
+                path = path[:2]
+            else:
+                path = path[:1] + (item.label,)
+        else:
+            path = path[:1]
+    else:
+        path = (item.group, item.label) if item.label else (item.group,)
+    return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
+
+
+def make_path_unique(path, counts):
+    """
+    Given a path, a list of existing paths and counts for each of the
+    existing paths.
+    """
+    while path in counts:
+        count = counts[path]
+        counts[path] += 1
+        path = path + (int_to_roman(count),)
+    if len(path) == 1:
+        path = path + (int_to_roman(counts.get(path, 1)),)
+    return path
 
 
 class ndmapping_groupby(param.ParameterizedFunction):
@@ -862,13 +1098,17 @@ class ndmapping_groupby(param.ParameterizedFunction):
         return container_type(groups, kdims=dimensions)
 
 
-def cartesian_product(arrays):
+def cartesian_product(arrays, flat=True, copy=False):
     """
-    Computes the cartesian product of a list of 1D arrays
-    returning arrays matching the shape defined by all
-    supplied dimensions.
+    Efficient cartesian product of a list of 1D arrays returning the
+    expanded array views for each dimensions. By default arrays are
+    flattened, which may be controlled with the flat flag. The array
+    views can be turned into regular arrays with the copy flag.
     """
-    return np.broadcast_arrays(*np.ix_(*arrays))
+    arrays = np.broadcast_arrays(*np.ix_(*arrays))
+    if flat:
+        return tuple(arr.flatten() if copy else arr.flat for arr in arrays)
+    return tuple(arr.copy() if copy else arr for arr in arrays)
 
 
 def arglexsort(arrays):
@@ -889,17 +1129,22 @@ def get_dynamic_item(map_obj, dimensions, key):
     and a corresponding key. The dimensions must be a subset
     of the map_obj key dimensions.
     """
-    if isinstance(key, tuple):
+    dmaps = map_obj.traverse(lambda x: x, ['DynamicMap'])
+    dmap = dmaps[0] if dmaps else map_obj
+    if key == () and (not dimensions or not dmap.kdims):
+        map_obj.traverse(lambda x: x[()], ['DynamicMap'])
+        return key, map_obj.map(lambda x: x.last, ['DynamicMap'])
+    elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)
-        el = map_obj.select([lambda x: type(x).__name__ == 'DynamicMap'],
-                            **dims)
+        el = map_obj.select(['DynamicMap', 'HoloMap'], **dims)
     elif key < map_obj.counter:
         key_offset = max([key-map_obj.cache_size, 0])
         key = map_obj.keys()[min([key-key_offset,
                                   len(map_obj)-1])]
-        el = map_obj[key]
+        map_obj.traverse(lambda x: x[key], ['DynamicMap'])
+        el = map_obj.map(lambda x: x[key], ['DynamicMap'])
     elif key >= map_obj.counter:
         el = next(map_obj)
         key = list(map_obj.keys())[-1]
@@ -917,7 +1162,7 @@ def expand_grid_coords(dataset, dim):
     arrays = [dataset.interface.coords(dataset, d.name, True)
               for d in dataset.kdims]
     idx = dataset.get_dimension_index(dim)
-    return cartesian_product(arrays)[idx]
+    return cartesian_product(arrays, flat=False)[idx]
 
 
 def dt64_to_dt(dt64):
@@ -926,3 +1171,13 @@ def dt64_to_dt(dt64):
     """
     ts = (dt64 - np.datetime64('1970-01-01T00:00:00Z')) / np.timedelta64(1, 's')
     return dt.datetime.utcfromtimestamp(ts)
+
+
+def is_nan(x):
+    """
+    Checks whether value is NaN on arbitrary types
+    """
+    try:
+        return np.isnan(x)
+    except:
+        return False

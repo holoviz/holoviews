@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import BoxAnnotation
+from bokeh.models import Span
 
 from ...element import HLine, VLine
 from .element import ElementPlot, text_properties, line_properties
@@ -20,6 +20,7 @@ class TextPlot(ElementPlot):
             data = dict(x=[element.y], y=[element.x])
         else:
             data = dict(x=[element.x], y=[element.y])
+        self._categorize_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
         return (data, mapping)
 
@@ -44,30 +45,23 @@ class LineAnnotationPlot(ElementPlot):
 
     _update_handles = ['glyph']
 
+    _plot_methods = dict(single='Span')
+
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = {}, {}
-        if (isinstance(element, HLine) or
-            (isinstance(element, VLine) and self.invert_axes)):
-            mapping['bottom'] = element.data
-            mapping['top'] = element.data
-        elif (isinstance(element, VLine) or
-              (isinstance(element, HLine) and self.invert_axes)):
-            mapping['left'] = element.data
-            mapping['right'] = element.data
+        mapping['dimension'] = 'width' if isinstance(element, HLine) else 'height'
+        mapping['location'] = element.data
         return (data, mapping)
-
 
     def _init_glyph(self, plot, mapping, properties):
         """
         Returns a Bokeh glyph object.
         """
-        properties.pop('source', None)
-        properties.pop('legend', None)
-        box = BoxAnnotation(plot=plot, level='overlay',
-                            **dict(mapping, **properties))
+        properties.pop('source')
+        properties.pop('legend')
+        box = Span(level='overlay', **dict(mapping, **properties))
         plot.renderers.append(box)
         return None, box
-
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None

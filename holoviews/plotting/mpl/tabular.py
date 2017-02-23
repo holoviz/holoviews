@@ -48,11 +48,10 @@ class TablePlot(ElementPlot):
 
     def __init__(self, table, **params):
         super(TablePlot, self).__init__(table, **params)
-        self.cell_values, self.cell_widths = self._format_table()
+        self.cell_widths = self._format_table()
 
 
     def _format_table(self):
-        cell_values = defaultdict(dict)
         cell_widths = defaultdict(int)
         for key in self.keys:
             frame = self._get_frame(key)
@@ -73,10 +72,23 @@ class TablePlot(ElementPlot):
                             adjusted_row = (frame.rows - self.max_rows + row)
                         value = frame.pprint_cell(adjusted_row, col)
                         cell_text = self.pprint_value(value)
-                    cell_values[key][(row, col)] = cell_text
                     if len(cell_text) + 2 > cell_widths[col]:
                         cell_widths[col] = len(cell_text) + 2
-        return cell_values, cell_widths
+        return cell_widths
+
+
+    def _cell_value(self, element, row, col):
+        summarize = element.rows > self.max_rows
+        half_rows = self.max_rows//2
+        rows = min([self.max_rows, element.rows])
+        if summarize and row == half_rows:
+            cell_text = "..."
+        else:
+            if summarize and row > half_rows:
+                row = (element.rows - self.max_rows + row)
+            value = element.pprint_cell(row, col)
+            cell_text = self.pprint_value(value)
+        return cell_text
 
 
     def pprint_value(self, value):
@@ -117,7 +129,7 @@ class TablePlot(ElementPlot):
             for col in range(element.cols):
                 if summarize and row > half_rows:
                     adjusted_row = (element.rows - self.max_rows + row)
-                cell_value = self.cell_values[self.keys[-1]][(row, col)]
+                cell_value = self._cell_value(element, row, col)
                 cellfont = self.font_types.get(element.cell_type(adjusted_row,col), None)
                 width = self.cell_widths[col] / float(total_width)
                 font_kwargs = dict(fontproperties=cellfont) if cellfont else {}
@@ -133,11 +145,11 @@ class TablePlot(ElementPlot):
         return self._finalize_axis(self.keys[-1])
 
 
-    def update_handles(self, key, axis, view, ranges, style):
+    def update_handles(self, key, axis, element, ranges, style):
         table = self.handles['artist']
 
         for coords, cell in table.get_celld().items():
-            value = self.cell_values[key][coords]
+            value = self._cell_value(element, *coords)
             cell.set_text_props(text=value)
 
         # Resize fonts across table as necessary

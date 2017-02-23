@@ -11,6 +11,7 @@ from holoviews import plotting              # noqa Register backends
 class TestStoreOptionsMerge(ComparisonTestCase):
 
     def setUp(self):
+        Store.current_backend = 'matplotlib'
         self.expected = {'Image': {'plot': {'fig_size': 150},
                                    'style': {'cmap': 'Blues'}}}
 
@@ -39,6 +40,10 @@ class TestStoreOptionsCall(ComparisonTestCase):
     The __call__ method makes use of most of the functionality in
     StoreOptions.
     """
+
+    def setUp(self):
+        Store.current_backend = 'matplotlib'
+
 
     def test_overlay_options_partitioned(self):
         """

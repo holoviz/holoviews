@@ -136,42 +136,5 @@ class DFrame(PandasDFrame):
                                             type to use, when visualizing the plot.""")
 
 
-    def bivariate(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
-        return self._convert(kdims, vdims, mdims, reduce_fn, view_type=Bivariate, **kwargs)
-
-
-    def distribution(self, dim, mdims=[], **kwargs):
-        grouped = self.groupby(mdims, HoloMap) if mdims else HoloMap({0: self})
-        inherited = dict(kdims=[self.get_dimension(dim)],
-                         label=self.label)
-        kwargs = dict(inherited, **kwargs)
-        conversion_fn = lambda x: Distribution(x.data.sort()[dim].dropna(), **kwargs)
-        distributions = grouped.map(conversion_fn, [DFrame])
-        return distributions if mdims else distributions.last
-
-
-    def regression(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
-        return self._convert(kdims, vdims, mdims, reduce_fn, view_type=Regression, **kwargs)
-
-
-    def timeseries(self, kdims, vdims, mdims=[], reduce_fn=None, **kwargs):
-        if not isinstance(kdims, list) or not len(kdims) ==2:
-            raise Exception('TimeSeries requires two key dimensions.')
-        if not isinstance(kdims, list): kdims = [kdims]
-        if not isinstance(vdims, list): vdims = [vdims]
-
-        sel_dims = kdims + vdims
-        if mdims:
-            mdims = mdims + [kdims[1]]
-        else:
-            mdims = [kdims[1]]
-            if not reduce_fn:
-                mdims += [dim for dim in self.dimensions(label=True) if dim not in sel_dims]
-        curve_map = self._convert(kdims[0], vdims, mdims, reduce_fn, view_type=Curve, **kwargs)
-        return TimeSeries(curve_map.overlay(kdims[1]),
-                          kdims=[self.get_dimension(dim) for dim in kdims],
-                          **kwargs)
-
-
 __all__ = ['DFrame', 'Bivariate', 'Distribution',
            'TimeSeries', 'Regression']

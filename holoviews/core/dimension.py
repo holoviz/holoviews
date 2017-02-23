@@ -14,7 +14,7 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         safe_unicode, unicode, dt64_to_dt)
+                         safe_unicode, unicode, dt64_to_dt, unique_array)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -52,12 +52,14 @@ def replace_dimensions(dimensions, overrides):
     for d in dimensions:
         if d.name in overrides:
             override = overrides[d.name]
+        elif d.label in overrides:
+            override = overrides[d.label]
         else:
             override = None
 
         if override is None:
             replaced.append(d)
-        elif isinstance(override, basestring):
+        elif isinstance(override, (basestring, tuple)):
             replaced.append(d(override))
         elif isinstance(override, Dimension):
             replaced.append(override)
@@ -142,11 +144,17 @@ class Dimension(param.Parameterized):
             existing_params = {'name': name}
 
         all_params = dict(existing_params, **params)
-        if isinstance(all_params['name'], tuple):
-            alias, long_name = all_params['name']
-            dimension_sanitizer.add_aliases(**{alias:long_name})
-            all_params['name'] = long_name
+        name = all_params['name']
+        label = name
+        if isinstance(name, tuple):
+            name, label = name
+            all_params['name'] = name
+        self.label = label
 
+        if not isinstance(params.get('values', None), basestring):
+            all_params['values'] = sorted(list(unique_array(params.get('values', []))))
+        elif params['values'] != 'initial':
+            raise Exception("Values argument can only be set with the string 'initial'.")
         super(Dimension, self).__init__(**all_params)
 
 
@@ -165,7 +173,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return safe_unicode(self.name) + safe_unicode(unit)
+        return safe_unicode(self.label) + safe_unicode(unit)
 
 
     def pprint_value(self, value):
@@ -202,7 +210,7 @@ class Dimension(param.Parameterized):
         """
         unit = '' if self.unit is None else ' ' + self.unit
         value = self.pprint_value(value)
-        return title_format.format(name=self.name, val=value, unit=unit)
+        return title_format.format(name=self.label, val=value, unit=unit)
 
 
     def __hash__(self):
@@ -215,14 +223,27 @@ class Dimension(param.Parameterized):
                     if not isinstance(value, list)])
 
 
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.label = self.name
+
+
     def __str__(self):
         return self.pprint_label
 
 
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, dimension_sanitizer(self.name)]
-        return other.name in dim_matches if isinstance(other, Dimension) else other in dim_matches
+        dim_matches = [self.name, self.label, dimension_sanitizer(self.label)]
+        if self is other:
+            return True
+        elif isinstance(other, Dimension):
+            return bool({other.name, other.label} & set(dim_matches))
+        else:
+            return other in dim_matches
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
@@ -340,13 +361,15 @@ class LabelledData(param.Parameterized):
         Assign a new label and/or group to an existing LabelledData
         object, creating a clone of the object with the new settings.
         """
-        keywords = [('label',label), ('group',group)]
-        obj = self.clone(self.data,
-                         **{k:v for k,v in keywords if v is not None})
-        if (depth > 0) and getattr(obj, '_deep_indexable', False):
-            for k, v in obj.items():
-                obj[k] =  v.relabel(group=group, label=label, depth=depth-1)
-        return obj
+        new_data = self.data
+        if (depth > 0) and getattr(self, '_deep_indexable', False):
+            new_data = []
+            for k, v in self.data.items():
+                relabelled = v.relabel(group=group, label=label, depth=depth-1)
+                new_data.append((k, relabelled))
+        keywords = [('label', label), ('group', group)]
+        kwargs = {k: v for k, v in keywords if v is not None}
+        return self.clone(new_data, **kwargs)
 
 
     def matches(self, spec):
@@ -413,6 +436,7 @@ class LabelledData(param.Parameterized):
         Recursively replaces elements using a map function when the
         specification applies.
         """
+        if specs and not isinstance(specs, list): specs = [specs]
         applies = specs is None or any(self.matches(spec) for spec in specs)
 
         if self._deep_indexable:
@@ -593,6 +617,11 @@ class Dimensioned(LabelledData):
                                   for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(data, **params)
+        duplicates = [vd for vd in self.vdims if vd in self.kdims]
+        if duplicates:
+            duplicates = ', '.join([d.name for d in duplicates])
+            raise ValueError('Dimension(s) %s cannot be both key and '
+                             'value dimensions' % duplicates)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
@@ -601,7 +630,7 @@ class Dimensioned(LabelledData):
 
     def _valid_dimensions(self, dimensions):
         """Validates key dimension input
-        
+
         Returns kdims if no dimensions are specified"""
         if dimensions is None:
             dimensions = self.kdims
@@ -620,7 +649,7 @@ class Dimensioned(LabelledData):
     @property
     def ddims(self):
         "The list of deep dimensions"
-        if self._deep_indexable and len(self):
+        if self._deep_indexable and self:
             return self.values()[0].dimensions()
         else:
             return []
@@ -633,6 +662,13 @@ class Dimensioned(LabelledData):
         by their type, i.e. 'key' or 'value' dimensions.
         By default 'all' dimensions are returned.
         """
+        if label in ['name', True]:
+            label = 'short'
+        elif label == 'label':
+            label = 'long'
+        elif label:
+            raise ValueError("label needs to be one of True, False, 'name' or 'label'")
+
         lambdas = {'k': (lambda x: x.kdims, {'full_breadth': False}),
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
@@ -652,7 +688,8 @@ class Dimensioned(LabelledData):
         else:
             raise KeyError("Invalid selection %r, valid selections include"
                            "'all', 'value' and 'key' dimensions" % repr(selection))
-        return [dim.name if label else dim for dim in dims]
+        return [(dim.label if label == 'long' else dim.name)
+                if label else dim for dim in dims]
 
 
     def get_dimension(self, dimension, default=None, strict=False):
@@ -673,6 +710,8 @@ class Dimensioned(LabelledData):
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
+        name_map.update({dim.label: dim for dim in all_dims})
+        name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
             raise KeyError("Dimension %s not found" % dimension)
         else:
@@ -691,10 +730,9 @@ class Dimensioned(LabelledData):
             else:
                 return IndexError('Dimension index out of bounds')
         try:
-            if dim in self.kdims+self.vdims:
-                return (self.kdims+self.vdims).index(dim)
-            return self.dimensions().index(dim)
-        except ValueError:
+            dimensions = self.kdims+self.vdims
+            return [i for i, d in enumerate(dimensions) if d == dim][0]
+        except IndexError:
             raise Exception("Dimension %s not found in %s." %
                             (dim, self.__class__.__name__))
 
@@ -751,6 +789,8 @@ class Dimensioned(LabelledData):
 
         # Check selection_spec applies
         if selection_specs is not None:
+            if not isinstance(selection_specs, (list, tuple)):
+                selection_specs = [selection_specs]
             matches = any(self.matches(spec)
                           for spec in selection_specs)
         else:
@@ -758,8 +798,9 @@ class Dimensioned(LabelledData):
 
         # Apply selection to self
         if local_kwargs and matches:
-            ndims = (len(self.dimensions()) if any(d in self.vdims for d in kwargs)
-                     else self.ndims)
+            ndims = self.ndims
+            if any(d in self.vdims for d in kwargs):
+                ndims = len(self.kdims+self.vdims)
             select = [slice(None) for _ in range(ndims)]
             for dim, val in local_kwargs.items():
                 if dim == 'value':
@@ -780,20 +821,15 @@ class Dimensioned(LabelledData):
             return selection
         elif type(selection) is not type(self) and isinstance(selection, Dimensioned):
             # Apply the selection on the selected object of a different type
-            val_dim = ['value'] if selection.vdims else []
-            key_dims = selection.dimensions('key', label=True) + val_dim
-            if any(kw in key_dims for kw in kwargs):
+            dimensions = selection.dimensions() + ['value']
+            if any(kw in dimensions for kw in kwargs):
                 selection = selection.select(selection_specs, **kwargs)
         elif isinstance(selection, Dimensioned) and selection._deep_indexable:
             # Apply the deep selection on each item in local selection
             items = []
             for k, v in selection.items():
-                val_dim = ['value'] if v.vdims else []
-                dims = list(zip(*[(dimension_sanitizer(kd), kd)
-                                  for kd in v.dimensions('key', label=True)]))
-                kdims, skdims = dims if dims else ([], [])
-                key_dims = list(kdims) + list(skdims) + val_dim
-                if any(kw in key_dims for kw in kwargs):
+                dimensions = v.dimensions() + ['value']
+                if any(kw in dimensions for kw in kwargs):
                     items.append((k, v.select(selection_specs, **kwargs)))
                 else:
                     items.append((k, v))
@@ -854,21 +890,30 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
-        if dimension.range != (None, None):
+        if None not in dimension.range:
             return dimension.range
-        elif not data_range:
-            return (None, None)
-        soft_range = [r for r in dimension.soft_range
-                      if r is not None]
-        if dimension in self.kdims or dimension in self.vdims:
-            dim_vals = self.dimension_values(dimension.name)
-            return find_range(dim_vals, soft_range)
-        dname = dimension.name
-        match_fn = lambda x: dname in x.dimensions(['key', 'value'], True)
-        range_fn = lambda x: x.range(dname)
-        ranges = self.traverse(range_fn, [match_fn])
-        drange = max_range(ranges)
-        return drange
+        elif data_range:
+            if dimension in self.kdims+self.vdims:
+                dim_vals = self.dimension_values(dimension.name)
+                drange = find_range(dim_vals)
+            else:
+                dname = dimension.name
+                match_fn = lambda x: dname in x.kdims + x.vdims
+                range_fn = lambda x: x.range(dname)
+                ranges = self.traverse(range_fn, [match_fn])
+                drange = max_range(ranges)
+            soft_range = [r for r in dimension.soft_range if r is not None]
+            if soft_range:
+                drange = util.max_range([drange, soft_range])
+        else:
+            drange = dim.soft_range
+        if dimension.range[0] is not None:
+            return (dimension.range[0], drange[1])
+        elif dimension.range[1] is not None:
+            return (drange[0], dimension.range[1])
+        else:
+            return drange
+
 
     def __repr__(self):
         reprval = PrettyPrinter.pprint(self)
@@ -876,6 +921,9 @@ class Dimensioned(LabelledData):
             return str(reprval.encode("utf8"))
         else:
             return str(reprval)
+
+    def __str__(self):
+        return repr(self)
 
     def __unicode__(self):
         return unicode(PrettyPrinter.pprint(self))

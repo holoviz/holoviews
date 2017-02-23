@@ -2,9 +2,11 @@ from bokeh.models.widgets import DataTable, TableColumn
 
 import param
 
-from .plot import BokehPlot
+from ...core import Dataset
+from ...element import ItemTable
 from ..plot import GenericElementPlot
-
+from .plot import BokehPlot
+from .util import bokeh_version
 
 class TablePlot(BokehPlot, GenericElementPlot):
 
@@ -15,9 +17,20 @@ class TablePlot(BokehPlot, GenericElementPlot):
     style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'width', 'height']
 
+    _update_handles = ['source', 'glyph']
+
+    def __init__(self, element, plot=None, **params):
+        super(TablePlot, self).__init__(element, **params)
+        self.handles = {} if plot is None else self.handles['plot']
+        element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
+        self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
+
+
     def get_data(self, element, ranges=None, empty=False):
         dims = element.dimensions()
-        return ({d.name: [] if empty else element.dimension_values(d) for d in dims},
+        return ({d.name: [] if empty else
+                 [d.pprint_value(v) for v in element.dimension_values(d)]
+                 for d in dims},
                 {d.name: d.name for d in dims})
 
 
@@ -46,6 +59,31 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return table
+
+
+    @property
+    def current_handles(self):
+        """
+        Returns a list of the plot objects to update.
+        """
+        handles = []
+        if self.static and not self.dynamic:
+            return handles
+
+        previous_id = self.handles.get('previous_id', None)
+        current_id = id(self.current_frame.data) if self.current_frame else None
+        for handle in self._update_handles:
+            if (handle == 'source' and self.dynamic and
+                current_id == previous_id):
+                continue
+            if handle in self.handles:
+                handles.append(self.handles[handle])
+
+        # Cache frame object id to skip updating if unchanged
+        if self.dynamic:
+            self.handles['previous_id'] = current_id
+
+        return handles
 
 
     def update_frame(self, key, ranges=None, plot=None):
