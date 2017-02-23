@@ -893,7 +893,20 @@ class ColorbarPlot(ElementPlot):
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
         colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        colormapper, opts = self._get_cmapper_opts(low, high, factors, colors)
 
+        if 'color_mapper' in self.handles:
+            cmapper = self.handles['color_mapper']
+            cmapper.palette = palette
+            cmapper.update(**opts)
+        else:
+            cmapper = colormapper(palette=palette, **opts)
+            self.handles['color_mapper'] = cmapper
+            self.handles['color_dim'] = dim
+        return cmapper
+
+
+    def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
@@ -906,16 +919,7 @@ class ColorbarPlot(ElementPlot):
             opts = dict(factors=factors)
             if 'NaN' in colors:
                 opts['nan_color'] = colors['NaN']
-
-        if 'color_mapper' in self.handles:
-            cmapper = self.handles['color_mapper']
-            cmapper.palette = palette
-            cmapper.update(**opts)
-        else:
-            cmapper = colormapper(palette=palette, **opts)
-            self.handles['color_mapper'] = cmapper
-            self.handles['color_dim'] = dim
-        return cmapper
+        return colormapper, opts
 
 
     def _init_glyph(self, plot, mapping, properties):
