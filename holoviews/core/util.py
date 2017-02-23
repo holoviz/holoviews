@@ -1018,8 +1018,13 @@ def get_path(item):
     sanitizers = [group_sanitizer, label_sanitizer]
     if isinstance(item, tuple):
         path, item = item
-        new_path = get_path(item)
-        path = path[:2] if item.label and path[1] == new_path[1] else path[:1]
+        if item.label:
+            if len(path) > 1 and item.label == path[1]:
+                path = path[:2]
+            else:
+                path = path[:1] + (item.label,)
+        else:
+            path = path[:1]
     else:
         path = (item.group, item.label) if item.label else (item.group,)
     return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
