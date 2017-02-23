@@ -38,7 +38,7 @@ class Path(Element2D):
 
     def __init__(self, data, **params):
         if isinstance(data, tuple):
-            x, y = data
+            x, y = map(np.asarray, data)
             if y.ndim == 1:
                 y = np.atleast_2d(y).T
             if len(x) != y.shape[0]:
