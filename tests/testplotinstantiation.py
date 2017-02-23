@@ -342,7 +342,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertTrue(isinstance(cmapper, mapper_type))
 
     def test_points_colormapping(self):
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(plot=dict(color_index=3))
         self._test_colormapping(points, 3)
 
     def test_points_colormapping_categorical(self):
