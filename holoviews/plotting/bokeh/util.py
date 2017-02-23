@@ -65,6 +65,16 @@ def rgb2hex(rgb):
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
+def rgba_tuple(rgba):
+    """
+    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+    """
+    if isinstance(rgba, tuple):
+        return [int(c*255) if i<3 else c for i, c in enumerate(rgba)]
+    else:
+        return rgba
+
+
 def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."

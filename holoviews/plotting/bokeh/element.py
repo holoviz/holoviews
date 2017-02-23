@@ -34,7 +34,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
 from .plot import BokehPlot
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
-                   bokeh_version, mplcmap_to_palette, py2js_tickformatter)
+                   bokeh_version, mplcmap_to_palette, py2js_tickformatter,
+                   rgba_tuple)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -891,10 +892,7 @@ class ColorbarPlot(ElementPlot):
         ncolors = None if factors is None else len(factors)
         low, high = ranges.get(dim.name, element.range(dim.name))
         palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
-
-        color_rgb = lambda color: [int(c*255) if i<3 else c for i, c in enumerate(color)]
-        colors = {k: color_rgb(v) if isinstance(v, tuple) else v
-                  for k, v in self.clipping_colors.items()}
+        colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
 
         if factors is None:
             colormapper = LogColorMapper if self.logz else LinearColorMapper
