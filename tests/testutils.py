@@ -16,9 +16,9 @@ except:
 
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
-    deephash, merge_dimensions
+    deephash, merge_dimensions, get_path, make_path_unique
 )
-from holoviews import Dimension
+from holoviews import Dimension, Element
 from holoviews.streams import PositionXY
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -463,3 +463,50 @@ class TestMergeDimensions(unittest.TestCase):
                                        [Dimension('A', values=[1, 2]), Dimension('B')]])
         self.assertEqual(dimensions, [Dimension('A'), Dimension('B')])
         self.assertEqual(dimensions[0].values, [0, 1, 2])
+
+
+class TestTreePathUtils(unittest.TestCase):
+
+    def test_get_path_with_label(self):
+        path = get_path(Element('Test', label='A'))
+        self.assertEqual(path, ('Element', 'A'))
+
+    def test_get_path_without_label(self):
+        path = get_path(Element('Test'))
+        self.assertEqual(path, ('Element',))
+
+    def test_get_path_with_custom_group(self):
+        path = get_path(Element('Test', group='Custom Group'))
+        self.assertEqual(path, ('Custom_Group',))
+
+    def test_get_path_with_custom_group_and_label(self):
+        path = get_path(Element('Test', group='Custom Group', label='A'))
+        self.assertEqual(path, ('Custom_Group', 'A'))
+
+    def test_get_path_from_item_with_custom_group(self):
+        path = get_path((('Custom',), Element('Test')))
+        self.assertEqual(path, ('Custom',))
+
+    def test_get_path_from_item_with_custom_group_and_label(self):
+        path = get_path((('Custom', 'Path'), Element('Test')))
+        self.assertEqual(path, ('Custom',))
+
+    def test_get_path_from_item_with_custom_group_and_matching_label(self):
+        path = get_path((('Custom', 'Path'), Element('Test', label='Path')))
+        self.assertEqual(path, ('Custom', 'Path'))
+
+    def test_make_path_unique_no_clash(self):
+        path = ('Element', 'A')
+        new_path = make_path_unique(path, {})
+        self.assertEqual(new_path, path)
+
+    def test_make_path_unique_clash_without_label(self):
+        path = ('Element',)
+        new_path = make_path_unique(path, {path: 1})
+        self.assertEqual(new_path, path+('I',))
+
+    def test_make_path_unique_clash_with_label(self):
+        path = ('Element', 'A')
+        new_path = make_path_unique(path, {path: 1})
+        self.assertEqual(new_path, path+('I',))
+

@@ -223,7 +223,7 @@ class HoloMap(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     def __lshift__(self, other):
@@ -1137,7 +1137,7 @@ class GridSpace(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     @property
