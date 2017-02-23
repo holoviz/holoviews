@@ -12,7 +12,7 @@ from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
 try:
     from bokeh.models import ColorBar
-    from bokeh.models.mappers import LogColorMapper
+    from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.models import LogTicker, BasicTicker
@@ -34,7 +34,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
 from .plot import BokehPlot
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
-                   bokeh_version, mplcmap_to_palette, py2js_tickformatter)
+                   bokeh_version, mplcmap_to_palette, py2js_tickformatter,
+                   rgba_tuple)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -851,6 +852,8 @@ class ColorbarPlot(ElementPlot):
                               major_tick_line_color='black')
 
     def _draw_colorbar(self, plot, color_mapper):
+        if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
+            return
         if LogColorMapper and isinstance(color_mapper, LogColorMapper):
             ticker = LogTicker()
         else:
@@ -870,13 +873,11 @@ class ColorbarPlot(ElementPlot):
         self.handles['colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style):
+    def _get_colormapper(self, dim, element, ranges, style, factors=None):
         # The initial colormapper instance is cached the first time
         # and then only updated
         if dim is None:
             return None
-        low, high = ranges.get(dim.name, element.range(dim.name))
-        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'))
         if self.adjoined:
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
                                                          x.handles.get('color_mapper')))
@@ -887,28 +888,38 @@ class ColorbarPlot(ElementPlot):
                 return cmapper
             else:
                 return None
-        colors = self.clipping_colors
-        if isinstance(low, (bool, np.bool_)): low = int(low)
-        if isinstance(high, (bool, np.bool_)): high = int(high)
-        opts = {'low': low, 'high': high}
-        color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
-        for name, opt in color_opts:
-            color = colors.get(name)
-            if not color:
-                continue
-            elif isinstance(color, tuple):
-                color = [int(c*255) if i<3 else c for i, c in enumerate(color)]
-            opts[opt] = color
+
+        ncolors = None if factors is None else len(factors)
+        low, high = ranges.get(dim.name, element.range(dim.name))
+        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
+        colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        colormapper, opts = self._get_cmapper_opts(low, high, factors, colors)
+
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
             cmapper.palette = palette
             cmapper.update(**opts)
         else:
-            colormapper = LogColorMapper if self.logz else LinearColorMapper
-            cmapper = colormapper(palette, **opts)
+            cmapper = colormapper(palette=palette, **opts)
             self.handles['color_mapper'] = cmapper
             self.handles['color_dim'] = dim
         return cmapper
+
+
+    def _get_cmapper_opts(self, low, high, factors, colors):
+        if factors is None:
+            colormapper = LogColorMapper if self.logz else LinearColorMapper
+            if isinstance(low, (bool, np.bool_)): low = int(low)
+            if isinstance(high, (bool, np.bool_)): high = int(high)
+            opts = {'low': low, 'high': high}
+            color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
+            opts.update({opt: colors[name] for name, opt in color_opts if name in colors})
+        else:
+            colormapper = CategoricalColorMapper
+            opts = dict(factors=factors)
+            if 'NaN' in colors:
+                opts['nan_color'] = colors['NaN']
+        return colormapper, opts
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -942,15 +953,32 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
-
     legend_cols = param.Integer(default=False, doc="""
        Whether to lay out the legend as columns.""")
-
 
     legend_specs = {'right': dict(pos='right', loc=(5, -40)),
                     'left': dict(pos='left', loc=(0, -40)),
                     'top': dict(pos='above', loc=(120, 5)),
                     'bottom': dict(pos='below', loc=(60, 0))}
+
+    def _process_legend(self, plot=None):
+        plot = plot or self.handles['plot']
+        if not plot.legend:
+            return
+        legend = plot.legend[0]
+        if not self.show_legend:
+            legend.items[:] = []
+        else:
+            plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
+            pos = self.legend_position
+            if pos in self.legend_specs:
+                opts = self.legend_specs[pos]
+                plot.legend[:] = []
+                legend.plot = None
+                legend.location = opts['loc']
+                plot.add_layout(legend, opts['pos'])
+            else:
+                legend.location = pos
 
 
 
