@@ -53,7 +53,7 @@ def attributes_js(attributes, handles):
 class Callback(object):
     """
     Provides a baseclass to define callbacks, which return data from
-    bokeh models such as the plot ranges or various tools. The callback
+    bokeh model callbacks, events and attribute changes. The callback
     then makes this data available to any streams attached to it.
 
     The definition of a callback consists of a number of components:
@@ -78,10 +78,22 @@ class Callback(object):
                     cb_data and cb_obj variables available containing
                     additional information about the event.
 
-    * code        : Defines any additional JS code to be executed,
+    * code       :  Defines any additional JS code to be executed,
                     which can modify the data object that is sent to
                     the backend.
 
+    * event      :  If the Callback should listen to bokeh events this
+                    should declare the type of event, e.g. 'tap',
+                    'keypress' etc. (optional)
+
+    * change     :  If the Callback should listen to a particular
+                    attribute change on a model defined in the handles
+                    this should declare the name of that attribute
+                    (optional)
+
+    If either the event or change attributes are declared the Callback
+    will be registered using the on_event or on_change machinery,
+    otherwise it will be treated as a regular callback on the model.
     The callback can also define a _process_msg method, which can
     modify the data sent by the callback before it is passed to the
     streams.
@@ -159,6 +171,12 @@ class Callback(object):
     # The plotting handle(s) to attach the JS callback on
     handles = []
 
+    # Callback will listen to events of the supplied type on the handles
+    event = None
+
+    # Callback will listen to changes to this attribute on the handles
+    change = None
+
     _comm_type = JupyterCommJS
 
     # Timeout if a comm message is swallowed
@@ -168,8 +186,6 @@ class Callback(object):
     debounce = 20
 
     _callbacks = {}
-
-    event = False
 
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
@@ -276,14 +292,13 @@ class Callback(object):
         attributes = attributes_js(self.attributes, references)
         code = 'var data = {};\n' + attributes + self.code + self_callback
 
+        js_callback = CustomJS(args=references, code=code)
         if self.event:
-            js_callback = CustomJS(args=references, code=code)
             handle.js_on_event(self.event, js_callback)
-            return
-
-        # Merge callbacks if another callback has already been attached
-        # otherwise set it
-        if id(handle.callback) in self._callbacks:
+        elif self.change:
+            handle.js_on_change(self.change, js_callback)
+        elif id(handle.callback) in self._callbacks:
+            # Merge callbacks if another callback has already been attached
             cb = self._callbacks[id(handle.callback)]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
@@ -292,7 +307,6 @@ class Callback(object):
             else:
                 handle.callback.code += code
         else:
-            js_callback = CustomJS(args=references, code=code)
             self._callbacks[id(js_callback)] = self
             handle.callback = js_callback
 
