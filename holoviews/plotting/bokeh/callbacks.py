@@ -169,6 +169,8 @@ class Callback(object):
 
     _callbacks = {}
 
+    event = False
+
     def __init__(self, plot, streams, source, **params):
         self.plot = plot
         self.streams = streams
@@ -273,6 +275,11 @@ class Callback(object):
 
         attributes = attributes_js(self.attributes, references)
         code = 'var data = {};\n' + attributes + self.code + self_callback
+
+        if self.event:
+            js_callback = CustomJS(args=references, code=code)
+            handle.js_on_event(self.event, js_callback)
+            return
 
         # Merge callbacks if another callback has already been attached
         # otherwise set it
