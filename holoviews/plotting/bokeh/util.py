@@ -17,7 +17,8 @@ from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row, ToolbarBox)
+from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
+                          ToolbarBox, FactorRange, Range1d)
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
 if bokeh_version >= '0.12':
@@ -25,6 +26,8 @@ if bokeh_version >= '0.12':
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
+
+from ..util import dim_axis_label
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -125,7 +128,7 @@ def mpl_to_bokeh(properties):
     return new_properties
 
 
-def layout_padding(plots):
+def layout_padding(plots, renderer):
     """
     Temporary workaround to allow empty plots in a
     row of a bokeh GridPlot type. Should be removed
@@ -136,8 +139,7 @@ def layout_padding(plots):
     for r, row in enumerate(plots):
         for c, p in enumerate(row):
             if p is not None:
-                width = p.plot_width if isinstance(p, Plot) else p.width
-                height = p.plot_height if isinstance(p, Plot) else p.height
+                width, height = renderer.get_size(p)
                 widths[c] = max(widths[c], width)
                 heights[r] = max(heights[r], height)
 
@@ -146,16 +148,57 @@ def layout_padding(plots):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                p = Figure(plot_width=widths[c],
-                           plot_height=heights[r])
-                p.text(x=0, y=0, text=[' '])
+                x_range = Range1d(start=0, end=1)
+                y_range = Range1d(start=0, end=1)
+                p = Figure(plot_width=widths[c], plot_height=heights[r],
+                           x_range=x_range, y_range=y_range)
                 p.xaxis.visible = False
                 p.yaxis.visible = False
-                p.outline_line_color = None
-                p.xgrid.grid_line_color = None
-                p.ygrid.grid_line_color = None
+                p.outline_line_alpha = 0
+                p.grid.grid_line_alpha = 0
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def make_axis(axis, size, factors, dim, flip=False, rotation=0):
+    factors = list(map(dim.pprint_value, factors))
+    ranges = FactorRange(factors=factors)
+    ranges2 = Range1d(start=0, end=1)
+    axis_label = dim_axis_label(dim)
+
+    rotation = np.radians(rotation)
+    if axis == 'x':
+        # Adjust height to compensate for label rotation
+        height = int(50 + np.abs(np.sin(rotation)) * 30)
+        opts = dict(x_axis_type='auto', x_axis_label=axis_label,
+                    x_range=ranges, y_range=ranges2, plot_height=height,
+                    plot_width=size)
+    else:
+        # Adjust width to compensate for label rotation
+        width = int(80 - np.abs(np.sin(rotation)) * 30)
+        opts = dict(y_axis_label=axis_label, x_range=ranges2,
+                    y_range=ranges, plot_width=width, plot_height=size)
+
+    p = Figure(toolbar_location=None, **opts)
+    p.outline_line_alpha = 0
+    p.grid.grid_line_alpha = 0
+
+    if axis == 'x':
+        p.yaxis.visible = False
+        axis = p.xaxis[0]
+        if flip:
+            p.above = p.below
+            p.below = []
+            p.xaxis[:] = p.above
+    else:
+        p.xaxis.visible = False
+        axis = p.yaxis[0]
+        if flip:
+            p.right = p.left
+            p.left = []
+            p.yaxis[:] = p.right
+    axis.major_label_orientation = rotation
+    return p
 
 
 def convert_datetime(time):
