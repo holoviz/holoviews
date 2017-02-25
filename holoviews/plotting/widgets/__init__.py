@@ -146,7 +146,7 @@ class NdWidget(param.Parameterized):
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
-        mode = repr(self.renderer.mode)
+        mode = str(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
         if json_path and json_path[-1] != '/':
