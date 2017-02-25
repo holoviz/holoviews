@@ -796,6 +796,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
             self.assertIsInstance(grow2, Row)
             self.assertEqual(len(grow1.children), 2)
             self.assertEqual(len(grow2.children), 2)
+            ax_row, grid_row = grow1.children
+            grow1, grow2 = grid_row.children[0].children
             gfig1, gfig2 = grow1.children
             gfig3, gfig4 = grow2.children
             self.assertIsInstance(gfig1, Figure)
