@@ -600,9 +600,12 @@ class ColorbarPlot(ElementPlot):
 
         # Get colorbar label
         dim = element.get_dimension(dim)
-        if dim is None:
-            dim = element.vdims[0]
-        label = str(dim)
+        if dim:
+            label = dim.pprint_label
+        elif element.vdims:
+            label = element.vdims[0].pprint_label
+        elif dim is None:
+            label = ''
 
         padding = self.cbar_padding
         width = self.cbar_width
