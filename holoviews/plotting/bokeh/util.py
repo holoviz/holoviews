@@ -168,6 +168,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0):
 
     rotation = np.radians(rotation)
     if axis == 'x':
+        align = 'center'
         # Adjust height to compensate for label rotation
         height = int(50 + np.abs(np.sin(rotation)) * 30)
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
@@ -175,6 +176,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0):
                     plot_width=size)
     else:
         # Adjust width to compensate for label rotation
+        align = 'left' if flip else 'right'
         width = int(80 - np.abs(np.sin(rotation)) * 30)
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
@@ -198,6 +200,8 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0):
             p.left = []
             p.yaxis[:] = p.right
     axis.major_label_orientation = rotation
+    axis.major_label_text_align = align
+    axis.major_label_text_baseline = 'middle'
     return p
 
 

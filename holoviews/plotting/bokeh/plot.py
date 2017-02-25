@@ -210,13 +210,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         If enabled the x-axes of the GridSpace will be drawn from the
         objects inside the Grid rather than the GridSpace dimensions.""")
 
-    xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['bottom', 'top', None], doc="""
+    xaxis = param.ObjectSelector(default=True,
+                                 objects=['bottom', 'top', None, True, False], doc="""
         Whether and where to display the xaxis, supported options are
         'bottom', 'top' and None.""")
 
-    yaxis = param.ObjectSelector(default='left',
-                                 objects=['left', 'right', None], doc="""
+    yaxis = param.ObjectSelector(default=True,
+                                 objects=['left', 'right', None, True, False], doc="""
         Whether and where to display the yaxis, supported options are
         'left', 'right' and None.""")
 
@@ -263,17 +263,17 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             # Create axes
             kwargs = {}
             if c == 0 and r != 0:
-                kwargs['xaxis'] = 'bottom-bare'
-                kwargs['width'] = self.plot_size+40
+                kwargs['xaxis'] = None
+                kwargs['width'] = self.plot_size+50
             if c != 0 and r == 0:
-                kwargs['yaxis'] = 'left-bare'
-                kwargs['height'] = self.plot_size+40
+                kwargs['yaxis'] = None
+                kwargs['height'] = self.plot_size+50
             if c == 0 and r == 0:
-                kwargs['width'] = self.plot_size+40
-                kwargs['height'] = self.plot_size+40
+                kwargs['width'] = self.plot_size+50
+                kwargs['height'] = self.plot_size+50
             if r != 0 and c != 0:
-                kwargs['xaxis'] = 'bottom-bare'
-                kwargs['yaxis'] = 'left-bare'
+                kwargs['xaxis'] = None
+                kwargs['yaxis'] = None
 
             if 'width' not in kwargs or not self.shared_yaxis:
                 kwargs['width'] = self.plot_size
@@ -283,10 +283,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 kwargs['border'] = 0
 
             if not self.shared_xaxis:
-                kwargs['xaxis'] = 'bottom-bare'
+                kwargs['xaxis'] = None
 
             if not self.shared_yaxis:
-                kwargs['yaxis'] = 'left-bare'
+                kwargs['yaxis'] = None
 
             if isinstance(layout, GridMatrix):
                 if view.traverse(lambda x: x, [Histogram]):
