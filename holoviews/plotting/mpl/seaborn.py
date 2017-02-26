@@ -54,10 +54,11 @@ class RegressionPlot(SeabornPlot):
                   'x_jitter', 'y_jitter', 'x_partial', 'y_partial']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
+        plot_kwargs.pop('zorder')
         return {'axis': sns.regplot(*plot_data, ax=ax, **plot_kwargs)}
 
     def get_data(self, element, ranges, style):
-        xs, ys = (element[d] for d in self.dimensions()[:1])
+        xs, ys = (element[d] for d in element.dimensions()[:2])
         return (xs, ys), style, {}
 
 
