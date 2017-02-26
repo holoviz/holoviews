@@ -83,10 +83,10 @@ class DataConversion(object):
                 raise ValueError('Cannot supply both mdims and groupby')
             else:
                 self._element.warning("'mdims' keyword has been renamed "
-                                      "to groupby; the name mdims is "
+                                      "to 'groupby'; the name mdims is "
                                       "deprecated and will be removed "
                                       "after version 1.7.")
-                groupby = kwargs['mdims']
+                groupby = kwargs.pop('mdims')
 
         if kdims is None:
             kdims = self._element.kdims
