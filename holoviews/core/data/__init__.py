@@ -102,7 +102,7 @@ class DataConversion(object):
         elif groupby and not isinstance(groupby, list):
             groupby = [groupby]
 
-        if new_type._1d:
+        if self._element.interface.gridded:
             selected = self._element
         else:
             selected = self._element.reindex(groupby+kdims, vdims)
