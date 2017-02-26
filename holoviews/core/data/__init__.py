@@ -99,7 +99,10 @@ class DataConversion(object):
         elif groupby and not isinstance(groupby, list):
             groupby = [groupby]
 
-        selected = self._element.reindex(groupby+kdims, vdims)
+        if new_type._1d:
+            selected = self._element
+        else:
+            selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
                   'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
