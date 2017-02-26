@@ -37,7 +37,7 @@ try:
     from holoviews.plotting.bokeh.callbacks import Callback
     from bokeh.models import (
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
-        ToolbarBox, Spacer
+        ToolbarBox, Spacer, FixedTicker, FuncTickFormatter
     )
     from bokeh.models.mappers import (LinearColorMapper, LogColorMapper,
                                       CategoricalColorMapper)
@@ -760,7 +760,103 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
+    def test_element_show_frame_disabled(self):
+        curve = Curve(range(10))(plot=dict(show_frame=False))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.outline_line_alpha, 0)
 
+    def test_overlay_show_frame_disabled(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(show_frame=False))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.outline_line_alpha, 0)
+
+    def test_element_no_xaxis(self):
+        curve = Curve(range(10))(plot=dict(xaxis=None))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertFalse(plot.xaxis[0].visible)
+
+    def test_element_no_yaxis(self):
+        curve = Curve(range(10))(plot=dict(yaxis=None))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertFalse(plot.yaxis[0].visible)
+
+    def test_element_no_xaxis(self):
+        curve = Curve(range(10))(plot=dict(xaxis=None))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertFalse(plot.xaxis[0].visible)
+
+    def test_element_no_yaxis(self):
+        curve = Curve(range(10))(plot=dict(yaxis=None))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertFalse(plot.yaxis[0].visible)
+
+    def test_overlay_no_xaxis(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xaxis=None))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertFalse(plot.xaxis[0].visible)
+
+    def test_overlay_no_yaxis(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yaxis=None))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertFalse(plot.yaxis[0].visible)
+
+    def test_element_xrotation(self):
+        curve = Curve(range(10))(plot=dict(xrotation=90))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].major_label_orientation, np.pi/2)
+
+    def test_element_yrotation(self):
+        curve = Curve(range(10))(plot=dict(yrotation=90))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
+
+    def test_overlay_xrotation(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xrotation=90))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.xaxis[0].major_label_orientation, np.pi/2)
+
+    def test_overlay_yrotation(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yrotation=90))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
+
+    def test_element_xticks_list(self):
+        curve = Curve(range(10))(plot=dict(xticks=[0, 5, 10]))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
+
+    def test_element_yticks_list(self):
+        curve = Curve(range(10))(plot=dict(yticks=[0, 5, 10]))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
+
+    def test_overlay_xticks_list(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xticks=[0, 5, 10]))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
+
+    def test_overlay_yticks_list(self):
+        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yticks=[0, 5, 10]))
+        plot = bokeh_renderer.get_plot(overlay).state
+        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
+
+    def test_element_formatter_xaxis(self):
+        def formatter(x):
+            return '%s' % x
+        curve = Curve(range(10), kdims=[Dimension('x', value_format=formatter)])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
+
+    def test_element_formatter_yaxis(self):
+        def formatter(x):
+            return '%s' % x
+        curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
