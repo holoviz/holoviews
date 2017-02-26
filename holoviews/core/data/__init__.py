@@ -89,7 +89,10 @@ class DataConversion(object):
                 groupby = kwargs.pop('mdims')
 
         if kdims is None:
-            kdims = self._element.kdims
+            kd_filter = groupby or []
+            if not isinstance(kd_filter, list):
+                kd_filter = [groupby]
+            kdims = [kd for kd in self._element.kdims if kd not in kd_filter]
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
             vdims = self._element.vdims
