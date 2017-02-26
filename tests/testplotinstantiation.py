@@ -31,6 +31,13 @@ try:
 except:
     mpl_renderer = None
 
+
+try:
+    import seaborn as sns
+    from holoviews.interface.seaborn import Regression
+except:
+    sns = None
+
 try:
     import holoviews.plotting.bokeh
     bokeh_renderer = Store.renderers['bokeh']
@@ -96,6 +103,14 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         """
         o = Overlay([Curve(np.array([[0, 1]])) , Scatter([[1,1]]) , Curve(np.array([[0, 1]]))])
         OverlayPlot(o)
+
+    def test_regression_plot_initializes(self):
+        if sns is None:
+            raise SkipTest("Seaborn required to test Regression plot")
+        reg = Regression(np.random.rand(20,2))
+        plot = mpl_renderer.get_plot(reg)
+        axis = plot.handles['axis']
+        plot.initialize_plot()
 
     def test_dynamic_nonoverlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
