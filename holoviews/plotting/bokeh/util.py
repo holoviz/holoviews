@@ -162,6 +162,7 @@ def layout_padding(plots, renderer):
 
 def make_axis(axis, size, factors, dim, flip=False, rotation=0):
     factors = list(map(dim.pprint_value, factors))
+    nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
@@ -170,14 +171,14 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0):
     if axis == 'x':
         align = 'center'
         # Adjust height to compensate for label rotation
-        height = int(50 + np.abs(np.sin(rotation)) * 30)
+        height = int(50 + np.abs(np.sin(rotation)) * (nchars*8))
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
                     x_range=ranges, y_range=ranges2, plot_height=height,
                     plot_width=size)
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
-        width = int(80 - np.abs(np.sin(rotation)) * 30)
+        width = int(50 + np.abs(np.cos(rotation)) * (nchars*8))
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
 
