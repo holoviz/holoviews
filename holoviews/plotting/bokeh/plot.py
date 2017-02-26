@@ -280,7 +280,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if 'height' not in kwargs or not self.shared_xaxis:
                 kwargs['height'] = self.plot_size
             if 'border' not in kwargs:
-                kwargs['border'] = 0
+                kwargs['border'] = 3
 
             if not self.shared_xaxis:
                 kwargs['xaxis'] = None
