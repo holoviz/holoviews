@@ -869,6 +869,14 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
             partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y')
         self.assertEqual(partial.last['Val'], array[:, -1, :].T.flatten())
 
+    def test_dataset_groupby_drop_dims_dynamic(self):
+        array = np.random.rand(3, 20, 10)
+        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+                     kdims=['x', 'y', 'z'], vdims=['Val'])
+        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
+            self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
+
 
 class IrisDatasetTest(GridDatasetTest):
     """
