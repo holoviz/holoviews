@@ -105,19 +105,26 @@ class XArrayInterface(GridInterface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        drop_dim = len(group_kwargs['kdims']) != len(element_dims)
+
         # XArray 0.7.2 does not support multi-dimensional groupby
         # Replace custom implementation when 
         # https://github.com/pydata/xarray/pull/818 is merged.
         group_by = [d.name for d in index_dims]
+        data = []
         if len(dimensions) == 1:
-            data = [(k, group_type(v, **group_kwargs)) for k, v in
-                    dataset.data.groupby(index_dims[0].name)]
+            for k, v in dataset.data.groupby(index_dims[0].name):
+                if drop_dim:
+                    v = v.to_dataframe().reset_index()
+                data.append((k, group_type(v, **group_kwargs)))
         else:
             unique_iters = [cls.values(dataset, d, False) for d in group_by]
             indexes = zip(*util.cartesian_product(unique_iters))
-            data = [(k, group_type(dataset.data.sel(**dict(zip(group_by, k))),
-                                   **group_kwargs))
-                    for k in indexes]
+            for k in indexes:
+                sel = dataset.data.sel(**dict(zip(group_by, k)))
+                if drop_dim:
+                    sel = sel.to_dataframe().reset_index()
+                data.append((k, group_type(sel, **group_kwargs)))
 
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
@@ -233,10 +240,8 @@ class XArrayInterface(GridInterface):
     
     @classmethod
     def dframe(cls, dataset, dimensions):
-        dimensions = [dataset.get_dimension(d, strict=True).name
-                      for d in dimensions]
         if dimensions:
-            return dataset.reindex(columns=dimensions)
+            return dataset.reindex(columns=dimensions).data.to_dataframe().reset_index(dimensions)
         else:
             return dataset.data.to_dataframe().reset_index(dimensions)
 

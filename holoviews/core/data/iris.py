@@ -11,6 +11,7 @@ import numpy as np
 from .interface import Interface
 from .grid import GridInterface
 from ..dimension import Dimension
+from ..element import Element
 from ..ndmapping import (NdMapping, item_check, sorted_context)
 from ..spaces import HoloMap
 from .. import util
@@ -178,14 +179,25 @@ class CubeInterface(GridInterface):
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
 
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(dataset))
+            group_kwargs['kdims'] = slice_dims
+        group_kwargs.update(kwargs)
+
+        drop_dim = len(group_kwargs['kdims']) != len(slice_dims)
+
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])
         data = []
         for key in unique_coords:
             constraint = iris.Constraint(**dict(zip(constraints, key)))
-            cube = dataset.clone(dataset.data.extract(constraint),
-                                  new_type=group_type,
-                                  **dict(kwargs, kdims=slice_dims))
+            extracted = dataset.data.extract(constraint)
+            if drop_dim:
+                extracted = group_type(extracted, kdims=slice_dims).columns()
+            cube = group_type(extracted, **group_kwargs)
             data.append((key, cube))
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
