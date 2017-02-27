@@ -23,6 +23,20 @@ except:
     dd = None
 
 
+class DatatypeContext(object):
+
+    def __init__(self, datatypes):
+        self.datatypes = datatypes
+        self._old_datatypes = None
+
+    def __enter__(self):
+        self._old_datatypes = Dataset.datatype
+        Dataset.datatype = self.datatypes
+
+    def __exit__(self, *args):
+        Dataset.datatype = self._old_datatypes
+
+
 class HomogeneousColumnTypes(object):
     """
     Tests for data formats that require all dataset to have the same
@@ -593,6 +607,8 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     Test of the Grid array interface
     """
 
+    datatype = 'grid'
+
     def setUp(self):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['grid']
@@ -845,11 +861,29 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         for c, d in keys:
             self.assertEqual(grouped[c, d], dataset.select(c=c, d=d).reindex(['a', 'b']))
 
+    def test_dataset_groupby_drop_dims(self):
+        array = np.random.rand(3, 20, 10)
+        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+                     kdims=['x', 'y', 'z'], vdims=['Val'])
+        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y')
+        self.assertEqual(partial.last['Val'], array[:, -1, :].T.flatten())
+
+    def test_dataset_groupby_drop_dims_dynamic(self):
+        array = np.random.rand(3, 20, 10)
+        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
+                     kdims=['x', 'y', 'z'], vdims=['Val'])
+        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+            partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
+            self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
+
 
 class IrisDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
     """
+
+    datatype = 'cube'
 
     def setUp(self):
         import iris
@@ -900,6 +934,8 @@ class XArrayDatasetTest(GridDatasetTest):
     """
     Tests for Iris interface
     """
+
+    datatype = 'xarray'
 
     def setUp(self):
         import xarray

@@ -83,13 +83,16 @@ class DataConversion(object):
                 raise ValueError('Cannot supply both mdims and groupby')
             else:
                 self._element.warning("'mdims' keyword has been renamed "
-                                      "to groupby; the name mdims is "
+                                      "to 'groupby'; the name mdims is "
                                       "deprecated and will be removed "
                                       "after version 1.7.")
-                groupby = kwargs['mdims']
+                groupby = kwargs.pop('mdims')
 
         if kdims is None:
-            kdims = self._element.kdims
+            kd_filter = groupby or []
+            if not isinstance(kd_filter, list):
+                kd_filter = [groupby]
+            kdims = [kd for kd in self._element.kdims if kd not in kd_filter]
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
             vdims = self._element.vdims
@@ -99,7 +102,10 @@ class DataConversion(object):
         elif groupby and not isinstance(groupby, list):
             groupby = [groupby]
 
-        selected = self._element.reindex(groupby+kdims, vdims)
+        if self._element.interface.gridded:
+            selected = self._element
+        else:
+            selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
                   'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
@@ -428,15 +434,20 @@ class Dataset(Element):
 
         if dynamic:
             group_dims = [d.name for d in self.kdims if d not in dimensions]
-            group_kwargs = dict(util.get_param_values(self), **kwargs)
-            group_kwargs['kdims'] = [self.get_dimension(d) for d in group_dims]
+            kdims = [self.get_dimension(d) for d in group_dims]
+            group_kwargs = dict(util.get_param_values(self), kdims=kdims)
+            group_kwargs.update(kwargs)
+            drop_dim = len(kdims) != len(group_kwargs['kdims'])
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
                 group = self.select(**constraint)
                 if np.isscalar(group):
                     return group_type(([group],), group=self.group,
                                       label=self.label, vdims=self.vdims)
-                return group_type(group.reindex(group_dims), **group_kwargs)
+                data = group.reindex(group_dims)
+                if drop_dim and self.interface.gridded:
+                    data = data.columns()
+                return group_type(data, **group_kwargs)
             dynamic_dims = [d(values=list(self.interface.values(self, d.name, False)))
                             for d in dimensions]
             return DynamicMap(load_subset, kdims=dynamic_dims)
