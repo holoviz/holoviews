@@ -569,7 +569,7 @@ class GenericElementPlot(DimensionedPlot):
 
         plot_element = self.hmap.last
         if self.batched and not isinstance(self, GenericOverlayPlot):
-            plot_element = [el for el in plot_element if len(el) > 0][-1]
+            plot_element = [el for el in plot_element if el][-1]
 
         top_level = keys is None
         if top_level:
