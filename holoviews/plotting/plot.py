@@ -158,7 +158,8 @@ class DimensionedPlot(Plot):
 
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'labels', 'ticks',
-                      'title', 'legend', 'legend_title']
+                      'title', 'legend', 'legend_title', 'xticks',
+                      'yticks']
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -298,6 +299,8 @@ class DimensionedPlot(Plot):
             return {label:self.fontsize[key]}
         elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
             return {label:self.fontsize['labels']}
+        elif key in ['xticks', 'yticks'] and 'ticks' in self.fontsize:
+            return {label:self.fontsize['ticks']}
         else:
             return {}
 
