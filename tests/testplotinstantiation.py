@@ -695,6 +695,54 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['x_range'].start, np.datetime64(dt.datetime(2016, 1, 1)))
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
+    def test_curve_fontsize_xlabel(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'xlabel': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_ylabel(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'ylabel': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_both_labels(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'labels': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
+                         {'value': '14pt'})
+        self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_xticks(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'xticks': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_yticks(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'yticks': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_both_ticks(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'ticks': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
+                         {'value': '14pt'})
+        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
+                         {'value': '14pt'})
+
+    def test_curve_fontsize_xticks_and_both_ticks(self):
+        curve = Curve(range(10))(plot=dict(fontsize={'xticks': '18pt', 'ticks': '14pt'}))
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
+                         {'value': '18pt'})
+        self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
+                         {'value': '14pt'})
+
     def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
                              for j in range(2,4)}) +

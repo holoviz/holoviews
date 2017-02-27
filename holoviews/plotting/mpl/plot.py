@@ -453,8 +453,9 @@ class GridPlot(CompositePlot):
             layout_axis.set_position(self.position)
         layout_axis.patch.set_visible(False)
 
-        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
-        if tick_fontsize: layout_axis.tick_params(**tick_fontsize)
+        for ax, ax_obj in zip(['x', 'y'], [layout_axis.xaxis, layout_axis.yaxis]):
+            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize', common=False)
+            if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
         # Set labels
         layout_axis.set_xlabel(str(layout.kdims[0]),

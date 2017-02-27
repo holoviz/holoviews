@@ -381,10 +381,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             title_font = self._fontsize('title', 'title_text_font_size')
             return dict(title=title, title_text_color='black', **title_font)
         else:
-            title_font = self._fontsize('title', 'text_font_size')
-            title_font['text_font_size'] = value(title_font['text_font_size'])
-            return dict(text=title, text_color='black', **title_font)
-
+            opts = dict(text=title, text_color='black')
+            title_font = self._fontsize('title').get('fontsize')
+            if title_font:
+                opts['text_font_size'] = value(title_font)
+            return opts
 
     def _init_axes(self, plot):
         if self.xaxis is None:
@@ -420,6 +421,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
         else:
+            labelsize = self._fontsize('%slabel' % axis).get('fontsize')
+            if labelsize:
+                axis_props['axis_label_text_font_size'] = labelsize
+            ticksize = self._fontsize('%sticks' % axis, common=False).get('fontsize')
+            if ticksize:
+                axis_props['major_label_text_font_size'] = value(ticksize)
             rotation = self.xrotation if axis == 'x' else self.yrotation
             if rotation:
                 axis_props['major_label_orientation'] = np.radians(rotation)

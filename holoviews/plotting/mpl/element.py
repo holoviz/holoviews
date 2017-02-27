@@ -248,8 +248,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
                                  rotation=self.zrotation)
 
-        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
-        if tick_fontsize: axis.tick_params(**tick_fontsize)
+        for ax, ax_obj in zip('xy', [axis.xaxis, axis.yaxis]):
+            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
+            if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
 
     def _finalize_artist(self, element):
