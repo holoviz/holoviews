@@ -259,7 +259,8 @@ class HistogramPlot(ChartPlot):
         Whether to overlay a grid on the axis.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
-                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch']
+                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
+                  'linewidth']
 
     def __init__(self, histograms, **params):
         self.center = False
