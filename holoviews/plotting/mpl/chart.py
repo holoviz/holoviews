@@ -1058,8 +1058,8 @@ class BoxPlot(ChartPlot):
             data.append(group[group.vdims[0]])
             labels.append(label)
         style['labels'] = labels
-        style.pop('zorder')
-        style.pop('label')
+        style.pop('zorder', None)
+        style.pop('label', None)
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims,
