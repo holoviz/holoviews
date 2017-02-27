@@ -136,9 +136,12 @@ def display_hook(fn):
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
+            t, v, tb = sys.exc_info()
             try: option_state(element, state=optstate)
-            except: pass
-            raise
+            except Exception: pass
+            if sys.version_info[0] < 3:
+                raise (t, v, tb)
+            raise v.with_traceback(tb)
     return wrapped
 
 
