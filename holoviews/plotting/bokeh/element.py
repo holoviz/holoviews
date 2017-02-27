@@ -384,7 +384,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             opts = dict(text=title, text_color='black')
             title_font = self._fontsize('title').get('fontsize')
             if title_font:
-                opts['title_text_font_size'] = value(title_font)
+                opts['text_font_size'] = value(title_font)
             return opts
 
     def _init_axes(self, plot):
