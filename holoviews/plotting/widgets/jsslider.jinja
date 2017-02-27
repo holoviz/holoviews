@@ -235,7 +235,7 @@
     function create_widget() {
         setTimeout(function() {
             anim{{ id }} = new {{ widget_name }}(frame_data, "{{ id }}", widget_ids,
-				keyMap, dim_vals, notFound, {{ load_json }}, {{ mode }},
+				keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
 				{{ cached }}, "{{ json_path}}", {{ dynamic }});
         }, 0);
     }
