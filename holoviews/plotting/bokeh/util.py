@@ -131,10 +131,7 @@ def mpl_to_bokeh(properties):
 
 def layout_padding(plots, renderer):
     """
-    Temporary workaround to allow empty plots in a
-    row of a bokeh GridPlot type. Should be removed
-    when https://github.com/bokeh/bokeh/issues/2891
-    is resolved.
+    Pads Nones in a list of lists of plots with empty plots.
     """
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
