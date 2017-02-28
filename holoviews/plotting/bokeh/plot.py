@@ -202,6 +202,19 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     object.
     """
 
+    axis_offset = param.Integer(default=50, doc="""
+        Number of pixels to adjust row and column widths and height by
+        to compensate for shared axes.""")
+
+    fontsize = param.Parameter(default={'title': '16pt'},
+                               allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'title': '15pt'}""")
+
     shared_xaxis = param.Boolean(default=False, doc="""
         If enabled the x-axes of the GridSpace will be drawn from the
         objects inside the Grid rather than the GridSpace dimensions.""")
@@ -261,16 +274,17 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 vtype = None
 
             # Create axes
+            offset = self.axis_offset
             kwargs = {}
             if c == 0 and r != 0:
                 kwargs['xaxis'] = None
-                kwargs['width'] = self.plot_size+50
+                kwargs['width'] = self.plot_size+offset
             if c != 0 and r == 0:
                 kwargs['yaxis'] = None
-                kwargs['height'] = self.plot_size+50
+                kwargs['height'] = self.plot_size+offset
             if c == 0 and r == 0:
-                kwargs['width'] = self.plot_size+50
-                kwargs['height'] = self.plot_size+50
+                kwargs['width'] = self.plot_size+offset
+                kwargs['height'] = self.plot_size+offset
             if r != 0 and c != 0:
                 kwargs['xaxis'] = None
                 kwargs['yaxis'] = None
@@ -359,15 +373,21 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if self.xaxis:
             flip = self.shared_xaxis
             rotation = self.xrotation
+            lsize = self._fontsize('xlabel').get('fontsize')
+            tsize = self._fontsize('xticks', common=False).get('fontsize')
             xfactors = list(unique_iterator(self.layout.dimension_values(0)))
             x_axis = make_axis('x', width, xfactors, self.layout.kdims[0],
-                               flip=flip, rotation=rotation)
+                               flip=flip, rotation=rotation, label_size=lsize,
+                               tick_size=tsize)
         if self.yaxis and self.layout.ndims > 1:
             flip = self.shared_yaxis
             rotation = self.yrotation
+            lsize = self._fontsize('ylabel').get('fontsize')
+            tsize = self._fontsize('yticks', common=False).get('fontsize')
             yfactors = list(unique_iterator(self.layout.dimension_values(1)))
             y_axis = make_axis('y', height, yfactors, self.layout.kdims[1],
-                               flip=flip, rotation=rotation)
+                               flip=flip, rotation=rotation, label_size=lsize,
+                               tick_size=tsize)
         if x_axis and y_axis:
             plot = filter_toolboxes(plot)
             r1, r2 = ([y_axis, plot], [None, x_axis])

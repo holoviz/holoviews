@@ -15,6 +15,7 @@ import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.models.plots import Plot
 from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
@@ -160,25 +161,56 @@ def layout_padding(plots, renderer):
     return expanded_plots
 
 
-def make_axis(axis, size, factors, dim, flip=False, rotation=0):
+def font_size_to_pixels(size):
+    """
+    Convert a fontsize to a pixel value
+    """
+    if size is None or not isinstance(size, basestring):
+        return
+    conversions = {'em': 16, 'pt': 16/12.}
+    val = re.findall('\d+', size)
+    unit = re.findall('[a-z]+', size)
+    if (val and not unit) or (val and unit[0] == 'px'):
+        return int(val[0])
+    elif val and unit[0] in conversions:
+        return (int(int(val[0]) * conversions[unit[0]]))
+
+
+def make_axis(axis, size, factors, dim, flip=False, rotation=0,
+              label_size=None, tick_size=None, axis_height=40):
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
 
+    axis_props = {}
+    if label_size:
+        axis_props['axis_label_text_font_size'] = value(label_size)
+    if tick_size:
+        axis_props['major_label_text_font_size'] = value(tick_size)
+
+    tick_px = font_size_to_pixels(tick_size)
+    if tick_px is None:
+        tick_px = 8
+    label_px = font_size_to_pixels(label_size)
+    if label_px is None:
+        label_px = 10
+
     rotation = np.radians(rotation)
     if axis == 'x':
         align = 'center'
         # Adjust height to compensate for label rotation
-        height = int(50 + np.abs(np.sin(rotation)) * (nchars*8))
+        height = int(axis_height + np.abs(np.sin(rotation)) *
+                     ((nchars*tick_px)*0.5)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
                     x_range=ranges, y_range=ranges2, plot_height=height,
                     plot_width=size)
     else:
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
-        width = int(50 + np.abs(np.cos(rotation)) * (nchars*8))
+        width = int(axis_height + np.abs(np.cos(rotation)) *
+                    ((nchars*tick_px)*0.5)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
 
@@ -203,6 +235,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0):
     axis.major_label_orientation = rotation
     axis.major_label_text_align = align
     axis.major_label_text_baseline = 'middle'
+    axis.update(**axis_props)
     return p
 
 
