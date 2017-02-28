@@ -296,6 +296,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if 'border' not in kwargs:
                 kwargs['border'] = 3
 
+            kwargs['show_legend'] = False
+
             if not self.shared_xaxis:
                 kwargs['xaxis'] = None
 
