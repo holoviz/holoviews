@@ -259,7 +259,8 @@ class HistogramPlot(ChartPlot):
         Whether to overlay a grid on the axis.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
-                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch']
+                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
+                  'linewidth']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -1058,8 +1059,8 @@ class BoxPlot(ChartPlot):
             data.append(group[group.vdims[0]])
             labels.append(label)
         style['labels'] = labels
-        style.pop('zorder')
-        style.pop('label')
+        style = {k: v for k, v in style.items()
+                 if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims,
