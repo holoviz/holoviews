@@ -28,19 +28,19 @@ class ImageInterface(GridInterface):
             vdims = eltype.vdims
 
         kwargs = {}
-        dimensions = [d.alias if isinstance(d, Dimension) else
+        dimensions = [d.name if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
-            xs, ys = np.asarray(data[kdims[0].alias]), np.asarray(data[kdims[1].alias])
+            xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
             l, r, xdensity, invertx = util.bound_range(xs, None)
             b, t, ydensity, inverty = util.bound_range(ys, None)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
-                data = np.flipud(np.asarray(data[vdims[0].alias]))
+                data = np.flipud(np.asarray(data[vdims[0].name]))
             else:
-                data = np.dstack([np.flipud(data[vd.alias]) for vd in vdims])
+                data = np.dstack([np.flipud(data[vd.name]) for vd in vdims])
             if invertx:
                 data = data[:, ::-1]
             if inverty:
@@ -123,7 +123,7 @@ class ImageInterface(GridInterface):
         """
         selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
                      for k, sel in selection.items()}
-        coords = tuple(selection[kd.alias] if kd.alias in selection else slice(None)
+        coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in dataset.kdims)
         if not any([isinstance(el, slice) for el in coords]):
             return dataset.data[dataset.sheet2matrixidx(*coords)], {}
@@ -195,7 +195,7 @@ class ImageInterface(GridInterface):
         tuple.
         """
         if len(samples[0]) == 1:
-            return dataset.select(**{dataset.kdims[0].alias:
+            return dataset.select(**{dataset.kdims[0].name:
                                      [s[0] for s in samples]}).columns()
         else:
             return [c+(dataset.data[dataset._coord2matrix(c)],)
@@ -247,7 +247,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [kd.alias if isinstance(kd, Dimension) else kd for kd in kdims]
+        kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
         
@@ -256,7 +256,7 @@ class ImageInterface(GridInterface):
             return data
         elif len(axes) == 1:
             return {kdims[0]: cls.values(dataset, axes[0], expanded=False),
-                    dataset.vdims[0].alias: data}
+                    dataset.vdims[0].name: data}
 
 
 Interface.register(ImageInterface)

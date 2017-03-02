@@ -199,9 +199,9 @@ class GridInterface(DictInterface):
             select = dict(zip(dim_names, unique_key))
             if drop_dim:
                 group_data = dataset.select(**select)
-                group_data = group_data if np.isscalar(group_data) else group_data.columns()
+                group_data, _ = group_data if np.isscalar(group_data) else (group_data.columns(), None)
             else:
-                group_data = cls.select(dataset, **select)
+                group_data, _ = cls.select(dataset, **select)
             if np.isscalar(group_data):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
