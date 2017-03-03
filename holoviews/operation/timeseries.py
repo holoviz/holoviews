@@ -5,6 +5,30 @@ from ..core import ElementOperation, Element
 from ..core.util import pd
 from ..element import Scatter
 
+DF_INTERFACES = []
+try:
+    from ..core.data import PandasInterface
+    DF_INTERFACES.append(PandasInterface)
+except:
+    pass
+
+try:
+    from ..core.data import DaskInterface
+    DF_INTERFACES.append(DaskInterface)
+except:
+    pass
+
+
+def get_df_data(element):
+    """
+    Return element data as dataframe, avoiding casting if already
+    in dataframe format
+    """
+    if element.interface in DF_INTERFACES:
+        return element.data
+    else:
+        return element.dframe()
+
 
 class rolling(ElementOperation):
     """
@@ -23,7 +47,8 @@ class rolling(ElementOperation):
 
     def _apply(self, element, key=None):
         xdim = element.kdims[0].name
-        df = df.rolling(window=self.p.rolling_window, center=self.p.center, on=xdim)
+        df = get_df_data(element)
+        df = df.set_index(xdim).rolling(window=self.p.rolling_window, center=self.p.center)
         return element.clone(df.apply(self.p.function).reset_index())
 
     def _process(self, element, key=None):
@@ -46,8 +71,8 @@ class resample(ElementOperation):
 
     def _apply(self, element, key=None):
         xdim = element.kdims[0].name
-        df = element.dframe()
-        df = df.resample(rule=self.p.rule, label=self.p.edge, on=xdim)
+        df = get_df_data(element)
+        df = df.set_index(xdim).resample(rule=self.p.rule, label=self.p.edge)
         return element.clone(df.apply(self.p.function).reset_index())
 
     def _process(self, element, key=None):
