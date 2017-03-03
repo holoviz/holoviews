@@ -50,8 +50,10 @@ class Dynamic(param.ParameterizedFunction):
                 elif not isinstance(stream, Stream):
                     raise ValueError('Stream must only contain Stream '
                                      'classes or instances')
-                stream.update(**{k: self.p.operation.p.get(k, v) for k, v in
-                                 stream.contents.items()})
+                updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
+                           if v is None and k in self.p.operation.p}
+                if updates:
+                    stream.update(trigger=False, **updates)
                 streams.append(stream)
             return dmap.clone(streams=streams)
         return dmap
