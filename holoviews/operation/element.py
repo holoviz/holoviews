@@ -575,7 +575,7 @@ class decimate(ElementOperation):
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
 
-    def _process(self, element, key=None):
+    def _apply(self, element, key=None):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
         if element.interface not in column_interfaces:
@@ -604,7 +604,8 @@ class decimate(ElementOperation):
             sliced = element.clone(data)
         return sliced
 
-
+    def _process(self, element, key=None):
+        return element.map(self._apply, Element)
 
 
 class interpolate_curve(ElementOperation):
