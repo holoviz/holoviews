@@ -647,7 +647,7 @@ class interpolate_curve(ElementOperation):
         steps[1:, 1::2] = steps[1:, 0:-2:2]
         return steps
 
-    def _process(self, element, key=None):
+    def _apply(self, element, key=None):
         INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
                              'steps-mid': self.pts_to_midstep,
                              'steps-post': self.pts_to_poststep}
@@ -657,6 +657,9 @@ class interpolate_curve(ElementOperation):
         array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
         return element.clone((array[0, :], array[1, :])+dvals)
+
+    def _process(self, element, key=None):
+        return element.map(self._apply, Element)
 
 
 #==================#
