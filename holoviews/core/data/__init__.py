@@ -196,12 +196,14 @@ class Dataset(Element):
         will return the closest actual sample coordinates.
         """
         if self.ndims > 1:
-            NotImplementedError("Closest method currently only "
-                                "implemented for 1D Elements")
+            raise NotImplementedError("Closest method currently only "
+                                      "implemented for 1D Elements")
 
         xs = self.dimension_values(0)
+        if xs.dtype.kind in 'SO':
+            raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
+        return [xs[idx] for idx in idxs]
 
 
     def sort(self, by=[]):
