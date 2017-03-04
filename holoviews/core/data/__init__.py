@@ -422,7 +422,9 @@ class Dataset(Element):
         if np.isscalar(aggregated):
             return aggregated
         else:
-            new_type = None if ndims >= min_d and ndims <= max_d else Dataset
+            new_type = None
+            if (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d):
+                new_type = Dataset
             try:
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=new_type)
