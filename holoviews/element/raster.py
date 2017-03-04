@@ -87,6 +87,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
 
+
     def _wrap_data(self, data, bounds):
         if isinstance(data, np.ndarray):
             coords = [np.arange(s) for s in data.shape[::-1]]
@@ -137,7 +138,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
             if isinstance(selected, Dataset):
                 return self.clone(selected.columns(), new_type=Dataset)
             elif np.isscalar(selected):
-                data = [kwargs.get(d.name, kwargs.get(d.alias)) for d in self.dimensions()]
+                data = [kwargs.get(d.name, kwargs.get(d.name)) for d in self.dimensions()]
                 data[self.ndims] = selected
                 return self.clone([tuple(data)], new_type=Dataset)
         lens = {len(util.wrap_tuple(s)) for s in samples}
@@ -146,7 +147,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
         if closest:
             length = list(lens)[0]
             if length == 1:
-                samples = self.closest(**{self.kdims[0].alias: samples})
+                samples = self.closest(**{self.kdims[0].name: samples})
                 if np.isscalar(samples): samples = [samples]
             else:
                 samples = self.closest(samples)
@@ -344,35 +345,6 @@ class RGB(Image):
         if sliced is not None:
             self.vdims.append(self.alpha_dimension)
             self.data = data
-
-
-    def __getitem__(self, coords):
-        """
-        Slice the underlying numpy array in sheet coordinates.
-        """
-        if coords in self.dimensions(): return self.dimension_values(coords)
-        coords = util.process_ellipses(self, coords)
-        if not isinstance(coords, slice) and len(coords) > self.ndims:
-            values = coords[self.ndims:]
-            channels = [el for el in values
-                        if isinstance(el, (str, util.unicode, Dimension))]
-            if len(channels) == 1:
-                sliced = super(RGB, self).__getitem__(coords[:self.ndims])
-                if channels[0] not in self.vdims:
-                    raise KeyError("%r is not an available value dimension"
-                                    % channels[0])
-                vidx = self.get_dimension_index(channels[0])
-                val_index = vidx - self.ndims
-                data = sliced.data[:,:, val_index]
-                return Image(data, **dict(util.get_param_values(self),
-                                          vdims=[self.vdims[val_index]]))
-            elif len(channels) > 1:
-                raise KeyError("Channels can only be selected once in __getitem__")
-            elif all(v==slice(None) for v in values):
-                coords = coords[:self.ndims]
-            else:
-                raise KeyError("Only empty value slices currently supported in RGB")
-        return super(RGB, self).__getitem__(coords)
 
 
 class HSV(RGB):
