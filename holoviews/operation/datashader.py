@@ -32,7 +32,7 @@ def discover(dataset):
     Allows datashader to correctly discover the dtypes of the data
     in a holoviews Element.
     """
-    return dsdiscover(dataset.dframe(copy=False))
+    return dsdiscover(PandasInterface.as_dframe(element))
 
 
 @bypixel.pipeline.register(Element)
@@ -141,7 +141,7 @@ class aggregate(ElementOperation):
         elif isinstance(obj, CompositeOverlay):
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
-                df = element.dframe(copy=False)
+                df = PandasInterface.as_dframe(element)
                 if isinstance(obj, NdOverlay):
                     df = df.assign(**dict(zip(obj.dimensions('key', True), key)))
                 paths.append(df)

@@ -516,17 +516,15 @@ class Dataset(Element):
         return self.interface.dimension_type(self, dim_obj)
 
 
-    def dframe(self, dimensions=None, copy=True):
+    def dframe(self, dimensions=None):
         """
         Returns the data in the form of a DataFrame. Supplying a list
         of dimensions filters the dataframe. If the data is already
-        a DataFrame copy=False may be supplied to avoid making a copy.
+        a DataFrame a copy is returned.
         """
-        if pd is None:
-            raise Exception("Cannot return data as dataframe, pandas is not available")
-        elif dimensions:
+        if dimensions:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
-        return self.interface.dframe(self, dimensions, copy)
+        return self.interface.dframe(self, dimensions)
 
 
     def columns(self, dimensions=None):

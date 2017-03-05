@@ -6,10 +6,11 @@ import numpy as np
 from ..core import Dataset, OrderedDict
 from ..core.operation import ElementOperation
 from ..core.util import (is_nan, sort_topologically, one_to_one,
-                         cartesian_product, is_cyclic, get_df_data)
+                         cartesian_product, is_cyclic)
 
 try:
     import pandas as pd
+    from ..core.data import PandasInterface
 except:
     pd = None
 
@@ -141,7 +142,7 @@ class categorical_aggregate2d(ElementOperation):
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
         reindexed = concat_data.reindex([xdim, ydim], vdims)
         if pd:
-            df = reindexed.dframe(copy=False)
+            df = PandasInterface.as_dframe(reindexed)
             df = df.groupby([xdim, ydim], sort=False).first().reset_index()
             agg = reindexed.clone(df)
         else:

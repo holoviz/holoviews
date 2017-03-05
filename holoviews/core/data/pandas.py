@@ -223,13 +223,25 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def dframe(cls, columns, dimensions, copy):
+    def as_dframe(cls, dataset):
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
+        if it already a dataframe type.
+        """
+        if issubclass(dataset.interface, PandasInterface):
+            return dataset.data
+        else:
+            return dataset.dframe()
+
+
+    @classmethod
+    def dframe(cls, columns, dimensions):
         if dimensions:
             dimensions = [columns.get_dimension(d, strict=True).name
                           for d in dimensions]
             return columns.reindex(dimensions).data.copy()
-        elif :
-            return columns.data.copy() if copy else columns.data
+        else:
+            return columns.data.copy()
 
 
 Interface.register(PandasInterface)
