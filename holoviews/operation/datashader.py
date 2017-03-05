@@ -20,8 +20,7 @@ import datashader.transfer_functions as tf
 
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
-from ..core.data import (ArrayInterface, PandasInterface, DaskInterface,
-                         DF_INTERFACES)
+from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
 from ..element import GridImage, Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY
@@ -33,10 +32,7 @@ def discover(dataset):
     Allows datashader to correctly discover the dtypes of the data
     in a holoviews Element.
     """
-    if dataset.interface in DF_INTERFACES:
-        return dsdiscover(dataset.data)
-    else:
-        return dsdiscover(dataset.dframe())
+    return dsdiscover(dataset.dframe(copy=False))
 
 
 @bypixel.pipeline.register(Element)
@@ -135,7 +131,6 @@ class aggregate(ElementOperation):
         kdims = obj.kdims
         vdims = obj.vdims
         x, y = obj.dimensions(label=True)[:2]
-        is_df = lambda x: isinstance(x, Dataset) and x.interface in DF_INTERFACES
         if isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
@@ -146,7 +141,7 @@ class aggregate(ElementOperation):
         elif isinstance(obj, CompositeOverlay):
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
-                df = element.data if is_df(element) else element.dframe()
+                df = element.dframe(copy=False)
                 if isinstance(obj, NdOverlay):
                     df = df.assign(**dict(zip(obj.dimensions('key', True), key)))
                 paths.append(df)

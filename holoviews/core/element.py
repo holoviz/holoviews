@@ -144,7 +144,7 @@ class Element(ViewableElement, Composable, Overlayable):
         return Table(self, **(dict(datatype=datatype) if datatype else {}))
 
 
-    def dframe(self, dimensions=None):
+    def dframe(self, dimensions=None, copy=True):
         import pandas as pd
         column_names = dimensions if dimensions else self.dimensions(label=True)
         dim_vals = OrderedDict([(dim, self[dim]) for dim in column_names])

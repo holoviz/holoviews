@@ -4,10 +4,14 @@ import param
 import numpy as np
 
 from ..core import Dataset, OrderedDict
-from ..core.data import DF_INTERFACES
 from ..core.operation import ElementOperation
-from ..core.util import (pd, is_nan, sort_topologically,
-                         cartesian_product, is_cyclic, one_to_one)
+from ..core.util import (is_nan, sort_topologically, one_to_one,
+                         cartesian_product, is_cyclic, get_df_data)
+
+try:
+    import pandas as pd
+except:
+    pd = None
 
 try:
     import dask
@@ -136,8 +140,9 @@ class categorical_aggregate2d(ElementOperation):
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
         reindexed = concat_data.reindex([xdim, ydim], vdims)
-        if reindexed.interface in DF_INTERFACES:
-            df = reindexed.data.groupby([xdim, ydim], sort=False).first().reset_index()
+        if pd:
+            df = reindexed.dframe(copy=False)
+            df = df.groupby([xdim, ydim], sort=False).first().reset_index()
             agg = reindexed.clone(df)
         else:
             agg = reindexed.aggregate([xdim, ydim], reduce_fn)

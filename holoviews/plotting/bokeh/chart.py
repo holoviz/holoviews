@@ -579,7 +579,7 @@ class BoxPlot(ChartPlot):
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
         label = element.dimensions('key', True)
-        dframe = element.dframe()
+        dframe = element.dframe(copy=False)
 
         # Fix for displaying datetimes which are not handled by bokeh
         for kd in element.kdims:

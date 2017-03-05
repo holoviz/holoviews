@@ -235,7 +235,7 @@ class DaskInterface(PandasInterface):
         return dd.concat([col.data for col in cast_objs])
 
     @classmethod
-    def dframe(cls, columns, dimensions):
+    def dframe(cls, columns, dimensions, copy):
         return columns.data.compute()
 
     @classmethod

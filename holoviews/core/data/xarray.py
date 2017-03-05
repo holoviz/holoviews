@@ -239,7 +239,7 @@ class XArrayInterface(GridInterface):
         return np.product(dataset[dataset.vdims[0].name].shape)
     
     @classmethod
-    def dframe(cls, dataset, dimensions):
+    def dframe(cls, dataset, dimensions, copy):
         if dimensions:
             return dataset.reindex(columns=dimensions).data.to_dataframe().reset_index(dimensions)
         else:

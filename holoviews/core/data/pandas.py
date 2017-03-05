@@ -223,13 +223,13 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def dframe(cls, columns, dimensions):
+    def dframe(cls, columns, dimensions, copy):
         if dimensions:
             dimensions = [columns.get_dimension(d, strict=True).name
                           for d in dimensions]
             return columns.reindex(dimensions).data.copy()
-        else:
-            return columns.data.copy()
+        elif :
+            return columns.data.copy() if copy else columns.data
 
 
 Interface.register(PandasInterface)

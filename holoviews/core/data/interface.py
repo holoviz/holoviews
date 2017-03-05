@@ -192,8 +192,8 @@ class Interface(param.Parameterized):
         return Element.array(dataset, dimensions)
 
     @classmethod
-    def dframe(cls, dataset, dimensions):
-        return Element.dframe(dataset, dimensions)
+    def dframe(cls, dataset, dimensions, copy):
+        return Element.dframe(dataset, dimensions, copy)
 
     @classmethod
     def columns(cls, dataset, dimensions):

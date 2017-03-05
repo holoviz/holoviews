@@ -17,13 +17,11 @@ from .grid import GridInterface
 from .ndelement import NdElementInterface
 
 datatypes = ['array', 'dictionary', 'grid', 'ndelement']
-DF_INTERFACES = []
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     datatypes = ['array', 'dataframe', 'dictionary', 'grid', 'ndelement']
-    DF_INTERFACES.append(PandasInterface)
     DFColumns = PandasInterface
 except ImportError:
     pass
@@ -51,7 +49,6 @@ except ImportError:
 try:
     from .dask import DaskInterface
     datatypes.append('dask')
-    DF_INTERFACES.append(DaskInterface)
 except ImportError:
     pass
 
@@ -519,13 +516,17 @@ class Dataset(Element):
         return self.interface.dimension_type(self, dim_obj)
 
 
-    def dframe(self, dimensions=None):
+    def dframe(self, dimensions=None, copy=True):
         """
-        Returns the data in the form of a DataFrame.
+        Returns the data in the form of a DataFrame. Supplying a list
+        of dimensions filters the dataframe. If the data is already
+        a DataFrame copy=False may be supplied to avoid making a copy.
         """
-        if dimensions:
+        if pd is None:
+            raise Exception("Cannot return data as dataframe, pandas is not available")
+        elif dimensions:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]
-        return self.interface.dframe(self, dimensions)
+        return self.interface.dframe(self, dimensions, copy)
 
 
     def columns(self, dimensions=None):
