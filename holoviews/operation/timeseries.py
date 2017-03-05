@@ -32,9 +32,9 @@ class rolling(ElementOperation):
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
                  'slepian'], doc="The type of the window to apply")
 
-    def _apply(self, element, key=None):
+    def _process_layer(self, element, key=None):
         xdim = element.kdims[0].name
-        df = PandasInterface.as_df(element)
+        df = PandasInterface.as_dframe(element)
         roll_kwargs = {'window': self.p.rolling_window,
                        'center': self.p.center,
                        'win_type': self.p.window_type,
@@ -53,7 +53,7 @@ class rolling(ElementOperation):
         return element.clone(rolled.reset_index())
 
     def _process(self, element, key=None):
-        return element.map(self._apply, Element)
+        return element.map(self._process_layer, Element)
 
 
 class resample(ElementOperation):
@@ -73,8 +73,8 @@ class resample(ElementOperation):
     rule = param.String(default='D', doc="""
         A string representing the time interval over which to apply the resampling""")
 
-    def _apply(self, element, key=None):
-        df = PandasInterface.as_df(element)
+    def _process_layer(self, element, key=None):
+        df = PandasInterface.as_dframe(element)
         xdim = element.kdims[0].name
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
                            'closed': self.p.closed}
@@ -82,7 +82,7 @@ class resample(ElementOperation):
         return element.clone(df.apply(self.p.function).reset_index())
 
     def _process(self, element, key=None):
-        return element.map(self._apply, Element)
+        return element.map(self._process_layer, Element)
 
 
 class rolling_outlier_std(ElementOperation):
@@ -99,7 +99,7 @@ class rolling_outlier_std(ElementOperation):
     sigma = param.Number(default=2.0, doc="""
         Minimum sigma before a value is considered an outlier.""")
 
-    def _apply(self, element, key=None):
+    def _process_layer(self, element, key=None):
         sigma, window = self.p.sigma, self.p.rolling_window
         ys = element.dimension_values(1)
 
@@ -113,4 +113,4 @@ class rolling_outlier_std(ElementOperation):
         return element[outliers].clone(new_type=Scatter)
 
     def _process(self, element, key=None):
-        return element.map(self._apply, Element)
+        return element.map(self._process_layer, Element)
