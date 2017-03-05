@@ -494,8 +494,8 @@ def max_extents(extents, zrange=False):
     with warnings.catch_warnings():
         warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
         for lidx, uidx in inds:
-            lower = [v for v in arr[lidx] if v is not None]
-            upper = [v for v in arr[uidx] if v is not None]
+            lower = [v for v in arr[lidx] if v is not None and not is_nan(v)]
+            upper = [v for v in arr[uidx] if v is not None and not is_nan(v)]
             if lower and isinstance(lower[0], datetime_types):
                 extents[lidx] = np.min(lower)
             elif any(isinstance(l, basestring) for l in lower):
