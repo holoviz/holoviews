@@ -1,33 +1,10 @@
-import numpy as np
 import param
+import numpy as np
+import pandas as pd
 
 from ..core import ElementOperation, Element
-from ..core.util import pd
+from ..core.data import PandasInterface
 from ..element import Scatter
-
-DF_INTERFACES = []
-try:
-    from ..core.data import PandasInterface
-    DF_INTERFACES.append(PandasInterface)
-except:
-    pass
-
-try:
-    from ..core.data import DaskInterface
-    DF_INTERFACES.append(DaskInterface)
-except:
-    pass
-
-
-def get_df_data(element):
-    """
-    Return element data as dataframe, avoiding casting if already
-    in dataframe format
-    """
-    if element.interface in DF_INTERFACES:
-        return element.data
-    else:
-        return element.dframe()
 
 
 class rolling(ElementOperation):
@@ -57,7 +34,7 @@ class rolling(ElementOperation):
 
     def _apply(self, element, key=None):
         xdim = element.kdims[0].name
-        df = get_df_data(element)
+        df = PandasInterface.as_df(element)
         roll_kwargs = {'window': self.p.rolling_window,
                        'center': self.p.center,
                        'win_type': self.p.window_type,
@@ -71,7 +48,8 @@ class rolling(ElementOperation):
             elif self.p.function is np.sum:
                 rolled = df.sum()
             else:
-                raise ValueError("Rolling window function only supports mean and sum")
+                raise ValueError("Rolling window function only supports "
+                                 "mean and sum when custom window_type is supplied")
         return element.clone(rolled.reset_index())
 
     def _process(self, element, key=None):
@@ -96,8 +74,8 @@ class resample(ElementOperation):
         A string representing the time interval over which to apply the resampling""")
 
     def _apply(self, element, key=None):
+        df = PandasInterface.as_df(element)
         xdim = element.kdims[0].name
-        df = get_df_data(element)
         resample_kwargs = {'rule': self.p.rule, 'label': self.p.label,
                            'closed': self.p.closed}
         df = df.set_index(xdim).resample(**resample_kwargs)
