@@ -223,6 +223,18 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def as_dframe(cls, dataset):
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
+        if it already a dataframe type.
+        """
+        if issubclass(dataset.interface, PandasInterface):
+            return dataset.data
+        else:
+            return dataset.dframe()
+
+
+    @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
             dimensions = [columns.get_dimension(d, strict=True).name

@@ -518,7 +518,9 @@ class Dataset(Element):
 
     def dframe(self, dimensions=None):
         """
-        Returns the data in the form of a DataFrame.
+        Returns the data in the form of a DataFrame. Supplying a list
+        of dimensions filters the dataframe. If the data is already
+        a DataFrame a copy is returned.
         """
         if dimensions:
             dimensions = [self.get_dimension(d, strict=True).name for d in dimensions]

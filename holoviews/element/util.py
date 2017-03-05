@@ -5,8 +5,14 @@ import numpy as np
 
 from ..core import Dataset, OrderedDict
 from ..core.operation import ElementOperation
-from ..core.util import (pd, is_nan, sort_topologically,
-                         cartesian_product, is_cyclic, one_to_one)
+from ..core.util import (is_nan, sort_topologically, one_to_one,
+                         cartesian_product, is_cyclic)
+
+try:
+    import pandas as pd
+    from ..core.data import PandasInterface
+except:
+    pd = None
 
 try:
     import dask
@@ -134,7 +140,13 @@ class categorical_aggregate2d(ElementOperation):
         dtype = 'dataframe' if pd else 'dictionary'
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
-        agg = concat_data.reindex([xdim, ydim], vdims).aggregate([xdim, ydim], reduce_fn)
+        reindexed = concat_data.reindex([xdim, ydim], vdims)
+        if pd:
+            df = PandasInterface.as_dframe(reindexed)
+            df = df.groupby([xdim, ydim], sort=False).first().reset_index()
+            agg = reindexed.clone(df)
+        else:
+            agg = reindexed.aggregate([xdim, ydim], reduce_fn)
 
         # Convert data to a gridded dataset
         grid_data = {xdim: xcoords, ydim: ycoords}
