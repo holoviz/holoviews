@@ -17,11 +17,13 @@ from .grid import GridInterface
 from .ndelement import NdElementInterface
 
 datatypes = ['array', 'dictionary', 'grid', 'ndelement']
+DF_INTERFACES = []
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
     datatypes = ['array', 'dataframe', 'dictionary', 'grid', 'ndelement']
+    DF_INTERFACES.append(PandasInterface)
     DFColumns = PandasInterface
 except ImportError:
     pass
@@ -49,6 +51,7 @@ except ImportError:
 try:
     from .dask import DaskInterface
     datatypes.append('dask')
+    DF_INTERFACES.append(DaskInterface)
 except ImportError:
     pass
 

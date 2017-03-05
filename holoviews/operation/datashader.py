@@ -20,12 +20,12 @@ import datashader.transfer_functions as tf
 
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
-from ..core.data import ArrayInterface, PandasInterface, DaskInterface
+from ..core.data import (ArrayInterface, PandasInterface, DaskInterface,
+                         DF_INTERFACES)
 from ..core.util import get_param_values, basestring
 from ..element import GridImage, Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
-DF_INTERFACES = [PandasInterface, DaskInterface]
 
 @dispatch(Element)
 def discover(dataset):

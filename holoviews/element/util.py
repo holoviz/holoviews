@@ -4,6 +4,7 @@ import param
 import numpy as np
 
 from ..core import Dataset, OrderedDict
+from ..core.data import DF_INTERFACES
 from ..core.operation import ElementOperation
 from ..core.util import (pd, is_nan, sort_topologically,
                          cartesian_product, is_cyclic, one_to_one)
@@ -134,7 +135,12 @@ class categorical_aggregate2d(ElementOperation):
         dtype = 'dataframe' if pd else 'dictionary'
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
-        agg = concat_data.reindex([xdim, ydim], vdims).aggregate([xdim, ydim], reduce_fn)
+        reindexed = concat_data.reindex([xdim, ydim], vdims)
+        if reindexed.interface in DF_INTERFACES:
+            df = reindexed.data.groupby([xdim, ydim], sort=False).first().reset_index()
+            agg = reindexed.clone(df)
+        else:
+            agg = reindexed.aggregate([xdim, ydim], reduce_fn)
 
         # Convert data to a gridded dataset
         grid_data = {xdim: xcoords, ydim: ycoords}
