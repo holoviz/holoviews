@@ -266,6 +266,8 @@ class RGB(Image):
         If an alpha channel is supplied, the defined alpha_dimension
         is automatically appended to this list.""")
 
+    _vdim_reductions = {1: Image}
+
     @property
     def rgb(self):
         """

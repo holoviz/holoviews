@@ -150,6 +150,9 @@ class Dataset(Element):
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
+    _vdim_reductions = {}
+    _kdim_reductions = {}
+
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
@@ -305,13 +308,16 @@ class Dataset(Element):
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
 
+        new_type = None
         if vdims is None:
             val_dims = [d for d in self.vdims if not kdims or d not in kdims]
         else:
             val_dims = [self.get_dimension(v, strict=True) for v in vdims]
+            new_type = self._vdim_reductions.get(len(val_dims), type(self))
 
         data = self.interface.reindex(self, key_dims, val_dims)
-        return self.clone(data, kdims=key_dims, vdims=val_dims)
+        return self.clone(data, kdims=key_dims, vdims=val_dims,
+                          new_type=new_type)
 
 
     def __getitem__(self, slices):

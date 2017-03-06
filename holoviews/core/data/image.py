@@ -65,7 +65,11 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def reindex(cls, columns, kdims=None, vdims=None):
-        return columns.data
+        data = columns.data
+        if vdims is not None and vdims != columns.vdims and len(columns.vdims) > 1:
+            inds = [columns.get_dimension_index(vd)-columns.ndims for vd in vdims]
+            return data[:, :, inds] if len(inds) > 1 else data[:, :, inds[0]]
+        return data
 
     @classmethod
     def range(cls, obj, dim):
