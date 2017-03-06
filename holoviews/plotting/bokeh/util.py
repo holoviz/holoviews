@@ -15,9 +15,11 @@ import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row, ToolbarBox)
+from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
+                          ToolbarBox, FactorRange, Range1d)
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
 if bokeh_version >= '0.12':
@@ -25,6 +27,8 @@ if bokeh_version >= '0.12':
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
+
+from ..util import dim_axis_label
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -125,19 +129,15 @@ def mpl_to_bokeh(properties):
     return new_properties
 
 
-def layout_padding(plots):
+def layout_padding(plots, renderer):
     """
-    Temporary workaround to allow empty plots in a
-    row of a bokeh GridPlot type. Should be removed
-    when https://github.com/bokeh/bokeh/issues/2891
-    is resolved.
+    Pads Nones in a list of lists of plots with empty plots.
     """
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
         for c, p in enumerate(row):
             if p is not None:
-                width = p.plot_width if isinstance(p, Plot) else p.width
-                height = p.plot_height if isinstance(p, Plot) else p.height
+                width, height = renderer.get_size(p)
                 widths[c] = max(widths[c], width)
                 heights[r] = max(heights[r], height)
 
@@ -146,16 +146,94 @@ def layout_padding(plots):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                p = Figure(plot_width=widths[c],
-                           plot_height=heights[r])
-                p.text(x=0, y=0, text=[' '])
+                x_range = Range1d(start=0, end=1)
+                y_range = Range1d(start=0, end=1)
+                p = Figure(plot_width=widths[c], plot_height=heights[r],
+                           x_range=x_range, y_range=y_range)
                 p.xaxis.visible = False
                 p.yaxis.visible = False
-                p.outline_line_color = None
-                p.xgrid.grid_line_color = None
-                p.ygrid.grid_line_color = None
+                p.outline_line_alpha = 0
+                p.grid.grid_line_alpha = 0
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def font_size_to_pixels(size):
+    """
+    Convert a fontsize to a pixel value
+    """
+    if size is None or not isinstance(size, basestring):
+        return
+    conversions = {'em': 16, 'pt': 16/12.}
+    val = re.findall('\d+', size)
+    unit = re.findall('[a-z]+', size)
+    if (val and not unit) or (val and unit[0] == 'px'):
+        return int(val[0])
+    elif val and unit[0] in conversions:
+        return (int(int(val[0]) * conversions[unit[0]]))
+
+
+def make_axis(axis, size, factors, dim, flip=False, rotation=0,
+              label_size=None, tick_size=None, axis_height=40):
+    factors = list(map(dim.pprint_value, factors))
+    nchars = np.max([len(f) for f in factors])
+    ranges = FactorRange(factors=factors)
+    ranges2 = Range1d(start=0, end=1)
+    axis_label = dim_axis_label(dim)
+
+    axis_props = {}
+    if label_size:
+        axis_props['axis_label_text_font_size'] = value(label_size)
+    if tick_size:
+        axis_props['major_label_text_font_size'] = value(tick_size)
+
+    tick_px = font_size_to_pixels(tick_size)
+    if tick_px is None:
+        tick_px = 8
+    label_px = font_size_to_pixels(label_size)
+    if label_px is None:
+        label_px = 10
+
+    rotation = np.radians(rotation)
+    if axis == 'x':
+        align = 'center'
+        # Adjust height to compensate for label rotation
+        height = int(axis_height + np.abs(np.sin(rotation)) *
+                     ((nchars*tick_px)*0.5)) + tick_px + label_px
+        opts = dict(x_axis_type='auto', x_axis_label=axis_label,
+                    x_range=ranges, y_range=ranges2, plot_height=height,
+                    plot_width=size)
+    else:
+        # Adjust width to compensate for label rotation
+        align = 'left' if flip else 'right'
+        width = int(axis_height + np.abs(np.cos(rotation)) *
+                    ((nchars*tick_px)*0.5)) + tick_px + label_px
+        opts = dict(y_axis_label=axis_label, x_range=ranges2,
+                    y_range=ranges, plot_width=width, plot_height=size)
+
+    p = Figure(toolbar_location=None, **opts)
+    p.outline_line_alpha = 0
+    p.grid.grid_line_alpha = 0
+
+    if axis == 'x':
+        p.yaxis.visible = False
+        axis = p.xaxis[0]
+        if flip:
+            p.above = p.below
+            p.below = []
+            p.xaxis[:] = p.above
+    else:
+        p.xaxis.visible = False
+        axis = p.yaxis[0]
+        if flip:
+            p.right = p.left
+            p.left = []
+            p.yaxis[:] = p.right
+    axis.major_label_orientation = rotation
+    axis.major_label_text_align = align
+    axis.major_label_text_baseline = 'middle'
+    axis.update(**axis_props)
+    return p
 
 
 def convert_datetime(time):

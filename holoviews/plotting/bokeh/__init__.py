@@ -149,3 +149,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 # Annotations
 options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
 options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+
+# Define composite defaults
+options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
+                             xaxis=None, yaxis=None)

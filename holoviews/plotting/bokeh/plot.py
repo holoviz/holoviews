@@ -10,12 +10,13 @@ from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
 from ...core import traversal
 from ...core.options import Compositor, SkipRendering
-from ...core.util import basestring, wrap_tuple
+from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
 from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
-from .util import bokeh_version, layout_padding, pad_plots, filter_toolboxes
+from .util import (bokeh_version, layout_padding, pad_plots,
+                   filter_toolboxes, make_axis)
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -201,6 +202,46 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     object.
     """
 
+    axis_offset = param.Integer(default=50, doc="""
+        Number of pixels to adjust row and column widths and height by
+        to compensate for shared axes.""")
+
+    fontsize = param.Parameter(default={'title': '16pt'},
+                               allow_None=True,  doc="""
+       Specifies various fontsizes of the displayed text.
+
+       Finer control is available by supplying a dictionary where any
+       unmentioned keys reverts to the default sizes, e.g:
+
+          {'title': '15pt'}""")
+
+    shared_xaxis = param.Boolean(default=False, doc="""
+        If enabled the x-axes of the GridSpace will be drawn from the
+        objects inside the Grid rather than the GridSpace dimensions.""")
+
+    shared_yaxis = param.Boolean(default=False, doc="""
+        If enabled the x-axes of the GridSpace will be drawn from the
+        objects inside the Grid rather than the GridSpace dimensions.""")
+
+    xaxis = param.ObjectSelector(default=True,
+                                 objects=['bottom', 'top', None, True, False], doc="""
+        Whether and where to display the xaxis, supported options are
+        'bottom', 'top' and None.""")
+
+    yaxis = param.ObjectSelector(default=True,
+                                 objects=['left', 'right', None, True, False], doc="""
+        Whether and where to display the yaxis, supported options are
+        'left', 'right' and None.""")
+
+    xrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
+    yrotation = param.Integer(default=0, bounds=(0, 360), doc="""
+        Rotation angle of the yticks.""")
+
+    plot_size = param.Integer(default=120, doc="""
+        Defines the width and height of each plot in the grid""")
+
     def __init__(self, layout, ranges=None, layout_num=1, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
@@ -220,8 +261,8 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
-            r = i % self.cols
-            c = i // self.cols
+            r = i % self.rows
+            c = i // self.rows
 
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
@@ -233,26 +274,35 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                 vtype = None
 
             # Create axes
+            offset = self.axis_offset
             kwargs = {}
             if c == 0 and r != 0:
-                kwargs['xaxis'] = 'bottom-bare'
-                kwargs['width'] = 150
+                kwargs['xaxis'] = None
+                kwargs['width'] = self.plot_size+offset
             if c != 0 and r == 0:
-                kwargs['yaxis'] = 'left-bare'
-                kwargs['height'] = 150
+                kwargs['yaxis'] = None
+                kwargs['height'] = self.plot_size+offset
             if c == 0 and r == 0:
-                kwargs['width'] = 150
-                kwargs['height'] = 150
+                kwargs['width'] = self.plot_size+offset
+                kwargs['height'] = self.plot_size+offset
             if r != 0 and c != 0:
-                kwargs['xaxis'] = 'bottom-bare'
-                kwargs['yaxis'] = 'left-bare'
+                kwargs['xaxis'] = None
+                kwargs['yaxis'] = None
 
-            if 'width' not in kwargs:
-                kwargs['width'] = 105
-            if 'height' not in kwargs:
-                kwargs['height'] = 105
+            if 'width' not in kwargs or not self.shared_yaxis:
+                kwargs['width'] = self.plot_size
+            if 'height' not in kwargs or not self.shared_xaxis:
+                kwargs['height'] = self.plot_size
             if 'border' not in kwargs:
-                kwargs['border'] = 0
+                kwargs['border'] = 3
+
+            kwargs['show_legend'] = False
+
+            if not self.shared_xaxis:
+                kwargs['xaxis'] = None
+
+            if not self.shared_yaxis:
+                kwargs['yaxis'] = None
 
             if isinstance(layout, GridMatrix):
                 if view.traverse(lambda x: x, [Histogram]):
@@ -286,25 +336,30 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def initialize_plot(self, ranges=None, plots=[]):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         passed_plots = list(plots)
-        plots = [[] for r in range(self.cols)]
+        plots = [[None for c in range(self.cols)] for r in range(self.rows)]
         for i, coord in enumerate(self.layout.keys(full_grid=True)):
-            r = i % self.cols
+            r = i % self.rows
+            c = i // self.rows
             subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 plot = subplot.initialize_plot(ranges=ranges, plots=passed_plots)
-                plots[r].append(plot)
-                passed_plots.append(plots[r][-1])
+                plots[r][c] = plot
+                passed_plots.append(plot)
             else:
-                plots[r].append(None)
                 passed_plots.append(None)
+
         if bokeh_version < '0.12':
             plot = BokehGridPlot(children=plots[::-1])
         else:
             plot = gridplot(plots[::-1])
+        
+        plot = self._make_axes(plot)
+
         title = self._get_title(self.keys[-1])
         if title:
-            self.handles['title'] = title
             plot = Column(title, plot)
+            self.handles['title'] = title
+
         self.handles['plot'] = plot
         self.handles['plots'] = plots
         if self.shared_datasource:
@@ -312,6 +367,47 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         self.drawn = True
 
         return self.handles['plot']
+
+
+    def _make_axes(self, plot):
+        width, height = self.renderer.get_size(plot)
+        x_axis, y_axis = None, None
+        if self.xaxis:
+            flip = self.shared_xaxis
+            rotation = self.xrotation
+            lsize = self._fontsize('xlabel').get('fontsize')
+            tsize = self._fontsize('xticks', common=False).get('fontsize')
+            xfactors = list(unique_iterator(self.layout.dimension_values(0)))
+            x_axis = make_axis('x', width, xfactors, self.layout.kdims[0],
+                               flip=flip, rotation=rotation, label_size=lsize,
+                               tick_size=tsize)
+        if self.yaxis and self.layout.ndims > 1:
+            flip = self.shared_yaxis
+            rotation = self.yrotation
+            lsize = self._fontsize('ylabel').get('fontsize')
+            tsize = self._fontsize('yticks', common=False).get('fontsize')
+            yfactors = list(unique_iterator(self.layout.dimension_values(1)))
+            y_axis = make_axis('y', height, yfactors, self.layout.kdims[1],
+                               flip=flip, rotation=rotation, label_size=lsize,
+                               tick_size=tsize)
+        if x_axis and y_axis:
+            plot = filter_toolboxes(plot)
+            r1, r2 = ([y_axis, plot], [None, x_axis])
+            if self.shared_xaxis:
+                r1, r2 = r2, r1
+            if self.shared_yaxis:
+                r1, r2 = r1[::-1], r2[::-1]
+            models = layout_padding([r1, r2], self.renderer)
+            plot = gridplot(models)
+        elif y_axis:
+            models = [y_axis, plot]
+            if self.shared_yaxis: models = models[::-1]
+            plot = Row(*models)
+        elif x_axis:
+            models = [plot, x_axis]
+            if self.shared_xaxis: models = models[::-1]
+            plot = Column(*models)
+        return plot
 
 
     def update_frame(self, key, ranges=None):
@@ -528,7 +624,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         # Replace None types with empty plots
         # to avoid bokeh bug
         if adjoined:
-            plots = layout_padding(plots)
+            plots = layout_padding(plots, self.renderer)
 
         # Wrap in appropriate layout model
         if self.tabs:
