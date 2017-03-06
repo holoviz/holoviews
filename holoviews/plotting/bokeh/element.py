@@ -211,7 +211,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             dims = list(self.overlay_dims.keys())
         dims += element.dimensions()
-        return dims, {}
+        return list(util.unique_iterator(dims)), {}
 
     def _init_tools(self, element, callbacks=[]):
         """
@@ -249,13 +249,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not any(isinstance(t, HoverTool) for t in self.state.tools):
             return
 
-        for d in element.dimensions(label=True):
-            sanitized = util.dimension_sanitizer(d)
-            data[sanitized] = [] if empty else element.dimension_values(d)
+        for d in element.dimensions():
+            dim = util.dimension_sanitizer(d.name)
+            if dim not in data:
+                data[dim] = element.dimension_values(d)
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
-            data[dim] = [v for _ in range(len(list(data.values())[0]))]
+            if dim not in data:
+                data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
     def _axes_props(self, plots, subplots, element, ranges):
