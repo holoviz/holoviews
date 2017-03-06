@@ -103,6 +103,10 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
+    streams = param.List(default=[], doc="""
+        List of streams that are applied if dynamic=True, allowing
+        for dynamic interaction with the plot.""")
+
     def _process(self, view, key=None):
         """
         Process a single input element and outputs new single element
