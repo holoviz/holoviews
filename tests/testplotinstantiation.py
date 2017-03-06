@@ -121,6 +121,14 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
+    def test_dynamic_values_partial_overlap(self):
+        kdims = [Dimension('File', range=(0.01, 1)),
+                 Dimension('SliceDimension', values=['x', 'y', 'z']),
+                 Dimension('Coordinates', range=(0.01, 1))]
+        dmap1 = DynamicMap(lambda x, y, z: Image(np.random.rand(10,10)), kdims=kdims)
+        dmap2 = DynamicMap(lambda x: Curve(np.random.rand(10,2))*VLine(x),
+                           kdims=kdims[:1])
+        mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
     def test_dynamic_streams_refresh(self):
         stream = PositionXY()

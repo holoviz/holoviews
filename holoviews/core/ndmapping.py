@@ -173,7 +173,7 @@ class MultiDimensionalMapping(Dimensioned):
             if not self._instantiated and self.get_dimension(dim).values == 'initial':
                 if val not in vals:
                     self._cached_index_values[dim.name].append(val)
-            elif vals and val not in vals:
+            elif vals and val is not None and val not in vals:
                 raise KeyError('%s dimension value %s not in'
                                ' specified dimension values.' % (dim, repr(val)))
 
