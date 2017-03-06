@@ -68,7 +68,9 @@ class RasterPlot(ColorbarPlot):
             data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False))
                               for d in rgb.vdims])
         else:
-            data = np.flipud(element.dimension_values(2, flat=False))
+            data = element.dimension_values(2, flat=False)
+            if not type(element) is Raster:
+                data = np.flipud(data)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]

@@ -41,7 +41,8 @@ class RasterPlot(ColorbarPlot):
         l, b, r, t = element.bounds.lbrt()
         dh, dw = t-b, r-l
         if type(element) is Raster:
-            b = t
+            t, b = b, t
+            img = np.flipud(img)
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:

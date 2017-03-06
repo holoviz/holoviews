@@ -91,7 +91,7 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
     def _wrap_data(self, data, bounds):
         if isinstance(data, np.ndarray):
             coords = [np.arange(s) for s in data.shape[::-1]]
-            data = tuple(coords + [np.flipud(data)])
+            data = tuple(coords + [data])
             return data, None
         return data, bounds
 
