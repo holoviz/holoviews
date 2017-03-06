@@ -110,13 +110,20 @@ class PointPlot(LegendPlot, ColorbarPlot):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
+
+            nvals = len(data[k][-1])
             if 'color' not in elmapping:
                 zorder = self.get_zorder(element, key, el)
                 val = style[zorder].get('color')
                 elmapping['color'] = 'color'
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
-                data['color'].append([val]*len(data[k][-1]))
+                data['color'].append([val]*nvals)
+
+            if any(isinstance(t, HoverTool) for t in self.state.tools):
+                for dim, k in zip(element.dimensions(), key):
+                    sanitized = dimension_sanitizer(dim.name)
+                    data[sanitized].append([k]*nvals)
         data = {k: np.concatenate(v) for k, v in data.items()}
         return data, elmapping
 
