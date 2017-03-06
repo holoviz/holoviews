@@ -282,6 +282,14 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(hover[0].tooltips, tooltips)
         self.assertEqual(hover[0].line_policy, line_policy)
 
+    def test_points_overlay_hover_batched(self):
+        obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},
+                        kdims=['Test'])
+        opts = {'Points': {'tools': ['hover']},
+                'NdOverlay': {'legend_limit': 0}}
+        obj = obj(plot=opts)
+        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'), ('y', '@y')])
+
     def test_curve_overlay_hover_batched(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
                         kdims=['Test'])

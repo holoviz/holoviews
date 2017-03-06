@@ -103,7 +103,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        for key, el in element.items():
+        for key, el in element.data.items():
             style = self.lookup_options(el, 'style')
             style = style.max_cycles(len(self.ordering))
             self.set_param(**self.lookup_options(el, 'plot').options)
