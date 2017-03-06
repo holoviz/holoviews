@@ -32,7 +32,7 @@ def discover(dataset):
     Allows datashader to correctly discover the dtypes of the data
     in a holoviews Element.
     """
-    return dsdiscover(PandasInterface.as_dframe(element))
+    return dsdiscover(PandasInterface.as_dframe(dataset))
 
 
 @bypixel.pipeline.register(Element)
@@ -149,7 +149,7 @@ class aggregate(ElementOperation):
             vdims = element.vdims
         elif isinstance(obj, Element):
             glyph = 'line' if isinstance(obj, Curve) else 'points'
-            paths.append(obj.data if is_df(obj) else obj.dframe())
+            paths.append(PandasInterface.as_dframe(obj))
         if len(paths) > 1:
             if glyph == 'line':
                 path = paths[0][:1]
