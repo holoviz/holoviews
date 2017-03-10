@@ -181,6 +181,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.callbacks = self._construct_callbacks()
         self.static_source = False
 
+        # Whether axes are shared between plots
+        self._shared = {'x': False, 'y': False}
+
 
     def _construct_callbacks(self):
         """
@@ -260,6 +263,28 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
+    def _merge_ranges(self, plots, xlabel, ylabel):
+        """
+        Given a list of other plots return axes that are shared
+        with another plot by matching the axes labels
+        """
+        plot_ranges = {}
+        for plot in plots:
+            if plot is None:
+                continue
+            if hasattr(plot, 'xaxis'):
+                if plot.xaxis[0].axis_label == xlabel:
+                    plot_ranges['x_range'] = plot.x_range
+                if plot.xaxis[0].axis_label == ylabel:
+                    plot_ranges['y_range'] = plot.x_range
+            if hasattr(plot, 'yaxis'):
+                if plot.yaxis[0].axis_label == ylabel:
+                    plot_ranges['y_range'] = plot.y_range
+                if plot.yaxis[0].axis_label == xlabel:
+                    plot_ranges['x_range'] = plot.y_range
+        return plot_ranges
+
+
     def _axes_props(self, plots, subplots, element, ranges):
         # Get the bottom layer and range element
         el = element.traverse(lambda x: x, [Element])
@@ -273,16 +298,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_ranges = {}
         # Try finding shared ranges in other plots in the same Layout
         if plots and self.shared_axes:
-            for plot in plots:
-                if plot is None or not hasattr(plot, 'xaxis'): continue
-                if plot.xaxis[0].axis_label == xlabel:
-                    plot_ranges['x_range'] = plot.x_range
-                if plot.xaxis[0].axis_label == ylabel:
-                    plot_ranges['y_range'] = plot.x_range
-                if plot.yaxis[0].axis_label == ylabel:
-                    plot_ranges['y_range'] = plot.y_range
-                if plot.yaxis[0].axis_label == xlabel:
-                    plot_ranges['x_range'] = plot.y_range
+            plot_ranges = self._merge_ranges(plots, xlabel, ylabel)
 
         if el.get_dimension_type(0) in util.datetime_types:
             x_axis_type = 'datetime'
@@ -299,6 +315,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         l, b, r, t = self.get_extents(range_el, ranges)
         if self.invert_axes:
             l, b, r, t = b, l, t, r
+
+        # Declare shared axes
+        if 'x_range' in plot_ranges:
+            self._shared['x'] = True
+        if 'y_range' in plot_ranges:
+            self._shared['y'] = True
 
         categorical = any(self.traverse(lambda x: x._categorical))
         categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
@@ -418,7 +440,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         axis_props = {}
         if ((axis == 'x' and self.xaxis in ['bottom-bare', 'top-bare']) or
             (axis == 'y' and self.yaxis in ['left-bare', 'right-bare'])):
-            axis_props['axis_label'] = ''
+            axis_props['axis_label_text_font_size'] = value('0pt')
             axis_props['major_label_text_font_size'] = value('0pt')
             axis_props['major_tick_line_color'] = None
             axis_props['minor_tick_line_color'] = None
@@ -495,11 +517,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xfactors, yfactors = None, None
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
-        self._update_range(x_range, l, r, xfactors, self.invert_xaxis)
-        self._update_range(y_range, b, t, yfactors, self.invert_yaxis)
+        self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'])
+        self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'])
 
 
-    def _update_range(self, axis_range, low, high, factors, invert):
+    def _update_range(self, axis_range, low, high, factors, invert, shared):
         if isinstance(axis_range, Range1d):
             if (low == high and low is not None and
                 not isinstance(high, util.datetime_types)):
@@ -507,6 +529,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low -= offset
                 high += offset
             if invert: low, high = high, low
+            if shared:
+                shared = (axis_range.start, axis_range.end)
+                low, high = util.max_range([(low, high), shared])
             if low is not None and (isinstance(low, util.datetime_types)
                                     or np.isfinite(low)):
                 axis_range.start = low
