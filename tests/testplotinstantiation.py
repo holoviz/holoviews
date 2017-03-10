@@ -939,6 +939,25 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
 
+    def test_shared_axes(self):
+        curve = Curve(range(10))
+        img = Image(np.random.rand(10,10))
+        plot = bokeh_renderer.get_plot(curve+img)
+        plot = plot.subplots[(0, 1)].subplots['main']
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual((x_range.start, x_range.end), (-.5, 9))
+        self.assertEqual((y_range.start, y_range.end), (-.5, 9))
+
+    def test_shared_axes_disable(self):
+        curve = Curve(range(10))
+        img = Image(np.random.rand(10,10))(plot=dict(shared_axes=False))
+        plot = bokeh_renderer.get_plot(curve+img)
+        plot = plot.subplots[(0, 1)].subplots['main']
+        x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
+        self.assertEqual((x_range.start, x_range.end), (-.5, .5))
+        self.assertEqual((y_range.start, y_range.end), (-.5, .5))
+
+
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
