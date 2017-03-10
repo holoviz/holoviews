@@ -347,7 +347,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_points_colormapping_categorical(self):
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b'])
+                         vdims=['a', 'b'])(plot=dict(color_index='b'))
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
         fig = plot.state
