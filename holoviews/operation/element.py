@@ -663,6 +663,22 @@ class interpolate_curve(ElementOperation):
         return element.map(self._process_layer, Element)
 
 
+class stack_area(ElementOperation):
+    """
+    Stacks an (Nd)Overlay of Area Elements by offsetting their baseline.
+    """
+
+    def _process(self, areas, key=None):
+        baseline = np.zeros(len(areas.get(0)))
+        stacked = areas.clone(shared_data=False)
+        vdims = [areas.get(0).vdims[0], 'Baseline']
+        for k, area in areas.items():
+            x, y = (area.dimension_values(i) for i in range(2))
+            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims)
+            baseline += y
+        return stacked
+
+
 #==================#
 # Other operations #
 #==================#
