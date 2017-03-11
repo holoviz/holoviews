@@ -11,7 +11,7 @@ from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
 from .util import (dimension_sort, get_param_values, dimension_sanitizer,
-                   unique_array)
+                   unique_array, wrap_tuple)
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -166,10 +166,7 @@ class Element(ViewableElement, Composable, Overlayable):
                            for dim in vdims])
         else:
             values = [()]*length
-
-        data = zip(keys, values)
-        overrides = dict(kdims=kdims, vdims=vdims, **kwargs)
-        return NdElement(data, **dict(get_param_values(self), **overrides))
+        return OrderedDict(zip(keys, values))
 
 
     def array(self, dimensions=[]):
@@ -530,7 +527,6 @@ class Collator(NdMapping):
 
     group = param.String(default='Collator')
 
-
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
          None to disable progress bars.""")
@@ -555,6 +551,27 @@ class Collator(NdMapping):
                    GridSpace: (HoloMap, CompositeOverlay, ViewableElement),
                    NdLayout: (GridSpace, HoloMap, ViewableElement),
                    NdOverlay: Element}
+
+    def __init__(self, data=None, **params):
+        if isinstance(data, list) and all(np.isscalar(el) for el in data):
+            data = (((k,), (v,)) for k, v in enumerate(data))
+
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            mapping = data if isinstance(data, Collator) else data.mapping()
+            data = mapping.data
+            if 'kdims' not in params:
+                params['kdims'] = mapping.kdims
+            if 'vdims' not in params:
+                params['vdims'] = mapping.vdims
+
+        kdims = params.get('kdims', self.kdims)
+        if (data is not None and not isinstance(data, NdMapping) and 'Index' not in kdims):
+            params['kdims'] = ['Index'] + list(kdims)
+            data_items = data.items() if isinstance(data, dict) else data
+            data = [((i,)+wrap_tuple(k), v) for i, (k, v) in enumerate(data_items)]
+        super(Collator, self).__init__(data, **params)
+
 
     def __call__(self):
         """
