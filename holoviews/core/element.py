@@ -506,7 +506,7 @@ class Element3D(Element2D):
                xmax, ymax, zmax).""")
 
 
-class Collator(NdElement):
+class Collator(NdMapping):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
@@ -608,7 +608,7 @@ class Collator(NdElement):
         """
         dimensions = []
         for dim in self.kdims:
-            if len(set(self[dim.name])) == 1:
+            if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
 
