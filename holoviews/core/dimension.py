@@ -617,11 +617,6 @@ class Dimensioned(LabelledData):
                                   for d in params.pop(group)]
                 params[group] = dimensions
         super(Dimensioned, self).__init__(data, **params)
-        duplicates = [vd for vd in self.vdims if vd in self.kdims]
-        if duplicates:
-            duplicates = ', '.join([d.name for d in duplicates])
-            raise ValueError('Dimension(s) %s cannot be both key and '
-                             'value dimensions' % duplicates)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
