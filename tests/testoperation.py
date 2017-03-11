@@ -1,11 +1,11 @@
 import numpy as np
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
-                       Contours, Polygons, Points, Histogram, Curve)
+                       Contours, Polygons, Points, Histogram, Curve, Area)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve)
+                                         interpolate_curve, stack_area)
 
 class ElementOperationTests(ComparisonTestCase):
     """
@@ -113,3 +113,18 @@ class ElementOperationTests(ComparisonTestCase):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-post')
         curve = Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
         self.assertEqual(interpolated, curve)
+
+    def test_stack_area_overlay(self):
+        areas = Area([1, 2, 3]) * Area([1, 2, 3])
+        stacked = stack_area(areas)
+        area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
+        area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
+        self.assertEqual(stacked, area1 * area2)
+
+    def test_stack_area_ndoverlay(self):
+        areas = NdOverlay([(0, Area([1, 2, 3])), (1, Area([1, 2, 3]))])
+        stacked = stack_area(areas)
+        area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
+        area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
+        self.assertEqual(stacked, NdOverlay([(0, area1), (1, area2)]))
+
