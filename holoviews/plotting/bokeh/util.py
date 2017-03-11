@@ -74,7 +74,7 @@ def rgba_tuple(rgba):
     Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
     """
     if isinstance(rgba, tuple):
-        return [int(c*255) if i<3 else c for i, c in enumerate(rgba)]
+        return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
     else:
         return rgba
 
