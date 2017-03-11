@@ -553,23 +553,13 @@ class Collator(NdMapping):
                    NdOverlay: Element}
 
     def __init__(self, data=None, **params):
-        if isinstance(data, list) and all(np.isscalar(el) for el in data):
-            data = (((k,), (v,)) for k, v in enumerate(data))
-
         if isinstance(data, Element):
             params = dict(get_param_values(data), **params)
-            mapping = data if isinstance(data, Collator) else data.mapping()
-            data = mapping.data
             if 'kdims' not in params:
-                params['kdims'] = mapping.kdims
+                params['kdims'] = data.kdims
             if 'vdims' not in params:
-                params['vdims'] = mapping.vdims
-
-        kdims = params.get('kdims', self.kdims)
-        if (data is not None and not isinstance(data, NdMapping) and 'Index' not in kdims):
-            params['kdims'] = ['Index'] + list(kdims)
-            data_items = data.items() if isinstance(data, dict) else data
-            data = [((i,)+wrap_tuple(k), v) for i, (k, v) in enumerate(data_items)]
+                params['vdims'] = data.vdims
+            data = data.mapping()
         super(Collator, self).__init__(data, **params)
 
 
@@ -588,7 +578,7 @@ class Collator(NdMapping):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
-            if len(self.vdims):
+            if len(self.vdims) and self.value_transform:
                 vargs = dict(zip(self.dimensions('value', label=True), data))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
@@ -612,10 +602,6 @@ class Collator(NdMapping):
         for component in components:
             accumulator.update(component)
         return accumulator
-
-
-    def _add_item(self, key, value, sort=True, update=True):
-        NdMapping._add_item(self, key, value, sort, update)
 
 
     @property
