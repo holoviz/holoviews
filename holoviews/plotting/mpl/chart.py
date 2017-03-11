@@ -488,11 +488,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                   allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                  allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -529,7 +529,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_styles(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
-        if cdim:
+        cmap = style.get('cmap', None)
+        if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
             if cs.dtype.kind in 'if':
@@ -598,7 +599,7 @@ class VectorFieldPlot(ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=3, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 

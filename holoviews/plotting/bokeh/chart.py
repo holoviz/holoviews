@@ -22,11 +22,11 @@ from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
 class PointPlot(LegendPlot, ColorbarPlot):
 
-    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 

@@ -113,11 +113,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=4, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=3, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
