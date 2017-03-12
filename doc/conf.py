@@ -43,7 +43,9 @@ html_favicon = '_static/favicon.ico'
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 exclude_patterns = ['_build', 'test_data', 'reference_data', 'nbpublisher',
-                    'builder']
+                    'builder', '**.ipynb_checkpoints', 'Examples/*.ipynb']
+
+nbsphinx_allow_errors = True
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
