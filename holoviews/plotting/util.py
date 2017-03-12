@@ -336,6 +336,17 @@ def traverse_setter(obj, attribute, value):
     obj.traverse(lambda x: setattr(x, attribute, value))
 
 
+def get_min_distance(element):
+    """
+    Gets the minimum sampling distance of the x- and y-coordinates
+    in a grid.
+    """
+    xys = element.array([0, 1]).view(dtype=np.complex128)
+    m, n = np.meshgrid(xys, xys)
+    distances = np.abs(m-n)
+    np.fill_diagonal(distances, np.inf)
+    return distances[distances>0].min()
+
 
 # linear_kryw_0_100_c71 (aka "fire"):
 # A perceptually uniform equivalent of matplotlib's "hot" colormap, from

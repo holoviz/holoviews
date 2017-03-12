@@ -14,7 +14,8 @@ from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...operation import interpolate_curve
-from ..util import compute_sizes, get_sideplot_ranges, match_spec, map_colors
+from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
+                    map_colors, get_min_distance)
 from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
@@ -50,6 +51,26 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     _plot_methods = dict(single='scatter', batched='scatter')
 
+    def _get_size_data(self, element, ranges, style):
+        data, mapping = {}, {}
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
+            map_key = 'size_' + sdim.name
+            ms = style.get('size', np.sqrt(6))**2
+            sizes = element.dimension_values(self.size_index)
+            sizes = compute_sizes(sizes, self.size_fn,
+                                  self.scaling_factor,
+                                  self.scaling_method, ms)
+            if sizes is None:
+                eltype = type(element).__name__
+                self.warning('%s dimension is not numeric, cannot '
+                             'use to scale %s size.' % (sdim, eltype))
+            else:
+                data[map_key] = np.sqrt(sizes)
+                mapping['size'] = map_key
+        return data, mapping
+
+
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
@@ -63,39 +84,13 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data[ydim] = [] if empty else element.dimension_values(yidx)
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
-        cdim = element.get_dimension(self.color_index)
-        if cdim:
-            cdata = data[cdim.name] if cdim.name in data else element.dimension_values(cdim)
-            factors = None
-            if isinstance(cdata, list) or cdata.dtype.kind in 'OSU':
-                factors = list(np.unique(cdata))
-            mapper = self._get_colormapper(cdim, element, ranges, style,
-                                           factors)
-            data[cdim.name] = cdata
-            if factors is not None:
-                mapping['legend'] = {'field': cdim.name}
-            mapping['color'] = {'field': cdim.name,
-                                'transform': mapper}
+        cdata, cmapping = self._get_color_data(element, ranges, style)
+        data.update(cdata)
+        mapping.update(cmapping)
 
-        sdim = element.get_dimension(self.size_index)
-        if sdim:
-            map_key = 'size_' + sdim.name
-            if empty:
-                data[map_key] = []
-                mapping['size'] = map_key
-            else:
-                ms = style.get('size', np.sqrt(6))**2
-                sizes = element.dimension_values(self.size_index)
-                sizes = compute_sizes(sizes, self.size_fn,
-                                      self.scaling_factor,
-                                      self.scaling_method, ms)
-                if sizes is None:
-                    eltype = type(element).__name__
-                    self.warning('%s dimension is not numeric, cannot '
-                                 'use to scale %s size.' % (sdim, eltype))
-                else:
-                    data[map_key] = np.sqrt(sizes)
-                    mapping['size'] = map_key
+        sdata, smapping = self._get_size_data(element, ranges, style)
+        data.update(sdata)
+        mapping.update(smapping)
 
         self._get_hover_data(data, element, empty)
         return data, mapping
@@ -150,6 +145,62 @@ class PointPlot(LegendPlot, ColorbarPlot):
         if self.colorbar and 'color_mapper' in self.handles:
             self._draw_colorbar(plot, self.handles['color_mapper'])
         return renderer, renderer.glyph
+
+
+class VectorFieldPlot(ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+      Index of the dimension from which the sizes will the drawn.""")
+
+    normalize_lengths = param.Boolean(default=True, doc="""
+       Whether to normalize vector magnitudes automatically. If False,
+       it will be assumed that the lengths have already been correctly
+       normalized.""")
+
+    style_opts = ['color'] + line_properties
+    _plot_methods = dict(single='ray')
+
+    def _get_lengths(self, element, ranges):
+        mag_dim = element.get_dimension(self.size_index)
+        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
+        distance = get_min_distance(element)
+        base_dist = np.sqrt(distance/np.min([x1-x0, y1-y0]))
+        if mag_dim:
+            magnitudes = element.dimension_values(mag_dim)
+            _, max_magnitude = ranges[mag_dim.name]
+            if self.normalize_lengths and max_magnitude != 0:
+                magnitudes = magnitudes / max_magnitude
+            magnitudes *= base_dist
+        else:
+            magnitudes = np.ones(len(element))*base_dist
+        return magnitudes
+
+
+    def get_data(self, element, ranges=None, empty=False):
+        style = self.style[self.cyclic_index]
+
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        x = element.get_dimension(xidx).name
+        y = element.get_dimension(yidx).name
+        angle_dim = element.get_dimension(2).name
+        angles = element.dimension_values(2)
+
+        data = {x: element.dimension_values(xidx),
+                y: element.dimension_values(yidx), angle_dim: angles}
+        mapping = dict(x=x, y=y, angle=angle_dim, length='length')
+
+        cdata, cmapping = self._get_color_data(element, ranges, style,
+                                               name='line_color')
+        data.update(cdata)
+        mapping.update(cmapping)
+
+        data['length'] = self._get_lengths(element, ranges)
+        return (data, mapping)
 
 
 class CurvePlot(ElementPlot):
