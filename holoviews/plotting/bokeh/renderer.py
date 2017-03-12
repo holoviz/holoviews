@@ -5,9 +5,9 @@ import param
 from param.parameterized import bothmethod
 
 from bokeh.charts import Chart
+from bokeh.document import Document
 from bokeh.embed import notebook_div
 from bokeh.io import load_notebook
-from bokeh.model import _ModelInDocument as add_to_document
 from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
                           WidgetBox, Div, DataTable, Tabs)
 from bokeh.plotting import Figure
@@ -63,13 +63,14 @@ class BokehRenderer(Renderer):
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        doc_handler = add_to_document(plot.state)
-        with doc_handler:
-            doc = doc_handler._doc
-            comm_id = plot.comm.id if plot.comm else None
-            div = notebook_div(plot.state, comm_id)
+        model = plot.state
+        doc = Document()
+        for m in model.references():
+            m._document = None
+        doc.add_root(model)
+        comm_id = plot.comm.id if plot.comm else None
+        div = notebook_div(model, comm_id)
         plot.document = doc
-        doc.add_root(plot.state)
         return div
 
 
