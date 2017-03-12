@@ -161,14 +161,8 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        if len(dimensions) > 1:
-            raise NotImplementedError('Multi-dimensional aggregation not '
-                                      'supported as of xarray <=0.7.2.')
-        elif not dimensions:
-            return dataset.data.apply(function)
-        else:
-            dim = dataset.get_dimension(dimensions[0], strict=True)
-            return dataset.data.groupby(dim.name).apply(function)
+        reduce_dims = [d.name for d in dataset.kdims if d not in dimensions]
+        return dataset.data.reduce(function, dim=reduce_dims)
 
 
     @classmethod
