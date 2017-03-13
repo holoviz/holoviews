@@ -615,11 +615,14 @@ class GenericElementPlot(DimensionedPlot):
         taking into account possible batching of elements.
         """
         spec = util.get_overlay_spec(overlay, key, el)
-        try:
-            return self.ordering.index(spec)
-        except ValueError:
-            self.ordering = sorted(self.ordering+[spec])
-            return self.ordering.index(spec)
+        return self.ordering.index(spec)
+
+
+    def _updated_zorders(self, overlay):
+        specs = [util.get_overlay_spec(overlay, key, el)
+                 for key, el in overlay.data.items()]
+        self.ordering = sorted(set(self.ordering+specs))
+        return [self.ordering.index(spec) for spec in specs]
 
 
     def _get_frame(self, key):

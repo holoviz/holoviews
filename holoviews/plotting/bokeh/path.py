@@ -35,15 +35,17 @@ class PathPlot(ElementPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        for key, el in element.data.items():
-            style = self.lookup_options(el, 'style')
-            style = style.max_cycles(len(self.ordering))
+
+        zorders = self._updated_zorders(element)
+        styles = self.lookup_options(element.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(element.data.items(), zorders):
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-            zorder = self.get_zorder(element, key, el)
-            val = style[zorder].get('color')
+            val = styles[zorder].get('color')
             if val:
                 elmapping['line_color'] = 'color'
                 if isinstance(val, tuple):
@@ -92,16 +94,18 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        for key, el in element.data.items():
-            style = self.lookup_options(el, 'style')
-            style = style.max_cycles(len(self.ordering))
+        
+        zorders = self._updated_zorders(element)
+        styles = self.lookup_options(element.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(element.data.items(), zorders):
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
             if 'color' not in elmapping:
-                zorder = self.get_zorder(element, key, el)
-                val = style[zorder].get('color')
+                val = styles[zorder].get('color')
                 elmapping['color'] = 'color'
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
