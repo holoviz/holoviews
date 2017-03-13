@@ -49,7 +49,12 @@ def render(obj, **kwargs):
         return render_anim(obj)
 
     backend = Store.current_backend
-    return Store.renderers[backend].html(obj, **kwargs)
+    renderer = Store.renderers[backend]
+
+    # Drop back to png if pdf selected, notebook PDF rendering is buggy
+    if renderer.fig == 'pdf':
+        renderer = renderer.instance(fig='png')
+    return renderer.html(obj, **kwargs)
 
 
 def single_frame_plot(obj):
@@ -153,7 +158,11 @@ def element_display(element, max_frames, max_branches):
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
         return None
+
+    # Drop back to png if pdf selected, notebook PDF rendering is buggy
     renderer = Store.renderers[backend]
+    if renderer.fig == 'pdf':
+        renderer = renderer.instance(fig='png')
     return renderer.html(element, fmt=renderer.fig)
 
 
