@@ -143,7 +143,7 @@ class ItemTable(Element):
 
 class Table(Dataset, Tabular):
     """
-    Table is an NdElement type, which gets displayed in a tabular
+    Table is a Dataset type, which gets displayed in a tabular
     format and is convertible to most other Element types.
     """
 

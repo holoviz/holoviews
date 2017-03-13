@@ -12,7 +12,7 @@ import pandas as pd
 
 from .interface import Interface
 from ..dimension import Dimension
-from ..element import Element, NdElement
+from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check
 from .. import util
@@ -52,8 +52,7 @@ class PandasInterface(Interface):
             columns = [d.name if isinstance(d, Dimension) else d
                        for d in kdims+vdims]
 
-            if ((isinstance(data, dict) and all(c in data for c in columns)) or
-                (isinstance(data, NdElement) and all(c in data.dimensions() for c in columns))):
+            if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
             elif isinstance(data, dict) and not all(d in data for d in columns):
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
