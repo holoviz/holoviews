@@ -341,7 +341,7 @@ class SelectionWidget(NdWidget):
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
 
             visibility = '' if visible else 'display: none'
-            dim_str = safe_unicode(dim.name)
+            dim_str = dim.pprint_label
             escaped_dim = dimension_sanitizer(dim_str)
             widget_data = dict(dim=escaped_dim, dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
