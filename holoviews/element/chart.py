@@ -148,7 +148,7 @@ class BoxWhisker(Chart):
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
-    _1d = True
+    _auto_indexable_1d = False
 
 
 class Histogram(Element2D):
@@ -371,7 +371,7 @@ class Spikes(Chart):
 
     vdims = param.List(default=[])
 
-    _1d = True
+    _auto_indexable_1d = False
 
 
 class Area(Curve):

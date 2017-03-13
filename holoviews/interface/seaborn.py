@@ -99,7 +99,7 @@ class Distribution(Chart):
 
     vdims = param.List(default=[Dimension('Value')])
 
-    _1d = True
+    _auto_indexable_1d = False
 
 
 class Regression(Scatter):

@@ -61,10 +61,10 @@ class PandasInterface(Interface):
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    if eltype._1d:
-                        data = np.atleast_2d(data).T
-                    else:
+                    if eltype._auto_indexable_1d:
                         data = (range(len(data)), data)
+                    else:
+                        data = np.atleast_2d(data).T
                 else:
                     data = tuple(data[:, i] for i in range(data.shape[1]))
 
