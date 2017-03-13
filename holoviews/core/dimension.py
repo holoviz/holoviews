@@ -208,9 +208,9 @@ class Dimension(param.Parameterized):
         title_format variable, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
-        unit = '' if self.unit is None else ' ' + self.unit
+        unit = '' if self.unit is None else ' ' + safe_unicode(self.unit)
         value = self.pprint_value(value)
-        return title_format.format(name=self.label, val=value, unit=unit)
+        return title_format.format(name=safe_unicode(self.label), val=value, unit=unit)
 
 
     def __hash__(self):
