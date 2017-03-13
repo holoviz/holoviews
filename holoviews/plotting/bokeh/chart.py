@@ -149,6 +149,11 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
 class VectorFieldPlot(ColorbarPlot):
 
+    arrow_heads = param.Boolean(default=True, doc="""
+       Whether or not to draw arrow heads. If arrowheads are enabled,
+       they may be customized with the 'headlength' and
+       'headaxislength' style options.""")
+
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
@@ -163,13 +168,12 @@ class VectorFieldPlot(ColorbarPlot):
        normalized.""")
 
     style_opts = ['color'] + line_properties
-    _plot_methods = dict(single='ray')
+    _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
         mag_dim = element.get_dimension(self.size_index)
         (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
-        distance = get_min_distance(element)
-        base_dist = np.sqrt(distance/np.min([x1-x0, y1-y0]))
+        base_dist = get_min_distance(element)
         if mag_dim:
             magnitudes = element.dimension_values(mag_dim)
             _, max_magnitude = ranges[mag_dim.name]
@@ -184,23 +188,46 @@ class VectorFieldPlot(ColorbarPlot):
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
 
+        # Get data
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
-        x = element.get_dimension(xidx).name
-        y = element.get_dimension(yidx).name
         angle_dim = element.get_dimension(2).name
-        angles = element.dimension_values(2)
-
-        data = {x: element.dimension_values(xidx),
-                y: element.dimension_values(yidx), angle_dim: angles}
-        mapping = dict(x=x, y=y, angle=angle_dim, length='length')
-
+        rads = element.dimension_values(2)
+        lens = self._get_lengths(element, ranges)
+        cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
                                                name='line_color')
-        data.update(cdata)
-        mapping.update(cmapping)
 
-        data['length'] = self._get_lengths(element, ranges)
+        # Compute segments and arrowheads
+        xs = element.dimension_values(xidx)
+        ys = element.dimension_values(yidx)
+        x0s = xs + np.cos(rads)*lens/2.
+        y0s = ys + np.sin(rads)*lens/2.
+        x1s = xs - np.cos(rads)*lens/2.
+        y1s = ys - np.sin(rads)*lens/2.
+
+        if self.arrow_heads:
+            xa1s = x0s + np.cos(rads+np.pi/4.*3)*(lens/4.)
+            ya1s = y0s + np.sin(rads+np.pi/4.*3)*(lens/4.)
+            xa2s = x0s + np.cos(rads-np.pi/4.*3)*(lens/4.)
+            ya2s = y0s + np.sin(rads-np.pi/4.*3)*(lens/4.)
+            x0s = np.concatenate([x0s, x0s, x0s])
+            x1s = np.concatenate([x1s, xa1s, xa2s])
+            y0s = np.concatenate([y0s, y0s, y0s])
+            y1s = np.concatenate([y1s, ya1s, ya2s])
+            if cdim:
+                color = cdata.get(cdim.name)
+                color = np.concatenate([color, color, color])
+        elif cdim:
+            color = cdata.get(cdim.name)
+
+        data = {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}
+        mapping = dict(x0='x0', x1='x1', y0='y0', y1='y1')
+        if cdim:
+            data[cdim.name] = color
+            mapping.update(cmapping)
+
         return (data, mapping)
+
 
 
 class CurvePlot(ElementPlot):
