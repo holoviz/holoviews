@@ -203,16 +203,17 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute segments and arrowheads
         xs = element.dimension_values(xidx)
         ys = element.dimension_values(yidx)
-        x0s = xs + np.cos(rads)*lens/2.
-        y0s = ys + np.sin(rads)*lens/2.
-        x1s = xs - np.cos(rads)*lens/2.
-        y1s = ys - np.sin(rads)*lens/2.
+        xoffsets = np.cos(rads)*lens/2.
+        yoffsets = np.sin(rads)*lens/2.
+        x0s, x1s = (xs + xoffsets, xs - xoffsets)
+        y0s, y1s = (ys + yoffsets, ys - yoffsets)
 
         if self.arrow_heads:
-            xa1s = x0s - np.cos(rads+np.pi/4)*(lens/4.)
-            ya1s = y0s - np.sin(rads+np.pi/4)*(lens/4.)
-            xa2s = x0s - np.cos(rads-np.pi/4)*(lens/4.)
-            ya2s = y0s - np.sin(rads-np.pi/4)*(lens/4.)
+            arrow_len = (lens/4.)
+            xa1s = x0s - np.cos(rads+np.pi/4)*arrow_len
+            ya1s = y0s - np.sin(rads+np.pi/4)*arrow_len
+            xa2s = x0s - np.cos(rads-np.pi/4)*arrow_len
+            ya2s = y0s - np.sin(rads-np.pi/4)*arrow_len
             x0s = np.concatenate([x0s, x0s, x0s])
             x1s = np.concatenate([x1s, xa1s, xa2s])
             y0s = np.concatenate([y0s, y0s, y0s])
