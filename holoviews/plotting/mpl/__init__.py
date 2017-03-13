@@ -81,9 +81,9 @@ Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
-                 'linestyle': ['ls'], 'size': ['s'], 'color': ['c'],
-                 'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
-                 'markerfacecolor': ['mfc'], 'markersize': ['ms']}
+                 'size': ['s'], 'color': ['c'], 'markeredgecolor': ['mec'],
+                 'markeredgewidth': ['mew'], 'markerfacecolor': ['mfc'],
+                 'markersize': ['ms']}
 
 Store.renderers['matplotlib'] = MPLRenderer.instance()
 
