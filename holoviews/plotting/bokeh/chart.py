@@ -150,9 +150,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 class VectorFieldPlot(ColorbarPlot):
 
     arrow_heads = param.Boolean(default=True, doc="""
-       Whether or not to draw arrow heads. If arrowheads are enabled,
-       they may be customized with the 'headlength' and
-       'headaxislength' style options.""")
+       Whether or not to draw arrow heads.""")
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -167,6 +165,10 @@ class VectorFieldPlot(ColorbarPlot):
        it will be assumed that the lengths have already been correctly
        normalized.""")
 
+    rescale_lengths = param.Boolean(default=True, doc="""
+       Whether the lengths will be rescaled to take into account the
+       smallest non-zero distance between two vectors.""")
+
     style_opts = ['color'] + line_properties
     _plot_methods = dict(single='segment')
 
@@ -179,7 +181,8 @@ class VectorFieldPlot(ColorbarPlot):
             _, max_magnitude = ranges[mag_dim.name]
             if self.normalize_lengths and max_magnitude != 0:
                 magnitudes = magnitudes / max_magnitude
-            magnitudes *= base_dist
+            if self.rescale_lengths:
+                magnitudes *= base_dist
         else:
             magnitudes = np.ones(len(element))*base_dist
         return magnitudes
@@ -188,7 +191,7 @@ class VectorFieldPlot(ColorbarPlot):
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
 
-        # Get data
+        # Get x, y, angle, magnitude and color data
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         angle_dim = element.get_dimension(2).name
         rads = element.dimension_values(2)
@@ -206,10 +209,10 @@ class VectorFieldPlot(ColorbarPlot):
         y1s = ys - np.sin(rads)*lens/2.
 
         if self.arrow_heads:
-            xa1s = x0s + np.cos(rads+np.pi/4.*3)*(lens/4.)
-            ya1s = y0s + np.sin(rads+np.pi/4.*3)*(lens/4.)
-            xa2s = x0s + np.cos(rads-np.pi/4.*3)*(lens/4.)
-            ya2s = y0s + np.sin(rads-np.pi/4.*3)*(lens/4.)
+            xa1s = x0s - np.cos(rads+np.pi/4)*(lens/4.)
+            ya1s = y0s - np.sin(rads+np.pi/4)*(lens/4.)
+            xa2s = x0s - np.cos(rads-np.pi/4)*(lens/4.)
+            ya2s = y0s - np.sin(rads-np.pi/4)*(lens/4.)
             x0s = np.concatenate([x0s, x0s, x0s])
             x1s = np.concatenate([x1s, xa1s, xa2s])
             y0s = np.concatenate([y0s, y0s, y0s])
