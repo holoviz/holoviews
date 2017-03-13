@@ -940,6 +940,24 @@ class ColorbarPlot(ElementPlot):
         return cmapper
 
 
+    def _get_color_data(self, element, ranges, style, name='color'):
+        data, mapping = {}, {}
+        cdim = element.get_dimension(self.color_index)
+        if cdim:
+            cdata = element.dimension_values(cdim)
+            factors = None
+            if isinstance(cdata, list) or cdata.dtype.kind in 'OSU':
+                factors = list(np.unique(cdata))
+            mapper = self._get_colormapper(cdim, element, ranges, style,
+                                           factors)
+            data[cdim.name] = cdata
+            if factors is not None:
+                mapping['legend'] = {'field': cdim.name}
+            mapping[name] = {'field': cdim.name,
+                             'transform': mapper}
+        return data, mapping
+
+
     def _get_cmapper_opts(self, low, high, factors, colors):
         if factors is None:
             colormapper = LogColorMapper if self.logz else LinearColorMapper

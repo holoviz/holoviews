@@ -20,7 +20,8 @@ from ...core.util import (match_spec, unique_iterator, safe_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
 from ...operation import interpolate_curve
-from ..util import compute_sizes, get_sideplot_ranges, map_colors
+from ..util import (compute_sizes, get_sideplot_ranges, map_colors,
+                    get_min_distance)
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -633,16 +634,7 @@ class VectorFieldPlot(ColorbarPlot):
         """
         Get the minimum sample distance and maximum magnitude
         """
-        return np.min([self._get_min_dist(vfield) for vfield in vmap])
-
-
-    def _get_min_dist(self, vfield):
-        "Get the minimum sampling distance."
-        xys = vfield.array([0, 1]).view(dtype=np.complex128)
-        m, n = np.meshgrid(xys, xys)
-        distances = np.abs(m-n)
-        np.fill_diagonal(distances, np.inf)
-        return distances[distances>0].min()
+        return np.min([get_min_distance(vfield) for vfield in vmap])
 
 
     def get_data(self, element, ranges, style):
