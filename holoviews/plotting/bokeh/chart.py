@@ -98,9 +98,11 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        for key, el in element.data.items():
-            style = self.lookup_options(el, 'style')
-            style = style.max_cycles(len(self.ordering))
+        zorders = self._updated_zorders(element)
+        styles = self.lookup_options(element.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
@@ -108,8 +110,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
             nvals = len(data[k][-1])
             if 'color' not in elmapping:
-                zorder = self.get_zorder(element, key, el)
-                val = style[zorder].get('color')
+                val = styles[zorder].get('color')
                 elmapping['color'] = 'color'
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
@@ -271,16 +272,18 @@ class CurvePlot(ElementPlot):
     def get_batched_data(self, overlay, ranges=None, empty=False):
         data = defaultdict(list)
         opts = ['color', 'line_alpha', 'line_color']
-        for key, el in overlay.data.items():
+
+        zorders = self._updated_zorders(overlay)
+        styles = self.lookup_options(overlay.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(overlay.data.items(), zorders):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
 
             # Add options
-            style = self.lookup_options(el, 'style')
-            style = style.max_cycles(len(self.ordering))
-            zorder = self.get_zorder(overlay, key, el)
-            style = style[zorder]
+            style = styles[zorder]
             for opt in opts:
                 if opt not in style:
                     continue
