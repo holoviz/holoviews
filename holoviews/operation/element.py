@@ -758,8 +758,12 @@ class gridmatrix(param.ParameterizedFunction):
         for d1, d2 in permuted_dims:
             if d1 == d2:
                 if p.diagonal_type is not None:
-                    values = element.dimension_values(d1)
-                    el = p.diagonal_type(values, vdims=[d1])
+                    if p.diagonal_type._auto_indexable_1d:
+                        el = p.diagonal_type(el_data, kdims=[d1], vdims=[d2],
+                                             datatype=['dataframe', 'dictionary'])
+                    else:
+                        values = element.dimension_values(d1)
+                        el = p.diagonal_type(values, vdims=[d1])
                 elif p.diagonal_operation is histogram or isinstance(p.diagonal_operation, histogram):
                     bin_range = ranges.get(d1.name, element.range(d1))
                     opts = dict(axiswise=True, framewise=True)

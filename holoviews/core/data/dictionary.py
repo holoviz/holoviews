@@ -49,10 +49,10 @@ class DictInterface(Interface):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                if eltype._1d:
-                    data = np.atleast_2d(data).T
-                else:
+                if eltype._auto_indexable_1d:
                     data = np.column_stack([np.arange(len(data)), data])
+                else:
+                    data = np.atleast_2d(data).T
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
