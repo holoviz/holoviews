@@ -130,10 +130,13 @@ def process_ellipses(obj, key, vdim_selection=False):
     return head + ((slice(None),) * padlen) + tail
 
 
-def safe_unicode(value):
-   if sys.version_info.major == 3 or not isinstance(value, str): return value
-   else: return unicode(value.decode('utf-8'))
-
+def bytes_to_unicode(value):
+    """
+    Safely casts bytestring to unicode
+    """
+    if isinstance(value, bytes):
+        return unicode(value.decode('utf-8'))
+    return value
 
 
 def capitalize_unicode_name(s):
@@ -297,7 +300,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         for c in identifier:
             replacement = unicodedata.normalize('NFKD', c).encode('ASCII', 'ignore')
             if replacement != '':
-                chars += safe_unicode(replacement)
+                chars += bytes_to_unicode(replacement)
             else:
                 chars += c
         return chars
@@ -328,7 +331,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
             return self.aliases[name]
         elif name in self._lookup_table:
            return self._lookup_table[name]
-        name = safe_unicode(name)
+        name = bytes_to_unicode(name)
         version = self.version if version is None else version
         if not self.allowable(name):
             raise AttributeError("String %r is in the disallowed list of attribute names: %r" % self.disallowed)

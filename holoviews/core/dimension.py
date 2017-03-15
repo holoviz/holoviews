@@ -14,7 +14,7 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         safe_unicode, unicode, dt64_to_dt, unique_array)
+                         bytes_to_unicode, unicode, dt64_to_dt, unique_array)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -173,7 +173,7 @@ class Dimension(param.Parameterized):
         "The pretty-printed label string for the Dimension"
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
-        return safe_unicode(self.label) + safe_unicode(unit)
+        return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
 
     def pprint_value(self, value):
@@ -195,7 +195,7 @@ class Dimension(param.Parameterized):
                     return formatter.format(value)
                 else:
                     return formatter % value
-        return value
+        return unicode(bytes_to_unicode(value))
 
 
     def __repr__(self):
@@ -208,9 +208,9 @@ class Dimension(param.Parameterized):
         title_format variable, including the unit string (if
         set). Numeric types are printed to the stated rounding level.
         """
-        unit = '' if self.unit is None else ' ' + safe_unicode(self.unit)
+        unit = '' if self.unit is None else ' ' + bytes_to_unicode(self.unit)
         value = self.pprint_value(value)
-        return title_format.format(name=safe_unicode(self.label), val=value, unit=unit)
+        return title_format.format(name=bytes_to_unicode(self.label), val=value, unit=unit)
 
 
     def __hash__(self):
