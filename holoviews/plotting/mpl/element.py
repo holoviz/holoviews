@@ -200,8 +200,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     self._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
 
             # Apply aspects
-            if not (self.logx or self.logy):
-                self._set_aspect(axis, self.aspect)
+            self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
             self._finalize_artist(key)
@@ -296,13 +295,22 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if aspect and aspect == 'square':
-            axes.set_aspect((1./axes.get_data_ratio()))
-        elif aspect not in [None, 'square']:
-            if isinstance(aspect, util.basestring):
-                axes.set_aspect(aspect)
-            else:
-                axes.set_aspect(((1./axes.get_data_ratio()))/aspect)
+        if aspect is None:
+            return
+        elif isinstance(aspect, util.basestring) and aspect != 'square':
+            axes.set_aspect(aspect)
+            return
+
+        (x0, x1), (y0, y1) = axes.get_xlim(), axes.get_ylim()
+        xsize = np.log(x1) - np.log(x0) if self.logx else x1-x0
+        ysize = np.log(y1) - np.log(y0) if self.logy else y1-y0
+        xsize = max(abs(xsize), 1e-30)
+        ysize = max(abs(ysize), 1e-30)
+        data_ratio = 1./(ysize/xsize)
+        if aspect == 'square':
+            axes.set_aspect(data_ratio)
+        else:
+            ax.set_aspect(data_ratio/aspect)
 
 
     def _set_axis_limits(self, axis, view, subplots, ranges):
