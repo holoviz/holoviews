@@ -984,8 +984,6 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 own_params = self.get_param_values(onlychanged=True)
                 sublabel_opts = {k: v for k, v in own_params
                                  if 'sublabel_' in k}
-                if not isinstance(view, GridSpace):
-                    override_opts = dict(aspect='square')
             elif pos == 'right':
                 right_opts = dict(invert_axes=True,
                                   xaxis=None)
