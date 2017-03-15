@@ -174,9 +174,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
 
-                # Set axes limits
-                self._set_axis_limits(axis, element, subplots, ranges)
-
                 if not subplots:
                     legend = axis.get_legend()
                     if legend:
@@ -198,6 +195,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Apply ticks
                 if self.apply_ticks:
                     self._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
+
+                # Set axes limits
+                self._set_axis_limits(axis, element, subplots, ranges)
 
             # Apply aspects
             self._set_aspect(axis, self.aspect)
