@@ -185,6 +185,10 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.xaxis.grid(self.show_grid)
                     axis.yaxis.grid(self.show_grid)
 
+
+                # Apply aspects
+                self._set_aspect(axis, self.aspect)
+
                 # Apply log axes
                 if self.logx:
                     axis.set_xscale('log')
@@ -198,10 +202,6 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 # Apply ticks
                 if self.apply_ticks:
                     self._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
-
-            # Apply aspects
-            if not (self.logx or self.logy):
-                self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
             self._finalize_artist(key)
