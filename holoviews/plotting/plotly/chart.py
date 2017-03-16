@@ -210,8 +210,7 @@ class BoxWhiskerPlot(ElementPlot):
         plots = []
         for key, group in groups:
             if element.kdims:
-                label = ','.join([util.unicode(util.safe_unicode(d.pprint_value(v)))
-                                  for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
             data = {axis: group.dimension_values(group.vdims[0])}

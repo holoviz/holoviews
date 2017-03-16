@@ -7,7 +7,7 @@ import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
-from ...core.util import (dimension_sanitizer, safe_unicode,
+from ...core.util import (dimension_sanitizer, bytes_to_unicode,
                           unique_array, unicode, isnumeric,
                           wrap_tuple_streams, drop_streams)
 from ...core.traversal import hierarchical
@@ -23,7 +23,7 @@ def escape_vals(vals, escape_numerics=True):
     escaped = []
     for v in vals:
         if not isnumeric(v):
-            v = "'"+unicode(safe_unicode(v))+"'"
+            v = "'"+unicode(bytes_to_unicode(v))+"'"
         elif isinstance(v, np.datetime64):
             v = "'"+str(v)+"'"
         else:
@@ -316,7 +316,7 @@ class SelectionWidget(NdWidget):
 
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
-                    next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
+                    next_dim = bytes_to_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
 

@@ -280,7 +280,7 @@ class DimensionedPlot(Plot):
                             zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
-        return util.safe_unicode(separator.join(g for g in groups if g))
+        return util.bytes_to_unicode(separator.join(g for g in groups if g))
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -746,9 +746,9 @@ class GenericElementPlot(DimensionedPlot):
         if self.layout_dimensions:
             title = dim_title
         else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
+            title_format = util.bytes_to_unicode(self.title_format)
+            title = title_format.format(label=util.bytes_to_unicode(label),
+                                        group=util.bytes_to_unicode(group),
                                         type=type_name,
                                         dimensions=dim_title)
         return title.strip(' \n')
@@ -1021,12 +1021,12 @@ class GenericCompositePlot(DimensionedPlot):
         dim_title = self._frame_title(key, 3, separator)
         layout = self.layout
         type_name = type(self.layout).__name__
-        group = util.safe_unicode(layout.group if layout.group != type_name else '')
-        label = util.safe_unicode(layout.label)
-        title = util.safe_unicode(self.title_format).format(label=label,
-                                                            group=group,
-                                                            type=type_name,
-                                                            dimensions=dim_title)
+        group = util.bytes_to_unicode(layout.group if layout.group != type_name else '')
+        label = util.bytes_to_unicode(layout.label)
+        title = util.bytes_to_unicode(self.title_format).format(label=label,
+                                                                group=group,
+                                                                type=type_name,
+                                                                dimensions=dim_title)
         return title.strip(' \n')
 
 

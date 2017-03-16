@@ -16,7 +16,7 @@ mpl_version = LooseVersion(mpl.__version__)
 import param
 
 from ...core import OrderedDict, Dimension
-from ...core.util import (match_spec, unique_iterator, safe_unicode,
+from ...core.util import (match_spec, unique_iterator, bytes_to_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
 from ...operation import interpolate_curve
@@ -1045,8 +1045,7 @@ class BoxPlot(ChartPlot):
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         for key, group in groups:
             if element.kdims:
-                label = ','.join([unicode(safe_unicode(d.pprint_value(v)))
-                                  for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
             data.append(group[group.vdims[0]])

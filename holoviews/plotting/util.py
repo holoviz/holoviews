@@ -7,7 +7,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store, Dataset)
 from ..core.spaces import get_nested_streams, Callable
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
-                         get_overlay_spec, unique_iterator, safe_unicode)
+                         get_overlay_spec, unique_iterator)
 
 
 def displayable(obj):
@@ -289,8 +289,7 @@ def dim_axis_label(dimensions, separator=', '):
     Returns an axis label for one or more dimensions.
     """
     if not isinstance(dimensions, list): dimensions = [dimensions]
-    return separator.join([safe_unicode(d.pprint_label)
-                           for d in dimensions])
+    return separator.join([d.pprint_label for d in dimensions])
 
 
 def attach_streams(plot, obj):
