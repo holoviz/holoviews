@@ -98,6 +98,54 @@ class AdjointLayout(Dimensioned):
         super(AdjointLayout, self).__init__(data, **params)
 
 
+    def __mul__(self, other, reverse=False):
+        layer1 = other if reverse else self
+        layer2 = self if reverse else other
+        adjoined_items = []
+        if isinstance(layer1, AdjointLayout) and isinstance(layer2, AdjointLayout):
+            adjoined_items = []
+            adjoined_items.append(layer1.main*layer2.main)
+            if layer1.right is not None and layer2.right is not None:
+                if layer1.right.dimensions() == layer2.right.dimensions():
+                    adjoined_items.append(layer1.right*layer2.right)
+                else:
+                    adjoined_items += [layer1.right, layer2.right]
+            elif layer1.right is not None:
+                adjoined_items.append(layer1.right)
+            elif layer2.right is not None:
+                adjoined_items.append(layer2.right)
+
+            if layer1.top is not None and layer2.top is not None:
+                if layer1.top.dimensions() == layer2.top.dimensions():
+                    adjoined_items.append(layer1.top*layer2.top)
+                else:
+                    adjoined_items += [layer1.top, layer2.top]
+            elif layer1.top is not None:
+                adjoined_items.append(layer1.top)
+            elif layer2.top is not None:
+                adjoined_items.append(layer2.top)
+            if len(adjoined_items) > 3:
+                raise ValueError("AdjointLayouts could not be overlaid, "
+                                 "the dimensions of the adjoined plots "
+                                 "do not match and the AdjointLayout can "
+                                 "hold no more than two adjoined plots.")
+        elif isinstance(layer1, AdjointLayout):
+            adjoined_items = list(layer1.data.values())
+            adjoined_items[0] = layer1.main * layer2
+        elif isinstance(layer2, AdjointLayout):
+            adjoined_items = list(layer2.data.values())
+            adjoined_items[0] = layer1 * layer2.main
+
+        if adjoined_items:
+            return self.clone(adjoined_items)
+        else:
+            return NotImplemented
+
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
+
+
     @property
     def group(self):
         if self.main and self.main.group != type(self.main).__name__:
