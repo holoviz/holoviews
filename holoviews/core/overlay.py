@@ -36,9 +36,7 @@ class Overlayable(object):
             items = [(k, self * v) for (k, v) in other.items()]
             return other.clone(items)
         elif isinstance(other, AdjointLayout):
-            adjoined_items = list(other.data.values())
-            adjoined_items[0] = self * other.main
-            return other.clone(adjoined_items)
+            return NotImplemented
 
         return Overlay.from_values([self, other])
 
