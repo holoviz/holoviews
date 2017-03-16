@@ -211,6 +211,46 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot = mpl_renderer.get_plot(curve_dt*curve_dt64*curve_pd)
         self.assertEqual(plot.handles['axis'].get_xlim(), (735964.0, 735976.0))
 
+    def test_image_cbar_extend_both(self):
+        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1,2)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True)))
+        self.assertEqual(plot.handles['cbar'].extend, 'both')
+
+    def test_image_cbar_extend_min(self):
+        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(1, None)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True)))
+        self.assertEqual(plot.handles['cbar'].extend, 'min')
+
+    def test_image_cbar_extend_max(self):
+        img = Image(np.array([[0, 1], [2, 3]])).redim(z=dict(range=(None, 2)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True)))
+        self.assertEqual(plot.handles['cbar'].extend, 'max')
+
+    def test_image_cbar_extend_clime(self):
+        img = Image(np.array([[0, 1], [2, 3]]))(style=dict(clim=(None, None)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        self.assertEqual(plot.handles['cbar'].extend, 'neither')
+
+    def test_points_cbar_extend_both(self):
+        img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1,2)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        self.assertEqual(plot.handles['cbar'].extend, 'both')
+
+    def test_points_cbar_extend_min(self):
+        img = Points(([0, 1], [0, 3])).redim(y=dict(range=(1, None)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        self.assertEqual(plot.handles['cbar'].extend, 'min')
+
+    def test_points_cbar_extend_max(self):
+        img = Points(([0, 1], [0, 3])).redim(y=dict(range=(None, 2)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        self.assertEqual(plot.handles['cbar'].extend, 'max')
+
+    def test_points_cbar_extend_clime(self):
+        img = Points(([0, 1], [0, 3]))(style=dict(clim=(None, None)))
+        plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
+        self.assertEqual(plot.handles['cbar'].extend, 'neither')
+
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
