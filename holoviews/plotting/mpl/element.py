@@ -307,10 +307,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         xsize = max(abs(xsize), 1e-30)
         ysize = max(abs(ysize), 1e-30)
         data_ratio = 1./(ysize/xsize)
-        if aspect == 'square':
-            axes.set_aspect(data_ratio)
-        else:
-            ax.set_aspect(data_ratio/aspect)
+        if aspect != 'square':
+            data_ratio = data_ratio/aspect
+        axes.set_aspect(data_ratio)
 
 
     def _set_axis_limits(self, axis, view, subplots, ranges):
