@@ -1,4 +1,6 @@
 import uuid
+import time
+import tempfile
 
 import numpy as np
 import param
@@ -6,12 +8,13 @@ from param.parameterized import bothmethod
 
 from bokeh.charts import Chart
 from bokeh.document import Document
-from bokeh.embed import notebook_div
+from bokeh.embed import notebook_div, file_html
 from bokeh.io import load_notebook, curdoc
 from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
                           WidgetBox, Div, DataTable, Tabs)
 from bokeh.plotting import Figure
 from bokeh.resources import CDN, INLINE
+from bokeh.util.browser import view as browser_view
 
 from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
@@ -117,6 +120,19 @@ class BokehRenderer(Renderer):
         plot.document = doc
         return div
 
+    def show(self, obj, browser=None, resource=CDN):
+        """
+        Renders the supplied object and displays it using specified browser.
+        """
+        plot = self.get_plot(obj)
+        plot.initialize_plot()
+        html = file_html(plot.state, resource)
+        tf = tempfile.NamedTemporaryFile('w')
+        tf.write(html)
+        tf.seek(0)
+        browser_view(tf.name, browser)
+        time.sleep(5)
+        tf.close()
 
     def diff(self, plot, serialize=True):
         """
