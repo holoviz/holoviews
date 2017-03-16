@@ -103,7 +103,7 @@ class AdjointLayout(Dimensioned):
         layer2 = self if reverse else other
         adjoined_items = []
         if isinstance(layer1, AdjointLayout) and isinstance(layer2, AdjointLayout):
-            adjoined_items = layer1.data.values()
+            adjoined_items = list(layer1.data.values())
             adjoined_items[0] = layer1.main*layer2.main
             too_many = False
             if layer1.right is not None and layer2.right is not None:
@@ -126,10 +126,10 @@ class AdjointLayout(Dimensioned):
                                  "do not match and the AdjointLayout can "
                                  "hold no more than two adjoined plots.")
         elif isinstance(layer1, AdjointLayout):
-            adjoined_items = layer1.data.values()
+            adjoined_items = list(layer1.data.values())
             adjoined_items[0] = layer1.main * layer2
         elif isinstance(layer2, AdjointLayout):
-            adjoined_items = layer2.data.values()
+            adjoined_items = list(layer2.data.values())
             adjoined_items[0] = layer1 * layer2.main
 
         if adjoined_items:
