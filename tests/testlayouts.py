@@ -87,6 +87,25 @@ class AdjointLayoutTest(CompositeTest):
         self.assertEqual(layout.main, self.hmap * self.view1)
         self.assertEqual(layout.right, self.view3 * self.view3)
 
+    def test_adjointlayout_overlay_adjoined_holomap_nomatch(self):
+        dim_view = self.view3.clone(kdims=['x', 'y'])
+        layout = (self.view1 << self.view3) * (self.hmap << dim_view)
+        self.assertEqual(layout.main, self.view1 * self.hmap)
+        self.assertEqual(layout.right, self.view3)
+        self.assertEqual(layout.top, dim_view)
+
+    def test_adjointlayout_overlay_adjoined_holomap_nomatch_reverse(self):
+        dim_view = self.view3.clone(kdims=['x', 'y'])
+        layout = (self.hmap << dim_view) * (self.view1 << self.view3)
+        self.assertEqual(layout.main, self.hmap * self.view1)
+        self.assertEqual(layout.right, dim_view)
+        self.assertEqual(layout.top, self.view3)
+
+    def test_adjointlayout_overlay_adjoined_holomap_nomatch_too_many(self):
+        dim_view = self.view3.clone(kdims=['x', 'y'])
+        with self.assertRaises(ValueError):
+            (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
+
 
         
 class NdLayoutTest(CompositeTest):
