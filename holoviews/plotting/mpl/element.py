@@ -200,7 +200,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self._set_axis_limits(axis, element, subplots, ranges)
 
             # Apply aspects
-            self._set_aspect(axis, self.aspect)
+            if self.aspect is not None and self.projection != 'polar':
+                self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
             self._finalize_artist(key)
@@ -295,9 +296,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if aspect is None:
-            return
-        elif isinstance(aspect, util.basestring) and aspect != 'square':
+        if isinstance(aspect, util.basestring) and aspect != 'square':
             axes.set_aspect(aspect)
             return
 
