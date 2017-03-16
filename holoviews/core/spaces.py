@@ -11,10 +11,10 @@ from . import traversal, util
 from .dimension import OrderedDict, Dimension, ViewableElement
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
-from .overlay import Overlay, CompositeOverlay, NdOverlay
+from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
 
-class HoloMap(UniformNdMapping):
+class HoloMap(UniformNdMapping, Overlayable):
     """
     A HoloMap can hold any number of DataLayers indexed by a list of
     dimension values. It also has a number of properties, which can find
@@ -218,8 +218,7 @@ class HoloMap(UniformNdMapping):
             items = [(k, v * other) for (k, v) in self.data.items()]
             return self.clone(items, label=self._label, group=self._group)
         else:
-            raise Exception("Can only overlay with {data} or {vmap}.".format(
-                data=self.data_type, vmap=self.__class__.__name__))
+            return NotImplemented
 
 
     def __add__(self, obj):
