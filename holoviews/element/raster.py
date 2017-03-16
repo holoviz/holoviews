@@ -519,7 +519,7 @@ class Image(SheetCoordinateSystem, Raster):
     def range(self, dim, data_range=True):
         dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
         dim = self.get_dimension(dim_idx)
-        if dim.range != (None, None):
+        if None not in dim.range:
             return dim.range
         elif dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
@@ -532,13 +532,14 @@ class Image(SheetCoordinateSystem, Raster):
             data = np.atleast_3d(self.data)[:, :, dim_idx]
             drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            soft_range = [sr for sr in dim.soft_range if sr is not None]
+            soft_range = [np.NaN if sr is None else sr for sr in dim.soft_range]
             if soft_range:
-                return util.max_range([drange, soft_range])
-            else:
-                return drange
+                drange = util.max_range([drange, soft_range])
+            ranges = zip(drange, dim.range)
         else:
-            return dim.soft_range
+            ranges = zip(dim.soft_range, dim.range)
+        return tuple(datar if dimr is None else dimr
+                     for datar, dimr in ranges)
 
 
     def _coord2matrix(self, coord):
