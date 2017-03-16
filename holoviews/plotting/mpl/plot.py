@@ -130,6 +130,11 @@ class MPLPlot(DimensionedPlot):
                          'finalize_hooks, not both.')
         self.finalize_hooks = self.final_hooks
         self.handles['bbox_extra_artists'] = []
+        if self.renderer.interactive:
+            plt.ion()
+            self._close_figures = False
+        else:
+            plt.ioff()
 
 
     def _init_axis(self, fig, axis):

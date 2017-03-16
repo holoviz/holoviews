@@ -190,4 +190,6 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
+        import matplotlib.pyplot as plt
+        plt.switch_backend('agg')
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
