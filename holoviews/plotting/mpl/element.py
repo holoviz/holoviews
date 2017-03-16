@@ -614,7 +614,7 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = plt.colorbar(artist, cax=cax, extend=self._cbar_extend)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self._cbar_extend)
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
@@ -628,7 +628,6 @@ class ColorbarPlot(ElementPlot):
                               b, scaled_w, h])
 
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
-
 
 
     def _norm_kwargs(self, element, ranges, opts, vdim):
@@ -658,12 +657,18 @@ class ColorbarPlot(ElementPlot):
         opts['vmax'] = clim[1]
 
         # Check whether the colorbar should indicate clipping
-        el_min, el_max = element.range(vdim)
-        if el_min < opts['vmin'] and el_max > opts['vmax']:
+        values = element.dimension_values(vdim)
+        if values.dtype.kind not in 'OSUM':
+            el_min, el_max = np.nanmin(values), np.nanmax(values)
+        else:
+            el_min, el_max = -np.inf, np.inf
+        vmin = -np.inf if opts['vmin'] is None else opts['vmin']
+        vmax = np.inf if opts['vmax'] is None else opts['vmax']
+        if el_min < vmin and el_max > vmax:
             self._cbar_extend = 'both'
-        elif el_min < opts['vmin']:
+        elif el_min < vmin:
             self._cbar_extend = 'min'
-        elif el_max > opts['vmax']:
+        elif el_max > vmax:
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
