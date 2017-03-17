@@ -120,16 +120,19 @@ class MPLRenderer(Renderer):
         Renders the supplied object and displays it using the active
         GUI backend.
         """
+        if self.interactive:
+            return self.get_plot(obj)
+
         from .plot import MPLPlot
         MPLPlot._close_figures = False
         try:
             plot = self.get_plot(obj)
-            plot.initialize_plot()
             plt.show(plot.state)
         except:
             MPLPlot._close_figures = True
             raise
         MPLPlot._close_figures = True
+        return plot
 
 
     @classmethod
