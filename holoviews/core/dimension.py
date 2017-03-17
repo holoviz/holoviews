@@ -582,7 +582,6 @@ class Dimensioned(LabelledData):
        A string describing the data wrapped by the object.""")
 
     __abstract = True
-    _sorted = False
     _dim_groups = ['kdims', 'vdims', 'cdims', 'ddims']
     _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
                         constant_dimensions='cdims', deep_dimensions='ddims')

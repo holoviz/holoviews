@@ -269,8 +269,10 @@ class NdElement(NdMapping, Tabular):
         Note: String values may be supplied in the constructor which
         will then be promoted to Dimension objects.""")
 
+    sort = param.Boolean(default=False, doc="""
+        Whether the items should be sorted in the constructor.""")
+
     _deep_indexable = False
-    _sorted = False
 
     def __init__(self, data=None, **params):
         self.warning('NdElement will be deprecated in v2.0 and should '
