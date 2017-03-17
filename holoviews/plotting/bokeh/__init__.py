@@ -1,7 +1,7 @@
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, GridMatrix, NdLayout)
+                     GridSpace, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
@@ -77,8 +77,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Tabular
                 Table: TablePlot,
-                ItemTable: TablePlot,
-                NdElement: TablePlot}
+                ItemTable: TablePlot}
 
 if DFrame is not None:
     associations[DFrame] = TablePlot

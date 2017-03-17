@@ -273,6 +273,8 @@ class NdElement(NdMapping, Tabular):
     _sorted = False
 
     def __init__(self, data=None, **params):
+        self.warning('NdElement will be deprecated in v2.0 and should '
+                     'not be appearing unless instantiated directly.')
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 

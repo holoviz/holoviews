@@ -6,9 +6,9 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import ArrayInterface, NdElementInterface, DictInterface
+from ..core.data import ArrayInterface, DictInterface
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Dataset, NdElement)
+                    Overlay, Element, Dataset)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
