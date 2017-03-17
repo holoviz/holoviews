@@ -8,7 +8,8 @@ import param
 from ..core import util
 from ..core.data import ArrayInterface, NdElementInterface, DictInterface
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Dataset, NdElement)
+                    Overlay, Element, Dataset, NdElement,
+                    CompositeOverlay)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
@@ -702,17 +703,30 @@ class RGB(Image):
 
     def __init__(self, data, **params):
         sliced = None
-        if isinstance(data, Overlay):
+        if issubclass(type(data), CompositeOverlay):
             images = data.values()
-            if not all(isinstance(im, Image) for im in images):
-                raise ValueError("Input overlay must only contain Image elements")
+            if not all((isinstance(im, Image) or isinstance(im, Raster)) for im in images):
+                raise ValueError("Input overlay must only contain Image or Raster elements")
             shapes = [im.data.shape for im in images]
             if not all(shape==shapes[0] for shape in shapes):
                 raise ValueError("Images in the input overlays must contain data of the consistent shape")
-            ranges = [im.vdims[0].range for im in images]
-            if any(None in r for r in ranges):
-                raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
+
+            undefined_ranges, ranges = [], []
+            for i, im in enumerate(images):
+                dim = im.vdim[0]
+                if None in dim.range:
+                    undefined_ranges.append(dim.name)
+                    ranges.append((0, 1))
+                else:
+                    ranges.append(dim.range)
+
+                if len(undefined_ranges) > 0:
+                    undefined = ", ".join(undefined_ranges)
+                    self.warning("Undefined ranges on value dimensions are encountered."
+                                 "Assuming range (0,1) for vdims: {}".format(undefined))
+
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
+
             data = np.dstack(arrays)
 
         if not isinstance(data, Element):
