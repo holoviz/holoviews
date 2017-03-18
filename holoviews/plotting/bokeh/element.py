@@ -1,5 +1,6 @@
 from io import BytesIO
 from itertools import groupby
+import warnings
 
 import numpy as np
 import bokeh
@@ -8,7 +9,6 @@ from bokeh.core.properties import value
 from bokeh.models import Range, HoverTool, Renderer, Range1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
-
 from bokeh.models.mappers import LinearColorMapper
 try:
     from bokeh.models import ColorBar
@@ -61,6 +61,9 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
                      'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
 
 
+TOOLS = {name: tool if isinstance(tool, util.basestring) else type(tool())
+         for name, tool in known_tools.items()}
+
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
@@ -108,6 +111,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * threshold - Number of samples before downsampling is enabled.
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
+
+    sizing_mode = param.ObjectSelector(default='fixed',
+                                       objects=[
+            'fixed', 'scale_width', 'scale_height',
+            'scale_both', 'stretch_both'
+        ], doc="""Defines how the plot scales when resized.""")
 
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
@@ -231,12 +240,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
+        hover = False
         for cb in callbacks:
             for handle in cb.handles:
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
                         tool = HoverTool(tooltips=tooltips, **hover_opts)
+                        hover = tool
                     else:
                         tool = known_tools[handle]()
                     cb_tools.append(tool)
@@ -245,7 +256,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
         if 'hover' in tools:
-            tools[tools.index('hover')] = HoverTool(tooltips=tooltips, **hover_opts)
+            hover = HoverTool(tooltips=tooltips, **hover_opts)
+            tools[tools.index('hover')] = hover
+        if hover:
+            self.handles['hover'] = hover
         return tools
 
 
@@ -375,9 +389,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             properties['toolbar_location'] = self.toolbar
 
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
-        return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                     y_axis_type=y_axis_type, title=title,
-                                     **properties)
+        with warnings.catch_warnings():
+            warnings.simplefilter('ignore', UserWarning)
+            return bokeh.plotting.Figure(x_axis_type=x_axis_type,
+                                         y_axis_type=y_axis_type, title=title,
+                                         **properties)
 
 
     def _plot_properties(self, key, plot, element):
@@ -697,6 +713,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['glyph'] = glyph
         if isinstance(renderer, Renderer):
             self.handles['glyph_renderer'] = renderer
+
+        if 'hover' in self.handles:
+            self.handles['hover'].renderers = [renderer]
 
         # Update plot, source and glyph
         with abbreviated_exception():
@@ -1214,17 +1233,42 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        hover = False
+        hover_tools = {}
+        tool_types = []
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
-                el_tools = [t for t in el_tools
-                            if not (isinstance(t, HoverTool) and hover)]
-                tools += el_tools
-                if any(isinstance(t, HoverTool) for t in el_tools):
-                    hover = True
-        return list(set(tools))
+                for tool in el_tools:
+                    if isinstance(tool, util.basestring):
+                        tool_type = TOOLS.get(tool)
+                    else:
+                        tool_type = type(tool)
+                    if isinstance(tool, HoverTool):
+                        if tuple(tool.tooltips) in hover_tools:
+                            continue
+                        else:
+                            hover_tools[tuple(tool.tooltips)] = tool
+                    elif tool_type in tool_types:
+                        continue
+                    else:
+                        tool_types.append(tool_type)
+                    tools.append(tool)
+        self.handles['hover_tools'] = hover_tools
+        return tools
+
+
+    def _merge_tools(self, subplot):
+        """
+        Merges tools on the overlay with those on the subplots.
+        """
+        if 'hover' in subplot.handles and 'hover_tools' in self.handles:
+            hover = subplot.handles['hover']
+            tool = self.handles['hover_tools'].get(tuple(hover.tooltips))
+            if tool:
+                tool.renderers += hover.renderers
+        elif self.batched:
+            self.handles['hover'] = subplot.handles['hover']
 
 
     def _get_factors(self, overlay):
@@ -1271,6 +1315,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if self.tabs:
                 title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(Panel(child=child, title=title))
+            self._merge_tools(subplot)
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)
