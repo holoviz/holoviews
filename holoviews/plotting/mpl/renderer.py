@@ -121,18 +121,23 @@ class MPLRenderer(Renderer):
         GUI backend.
         """
         if self.interactive:
+            if isinstance(obj, list):
+                return [self.get_plot(o) for o in obj]
             return self.get_plot(obj)
 
         from .plot import MPLPlot
         MPLPlot._close_figures = False
         try:
-            plot = self.get_plot(obj)
-            plt.show(plot.state)
+            plots = []
+            objects = obj if isinstance(obj, list) else [obj]
+            for o in obj:
+                plots.append(self.get_plot(o))
+            plt.show()
         except:
             MPLPlot._close_figures = True
             raise
         MPLPlot._close_figures = True
-        return plot
+        return plots[0] if len(plots) == 1 else plots
 
 
     @classmethod
