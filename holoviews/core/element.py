@@ -11,7 +11,7 @@ from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
 from .util import (dimension_sort, get_param_values, dimension_sanitizer,
-                   unique_array)
+                   unique_array, wrap_tuple)
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -166,10 +166,7 @@ class Element(ViewableElement, Composable, Overlayable):
                            for dim in vdims])
         else:
             values = [()]*length
-
-        data = zip(keys, values)
-        overrides = dict(kdims=kdims, vdims=vdims, **kwargs)
-        return NdElement(data, **dict(get_param_values(self), **overrides))
+        return OrderedDict(zip(keys, values))
 
 
     def array(self, dimensions=[]):
@@ -276,6 +273,8 @@ class NdElement(NdMapping, Tabular):
     _sorted = False
 
     def __init__(self, data=None, **params):
+        self.warning('NdElement will be deprecated in v2.0 and should '
+                     'not be appearing unless instantiated directly.')
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
@@ -506,7 +505,7 @@ class Element3D(Element2D):
                xmax, ymax, zmax).""")
 
 
-class Collator(NdElement):
+class Collator(NdMapping):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
@@ -529,7 +528,6 @@ class Collator(NdElement):
         as strings or tuples.""")
 
     group = param.String(default='Collator')
-
 
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
@@ -556,6 +554,17 @@ class Collator(NdElement):
                    NdLayout: (GridSpace, HoloMap, ViewableElement),
                    NdOverlay: Element}
 
+    def __init__(self, data=None, **params):
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            if 'kdims' not in params:
+                params['kdims'] = data.kdims
+            if 'vdims' not in params:
+                params['vdims'] = data.vdims
+            data = data.mapping()
+        super(Collator, self).__init__(data, **params)
+
+
     def __call__(self):
         """
         Filter each Layout in the Collator with the supplied
@@ -571,7 +580,7 @@ class Collator(NdElement):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
-            if len(self.vdims):
+            if len(self.vdims) and self.value_transform:
                 vargs = dict(zip(self.dimensions('value', label=True), data))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
@@ -597,10 +606,6 @@ class Collator(NdElement):
         return accumulator
 
 
-    def _add_item(self, key, value, sort=True, update=True):
-        NdMapping._add_item(self, key, value, sort, update)
-
-
     @property
     def static_dimensions(self):
         """
@@ -608,7 +613,7 @@ class Collator(NdElement):
         """
         dimensions = []
         for dim in self.kdims:
-            if len(set(self[dim.name])) == 1:
+            if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
 

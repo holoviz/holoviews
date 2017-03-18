@@ -132,7 +132,6 @@ Store.register({Curve: CurvePlot,
                 # Tabular plots
                 ItemTable: TablePlot,
                 Table: TablePlot,
-                NdElement: TablePlot,
                 Collator: TablePlot,
 
                 # Raster plots
