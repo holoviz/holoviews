@@ -104,19 +104,41 @@ class Callback(object):
     attributes = {}
 
     js_callback = """
+        function unique_events(events) {{
+            var unique = [];
+            var unique_events = [];
+            for (var i=0; i<events.length; i++) {{
+                [event, data] = comm_state.events[i];
+                if (!unique_events.includes(event)) {{
+                    unique.unshift(data);
+                    unique_events.push(event);
+                }}
+            }}
+            return unique;
+        }}
+
+        function process_events(comm_state) {{
+            var events = unique_events(comm_state.events);
+            for (var i=0; i<events.length; i++) {{
+                var data = events[i];
+                var comm = HoloViewsWidget.comms[data["comm_id"]];
+                comm.send(data);
+            }}
+            comm_state.events = [];
+        }}
+
         function on_msg(msg){{
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
-          var comm = HoloViewsWidget.comms[comm_id];
           var comm_state = HoloViewsWidget.comm_state[comm_id];
-          if (comm_state.event) {{
-            comm.send(comm_state.event);
+          if (comm_state.events.length) {{
+            process_events(comm_state);
             comm_state.blocked = true;
             comm_state.timeout = Date.now()+{debounce};
           }} else {{
             comm_state.blocked = false;
           }}
-          comm_state.event = undefined;
+          comm_state.events = [];
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
           }} else if (msg.msg_type == "Error") {{
@@ -143,25 +165,23 @@ class Callback(object):
 
         var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
-            comm_state = {{event: undefined, blocked: false, timeout: Date.now()}}
+            comm_state = {{events: [], blocked: false, timeout: Date.now()}}
             HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
         function trigger() {{
-            if (comm_state.event != undefined) {{
-               var comm_id = comm_state.event["comm_id"]
-               var comm = HoloViewsWidget.comms[comm_id];
-               comm.send(comm_state.event);
+            if (comm_state.events.length) {{
+               process_events(comm_state)
             }}
-            comm_state.event = undefined;
         }}
 
+        event_name = cb_obj.event ? cb_obj.event.event_name : undefined
         timeout = comm_state.timeout + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.event = data;
+            comm_state.events.unshift([event_name, data]);
         }} else {{
-            comm_state.event = data;
+            comm_state.events.unshift([event_name, data]);
             setTimeout(trigger, {debounce});
             comm_state.blocked = true;
             comm_state.timeout = Date.now()+{debounce};
