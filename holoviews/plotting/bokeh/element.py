@@ -32,7 +32,7 @@ from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
-from .plot import BokehPlot
+from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
                    bokeh_version, mplcmap_to_palette, py2js_tickformatter,
                    rgba_tuple)
@@ -59,10 +59,6 @@ text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color
 
 legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
                      'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
-
-
-TOOLS = {name: tool if isinstance(tool, util.basestring) else type(tool())
-         for name, tool in known_tools.items()}
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -242,7 +238,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         cb_tools, tool_names = [], []
         hover = False
         for cb in callbacks:
-            for handle in cb.handles:
+            for handle in cb.handles+cb.extra_handles:
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
