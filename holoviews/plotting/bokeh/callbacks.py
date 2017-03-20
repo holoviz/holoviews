@@ -171,11 +171,17 @@ class Callback(object):
     # The plotting handle(s) to attach the JS callback on
     handles = []
 
-    # Callback will listen to events of the supplied type on the handles
-    event = None
+    # Additional handles available to the callback
+    extra_handles = []
 
-    # Callback will listen to changes to this attribute on the handles
-    change = None
+    # Conditions when callback should be skipped
+    skip_conditions = []
+
+    # Callback will listen to events of the supplied type on the handles
+    events = []
+
+    # List of attributes on the handles to listen to
+    change = []
 
     _comm_type = JupyterCommJS
 
@@ -193,6 +199,7 @@ class Callback(object):
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
         self.handle_ids = defaultdict(list)
+        self.callbacks = []
 
 
     def initialize(self):
@@ -212,7 +219,14 @@ class Callback(object):
                                  'attach %s callback' % warn_args)
                     continue
                 handle = handles[handle_name]
-                self.set_customjs(handle, handles)
+                requested = {}
+                for h in self.handles+self.extra_handles:
+                    if h in handles:
+                        requested[h] = handles[h]
+                    else:
+                        print("Warning %s could not find the %s model. "
+                              "The corresponding stream may not work.")
+                self.callbacks.append(self.set_customjs(handle, requested))
 
 
     def _filter_msg(self, msg, ids):
@@ -257,8 +271,7 @@ class Callback(object):
         handles = {}
         for plot in plots:
             for k, v in plot.handles.items():
-                if k not in handles and k in self.handles:
-                    handles[k] = v
+                handles[k] = v
         return handles
 
 
@@ -290,13 +303,20 @@ class Callback(object):
                                                 debounce=self.debounce)
 
         attributes = attributes_js(self.attributes, references)
-        code = 'var data = {};\n' + attributes + self.code + self_callback
+        conditions = ["%s" % cond for cond in self.skip_conditions]
+        conditional = ''
+        if conditions:
+            conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
+        code = conditional + 'var data = {};\n' + attributes + self.code + self_callback
 
+        print references
         js_callback = CustomJS(args=references, code=code)
-        if self.event:
-            handle.js_on_event(self.event, js_callback)
+        if self.events:
+            for event in self.events:
+                handle.js_on_event(event, js_callback)
         elif self.change:
-            handle.js_on_change(self.change, js_callback)
+            for change in self.change:
+                handle.js_on_change(change, js_callback)
         elif id(handle.callback) in self._callbacks:
             # Merge callbacks if another callback has already been attached
             cb = self._callbacks[id(handle.callback)]
@@ -309,28 +329,29 @@ class Callback(object):
         else:
             self._callbacks[id(js_callback)] = self
             handle.callback = js_callback
+        return js_callback
 
 
 
 class PositionXYCallback(Callback):
 
     attributes = {'x': 'cb_data.geometry.x', 'y': 'cb_data.geometry.y'}
-
-    handles = ['hover']
+    handles = ['plot']
+    events = ['mousemove']
 
 
 class PositionXCallback(Callback):
 
     attributes = {'x': 'cb_data.geometry.x'}
-
-    handles = ['hover']
+    handles = ['plot']
+    events = ['mousemove']
 
 
 class PositionYCallback(Callback):
 
     attributes = {'y': 'cb_data.geometry.y'}
-
-    handles = ['hover']
+    handles = ['plot']
+    events = ['mousemove']
 
 
 class RangeXYCallback(Callback):
@@ -341,6 +362,7 @@ class RangeXYCallback(Callback):
                   'y1': 'y_range.attributes.end'}
 
     handles = ['x_range', 'y_range']
+    change = ['start', 'end']
 
     def _process_msg(self, msg):
         data = {}
