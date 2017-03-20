@@ -117,7 +117,8 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def validate(cls, dataset):
-        pass
+        if len(dataset.vdims) > 1:
+            raise ValueError("Iris cubes do not support more than one value dimension")
 
 
     @classmethod
@@ -187,7 +188,7 @@ class CubeInterface(GridInterface):
             group_kwargs['kdims'] = slice_dims
         group_kwargs.update(kwargs)
 
-        drop_dim = len(group_kwargs['kdims']) != len(slice_dims)
+        drop_dim = any(d not in group_kwargs['kdims'] for d in slice_dims)
 
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])

@@ -188,7 +188,7 @@ class GridInterface(DictInterface):
             group_kwargs['kdims'] = kdims
         group_kwargs.update(kwargs)
 
-        drop_dim = len(group_kwargs['kdims']) != len(kdims)
+        drop_dim = any(d not in group_kwargs['kdims'] for d in kdims)
 
         # Find all the keys along supplied dimensions
         keys = [dataset.data[d.name] for d in dimensions]
@@ -206,7 +206,7 @@ class GridInterface(DictInterface):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
-            else:
+            elif not drop_dim:
                 for vdim in dataset.vdims:
                     group_data[vdim.name] = np.squeeze(group_data[vdim.name])
             group_data = group_type(group_data, **group_kwargs)
