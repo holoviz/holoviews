@@ -43,6 +43,19 @@ class Parser(object):
         return kw[1:] if kw[0]==',' else kw
 
     @classmethod
+    def recurse_token(cls, token, inner):
+        recursed = []
+        for tok in token:
+            if isinstance(tok, list):
+                new_tok = [s for t in tok for s in
+                           (cls.recurse_token(t, inner)
+                            if isinstance(t, list) else [t])]
+                recursed.append((inner % ''.join(new_tok)))
+            else:
+                recursed.append(tok)
+        return inner % ''.join(recursed)
+
+    @classmethod
     def collect_tokens(cls, parseresult, mode):
         """
         Collect the tokens from a (potentially) nested parse result.
@@ -53,7 +66,8 @@ class Parser(object):
         for token in parseresult.asList():
             # If value is a tuple, the token will be a list
             if isinstance(token, list):
-                tokens[-1] = tokens[-1] + (inner % ''.join(token))
+                token = cls.recurse_token(token, inner)
+                tokens[-1] = tokens[-1] + token
             else:
                 if token.strip() == ',': continue
                 tokens.append(cls._strip_commas(token))
@@ -86,7 +100,9 @@ class Parser(object):
         for keyword in grouped:
             # Tuple ('a', 3) becomes (,'a',3) and '(,' is never valid
             # Same for some of the other joining errors corrected here
-            for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='), (',:',':')]:
+            for (fst,snd) in [('(,', '('), ('{,', '{'), ('=,','='),
+                              (',:',':'), (':,', ':'), (',,', ','),
+                              (',.', '.')]:
                 keyword = keyword.replace(fst, snd)
             try:
                 kwargs.update(eval('dict(%s)' % keyword,
@@ -236,6 +252,59 @@ class OptsSpec(Parser):
                     framewise=framewise)
 
 
+    @classmethod
+    def _group_paths_without_options(cls, line_parse_result):
+        """
+        Given a parsed options specification as a list of groups, combine
+        groups without options with the first subsequent group which has
+        options.
+        A line of the form
+            'A B C [opts] D E [opts_2]'
+        results in
+            [({A, B, C}, [opts]), ({D, E}, [opts_2])]
+        """
+        active_pathspecs = set()
+        for group in line_parse_result:
+            active_pathspecs.add(group['pathspec'])
+
+            has_options = (
+                'norm_options' in group or
+                'plot_options' in group or
+                'style_options' in group
+            )
+            if has_options:
+                yield active_pathspecs, group
+                active_pathspecs = set()
+
+        if active_pathspecs:
+            yield active_pathspecs, {}
+
+
+    @classmethod
+    def _merge_options(cls, old_opts, new_opts):
+        """
+        Update the old_opts option dictionary with the options defined in
+        new_opts. Instead of a shallow update as would be performed by calling
+        old_opts.update(new_opts), this updates the dictionaries of all option
+        types separately.
+
+        Given two dictionaries
+            old_opts = {'a': {'x': 'old', 'y': 'old'}}
+        and
+            new_opts = {'a': {'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+        this returns a dictionary
+            {'a': {'x': 'old', 'y': 'new', 'z': 'new'}, 'b': {'k': 'new'}}
+        """
+        merged = dict(old_opts)
+
+        for option_type, options in new_opts.items():
+            if option_type not in merged:
+                merged[option_type] = {}
+
+            merged[option_type].update(options)
+
+        return merged
+
 
     @classmethod
     def parse(cls, line, ns={}):
@@ -252,30 +321,35 @@ class OptsSpec(Parser):
             if (processed.strip() != line.strip()):
                 raise SyntaxError("Failed to parse remainder of string: %r" % line[e:])
 
+        grouped_paths = cls._group_paths_without_options(cls.opts_spec.parseString(line))
         parse = {}
-        for group in cls.opts_spec.parseString(line):
+        for pathspecs, group in grouped_paths:
             options = {}
 
             normalization = cls.process_normalization(group)
             if normalization is not None:
-                options['norm'] = Options(**normalization)
+                options['norm'] = normalization
 
             if 'plot_options' in group:
                 plotopts =  group['plot_options'][0]
                 opts = cls.todict(plotopts, 'brackets', ns=ns)
-                options['plot'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['plot'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
             if 'style_options' in group:
                 styleopts = group['style_options'][0]
                 opts = cls.todict(styleopts, 'parens', ns=ns)
-                options['style'] = Options(**{cls.aliases.get(k,k):v for k,v in opts.items()})
+                options['style'] = {cls.aliases.get(k,k):v for k,v in opts.items()}
 
-            if group['pathspec'] in parse:
-                # Update in case same pathspec accidentally repeated by the user.
-                parse[group['pathspec']].update(options)
-            else:
-                parse[group['pathspec']] = options
-        return parse
+            for pathspec in pathspecs:
+                parse[pathspec] = cls._merge_options(parse.get(pathspec, {}), options)
+
+        return {
+            path: {
+                option_type: Options(**option_pairs)
+                for option_type, option_pairs in options.items()
+            }
+            for path, options in parse.items()
+        }
 
 
 

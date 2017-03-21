@@ -50,8 +50,8 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  None,
-    'json':  None
+    'html':  'text/html',
+    'json':  'text/json'
 }
 
 static_template = """
@@ -204,7 +204,7 @@ class Renderer(Exporter):
             if (((len(plot) == 1 and not plot.dynamic)
                 or (len(plot) > 1 and self.holomap is None) or
                 (plot.dynamic and len(plot.keys[0]) == 0)) or
-                not unbound_dimensions(plot.streams, plot.dimensions)):
+                not unbound_dimensions(plot.streams, plot.dimensions, no_duplicates=False)):
                 fmt = fig_formats[0] if self.fig=='auto' else self.fig
             else:
                 fmt = holomap_formats[0] if self.holomap=='auto' else self.holomap
@@ -283,10 +283,10 @@ class Renderer(Exporter):
         html = tag.format(src=src, mime_type=mime_type, css=css)
         if comm and plot.comm is not None:
             comm, msg_handler = self.comms[self.mode]
-            msg_handler = msg_handler.format(comms_target=plot.comm.target)
+            msg_handler = msg_handler.format(comm_id=plot.comm.id)
             return comm.template.format(init_frame=html,
                                         msg_handler=msg_handler,
-                                        comms_target=plot.comm.target)
+                                        comm_id=plot.comm.id)
         else:
             return html
 
@@ -361,12 +361,13 @@ class Renderer(Exporter):
             widget = obj
 
         html = self_or_cls.static_html(widget, fmt, template)
+        encoded = self_or_cls.encode((html, {'mime_type': 'text/html'}))
         if isinstance(filename, BytesIO):
-            filename.write(html)
+            filename.write(encoded)
             filename.seek(0)
         else:
             with open(filename, 'w') as f:
-                f.write(html)
+                f.write(encoded)
 
 
     @classmethod
@@ -406,10 +407,15 @@ class Renderer(Exporter):
 
         # Join all the js widget code into one string
         path = os.path.dirname(os.path.abspath(__file__))
-        widgetjs = '\n'.join(open(find_file(path, f), 'r').read()
-                             for f in basejs + extensionjs
-                             if f is not None )
-        widgetcss = '\n'.join(open(find_file(path, f), 'r').read()
+
+        def open_and_read(path, f):
+            with open(find_file(path, f), 'r') as f:
+                txt = f.read()
+            return txt
+
+        widgetjs = '\n'.join(open_and_read(path, f)
+                             for f in basejs + extensionjs if f is not None)
+        widgetcss = '\n'.join(open_and_read(path, f) 
                               for f in css if f is not None)
 
         dependencies = {}
@@ -477,11 +483,11 @@ class Renderer(Exporter):
             rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
+        encoded = self_or_cls.encode(rendered)
         if isinstance(basename, BytesIO):
-            basename.write(data)
+            basename.write(encoded)
             basename.seek(0)
         else:
-            encoded = self_or_cls.encode(rendered)
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
                 f.write(encoded)

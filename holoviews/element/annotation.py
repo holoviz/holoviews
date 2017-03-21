@@ -45,12 +45,12 @@ class Annotation(Element2D):
         return self.clone(self.data, extents=(xstart, ystart, xstop, ystop))
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
-            return [self.data if np.isscalar(self.data) else self.data[index]]
+            return np.array([self.data if np.isscalar(self.data) else self.data[index]])
         elif index == 1:
-            return [] if np.isscalar(self.data) else [self.data[1]]
+            return [] if np.isscalar(self.data) else np.array([self.data[1]])
         else:
             return super(Annotation, self).dimension_values(dimension)
 
@@ -72,6 +72,15 @@ class HLine(Annotation):
 
     def __init__(self, y, **params):
         super(HLine, self).__init__(y, **params)
+
+    def dimension_values(self, dimension):
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return []
+        elif index == 1:
+            return [self.data]
+        else:
+            return super(HLine, self).dimension_values(dimension)
 
 
 
@@ -97,10 +106,10 @@ class Spline(Annotation):
         super(Spline, self).__init__(spline_points, **params)
 
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
-            return [point[index] for point in self.data[0]]
+            return np.array([point[index] for point in self.data[0]])
         else:
             return super(Spline, self).dimension_values(dimension)
 
@@ -149,6 +158,16 @@ class Arrow(Annotation):
         settings = dict(self.get_param_values(), **overrides)
         return self.__class__(*args, **settings)
 
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return np.array([self.x])
+        elif index == 1:
+            return np.array([self.y])
+        else:
+            return super(Text, self).dimension_values(dimension)
+
+
 
 class Text(Annotation):
     """
@@ -156,9 +175,9 @@ class Text(Annotation):
     fontsize, alignment and rotation.
     """
 
-    x = param.Number(default=0, doc="The x-position of the text.")
+    x = param.Parameter(default=0, doc="The x-position of the text.")
 
-    y = param.Number(default=0, doc="The y-position of text.")
+    y = param.Parameter(default=0, doc="The y-position of text.")
 
     text = param.String(default='', doc="The text to be displayed.")
 

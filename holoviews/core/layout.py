@@ -7,6 +7,7 @@ to act as supplementary elements.
 
 from functools import reduce
 from itertools import chain
+from collections import defaultdict, Counter
 
 import numpy as np
 
@@ -15,8 +16,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import (int_to_roman, sanitize_identifier, group_sanitizer,
-                   label_sanitizer, unique_array)
+from .util import (unique_array, get_path, make_path_unique)
 from . import traversal
 
 
@@ -27,7 +27,7 @@ class Composable(object):
     """
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     def __lshift__(self, other):
@@ -96,6 +96,56 @@ class AdjointLayout(Dimensioned):
             data = OrderedDict()
 
         super(AdjointLayout, self).__init__(data, **params)
+
+
+    def __mul__(self, other, reverse=False):
+        layer1 = other if reverse else self
+        layer2 = self if reverse else other
+        adjoined_items = []
+        if isinstance(layer1, AdjointLayout) and isinstance(layer2, AdjointLayout):
+            adjoined_items = []
+            adjoined_items.append(layer1.main*layer2.main)
+            if layer1.right is not None and layer2.right is not None:
+                if layer1.right.dimensions() == layer2.right.dimensions():
+                    adjoined_items.append(layer1.right*layer2.right)
+                else:
+                    adjoined_items += [layer1.right, layer2.right]
+            elif layer1.right is not None:
+                adjoined_items.append(layer1.right)
+            elif layer2.right is not None:
+                adjoined_items.append(layer2.right)
+
+            if layer1.top is not None and layer2.top is not None:
+                if layer1.top.dimensions() == layer2.top.dimensions():
+                    adjoined_items.append(layer1.top*layer2.top)
+                else:
+                    adjoined_items += [layer1.top, layer2.top]
+            elif layer1.top is not None:
+                adjoined_items.append(layer1.top)
+            elif layer2.top is not None:
+                adjoined_items.append(layer2.top)
+            if len(adjoined_items) > 3:
+                raise ValueError("AdjointLayouts could not be overlaid, "
+                                 "the dimensions of the adjoined plots "
+                                 "do not match and the AdjointLayout can "
+                                 "hold no more than two adjoined plots.")
+        elif isinstance(layer1, AdjointLayout):
+            adjoined_items = [layer1.data[o] for o in self.layout_order
+                              if o in layer1.data]
+            adjoined_items[0] = layer1.main * layer2
+        elif isinstance(layer2, AdjointLayout):
+            adjoined_items = [layer2.data[o] for o in self.layout_order
+                              if o in layer2.data]
+            adjoined_items[0] = layer1 * layer2.main
+
+        if adjoined_items:
+            return self.clone(adjoined_items)
+        else:
+            return NotImplemented
+
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
 
 
     @property
@@ -212,7 +262,7 @@ class AdjointLayout(Dimensioned):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     def __len__(self):
@@ -268,7 +318,7 @@ class NdLayout(UniformNdMapping):
 
 
     def __add__(self, obj):
-        return Layout.from_values(self) + Layout.from_values(obj)
+        return Layout.from_values([self, obj])
 
 
     @property
@@ -314,6 +364,16 @@ class Layout(AttrTree, Dimensioned):
 
     _deep_indexable = True
 
+    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
+        self.__dict__['_display'] = 'auto'
+        self.__dict__['_max_cols'] = 4
+        if items and all(isinstance(item, Dimensioned) for item in items):
+            items = self._process_items(items)
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
+        AttrTree.__init__(self, items, identifier, parent, **kwargs)
+        Dimensioned.__init__(self, self.data, **params)
+
+
     @classmethod
     def collate(cls, data, kdims=None, key_dimensions=None):
         kdims = key_dimensions if (kdims is None) else kdims
@@ -329,75 +389,67 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def new_path(cls, path, item, paths, count):
-        sanitizers = [sanitize_identifier, group_sanitizer, label_sanitizer]
-        path = tuple(fn(p) for (p, fn) in zip(path, sanitizers))
-        while any(path[:i] in paths or path in [p[:i] for p in paths]
-                  for i in range(1,len(path)+1)):
-            path = path[:2]
-            pl = len(path)
-            if (pl == 1 and not item.label) or (pl == 2 and item.label):
-                new_path = path + (int_to_roman(count-1),)
-                if path in paths:
-                    paths[paths.index(path)] = new_path
-                path = path + (int_to_roman(count),)
-            else:
-                path = path[:-1] + (int_to_roman(count),)
-            count += 1
-        return path, count
-
-
-    @classmethod
-    def relabel_item_paths(cls, items):
-        """
-        Given a list of path items (list of tuples where each element
-        is a (path, element) pair), generate a new set of path items that
-        guarantees that no paths clash. This uses the element labels as
-        appropriate and automatically generates roman numeral
-        identifiers if necessary.
-        """
-        paths, path_items = [], []
-        count = 2
-        for path, item in items:
-            new_path, count = cls.new_path(path, item, paths, count)
-            new_path = tuple(''.join((p[0].upper(), p[1:])) for p in new_path)
-            path_items.append(item)
-            paths.append(new_path)
-        return list(zip(paths, path_items))
-
-
-    @classmethod
-    def _from_values(cls, val):
-        return reduce(lambda x,y: x+y, val).display('auto')
-
-    @classmethod
-    def from_values(cls, val):
+    def from_values(cls, vals):
         """
         Returns a Layout given a list (or tuple) of viewable
         elements or just a single viewable element.
         """
-        collection = isinstance(val, (list, tuple))
-        if type(val) is cls:
-            return val
-        elif collection and len(val)>1:
-            return cls._from_values(val)
-        elif collection:
-            val = val[0]
-        group = group_sanitizer(val.group)
-        group = ''.join([group[0].upper(), group[1:]])
-        label = label_sanitizer(val.label if val.label else 'I')
-        label = ''.join([label[0].upper(), label[1:]])
-        return cls(items=[((group, label), val)])
+        return cls(items=cls._process_items(vals))
 
 
-    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
-        self.__dict__['_display'] = 'auto'
-        self.__dict__['_max_cols'] = 4
-        if items and all(isinstance(item, Dimensioned) for item in items):
-            items = self.from_values(items).data
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
-        AttrTree.__init__(self, items, identifier, parent, **kwargs)
-        Dimensioned.__init__(self, self.data, **params)
+    @classmethod
+    def _process_items(cls, vals):
+        """
+        Processes a list of Labelled types unpacking any objects of
+        the same type (e.g. a Layout) and finding unique paths for
+        all the items in the list.
+        """
+        if type(vals) is cls:
+            return vals.data
+        elif not isinstance(vals, (list, tuple)):
+            vals = [vals]
+        paths = cls._initial_paths(vals)
+        path_counter = Counter(paths)
+        items = []
+        counts = defaultdict(lambda: 1)
+        counts.update({k: 1 for k, v in path_counter.items() if v > 1})
+        cls._unpack_paths(vals, items, counts)
+        return items
+
+
+    @classmethod
+    def _initial_paths(cls, items, paths=None):
+        """
+        Recurses the passed items finding paths for each. Useful for
+        determining which paths are not unique and have to be resolved.
+        """
+        if paths is None:
+            paths = []
+        for item in items:
+            path, item = item if isinstance(item, tuple) else (None, item)
+            if type(item) is cls:
+                cls._initial_paths(item.items(), paths)
+                continue
+            paths.append(get_path(item))
+        return paths
+
+
+    @classmethod
+    def _unpack_paths(cls, objs, items, counts):
+        """
+        Recursively unpacks lists and Layout-like objects, accumulating
+        into the supplied list of items.
+        """
+        if type(objs) is cls:
+            objs = objs.items()
+        for item in objs:
+            path, obj = item if isinstance(item, tuple) else (None, item)
+            if type(obj) is cls:
+                cls._unpack_paths(obj, items, counts)
+                continue
+            path = get_path(item)
+            new_path = make_path_unique(path, counts)
+            items.append((new_path, obj))
 
 
     @property
@@ -501,9 +553,7 @@ class Layout(AttrTree, Dimensioned):
 
 
     def __add__(self, other):
-        other = self.from_values(other)
-        items = list(self.data.items()) + list(other.data.items())
-        return Layout(items=self.relabel_item_paths(items)).display('all')
+        return Layout.from_values([self, other]).display('all')
 
 
 

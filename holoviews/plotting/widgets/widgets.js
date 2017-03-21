@@ -143,9 +143,8 @@ SelectionWidget.prototype.get_key = function(current_vals) {
     {
         val = this.current_vals[i];
         if (!(typeof val === 'string')) {
-            if (val % 1 === 0) { var fixed = 1;}
-            else { var fixed = 10;}
-            val = val.toFixed(fixed)
+            if (val % 1 === 0) { val = val.toFixed(1); }
+            else { val = val.toFixed(10); val = val.slice(0, val.length-1);}
         }
         key += "'" + val + "'";
         if(i != this.slider_ids.length-1) { key += ', ';}

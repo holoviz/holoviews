@@ -113,11 +113,11 @@ class Scatter3DPlot(Plot3D, PointPlot):
     onto a particular Dimension of the data.
     """
 
-    color_index = param.ClassSelector(default=4, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=3, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -166,7 +166,8 @@ class SurfacePlot(Plot3D):
         Valid values are 'surface', 'wireframe' and 'contour'.""")
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
-                  'linewidth', 'facecolors', 'rstride', 'cstride']
+                  'linewidth', 'facecolors', 'rstride', 'cstride',
+                  'norm']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
@@ -196,7 +197,8 @@ class TrisurfacePlot(Plot3D):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor']
+    style_opts = ['cmap', 'color', 'shade', 'linewidth', 'edgecolor',
+                  'norm']
 
     _plot_methods = dict(single='plot_trisurf')
 

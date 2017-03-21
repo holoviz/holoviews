@@ -2,10 +2,14 @@
 HoloViews Tutorials
 *******************
 
-The HoloViews tutorials are the best way to learn what HoloViews can
-do and how to use it.  The web site has static copies of each
-tutorial, but it is much more effective to install HoloViews and try
-it out live for yourself, using the notebook files in this `tutorial notebooks`_.
+The HoloViews tutorials are the best way to learn what HoloViews can do
+and how to use it.  The web site has static copies of each tutorial, but
+you may also try out live copies on `mybinder.org
+<http://mybinder.org/repo/ioam/holoviews-contrib>`_ where you can also
+explore many other examples in our `contrib repository
+<https://github.com/ioam/holoviews-contrib>`_. Lastly, for the most
+responsive experience, you can install HoloViews and try out the
+`tutorial notebooks`_ for yourself.
 
 
 Introductory Tutorials
@@ -66,10 +70,6 @@ There are additional tutorials detailing other features of HoloViews:
   `Bokeh <http://bokeh.pydata.org>`_ backend, such as interactive zooming,
   panning, and selection linked automatically between plots.
 
-* `Pandas Conversion: <Pandas_Conversion.html>`_
-  Using the DFrame conversion wrapper of HoloViews to convert pandas
-  dataframes into HoloViews components.
-
 * `Pandas and Seaborn: <Pandas_Seaborn.html>`_
   Specialized visualizations provided by pandas and seaborn.
 
@@ -113,7 +113,6 @@ extend HoloViews and apply it to real world data see the `Examples
    Continuous Coordinates <Continuous_Coordinates>
    Composing Data <Composing_Data>
    Bokeh Backend <Bokeh_Backend>
-   Pandas Conversion <Pandas_Conversion>
    Pandas and Seaborn <Pandas_Seaborn>
    Matplotlib Elements <Elements>
    Bokeh Elements <Bokeh_Elements>

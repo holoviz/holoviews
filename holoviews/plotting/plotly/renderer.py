@@ -1,7 +1,8 @@
 import uuid, json
-from plotly.offline.offline import utils, get_plotlyjs
 
 import param
+with param.logging_level('CRITICAL'):
+    from plotly.offline.offline import utils, get_plotlyjs
 
 from ..renderer import Renderer, MIME_TYPES
 from ..widgets import NdWidget
@@ -13,7 +14,7 @@ from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 plotly_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{comms_target}')[0];
+var plot = $('#{comm_id}')[0];
 var data = JSON.parse(msg);
 $.each(data.data, function(i, obj) {{
   $.each(Object.keys(obj), function(j, key) {{
@@ -41,7 +42,7 @@ class PlotlyRenderer(Renderer):
     fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
-    
+
     mode_formats = {'fig': {'default': ['html', 'json']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto']}}
 
@@ -81,7 +82,7 @@ class PlotlyRenderer(Renderer):
         figure = plot.state
         if divuuid is None:
             if plot.comm:
-                divuuid = plot.comm.target
+                divuuid = plot.comm.id
             else:
                 divuuid = uuid.uuid4().hex
 
@@ -91,7 +92,7 @@ class PlotlyRenderer(Renderer):
         config = {}
         config['showLink'] = False
         jconfig = json.dumps(config)
-    
+
         header = ('<script type="text/javascript">'
                   'window.PLOTLYENV=window.PLOTLYENV || {};'
                   '</script>')
@@ -117,10 +118,10 @@ class PlotlyRenderer(Renderer):
 
         if comm and plot.comm is not None:
             comm, msg_handler = self.comms[self.mode]
-            msg_handler = msg_handler.format(comms_target=plot.comm.target)
+            msg_handler = msg_handler.format(comm_id=plot.comm.id)
             return comm.template.format(init_frame=joined,
                                         msg_handler=msg_handler,
-                                        comms_target=plot.comm.target)
+                                        comm_id=plot.comm.id)
         return joined
 
 
@@ -159,4 +160,3 @@ def plotly_include():
             <script type="text/javascript">
             require=require_;requirejs=requirejs_; define=define_;
             </script>""".format(include=get_plotlyjs())
-

@@ -18,11 +18,10 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.traversal import dimensionless_cache
 from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
-                   attach_streams, traverse_setter)
+                   attach_streams, traverse_setter, get_nested_streams)
 
 
 class Plot(param.Parameterized):
@@ -159,7 +158,8 @@ class DimensionedPlot(Plot):
 
     #Allowed fontsize keys
     _fontsize_keys = ['xlabel','ylabel', 'labels', 'ticks',
-                      'title', 'legend', 'legend_title']
+                      'title', 'legend', 'legend_title', 'xticks',
+                      'yticks']
 
     show_title = param.Boolean(default=True, doc="""
         Whether to display the plot title.""")
@@ -280,7 +280,7 @@ class DimensionedPlot(Plot):
                             zip(dimensions, key)]
         groups = [', '.join(dimension_labels[i*group_size:(i+1)*group_size])
                   for i in range(len(dimension_labels))]
-        return util.safe_unicode(separator.join(g for g in groups if g))
+        return util.bytes_to_unicode(separator.join(g for g in groups if g))
 
 
     def _fontsize(self, key, label='fontsize', common=True):
@@ -299,6 +299,8 @@ class DimensionedPlot(Plot):
             return {label:self.fontsize[key]}
         elif key in ['ylabel', 'xlabel'] and 'labels' in self.fontsize:
             return {label:self.fontsize['labels']}
+        elif key in ['xticks', 'yticks'] and 'ticks' in self.fontsize:
+            return {label:self.fontsize['ticks']}
         else:
             return {}
 
@@ -332,7 +334,7 @@ class DimensionedPlot(Plot):
             elements = []
             # Skip if ranges are cached or already computed by a
             # higher-level container object.
-            framewise = framewise or self.dynamic
+            framewise = framewise or self.dynamic or len(elements) == 1
             if group in ranges and (not framewise or ranges is not self.ranges):
                 continue
             elif not framewise: # Traverse to get all elements
@@ -340,8 +342,10 @@ class DimensionedPlot(Plot):
             elif key is not None: # Traverse to get elements for each frame
                 frame = self._get_frame(key)
                 elements = [] if frame is None else frame.traverse(return_fn, [group])
-            if not axiswise or ((not framewise or len(elements) == 1)
-                                and isinstance(obj, HoloMap)): # Compute new ranges
+            # Only compute ranges if not axiswise on a composite plot
+            # or not framewise on a Overlay or ElementPlot
+            if (not (axiswise and not isinstance(obj, HoloMap)) or
+                (not framewise and isinstance(obj, HoloMap))):
                 self._compute_group_range(group, elements, ranges)
         self.ranges.update(ranges)
         return ranges
@@ -545,12 +549,18 @@ class GenericElementPlot(DimensionedPlot):
     # plot and a 'batched' method to draw multiple Elements at once
     _plot_methods = {}
 
+    # Declares the options that are propagated from sub-elements of the
+    # plot, mostly useful for inheriting options from individual
+    # Elements on an OverlayPlot. Enabled by default in v1.7.
+    _propagate_options = []
+    v17_option_propagation = True
+
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
                  overlay_dims={}, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
-        self.overlaid = overlaid and not batched
+        self.overlaid = overlaid
         self.batched = batched
         self.overlay_dims = overlay_dims
 
@@ -562,7 +572,7 @@ class GenericElementPlot(DimensionedPlot):
 
         plot_element = self.hmap.last
         if self.batched and not isinstance(self, GenericOverlayPlot):
-            plot_element = [el for el in plot_element if len(el) > 0][-1]
+            plot_element = [el for el in plot_element if el][-1]
 
         top_level = keys is None
         if top_level:
@@ -571,6 +581,11 @@ class GenericElementPlot(DimensionedPlot):
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
+        if self.v17_option_propagation:
+            inherited = self._traverse_options(plot_element, 'plot',
+                                               self._propagate_options,
+                                               defaults=False)
+            plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
         dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
@@ -578,7 +593,10 @@ class GenericElementPlot(DimensionedPlot):
                                                  **dict(params, **plot_opts))
         if top_level:
             self.comm = self.init_comm(element)
-        self.streams = self.hmap.streams if isinstance(self.hmap, DynamicMap) else []
+        streams = []
+        if isinstance(self.hmap, DynamicMap):
+            streams = get_nested_streams(self.hmap)
+        self.streams = streams
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -597,11 +615,14 @@ class GenericElementPlot(DimensionedPlot):
         taking into account possible batching of elements.
         """
         spec = util.get_overlay_spec(overlay, key, el)
-        try:
-            return self.ordering.index(spec)
-        except ValueError:
-            self.ordering = sorted(self.ordering+[spec])
-            return self.ordering.index(spec)
+        return self.ordering.index(spec)
+
+
+    def _updated_zorders(self, overlay):
+        specs = [util.get_overlay_spec(overlay, key, el)
+                 for key, el in overlay.data.items()]
+        self.ordering = sorted(set(self.ordering+specs))
+        return [self.ordering.index(spec) for spec in specs]
 
 
     def _get_frame(self, key):
@@ -609,8 +630,7 @@ class GenericElementPlot(DimensionedPlot):
             self.current_key = key
             return self.current_frame
         elif self.dynamic:
-            with dimensionless_cache(self.hmap, not self._force or not self.drawn):
-                key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
+            key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
             key_map = dict(zip([d.name for d in self.hmap.kdims], key))
@@ -622,7 +642,7 @@ class GenericElementPlot(DimensionedPlot):
             return frame
 
         if isinstance(key, int):
-            key = self.hmap.keys()[min([key, len(self.hmap)-1])]
+            key = list(self.hmap.data.keys())[min([key, len(self.hmap)-1])]
 
         self.current_key = key
 
@@ -691,8 +711,18 @@ class GenericElementPlot(DimensionedPlot):
                 extents = util.max_extents(extent_list, self.projection == '3d')
         else:
             extents = (np.NaN,) * num
-        return tuple(l1 if l2 is None or not np.isfinite(l2) else
-                     l2 for l1, l2 in zip(range_extents, extents))
+
+        if getattr(self, 'shared_axes', False) and self.subplot:
+            return util.max_extents([range_extents, extents], self.projection == '3d')
+        else:
+            max_extent = []
+            for l1, l2 in zip(range_extents, extents):
+                if (isinstance(l2, util.datetime_types)
+                    or (l2 is not None and np.isfinite(l2))):
+                    max_extent.append(l2)
+                else:
+                    max_extent.append(l1)
+            return tuple(max_extent)
 
 
     def _get_axis_labels(self, dimensions, xlabel=None, ylabel=None, zlabel=None):
@@ -716,9 +746,9 @@ class GenericElementPlot(DimensionedPlot):
         if self.layout_dimensions:
             title = dim_title
         else:
-            title_format = util.safe_unicode(self.title_format)
-            title = title_format.format(label=util.safe_unicode(label),
-                                        group=util.safe_unicode(group),
+            title_format = util.bytes_to_unicode(self.title_format)
+            title = title_format.format(label=util.bytes_to_unicode(label),
+                                        group=util.bytes_to_unicode(group),
                                         type=type_name,
                                         dimensions=dim_title)
         return title.strip(' \n')
@@ -790,7 +820,7 @@ class GenericOverlayPlot(GenericElementPlot):
         else:
             mapwise_ranges = self.compute_ranges(holomap, None, None)
             frame_ranges = OrderedDict([(key, self.compute_ranges(holomap, key, mapwise_ranges))
-                                        for key in holomap.keys()])
+                                        for key in holomap.data.keys()])
         ranges = frame_ranges.values()
 
         return Compositor.collapse(holomap, (ranges, frame_ranges.keys()), mode='display')
@@ -823,13 +853,13 @@ class GenericOverlayPlot(GenericElementPlot):
 
         subplots = OrderedDict()
         for (key, vmap) in zip(keys, vmaps):
-            opts = {}
+            opts = {'overlaid': overlay_type}
             if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
             else:
                 if not isinstance(key, tuple): key = (key,)
                 style_key = group_fn(vmap) + key
-                opts['overlay_dims'] = OrderedDict(zip(vmap.last.kdims, key))
+                opts['overlay_dims'] = OrderedDict(zip(self.hmap.last.kdims, key))
 
             if self.batched:
                 vtype = type(vmap.last.last)
@@ -855,18 +885,19 @@ class GenericOverlayPlot(GenericElementPlot):
                 opts['show_legend'] = self.show_legend
             elif self.batched and 'batched' in plottype._plot_methods:
                 opts['batched'] = self.batched
+                opts['overlaid'] = self.overlaid
             if len(ordering) > self.legend_limit:
                 opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
+            passed_handles = {k: v for k, v in self.handles.items()
+                              if k in self._passed_handles}
             plotopts = dict(opts, cyclic_index=cyclic_index,
                             invert_axes=self.invert_axes,
                             dimensions=self.dimensions, keys=self.keys,
                             layout_dimensions=self.layout_dimensions,
-                            overlaid=overlay_type, ranges=ranges,
-                            show_title=self.show_title, style=style,
-                            uniform=self.uniform, zorder=zorder,
-                            **{k: v for k, v in self.handles.items()
-                               if k in self._passed_handles})
+                            ranges=ranges, show_title=self.show_title,
+                            style=style, uniform=self.uniform,
+                            zorder=zorder, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
@@ -928,9 +959,9 @@ class GenericCompositePlot(DimensionedPlot):
         if top_level:
             self.comm = self.init_comm(layout)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
-        self.streams = [s for streams in layout.traverse(lambda x: x.streams,
-                                                         [DynamicMap])
-                        for s in streams]
+        nested_streams = layout.traverse(lambda x: get_nested_streams(x),
+                                         [DynamicMap])
+        self.streams = list(set([s for streams in nested_streams for s in streams]))
 
 
     def _get_frame(self, key):
@@ -960,8 +991,7 @@ class GenericCompositePlot(DimensionedPlot):
                                     if d in item.dimensions('key')], key)
                 self.current_key = tuple(k[1] for k in dim_keys)
             elif item.traverse(lambda x: x, [DynamicMap]):
-                with dimensionless_cache(item, not self._force or not self.drawn):
-                    key, frame = util.get_dynamic_item(item, self.dimensions, key)
+                key, frame = util.get_dynamic_item(item, self.dimensions, key)
                 layout_frame[path] = frame
                 continue
             elif self.uniform:
@@ -991,12 +1021,12 @@ class GenericCompositePlot(DimensionedPlot):
         dim_title = self._frame_title(key, 3, separator)
         layout = self.layout
         type_name = type(self.layout).__name__
-        group = util.safe_unicode(layout.group if layout.group != type_name else '')
-        label = util.safe_unicode(layout.label)
-        title = util.safe_unicode(self.title_format).format(label=label,
-                                                            group=group,
-                                                            type=type_name,
-                                                            dimensions=dim_title)
+        group = util.bytes_to_unicode(layout.group if layout.group != type_name else '')
+        label = util.bytes_to_unicode(layout.label)
+        title = util.bytes_to_unicode(self.title_format).format(label=label,
+                                                                group=group,
+                                                                type=type_name,
+                                                                dimensions=dim_title)
         return title.strip(' \n')
 
 
@@ -1006,14 +1036,19 @@ class GenericLayoutPlot(GenericCompositePlot):
     displays the elements in a cartesian grid in scanline order.
     """
 
+    transpose = param.Boolean(default=False, doc="""
+        Whether to transpose the layout when plotting. Switches
+        from row-based left-to-right and top-to-bottom scanline order
+        to column-based top-to-bottom and left-to-right order.""")
+
     def __init__(self, layout, **params):
         if not isinstance(layout, (NdLayout, Layout)):
             raise ValueError("GenericLayoutPlot only accepts Layout objects.")
         if len(layout.values()) == 0:
-            raise ValueError("Cannot display empty layout")
+            raise SkipRendering(warn=False)
 
         super(GenericLayoutPlot, self).__init__(layout, **params)
         self.subplots = {}
-        self.rows, self.cols = layout.shape
+        self.rows, self.cols = layout.shape[::-1] if self.transpose else layout.shape
         self.coords = list(product(range(self.rows),
                                    range(self.cols)))

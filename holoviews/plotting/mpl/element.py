@@ -1,11 +1,11 @@
-import math
+import math, copy
 
 import param
 import numpy as np
 import matplotlib as mpl
 import matplotlib.pyplot as plt
+import matplotlib.colors as mpl_colors
 from matplotlib import ticker
-from matplotlib import colors
 from matplotlib.dates import date2num
 
 from ...core import util
@@ -157,10 +157,13 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_facecolor(self.bgcolor)
               
             # Apply title
-            title = None if self.zorder > 0 else self._format_title(key)
+            title = self._format_title(key)
             if self.show_title and title is not None:
                 fontsize = self._fontsize('title')
-                self.handles['title'] = axis.set_title(title, **fontsize)
+                if 'title' in self.handles:
+                    self.handles['title'].set_text(title)
+                else:
+                    self.handles['title'] = axis.set_title(title, **fontsize)
 
             # Apply subplot label
             self._subplot_label(axis)
@@ -171,12 +174,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if dimensions:
                     self._set_labels(axis, dimensions, xlabel, ylabel, zlabel)
 
-                # Set axes limits
-                self._set_axis_limits(axis, element, subplots, ranges)
-
                 if not subplots:
                     legend = axis.get_legend()
-                    if legend: legend.set_visible(self.show_legend)
+                    if legend:
+                        legend.set_visible(self.show_legend)
+                        self.handles["bbox_extra_artists"] += [legend]
                     axis.xaxis.grid(self.show_grid)
                     axis.yaxis.grid(self.show_grid)
 
@@ -194,8 +196,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 if self.apply_ticks:
                     self._finalize_ticks(axis, dimensions, xticks, yticks, zticks)
 
+                # Set axes limits
+                self._set_axis_limits(axis, element, subplots, ranges)
+
             # Apply aspects
-            if not (self.logx or self.logy):
+            if self.aspect is not None and self.projection != 'polar':
                 self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
@@ -243,8 +248,9 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             self._set_axis_ticks(axis.zaxis, zticks, log=self.logz,
                                  rotation=self.zrotation)
 
-        tick_fontsize = self._fontsize('ticks','labelsize',common=False)
-        if tick_fontsize: axis.tick_params(**tick_fontsize)
+        for ax, ax_obj in zip('xy', [axis.xaxis, axis.yaxis]):
+            tick_fontsize = self._fontsize('%sticks' % ax,'labelsize',common=False)
+            if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
 
     def _finalize_artist(self, element):
@@ -290,13 +296,19 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         """
         Set the aspect on the axes based on the aspect setting.
         """
-        if aspect and aspect == 'square':
-            axes.set_aspect((1./axes.get_data_ratio()))
-        elif aspect not in [None, 'square']:
-            if isinstance(aspect, util.basestring):
-                axes.set_aspect(aspect)
-            else:
-                axes.set_aspect(((1./axes.get_data_ratio()))/aspect)
+        if isinstance(aspect, util.basestring) and aspect != 'square':
+            axes.set_aspect(aspect)
+            return
+
+        (x0, x1), (y0, y1) = axes.get_xlim(), axes.get_ylim()
+        xsize = np.log(x1) - np.log(x0) if self.logx else x1-x0
+        ysize = np.log(y1) - np.log(y0) if self.logy else y1-y0
+        xsize = max(abs(xsize), 1e-30)
+        ysize = max(abs(ysize), 1e-30)
+        data_ratio = 1./(ysize/xsize)
+        if aspect != 'square':
+            data_ratio = data_ratio/aspect
+        axes.set_aspect(data_ratio)
 
 
     def _set_axis_limits(self, axis, view, subplots, ranges):
@@ -517,8 +529,13 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
-    cbar_width = param.Number(default=0.05, doc="""
-        Width of the colorbar as a fraction of the main plot""")
+    clipping_colors = param.Dict(default={}, doc="""
+        Dictionary to specify colors for clipped values, allows
+        setting color for NaN values and for values above and below
+        the min and max value. The min, max or NaN color may specify
+        an RGB(A) color as a color hex string of the form #FFFFFF or
+        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
+        the range 0-1 or a named HTML color.""")
 
     cbar_padding = param.Number(default=0.01, doc="""
         Padding between colorbar and other plots.""")
@@ -530,10 +547,17 @@ class ColorbarPlot(ElementPlot):
         set to None default matplotlib ticking behavior is
         applied.""")
 
+    cbar_width = param.Number(default=0.05, doc="""
+        Width of the colorbar as a fraction of the main plot""")
+
     symmetric = param.Boolean(default=False, doc="""
         Whether to make the colormap symmetric around zero.""")
 
     _colorbars = {}
+
+    def __init__(self, *args, **kwargs):
+        super(ColorbarPlot, self).__init__(*args, **kwargs)
+        self._cbar_extend = 'neither'
 
     def _adjust_cbar(self, cbar, label, dim):
         noalpha = math.floor(self.style[self.cyclic_index].get('alpha', 1)) == 1
@@ -541,12 +565,12 @@ class ColorbarPlot(ElementPlot):
             cbar.solids.set_edgecolor("face")
         cbar.set_label(label)
         if isinstance(self.cbar_ticks, ticker.Locator):
-            cbar.set_major_locator(self.cbar_ticks)
+            cbar.ax.yaxis.set_major_locator(self.cbar_ticks)
         elif self.cbar_ticks == 0:
             cbar.set_ticks([])
         elif isinstance(self.cbar_ticks, int):
             locator = ticker.MaxNLocator(self.cbar_ticks)
-            cbar.set_major_locator(locator)
+            cbar.ax.yaxis.set_major_locator(locator)
         elif isinstance(self.cbar_ticks, list):
             if all(isinstance(t, tuple) for t in self.cbar_ticks):
                 ticks, labels = zip(*self.cbar_ticks)
@@ -582,9 +606,12 @@ class ColorbarPlot(ElementPlot):
 
         # Get colorbar label
         dim = element.get_dimension(dim)
-        if dim is None:
-            dim = element.vdims[0]
-        label = str(dim)
+        if dim:
+            label = dim.pprint_label
+        elif element.vdims:
+            label = element.vdims[0].pprint_label
+        elif dim is None:
+            label = ''
 
         padding = self.cbar_padding
         width = self.cbar_width
@@ -593,7 +620,7 @@ class ColorbarPlot(ElementPlot):
             scaled_w = w*width
             cax = fig.add_axes([l+w+padding+(scaled_w+padding+w*0.15)*offset,
                                 b, scaled_w, h])
-            cbar = plt.colorbar(artist, cax=cax)
+            cbar = fig.colorbar(artist, cax=cax, ax=axis, extend=self._cbar_extend)
             self._adjust_cbar(cbar, label, dim)
             self.handles['cax'] = cax
             self.handles['cbar'] = cbar
@@ -607,7 +634,6 @@ class ColorbarPlot(ElementPlot):
                               b, scaled_w, h])
 
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
-
 
 
     def _norm_kwargs(self, element, ranges, opts, vdim):
@@ -628,13 +654,48 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, len(np.unique(cs)))
         if self.logz:
             if self.symmetric:
-                norm = colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
+                norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
                                          linthresh=clim[1]/np.e)
             else:
-                norm = colors.LogNorm(vmin=clim[0], vmax=clim[1])
+                norm = mpl_colors.LogNorm(vmin=clim[0], vmax=clim[1])
             opts['norm'] = norm
         opts['vmin'] = clim[0]
         opts['vmax'] = clim[1]
+
+        # Check whether the colorbar should indicate clipping
+        values = element.dimension_values(vdim)
+        if values.dtype.kind not in 'OSUM':
+            el_min, el_max = np.nanmin(values), np.nanmax(values)
+        else:
+            el_min, el_max = -np.inf, np.inf
+        vmin = -np.inf if opts['vmin'] is None else opts['vmin']
+        vmax = np.inf if opts['vmax'] is None else opts['vmax']
+        if el_min < vmin and el_max > vmax:
+            self._cbar_extend = 'both'
+        elif el_min < vmin:
+            self._cbar_extend = 'min'
+        elif el_max > vmax:
+            self._cbar_extend = 'max'
+
+        # Define special out-of-range colors on colormap
+        cmap = copy.copy(plt.cm.get_cmap(opts.get('cmap')))
+        colors = {}
+        for k, val in self.clipping_colors.items():
+            if isinstance(val, tuple):
+                colors[k] = {'color': val[:3],
+                             'alpha': val[3] if len(val) > 3 else 1}
+            elif isinstance(val, util.basestring):
+                color = val
+                alpha = 1
+                if color.startswith('#') and len(color) == 9:
+                    alpha = int(color[-2:], 16)/255.
+                    color = color[:-2]
+                colors[k] = {'color': color, 'alpha': alpha}
+        if 'max' in colors: cmap.set_over(**colors['max'])
+        if 'min' in colors: cmap.set_under(**colors['min'])
+        if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
+        opts['cmap'] = cmap
+
 
 
 class LegendPlot(ElementPlot):
@@ -681,6 +742,13 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     """
 
     _passed_handles = ['fig', 'axis']
+
+    _propagate_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
+                          'labelled', 'bgcolor', 'fontsize', 'invert_axes',
+                          'show_frame', 'show_grid', 'logx', 'logy', 'logz',
+                          'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation'
+                          'zrotation', 'invert_xaxis', 'invert_yaxis',
+                          'invert_zaxis']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

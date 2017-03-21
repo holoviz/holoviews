@@ -8,6 +8,7 @@ from collections import defaultdict
 from operator import itemgetter
 
 from .dimension import Dimension, OrderedDict
+from .util import merge_dimensions
 
 try:
     import itertools.izip as zip
@@ -56,8 +57,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     subset = all(g1 <= g2 or g1 >= g2 for g1 in dgroups for g2 in dgroups)
     # Find unique keys
     if subset:
-        dims = OrderedDict([(dim.name, dim) for dim_group in dim_groups
-                            for dim in dim_group]).values()
+        dims = merge_dimensions(dim_groups)
         all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
     else:
         all_dims = [default_dim]
@@ -128,29 +128,3 @@ def hierarchical(keys):
                 store1[v2].append(v1)
         hierarchies.append(store2 if hierarchy else {})
     return hierarchies
-
-
-class dimensionless_cache(object):
-    """
-    Context manager which temporarily enables lookup of frame in the
-    cache on a DynamicMap with dimensionless streams. Allows passing
-    any Dimensioned object which might contain a DynamicMap and
-    whether to enable the cache. This allows looking up an item
-    without triggering the callback. Useful when the object is looked
-    up multiple times as part of some processing pipeline.
-    """
-
-    def __init__(self, obj, allow_cache_lookup=True):
-        self.obj = obj
-        self._allow_cache_lookup = allow_cache_lookup
-
-    def __enter__(self):
-        self.set_cache_flag(self._allow_cache_lookup)
-
-    def __exit__(self, exc_type, exc_val, exc_tb):
-        self.set_cache_flag(False)
-
-    def set_cache_flag(self, value):
-        self.obj.traverse(lambda x: setattr(x, '_dimensionless_cache', value),
-                          ['DynamicMap'])
-

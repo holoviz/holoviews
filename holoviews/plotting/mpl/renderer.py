@@ -137,8 +137,8 @@ class MPLRenderer(Renderer):
     @bothmethod
     def get_size(self_or_cls, plot):
         w, h = plot.state.get_size_inches()
-        dpi = plot.state.dpi
-        return (w*dpi, h*dpi)
+        dpi = self_or_cls.dpi if self_or_cls.dpi else plot.state.dpi
+        return (int(w*dpi), int(h*dpi))
 
 
     def diff(self, plot):
@@ -178,15 +178,15 @@ class MPLRenderer(Renderer):
             if fmt == 'json':
                 return mpld3.fig_to_dict(fig)
             else:
-                figid = "fig_el"+plot.comm.target if plot.comm else None
+                figid = "fig_el"+plot.comm.id if plot.comm else None
                 html = mpld3.fig_to_html(fig, figid=figid)
                 html = "<center>" + html + "<center/>"
                 if plot.comm:
                     comm, msg_handler = self.comms[self.mode]
-                    msg_handler = msg_handler.format(comms_target=plot.comm.target)
+                    msg_handler = msg_handler.format(comm_id=plot.comm.id)
                     return comm.template.format(init_frame=html,
                                                 msg_handler=msg_handler,
-                                                comms_target=plot.comm.target)
+                                                comm_id=plot.comm.id)
                 return html
 
         traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
@@ -272,10 +272,6 @@ class MPLRenderer(Renderer):
         """
         Validates a dictionary of options set on the backend.
         """
-        if options['fig']=='pdf':
-            outputwarning.warning("PDF output is experimental, may not be supported"
-                                  "by your browser and may change in future.")
-
         if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
             outputwarning.warning("The widget mode must be set to 'live' for "
                                   "matplotlib:nbagg.\nSwitching widget mode to 'live'.")

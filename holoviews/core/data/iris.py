@@ -11,6 +11,7 @@ import numpy as np
 from .interface import Interface
 from .grid import GridInterface
 from ..dimension import Dimension
+from ..element import Element
 from ..ndmapping import (NdMapping, item_check, sorted_context)
 from ..spaces import HoloMap
 from .. import util
@@ -78,17 +79,17 @@ class CubeInterface(GridInterface):
             ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
-            vdim = vdims[0].name if isinstance(vdims[0], Dimension) else vdims[0]
+            vdim = vdims[0] if isinstance(vdims[0], Dimension) else Dimension(vdims[0])
             if isinstance(data, tuple):
                 value_array = data[-1]
-                data = {d: vals for d, vals in zip(kdim_names + [vdim], data)}
+                data = {d: vals for d, vals in zip(kdim_names + [vdim.name], data)}
             elif isinstance(data, dict):
-                value_array = data[vdim]
+                value_array = data[vdim.name]
             coords = [(iris.coords.DimCoord(data[kd.name], long_name=kd.name,
                                             units=kd.unit), ndims-n-1)
                       for n, kd in enumerate(kdims)]
             try:
-                data = iris.cube.Cube(value_array, long_name=vdim,
+                data = iris.cube.Cube(value_array, long_name=vdim.name,
                                       dim_coords_and_dims=coords)
             except:
                 pass
@@ -116,14 +117,16 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def validate(cls, dataset):
-        pass
+        if len(dataset.vdims) > 1:
+            raise ValueError("Iris cubes do not support more than one value dimension")
 
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
+        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
-            return util.expand_grid_coords(dataset, dim)
-        data = dataset.data.coords(dim)[0].points
+            return util.expand_grid_coords(dataset, dim.name)
+        data = dataset.data.coords(dim.name)[0].points
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -134,14 +137,14 @@ class CubeInterface(GridInterface):
         """
         Returns an array of the values along the supplied dimension.
         """
-        dim = dataset.get_dimension(dim)
+        dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims:
             coord_names = [c.name() for c in dataset.data.dim_coords]
             data = dataset.data.copy().data
             data = cls.canonicalize(dataset, data, coord_names)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim, expanded=True)
+            data = cls.coords(dataset, dim.name, expanded=True)
             return data.flatten() if flat else data
         else:
             return cls.coords(dataset, dim.name, ordered=True)
@@ -173,18 +176,29 @@ class CubeInterface(GridInterface):
         break up a high-dimensional dataset into smaller viewable chunks.
         """
         if not isinstance(dims, list): dims = [dims]
-        dims = [dataset.get_dimension(d) for d in dims]
+        dims = [dataset.get_dimension(d, strict=True) for d in dims]
         constraints = [d.name for d in dims]
         slice_dims = [d for d in dataset.kdims if d not in dims]
+
+        # Update the kwargs appropriately for Element group types
+        group_kwargs = {}
+        group_type = dict if group_type == 'raw' else group_type
+        if issubclass(group_type, Element):
+            group_kwargs.update(util.get_param_values(dataset))
+            group_kwargs['kdims'] = slice_dims
+        group_kwargs.update(kwargs)
+
+        drop_dim = any(d not in group_kwargs['kdims'] for d in slice_dims)
 
         unique_coords = product(*[cls.values(dataset, d, expanded=False)
                                   for d in dims])
         data = []
         for key in unique_coords:
             constraint = iris.Constraint(**dict(zip(constraints, key)))
-            cube = dataset.clone(dataset.data.extract(constraint),
-                                  new_type=group_type,
-                                  **dict(kwargs, kdims=slice_dims))
+            extracted = dataset.data.extract(constraint)
+            if drop_dim:
+                extracted = group_type(extracted, kdims=slice_dims).columns()
+            cube = group_type(extracted, **group_kwargs)
             data.append((key, cube))
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
@@ -198,8 +212,8 @@ class CubeInterface(GridInterface):
         """
         Computes the range along a particular dimension.
         """
-        dim = dataset.get_dimension(dimension)
-        values = dataset.dimension_values(dim, False)
+        dim = dataset.get_dimension(dimension, strict=True)
+        values = dataset.dimension_values(dim.name, False)
         return (np.nanmin(values), np.nanmax(values))
 
 
@@ -262,7 +276,7 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def select_to_constraint(cls, selection):
+    def select_to_constraint(cls, dataset, selection):
         """
         Transform a selection dictionary to an iris Constraint.
         """
@@ -272,7 +286,8 @@ class CubeInterface(GridInterface):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
                 constraint = iris.util.between(*constraint, rh_inclusive=False)
-            constraint_kwargs[dim] = constraint
+            dim = dataset.get_dimension(dim, strict=True)
+            constraint_kwargs[dim.name] = constraint
         return iris.Constraint(**constraint_kwargs)
 
 
@@ -281,7 +296,7 @@ class CubeInterface(GridInterface):
         """
         Apply a selection to the data.
         """
-        constraint = cls.select_to_constraint(selection)
+        constraint = cls.select_to_constraint(dataset, selection)
         pre_dim_coords = [c.name() for c in dataset.data.dim_coords]
         indexed = cls.indexed(dataset, selection)
         extracted = dataset.data.extract(constraint)

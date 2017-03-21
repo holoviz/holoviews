@@ -21,13 +21,13 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim, strict=True).name
         return dataset.data[name].dtype.type
 
 
     @classmethod
     def dtype(cls, dataset, dim):
-        name = dataset.get_dimension(dim).name
+        name = dataset.get_dimension(dim, strict=True).name
         return dataset.data[name].dtype
 
 
@@ -67,10 +67,7 @@ class XArrayInterface(GridInterface):
                 if not isinstance(arr, xr.DataArray):
                     arr = xr.DataArray(arr, coords=coords)
                 arrays[vdim.name] = arr
-            try:
-                data = xr.Dataset(arrays)
-            except:
-                pass
+            data = xr.Dataset(arrays)
         else:
             if vdims is None:
                 vdims = list(data.data_vars.keys())
@@ -85,7 +82,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def range(cls, dataset, dimension):
-        dim = dataset.get_dimension(dimension).name
+        dim = dataset.get_dimension(dimension, strict=True).name
         if dim in dataset.data:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
@@ -98,7 +95,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def groupby(cls, dataset, dimensions, container_type, group_type, **kwargs):
-        index_dims = [dataset.get_dimension(d) for d in dimensions]
+        index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims
                         if kdim not in index_dims]
 
@@ -108,18 +105,26 @@ class XArrayInterface(GridInterface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        drop_dim = any(d not in group_kwargs['kdims'] for d in element_dims)
+
         # XArray 0.7.2 does not support multi-dimensional groupby
         # Replace custom implementation when 
         # https://github.com/pydata/xarray/pull/818 is merged.
+        group_by = [d.name for d in index_dims]
+        data = []
         if len(dimensions) == 1:
-            data = [(k, group_type(v, **group_kwargs)) for k, v in
-                    dataset.data.groupby(dimensions[0])]
+            for k, v in dataset.data.groupby(index_dims[0].name):
+                if drop_dim:
+                    v = v.to_dataframe().reset_index()
+                data.append((k, group_type(v, **group_kwargs)))
         else:
-            unique_iters = [cls.values(dataset, d, False) for d in dimensions]
-            indexes = zip(*[vals.flat for vals in util.cartesian_product(unique_iters)])
-            data = [(k, group_type(dataset.data.sel(**dict(zip(dimensions, k))),
-                                   **group_kwargs))
-                    for k in indexes]
+            unique_iters = [cls.values(dataset, d, False) for d in group_by]
+            indexes = zip(*util.cartesian_product(unique_iters))
+            for k in indexes:
+                sel = dataset.data.sel(**dict(zip(group_by, k)))
+                if drop_dim:
+                    sel = sel.to_dataframe().reset_index()
+                data.append((k, group_type(sel, **group_kwargs)))
 
         if issubclass(container_type, NdMapping):
             with item_check(False), sorted_context(False):
@@ -130,6 +135,7 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
+        dim = dataset.get_dimension(dim, strict=True).name
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = np.atleast_1d(dataset.data[dim].data)
@@ -140,27 +146,23 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
-        data = dataset.data[dim].data
+        dim = dataset.get_dimension(dim, strict=True)
+        data = dataset.data[dim.name].data
         if dim in dataset.vdims:
-            coord_dims = dataset.data[dim].dims
+            coord_dims = dataset.data[dim.name].dims
             data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
-            data = cls.coords(dataset, dim, expanded=True)
+            data = cls.coords(dataset, dim.name, expanded=True)
             return data.flatten() if flat else data
         else:
-            return cls.coords(dataset, dim, ordered=True)
+            return cls.coords(dataset, dim.name, ordered=True)
 
 
     @classmethod
     def aggregate(cls, dataset, dimensions, function, **kwargs):
-        if len(dimensions) > 1:
-            raise NotImplementedError('Multi-dimensional aggregation not '
-                                      'supported as of xarray <=0.7.2.')
-        elif not dimensions:
-            return dataset.data.apply(function)
-        else:
-            return dataset.data.groupby(dimensions[0]).apply(function)
+        reduce_dims = [d.name for d in dataset.kdims if d not in dimensions]
+        return dataset.data.reduce(function, dim=reduce_dims)
 
 
     @classmethod
@@ -199,17 +201,18 @@ class XArrayInterface(GridInterface):
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
         for k, v in selection.items():
+            dim = dataset.get_dimension(k, strict=True).name
             if isinstance(v, slice):
                 v = (v.start, v.stop)
             if isinstance(v, set):
-                validated[k] = list(v)
+                validated[dim] = list(v)
             elif isinstance(v, tuple):
                 upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
-                validated[k] = slice(v[0], upper)
+                validated[dim] = slice(v[0], upper)
             elif isinstance(v, types.FunctionType):
-                validated[k] = v(dataset[k])
+                validated[dim] = v(dataset[k])
             else:
-                validated[k] = v
+                validated[dim] = v
         data = dataset.data.sel(**validated)
 
         # Restore constant dimensions
@@ -232,7 +235,7 @@ class XArrayInterface(GridInterface):
     @classmethod
     def dframe(cls, dataset, dimensions):
         if dimensions:
-            return dataset.reindex(columns=dimensions)
+            return dataset.reindex(columns=dimensions).data.to_dataframe().reset_index(dimensions)
         else:
             return dataset.data.to_dataframe().reset_index(dimensions)
 

@@ -3,12 +3,13 @@ import plotly.graph_objs as go
 from plotly.tools import FigureFactory as FF
 
 from ...core import util
+from ...operation import interpolate_curve
 from .element import ElementPlot, ColorbarPlot
 
 
 class ScatterPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=3, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -41,11 +42,20 @@ class PointPlot(ScatterPlot):
 
 class CurvePlot(ElementPlot):
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     graph_obj = go.Scatter
 
     style_opts = ['color', 'dash', 'width']
 
     def graph_options(self, element, ranges):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         opts = super(CurvePlot, self).graph_options(element, ranges)
         opts['mode'] = 'lines'
         style = self.style[self.cyclic_index]
@@ -200,8 +210,7 @@ class BoxWhiskerPlot(ElementPlot):
         plots = []
         for key, group in groups:
             if element.kdims:
-                label = ','.join([util.unicode(util.safe_unicode(d.pprint_value(v)))
-                                  for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
             data = {axis: group.dimension_values(group.vdims[0])}

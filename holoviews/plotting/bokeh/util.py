@@ -1,4 +1,4 @@
-import itertools
+import itertools, inspect, re
 from distutils.version import LooseVersion
 from collections import defaultdict
 
@@ -10,19 +10,25 @@ try:
 except ImportError:
     cm, colors = None, None
 
+import param
 import bokeh
 bokeh_version = LooseVersion(bokeh.__version__)
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
+from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.models.plots import Plot
-from bokeh.models import GlyphRenderer, Model, HasProps
+from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
+                          ToolbarBox, FactorRange, Range1d)
 from bokeh.models.widgets import DataTable, Tabs
 from bokeh.plotting import Figure
 if bokeh_version >= '0.12':
     from bokeh.layouts import WidgetBox
 
 from ...core.options import abbreviated_exception
+from ...core.overlay import Overlay
+
+from ..util import dim_axis_label
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -41,15 +47,17 @@ markers = {'s': {'marker': 'square'},
 # and can therefore be safely ignored. Axes currently fail saying
 # LinearAxis.computed_bounds cannot be updated
 IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
-                  'CategoricalAxis', 'BasicTicker', 'BasicTickFormatter',
-                  'FixedTicker', 'FuncTickFormatter', 'LogTickFormatter']
+                  'BasicTicker', 'BasicTickFormatter', 'FixedTicker',
+                  'FuncTickFormatter', 'LogTickFormatter',
+                  'CategoricalTickFormatter']
 
 # List of attributes that can safely be dropped from the references
-IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y']
+IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y', 'factors']
 
 # Model priority order to ensure some types are updated before others
 MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
-                  'Plot', 'Range1d', 'LinearAxis', 'ColumnDataSource']
+                  'Plot', 'Range1d', 'FactorRange', 'CategoricalAxis',
+                  'LinearAxis', 'ColumnDataSource']
 
 
 def rgb2hex(rgb):
@@ -61,7 +69,17 @@ def rgb2hex(rgb):
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
-def mplcmap_to_palette(cmap):
+def rgba_tuple(rgba):
+    """
+    Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.
+    """
+    if isinstance(rgba, tuple):
+        return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
+    else:
+        return rgba
+
+
+def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
@@ -69,6 +87,8 @@ def mplcmap_to_palette(cmap):
         raise ValueError("Using cmaps on objects requires matplotlib.")
     with abbreviated_exception():
         colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+        if ncolors:
+            return [rgb2hex(colormap(i)) for i in np.linspace(0, 1, ncolors)]
         return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
 
 
@@ -109,19 +129,15 @@ def mpl_to_bokeh(properties):
     return new_properties
 
 
-def layout_padding(plots):
+def layout_padding(plots, renderer):
     """
-    Temporary workaround to allow empty plots in a
-    row of a bokeh GridPlot type. Should be removed
-    when https://github.com/bokeh/bokeh/issues/2891
-    is resolved.
+    Pads Nones in a list of lists of plots with empty plots.
     """
     widths, heights = defaultdict(int), defaultdict(int)
     for r, row in enumerate(plots):
         for c, p in enumerate(row):
             if p is not None:
-                width = p.plot_width if isinstance(p, Plot) else p.width
-                height = p.plot_height if isinstance(p, Plot) else p.height
+                width, height = renderer.get_size(p)
                 widths[c] = max(widths[c], width)
                 heights[r] = max(heights[r], height)
 
@@ -130,16 +146,94 @@ def layout_padding(plots):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                p = Figure(plot_width=widths[c],
-                           plot_height=heights[r])
-                p.text(x=0, y=0, text=[' '])
+                x_range = Range1d(start=0, end=1)
+                y_range = Range1d(start=0, end=1)
+                p = Figure(plot_width=widths[c], plot_height=heights[r],
+                           x_range=x_range, y_range=y_range)
                 p.xaxis.visible = False
                 p.yaxis.visible = False
-                p.outline_line_color = None
-                p.xgrid.grid_line_color = None
-                p.ygrid.grid_line_color = None
+                p.outline_line_alpha = 0
+                p.grid.grid_line_alpha = 0
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def font_size_to_pixels(size):
+    """
+    Convert a fontsize to a pixel value
+    """
+    if size is None or not isinstance(size, basestring):
+        return
+    conversions = {'em': 16, 'pt': 16/12.}
+    val = re.findall('\d+', size)
+    unit = re.findall('[a-z]+', size)
+    if (val and not unit) or (val and unit[0] == 'px'):
+        return int(val[0])
+    elif val and unit[0] in conversions:
+        return (int(int(val[0]) * conversions[unit[0]]))
+
+
+def make_axis(axis, size, factors, dim, flip=False, rotation=0,
+              label_size=None, tick_size=None, axis_height=40):
+    factors = list(map(dim.pprint_value, factors))
+    nchars = np.max([len(f) for f in factors])
+    ranges = FactorRange(factors=factors)
+    ranges2 = Range1d(start=0, end=1)
+    axis_label = dim_axis_label(dim)
+
+    axis_props = {}
+    if label_size:
+        axis_props['axis_label_text_font_size'] = value(label_size)
+    if tick_size:
+        axis_props['major_label_text_font_size'] = value(tick_size)
+
+    tick_px = font_size_to_pixels(tick_size)
+    if tick_px is None:
+        tick_px = 8
+    label_px = font_size_to_pixels(label_size)
+    if label_px is None:
+        label_px = 10
+
+    rotation = np.radians(rotation)
+    if axis == 'x':
+        align = 'center'
+        # Adjust height to compensate for label rotation
+        height = int(axis_height + np.abs(np.sin(rotation)) *
+                     ((nchars*tick_px)*0.5)) + tick_px + label_px
+        opts = dict(x_axis_type='auto', x_axis_label=axis_label,
+                    x_range=ranges, y_range=ranges2, plot_height=height,
+                    plot_width=size)
+    else:
+        # Adjust width to compensate for label rotation
+        align = 'left' if flip else 'right'
+        width = int(axis_height + np.abs(np.cos(rotation)) *
+                    ((nchars*tick_px)*0.5)) + tick_px + label_px
+        opts = dict(y_axis_label=axis_label, x_range=ranges2,
+                    y_range=ranges, plot_width=width, plot_height=size)
+
+    p = Figure(toolbar_location=None, **opts)
+    p.outline_line_alpha = 0
+    p.grid.grid_line_alpha = 0
+
+    if axis == 'x':
+        p.yaxis.visible = False
+        axis = p.xaxis[0]
+        if flip:
+            p.above = p.below
+            p.below = []
+            p.xaxis[:] = p.above
+    else:
+        p.xaxis.visible = False
+        axis = p.yaxis[0]
+        if flip:
+            p.right = p.left
+            p.left = []
+            p.yaxis[:] = p.right
+    axis.major_label_orientation = rotation
+    axis.major_label_text_align = align
+    axis.major_label_text_baseline = 'middle'
+    axis.update(**axis_props)
+    return p
 
 
 def convert_datetime(time):
@@ -344,7 +438,36 @@ def update_plot(old, new):
             old_r.data_source.data.update(emptied)
 
 
-def pad_plots(plots, padding=0.85):
+def pad_width(model, table_padding=0.85, tabs_padding=1.2):
+    """
+    Computes the width of a model and sets up appropriate padding
+    for Tabs and DataTable types.
+    """
+    if isinstance(model, Row):
+        vals = [pad_width(child) for child in model.children]
+        width = np.max([v for v in vals if v is not None])
+    elif isinstance(model, Column):
+        vals = [pad_width(child) for child in model.children]
+        width = np.sum([v for v in vals if v is not None])
+    elif isinstance(model, Tabs):
+        vals = [pad_width(t) for t in model.tabs]
+        width = np.max([v for v in vals if v is not None])
+        for model in model.tabs:
+            model.width = width
+            width = int(tabs_padding*width)
+    elif isinstance(model, DataTable):
+        width = model.width
+        model.width = int(table_padding*width)
+    elif isinstance(model, WidgetBox):
+        width = model.width
+    elif model:
+        width = model.plot_width
+    else:
+        width = 0
+    return width
+
+
+def pad_plots(plots):
     """
     Accepts a grid of bokeh plots in form of a list of lists and
     wraps any DataTable or Tabs in a WidgetBox with appropriate
@@ -354,21 +477,73 @@ def pad_plots(plots, padding=0.85):
     for row in plots:
         row_widths = []
         for p in row:
-            if isinstance(p, Tabs):
-                width = np.max([p.width if isinstance(p, DataTable) else
-                                t.child.plot_width for t in p.tabs])
-                for p in p.tabs:
-                    p.width = int(padding*width)
-            elif isinstance(p, DataTable):
-                width = p.width
-                p.width = int(padding*width)
-            elif p:
-                width = p.plot_width
-            else:
-                width = 0
+            width = pad_width(p)
             row_widths.append(width)
         widths.append(row_widths)
     plots = [[WidgetBox(p, width=w) if isinstance(p, (DataTable, Tabs)) else p
               for p, w in zip(row, ws)] for row, ws in zip(plots, widths)]
     total_width = np.max([np.sum(row) for row in widths])
     return plots, total_width
+
+
+def filter_toolboxes(plots):
+    """
+    Filters out toolboxes out of a list of plots to be able to compose
+    them into a larger plot.
+    """
+    if isinstance(plots, list):
+        plots = [filter_toolboxes(plot) for plot in plots]
+    elif hasattr(plots, 'children'):
+        plots.children = [filter_toolboxes(child) for child in plots.children
+                          if not isinstance(child, ToolbarBox)]
+    return plots
+
+
+def py2js_tickformatter(formatter, msg=''):
+    """
+    Uses flexx.pyscript to compile a python tick formatter to JS code
+    """
+    try:
+        from flexx.pyscript import py2js
+    except ImportError:
+        param.main.warning(msg+'Ensure Flexx is installed '
+                           '("conda install -c bokeh flexx" or '
+                           '"pip install flexx")')
+        return
+    try:
+        jscode = py2js(formatter, 'formatter')
+    except Exception as e:
+        error = 'Pyscript raised an error: {0}'.format(e)
+        error = error.replace('%', '%%')
+        param.main.warning(msg+error)
+        return
+
+    args = inspect.getargspec(formatter).args
+    arg_define = 'var %s = tick;' % args[0] if args else ''
+    return_js = 'return formatter();\n'
+    jsfunc = '\n'.join([arg_define, jscode, return_js])
+    match = re.search('(function \(.*\))', jsfunc )
+    return jsfunc[:match.start()] + 'function ()' + jsfunc[match.end():]
+
+
+def get_tab_title(key, frame, overlay):
+    """
+    Computes a title for bokeh tabs from the key in the overlay, the
+    element and the containing (Nd)Overlay.
+    """
+    if isinstance(overlay, Overlay):
+        if frame is not None:
+            title = []
+            if frame.label:
+                title.append(frame.label)
+                if frame.group != frame.params('group').default:
+                    title.append(frame.group)
+            else:
+                title.append(frame.group)
+        else:
+            title = key
+        title = ' '.join(title)
+    else:
+        title = ' | '.join([d.pprint_value_string(k) for d, k in
+                            zip(overlay.kdims, key)])
+    return title

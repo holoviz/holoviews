@@ -9,8 +9,16 @@ from .element import ElementPlot, text_properties, line_properties
 
 class TextPlot(ElementPlot):
 
-    style_opts = text_properties
+    style_opts = text_properties+['color']
     _plot_methods = dict(single='text', batched='text')
+
+    def _glyph_properties(self, plot, element, source, ranges):
+        props = super(TextPlot, self)._glyph_properties(plot, element, source, ranges)
+        props['text_align'] = element.halign
+        props['text_baseline'] = 'middle' if element.valign == 'center' else element.valign
+        if 'color' in props:
+            props['text_color'] = props.pop('color')
+        return props
 
     def get_data(self, element, ranges=None, empty=False):
         mapping = dict(x='x', y='y', text='text')
@@ -20,6 +28,7 @@ class TextPlot(ElementPlot):
             data = dict(x=[element.y], y=[element.x])
         else:
             data = dict(x=[element.x], y=[element.y])
+        self._categorize_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
         return (data, mapping)
 
@@ -56,8 +65,8 @@ class LineAnnotationPlot(ElementPlot):
         """
         Returns a Bokeh glyph object.
         """
-        properties.pop('source')
-        properties.pop('legend')
+        properties = {p: v for p, v in properties.items()
+                      if p not in ['source', 'legend']}
         box = Span(level='overlay', **dict(mapping, **properties))
         plot.renderers.append(box)
         return None, box

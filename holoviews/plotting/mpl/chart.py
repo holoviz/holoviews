@@ -1,20 +1,27 @@
 from __future__ import unicode_literals
 
 from itertools import product
+from distutils.version import LooseVersion
 
 import numpy as np
+import matplotlib as mpl
 from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
+from matplotlib.path import Path as MPLPath
 from matplotlib.dates import date2num, DateFormatter
+
+mpl_version = LooseVersion(mpl.__version__)
 
 import param
 
 from ...core import OrderedDict, Dimension
-from ...core.util import (match_spec, unique_iterator, safe_unicode,
+from ...core.util import (match_spec, unique_iterator, bytes_to_unicode,
                           basestring, max_range, unicode)
 from ...element import Points, Raster, Polygons, HeatMap
-from ..util import compute_sizes, get_sideplot_ranges, map_colors
+from ...operation import interpolate_curve
+from ..util import (compute_sizes, get_sideplot_ranges, map_colors,
+                    get_min_distance)
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot
@@ -41,6 +48,13 @@ class CurvePlot(ChartPlot):
         Whether to let matplotlib automatically compute tick marks
         or to allow the user to control tick marks.""")
 
+    interpolation = param.ObjectSelector(objects=['linear', 'steps-mid',
+                                                  'steps-pre', 'steps-post'],
+                                         default='linear', doc="""
+        Defines how the samples of the Curve are interpolated,
+        default is 'linear', other options include 'steps-mid',
+        'steps-pre' and 'steps-post'.""")
+
     relative_labels = param.Boolean(default=False, doc="""
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
@@ -59,13 +73,16 @@ class CurvePlot(ChartPlot):
     _plot_methods = dict(single='plot')
 
     def get_data(self, element, ranges, style):
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
         xs = element.dimension_values(0)
         ys = element.dimension_values(1)
         dims = element.dimensions()
         if xs.dtype.kind == 'M':
             dt_format = Dimension.type_formatters[np.datetime64]
             dims[0] = dims[0](value_format=DateFormatter(dt_format))
-        return (xs, ys), style, {'dimensions': dims}
+        coords = (ys, xs) if self.invert_axes else (xs, ys)
+        return coords, style, {'dimensions': dims}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         xs, ys = plot_args
@@ -101,7 +118,14 @@ class ErrorPlot(ChartPlot):
     _plot_methods = dict(single='errorbar')
 
     def init_artists(self, ax, plot_data, plot_kwargs):
-        _, (bottoms, tops), verts = ax.errorbar(*plot_data, **plot_kwargs)
+        handles = ax.errorbar(*plot_data, **plot_kwargs)
+        bottoms, tops = None, None
+        if mpl_version >= str('2.0'):
+            _, caps, verts = handles
+            if caps:
+                bottoms, tops = caps
+        else:
+            _, (bottoms, tops), verts = handles
         return {'bottoms': bottoms, 'tops': tops, 'verts': verts[0]}
 
 
@@ -110,8 +134,15 @@ class ErrorPlot(ChartPlot):
         dims = element.dimensions()
         xs, ys = (element.dimension_values(i) for i in range(2))
         yerr = element.array(dimensions=dims[2:4])
-        style['yerr'] = yerr.T if len(dims) > 3 else yerr[:, 0]
-        return (xs, ys), style, {}
+
+        if self.invert_axes:
+            coords = (ys, xs)
+            err_key = 'xerr'
+        else:
+            coords = (xs, ys)
+            err_key = 'yerr'
+        style[err_key] = yerr.T if len(dims) > 3 else yerr[:, 0]
+        return coords, style, {}
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -120,30 +151,37 @@ class ErrorPlot(ChartPlot):
         verts = self.handles['verts']
         paths = verts.get_paths()
 
-        (xs, ys), style, axis_kwargs = self.get_data(element, ranges, style)
-
-        neg_error = element.dimension_values(2)
+        _, style, axis_kwargs = self.get_data(element, ranges, style)
+        xs, ys, neg_error = (element.dimension_values(i) for i in range(3))
+        samples = len(xs)
+        npaths = len(paths)
         pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
         if self.invert_axes:
-            bdata = xs - neg_error
-            tdata = xs + pos_error
-            tops.set_xdata(bdata)
-            tops.set_ydata(ys)
-            bottoms.set_xdata(tdata)
-            bottoms.set_ydata(ys)
-            for i, path in enumerate(paths):
-                path.vertices = np.array([[bdata[i], ys[i]],
-                                          [tdata[i], ys[i]]])
+            bxs, bys = ys - neg_error, xs
+            txs, tys = ys + pos_error, xs
+            new_arrays = [np.array([[bxs[i], xs[i]], [txs[i], xs[i]]])
+                          for i in range(samples)]
         else:
-            bdata = ys - neg_error
-            tdata = ys + pos_error
-            bottoms.set_xdata(xs)
-            bottoms.set_ydata(bdata)
-            tops.set_xdata(xs)
-            tops.set_ydata(tdata)
-            for i, path in enumerate(paths):
-                path.vertices = np.array([[xs[i], bdata[i]],
-                                          [xs[i], tdata[i]]])
+            bxs, bys = xs, ys - neg_error
+            txs, tys = xs, ys + pos_error
+            new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
+                          for i in range(samples)]
+
+        new_paths = []
+        for i, arr in enumerate(new_arrays):
+            if i < npaths:
+                paths[i].vertices = arr
+                new_paths.append(paths[i])
+            else:
+                new_paths.append(MPLPath(arr))
+        verts.set_paths(new_paths)
+
+        if bottoms:
+            bottoms.set_xdata(bxs)
+            bottoms.set_ydata(bys)
+        if tops:
+            tops.set_xdata(txs)
+            tops.set_ydata(tys)
         return axis_kwargs
 
 
@@ -222,7 +260,8 @@ class HistogramPlot(ChartPlot):
         Whether to overlay a grid on the axis.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
-                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch']
+                  'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
+                  'linewidth']
 
     def __init__(self, histograms, **params):
         self.center = False
@@ -450,11 +489,11 @@ class PointPlot(ChartPlot, ColorbarPlot):
     how point magnitudes are rendered to different colors.
     """
 
-    color_index = param.ClassSelector(default=3, class_=(basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                   allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=2, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                  allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -477,7 +516,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
 
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'size', 'visible',
-                  'cmap', 'vmin', 'vmax']
+                  'cmap', 'vmin', 'vmax', 'norm']
 
     _disabled_opts = ['size']
     _plot_methods = dict(single='scatter')
@@ -491,7 +530,8 @@ class PointPlot(ChartPlot, ColorbarPlot):
     def _compute_styles(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
         color = style.pop('color', None)
-        if cdim:
+        cmap = style.get('cmap', None)
+        if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
             if cs.dtype.kind in 'if':
@@ -507,11 +547,18 @@ class PointPlot(ChartPlot, ColorbarPlot):
             style['c'] = color
         style['edgecolors'] = style.pop('edgecolors', style.pop('edgecolor', 'none'))
 
-        if element.get_dimension(self.size_index):
+        sdim = element.get_dimension(self.size_index)
+        if sdim:
             sizes = element.dimension_values(self.size_index)
-            ms = style.pop('s') if 's' in style else plt.rcParams['lines.markersize']
-            style['s'] = compute_sizes(sizes, self.size_fn, self.scaling_factor,
-                                       self.scaling_method, ms)
+            ms = style['s'] if 's' in style else plt.rcParams['lines.markersize']
+            sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
+                                  self.scaling_method, ms)
+            if sizes is None:
+                eltype = type(element).__name__
+                self.warning('%s dimension is not numeric, cannot '
+                             'use to scale %s size.' % (sdim, eltype))
+            else:
+                style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
 
 
@@ -553,7 +600,7 @@ class VectorFieldPlot(ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    size_index = param.ClassSelector(default=3, class_=(basestring, int),
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
@@ -574,7 +621,7 @@ class VectorFieldPlot(ColorbarPlot):
     style_opts = ['alpha', 'color', 'edgecolors', 'facecolors',
                   'linewidth', 'marker', 'visible', 'cmap',
                   'scale', 'headlength', 'headaxislength', 'pivot',
-                  'width','headwidth']
+                  'width','headwidth', 'norm']
 
     _plot_methods = dict(single='quiver')
 
@@ -587,16 +634,7 @@ class VectorFieldPlot(ColorbarPlot):
         """
         Get the minimum sample distance and maximum magnitude
         """
-        return np.min([self._get_min_dist(vfield) for vfield in vmap])
-
-
-    def _get_min_dist(self, vfield):
-        "Get the minimum sampling distance."
-        xys = vfield.array([0, 1]).view(dtype=np.complex128)
-        m, n = np.meshgrid(xys, xys)
-        distances = np.abs(m-n)
-        np.fill_diagonal(distances, np.inf)
-        return distances[distances>0].min()
+        return np.min([get_min_distance(vfield) for vfield in vmap])
 
 
     def get_data(self, element, ranges, style):
@@ -887,7 +925,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         explicit aspect ratio as width/height as well as
         'square' and 'equal' options.""")
 
-    color_index = param.ClassSelector(default=1, class_=(basestring, int), doc="""
+    color_index = param.ClassSelector(default=1, allow_None=True,
+                                      class_=(basestring, int), doc="""
       Index of the dimension from which the color will the drawn""")
 
     spike_length = param.Number(default=0.1, doc="""
@@ -906,9 +945,12 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
     def get_extents(self, element, ranges):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
-        ndims = len(element.dimensions(label=True))
-        max_length = t if ndims > 1 else self.spike_length
-        return (l, self.position, r, self.position+max_length)
+        if len(element.dimensions()) == 1:
+            b, t = self.position, self.position+self.spike_length
+        else:
+            b = np.nanmin([0, b])
+            t = np.nanmax([0, t])
+        return l, b, r, t
 
 
     def get_data(self, element, ranges, style):
@@ -1003,15 +1045,14 @@ class BoxPlot(ChartPlot):
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         for key, group in groups:
             if element.kdims:
-                label = ','.join([unicode(safe_unicode(d.pprint_value(v)))
-                                  for d, v in zip(element.kdims, key)])
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
             data.append(group[group.vdims[0]])
             labels.append(label)
         style['labels'] = labels
-        style.pop('zorder')
-        style.pop('label')
+        style = {k: v for k, v in style.items()
+                 if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         return (data,), style, {'dimensions': [format_kdims,

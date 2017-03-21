@@ -15,6 +15,7 @@ from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
+from ..element.util import categorical_aggregate2d
 from ..streams import RangeXY
 
 column_interfaces = [ArrayInterface, DictInterface]
@@ -461,22 +462,19 @@ class histogram(ElementOperation):
     Returns a Histogram of the input element data, binned into
     num_bins over the bin_range (if specified) along the specified
     dimension.
-
-    If adjoin is True, the histogram will be returned adjoined to the
-    Element as a side-plot.
     """
 
-    adjoin = param.Boolean(default=True, doc="""
-      Whether to adjoin the histogram to the ViewableElement.""")
-
-    bin_range = param.NumericTuple(default=(0, 0), doc="""
+    bin_range = param.NumericTuple(default=None, length=2,  doc="""
       Specifies the range within which to compute the bins.""")
 
     dimension = param.String(default=None, doc="""
-      Along which dimension of the ViewableElement to compute the histogram.""")
+      Along which dimension of the Element to compute the histogram.""")
 
     individually = param.Boolean(default=True, doc="""
-      Specifies whether the histogram will be rescaled for each Raster in a UniformNdMapping.""")
+      Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
+
+    log = param.Boolean(default=False, doc="""
+      Whether to use base 10 logarithmic samples for the bin edges.""")
 
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
@@ -518,16 +516,21 @@ class histogram(ElementOperation):
         if hist_range == (0, 0):
             hist_range = (0, 1)
         data = data[np.invert(np.isnan(data))]
+        if self.p.log:
+            bin_min = max([abs(hist_range[0]), data[data>0].min()])
+            edges = np.logspace(np.log10(bin_min), np.log10(hist_range[1]),
+                                self.p.num_bins+1)
+        else:
+            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
         try:
             hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
-                                       range=hist_range, weights=weights, bins=self.p.num_bins)
+                                       range=hist_range, weights=weights, bins=edges)
             if not normed and self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
                                             range=hist_range, bins=self.p.num_bins)
                 hist /= hist_mean
         except:
-            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
             hist = np.zeros(self.p.num_bins)
 
         hist[np.isnan(hist)] = 0
@@ -538,10 +541,8 @@ class histogram(ElementOperation):
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
-        hist_view = Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
-                              label=view.label, **params)
-
-        return (view << hist_view) if self.p.adjoin else hist_view
+        return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
+                         label=view.label, **params)
 
 
 
@@ -574,7 +575,7 @@ class decimate(ElementOperation):
        The x_range as a tuple of min and max y-value. Auto-ranges
        if set to None.""")
 
-    def _process(self, element, key=None):
+    def _process_layer(self, element, key=None):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
         if element.interface not in column_interfaces:
@@ -602,6 +603,63 @@ class decimate(ElementOperation):
                     data = sliced.data[inds, :]
             sliced = element.clone(data)
         return sliced
+
+    def _process(self, element, key=None):
+        return element.map(self._process_layer, Element)
+
+
+class interpolate_curve(ElementOperation):
+    """
+    Resamples a Curve using the defined interpolation method, e.g.
+    to represent changes in y-values as steps.
+    """
+
+    interpolation = param.ObjectSelector(objects=['steps-pre', 'steps-mid',
+                                                  'steps-post', 'linear'],
+                                         default='steps-mid', doc="""
+       Controls the transition point of the step along the x-axis.""")
+
+    @classmethod
+    def pts_to_prestep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x) - 1))
+        steps[0, 0::2] = x
+        steps[0, 1::2] = steps[0, 0:-2:2]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 2::2]
+        return steps
+
+    @classmethod
+    def pts_to_midstep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x)))
+        x = np.asanyarray(x)
+        steps[0, 1:-1:2] = steps[0, 2::2] = (x[:-1] + x[1:]) / 2
+        steps[0, 0], steps[0, -1] = x[0], x[-1]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 0::2]
+        return steps
+
+    @classmethod
+    def pts_to_poststep(cls, x, y):
+        steps = np.zeros((2, 2 * len(x) - 1))
+        steps[0, 0::2] = x
+        steps[0, 1::2] = steps[0, 2::2]
+        steps[1:, 0::2] = y
+        steps[1:, 1::2] = steps[1:, 0:-2:2]
+        return steps
+
+    def _process_layer(self, element, key=None):
+        INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
+                             'steps-mid': self.pts_to_midstep,
+                             'steps-post': self.pts_to_poststep}
+        if self.p.interpolation not in INTERPOLATE_FUNCS:
+            return element
+        x, y = element.dimension_values(0), element.dimension_values(1)
+        array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
+        dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
+        return element.clone((array[0, :], array[1, :])+dvals)
+
+    def _process(self, element, key=None):
+        return element.map(self._process_layer, Element)
 
 
 #==================#
@@ -645,9 +703,14 @@ class gridmatrix(param.ParameterizedFunction):
         The Element type used to display bivariate distributions
         of the data.""")
 
-    diagonal_type = param.Parameter(default=Histogram, doc="""
+    diagonal_type = param.Parameter(default=None, doc="""
        The Element type along the diagonal, may be a Histogram or any
-       other plot type which can visualize a univariate distribution.""")
+       other plot type which can visualize a univariate distribution.
+       This parameter overrides diagonal_operation.""")
+
+    diagonal_operation = param.Parameter(default=histogram, doc="""
+       The operation applied along the diagonal, may be a histogram-operation
+       or any other function which returns a viewable element.""")
 
     overlay_dims = param.List(default=[], doc="""
        If a HoloMap is supplied this will allow overlaying one or
@@ -686,17 +749,29 @@ class gridmatrix(param.ParameterizedFunction):
         permuted_dims = [(d1, d2) for d1 in dims
                          for d2 in dims[::-1]]
 
+        # Convert Histogram type to operation to avoid one case in the if below.
+        if p.diagonal_type is Histogram:
+            p.diagonal_type = None
+            p.diagonal_operation = histogram
+
         data = {}
         for d1, d2 in permuted_dims:
             if d1 == d2:
-                if p.diagonal_type is Histogram:
+                if p.diagonal_type is not None:
+                    if p.diagonal_type._auto_indexable_1d:
+                        el = p.diagonal_type(el_data, kdims=[d1], vdims=[d2],
+                                             datatype=['dataframe', 'dictionary'])
+                    else:
+                        values = element.dimension_values(d1)
+                        el = p.diagonal_type(values, vdims=[d1])
+                elif p.diagonal_operation is histogram or isinstance(p.diagonal_operation, histogram):
                     bin_range = ranges.get(d1.name, element.range(d1))
-                    el = element.hist(dimension=d1.name,
-                                      bin_range=bin_range,
-                                      adjoin=False)(norm=dict(axiswise=True, framewise=True))
+                    opts = dict(axiswise=True, framewise=True)
+                    el = p.diagonal_operation(element,
+                                              dimension=d1.name,
+                                              bin_range=bin_range)(norm=opts)
                 else:
-                    values = element.dimension_values(d1)
-                    el = p.diagonal_type(values, vdims=[d1])
+                    el = p.diagonal_operation(element, dimension=d1.name)
             else:
                 el = p.chart_type(el_data, kdims=[d1],
                                   vdims=[d2], datatype=['dataframe', 'dictionary'])

@@ -6,7 +6,7 @@ from holoviews.core.util import unicode
 import param
 
 from .element import ElementPlot
-from ...core.util import safe_unicode
+from ...core.util import bytes_to_unicode
 
 
 class TablePlot(ElementPlot):
@@ -70,8 +70,9 @@ class TablePlot(ElementPlot):
                     else:
                         if summarize and row > half_rows:
                             adjusted_row = (frame.rows - self.max_rows + row)
-                        value = frame.pprint_cell(adjusted_row, col)
-                        cell_text = self.pprint_value(value)
+                        cell_text = frame.pprint_cell(adjusted_row, col)
+                        if len(cell_text) > self.max_value_len:
+                            cell_text = cell_text[:(self.max_value_len-3)]+'...'
                     if len(cell_text) + 2 > cell_widths[col]:
                         cell_widths[col] = len(cell_text) + 2
         return cell_widths
@@ -86,28 +87,10 @@ class TablePlot(ElementPlot):
         else:
             if summarize and row > half_rows:
                 row = (element.rows - self.max_rows + row)
-            value = element.pprint_cell(row, col)
-            cell_text = self.pprint_value(value)
+            cell_text = element.pprint_cell(row, col)
+            if len(cell_text) > self.max_value_len:
+                cell_text = cell_text[:(self.max_value_len-3)]+'...'
         return cell_text
-
-
-    def pprint_value(self, value):
-        """
-        Generate the pretty printed representation of a value for
-        inclusion in a table cell.
-        """
-        if isinstance(value, float):
-            formatter = '{:.%df}' % self.float_precision
-            formatted = formatter.format(value)
-        elif isinstance(value, (str, unicode)):
-            formatted = safe_unicode(value)
-        else:
-            formatted = str(value)
-
-        if len(formatted) > self.max_value_len:
-            return formatted[:(self.max_value_len-3)]+'...'
-        else:
-            return formatted
 
 
     def initialize_plot(self, ranges=None):

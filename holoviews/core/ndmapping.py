@@ -87,6 +87,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     kdims = param.List(default=[Dimension("Default")], constant=True)
 
+    vdims = param.List(default=[], bounds=(0, 0), constant=True)
+
     data_type = None          # Optional type checking of elements
     _deep_indexable = False
     _sorted = True
@@ -171,7 +173,7 @@ class MultiDimensionalMapping(Dimensioned):
             if not self._instantiated and self.get_dimension(dim).values == 'initial':
                 if val not in vals:
                     self._cached_index_values[dim.name].append(val)
-            elif vals and val not in vals:
+            elif vals and val is not None and val not in vals:
                 raise KeyError('%s dimension value %s not in'
                                ' specified dimension values.' % (dim, repr(val)))
 
@@ -217,6 +219,9 @@ class MultiDimensionalMapping(Dimensioned):
         """
         if not isinstance(key, tuple):
             key = (key,)
+        elif key == ():
+            return (), ()
+
         if key[0] is Ellipsis:
             num_pad = self.ndims - len(key) + 1
             key = (slice(None),) * num_pad + key[1:]
@@ -239,7 +244,7 @@ class MultiDimensionalMapping(Dimensioned):
         indexable. Warns if attempting to slice an object that has not
         been declared deep indexable.
         """
-        if isinstance(data, Dimensioned) and indices:
+        if self._deep_indexable and isinstance(data, Dimensioned) and indices:
             return data[indices]
         elif len(indices) > 0:
             self.warning('Cannot index into data element, extra data'
@@ -277,7 +282,7 @@ class MultiDimensionalMapping(Dimensioned):
             return self
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
-        dimensions = [self.get_dimension(d) for d in dimensions]
+        dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         sort = not self._sorted
         with item_check(False):
             return util.ndmapping_groupby(self, dimensions, container_type,
@@ -345,10 +350,10 @@ class MultiDimensionalMapping(Dimensioned):
 
     def dimension_values(self, dimension, expanded=True, flat=True):
         "Returns the values along the specified dimension."
-        dimension = self.get_dimension(dimension, strict=True).name
+        dimension = self.get_dimension(dimension, strict=True)
         if dimension in self.kdims:
             return np.array([k[self.get_dimension_index(dimension)] for k in self.data.keys()])
-        if dimension in self.dimensions(label=True):
+        if dimension in self.dimensions():
             values = [el.dimension_values(dimension) for el in self
                       if dimension in el.dimensions()]
             vals = np.concatenate(values)

@@ -49,7 +49,12 @@ def render(obj, **kwargs):
         return render_anim(obj)
 
     backend = Store.current_backend
-    return Store.renderers[backend].html(obj, **kwargs)
+    renderer = Store.renderers[backend]
+
+    # Drop back to png if pdf selected, notebook PDF rendering is buggy
+    if renderer.fig == 'pdf':
+        renderer = renderer.instance(fig='png')
+    return renderer.html(obj, **kwargs)
 
 
 def single_frame_plot(obj):
@@ -121,7 +126,8 @@ def display_hook(fn):
 
             return html
         except SkipRendering as e:
-            sys.stderr.write("Rendering process skipped: %s" % str(e))
+            if e.warn:
+                sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
             try: option_state(element, state=optstate)
@@ -135,9 +141,12 @@ def display_hook(fn):
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
         except Exception as e:
+            t, v, tb = sys.exc_info()
             try: option_state(element, state=optstate)
-            except: pass
-            raise
+            except Exception: pass
+            if sys.version_info[0] < 3:
+                raise (t, v, tb)
+            raise v.with_traceback(tb)
     return wrapped
 
 
@@ -149,7 +158,11 @@ def element_display(element, max_frames, max_branches):
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
         return None
+
+    # Drop back to png if pdf selected, notebook PDF rendering is buggy
     renderer = Store.renderers[backend]
+    if renderer.fig == 'pdf':
+        renderer = renderer.instance(fig='png')
     return renderer.html(element, fmt=renderer.fig)
 
 

@@ -1,12 +1,13 @@
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, NdElement, GridMatrix, NdLayout)
+                     GridSpace, GridMatrix, NdLayout)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, GridImage)
+                        Table, ItemTable, Area, HSV, QuadMesh, GridImage,
+                        VectorField)
 from ...core.options import Options, Cycle
 
 try:
@@ -21,7 +22,7 @@ from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, BokehMPLWrapper
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
-                    SideSpikesPlot, AreaPlot)
+                    SideSpikesPlot, AreaPlot, VectorFieldPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
@@ -47,6 +48,7 @@ associations = {Overlay: OverlayPlot,
                 Spread: SpreadPlot,
                 Spikes: SpikesPlot,
                 Area: AreaPlot,
+                VectorField: VectorFieldPlot,
 
                 # Rasters
                 Image: RasterPlot,
@@ -75,8 +77,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Tabular
                 Table: TablePlot,
-                ItemTable: TablePlot,
-                NdElement: TablePlot}
+                ItemTable: TablePlot}
 
 if DFrame is not None:
     associations[DFrame] = TablePlot
@@ -122,14 +123,15 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle(), size=point_size)
-options.Points = Options('style', color=Cycle(), size=point_size)
+options.Scatter = Options('style', color=Cycle(), size=point_size, cmap='hot')
+options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
+options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
-options.Histogram = Options('style', fill_color="#036564", line_color="#033649")
 
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')
+options.VectorField = Options('style', line_color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
@@ -149,3 +151,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 # Annotations
 options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
 options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+
+# Define composite defaults
+options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
+                             xaxis=None, yaxis=None)

@@ -123,9 +123,7 @@ class Bars(Dataset, Element2D):
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
     dimensions. Bars is useful for categorical data, which may be
-    laid via groups, categories and stacks. Internally Bars is
-    a NdElement with up to three key dimensions and a single value
-    dimension.
+    laid via groups, categories and stacks.
     """
 
     group = param.String(default='Bars', constant=True)
@@ -148,7 +146,7 @@ class BoxWhisker(Chart):
 
     vdims = param.List(default=[Dimension('y')], bounds=(1,1))
 
-    _1d = True
+    _auto_indexable_1d = False
 
 
 class Histogram(Element2D):
@@ -309,12 +307,6 @@ class Points(Chart):
 
     _min_dims = 2                      # Minimum number of columns
 
-    def __iter__(self):
-        i = 0
-        while i < len(self):
-            yield tuple(self.data[i, ...])
-            i += 1
-
 
 
 class VectorField(Points):
@@ -377,7 +369,7 @@ class Spikes(Chart):
 
     vdims = param.List(default=[])
 
-    _1d = True
+    _auto_indexable_1d = False
 
 
 class Area(Curve):

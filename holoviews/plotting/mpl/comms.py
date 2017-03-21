@@ -13,7 +13,7 @@ from ..comms import JupyterComm
 
 mpl_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-target = $('#fig_{comms_target}');
+target = $('#fig_{comm_id}');
 img = $('<div />').html(msg);
 target.children().each(function () {{ $(this).remove() }})
 target.append(img)
@@ -21,9 +21,9 @@ target.append(img)
 
 mpld3_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-target = $('#fig_el{comms_target}');
+target = $('#fig_el{comm_id}');
 target.children().each(function () {{ $(this).remove() }});
-mpld3.draw_figure("fig_el{comms_target}", msg);
+mpld3.draw_figure("fig_el{comm_id}", msg);
 """
 
 class NbAggCommSocket(CommSocket):
@@ -72,7 +72,7 @@ class NbAggJupyterComm(JupyterComm):
         for ax in fig.get_axes():
             if isinstance(ax, Axes3D):
                 ax.mouse_init()
-        self._comm_socket = NbAggCommSocket(target=self.target,
+        self._comm_socket = NbAggCommSocket(target=self.id,
                                             manager=self.manager)
         return self.manager
 

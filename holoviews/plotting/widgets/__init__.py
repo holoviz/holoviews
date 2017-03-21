@@ -7,7 +7,7 @@ import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
-from ...core.util import (dimension_sanitizer, safe_unicode,
+from ...core.util import (dimension_sanitizer, bytes_to_unicode,
                           unique_array, unicode, isnumeric,
                           wrap_tuple_streams, drop_streams)
 from ...core.traversal import hierarchical
@@ -17,21 +17,22 @@ def escape_vals(vals, escape_numerics=True):
     Escapes a list of values to a string, converting to
     unicode for safety.
     """
-    if escape_numerics:
-        ints, floats = "'%.1f'", "'%.10f'"
-    else:
-        ints, floats = "%.1f", "%.10f"
+    # Ints formatted as floats to disambiguate with counter mode
+    ints, floats = "%.1f", "%.10f"
 
     escaped = []
     for v in vals:
         if not isnumeric(v):
-            v = "'"+unicode(safe_unicode(v))+"'"
+            v = "'"+unicode(bytes_to_unicode(v))+"'"
         elif isinstance(v, np.datetime64):
             v = "'"+str(v)+"'"
-        elif v % 1 == 0:
-            v = ints % v
         else:
-            v = floats % v
+            if v % 1 == 0:
+                v = ints % v
+            else:
+                v = (floats % v)[:-1]
+            if escape_numerics:
+                v = "'"+v+"'"
         escaped.append(v)
     return escaped
 
@@ -105,9 +106,13 @@ class NdWidget(param.Parameterized):
 
     def __init__(self, plot, renderer=None, **params):
         super(NdWidget, self).__init__(**params)
-        self.id = plot.comm.target if plot.comm else uuid.uuid4().hex
+        self.id = plot.comm.id if plot.comm else uuid.uuid4().hex
         self.plot = plot
-        self.dimensions, self.keys = drop_streams(plot.streams,
+        streams = []
+        for stream in plot.streams:
+            if any(k in plot.dimensions for k in stream.contents):
+                streams.append(stream)
+        self.dimensions, self.keys = drop_streams(streams,
                                                   plot.dimensions,
                                                   plot.keys)
 
@@ -141,7 +146,7 @@ class NdWidget(param.Parameterized):
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
-        mode = repr(self.renderer.mode)
+        mode = str(self.renderer.mode)
         json_path = (self.json_save_path if self.json_load_path is None
                      else self.json_load_path)
         if json_path and json_path[-1] != '/':
@@ -268,11 +273,9 @@ class SelectionWidget(NdWidget):
             next_vals = {}
 
             # Hide widget if it has 1-to-1 mapping to next widget
-            visible = False
+            visible = True
             dim_nesting = hierarchy[idx-1].values() if idx and isinstance(hierarchy, list) else {}
             many_to_one = any(len(v) > 1 for v in dim_nesting)
-            if not dim_nesting or idx == 0 or self.plot.dynamic or many_to_one:
-                visible = True
 
             if self.plot.dynamic:
                 if dim.values:
@@ -309,9 +312,11 @@ class SelectionWidget(NdWidget):
                 else:
                     dim_vals = (dim.values if dim.values else
                                 list(unique_array(self.mock_obj.dimension_values(dim.name))))
+                    visible = visible and len(dim_vals) > 1
+
                 if idx < self.mock_obj.ndims-1:
                     next_vals = hierarchy[idx]
-                    next_dim = safe_unicode(self.mock_obj.kdims[idx+1])
+                    next_dim = bytes_to_unicode(self.mock_obj.kdims[idx+1])
                 else:
                     next_vals = {}
 
@@ -331,14 +336,12 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
-                visible = visible and len(dim_vals) > 1
-
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
 
             visibility = '' if visible else 'display: none'
-            dim_str = safe_unicode(dim.name)
+            dim_str = dim.pprint_label
             escaped_dim = dimension_sanitizer(dim_str)
             widget_data = dict(dim=escaped_dim, dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,

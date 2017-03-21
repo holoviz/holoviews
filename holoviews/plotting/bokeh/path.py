@@ -20,6 +20,13 @@ class PathPlot(ElementPlot):
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
 
+    def _hover_opts(self, element):
+        if self.batched:
+            dims = list(self.hmap.last.kdims)
+        else:
+            dims = list(self.overlay_dims.keys())
+        return dims, {}
+
     def get_data(self, element, ranges=None, empty=False):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         xs = [] if empty else [path[:, xidx] for path in element.data]
@@ -28,14 +35,17 @@ class PathPlot(ElementPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        style = self.style.max_cycles(len(self.ordering))
-        for key, el in element.data.items():
+
+        zorders = self._updated_zorders(element)
+        styles = self.lookup_options(element.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(element.data.items(), zorders):
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-            zorder = self.get_zorder(element, key, el)
-            val = style[zorder].get('color')
+            val = styles[zorder].get('color')
             if val:
                 elmapping['line_color'] = 'color'
                 if isinstance(val, tuple):
@@ -48,6 +58,14 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
+
+    def _hover_opts(self, element):
+        if self.batched:
+            dims = list(self.hmap.last.kdims)
+        else:
+            dims = list(self.overlay_dims.keys())
+        dims += element.vdims
+        return dims, {}
 
     def get_data(self, element, ranges=None, empty=False):
         xs = [] if empty else [path[:, 0] for path in element.data]
@@ -64,7 +82,7 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             mapping['fill_color'] = {'field': cdim.name,
                                      'transform': cmapper}
 
-        if 'hover' in self.tools+self.default_tools:
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
             dim_name = util.dimension_sanitizer(element.vdims[0].name)
             for k, v in self.overlay_dims.items():
                 dim = util.dimension_sanitizer(k.name)
@@ -76,15 +94,18 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
-        style = self.style.max_cycles(len(self.ordering))
-        for key, el in element.data.items():
+        
+        zorders = self._updated_zorders(element)
+        styles = self.lookup_options(element.last, 'style')
+        styles = styles.max_cycles(len(self.ordering))
+
+        for (key, el), zorder in zip(element.data.items(), zorders):
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
             if 'color' not in elmapping:
-                zorder = self.get_zorder(element, key, el)
-                val = style[zorder].get('color')
+                val = styles[zorder].get('color')
                 elmapping['color'] = 'color'
                 if isinstance(val, tuple):
                     val = rgb2hex(val)

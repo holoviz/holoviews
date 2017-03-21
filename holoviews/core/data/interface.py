@@ -87,7 +87,7 @@ class Interface(param.Parameterized):
 
     @classmethod
     def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label=True)
+        not_found = [d for d in dataset.dimensions(label='name')
                      if d not in dataset.data]
         if not_found:
             raise ValueError("Supplied data does not contain specified "
@@ -206,6 +206,10 @@ class Interface(param.Parameterized):
     @classmethod
     def length(cls, dataset):
         return len(dataset.data)
+
+    @classmethod
+    def nonzero(cls, dataset):
+        return bool(cls.length(dataset))
 
     @classmethod
     def redim(cls, dataset, dimensions):

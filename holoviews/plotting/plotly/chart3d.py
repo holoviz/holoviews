@@ -5,6 +5,11 @@ from plotly import colors
 from plotly.tools import FigureFactory as FF
 from plotly.graph_objs import Scene, XAxis, YAxis, ZAxis
 
+try:
+    from plotly.figure_factory._trisurf import trisurf as trisurface
+except ImportError:
+    pass
+
 import param
 
 from ...core.spaces import DynamicMap
@@ -96,7 +101,7 @@ class TrisurfacePlot(ColorbarPlot, Chart3DPlot):
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
         simplices = tri.simplices
-        return (x, y, z, simplices, self.colorbar, 'black'), {}
+        return (x, y, z, simplices, self.colorbar, 'black', None), {}
 
     def graph_options(self, element, ranges):
         opts = self.style[self.cyclic_index]
@@ -110,5 +115,8 @@ class TrisurfacePlot(ColorbarPlot, Chart3DPlot):
         return opts
 
     def init_graph(self, plot_args, plot_kwargs):
-        trisurf = FF._trisurf(*plot_args, **plot_kwargs)
+        if hasattr(FF, '_trisurf'):
+            trisurf = FF._trisurf(*plot_args[:-1], **plot_kwargs)
+        else:
+            trisurf = trisurface(*plot_args, **plot_kwargs)
         return trisurf[0]

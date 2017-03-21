@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
+from numbers import Number
 from collections import defaultdict
 from .core import util
 
@@ -106,6 +107,9 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             subscriber(**dict(union))
 
+        for stream in streams:
+            stream.deactivate()
+
 
     def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
         """
@@ -124,6 +128,15 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+
+    def deactivate(self):
+        """
+        Allows defining an action after the stream has been triggered,
+        e.g. resetting parameters on streams with transient events.
+        """
+        pass
+
 
     @property
     def source(self):
@@ -187,7 +200,7 @@ class PositionX(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.Number(default=0, doc="""
+    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
 
@@ -199,7 +212,7 @@ class PositionY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    y = param.Number(default=0, doc="""
+    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
 
@@ -211,10 +224,10 @@ class PositionXY(Stream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.Number(default=0, doc="""
+    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the x-axis in data coordinates""", constant=True)
 
-    y = param.Number(default=0, doc="""
+    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
 
 

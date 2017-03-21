@@ -1,18 +1,23 @@
 import uuid
 
+import numpy as np
+import param
+from param.parameterized import bothmethod
+
+from bokeh.charts import Chart
+from bokeh.document import Document
+from bokeh.embed import notebook_div
+from bokeh.io import load_notebook
+from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
+                          WidgetBox, Div, DataTable, Tabs)
+from bokeh.plotting import Figure
+from bokeh.resources import CDN, INLINE
+
 from ...core import Store, HoloMap
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget
 from .util import compute_static_patch, serialize_json
 
-import param
-from param.parameterized import bothmethod
-
-from bokeh.embed import notebook_div
-from bokeh.io import load_notebook
-from bokeh.resources import CDN, INLINE
-
-from bokeh.model import _ModelInDocument as add_to_document
 
 
 class BokehRenderer(Renderer):
@@ -27,7 +32,7 @@ class BokehRenderer(Renderer):
     mode_formats = {'fig': {'default': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None]}}
 
-    webgl = param.Boolean(default=True, doc="""Whether to render plots with WebGL
+    webgl = param.Boolean(default=False, doc="""Whether to render plots with WebGL
         if bokeh version >=0.10""")
 
     widgets = {'scrubber': BokehScrubberWidget,
@@ -58,13 +63,14 @@ class BokehRenderer(Renderer):
 
 
     def figure_data(self, plot, fmt='html', **kwargs):
-        doc_handler = add_to_document(plot.state)
-        with doc_handler:
-            doc = doc_handler._doc
-            target = plot.comm.target if plot.comm else None
-            div = notebook_div(plot.state, target)
+        model = plot.state
+        doc = Document()
+        for m in model.references():
+            m._document = None
+        doc.add_root(model)
+        comm_id = plot.comm.id if plot.comm else None
+        div = notebook_div(model, comm_id)
         plot.document = doc
-        doc.add_root(plot.state)
         return div
 
 
@@ -114,7 +120,26 @@ class BokehRenderer(Renderer):
 
         Returns a tuple of (width, height) in pixels.
         """
-        return (plot.state.height, plot.state.height)
+        if not isinstance(plot, Model):
+            plot = plot.state
+        if isinstance(plot, Div):
+            # Cannot compute size for Div
+            return 0, 0
+        elif isinstance(plot, (Row, Column, ToolbarBox, WidgetBox, Tabs)):
+            if not plot.children: return 0, 0
+            if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
+                w_agg, h_agg = (np.sum, np.max)
+            elif isinstance(plot, Tabs):
+                w_agg, h_agg = (np.max, np.max)
+            else:
+                w_agg, h_agg = (np.max, np.sum)
+            widths, heights = zip(*[self_or_cls.get_size(child) for child in plot.children])
+            width, height = w_agg(widths), h_agg(heights)
+        elif isinstance(plot, (Chart, Figure)):
+            width, height = plot.plot_width, plot.plot_height
+        elif isinstance(plot, (Plot, DataTable)):
+            width, height = plot.width, plot.height
+        return width, height
 
     @classmethod
     def load_nb(cls, inline=True):

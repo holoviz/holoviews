@@ -26,7 +26,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def dimension_type(cls, columns, dim):
-        name = columns.get_dimension(dim).name
+        name = columns.get_dimension(dim, strict=True).name
         idx = list(columns.data.columns).index(name)
         return columns.data.dtypes[idx].type
 
@@ -61,10 +61,10 @@ class PandasInterface(Interface):
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    if eltype._1d:
-                        data = np.atleast_2d(data).T
-                    else:
+                    if eltype._auto_indexable_1d:
                         data = (range(len(data)), data)
+                    else:
+                        data = np.atleast_2d(data).T
                 else:
                     data = tuple(data[:, i] for i in range(data.shape[1]))
 
@@ -80,8 +80,18 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def validate(cls, dataset):
+        not_found = [d for d in dataset.dimensions(label='name')
+                     if d not in dataset.data.columns]
+        if not_found:
+            raise ValueError("Supplied data does not contain specified "
+                             "dimensions, the following dimensions were "
+                             "not found: %s" % repr(not_found))
+
+
+    @classmethod
     def range(cls, columns, dimension):
-        column = columns.data[columns.get_dimension(dimension).name]
+        column = columns.data[columns.get_dimension(dimension, strict=True).name]
         if column.dtype.kind == 'O':
             if (not isinstance(columns.data, pd.DataFrame) or
                         LooseVersion(pd.__version__) < '0.17.0'):
@@ -101,7 +111,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        index_dims = [columns.get_dimension(d) for d in dimensions]
+        index_dims = [columns.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in columns.kdims
                         if kdim not in index_dims]
 
@@ -111,8 +121,9 @@ class PandasInterface(Interface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
+        group_by = [d.name for d in index_dims]
         data = [(k, group_type(v, **group_kwargs)) for k, v in
-                columns.data.groupby(dimensions, sort=False)]
+                columns.data.groupby(group_by, sort=False)]
         if issubclass(container_type, NdMapping):
             with item_check(False):
                 return container_type(data, kdims=index_dims)
@@ -124,10 +135,11 @@ class PandasInterface(Interface):
     def aggregate(cls, columns, dimensions, function, **kwargs):
         data = columns.data
         cols = [d.name for d in columns.kdims if d in dimensions]
-        vdims = columns.dimensions('value', True)
-        reindexed = data.reindex(columns=cols+vdims)
+        vdims = columns.dimensions('value', label='name')
+        reindexed = data[cols+vdims]
         if len(dimensions):
-            return reindexed.groupby(cols, sort=False).aggregate(function, **kwargs).reset_index()
+            grouped = reindexed.groupby(cols, sort=False)
+            return grouped.aggregate(function, **kwargs).reset_index()
         else:
             agg = reindexed.apply(function, **kwargs)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
@@ -160,9 +172,7 @@ class PandasInterface(Interface):
     @classmethod
     def sort(cls, columns, by=[]):
         import pandas as pd
-        if not isinstance(by, list): by = [by]
-        if not by: by = range(columns.ndims)
-        cols = [columns.get_dimension(d).name for d in by]
+        cols = [columns.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
@@ -184,12 +194,11 @@ class PandasInterface(Interface):
 
     @classmethod
     def values(cls, columns, dim, expanded=True, flat=True):
-        data = columns.data[dim]
-        if util.dd and isinstance(data, util.dd.Series):
-            data = data.compute()
+        dim = columns.get_dimension(dim, strict=True)
+        data = columns.data[dim.name]
         if not expanded:
-            return util.unique_array(data)
-        return np.array(data)
+            return data.unique()
+        return data.values
 
 
     @classmethod
@@ -214,8 +223,22 @@ class PandasInterface(Interface):
 
 
     @classmethod
+    def as_dframe(cls, dataset):
+        """
+        Returns the data of a Dataset as a dataframe avoiding copying
+        if it already a dataframe type.
+        """
+        if issubclass(dataset.interface, PandasInterface):
+            return dataset.data
+        else:
+            return dataset.dframe()
+
+
+    @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
+            dimensions = [columns.get_dimension(d, strict=True).name
+                          for d in dimensions]
             return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()

@@ -6,15 +6,15 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import ArrayInterface, NdElementInterface, DictInterface
+from ..core.data import ArrayInterface, DictInterface
 from ..core import (Dimension, NdMapping, Element2D,
-                    Overlay, Element, Dataset, NdElement)
+                    Overlay, Element, Dataset)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges, toarray
+from .util import compute_edges, toarray, categorical_aggregate2d
 
 try:
     from ..core.data import PandasInterface
@@ -336,12 +336,12 @@ class QuadMesh(Raster):
                      for i in [1, 0])
 
 
-    def range(self, dimension):
+    def range(self, dimension, data_range=True):
         idx = self.get_dimension_index(dimension)
-        if idx in [0, 1]:
+        if data_range and idx in [0, 1]:
             data = self.data[idx]
             return np.min(data), np.max(data)
-        elif idx == 2:
+        elif data_range and idx == 2:
             data = self.data[idx]
             return np.nanmin(data), np.nanmax(data)
         super(QuadMesh, self).range(dimension)
@@ -365,7 +365,6 @@ class QuadMesh(Raster):
             return super(QuadMesh, self).dimension_values(idx)
 
 
-
 class HeatMap(Dataset, Element2D):
     """
     HeatMap is an atomic Element used to visualize two dimensional
@@ -373,8 +372,7 @@ class HeatMap(Dataset, Element2D):
     upsampling them to a dense representation, which can be visualized.
 
     A HeatMap can be initialized with any dict or NdMapping type with
-    two-dimensional keys. Once instantiated the dense representation is
-    available via the .data property.
+    two-dimensional keys.
     """
 
     group = param.String(default='HeatMap', constant=True)
@@ -383,85 +381,16 @@ class HeatMap(Dataset, Element2D):
 
     vdims = param.List(default=[Dimension('z')])
 
-    def __init__(self, data, extents=None, **params):
+    def __init__(self, data, **params):
         super(HeatMap, self).__init__(data, **params)
-        data, self.raster = self._compute_raster()
-        self.data = data.data
-        self.interface = data.interface
-        self.depth = 1
-        if extents is None:
-            (d1, d2) = self.raster.shape[:2]
-            self.extents = (0, 0, d2, d1)
-        else:
-            self.extents = extents
+        self.gridded = categorical_aggregate2d(self)
 
-
-    def _compute_raster(self):
-        if self.interface.gridded:
-            return self, np.flipud(self.dimension_values(2, flat=False))
-        d1keys = self.dimension_values(0, False)
-        d2keys = self.dimension_values(1, False)
-        coords = [(d1, d2, np.NaN) for d1 in d1keys for d2 in d2keys]
-        dtype = 'dataframe' if pd else 'dictionary'
-        dense_data = Dataset(coords, kdims=self.kdims, vdims=self.vdims, datatype=[dtype])
-        concat_data = self.interface.concatenate([dense_data, Dataset(self)], datatype=dtype)
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'Mean of empty slice')
-            data = concat_data.aggregate(self.kdims, np.nanmean)
-        array = data.dimension_values(2).reshape(len(d1keys), len(d2keys))
-        return data, np.flipud(array.T)
-
-
-    def __setstate__(self, state):
-        if '_data' in state:
-            data = state['_data']
-            if isinstance(data, NdMapping):
-                items = [tuple(k)+((v,) if np.isscalar(v) else tuple(v))
-                         for k, v in data.items()]
-                kdims = state['kdims'] if 'kdims' in state else self.kdims
-                vdims = state['vdims'] if 'vdims' in state else self.vdims
-                data = Dataset(items, kdims=kdims, vdims=vdims).data
-            elif isinstance(data, Dataset):
-                data = data.data
-                kdims = data.kdims
-                vdims = data.vdims
-            state['data'] = data
-            state['kdims'] = kdims
-            state['vdims'] = vdims
-        self.__dict__ = state
-
-        if isinstance(self.data, NdElement):
-            self.interface = NdElementInterface
-        elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayInterface
-        elif util.is_dataframe(self.data):
-            self.interface = PandasInterface
-        elif isinstance(self.data, dict):
-            self.interface = DictInterface
-        self.depth = 1
-        data, self.raster = self._compute_raster()
-        self.interface = data.interface
-        self.data = data.data
-        if 'extents' not in state:
-            (d1, d2) = self.raster.shape[:2]
-            self.extents = (0, 0, d2, d1)
-
-        super(HeatMap, self).__setstate__(state)
-
-    def dense_keys(self):
-        d1keys = self.dimension_values(0, False)
-        d2keys = self.dimension_values(1, False)
-        return list(zip(*[(d1, d2) for d1 in d1keys for d2 in d2keys]))
-
-
-    def dframe(self, dense=False):
-        if dense:
-            keys1, keys2 = self.dense_keys()
-            dense_map = self.clone({(k1, k2): self._data.get((k1, k2), np.NaN)
-                                 for k1, k2 in product(keys1, keys2)})
-            return dense_map.dframe()
-        return super(HeatMap, self).dframe()
-
+    @property
+    def raster(self):
+        self.warning("The .raster attribute on HeatMap is deprecated, "
+                     "the 2D aggregate is now computed dynamically "
+                     "during plotting.")
+        return self.gridded.dimension_values(2, flat=False)
 
 
 class Image(SheetCoordinateSystem, Raster):
@@ -590,7 +519,7 @@ class Image(SheetCoordinateSystem, Raster):
     def range(self, dim, data_range=True):
         dim_idx = dim if isinstance(dim, int) else self.get_dimension_index(dim)
         dim = self.get_dimension(dim_idx)
-        if dim.range != (None, None):
+        if None not in dim.range:
             return dim.range
         elif dim_idx in [0, 1]:
             l, b, r, t = self.bounds.lbrt()
@@ -603,13 +532,14 @@ class Image(SheetCoordinateSystem, Raster):
             data = np.atleast_3d(self.data)[:, :, dim_idx]
             drange = (np.nanmin(data), np.nanmax(data))
         if data_range:
-            soft_range = [sr for sr in dim.soft_range if sr is not None]
+            soft_range = [np.NaN if sr is None else sr for sr in dim.soft_range]
             if soft_range:
-                return util.max_range([drange, soft_range])
-            else:
-                return drange
+                drange = util.max_range([drange, soft_range])
+            ranges = zip(drange, dim.range)
         else:
-            return dim.soft_range
+            ranges = zip(dim.soft_range, dim.range)
+        return tuple(datar if dimr is None else dimr
+                     for datar, dimr in ranges)
 
 
     def _coord2matrix(self, coord):

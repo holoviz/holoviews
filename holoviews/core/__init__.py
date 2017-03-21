@@ -14,11 +14,22 @@ archive = FileArchive()
 
 # Define default type formatters
 Dimension.type_formatters[int] = "%d"
+Dimension.type_formatters[np.uint16] = '%d'
+Dimension.type_formatters[np.int16] = '%d'
+Dimension.type_formatters[np.uint32] = '%d'
+Dimension.type_formatters[np.int32] = '%d'
+Dimension.type_formatters[np.uint64] = '%d'
+Dimension.type_formatters[np.int64] = '%d'
 Dimension.type_formatters[float] = "%.5g"
 Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 
+try:
+    import pandas as pd
+    Dimension.type_formatters[pd.tslib.Timestamp] = "%Y-%m-%d %H:%M:%S"
+except:
+    pass
 
 def public(obj):
     if not isinstance(obj, type): return False

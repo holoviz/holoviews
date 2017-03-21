@@ -11,7 +11,7 @@ from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
 from .util import (dimension_sort, get_param_values, dimension_sanitizer,
-                   unique_array)
+                   unique_array, wrap_tuple)
 
 
 class Element(ViewableElement, Composable, Overlayable):
@@ -39,8 +39,7 @@ class Element(ViewableElement, Composable, Overlayable):
         hists = []
         for d in dimension[::-1]:
             hist = histogram(self, num_bins=num_bins, bin_range=bin_range,
-                             adjoin=False, individually=individually,
-                             dimension=d, **kwargs)
+                             individually=individually, dimension=d, **kwargs)
             hists.append(hist)
         if adjoin:
             layout = self
@@ -120,18 +119,15 @@ class Element(ViewableElement, Composable, Overlayable):
         if len(set(reduce_map.values())) > 1:
             raise Exception("Cannot define reduce operations with more than "
                             "one function at a time.")
-        sanitized_dict = {dimension_sanitizer(kd): kd
-                          for kd in self.dimensions('key', True)}
         if reduce_map:
             reduce_map = reduce_map.items()
         if dimensions:
             reduce_map = [(d, function) for d in dimensions]
         elif not reduce_map:
             reduce_map = [(d, function) for d in self.kdims]
-        reduced = [(d.name if isinstance(d, Dimension) else d, fn)
+        reduced = [(self.get_dimension(d, strict=True).name, fn)
                    for d, fn in reduce_map]
-        sanitized = [(sanitized_dict.get(d, d), fn) for d, fn in reduced]
-        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(sanitized, lambda x: x[1])]
+        grouped = [(fn, [dim for dim, _ in grp]) for fn, grp in groupby(reduced, lambda x: x[1])]
         return grouped[0]
 
 
@@ -170,15 +166,12 @@ class Element(ViewableElement, Composable, Overlayable):
                            for dim in vdims])
         else:
             values = [()]*length
-
-        data = zip(keys, values)
-        overrides = dict(kdims=kdims, vdims=vdims, **kwargs)
-        return NdElement(data, **dict(get_param_values(self), **overrides))
+        return OrderedDict(zip(keys, values))
 
 
     def array(self, dimensions=[]):
         if dimensions:
-            dims = [self.get_dimension(d) for d in dimensions]
+            dims = [self.get_dimension(d, strict=True) for d in dimensions]
         else:
             dims = [d for d in self.kdims + self.vdims if d != 'Index']
         columns, types = [], []
@@ -280,6 +273,8 @@ class NdElement(NdMapping, Tabular):
     _sorted = False
 
     def __init__(self, data=None, **params):
+        self.warning('NdElement will be deprecated in v2.0 and should '
+                     'not be appearing unless instantiated directly.')
         if isinstance(data, list) and all(np.isscalar(el) for el in data):
             data = (((k,), (v,)) for k, v in enumerate(data))
 
@@ -322,8 +317,8 @@ class NdElement(NdMapping, Tabular):
         elif kdims is None:
             kdims = [d for d in self.dimensions() if d not in vdims]
         if 'Index' not in kdims: kdims = ['Index'] + kdims
-        key_dims = [self.get_dimension(k) for k in kdims]
-        val_dims = [self.get_dimension(v) for v in vdims]
+        key_dims = [self.get_dimension(k, strict=True) for k in kdims]
+        val_dims = [self.get_dimension(v, strict=True) for v in vdims]
 
         kidxs = [(i, k in self.kdims, self.get_dimension_index(k))
                   for i, k in enumerate(kdims)]
@@ -483,9 +478,8 @@ class NdElement(NdMapping, Tabular):
 
     def dimension_values(self, dim, expanded=True, flat=True):
         dim = self.get_dimension(dim, strict=True)
-        value_dims = self.dimensions('value', label=True)
-        if dim.name in value_dims:
-            index = value_dims.index(dim.name)
+        if dim in self.vdims:
+            index = self.get_dimension_index(dim) - self.ndims
             vals = np.array([v[index] for v in self.data.values()])
             return vals if expanded else unique_array(vals)
         else:
@@ -511,7 +505,7 @@ class Element3D(Element2D):
                xmax, ymax, zmax).""")
 
 
-class Collator(NdElement):
+class Collator(NdMapping):
     """
     Collator is an NdMapping type which can merge any number
     of HoloViews components with whatever level of nesting
@@ -534,7 +528,6 @@ class Collator(NdElement):
         as strings or tuples.""")
 
     group = param.String(default='Collator')
-
 
     progress_bar = param.Parameter(default=None, doc="""
          The progress bar instance used to report progress. Set to
@@ -561,6 +554,17 @@ class Collator(NdElement):
                    NdLayout: (GridSpace, HoloMap, ViewableElement),
                    NdOverlay: Element}
 
+    def __init__(self, data=None, **params):
+        if isinstance(data, Element):
+            params = dict(get_param_values(data), **params)
+            if 'kdims' not in params:
+                params['kdims'] = data.kdims
+            if 'vdims' not in params:
+                params['vdims'] = data.vdims
+            data = data.mapping()
+        super(Collator, self).__init__(data, **params)
+
+
     def __call__(self):
         """
         Filter each Layout in the Collator with the supplied
@@ -576,7 +580,7 @@ class Collator(NdElement):
         for idx, (key, data) in enumerate(self.data.items()):
             if isinstance(data, AttrTree):
                 data = data.filter(self.filters)
-            if len(self.vdims):
+            if len(self.vdims) and self.value_transform:
                 vargs = dict(zip(self.dimensions('value', label=True), data))
                 data = self.value_transform(vargs)
             if not isinstance(data, Dimensioned):
@@ -602,10 +606,6 @@ class Collator(NdElement):
         return accumulator
 
 
-    def _add_item(self, key, value, sort=True, update=True):
-        NdMapping._add_item(self, key, value, sort, update)
-
-
     @property
     def static_dimensions(self):
         """
@@ -613,7 +613,7 @@ class Collator(NdElement):
         """
         dimensions = []
         for dim in self.kdims:
-            if len(set(self[dim.name])) == 1:
+            if len(set(self.dimension_values(dim.name))) == 1:
                 dimensions.append(dim)
         return dimensions
 

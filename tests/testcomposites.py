@@ -126,6 +126,31 @@ class LayoutTestCase(ElementTestCase):
                                     ('Element', 'LabelA', 'III'),
                                     ('Element', 'LabelA', 'IV')])
 
+    def test_layout_from_values_with_layouts(self):
+        layout1 = self.el1 + self.el4
+        layout2 = self.el2 + self.el5
+        paths = Layout.from_values([layout1, layout2]).keys()
+        self.assertEqual(paths, [('Element', 'I'), ('ValA', 'I'),
+                                 ('Element', 'II'), ('ValB', 'I')])
+
+    def test_layout_from_values_with_mixed_types(self):
+        layout1 = self.el1 + self.el4 + self.el7
+        layout2 = self.el2 + self.el5 + self.el8
+        paths = Layout.from_values([layout1, layout2, self.el3]).keys()
+        self.assertEqual(paths, [('Element', 'I'), ('ValA', 'I'),
+                                 ('ValA', 'LabelA'), ('Element', 'II'),
+                                 ('ValB', 'I'), ('ValA', 'LabelB'),
+                                 ('Element', 'III')])
+
+    def test_layout_from_values_retains_custom_path(self):
+        layout = Layout([('Custom', self.el1)])
+        paths = Layout.from_values([layout, self.el2]).keys()
+        self.assertEqual(paths, [('Custom', 'I'), ('Element', 'I')])
+
+    def test_layout_from_values_retains_custom_path_with_label(self):
+        layout = Layout([('Custom', self.el6)])
+        paths = Layout.from_values([layout, self.el2]).keys()
+        self.assertEqual(paths, [('Custom', 'LabelA'), ('Element', 'I')])
 
 
 class OverlayTestCase(ElementTestCase):
@@ -253,6 +278,31 @@ class OverlayTestCase(ElementTestCase):
                                     ('Element', 'LabelA', 'III'),
                                     ('Element', 'LabelA', 'IV')])
 
+    def test_overlay_from_values_with_layouts(self):
+        layout1 = self.el1 + self.el4
+        layout2 = self.el2 + self.el5
+        paths = Layout.from_values([layout1, layout2]).keys()
+        self.assertEqual(paths, [('Element', 'I'), ('ValA', 'I'),
+                                 ('Element', 'II'), ('ValB', 'I')])
+
+    def test_overlay_from_values_with_mixed_types(self):
+        overlay1 = self.el1 + self.el4 + self.el7
+        overlay2 = self.el2 + self.el5 + self.el8
+        paths = Layout.from_values([overlay1, overlay2, self.el3]).keys()
+        self.assertEqual(paths, [('Element', 'I'), ('ValA', 'I'),
+                                 ('ValA', 'LabelA'), ('Element', 'II'),
+                                 ('ValB', 'I'), ('ValA', 'LabelB'),
+                                 ('Element', 'III')])
+
+    def test_overlay_from_values_retains_custom_path(self):
+        overlay = Overlay([('Custom', self.el1)])
+        paths = Overlay.from_values([overlay, self.el2]).keys()
+        self.assertEqual(paths, [('Custom', 'I'), ('Element', 'I')])
+
+    def test_overlay_from_values_retains_custom_path_with_label(self):
+        overlay = Overlay([('Custom', self.el6)])
+        paths = Overlay.from_values([overlay, self.el2]).keys()
+        self.assertEqual(paths, [('Custom', 'LabelA'), ('Element', 'I')])
 
 
 

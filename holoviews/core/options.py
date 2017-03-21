@@ -51,7 +51,9 @@ class SkipRendering(Exception):
     hooks fall back to a text repr. Used to skip rendering of
     DynamicMaps with exhausted element generators.
     """
-    pass
+    def __init__(self, message="", warn=True):
+        self.warn = warn
+        super(SkipRendering, self).__init__(message)
 
 
 class OptionError(Exception):
@@ -74,7 +76,7 @@ class OptionError(Exception):
 
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
         msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(allowed_keywords)))
+               % (repr(invalid_keyword), str(sorted(list(set(allowed_keywords))))))
         if path and group_name:
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
@@ -288,7 +290,7 @@ class Options(param.Parameterized):
 
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
-                         % (repr(invalid_kws), str(allowed_keywords)))
+                         % (repr(invalid_kws), str(sorted(list(set(allowed_keywords))))))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
@@ -920,7 +922,7 @@ class Store(object):
 
     @classmethod
     def info(cls, obj, ansi=True, backend='matplotlib', visualization=True,
-             recursive=False, pattern=None):
+             recursive=False, pattern=None, elements=[]):
         """
         Show information about a particular object or component class
         including the applicable style and plot options. Returns None if
@@ -932,7 +934,8 @@ class Store(object):
         info = None
         if parameterized_object or parameterized_class:
             info = InfoPrinter.info(obj, ansi=ansi, backend=backend,
-                                    visualization=visualization, pattern=pattern)
+                                    visualization=visualization,
+                                    pattern=pattern, elements=elements)
 
         if parameterized_object and recursive:
             hierarchy = obj.traverse(lambda x: type(x))
@@ -1205,7 +1208,7 @@ class StoreOptions(object):
     def merge_options(cls, groups, options=None,**kwargs):
         """
         Given a full options dictionary and options groups specified
-        as a keywords such as return the full set of merged options:
+        as a keywords, return the full set of merged options:
 
         >>> options={'Curve':{'style':dict(color='b')}}
         >>> style={'Curve':{'linewidth':10 }}

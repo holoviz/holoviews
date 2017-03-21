@@ -14,6 +14,7 @@ from matplotlib import rc_params_from_file
 
 from ...core import Layout, NdOverlay, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
+from ...core.overlay import NdOverlay, Overlay
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
@@ -80,9 +81,9 @@ Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
-                 'linestyle': ['ls'], 'size': ['s'], 'color': ['c'],
-                 'markeredgecolor': ['mec'], 'markeredgewidth': ['mew'],
-                 'markerfacecolor': ['mfc'], 'markersize': ['ms']}
+                 'size': ['s'], 'color': ['c'], 'markeredgecolor': ['mec'],
+                 'markeredgewidth': ['mew'], 'markerfacecolor': ['mfc'],
+                 'markersize': ['ms']}
 
 Store.renderers['matplotlib'] = MPLRenderer.instance()
 
@@ -108,7 +109,7 @@ Store.register({Curve: CurvePlot,
                 VectorField: VectorFieldPlot,
                 ErrorBars: ErrorPlot,
                 Spread: SpreadPlot,
-		Spikes: SpikesPlot,
+                Spikes: SpikesPlot,
                 BoxWhisker: BoxPlot,
                 Area: AreaPlot,
 
@@ -131,7 +132,6 @@ Store.register({Curve: CurvePlot,
                 # Tabular plots
                 ItemTable: TablePlot,
                 Table: TablePlot,
-                NdElement: TablePlot,
                 Collator: TablePlot,
 
                 # Raster plots
@@ -171,12 +171,12 @@ options = Store.options(backend='matplotlib')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
-options.Scatter = Options('style', color=Cycle(), marker='o')
+options.Scatter = Options('style', color=Cycle(), marker='o', cmap='hot')
 options.ErrorBars = Options('style', ecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
-options.Points = Options('style', color=Cycle(), marker='o')
+options.Points = Options('style', color=Cycle(), marker='o', cmap='hot')
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)

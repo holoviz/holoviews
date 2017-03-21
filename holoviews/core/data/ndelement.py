@@ -34,10 +34,10 @@ class NdElementInterface(Interface):
             data = tuple(data.get(d) for d in dimensions)
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                if eltype._1d:
-                    data = np.atleast_2d(data).T
-                else:
+                if eltype._auto_indexable_1d:
                     data = (np.arange(len(data)), data)
+                else:
+                    data = np.atleast_2d(data).T
             else:
                 data = tuple(data[:, i]  for i in range(data.shape[1]))
         elif isinstance(data, list) and np.isscalar(data[0]):

@@ -14,7 +14,7 @@ from .dimension import ViewableElement
 from .element import Element, HoloMap, GridSpace, Collator
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
-from .spaces import DynamicMap
+from .spaces import DynamicMap, Callable
 from .traversal import unique_dimkeys
 from . import util
 
@@ -103,6 +103,10 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
+    streams = param.List(default=[], doc="""
+        List of streams that are applied if dynamic=True, allowing
+        for dynamic interaction with the plot.""")
+
     def _process(self, view, key=None):
         """
         Process a single input element and outputs new single element
@@ -151,14 +155,21 @@ class ElementOperation(Operation):
         elif isinstance(element, HoloMap):
             mapped_items = [(k, self._process(el, key=k))
                             for k, el in element.items()]
-            refval = mapped_items[0][1]
-            processed = element.clone(mapped_items,
-                                      group=refval.group,
-                                      label=refval.label)
+            processed = element.clone(mapped_items)
         else:
             raise ValueError("Cannot process type %r" % type(element).__name__)
         return processed
 
+
+class OperationCallable(Callable):
+    """
+    OperationCallable allows wrapping an ElementOperation and the
+    objects it is processing to allow traversing the operations
+    applied on a DynamicMap.
+    """
+
+    operation = param.ClassSelector(class_=ElementOperation, doc="""
+        The ElementOperation being wrapped.""")
 
 
 class MapOperation(param.ParameterizedFunction):
