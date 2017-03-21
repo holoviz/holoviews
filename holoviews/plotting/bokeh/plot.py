@@ -182,10 +182,13 @@ class CompositePlot(BokehPlot):
 
     def _update_callbacks(self, plot):
         """
-        Updates any callbacks on the subplots.
+        Iterates over all subplots and updates existing CustomJS
+        callbacks with models that were replaced when compositing subplots
+        into a CompositePlot
         """
         subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOLS[t]})) for t in self._merged_tools}
+        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
+                        for t in self._merged_tools}
         for subplot in subplots:
             for cb in subplot.callbacks:
                 for c in cb.callbacks:

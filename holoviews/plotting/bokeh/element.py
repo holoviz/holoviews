@@ -108,12 +108,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
 
-    sizing_mode = param.ObjectSelector(default='fixed',
-                                       objects=[
-            'fixed', 'scale_width', 'scale_height',
-            'scale_both', 'stretch_both'
-        ], doc="""Defines how the plot scales when resized.""")
-
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
@@ -820,24 +814,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(self.handles.get(key), FactorRange):
                 handles.append(self.handles[key])
 
+        framewise = self.framewise
         if self.current_frame:
             if not self.apply_ranges:
                 rangex, rangey = False, False
-            elif self.framewise:
-                rangex, rangey = True, True
             elif isinstance(self.hmap, DynamicMap):
-                rangex, rangey = True, True
                 callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
                              for cb in cbs]
-                streams = [s for cb in callbacks for s in cb.streams]
-                for stream in streams:
-                    if isinstance(stream, RangeXY):
-                        rangex, rangey = False, False
-                        break
-                    elif isinstance(stream, RangeX):
-                        rangex = False
-                    elif isinstance(stream, RangeY):
-                        rangey = False
+                stream_metadata = [stream._metadata for cb in callbacks
+                                   for stream in cb.streams if stream._metadata]
+                ranges = ['%s_range' % ax for ax in 'xy']
+                event_ids = [md[ax]['id'] for md in stream_metadata
+                             for ax in ranges if ax in md]
+                rangex = plot.x_range.ref['id'] not in event_ids and framewise
+                rangey = plot.y_range.ref['id'] not in event_ids and framewise
+            elif self.framewise:
+                rangex, rangey = True, True
             else:
                 rangex, rangey = False, False
             if rangex:
