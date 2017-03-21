@@ -105,10 +105,12 @@ class Callback(object):
 
     js_callback = """
         function unique_events(events) {{
+            // Processes the event queue ignoring duplicate events
+            // of the same type
             var unique = [];
             var unique_events = [];
             for (var i=0; i<events.length; i++) {{
-                [event, data] = comm_state.events[i];
+                [event, data] = events[i];
                 if (!unique_events.includes(event)) {{
                     unique.unshift(data);
                     unique_events.push(event);
@@ -118,6 +120,7 @@ class Callback(object):
         }}
 
         function process_events(comm_state) {{
+            // Iterates over event queue and sends events via Comm
             var events = unique_events(comm_state.events);
             for (var i=0; i<events.length; i++) {{
                 var data = events[i];
@@ -128,6 +131,8 @@ class Callback(object):
         }}
 
         function on_msg(msg){{
+          // Receives acknowledgement from Python, processing event
+          // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
           var comm_state = HoloViewsWidget.comm_state[comm_id];
@@ -146,7 +151,7 @@ class Callback(object):
           }}
         }}
 
-        data['comm_id'] = "{comm_id}";
+        // Initialize Comm
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
           var comms = HoloViewsWidget.comms["{comm_id}"];
@@ -163,26 +168,23 @@ class Callback(object):
           return
         }}
 
+        // Initialize event queue and timeouts for Comm
         var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
             comm_state = {{events: [], blocked: false, timeout: Date.now()}}
             HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
-        function trigger() {{
-            if (comm_state.events.length) {{
-               process_events(comm_state)
-            }}
-        }}
-
+        // Add current event to queue and process queue if not blocked
         event_name = cb_obj.event ? cb_obj.event.event_name : undefined
+        data['comm_id'] = "{comm_id}";
         timeout = comm_state.timeout + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.events.unshift([event_name, data]);
         }} else {{
             comm_state.events.unshift([event_name, data]);
-            setTimeout(trigger, {debounce});
+            setTimeout(function() {{ process_events(comm_state); }}, {debounce});
             comm_state.blocked = true;
             comm_state.timeout = Date.now()+{debounce};
         }}
