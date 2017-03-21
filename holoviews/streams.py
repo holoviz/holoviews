@@ -72,6 +72,10 @@ class Stream(param.Parameterized):
 
     Streams may have one or more subscribers which are callables passed
     the parameter dictionary when the trigger classmethod is called.
+
+    Depending on the plotting backend certain streams may interactively
+    subscribe to events and changes by the plotting backend. To disable
+    this behavior instantiate the Stream with interactive=False.
     """
 
     # Mapping from a source id to a list of streams
@@ -111,7 +115,8 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
+    def __init__(self, preprocessors=[], source=None, subscribers=[],
+                 interactive=True, **params):
         """
         Mapping allows multiple streams with similar event state to be
         used by remapping parameter names.
@@ -125,6 +130,7 @@ class Stream(param.Parameterized):
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
         self._metadata = None
+        self.interactive = interactive
 
         super(Stream, self).__init__(**params)
         if source:
