@@ -29,6 +29,8 @@ from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
                      HSVPlot, QuadMeshPlot)
 from .renderer import BokehRenderer
 from .tabular import TablePlot
+from .util import bokeh_version
+
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
@@ -156,3 +158,12 @@ options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
                              xaxis=None, yaxis=None)
+
+if bokeh_version >= '0.12.5':
+    options.Overlay = Options('style', click_policy='mute')
+    options.Curve = Options('style', muted_line_alpha=0.2)
+    options.Path = Options('style', muted_line_alpha=0.2)
+    options.Scatter = Options('style', muted_fill_alpha=0.2)
+    options.Points = Options('style', muted_fill_alpha=0.2)
+    options.Polygons = Options('style', muted_fill_alpha=0.2)
+
