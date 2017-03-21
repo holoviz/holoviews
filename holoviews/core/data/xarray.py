@@ -105,7 +105,7 @@ class XArrayInterface(GridInterface):
                                 kdims=element_dims)
         group_kwargs.update(kwargs)
 
-        drop_dim = len(group_kwargs['kdims']) != len(element_dims)
+        drop_dim = any(d not in group_kwargs['kdims'] for d in element_dims)
 
         # XArray 0.7.2 does not support multi-dimensional groupby
         # Replace custom implementation when 

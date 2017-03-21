@@ -877,6 +877,22 @@ class GridDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
             partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
 
+    def test_dataset_groupby_drop_dims_with_vdim(self):
+        array = np.random.rand(3, 20, 10)
+        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+                     kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
+        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
+        self.assertEqual(partial.last['Val'], array[:, -1, :].T.flatten())
+
+    def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
+        array = np.random.rand(3, 20, 10)
+        ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
+                     kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
+        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+            partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
+            self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
+
 
 class IrisDatasetTest(GridDatasetTest):
     """
@@ -929,6 +945,12 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sample_hm_alias(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_groupby_drop_dims_with_vdim(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
+        raise SkipTest("Not supported")
+    
 
 class XArrayDatasetTest(GridDatasetTest):
     """
