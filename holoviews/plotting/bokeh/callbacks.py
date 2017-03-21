@@ -8,6 +8,7 @@ from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
                         RangeY, PositionX, PositionY, Bounds, Tap,
                         DoubleTap, MouseEnter, MouseLeave, PlotDimensions)
 from ..comms import JupyterCommJS
+from .util import bokeh_version
 
 
 def attributes_js(attributes, handles):
@@ -349,10 +350,10 @@ class Callback(object):
                     cb.handle_ids[k].update(v)
 
         if not cb:
-            if self.events:
+            if self.events and bokeh_version >= '0.12.5':
                 for event in self.events:
                     handle.js_on_event(event, js_callback)
-            elif self.change:
+            elif self.change and bokeh_version >= '0.12.5':
                 for change in self.change:
                     handle.js_on_change(change, js_callback)
             else:

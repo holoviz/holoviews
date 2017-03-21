@@ -1255,7 +1255,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             tool = self.handles['hover_tools'].get(tuple(hover.tooltips))
             if tool:
                 tool.renderers += hover.renderers
-        elif self.batched:
+        elif self.batched and 'hover' in subplot.handles:
             self.handles['hover'] = subplot.handles['hover']
 
 
