@@ -124,6 +124,7 @@ class Stream(param.Parameterized):
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
+        self._metadata = None
 
         super(Stream, self).__init__(**params)
         if source:

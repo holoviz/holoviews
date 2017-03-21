@@ -218,7 +218,7 @@ class Callback(object):
         self.streams = streams
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
-        self.handle_ids = defaultdict(list)
+        self.handle_ids = defaultdict(dict)
         self.callbacks = []
 
 
@@ -228,7 +228,14 @@ class Callback(object):
             plots += list(self.plot.subplots.values())
 
         handles = self._get_plot_handles(plots)
-        self.handle_ids.update(self._get_stream_handle_ids(handles))
+        requested = {}
+        for h in self.handles+self.extra_handles:
+            if h in handles:
+                requested[h] = handles[h]
+            elif h in self.extra_handles:
+                print("Warning %s could not find the %s model. "
+                      "The corresponding stream may not work.")
+        self.handle_ids.update(self._get_stream_handle_ids(requested))
 
         for plot in plots:
             for handle_name in self.handles:
@@ -239,13 +246,6 @@ class Callback(object):
                                  'attach %s callback' % warn_args)
                     continue
                 handle = handles[handle_name]
-                requested = {}
-                for h in self.handles+self.extra_handles:
-                    if h in handles:
-                        requested[h] = handles[h]
-                    else:
-                        print("Warning %s could not find the %s model. "
-                              "The corresponding stream may not work.")
                 self.callbacks.append(self.set_customjs(handle, requested))
 
 
@@ -267,13 +267,18 @@ class Callback(object):
 
     def on_msg(self, msg):
         for stream in self.streams:
-            ids = self.handle_ids[stream]
+            metadata = self.handle_ids[stream]
+            ids = list(metadata.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
             if not processed_msg:
                 continue
             stream.update(trigger=False, **processed_msg)
+            stream._metadata = {h: {'id': hid, 'events': self.events}
+                                for h, hid in metadata.items()}
         Stream.trigger(self.streams)
+        for stream in self.streams:
+            stream._metadata = None
 
 
     def _process_msg(self, msg):
@@ -301,12 +306,12 @@ class Callback(object):
         This allows checking that a stream is not given the state
         of a plotting handle it wasn't attached to
         """
-        stream_handle_ids = defaultdict(list)
+        stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
             for h in self.handles:
                 if h in handles:
                     handle_id = handles[h].ref['id']
-                    stream_handle_ids[stream].append(handle_id)
+                    stream_handle_ids[stream][h] = handle_id
         return stream_handle_ids
 
 
@@ -327,28 +332,30 @@ class Callback(object):
         conditional = ''
         if conditions:
             conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
-        code = conditional + 'var data = {};\n' + attributes + self.code + self_callback
+        data = "var data = {};\n"
+        code = conditional + data + attributes + self.code + self_callback
 
-        print references
         js_callback = CustomJS(args=references, code=code)
-        if self.events:
-            for event in self.events:
-                handle.js_on_event(event, js_callback)
-        elif self.change:
-            for change in self.change:
-                handle.js_on_change(change, js_callback)
-        elif id(handle.callback) in self._callbacks:
+        cb = None
+        if id(handle) in self._callbacks:
             # Merge callbacks if another callback has already been attached
-            cb = self._callbacks[id(handle.callback)]
+            cb = self._callbacks[id(handle)]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
                 for k, v in self.handle_ids.items():
-                    cb.handle_ids[k] += v
+                    cb.handle_ids[k].update(v)
+
+        if not cb:
+            if self.events:
+                for event in self.events:
+                    handle.js_on_event(event, js_callback)
+            elif self.change:
+                for change in self.change:
+                    handle.js_on_change(change, js_callback)
             else:
-                handle.callback.code += code
-        else:
-            self._callbacks[id(js_callback)] = self
-            handle.callback = js_callback
+                handle.callback = js_callback
+
+        self._callbacks[id(handle)] = self
         return js_callback
 
 
