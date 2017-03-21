@@ -16,7 +16,8 @@ from ...core.options import abbreviated_exception
 from ...operation import interpolate_curve
 from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
                     map_colors, get_min_distance)
-from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
+from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
+                      fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
@@ -123,29 +124,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data = {k: np.concatenate(v) for k, v in data.items()}
         return data, elmapping
 
-
-    def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
-        """
-        properties = mpl_to_bokeh(properties)
-        unselect_color = properties.pop('unselected_color', None)
-        if (any(t in self.tools for t in ['box_select', 'lasso_select'])
-            and unselect_color is not None):
-            source = properties.pop('source')
-            color = properties.pop('color', None)
-            color = mapping.pop('color', color)
-            properties.pop('legend', None)
-            unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
-            selected = Circle(**dict(properties, fill_color=color, **mapping))
-            renderer = plot.add_glyph(source, selected, selection_glyph=selected,
-                                      nonselection_glyph=unselected)
-        else:
-            plot_method = self._plot_methods.get('batched' if self.batched else 'single')
-            renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
-        return renderer, renderer.glyph
 
 
 class VectorFieldPlot(ColorbarPlot):

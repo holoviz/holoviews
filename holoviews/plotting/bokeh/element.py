@@ -42,18 +42,23 @@ if bokeh_version >= '0.12':
 else:
     FuncTickFormatter = None
 
+property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
 # Define shared style properties for bokeh plots
-line_properties = ['line_width', 'line_color', 'line_alpha',
+line_properties = ['line_color', 'line_alpha', 'line_width',
                    'line_join', 'line_cap', 'line_dash']
+line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:2]
+                    for prefix in property_prefixes]
 
 fill_properties = ['fill_color', 'fill_alpha']
+fill_properties += ['_'.join([prefix, prop]) for prop in fill_properties
+                    for prefix in property_prefixes]
 
 text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color',
                    'text_alpha', 'text_align', 'text_baseline']
 
 legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
-                     'glyph_height', 'legend_padding', 'legend_spacing']
+                     'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
 
 
 
@@ -611,13 +616,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['source'] = source
         return properties
 
-
-    def _update_glyph(self, glyph, properties, mapping):
-        allowed_properties = glyph.properties()
+    def _update_glyphs(self, renderer, properties, mapping):
+        allowed_properties = renderer.glyph.properties()
         properties = mpl_to_bokeh(properties)
-        merged = dict(properties, **mapping)
-        glyph.update(**{k: v for k, v in merged.items()
-                        if k in allowed_properties})
+        merged = {k: v for k, v in dict(properties, **mapping).items()
+                  if k in allowed_properties}
+        renderer.glyph.update(**merged)
+        if renderer.selection_glyph:
+            sel_props = {k[10:]: v for k, v in properties.items()
+                         if k.startswith('selection_')
+                         and k[10:] in allowed_properties}
+            renderer.selection_glyph.update(**dict(merged, **sel_props))
+        if renderer.nonselection_glyph:
+            non_props = {k[13:]: v for k, v in properties.items()
+                         if k.startswith('nonselection_')
+                         and k[13:] in allowed_properties}
+            renderer.nonselection_glyph.update(**dict(merged, **non_props))
+
 
     def _execute_hooks(self, element):
         """
@@ -677,7 +692,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Update plot, source and glyph
         with abbreviated_exception():
-            self._update_glyph(glyph, properties, mapping)
+            self._update_glyphs(renderer, properties, mapping)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
             self._update_ranges(style_element, ranges)
@@ -745,7 +760,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
             with abbreviated_exception():
-                self._update_glyph(self.handles['glyph'], properties, mapping)
+                self._update_glyphs(self.handles['glyph_renderer'], properties, mapping)
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
@@ -982,13 +997,6 @@ class ColorbarPlot(ElementPlot):
         if self.colorbar and 'color_mapper' in self.handles:
             self._draw_colorbar(plot, self.handles['color_mapper'])
         return ret
-
-
-    def _update_glyph(self, glyph, properties, mapping):
-        allowed_properties = glyph.properties()
-        merged = dict(properties, **mapping)
-        glyph.update(**{k: v for k, v in merged.items()
-                        if k in allowed_properties})
 
 
 class LegendPlot(ElementPlot):
