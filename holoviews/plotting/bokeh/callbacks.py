@@ -5,7 +5,8 @@ import numpy as np
 from bokeh.models import CustomJS
 
 from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PositionX, PositionY, Bounds)
+                        RangeY, PositionX, PositionY, Bounds, Tap,
+                        DoubleTap, MouseEnter, MouseLeave, PlotDimensions)
 from ..comms import JupyterCommJS
 
 
@@ -363,33 +364,74 @@ class Callback(object):
 
 
 class PositionXYCallback(Callback):
+    """
+    Returns the mouse x/y-position on mousemove event.
+    """
 
-    attributes = {'x': 'cb_data.geometry.x', 'y': 'cb_data.geometry.y'}
+    attributes = {'x': 'cb_obj.event.x', 'y': 'cb_obj.event.y'}
     handles = ['plot']
     events = ['mousemove']
 
 
-class PositionXCallback(Callback):
+class PositionXCallback(PositionXYCallback):
+    """
+    Returns the mouse x-position on mousemove event.
+    """
 
-    attributes = {'x': 'cb_data.geometry.x'}
-    handles = ['plot']
-    events = ['mousemove']
+    attributes = {'x': 'cb_obj.event.x'}
 
 
-class PositionYCallback(Callback):
+class PositionYCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mousemove event.
+    """
 
-    attributes = {'y': 'cb_data.geometry.y'}
-    handles = ['plot']
-    events = ['mousemove']
+    attributes = {'y': 'cb_data.event.y'}
+
+
+class TapCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on tap event.
+    """
+
+    events = ['tap']
+
+
+class DoubleTapCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on doubletap event.
+    """
+
+    events = ['doubletap']
+
+
+class MouseEnterCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mouseenter event, i.e. when
+    mouse enters the plot canvas.
+    """
+
+    events = ['mouseenter']
+
+
+class MouseLeaveCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mouseleave event, i.e. when
+    mouse leaves the plot canvas.
+    """
+
+    events = ['mouseleave']
 
 
 class RangeXYCallback(Callback):
+    """
+    Returns the x/y-axis ranges of a plot.
+    """
 
     attributes = {'x0': 'x_range.attributes.start',
                   'x1': 'x_range.attributes.end',
                   'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-
     handles = ['x_range', 'y_range']
     change = ['start', 'end']
 
@@ -402,11 +444,13 @@ class RangeXYCallback(Callback):
         return data
 
 
-class RangeXCallback(Callback):
+class RangeXCallback(RangeXYCallback):
+    """
+    Returns the x-axis range of a plot.
+    """
 
     attributes = {'x0': 'x_range.attributes.start',
                   'x1': 'x_range.attributes.end'}
-
     handles = ['x_range']
 
     def _process_msg(self, msg):
@@ -416,11 +460,13 @@ class RangeXCallback(Callback):
             return {}
 
 
-class RangeYCallback(Callback):
+class RangeYCallback(RangeXYCallback):
+    """
+    Returns the y-axis range of a plot.
+    """
 
     attributes = {'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-
     handles = ['y_range']
 
     def _process_msg(self, msg):
@@ -430,13 +476,27 @@ class RangeYCallback(Callback):
             return {}
 
 
+class PlotDimensionCallback(Callback):
+    """
+    Returns the actual width and height of a plot once the layout
+    solver has executed.
+    """
+
+    handles = ['plot']
+    attributes = {'width': 'cb_obj.inner_width',
+                  'height': 'cb_obj.inner_height'}
+    change = ['inner_width', 'inner_height']
+
+
 class BoundsCallback(Callback):
+    """
+    Returns the bounds of a box_select tool.
+    """
 
     attributes = {'x0': 'cb_data.geometry.x0',
                   'x1': 'cb_data.geometry.x1',
                   'y0': 'cb_data.geometry.y0',
                   'y1': 'cb_data.geometry.y1'}
-
     handles = ['box_select']
 
     def _process_msg(self, msg):
@@ -447,10 +507,13 @@ class BoundsCallback(Callback):
 
 
 class Selection1DCallback(Callback):
+    """
+    Returns the current selection on a ColumnDataSource.
+    """
 
-    attributes = {'index': 'source.selected.1d.indices'}
-
+    attributes = {'index': 'cb_obj.selected.1d.indices'}
     handles = ['source']
+    change = ['selected']
 
     def _process_msg(self, msg):
         if 'index' in msg:
@@ -461,11 +524,16 @@ class Selection1DCallback(Callback):
 
 callbacks = Stream._callbacks['bokeh']
 
-callbacks[PositionXY] = PositionXYCallback
-callbacks[PositionX] = PositionXCallback
-callbacks[PositionY] = PositionYCallback
-callbacks[RangeXY] = RangeXYCallback
-callbacks[RangeX] = RangeXCallback
-callbacks[RangeY] = RangeYCallback
-callbacks[Bounds] = BoundsCallback
+callbacks[PositionXY]  = PositionXYCallback
+callbacks[PositionX]   = PositionXCallback
+callbacks[PositionY]   = PositionYCallback
+callbacks[Tap]         = TapCallback
+callbacks[DoubleTap]   = DoubleTapCallback
+callbacks[MouseEnter]  = MouseEnterCallback
+callbacks[MouseLeave]  = MouseLeaveCallback
+callbacks[RangeXY]     = RangeXYCallback
+callbacks[RangeX]      = RangeXCallback
+callbacks[RangeY]      = RangeYCallback
+callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
+callbacks[PlotDimensions] = PlotDimensionCallback

@@ -232,6 +232,42 @@ class PositionXY(Stream):
            Position along the y-axis in data coordinates""", constant=True)
 
 
+class Tap(PositionXY):
+    """
+    The x/y-position of a tap or click in data coordinates.
+    """
+
+
+class DoubleTap(PositionXY):
+    """
+    The x/y-position of a double-tap or -click in data coordinates.
+    """
+
+
+class MouseEnter(PositionXY):
+    """
+    The x/y-position where the mouse/cursor entered the plot area
+    in data coordinates.
+    """
+
+
+class MouseLeave(PositionXY):
+    """
+    The x/y-position where the mouse/cursor entered the plot area
+    in data coordinates.
+    """
+
+
+class PlotDimensions(Stream):
+    """
+    Returns the dimensions of a plot once it has been displayed.
+    """
+
+    width = param.Integer(300, doc="The width of the plot in pixels")
+
+    height = param.Integer(300, doc="The height of the plot in pixels")
+
+
 class RangeXY(Stream):
     """
     Axis ranges along x- and y-axis in data coordinates.
