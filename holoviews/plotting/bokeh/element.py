@@ -42,12 +42,12 @@ if bokeh_version >= '0.12':
 else:
     FuncTickFormatter = None
 
-property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
+property_prefixes = ['selection', 'nonselection', 'muted']
 
 # Define shared style properties for bokeh plots
-line_properties = ['line_color', 'line_alpha', 'line_width',
+line_properties = ['line_color', 'line_alpha', 'color', 'line_width',
                    'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:2]
+line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:3]
                     for prefix in property_prefixes]
 
 fill_properties = ['fill_color', 'fill_alpha']
@@ -616,22 +616,35 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['source'] = source
         return properties
 
-    def _update_glyphs(self, renderer, properties, mapping):
-        allowed_properties = renderer.glyph.properties()
+    def _update_glyphs(self, renderer, properties, mapping, glyph):
+        allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
-        merged = {k: v for k, v in dict(properties, **mapping).items()
-                  if k in allowed_properties}
-        renderer.glyph.update(**merged)
-        if renderer.selection_glyph:
-            sel_props = {k[10:]: v for k, v in properties.items()
-                         if k.startswith('selection_')
-                         and k[10:] in allowed_properties}
-            renderer.selection_glyph.update(**dict(merged, **sel_props))
-        if renderer.nonselection_glyph:
-            non_props = {k[13:]: v for k, v in properties.items()
-                         if k.startswith('nonselection_')
-                         and k[13:] in allowed_properties}
-            renderer.nonselection_glyph.update(**dict(merged, **non_props))
+        merged = dict(properties, **mapping)
+        for glyph_type in ('', 'selection_', 'nonselection_'):
+            if renderer:
+                glyph = getattr(renderer, glyph_type+'glyph', None)
+            if not glyph or (not renderer and glyph_type):
+                continue
+            if glyph_type:
+                glyph_props = properties
+            else:
+                glyph_props = merged
+            glyph_color = merged.get(glyph_type+'color')
+
+            glyph_props = {k[len(glyph_type):]: v for k, v in glyph_props.items()
+                           if k.startswith(glyph_type)}
+
+            if glyph_color and 'line_color' not in glyph_props:
+                glyph_props['line_color'] = glyph_color
+            if glyph_color and 'fill_color' not in glyph_props:
+                glyph_props['fill_color'] = glyph_color
+
+            if glyph_type:
+                glyph_props = dict(properties, **glyph_props)
+
+            filtered = {k: v for k, v in glyph_props.items()
+                        if k in allowed_properties}
+            glyph.update(**filtered)
 
 
     def _execute_hooks(self, element):
@@ -692,7 +705,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Update plot, source and glyph
         with abbreviated_exception():
-            self._update_glyphs(renderer, properties, mapping)
+            self._update_glyphs(renderer, properties, mapping, glyph)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
             self._update_ranges(style_element, ranges)
@@ -760,7 +773,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
             with abbreviated_exception():
-                self._update_glyphs(self.handles['glyph_renderer'], properties, mapping)
+                self._update_glyphs(self.handles['glyph_renderer'], properties, mapping,
+                                    glyph)
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)

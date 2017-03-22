@@ -112,7 +112,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
             nvals = len(data[k][-1])
             if 'color' not in elmapping:
                 val = styles[zorder].get('color')
-                elmapping['color'] = 'color'
+                elmapping['color'] = {'field': 'color'}
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
                 data['color'].append([val]*nvals)
@@ -148,7 +148,7 @@ class VectorFieldPlot(ColorbarPlot):
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
@@ -222,7 +222,7 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
     _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
@@ -312,7 +312,7 @@ class AreaPlot(PolygonPlot):
 
 class SpreadPlot(PolygonPlot):
 
-    style_opts = ['color'] + line_properties + fill_properties
+    style_opts = line_properties + fill_properties
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
@@ -337,7 +337,7 @@ class SpreadPlot(PolygonPlot):
 
 class HistogramPlot(ElementPlot):
 
-    style_opts = ['color'] + line_properties + fill_properties
+    style_opts = line_properties + fill_properties
     _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
@@ -437,7 +437,7 @@ class ErrorPlot(PathPlot):
 
     horizontal = param.Boolean(default=False)
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
 
     def get_data(self, element, ranges=None, empty=False):
         if empty:
@@ -644,7 +644,7 @@ class BoxPlot(ChartPlot):
     percentiles.
     """
 
-    style_opts = ['color', 'whisker_color', 'marker'] + line_properties
+    style_opts = ['whisker_color', 'marker'] + line_properties
 
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
