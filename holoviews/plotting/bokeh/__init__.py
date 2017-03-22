@@ -130,11 +130,11 @@ options.Scatter = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
-options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
+options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
 
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')
-options.VectorField = Options('style', line_color='black')
+options.VectorField = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
@@ -152,8 +152,8 @@ options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
-options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
-options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,

@@ -625,24 +625,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 glyph = getattr(renderer, glyph_type+'glyph', None)
             if not glyph or (not renderer and glyph_type):
                 continue
-            if glyph_type:
-                glyph_props = dict(properties)
-            else:
-                glyph_props = dict(merged)
+            glyph_props = dict(merged)
 
-            for prop in ('color', 'alpha'):
-                glyph_prop = merged.get(glyph_type+prop)
-                if glyph_prop and 'line_'+prop not in glyph_props:
-                    glyph_props['line_'+prop] = glyph_prop
-                if glyph_prop and 'fill_'+prop not in glyph_props:
-                    glyph_props['fill_'+prop] = glyph_prop
+            for gtype in ((glyph_type, '') if glyph_type else ('',)):
+                for prop in ('color', 'alpha'):
+                    glyph_prop = merged.get(gtype+prop)
+                    if glyph_prop and ('line_'+prop not in glyph_props or gtype):
+                        glyph_props['line_'+prop] = glyph_prop
+                    if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
+                        glyph_props['fill_'+prop] = glyph_prop
 
-            glyph_props = {k[len(glyph_type):]: v for k, v in glyph_props.items()
-                           if k.startswith(glyph_type)}
-
-            if glyph_type:
-                glyph_props = dict(properties, **glyph_props)
-
+                glyph_props.update({k[len(gtype):]: v for k, v in glyph_props.items()
+                                    if k.startswith(gtype)})
             filtered = {k: v for k, v in glyph_props.items()
                         if k in allowed_properties}
             glyph.update(**filtered)
