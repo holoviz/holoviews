@@ -232,7 +232,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         cb_tools, tool_names = [], []
         hover = False
         for cb in callbacks:
-            for handle in cb.handles+cb.extra_handles:
+            for handle in cb.models+cb.extra_models:
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':

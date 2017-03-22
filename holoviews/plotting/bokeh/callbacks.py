@@ -60,38 +60,46 @@ class Callback(object):
 
     The definition of a callback consists of a number of components:
 
-    * handles    :  The handles define which plotting handles the
-                    callback will be attached on, e.g. this could be
-                    the x_range, y_range, a plotting tool or any other
-                    bokeh object that allows callbacks.
+    * models     :  Defines which bokeh models the callback will be
+                    attached on referencing the model by its key in
+                    the plots handles, e.g. this could be the x_range,
+                    y_range, plot, a plotting tool or any other
+                    bokeh mode.
 
-    * attributes :  The attributes define which attributes to send
+    * extra_models: Any additional models available in handles which
+                    should be made available in the namespace of the
+                    objects.
+
+    * attributes  : The attributes define which attributes to send
                     back to Python. They are defined as a dictionary
                     mapping between the name under which the variable
                     is made available to Python and the specification
                     of the attribute. The specification should start
                     with the variable name that is to be accessed and
-                    the location of the attribute separated by periods.
-                    All plotting handles such as tools, the x_range,
-                    y_range and (data)source can be addressed in this
+                    the location of the attribute separated by
+                    periods.  All models defined by the models and
+                    extra_models attributes can be addressed in this
                     way, e.g. to get the start of the x_range as 'x'
                     you can supply {'x': 'x_range.attributes.start'}.
                     Additionally certain handles additionally make the
                     cb_data and cb_obj variables available containing
                     additional information about the event.
 
-    * code       :  Defines any additional JS code to be executed,
+    * skip        : Conditions when the Callback should be skipped
+                    specified as a list of valid JS expressions, which
+                    can reference models requested by the callback,
+                    e.g. ['pan.attributes.active'] would skip the
+                    callback if the pan tool is active.
+
+    * code        : Defines any additional JS code to be executed,
                     which can modify the data object that is sent to
                     the backend.
 
-    * event      :  If the Callback should listen to bokeh events this
-                    should declare the type of event, e.g. 'tap',
-                    'keypress' etc. (optional)
+    * events      : If the Callback should listen to bokeh events this
+                    should declare the types of event as a list (optional)
 
-    * change     :  If the Callback should listen to a particular
-                    attribute change on a model defined in the handles
-                    this should declare the name of that attribute
-                    (optional)
+    * change      : If the Callback should listen to model attribute
+                    changes on the defined ``models`` (optional)
 
     If either the event or change attributes are declared the Callback
     will be registered using the on_event or on_change machinery,
@@ -193,18 +201,18 @@ class Callback(object):
     """
 
     # The plotting handle(s) to attach the JS callback on
-    handles = []
+    models = []
 
-    # Additional handles available to the callback
-    extra_handles = []
+    # Additional models available to the callback
+    extra_models = []
 
     # Conditions when callback should be skipped
-    skip_conditions = []
+    skip = []
 
-    # Callback will listen to events of the supplied type on the handles
+    # Callback will listen to events of the supplied type on the models
     events = []
 
-    # List of attributes on the handles to listen to
+    # List of attributes on the models to listen to
     change = []
 
     _comm_type = JupyterCommJS
@@ -233,16 +241,16 @@ class Callback(object):
 
         handles = self._get_plot_handles(plots)
         requested = {}
-        for h in self.handles+self.extra_handles:
+        for h in self.models+self.extra_models:
             if h in handles:
                 requested[h] = handles[h]
-            elif h in self.extra_handles:
+            elif h in self.extra_models:
                 print("Warning %s could not find the %s model. "
                       "The corresponding stream may not work.")
         self.handle_ids.update(self._get_stream_handle_ids(requested))
 
         for plot in plots:
-            for handle_name in self.handles:
+            for handle_name in self.models:
                 if handle_name not in handles:
                     warn_args = (handle_name, type(self.plot).__name__,
                                  type(self).__name__)
@@ -312,7 +320,7 @@ class Callback(object):
         """
         stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.handles:
+            for h in self.models:
                 if h in handles:
                     handle_id = handles[h].ref['id']
                     stream_handle_ids[stream][h] = handle_id
@@ -332,7 +340,7 @@ class Callback(object):
                                                 debounce=self.debounce)
 
         attributes = attributes_js(self.attributes, references)
-        conditions = ["%s" % cond for cond in self.skip_conditions]
+        conditions = ["%s" % cond for cond in self.skip]
         conditional = ''
         if conditions:
             conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
@@ -370,7 +378,7 @@ class PositionXYCallback(Callback):
     """
 
     attributes = {'x': 'cb_obj.event.x', 'y': 'cb_obj.event.y'}
-    handles = ['plot']
+    models = ['plot']
     events = ['mousemove']
 
 
@@ -433,7 +441,7 @@ class RangeXYCallback(Callback):
                   'x1': 'x_range.attributes.end',
                   'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-    handles = ['x_range', 'y_range']
+    models = ['x_range', 'y_range']
     change = ['start', 'end']
 
     def _process_msg(self, msg):
@@ -452,7 +460,7 @@ class RangeXCallback(RangeXYCallback):
 
     attributes = {'x0': 'x_range.attributes.start',
                   'x1': 'x_range.attributes.end'}
-    handles = ['x_range']
+    models = ['x_range']
 
     def _process_msg(self, msg):
         if 'x0' in msg and 'x1' in msg:
@@ -468,7 +476,7 @@ class RangeYCallback(RangeXYCallback):
 
     attributes = {'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-    handles = ['y_range']
+    models = ['y_range']
 
     def _process_msg(self, msg):
         if 'y0' in msg and 'y1' in msg:
@@ -483,7 +491,7 @@ class PlotDimensionCallback(Callback):
     solver has executed.
     """
 
-    handles = ['plot']
+    models = ['plot']
     attributes = {'width': 'cb_obj.inner_width',
                   'height': 'cb_obj.inner_height'}
     change = ['inner_width', 'inner_height']
@@ -498,7 +506,7 @@ class BoundsCallback(Callback):
                   'x1': 'cb_data.geometry.x1',
                   'y0': 'cb_data.geometry.y0',
                   'y1': 'cb_data.geometry.y1'}
-    handles = ['box_select']
+    models = ['box_select']
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -513,7 +521,7 @@ class Selection1DCallback(Callback):
     """
 
     attributes = {'index': 'cb_obj.selected.1d.indices'}
-    handles = ['source']
+    models = ['source']
     change = ['selected']
 
     def _process_msg(self, msg):
