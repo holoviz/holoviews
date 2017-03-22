@@ -46,7 +46,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color',
+    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'color',
                    'unselected_color'] +
                   line_properties + fill_properties)
 

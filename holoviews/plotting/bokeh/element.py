@@ -45,9 +45,9 @@ else:
 property_prefixes = ['selection', 'nonselection', 'muted']
 
 # Define shared style properties for bokeh plots
-line_properties = ['line_color', 'line_alpha', 'color', 'line_width',
+line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
                    'line_join', 'line_cap', 'line_dash']
-line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:3]
+line_properties += ['_'.join([prefix, prop]) for prop in line_properties[:4]
                     for prefix in property_prefixes]
 
 fill_properties = ['fill_color', 'fill_alpha']
@@ -629,15 +629,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 glyph_props = properties
             else:
                 glyph_props = merged
-            glyph_color = merged.get(glyph_type+'color')
+            for prop in ('color', 'alpha'):
+                glyph_prop = merged.get(glyph_type+prop)
+                if glyph_prop and 'line_'+prop not in glyph_props:
+                    glyph_props['line_'+prop] = glyph_prop
+                if glyph_prop and 'fill_'+prop not in glyph_props:
+                    glyph_props['fill_'+prop] = glyph_prop
 
             glyph_props = {k[len(glyph_type):]: v for k, v in glyph_props.items()
                            if k.startswith(glyph_type)}
-
-            if glyph_color and 'line_color' not in glyph_props:
-                glyph_props['line_color'] = glyph_color
-            if glyph_color and 'fill_color' not in glyph_props:
-                glyph_props['fill_color'] = glyph_color
 
             if glyph_type:
                 glyph_props = dict(properties, **glyph_props)
