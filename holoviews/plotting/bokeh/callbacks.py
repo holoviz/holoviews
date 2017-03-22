@@ -131,13 +131,13 @@ class Callback(object):
 
         function process_events(comm_state) {{
             // Iterates over event queue and sends events via Comm
-            var events = unique_events(comm_state.events);
+            var events = unique_events(comm_state.event_buffer);
             for (var i=0; i<events.length; i++) {{
                 var data = events[i];
                 var comm = HoloViewsWidget.comms[data["comm_id"]];
                 comm.send(data);
             }}
-            comm_state.events = [];
+            comm_state.event_buffer = [];
         }}
 
         function on_msg(msg){{
@@ -146,14 +146,14 @@ class Callback(object):
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
           var comm_state = HoloViewsWidget.comm_state[comm_id];
-          if (comm_state.events.length) {{
+          if (comm_state.event_buffer.length) {{
             process_events(comm_state);
             comm_state.blocked = true;
-            comm_state.timeout = Date.now()+{debounce};
+            comm_state.time = Date.now()+{debounce};
           }} else {{
             comm_state.blocked = false;
           }}
-          comm_state.events = [];
+          comm_state.event_buffer = [];
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
           }} else if (msg.msg_type == "Error") {{
@@ -181,22 +181,22 @@ class Callback(object):
         // Initialize event queue and timeouts for Comm
         var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
-            comm_state = {{events: [], blocked: false, timeout: Date.now()}}
+            comm_state = {{event_buffer: [], blocked: false, time: Date.now()}}
             HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
         // Add current event to queue and process queue if not blocked
         event_name = cb_obj.event ? cb_obj.event.event_name : undefined
         data['comm_id'] = "{comm_id}";
-        timeout = comm_state.timeout + {timeout};
+        timeout = comm_state.time + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.events.unshift([event_name, data]);
+            comm_state.event_buffer.unshift([event_name, data]);
         }} else {{
-            comm_state.events.unshift([event_name, data]);
+            comm_state.event_buffer.unshift([event_name, data]);
             setTimeout(function() {{ process_events(comm_state); }}, {debounce});
             comm_state.blocked = true;
-            comm_state.timeout = Date.now()+{debounce};
+            comm_state.time = Date.now()+{debounce};
         }}
     """
 
