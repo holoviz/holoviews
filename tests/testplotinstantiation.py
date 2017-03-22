@@ -39,7 +39,7 @@ except:
     sns = None
 
 try:
-    import holoviews.plotting.bokeh
+    from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback
     from bokeh.models import (
@@ -499,6 +499,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(main_plot.handles['color_dim'], img.vdims[0])
 
     def test_stream_callback(self):
+        if bokeh_version < str('0.12.5'):
+            raise SkipTest("Bokeh >= 0.12.5 required to test streams")
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
@@ -508,17 +510,23 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(data['y'], np.array([-10]))
 
     def test_stream_callback_with_ids(self):
+        if bokeh_version < str('0.12.5'):
+            raise SkipTest("Bokeh >= 0.12.5 required to test streams")
+
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
-        hover = plot.state.select(type=HoverTool)[0]
-        plot.callbacks[0].on_msg({"x": {'id': hover.ref['id'], 'value': 10},
-                                  "y": {'id': hover.ref['id'], 'value': -10}})
+        model = plot.state
+        plot.callbacks[0].on_msg({"x": {'id': model.ref['id'], 'value': 10},
+                                  "y": {'id': model.ref['id'], 'value': -10}})
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.array([10]))
         self.assertEqual(data['y'], np.array([-10]))
 
     def test_stream_callback_single_call(self):
+        if bokeh_version < str('0.12.5'):
+            raise SkipTest("Bokeh >= 0.12.5 required to test streams")
+
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
