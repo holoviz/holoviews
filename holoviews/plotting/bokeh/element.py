@@ -626,9 +626,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not glyph or (not renderer and glyph_type):
                 continue
             if glyph_type:
-                glyph_props = properties
+                glyph_props = dict(properties)
             else:
-                glyph_props = merged
+                glyph_props = dict(merged)
+
             for prop in ('color', 'alpha'):
                 glyph_prop = merged.get(glyph_type+prop)
                 if glyph_prop and 'line_'+prop not in glyph_props:
