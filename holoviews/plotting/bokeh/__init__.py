@@ -142,7 +142,7 @@ options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
-options.Polygons = Options('style', color=Cycle())
+options.Polygons = Options('style', color=Cycle(), line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap='hot')
