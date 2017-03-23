@@ -5,8 +5,10 @@ import numpy as np
 from bokeh.models import CustomJS
 
 from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PositionX, PositionY, Bounds)
+                        RangeY, PositionX, PositionY, Bounds, Tap,
+                        DoubleTap, MouseEnter, MouseLeave, PlotSize)
 from ..comms import JupyterCommJS
+from .util import bokeh_version
 
 
 def attributes_js(attributes, handles):
@@ -53,35 +55,56 @@ def attributes_js(attributes, handles):
 class Callback(object):
     """
     Provides a baseclass to define callbacks, which return data from
-    bokeh models such as the plot ranges or various tools. The callback
+    bokeh model callbacks, events and attribute changes. The callback
     then makes this data available to any streams attached to it.
 
     The definition of a callback consists of a number of components:
 
-    * handles    :  The handles define which plotting handles the
-                    callback will be attached on, e.g. this could be
-                    the x_range, y_range, a plotting tool or any other
-                    bokeh object that allows callbacks.
+    * models      : Defines which bokeh models the callback will be
+                    attached on referencing the model by its key in
+                    the plots handles, e.g. this could be the x_range,
+                    y_range, plot, a plotting tool or any other
+                    bokeh mode.
 
-    * attributes :  The attributes define which attributes to send
+    * extra_models: Any additional models available in handles which
+                    should be made available in the namespace of the
+                    objects, e.g. to make a tool available to skip
+                    checks.
+
+    * attributes  : The attributes define which attributes to send
                     back to Python. They are defined as a dictionary
                     mapping between the name under which the variable
                     is made available to Python and the specification
                     of the attribute. The specification should start
                     with the variable name that is to be accessed and
-                    the location of the attribute separated by periods.
-                    All plotting handles such as tools, the x_range,
-                    y_range and (data)source can be addressed in this
+                    the location of the attribute separated by
+                    periods.  All models defined by the models and
+                    extra_models attributes can be addressed in this
                     way, e.g. to get the start of the x_range as 'x'
                     you can supply {'x': 'x_range.attributes.start'}.
                     Additionally certain handles additionally make the
                     cb_data and cb_obj variables available containing
                     additional information about the event.
 
+    * skip        : Conditions when the Callback should be skipped
+                    specified as a list of valid JS expressions, which
+                    can reference models requested by the callback,
+                    e.g. ['pan.attributes.active'] would skip the
+                    callback if the pan tool is active.
+
     * code        : Defines any additional JS code to be executed,
                     which can modify the data object that is sent to
                     the backend.
 
+    * events      : If the Callback should listen to bokeh events this
+                    should declare the types of event as a list (optional)
+
+    * change      : If the Callback should listen to model attribute
+                    changes on the defined ``models`` (optional)
+
+    If either the event or change attributes are declared the Callback
+    will be registered using the on_event or on_change machinery,
+    otherwise it will be treated as a regular callback on the model.
     The callback can also define a _process_msg method, which can
     modify the data sent by the callback before it is passed to the
     streams.
@@ -92,19 +115,46 @@ class Callback(object):
     attributes = {}
 
     js_callback = """
+        function unique_events(events) {{
+            // Processes the event queue ignoring duplicate events
+            // of the same type
+            var unique = [];
+            var unique_events = [];
+            for (var i=0; i<events.length; i++) {{
+                [event, data] = events[i];
+                if (!unique_events.includes(event)) {{
+                    unique.unshift(data);
+                    unique_events.push(event);
+                }}
+            }}
+            return unique;
+        }}
+
+        function process_events(comm_state) {{
+            // Iterates over event queue and sends events via Comm
+            var events = unique_events(comm_state.event_buffer);
+            for (var i=0; i<events.length; i++) {{
+                var data = events[i];
+                var comm = HoloViewsWidget.comms[data["comm_id"]];
+                comm.send(data);
+            }}
+            comm_state.event_buffer = [];
+        }}
+
         function on_msg(msg){{
+          // Receives acknowledgement from Python, processing event
+          // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
-          var comm = HoloViewsWidget.comms[comm_id];
           var comm_state = HoloViewsWidget.comm_state[comm_id];
-          if (comm_state.event) {{
-            comm.send(comm_state.event);
+          if (comm_state.event_buffer.length) {{
+            process_events(comm_state);
             comm_state.blocked = true;
-            comm_state.timeout = Date.now()+{debounce};
+            comm_state.time = Date.now()+{debounce};
           }} else {{
             comm_state.blocked = false;
           }}
-          comm_state.event = undefined;
+          comm_state.event_buffer = [];
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
           }} else if (msg.msg_type == "Error") {{
@@ -112,7 +162,7 @@ class Callback(object):
           }}
         }}
 
-        data['comm_id'] = "{comm_id}";
+        // Initialize Comm
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
           var comms = HoloViewsWidget.comms["{comm_id}"];
@@ -129,35 +179,42 @@ class Callback(object):
           return
         }}
 
+        // Initialize event queue and timeouts for Comm
         var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
-            comm_state = {{event: undefined, blocked: false, timeout: Date.now()}}
+            comm_state = {{event_buffer: [], blocked: false, time: Date.now()}}
             HoloViewsWidget.comm_state["{comm_id}"] = comm_state
         }}
 
-        function trigger() {{
-            if (comm_state.event != undefined) {{
-               var comm_id = comm_state.event["comm_id"]
-               var comm = HoloViewsWidget.comms[comm_id];
-               comm.send(comm_state.event);
-            }}
-            comm_state.event = undefined;
-        }}
-
-        timeout = comm_state.timeout + {timeout};
+        // Add current event to queue and process queue if not blocked
+        event_name = cb_obj.event ? cb_obj.event.event_name : undefined
+        data['comm_id'] = "{comm_id}";
+        timeout = comm_state.time + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.event = data;
+            comm_state.event_buffer.unshift([event_name, data]);
         }} else {{
-            comm_state.event = data;
-            setTimeout(trigger, {debounce});
+            comm_state.event_buffer.unshift([event_name, data]);
+            setTimeout(function() {{ process_events(comm_state); }}, {debounce});
             comm_state.blocked = true;
-            comm_state.timeout = Date.now()+{debounce};
+            comm_state.time = Date.now()+{debounce};
         }}
     """
 
     # The plotting handle(s) to attach the JS callback on
-    handles = []
+    models = []
+
+    # Additional models available to the callback
+    extra_models = []
+
+    # Conditions when callback should be skipped
+    skip = []
+
+    # Callback will listen to events of the supplied type on the models
+    events = []
+
+    # List of attributes on the models to listen to
+    change = []
 
     _comm_type = JupyterCommJS
 
@@ -174,7 +231,8 @@ class Callback(object):
         self.streams = streams
         self.comm = self._comm_type(plot, on_msg=self.on_msg)
         self.source = source
-        self.handle_ids = defaultdict(list)
+        self.handle_ids = defaultdict(dict)
+        self.callbacks = []
 
 
     def initialize(self):
@@ -183,10 +241,17 @@ class Callback(object):
             plots += list(self.plot.subplots.values())
 
         handles = self._get_plot_handles(plots)
-        self.handle_ids.update(self._get_stream_handle_ids(handles))
+        requested = {}
+        for h in self.models+self.extra_models:
+            if h in handles:
+                requested[h] = handles[h]
+            elif h in self.extra_models:
+                print("Warning %s could not find the %s model. "
+                      "The corresponding stream may not work.")
+        self.handle_ids.update(self._get_stream_handle_ids(requested))
 
         for plot in plots:
-            for handle_name in self.handles:
+            for handle_name in self.models:
                 if handle_name not in handles:
                     warn_args = (handle_name, type(self.plot).__name__,
                                  type(self).__name__)
@@ -194,7 +259,9 @@ class Callback(object):
                                  'attach %s callback' % warn_args)
                     continue
                 handle = handles[handle_name]
-                self.set_customjs(handle, handles)
+                js_callback = self.get_customjs(requested)
+                self.set_customjs(js_callback, handle)
+                self.callbacks.append(js_callback)
 
 
     def _filter_msg(self, msg, ids):
@@ -215,13 +282,18 @@ class Callback(object):
 
     def on_msg(self, msg):
         for stream in self.streams:
-            ids = self.handle_ids[stream]
+            handle_ids = self.handle_ids[stream]
+            ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
             if not processed_msg:
                 continue
             stream.update(trigger=False, **processed_msg)
+            stream._metadata = {h: {'id': hid, 'events': self.events}
+                                for h, hid in handle_ids.items()}
         Stream.trigger(self.streams)
+        for stream in self.streams:
+            stream._metadata = {}
 
 
     def _process_msg(self, msg):
@@ -239,8 +311,7 @@ class Callback(object):
         handles = {}
         for plot in plots:
             for k, v in plot.handles.items():
-                if k not in handles and k in self.handles:
-                    handles[k] = v
+                handles[k] = v
         return handles
 
 
@@ -250,76 +321,138 @@ class Callback(object):
         This allows checking that a stream is not given the state
         of a plotting handle it wasn't attached to
         """
-        stream_handle_ids = defaultdict(list)
+        stream_handle_ids = defaultdict(dict)
         for stream in self.streams:
-            for h in self.handles:
+            for h in self.models:
                 if h in handles:
                     handle_id = handles[h].ref['id']
-                    stream_handle_ids[stream].append(handle_id)
+                    stream_handle_ids[stream][h] = handle_id
         return stream_handle_ids
 
 
-    def set_customjs(self, handle, references):
+    def get_customjs(self, references):
         """
-        Generates a CustomJS callback by generating the required JS
-        code and gathering all plotting handles and installs it on
-        the requested callback handle.
+        Creates a CustomJS callback that will send the requested
+        attributes back to python.
         """
-
         # Generate callback JS code to get all the requested data
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
         attributes = attributes_js(self.attributes, references)
-        code = 'var data = {};\n' + attributes + self.code + self_callback
+        conditions = ["%s" % cond for cond in self.skip]
+        conditional = ''
+        if conditions:
+            conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
+        data = "var data = {};\n"
+        code = conditional + data + attributes + self.code + self_callback
+        return CustomJS(args=references, code=code)
 
-        # Merge callbacks if another callback has already been attached
-        # otherwise set it
-        if id(handle.callback) in self._callbacks:
-            cb = self._callbacks[id(handle.callback)]
+
+    def set_customjs(self, js_callback, handle):
+        """
+        Generates a CustomJS callback by generating the required JS
+        code and gathering all plotting handles and installs it on
+        the requested callback handle.
+        """
+
+        # Hash the plot handle with Callback type allowing multiple
+        # callbacks on one handle to be merged
+        cb_hash = (id(handle), id(type(self)))
+        if cb_hash in self._callbacks:
+            # Merge callbacks if another callback has already been attached
+            cb = self._callbacks[cb_hash]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
                 for k, v in self.handle_ids.items():
-                    cb.handle_ids[k] += v
-            else:
-                handle.callback.code += code
-        else:
-            js_callback = CustomJS(args=references, code=code)
-            self._callbacks[id(js_callback)] = self
+                    cb.handle_ids[k].update(v)
+            return
+
+        self._callbacks[cb_hash] = self
+        if self.events and bokeh_version >= '0.12.5':
+            for event in self.events:
+                handle.js_on_event(event, js_callback)
+        elif self.change and bokeh_version >= '0.12.5':
+            for change in self.change:
+                handle.js_on_change(change, js_callback)
+        elif hasattr(handle, 'callback'):
             handle.callback = js_callback
 
 
 
+
 class PositionXYCallback(Callback):
+    """
+    Returns the mouse x/y-position on mousemove event.
+    """
 
-    attributes = {'x': 'cb_data.geometry.x', 'y': 'cb_data.geometry.y'}
-
-    handles = ['hover']
-
-
-class PositionXCallback(Callback):
-
-    attributes = {'x': 'cb_data.geometry.x'}
-
-    handles = ['hover']
+    attributes = {'x': 'cb_obj.event.x', 'y': 'cb_obj.event.y'}
+    models = ['plot']
+    events = ['mousemove']
 
 
-class PositionYCallback(Callback):
+class PositionXCallback(PositionXYCallback):
+    """
+    Returns the mouse x-position on mousemove event.
+    """
 
-    attributes = {'y': 'cb_data.geometry.y'}
+    attributes = {'x': 'cb_obj.event.x'}
 
-    handles = ['hover']
+
+class PositionYCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mousemove event.
+    """
+
+    attributes = {'y': 'cb_data.event.y'}
+
+
+class TapCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on tap event.
+    """
+
+    events = ['tap']
+
+
+class DoubleTapCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on doubletap event.
+    """
+
+    events = ['doubletap']
+
+
+class MouseEnterCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mouseenter event, i.e. when
+    mouse enters the plot canvas.
+    """
+
+    events = ['mouseenter']
+
+
+class MouseLeaveCallback(PositionXYCallback):
+    """
+    Returns the mouse x/y-position on mouseleave event, i.e. when
+    mouse leaves the plot canvas.
+    """
+
+    events = ['mouseleave']
 
 
 class RangeXYCallback(Callback):
+    """
+    Returns the x/y-axis ranges of a plot.
+    """
 
     attributes = {'x0': 'x_range.attributes.start',
                   'x1': 'x_range.attributes.end',
                   'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-
-    handles = ['x_range', 'y_range']
+    models = ['x_range', 'y_range']
+    change = ['start', 'end']
 
     def _process_msg(self, msg):
         data = {}
@@ -330,12 +463,14 @@ class RangeXYCallback(Callback):
         return data
 
 
-class RangeXCallback(Callback):
+class RangeXCallback(RangeXYCallback):
+    """
+    Returns the x-axis range of a plot.
+    """
 
     attributes = {'x0': 'x_range.attributes.start',
                   'x1': 'x_range.attributes.end'}
-
-    handles = ['x_range']
+    models = ['x_range']
 
     def _process_msg(self, msg):
         if 'x0' in msg and 'x1' in msg:
@@ -344,12 +479,14 @@ class RangeXCallback(Callback):
             return {}
 
 
-class RangeYCallback(Callback):
+class RangeYCallback(RangeXYCallback):
+    """
+    Returns the y-axis range of a plot.
+    """
 
     attributes = {'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
-
-    handles = ['y_range']
+    models = ['y_range']
 
     def _process_msg(self, msg):
         if 'y0' in msg and 'y1' in msg:
@@ -358,14 +495,28 @@ class RangeYCallback(Callback):
             return {}
 
 
+class PlotSizeCallback(Callback):
+    """
+    Returns the actual width and height of a plot once the layout
+    solver has executed.
+    """
+
+    models = ['plot']
+    attributes = {'width': 'cb_obj.inner_width',
+                  'height': 'cb_obj.inner_height'}
+    change = ['inner_width', 'inner_height']
+
+
 class BoundsCallback(Callback):
+    """
+    Returns the bounds of a box_select tool.
+    """
 
     attributes = {'x0': 'cb_data.geometry.x0',
                   'x1': 'cb_data.geometry.x1',
                   'y0': 'cb_data.geometry.y0',
                   'y1': 'cb_data.geometry.y1'}
-
-    handles = ['box_select']
+    models = ['box_select']
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -375,10 +526,13 @@ class BoundsCallback(Callback):
 
 
 class Selection1DCallback(Callback):
+    """
+    Returns the current selection on a ColumnDataSource.
+    """
 
-    attributes = {'index': 'source.selected.1d.indices'}
-
-    handles = ['source']
+    attributes = {'index': 'cb_obj.selected.1d.indices'}
+    models = ['source']
+    change = ['selected']
 
     def _process_msg(self, msg):
         if 'index' in msg:
@@ -389,11 +543,16 @@ class Selection1DCallback(Callback):
 
 callbacks = Stream._callbacks['bokeh']
 
-callbacks[PositionXY] = PositionXYCallback
-callbacks[PositionX] = PositionXCallback
-callbacks[PositionY] = PositionYCallback
-callbacks[RangeXY] = RangeXYCallback
-callbacks[RangeX] = RangeXCallback
-callbacks[RangeY] = RangeYCallback
-callbacks[Bounds] = BoundsCallback
+callbacks[PositionXY]  = PositionXYCallback
+callbacks[PositionX]   = PositionXCallback
+callbacks[PositionY]   = PositionYCallback
+callbacks[Tap]         = TapCallback
+callbacks[DoubleTap]   = DoubleTapCallback
+callbacks[MouseEnter]  = MouseEnterCallback
+callbacks[MouseLeave]  = MouseLeaveCallback
+callbacks[RangeXY]     = RangeXYCallback
+callbacks[RangeX]      = RangeXCallback
+callbacks[RangeY]      = RangeYCallback
+callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
+callbacks[PlotSize]    = PlotSizeCallback

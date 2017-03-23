@@ -12,7 +12,8 @@ from ...core import traversal
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
-from ..plot import DimensionedPlot, GenericCompositePlot, GenericLayoutPlot
+from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
+                    GenericElementPlot)
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
@@ -22,6 +23,10 @@ if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
 else:
     from bokeh.models import GridPlot as BokehGridPlot
+from bokeh.plotting.helpers import _known_tools as known_tools
+
+TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
+         for name, tool in known_tools.items()}
 
 
 class BokehPlot(DimensionedPlot):
@@ -171,6 +176,26 @@ class CompositePlot(BokehPlot):
           {'title': '15pt'}""")
 
     _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
+
+    _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
+                     'poly_select', 'ypan', 'xpan']
+
+    def _update_callbacks(self, plot):
+        """
+        Iterates over all subplots and updates existing CustomJS
+        callbacks with models that were replaced when compositing subplots
+        into a CompositePlot
+        """
+        subplots = self.traverse(lambda x: x, [GenericElementPlot])
+        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
+                        for t in self._merged_tools}
+        for subplot in subplots:
+            for cb in subplot.callbacks:
+                for c in cb.callbacks:
+                    for tool, objs in merged_tools.items():
+                        if tool in c.args and objs:
+                            c.args[tool] = objs[0]
+
 
     def _get_title(self, key):
         title_div = None
@@ -323,14 +348,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                            if isinstance(subplot, GenericCompositePlot)
                                            else subplot.hmap)
                 subplots[coord] = subplot
-        self.sync_tools(subplots)
         return subplots, collapsed_layout
-
-
-    def sync_tools(self, subplots):
-        tools = list({t for p in subplots.values() for t in p.tools})
-        for plot in subplots.values():
-            plot.tools = tools
 
 
     def initialize_plot(self, ranges=None, plots=[]):
@@ -360,6 +378,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot = Column(title, plot)
             self.handles['title'] = title
 
+        self._update_callbacks(plot)
         self.handles['plot'] = plot
         self.handles['plots'] = plots
         if self.shared_datasource:
@@ -648,6 +667,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         if title:
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot)
+
+        self._update_callbacks(layout_plot)
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
         if self.shared_datasource:

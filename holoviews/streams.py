@@ -72,6 +72,10 @@ class Stream(param.Parameterized):
 
     Streams may have one or more subscribers which are callables passed
     the parameter dictionary when the trigger classmethod is called.
+
+    Depending on the plotting backend certain streams may interactively
+    subscribe to events and changes by the plotting backend. To disable
+    this behavior instantiate the Stream with linked=False.
     """
 
     # Mapping from a source id to a list of streams
@@ -111,7 +115,8 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[], **params):
+    def __init__(self, preprocessors=[], source=None, subscribers=[],
+                 linked=True, **params):
         """
         Mapping allows multiple streams with similar event state to be
         used by remapping parameter names.
@@ -119,11 +124,20 @@ class Stream(param.Parameterized):
         Source is an optional argument specifying the HoloViews
         datastructure that the stream receives events from, as supported
         by the plotting backend.
+
+        Some streams are configured to automatically link to the source
+        plot, to disable this set linked=False
         """
         self._source = source
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
+        self.linked = linked
+
+        # The metadata may provide information about the currently
+        # active event, i.e. the source of the stream values may
+        # indicate where the event originated from
+        self._metadata = {}
 
         super(Stream, self).__init__(**params)
         if source:
@@ -229,6 +243,42 @@ class PositionXY(Stream):
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
            Position along the y-axis in data coordinates""", constant=True)
+
+
+class Tap(PositionXY):
+    """
+    The x/y-position of a tap or click in data coordinates.
+    """
+
+
+class DoubleTap(PositionXY):
+    """
+    The x/y-position of a double-tap or -click in data coordinates.
+    """
+
+
+class MouseEnter(PositionXY):
+    """
+    The x/y-position where the mouse/cursor entered the plot area
+    in data coordinates.
+    """
+
+
+class MouseLeave(PositionXY):
+    """
+    The x/y-position where the mouse/cursor entered the plot area
+    in data coordinates.
+    """
+
+
+class PlotSize(Stream):
+    """
+    Returns the dimensions of a plot once it has been displayed.
+    """
+
+    width = param.Integer(300, doc="The width of the plot in pixels")
+
+    height = param.Integer(300, doc="The height of the plot in pixels")
 
 
 class RangeXY(Stream):

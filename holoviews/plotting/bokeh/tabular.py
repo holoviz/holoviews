@@ -24,6 +24,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
+        self.callbacks = [] # Callback support on tables not implemented
 
 
     def get_data(self, element, ranges=None, empty=False):

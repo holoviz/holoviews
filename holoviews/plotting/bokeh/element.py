@@ -1,5 +1,6 @@
 from io import BytesIO
 from itertools import groupby
+import warnings
 
 import numpy as np
 import bokeh
@@ -8,7 +9,6 @@ from bokeh.core.properties import value
 from bokeh.models import Range, HoverTool, Renderer, Range1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
 from bokeh.models.widgets import Panel, Tabs
-
 from bokeh.models.mappers import LinearColorMapper
 try:
     from bokeh.models import ColorBar
@@ -32,7 +32,7 @@ from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, get_sources
-from .plot import BokehPlot
+from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
                    bokeh_version, mplcmap_to_palette, py2js_tickformatter,
                    rgba_tuple)
@@ -59,7 +59,6 @@ text_properties = ['text_font', 'text_font_size', 'text_font_style', 'text_color
 
 legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_width',
                      'glyph_height', 'legend_padding', 'legend_spacing', 'click_policy']
-
 
 
 class ElementPlot(BokehPlot, GenericElementPlot):
@@ -205,7 +204,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             streams = Stream.registry.get(id(source), [])
             registry = Stream._callbacks['bokeh']
             cb_classes |= {(registry[type(stream)], stream) for stream in streams
-                           if type(stream) in registry and streams}
+                           if type(stream) in registry and stream.linked}
         cbs = []
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):
@@ -231,12 +230,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
+        hover = False
         for cb in callbacks:
-            for handle in cb.handles:
+            for handle in cb.models+cb.extra_models:
                 if handle and handle in known_tools:
                     tool_names.append(handle)
                     if handle == 'hover':
                         tool = HoverTool(tooltips=tooltips, **hover_opts)
+                        hover = tool
                     else:
                         tool = known_tools[handle]()
                     cb_tools.append(tool)
@@ -245,7 +246,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
         if 'hover' in tools:
-            tools[tools.index('hover')] = HoverTool(tooltips=tooltips, **hover_opts)
+            hover = HoverTool(tooltips=tooltips, **hover_opts)
+            tools[tools.index('hover')] = hover
+        if hover:
+            self.handles['hover'] = hover
         return tools
 
 
@@ -375,9 +379,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             properties['toolbar_location'] = self.toolbar
 
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
-        return bokeh.plotting.Figure(x_axis_type=x_axis_type,
-                                     y_axis_type=y_axis_type, title=title,
-                                     **properties)
+        with warnings.catch_warnings():
+            # Bokeh raises warnings about duplicate tools but these
+            # are not really an issue
+            warnings.simplefilter('ignore', UserWarning)
+            return bokeh.plotting.Figure(x_axis_type=x_axis_type,
+                                         y_axis_type=y_axis_type, title=title,
+                                         **properties)
 
 
     def _plot_properties(self, key, plot, element):
@@ -698,6 +706,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(renderer, Renderer):
             self.handles['glyph_renderer'] = renderer
 
+        if 'hover' in self.handles:
+            self.handles['hover'].renderers = [renderer]
+
         # Update plot, source and glyph
         with abbreviated_exception():
             self._update_glyphs(renderer, properties, mapping, glyph)
@@ -805,24 +816,22 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if isinstance(self.handles.get(key), FactorRange):
                 handles.append(self.handles[key])
 
+        framewise = self.framewise
         if self.current_frame:
             if not self.apply_ranges:
                 rangex, rangey = False, False
-            elif self.framewise:
-                rangex, rangey = True, True
             elif isinstance(self.hmap, DynamicMap):
-                rangex, rangey = True, True
                 callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
                              for cb in cbs]
-                streams = [s for cb in callbacks for s in cb.streams]
-                for stream in streams:
-                    if isinstance(stream, RangeXY):
-                        rangex, rangey = False, False
-                        break
-                    elif isinstance(stream, RangeX):
-                        rangex = False
-                    elif isinstance(stream, RangeY):
-                        rangey = False
+                stream_metadata = [stream._metadata for cb in callbacks
+                                   for stream in cb.streams if stream._metadata]
+                ranges = ['%s_range' % ax for ax in 'xy']
+                event_ids = [md[ax]['id'] for md in stream_metadata
+                             for ax in ranges if ax in md]
+                rangex = plot.x_range.ref['id'] not in event_ids and framewise
+                rangey = plot.y_range.ref['id'] not in event_ids and framewise
+            elif self.framewise:
+                rangex, rangey = True, True
             else:
                 rangex, rangey = False, False
             if rangex:
@@ -1214,17 +1223,42 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tools = []
-        hover = False
+        hover_tools = {}
+        tool_types = []
         for key, subplot in self.subplots.items():
             el = element.get(key)
             if el is not None:
                 el_tools = subplot._init_tools(el, self.callbacks)
-                el_tools = [t for t in el_tools
-                            if not (isinstance(t, HoverTool) and hover)]
-                tools += el_tools
-                if any(isinstance(t, HoverTool) for t in el_tools):
-                    hover = True
-        return list(set(tools))
+                for tool in el_tools:
+                    if isinstance(tool, util.basestring):
+                        tool_type = TOOLS.get(tool)
+                    else:
+                        tool_type = type(tool)
+                    if isinstance(tool, HoverTool):
+                        if tuple(tool.tooltips) in hover_tools:
+                            continue
+                        else:
+                            hover_tools[tuple(tool.tooltips)] = tool
+                    elif tool_type in tool_types:
+                        continue
+                    else:
+                        tool_types.append(tool_type)
+                    tools.append(tool)
+        self.handles['hover_tools'] = hover_tools
+        return tools
+
+
+    def _merge_tools(self, subplot):
+        """
+        Merges tools on the overlay with those on the subplots.
+        """
+        if 'hover' in subplot.handles and 'hover_tools' in self.handles:
+            hover = subplot.handles['hover']
+            tool = self.handles['hover_tools'].get(tuple(hover.tooltips))
+            if tool:
+                tool.renderers += hover.renderers
+        elif self.batched and 'hover' in subplot.handles:
+            self.handles['hover'] = subplot.handles['hover']
 
 
     def _get_factors(self, overlay):
@@ -1271,6 +1305,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if self.tabs:
                 title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(Panel(child=child, title=title))
+            self._merge_tools(subplot)
 
         if self.tabs:
             self.handles['plot'] = Tabs(tabs=panels)
