@@ -24,7 +24,7 @@ from ..util import (compute_sizes, get_sideplot_ranges, map_colors,
                     get_min_distance)
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
-from .plot import AdjoinedPlot
+from .plot import AdjoinedPlot, mpl_rc_context
 
 
 class ChartPlot(ElementPlot):
@@ -277,6 +277,7 @@ class HistogramPlot(ChartPlot):
         self.cyclic_range = val_dim.range if val_dim.cyclic else None
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         hist = self.hmap.last
         key = self.keys[-1]
@@ -788,6 +789,7 @@ class BarPlot(LegendPlot):
             return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         vdim = element.vdims[0]

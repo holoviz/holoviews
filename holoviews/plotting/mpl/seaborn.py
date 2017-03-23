@@ -15,7 +15,7 @@ from ...interface.seaborn import DFrame as SNSFrame
 from ...core.options import Store
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
-from .plot import MPLPlot, AdjoinedPlot
+from .plot import MPLPlot, AdjoinedPlot, mpl_rc_context
 
 
 class SeabornPlot(ElementPlot):
@@ -230,6 +230,7 @@ class SNSFramePlot(DFrameViewPlot):
         super(SNSFramePlot, self).__init__(view, **params)
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         dfview = self.hmap.last
         axis = self.handles['axis']
@@ -258,6 +259,7 @@ class SNSFramePlot(DFrameViewPlot):
             raise Exception("Multiple %s plots cannot be composed."
                             % self.plot_type)
 
+    @mpl_rc_context
     def update_frame(self, key, ranges=None):
         element = self.hmap.get(key, None)
         axis = self.handles['axis']

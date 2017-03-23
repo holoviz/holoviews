@@ -19,6 +19,16 @@ from ..util import get_dynamic_mode, initialize_sampled
 from .util import compute_ratios, fix_aspect
 
 
+def mpl_rc_context(f):
+    """
+    Applies matplotlib rc params while when method is called.
+    """
+    def wrapper(self, *args, **kwargs):
+        with mpl.rc_context(rc=self.fig_rcparams):
+            return f(self, *args, **kwargs)
+    return wrapper
+
+
 class MPLPlot(DimensionedPlot):
     """
     An MPLPlot object draws a matplotlib figure object when called or
@@ -208,6 +218,7 @@ class MPLPlot(DimensionedPlot):
         if self._close_figures: plt.close(figure)
         return anim
 
+
     def update(self, key):
         if len(self) == 1 and key == 0 and not self.drawn:
             return self.initialize_plot()
@@ -221,6 +232,7 @@ class CompositePlot(GenericCompositePlot, MPLPlot):
     subplots to form a Layout.
     """
 
+    @mpl_rc_context
     def update_frame(self, key, ranges=None):
         ranges = self.compute_ranges(self.layout, key, ranges)
         for subplot in self.subplots.values():
@@ -413,6 +425,7 @@ class GridPlot(CompositePlot):
         return subplots, subaxes, collapsed_layout
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         # Get the extent of the layout elements (not the whole layout)
         key = self.keys[-1]
@@ -586,6 +599,7 @@ class AdjointLayoutPlot(MPLPlot):
         super(AdjointLayoutPlot, self).__init__(subplots=subplots, **params)
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         """
         Plot all the views contained in the AdjointLayout Object using axes
@@ -657,6 +671,7 @@ class AdjointLayoutPlot(MPLPlot):
                 ax.set_aspect('equal')
 
 
+    @mpl_rc_context
     def update_frame(self, key, ranges=None):
         for pos in self.view_positions:
             subplot = self.subplots.get(pos)
@@ -1015,6 +1030,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         return subplots, adjoint_clone, projections
 
 
+    @mpl_rc_context
     def initialize_plot(self):
         key = self.keys[-1]
         ranges = self.compute_ranges(self.layout, key, None)

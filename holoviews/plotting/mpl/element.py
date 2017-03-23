@@ -14,7 +14,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
 from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
-from .plot import MPLPlot
+from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter
 from distutils.version import LooseVersion
 
@@ -465,6 +465,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         ax = self.handles['axis']
@@ -814,6 +815,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         self.handles['legend_data'] = data
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         axis = self.handles['axis']
         key = self.keys[-1]

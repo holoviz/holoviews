@@ -1,12 +1,12 @@
 from collections import defaultdict
 from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
-from holoviews.core.util import unicode
-
 import param
 
+from ...core.util import bytes_to_unicode, unicode
 from .element import ElementPlot
-from ...core.util import bytes_to_unicode
+from .plot import mpl_rc_context
+
 
 
 class TablePlot(ElementPlot):
@@ -93,6 +93,7 @@ class TablePlot(ElementPlot):
         return cell_text
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         axis = self.handles['axis']
