@@ -243,8 +243,13 @@ class QuadMesh(Raster):
     def depth(self): return 1
 
     def _process_data(self, data):
-        data = tuple(np.array(el) for el in data)
-        x, y, zarray = data
+        if isinstance(data, GridImage):
+            x = data.dimension_values(0, expanded=False)
+            y = data.dimension_values(1, expanded=False)
+            zarray = data.dimension_values(2, flat=False)
+        else:
+            data = tuple(np.array(el) for el in data)
+            x, y, zarray = data
         ys, xs = zarray.shape
         if x.ndim == 1 and len(x) == xs:
             x = compute_edges(x)
