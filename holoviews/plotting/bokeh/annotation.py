@@ -65,9 +65,7 @@ class LineAnnotationPlot(ElementPlot):
         """
         Returns a Bokeh glyph object.
         """
-        properties = {p: v for p, v in properties.items()
-                      if p not in ['source', 'legend']}
-        box = Span(level='overlay', **dict(mapping, **properties))
+        box = Span(level='overlay', **mapping)
         plot.renderers.append(box)
         return None, box
 

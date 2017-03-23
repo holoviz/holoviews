@@ -29,6 +29,8 @@ from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
                      HSVPlot, QuadMeshPlot)
 from .renderer import BokehRenderer
 from .tabular import TablePlot
+from .util import bokeh_version
+
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
@@ -127,11 +129,11 @@ options.Scatter = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
-options.Spread = Options('style', fill_color=Cycle(), fill_alpha=0.6, line_color='black')
+options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
 
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')
-options.VectorField = Options('style', line_color='black')
+options.VectorField = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
@@ -139,7 +141,7 @@ options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
-options.Polygons = Options('style', color=Cycle())
+options.Polygons = Options('style', color=Cycle(), line_color='black')
 
 # Rasters
 options.Image = Options('style', cmap='hot')
@@ -149,9 +151,19 @@ options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
-options.HLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
-options.VLine = Options('style', line_color=Cycle(), line_width=3, line_alpha=1)
+options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
                              xaxis=None, yaxis=None)
+
+if bokeh_version >= '0.12.5':
+    options.Overlay = Options('style', click_policy='mute')
+    options.NdOverlay = Options('style', click_policy='mute')
+    options.Curve = Options('style', muted_alpha=0.2)
+    options.Path = Options('style', muted_alpha=0.2)
+    options.Scatter = Options('style', muted_alpha=0.2)
+    options.Points = Options('style', muted_alpha=0.2)
+    options.Polygons = Options('style', muted_alpha=0.2)
+

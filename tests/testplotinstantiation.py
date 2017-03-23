@@ -385,6 +385,12 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(plot=dict(color_index=3))
         self._test_colormapping(points, 3)
 
+    def test_points_colormapping_with_nonselection(self):
+        opts = dict(plot=dict(color_index=3),
+                    style=dict(nonselection_color='red'))
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(**opts)
+        self._test_colormapping(points, 3)
+
     def test_points_colormapping_categorical(self):
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
                          vdims=['a', 'b'])(plot=dict(color_index='b'))
@@ -394,6 +400,43 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         cmapper = plot.handles['color_mapper']
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, list(points['b']))
+
+    def test_points_color_selection_nonselection(self):
+        opts = dict(color='green', selection_color='red', nonselection_color='blue')
+        points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
+                         vdims=['a', 'b'])(style=opts)
+        plot = bokeh_renderer.get_plot(points)
+        glyph_renderer = plot.handles['glyph_renderer']
+        self.assertEqual(glyph_renderer.glyph.fill_color, 'green')
+        self.assertEqual(glyph_renderer.glyph.line_color, 'green')
+        self.assertEqual(glyph_renderer.selection_glyph.fill_color, 'red')
+        self.assertEqual(glyph_renderer.selection_glyph.line_color, 'red')
+        self.assertEqual(glyph_renderer.nonselection_glyph.fill_color, 'blue')
+        self.assertEqual(glyph_renderer.nonselection_glyph.line_color, 'blue')
+
+    def test_points_alpha_selection_nonselection(self):
+        opts = dict(alpha=0.8, selection_alpha=1.0, nonselection_alpha=0.2)
+        points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
+                         vdims=['a', 'b'])(style=opts)
+        plot = bokeh_renderer.get_plot(points)
+        glyph_renderer = plot.handles['glyph_renderer']
+        self.assertEqual(glyph_renderer.glyph.fill_alpha, 0.8)
+        self.assertEqual(glyph_renderer.glyph.line_alpha, 0.8)
+        self.assertEqual(glyph_renderer.selection_glyph.fill_alpha, 1)
+        self.assertEqual(glyph_renderer.selection_glyph.line_alpha, 1)
+        self.assertEqual(glyph_renderer.nonselection_glyph.fill_alpha, 0.2)
+        self.assertEqual(glyph_renderer.nonselection_glyph.line_alpha, 0.2)
+
+    def test_points_alpha_selection_partial(self):
+        opts = dict(selection_alpha=1.0, selection_fill_alpha=0.2)
+        points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
+                         vdims=['a', 'b'])(style=opts)
+        plot = bokeh_renderer.get_plot(points)
+        glyph_renderer = plot.handles['glyph_renderer']
+        self.assertEqual(glyph_renderer.glyph.fill_alpha, 1.0)
+        self.assertEqual(glyph_renderer.glyph.line_alpha, 1.0)
+        self.assertEqual(glyph_renderer.selection_glyph.fill_alpha, 0.2)
+        self.assertEqual(glyph_renderer.selection_glyph.line_alpha, 1)
 
     def test_image_colormapping(self):
         img = Image(np.random.rand(10, 10))(plot=dict(logz=True))

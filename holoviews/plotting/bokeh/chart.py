@@ -16,7 +16,8 @@ from ...core.options import abbreviated_exception
 from ...operation import interpolate_curve
 from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
                     map_colors, get_min_distance)
-from .element import ElementPlot, ColorbarPlot, LegendPlot, line_properties, fill_properties
+from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
+                      fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
 
@@ -45,8 +46,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 's', 'alpha', 'color',
-                   'unselected_color'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size', 's'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
@@ -111,7 +111,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
             nvals = len(data[k][-1])
             if 'color' not in elmapping:
                 val = styles[zorder].get('color')
-                elmapping['color'] = 'color'
+                elmapping['color'] = {'field': 'color'}
                 if isinstance(val, tuple):
                     val = rgb2hex(val)
                 data['color'].append([val]*nvals)
@@ -123,29 +123,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data = {k: np.concatenate(v) for k, v in data.items()}
         return data, elmapping
 
-
-    def _init_glyph(self, plot, mapping, properties):
-        """
-        Returns a Bokeh glyph object.
-        """
-        properties = mpl_to_bokeh(properties)
-        unselect_color = properties.pop('unselected_color', None)
-        if (any(t in self.tools for t in ['box_select', 'lasso_select'])
-            and unselect_color is not None):
-            source = properties.pop('source')
-            color = properties.pop('color', None)
-            color = mapping.pop('color', color)
-            properties.pop('legend', None)
-            unselected = Circle(**dict(properties, fill_color=unselect_color, **mapping))
-            selected = Circle(**dict(properties, fill_color=color, **mapping))
-            renderer = plot.add_glyph(source, selected, selection_glyph=selected,
-                                      nonselection_glyph=unselected)
-        else:
-            plot_method = self._plot_methods.get('batched' if self.batched else 'single')
-            renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
-        if self.colorbar and 'color_mapper' in self.handles:
-            self._draw_colorbar(plot, self.handles['color_mapper'])
-        return renderer, renderer.glyph
 
 
 class VectorFieldPlot(ColorbarPlot):
@@ -170,7 +147,7 @@ class VectorFieldPlot(ColorbarPlot):
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
@@ -244,7 +221,7 @@ class CurvePlot(ElementPlot):
         default is 'linear', other options include 'steps-mid',
         'steps-pre' and 'steps-post'.""")
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
     _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
 
@@ -334,7 +311,7 @@ class AreaPlot(PolygonPlot):
 
 class SpreadPlot(PolygonPlot):
 
-    style_opts = ['color'] + line_properties + fill_properties
+    style_opts = line_properties + fill_properties
 
     def get_data(self, element, ranges=None, empty=None):
         if empty:
@@ -359,7 +336,7 @@ class SpreadPlot(PolygonPlot):
 
 class HistogramPlot(ElementPlot):
 
-    style_opts = ['color'] + line_properties + fill_properties
+    style_opts = line_properties + fill_properties
     _plot_methods = dict(single='quad')
 
     def get_data(self, element, ranges=None, empty=None):
@@ -459,7 +436,7 @@ class ErrorPlot(PathPlot):
 
     horizontal = param.Boolean(default=False)
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
 
     def get_data(self, element, ranges=None, empty=False):
         if empty:
@@ -666,7 +643,7 @@ class BoxPlot(ChartPlot):
     percentiles.
     """
 
-    style_opts = ['color', 'whisker_color', 'marker'] + line_properties
+    style_opts = ['whisker_color', 'marker'] + line_properties
 
     def _init_chart(self, element, ranges):
         properties = self.style[self.cyclic_index]
