@@ -75,7 +75,7 @@ class Stream(param.Parameterized):
 
     Depending on the plotting backend certain streams may interactively
     subscribe to events and changes by the plotting backend. To disable
-    this behavior instantiate the Stream with interactive=False.
+    this behavior instantiate the Stream with linked=False.
     """
 
     # Mapping from a source id to a list of streams
@@ -116,7 +116,7 @@ class Stream(param.Parameterized):
 
 
     def __init__(self, preprocessors=[], source=None, subscribers=[],
-                 interactive=True, **params):
+                 linked=True, **params):
         """
         Mapping allows multiple streams with similar event state to be
         used by remapping parameter names.
@@ -124,12 +124,15 @@ class Stream(param.Parameterized):
         Source is an optional argument specifying the HoloViews
         datastructure that the stream receives events from, as supported
         by the plotting backend.
+
+        Some streams are configured to automatically link to the source
+        plot, to disable this set linked=False
         """
         self._source = source
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
-        self.interactive = interactive
+        self.linked = linked
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may

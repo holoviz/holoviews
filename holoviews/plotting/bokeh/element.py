@@ -204,7 +204,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             streams = Stream.registry.get(id(source), [])
             registry = Stream._callbacks['bokeh']
             cb_classes |= {(registry[type(stream)], stream) for stream in streams
-                           if type(stream) in registry and stream.interactive}
+                           if type(stream) in registry and stream.linked}
         cbs = []
         sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
         for cb, group in groupby(sorted_cbs, lambda x: x[0]):
