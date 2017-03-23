@@ -6,7 +6,7 @@ from bokeh.models import CustomJS
 
 from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
                         RangeY, PositionX, PositionY, Bounds, Tap,
-                        DoubleTap, MouseEnter, MouseLeave, PlotDimensions)
+                        DoubleTap, MouseEnter, MouseLeave, PlotSize)
 from ..comms import JupyterCommJS
 from .util import bokeh_version
 
@@ -60,7 +60,7 @@ class Callback(object):
 
     The definition of a callback consists of a number of components:
 
-    * models     :  Defines which bokeh models the callback will be
+    * models      : Defines which bokeh models the callback will be
                     attached on referencing the model by its key in
                     the plots handles, e.g. this could be the x_range,
                     y_range, plot, a plotting tool or any other
@@ -68,7 +68,8 @@ class Callback(object):
 
     * extra_models: Any additional models available in handles which
                     should be made available in the namespace of the
-                    objects.
+                    objects, e.g. to make a tool available to skip
+                    checks.
 
     * attributes  : The attributes define which attributes to send
                     back to Python. They are defined as a dictionary
@@ -258,7 +259,9 @@ class Callback(object):
                                  'attach %s callback' % warn_args)
                     continue
                 handle = handles[handle_name]
-                self.callbacks.append(self.set_customjs(handle, requested))
+                js_callback = self.get_customjs(requested)
+                self.set_customjs(js_callback, handle)
+                self.callbacks.append(js_callback)
 
 
     def _filter_msg(self, msg, ids):
@@ -279,18 +282,18 @@ class Callback(object):
 
     def on_msg(self, msg):
         for stream in self.streams:
-            metadata = self.handle_ids[stream]
-            ids = list(metadata.values())
+            handle_ids = self.handle_ids[stream]
+            ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
             if not processed_msg:
                 continue
             stream.update(trigger=False, **processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.events}
-                                for h, hid in metadata.items()}
+                                for h, hid in handle_ids.items()}
         Stream.trigger(self.streams)
         for stream in self.streams:
-            stream._metadata = None
+            stream._metadata = {}
 
 
     def _process_msg(self, msg):
@@ -327,13 +330,11 @@ class Callback(object):
         return stream_handle_ids
 
 
-    def set_customjs(self, handle, references):
+    def get_customjs(self, references):
         """
-        Generates a CustomJS callback by generating the required JS
-        code and gathering all plotting handles and installs it on
-        the requested callback handle.
+        Creates a CustomJS callback that will send the requested
+        attributes back to python.
         """
-
         # Generate callback JS code to get all the requested data
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
@@ -346,29 +347,38 @@ class Callback(object):
             conditional = 'if (%s) { return };\n' % (' || '.join(conditions))
         data = "var data = {};\n"
         code = conditional + data + attributes + self.code + self_callback
+        return CustomJS(args=references, code=code)
 
-        js_callback = CustomJS(args=references, code=code)
-        cb = None
-        if id(handle) in self._callbacks:
+
+    def set_customjs(self, js_callback, handle):
+        """
+        Generates a CustomJS callback by generating the required JS
+        code and gathering all plotting handles and installs it on
+        the requested callback handle.
+        """
+
+        # Hash the plot handle with Callback type allowing multiple
+        # callbacks on one handle to be merged
+        cb_hash = (id(handle), id(type(self)))
+        if cb_hash in self._callbacks:
             # Merge callbacks if another callback has already been attached
-            cb = self._callbacks[id(handle)]
+            cb = self._callbacks[cb_hash]
             if isinstance(cb, type(self)):
                 cb.streams += self.streams
                 for k, v in self.handle_ids.items():
                     cb.handle_ids[k].update(v)
+            return
 
-        if not cb:
-            if self.events and bokeh_version >= '0.12.5':
-                for event in self.events:
-                    handle.js_on_event(event, js_callback)
-            elif self.change and bokeh_version >= '0.12.5':
-                for change in self.change:
-                    handle.js_on_change(change, js_callback)
-            else:
-                handle.callback = js_callback
+        self._callbacks[cb_hash] = self
+        if self.events and bokeh_version >= '0.12.5':
+            for event in self.events:
+                handle.js_on_event(event, js_callback)
+        elif self.change and bokeh_version >= '0.12.5':
+            for change in self.change:
+                handle.js_on_change(change, js_callback)
+        elif hasattr(handle, 'callback'):
+            handle.callback = js_callback
 
-        self._callbacks[id(handle)] = self
-        return js_callback
 
 
 
@@ -485,7 +495,7 @@ class RangeYCallback(RangeXYCallback):
             return {}
 
 
-class PlotDimensionCallback(Callback):
+class PlotSizeCallback(Callback):
     """
     Returns the actual width and height of a plot once the layout
     solver has executed.
@@ -545,4 +555,4 @@ callbacks[RangeX]      = RangeXCallback
 callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
-callbacks[PlotDimensions] = PlotDimensionCallback
+callbacks[PlotSize]    = PlotSizeCallback

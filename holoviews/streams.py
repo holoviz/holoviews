@@ -129,8 +129,12 @@ class Stream(param.Parameterized):
         self.subscribers = subscribers
         self.preprocessors = preprocessors
         self._hidden_subscribers = []
-        self._metadata = None
         self.interactive = interactive
+
+        # The metadata may provide information about the currently
+        # active event, i.e. the source of the stream values may
+        # indicate where the event originated from
+        self._metadata = {}
 
         super(Stream, self).__init__(**params)
         if source:
@@ -264,7 +268,7 @@ class MouseLeave(PositionXY):
     """
 
 
-class PlotDimensions(Stream):
+class PlotSize(Stream):
     """
     Returns the dimensions of a plot once it has been displayed.
     """

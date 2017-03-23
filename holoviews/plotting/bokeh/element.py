@@ -380,6 +380,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         with warnings.catch_warnings():
+            # Bokeh raises warnings about duplicate tools but these
+            # are not really an issue
             warnings.simplefilter('ignore', UserWarning)
             return bokeh.plotting.Figure(x_axis_type=x_axis_type,
                                          y_axis_type=y_axis_type, title=title,
