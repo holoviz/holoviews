@@ -11,7 +11,7 @@ except:
     pass
 
 from .dimension import ViewableElement
-from .element import Element, HoloMap, GridSpace, Collator
+from .element import Element, HoloMap, GridSpace, NdLayout, Collator
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .spaces import DynamicMap, Callable
@@ -132,12 +132,11 @@ class ElementOperation(Operation):
                     isinstance(element, DynamicMap))
                    or self.p.dynamic is True)
 
-        if isinstance(element, GridSpace):
+        if isinstance(element, (GridSpace, NdLayout)):
             # Initialize an empty axis layout
             grid_data = ((pos, self(cell, **params))
                          for pos, cell in element.items())
-            processed = GridSpace(grid_data, label=element.label,
-                                  kdims=element.kdims)
+            processed = element.clone(grid_data)
         elif dynamic:
             from ..util import Dynamic
             streams = getattr(self.p, 'streams', [])

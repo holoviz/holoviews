@@ -1,7 +1,7 @@
 import numpy as np
 
-from holoviews import (HoloMap, NdOverlay, Image, Contours, Polygons, Points,
-                       Histogram, Curve)
+from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
+                       Contours, Polygons, Points, Histogram, Curve)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
@@ -17,6 +17,20 @@ class ElementOperationTests(ComparisonTestCase):
         img = Image(np.random.rand(10, 10))
         op_img = operation(img, op=lambda x, k: x.clone(x.data*2))
         self.assertEqual(op_img, img.clone(img.data*2, group='Operation'))
+
+    def test_operation_ndlayout(self):
+        ndlayout = NdLayout({i: Image(np.random.rand(10, 10)) for i in range(10)})
+        op_ndlayout = operation(ndlayout, op=lambda x, k: x.clone(x.data*2))
+        doubled = ndlayout.clone({k: v.clone(v.data*2, group='Operation')
+                                  for k, v in ndlayout.items()})
+        self.assertEqual(op_ndlayout, doubled)
+
+    def test_operation_grid(self):
+        grid = GridSpace({i: Image(np.random.rand(10, 10)) for i in range(10)}, kdims=['X'])
+        op_grid = operation(grid, op=lambda x, k: x.clone(x.data*2))
+        doubled = grid.clone({k: v.clone(v.data*2, group='Operation')
+                              for k, v in grid.items()})
+        self.assertEqual(op_grid, doubled)
 
     def test_operation_holomap(self):
         hmap = HoloMap({1: Image(np.random.rand(10, 10))})
