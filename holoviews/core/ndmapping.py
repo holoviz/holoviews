@@ -38,11 +38,10 @@ class item_check(object):
 
 class sorted_context(object):
     """
-    Context manager to allow creating NdMapping types without
-    performing the usual sorting, providing significant
-    speedups when there are a lot of items. Should only be
-    used if values are guaranteed to be sorted before or after
-    the operation is performed.
+    Context manager to temporarily disable sorting on NdMapping
+    types. Retains the current sort order, which can be useful as
+    an optimization on NdMapping instances where sort=True but the
+    items are already known to have been sorted.
     """
 
     def __init__(self, enabled):
@@ -101,6 +100,10 @@ class MultiDimensionalMapping(Dimensioned):
             params = dict(util.get_param_values(initial_items),
                           **dict({'sort': self.sort}, **params))
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
+        if type(initial_items) is dict and not self.sort:
+            raise ValueError('If sort=False the data must define a fixed '
+                             'ordering, please supply a list of items or '
+                             'an OrderedDict, not a regular dictionary.')
 
         self._next_ind = 0
         self._check_key_type = True
@@ -109,10 +112,6 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_categorical = any(d.values for d in self.kdims)
 
         if initial_items is None: initial_items = []
-        if type(initial_items) is dict and not sort:
-            raise ValueError('If sort=False the data must define a fixed '
-                             'ordering, please supply a list of items or '
-                             'an OrderedDict, not a regular dictionary.')
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif not self._check_items:
@@ -272,6 +271,8 @@ class MultiDimensionalMapping(Dimensioned):
         Splits the mapping into groups by key dimension which are then
         returned together in a mapping of class container_type. The
         individual groups are of the same type as the original map.
+        This operation will always sort the groups and the items in
+        each group.
         """
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
