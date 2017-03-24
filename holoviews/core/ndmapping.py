@@ -109,6 +109,10 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_categorical = any(d.values for d in self.kdims)
 
         if initial_items is None: initial_items = []
+        if type(initial_items) is dict and not sort:
+            raise ValueError('If sort=False the data must define a fixed '
+                             'ordering, please supply a list of items or '
+                             'an OrderedDict, not a regular dictionary.')
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
         elif not self._check_items:
