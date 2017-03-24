@@ -467,7 +467,7 @@ class DynamicMap(HoloMap):
     mode. Bounded mode only applied to callables where all the key
     dimensions are fully bounded.
     """
-    _sorted = False
+
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
 

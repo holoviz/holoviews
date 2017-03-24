@@ -125,7 +125,7 @@ class NdWidget(param.Parameterized):
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  kdims=self.dimensions)
+                                  kdims=self.dimensions, sort=False)
 
         NdWidget.widgets[self.id] = self
 

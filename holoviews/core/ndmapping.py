@@ -38,22 +38,21 @@ class item_check(object):
 
 class sorted_context(object):
     """
-    Context manager to allow creating NdMapping types without
-    performing the usual sorting, providing significant
-    speedups when there are a lot of items. Should only be
-    used if values are guaranteed to be sorted before or after
-    the operation is performed.
+    Context manager to temporarily disable sorting on NdMapping
+    types. Retains the current sort order, which can be useful as
+    an optimization on NdMapping instances where sort=True but the
+    items are already known to have been sorted.
     """
 
     def __init__(self, enabled):
         self.enabled = enabled
 
     def __enter__(self):
-        self._enabled = MultiDimensionalMapping._sorted
-        MultiDimensionalMapping._sorted = self.enabled
+        self._enabled = MultiDimensionalMapping.sort
+        MultiDimensionalMapping.sort = self.enabled
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        MultiDimensionalMapping._sorted = self._enabled
+        MultiDimensionalMapping.sort = self._enabled
 
 
 
@@ -89,21 +88,22 @@ class MultiDimensionalMapping(Dimensioned):
 
     vdims = param.List(default=[], bounds=(0, 0), constant=True)
 
+    sort = param.Boolean(default=True, doc="""
+        Whether the items should be sorted in the constructor.""")
+
     data_type = None          # Optional type checking of elements
     _deep_indexable = False
-    _sorted = True
     _check_items = True
 
     def __init__(self, initial_items=None, **params):
-        if isinstance(initial_items, NdMapping):
-            map_type = type(initial_items)
-            own_params = self.params()
-            new_params = dict(initial_items.get_param_values(onlychanged=True))
-            if new_params.get('group') == map_type.__name__:
-                new_params.pop('group')
-            params = dict({name: value for name, value in new_params.items()
-                           if name in own_params}, **params)
+        if isinstance(initial_items, MultiDimensionalMapping):
+            params = dict(util.get_param_values(initial_items),
+                          **dict({'sort': self.sort}, **params))
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
+        if type(initial_items) is dict and not self.sort:
+            raise ValueError('If sort=False the data must define a fixed '
+                             'ordering, please supply a list of items or '
+                             'an OrderedDict, not a regular dictionary.')
 
         self._next_ind = 0
         self._check_key_type = True
@@ -111,21 +111,20 @@ class MultiDimensionalMapping(Dimensioned):
         self._cached_index_values = {d.name:d.values for d in self.kdims}
         self._cached_categorical = any(d.values for d in self.kdims)
 
-        self._instantiated = not any(v == 'initial' for v in self._cached_index_values.values())
         if initial_items is None: initial_items = []
         if isinstance(initial_items, tuple):
             self._add_item(initial_items[0], initial_items[1])
-        elif not self._check_items and self._instantiated:
+        elif not self._check_items:
             if isinstance(initial_items, dict):
                 initial_items = initial_items.items()
             elif isinstance(initial_items, MultiDimensionalMapping):
                 initial_items = initial_items.data.items()
             self.data = OrderedDict((k if isinstance(k, tuple) else (k,), v)
                                     for k, v in initial_items)
-            self._resort()
+            if self.sort:
+                self._resort()
         elif initial_items is not None:
             self.update(OrderedDict(initial_items))
-        self._instantiated = True
 
 
     def _item_check(self, dim_vals, data):
@@ -152,6 +151,7 @@ class MultiDimensionalMapping(Dimensioned):
         Adds item to the data, applying dimension types and ensuring
         key conforms to Dimension type and values.
         """
+        sort = sort and self.sort
         if not isinstance(dim_vals, tuple):
             dim_vals = (dim_vals,)
 
@@ -169,11 +169,7 @@ class MultiDimensionalMapping(Dimensioned):
 
         for dim, val in valid_vals:
             vals = self._cached_index_values[dim.name]
-            if vals == 'initial': self._cached_index_values[dim.name] = []
-            if not self._instantiated and self.get_dimension(dim).values == 'initial':
-                if val not in vals:
-                    self._cached_index_values[dim.name].append(val)
-            elif vals and val is not None and val not in vals:
+            if vals and val is not None and val not in vals:
                 raise KeyError('%s dimension value %s not in'
                                ' specified dimension values.' % (dim, repr(val)))
 
@@ -253,12 +249,11 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        if self._sorted:
-            resorted = dimension_sort(self.data, self.kdims, self.vdims,
-                                      self._cached_categorical,
-                                      range(self.ndims),
-                                      self._cached_index_values)
-            self.data = OrderedDict(resorted)
+        resorted = dimension_sort(self.data, self.kdims, self.vdims,
+                                  self._cached_categorical,
+                                  range(self.ndims),
+                                  self._cached_index_values)
+        self.data = OrderedDict(resorted)
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -276,6 +271,8 @@ class MultiDimensionalMapping(Dimensioned):
         Splits the mapping into groups by key dimension which are then
         returned together in a mapping of class container_type. The
         individual groups are of the same type as the original map.
+        This operation will always sort the groups and the items in
+        each group.
         """
         if self.ndims == 1:
             self.warning('Cannot split Map with only one dimension.')
@@ -283,10 +280,9 @@ class MultiDimensionalMapping(Dimensioned):
         container_type = container_type if container_type else type(self)
         group_type = group_type if group_type else type(self)
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        sort = not self._sorted
         with item_check(False):
             return util.ndmapping_groupby(self, dimensions, container_type,
-                                          group_type, sort=sort, **kwargs)
+                                          group_type, sort=True, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -480,7 +476,8 @@ class MultiDimensionalMapping(Dimensioned):
             other = other.data
         for key, data in other.items():
             self._add_item(key, data, sort=False)
-        self._resort()
+        if self.sort:
+            self._resort()
 
 
     def keys(self):

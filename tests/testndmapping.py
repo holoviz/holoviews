@@ -88,6 +88,23 @@ class NdIndexableMappingTest(ComparisonTestCase):
         nested_ndmap[1.5] = ndmap3
         self.assertEquals(list(nested_ndmap[1.5].values()), ['e', 'f'])
 
+    def test_idxmapping_unsorted(self):
+        data = [('B', 1), ('C', 2), ('A', 3)]
+        ndmap = MultiDimensionalMapping(data, sort=False)
+        self.assertEquals(ndmap.keys(), ['B', 'C', 'A'])
+
+    def test_idxmapping_unsorted_clone(self):
+        data = [('B', 1), ('C', 2), ('A', 3)]
+        ndmap = MultiDimensionalMapping(data, sort=False).clone()
+        self.assertEquals(ndmap.keys(), ['B', 'C', 'A'])
+
+    def test_idxmapping_groupby_unsorted(self):
+        data = [(('B', 2), 1), (('C', 2), 2), (('A', 1), 3)]
+        grouped = MultiDimensionalMapping(data, sort=False, kdims=['X', 'Y']).groupby('Y')
+        self.assertEquals(grouped.keys(), [1, 2])
+        self.assertEquals(grouped.values()[0].keys(), ['A'])
+        self.assertEquals(grouped.last.keys(), ['B', 'C'])
+
     def test_idxmapping_reindex(self):
         data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
         ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])

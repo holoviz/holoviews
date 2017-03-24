@@ -269,8 +269,10 @@ class NdElement(NdMapping, Tabular):
         Note: String values may be supplied in the constructor which
         will then be promoted to Dimension objects.""")
 
+    sort = param.Boolean(default=False, doc="""
+        Whether the items should be sorted in the constructor.""")
+
     _deep_indexable = False
-    _sorted = False
 
     def __init__(self, data=None, **params):
         self.warning('NdElement will be deprecated in v2.0 and should '
@@ -437,7 +439,8 @@ class NdElement(NdMapping, Tabular):
         if not by: by = range(self.ndims)
         indexes = [self.get_dimension_index(d) for d in by]
         return self.clone(dimension_sort(self.data, self.kdims, self.vdims,
-                                         False, indexes, self._cached_index_values))
+                                         False, indexes, self._cached_index_values),
+                          sort=False)
 
 
     def sample(self, samples=[]):
