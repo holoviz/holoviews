@@ -1007,6 +1007,30 @@ class DynamicMap(HoloMap):
         dims = [d for d in self.kdims if d not in dimensions]
         return self.groupby(dims, group_type=NdOverlay)
 
+
+    def hist(self, num_bins=20, bin_range=None, adjoin=True, individually=True, **kwargs):
+        """
+        Computes a histogram from the object and adjoins it by
+        default.  By default the histogram is computed for the bottom
+        layer, which can be overriden by supplying an ``index`` and
+        for the first value dimension, which may be overridden by
+        supplying an explicit ``dimension``.
+        """
+        def dynamic_hist(obj):
+            if isinstance(obj, (NdOverlay, Overlay)):
+                index = kwargs.get('index', 0)
+                obj = obj.get(index)
+            return obj.hist(num_bins=num_bins, bin_range=bin_range,
+                            adjoin=False, **kwargs)
+
+        from ..util import Dynamic
+        hist = Dynamic(self, operation=dynamic_hist)
+        if adjoin:
+            return self << hist
+        else:
+            return hist
+
+
     # For Python 2 and 3 compatibility
     __next__ = next
 
