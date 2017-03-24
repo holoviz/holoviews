@@ -274,6 +274,21 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
             if 'main' in adjoint.subplots:
                 self.assertEqual(adjoint.subplots['main'].layout_num, num)
 
+    def test_points_rcparams_do_not_persist(self):
+        opts = dict(fig_rcparams={'text.usetex': True})
+        points = Points(([0, 1], [0, 3]))(plot=opts)
+        plot = mpl_renderer.get_plot(points)
+        self.assertFalse(pyplot.rcParams['text.usetex'])
+
+    def test_points_rcparams_used(self):
+        opts = dict(fig_rcparams={'grid.color': 'red'})
+        points = Points(([0, 1], [0, 3]))(plot=opts)
+        plot = mpl_renderer.get_plot(points)
+        ax = plot.state.axes[0]
+        lines = ax.get_xgridlines()
+        self.assertEqual(lines[0].get_color(), 'red')
+
+
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
 

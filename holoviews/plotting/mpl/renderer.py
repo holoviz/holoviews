@@ -98,11 +98,13 @@ class MPLRenderer(Renderer):
         if isinstance(plot, tuple(self.widgets.values())):
             data = plot()
         elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
-            data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
+            with mpl.rc_context(rc=plot.fig_rcparams):
+                data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
         else:
             if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
                 raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
-            anim = plot.anim(fps=self.fps)
+            with mpl.rc_context(rc=plot.fig_rcparams):
+                anim = plot.anim(fps=self.fps)
             data = self._anim_data(anim, fmt)
 
         data = self._apply_post_render_hooks(data, obj, fmt)

@@ -4,6 +4,7 @@ from matplotlib import patches as patches
 from ...core.util import match_spec
 from ...core.options import abbreviated_exception
 from .element import ElementPlot
+from .plot import mpl_rc_context
 
 
 class AnnotationPlot(ElementPlot):
@@ -16,6 +17,7 @@ class AnnotationPlot(ElementPlot):
         super(AnnotationPlot, self).__init__(annotation, **params)
         self.handles['annotations'] = []
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         annotation = self.hmap.last
         key = self.keys[-1]

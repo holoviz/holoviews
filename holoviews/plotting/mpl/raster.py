@@ -11,7 +11,7 @@ from ...core import traversal
 from ...core.util import match_spec, max_range, unique_iterator, unique_array, is_nan
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
-from .plot import MPLPlot, GridPlot
+from .plot import MPLPlot, GridPlot, mpl_rc_context
 
 
 class RasterPlot(ColorbarPlot):
@@ -324,6 +324,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         return GridPlot._get_frame(self, key)
 
 
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         _, _, b_w, b_h, widths, heights = self.border_extents
 
