@@ -439,7 +439,8 @@ class NdElement(NdMapping, Tabular):
         if not by: by = range(self.ndims)
         indexes = [self.get_dimension_index(d) for d in by]
         return self.clone(dimension_sort(self.data, self.kdims, self.vdims,
-                                         False, indexes, self._cached_index_values))
+                                         False, indexes, self._cached_index_values),
+                          sort=False)
 
 
     def sample(self, samples=[]):

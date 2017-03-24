@@ -97,14 +97,9 @@ class MultiDimensionalMapping(Dimensioned):
     _check_items = True
 
     def __init__(self, initial_items=None, **params):
-        if isinstance(initial_items, NdMapping):
-            map_type = type(initial_items)
-            own_params = self.params()
-            new_params = dict(initial_items.get_param_values(onlychanged=True))
-            if new_params.get('group') == map_type.__name__:
-                new_params.pop('group')
-            params = dict({name: value for name, value in new_params.items()
-                           if name in own_params}, **params)
+        if isinstance(initial_items, MultiDimensionalMapping):
+            params = dict(util.get_param_values(initial_items),
+                          **dict({'sort': self.sort}, **params))
         super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
 
         self._next_ind = 0
@@ -282,7 +277,7 @@ class MultiDimensionalMapping(Dimensioned):
         dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
         with item_check(False):
             return util.ndmapping_groupby(self, dimensions, container_type,
-                                          group_type, sort=not self.sort, **kwargs)
+                                          group_type, sort=True, **kwargs)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
