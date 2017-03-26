@@ -382,6 +382,11 @@ class RGB(Image):
                 raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
+        vdims = list(params.get('vdims', self.vdims))
+        if isinstance(data, np.ndarray):
+            if data.shape[-1] == 4 and len(vdims) == 3:
+                vdims.append(self.alpha_dimension)
+                params['vdims'] = vdims
         super(RGB, self).__init__(data, **params)
 
 
