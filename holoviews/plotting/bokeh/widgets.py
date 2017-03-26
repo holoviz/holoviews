@@ -61,6 +61,7 @@ class BokehServerWidgets(param.Parameterized):
         if self.plot.renderer.mode == 'default':
             self.attach_callbacks()
         self.state = self.init_layout()
+        self._event_queue = []
 
 
     def get_widgets(self):
@@ -106,8 +107,8 @@ class BokehServerWidgets(param.Parameterized):
                                     options=list(zip(values, labels)))
                 lookup = zip(values, labels)
             if label:
-                label.on_change('value', partial(self.update, dim.pprint_label, 'label'))
-            widget.on_change('value', partial(self.update, dim.pprint_label, 'widget'))
+                label.on_change('value', partial(self.on_change, dim.pprint_label, 'label'))
+            widget.on_change('value', partial(self.on_change, dim.pprint_label, 'widget'))
             widgets[dim.pprint_label] = (label, widget)
             if lookup:
                 lookups[dim.pprint_label] = OrderedDict(lookup)
@@ -134,10 +135,20 @@ class BokehServerWidgets(param.Parameterized):
         pass
 
 
-    def update(self, dim, widget_type, attr, old, new):
+    def on_change(self, dim, widget_type, attr, old, new):
+        self._event_queue.append((dim, widget_type, attr, old, new))
+        if self.update not in self.plot.document._session_callbacks:
+            self.plot.document.add_timeout_callback(self.update, 50)
+
+
+    def update(self):
         """
         Handle update events on bokeh server.
         """
+        if not self._event_queue:
+            return
+        dim, widget_type, attr, old, new = self._event_queue[-1]
+
         label, widget = self.widgets[dim]
         if widget_type == 'label':
             if isinstance(label, AutocompleteInput):

@@ -366,6 +366,7 @@ class Callback(object):
         """
         if not self._event_queue:
             return
+        self._event_queue = []
 
         values = {}
         for attr, path in self.attributes.items():
@@ -385,7 +386,7 @@ class Callback(object):
                     attr_val = getattr(attr_val, p, None)
             values[attr] = {'id': obj.ref['id'], 'value': attr_val}
         self.on_msg(values)
-        self._event_queue = []
+        self.plot.document.add_timeout_callback(self.trigger, 50)
 
 
     def set_onchange(self, handle):
