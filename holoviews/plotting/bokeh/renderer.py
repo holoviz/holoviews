@@ -16,7 +16,7 @@ from bokeh.resources import CDN, INLINE
 from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehScrubberWidget, BokehSelectionWidget
+from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import compute_static_patch, serialize_json
 
 
