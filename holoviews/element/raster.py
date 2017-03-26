@@ -109,14 +109,65 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
-        data, kwargs = self.interface.select(self, **selection)
+        selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
+                     for k, sel in selection.items()}
+        coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
+                       for kd in self.kdims)
+        if not any([isinstance(el, slice) for el in coords]):
+            selection = {kd.name: c for kd, c in zip(self.kdims, self.closest(coords))}
 
+        # Compute new bounds
+        shape = self.interface.shape(self)
+        ys, xs = shape[:2]
+        xidx, yidx = coords
+        l, b, r, t = self.bounds.lbrt()
+        xdensity, ydensity = self.xdensity, self.ydensity
+        xunit = (1./xdensity)
+        yunit = (1./ydensity)
+        if isinstance(xidx, slice):
+            l = l if xidx.start is None else max(l, xidx.start)
+            r = r if xidx.stop is None else min(r, xidx.stop)
+        if isinstance(yidx, slice):
+            b = b if yidx.start is None else max(b, yidx.start)
+            t = t if yidx.stop is None else min(t, yidx.stop)
+        bounds = BoundingBox(points=((l, b), (r, t)))
+
+        # Apply new bounds
+        slc = Slice(bounds, self)
+
+        # Apply scalar and list indices
+        kwargs = {}
+        l, b, r, t = slc.compute_bounds(self).lbrt()
+        if not isinstance(xidx, slice):
+            if not isinstance(xidx, (list, set)): xidx = [xidx]
+            if len(xidx) > 1:
+                xdensity = xdensity*(float(len(xidx))/xs)
+            idxs = []
+            ls, rs = [], []
+            for idx in xidx:
+                xc, _ = self.closest_cell_center(idx, b)
+                ls.append(xc-xunit/2)
+                rs.append(xc+xunit/2)
+            l, r = np.min(ls), np.max(rs)
+        elif not isinstance(yidx, slice):
+            if not isinstance(yidx, (set, list)): yidx = [yidx]
+            if len(yidx) > 1:
+                ydensity = ydensity*(float(len(yidx))/ys)
+            idxs = []
+            bs, ts = [], []
+            for idx in yidx:
+                _, yc = self.closest_cell_center(l, idx)
+                bs.append(yc-yunit/2)
+                ts.append(yc+yunit/2)
+            b, t = np.min(bs), np.max(ts)
+
+        bounds = BoundingBox(points=((l, b), (r, t)))
+        data = self.interface.select(self, **selection)
         if np.isscalar(data):
             return data
         else:
-            return self.clone(data, **dict(dict(xdensity=self.xdensity,
-                                                ydensity=self.ydensity),
-                                           **kwargs))
+            return self.clone(data, xdensity=self.xdensity,
+                              ydensity=self.ydensity, bounds=bounds)
 
 
     def sample(self, samples=[], closest=True, **kwargs):
@@ -198,7 +249,6 @@ class Raster(Dataset, Element2D, SheetCoordinateSystem):
         else:
             getter = [0, 1]
         getter = itemgetter(*sorted(getter))
-        coords = list(coords)
         if len(coords) == 1:
             coords = coords[0]
         if isinstance(coords, tuple):
@@ -332,21 +382,8 @@ class RGB(Image):
                 raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
+        super(RGB, self).__init__(data, **params)
 
-        if not isinstance(data, Element):
-            if len(data.shape) != 3:
-                raise ValueError("Three dimensional matrices or arrays required")
-            elif data.shape[2] == 4:
-                sliced = data[:,:,:-1]
-
-        if len(params.get('vdims',[])) == 4:
-            alpha_dim = params['vdims'].pop(3)
-            params['alpha_dimension'] = alpha_dim
-
-        super(RGB, self).__init__(data if sliced is None else sliced, **params)
-        if sliced is not None:
-            self.vdims.append(self.alpha_dimension)
-            self.data = data
 
 
 class HSV(RGB):

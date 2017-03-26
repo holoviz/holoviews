@@ -306,7 +306,7 @@ class CubeInterface(GridInterface):
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]
         for d in dropped:
             extracted = iris.util.new_axis(extracted, d)
-        return extracted, {}
+        return extracted
 
 
 Interface.register(CubeInterface)

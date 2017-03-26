@@ -188,8 +188,8 @@ class PandasInterface(Interface):
         indexed = cls.indexed(columns, selection)
         df = df.ix[selection_mask]
         if indexed and len(df) == 1:
-            return df[columns.vdims[0].name].iloc[0], {}
-        return df, {}
+            return df[columns.vdims[0].name].iloc[0]
+        return df
 
 
     @classmethod

@@ -118,9 +118,9 @@ class NdElementInterface(Interface):
     @classmethod
     def select(cls, columns, selection_mask=None, **selection):
         if selection_mask is None:
-            return columns.data.select(**selection), {}
+            return columns.data.select(**selection)
         else:
-            return columns.data[selection_mask], {}
+            return columns.data[selection_mask]
 
     @classmethod
     def sample(cls, columns, samples=[]):

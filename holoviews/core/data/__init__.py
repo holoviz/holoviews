@@ -290,12 +290,12 @@ class Dataset(Element):
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
-        data, kwargs = self.interface.select(self, **selection)
+        data = self.interface.select(self, **selection)
 
         if np.isscalar(data):
             return data
         else:
-            return self.clone(data, **kwargs)
+            return self.clone(data)
 
 
     def reindex(self, kdims=None, vdims=None):

@@ -130,7 +130,7 @@ class ImageInterface(GridInterface):
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in dataset.kdims)
         if not any([isinstance(el, slice) for el in coords]):
-            return dataset.data[dataset.sheet2matrixidx(*coords)], {}
+            return dataset.data[dataset.sheet2matrixidx(*coords)]
 
         # Compute new bounds
         ys, xs = dataset.data.shape[:2]
@@ -152,13 +152,11 @@ class ImageInterface(GridInterface):
         data = slc.submatrix(dataset.data)
 
         # Apply scalar and list indices
-        kwargs = {}
         l, b, r, t = slc.compute_bounds(dataset).lbrt()
         if not isinstance(xidx, slice):
             if not isinstance(xidx, (list, set)): xidx = [xidx]
             if len(xidx) > 1:
                 xdensity = xdensity*(float(len(xidx))/xs)
-                kwargs['xdensity'] = xdensity
             idxs = []
             ls, rs = [], []
             for idx in xidx:
@@ -173,7 +171,6 @@ class ImageInterface(GridInterface):
             if not isinstance(yidx, (set, list)): yidx = [yidx]
             if len(yidx) > 1:
                 ydensity = ydensity*(float(len(yidx))/ys)
-                kwargs['ydensity'] = ydensity
             idxs = []
             bs, ts = [], []
             for idx in yidx:
@@ -184,8 +181,7 @@ class ImageInterface(GridInterface):
                 idxs.append(y)
             b, t = np.min(bs), np.max(ts)
             data = data[np.array(idxs), :]
-        kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
-        return data, kwargs
+        return data
 
 
     @classmethod
