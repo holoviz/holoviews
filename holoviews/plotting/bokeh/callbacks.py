@@ -276,7 +276,7 @@ class Callback(object):
                     continue
 
                 if self.plot.renderer.mode == 'server':
-                    self.set_onchange(plot.handles[handle_name])
+                    self.set_onchange(handle)
                 else:
                     js_callback = self.get_customjs(requested)
                     self.set_customjs(js_callback, handle)
@@ -401,7 +401,7 @@ class Callback(object):
                 handle.on_change(change, self.on_change)
 
 
-    def set_customjs(self, handle, references):
+    def get_customjs(self, references):
         """
         Creates a CustomJS callback that will send the requested
         attributes back to python.
@@ -427,8 +427,6 @@ class Callback(object):
         code and gathering all plotting handles and installs it on
         the requested callback handle.
         """
-
-        self._callbacks[cb_hash] = self
         if self.events and bokeh_version >= '0.12.5':
             for event in self.events:
                 handle.js_on_event(event, js_callback)
