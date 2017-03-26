@@ -526,8 +526,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xfactors, yfactors = None, None
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
-        self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'])
-        self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'])
+        if not self.model_changed(x_range):
+            self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'])
+        if not self.model_changed(y_range):
+            self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'])
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared):
@@ -788,6 +790,21 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._execute_hooks(element)
 
 
+    def model_changed(self, model):
+        """
+        Determines if the bokeh model was just changed on the frontend.
+        Useful to suppress boomeranging events, e.g. when the frontend
+        just sent an update to the x_range this should not trigger an
+        update on the backend.
+        """
+        callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
+                             for cb in cbs]
+        stream_metadata = [stream._metadata for cb in callbacks
+                           for stream in cb.streams if stream._metadata]
+        return any(md['id'] == model.ref['id'] for models in stream_metadata
+                   for md in models.values())
+
+
     @property
     def current_handles(self):
         """
@@ -821,15 +838,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if not self.apply_ranges:
                 rangex, rangey = False, False
             elif isinstance(self.hmap, DynamicMap):
-                callbacks = [cb for cbs in self.traverse(lambda x: x.callbacks)
-                             for cb in cbs]
-                stream_metadata = [stream._metadata for cb in callbacks
-                                   for stream in cb.streams if stream._metadata]
-                ranges = ['%s_range' % ax for ax in 'xy']
-                event_ids = [md[ax]['id'] for md in stream_metadata
-                             for ax in ranges if ax in md]
-                rangex = plot.x_range.ref['id'] not in event_ids and framewise
-                rangey = plot.y_range.ref['id'] not in event_ids and framewise
+                rangex = not self.model_changed(plot.x_range) and framewise
+                rangey = not self.model_changed(plot.y_range) and framewise
             elif self.framewise:
                 rangex, rangey = True, True
             else:

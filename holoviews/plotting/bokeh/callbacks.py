@@ -373,22 +373,18 @@ class Callback(object):
             if attr_path[0] == 'cb_obj':
                 attr_path = self.models[0]
             obj = self.plot_handles.get(attr_path[0])
+            attr_val = obj
             if not obj:
                 raise Exception('Bokeh plot attribute %s could not be found' % path)
             for p in attr_path[1:]:
                 if p == 'attributes':
                     continue
-                if isinstance(obj, dict):
-                    obj = obj.get(p)
+                if isinstance(attr_val, dict):
+                    attr_val = attr_val.get(p)
                 else:
-                    obj = getattr(obj, p, None)
-            values[attr] = obj
-        values = self._process_msg(values)
-        if any(v is None for v in values.values()):
-            return
-        for stream in self.streams:
-            stream.update(trigger=False, **values)
-        Stream.trigger(self.streams)
+                    attr_val = getattr(attr_val, p, None)
+            values[attr] = {'id': obj.ref['id'], 'value': attr_val}
+        self.on_msg(values)
         self._event_queue = []
 
 
