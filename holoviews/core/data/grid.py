@@ -199,7 +199,7 @@ class GridInterface(DictInterface):
             select = dict(zip(dim_names, unique_key))
             if drop_dim:
                 group_data = dataset.select(**select)
-                group_data = group_data if np.isscalar(group_data) else (group_data.columns(), None)
+                group_data = group_data if np.isscalar(group_data) else group_data.columns()
             else:
                 group_data = cls.select(dataset, **select)
             if np.isscalar(group_data):

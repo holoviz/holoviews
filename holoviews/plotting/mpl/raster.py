@@ -59,9 +59,12 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, RGB):
             style.pop('cmap', None)
 
-        l, b, r, t = element.bounds.lbrt()
-        if self.invert_yaxis and type(element) is Raster:
-            b, t = t, b
+        if type(element) is Raster:
+            l, b, r, t = element.extents
+            if self.invert_yaxis:
+                b, t = t, b
+        else:
+            l, b, r, t = element.bounds.lbrt()
 
         if isinstance(element, RGB):
             rgb = element.rgb
@@ -69,7 +72,9 @@ class RasterPlot(ColorbarPlot):
                               for d in rgb.vdims])
         else:
             data = element.dimension_values(2, flat=False)
-            if not type(element) is Raster:
+            if type(element) is Raster:
+                data = data.T
+            else:
                 data = np.flipud(data)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)

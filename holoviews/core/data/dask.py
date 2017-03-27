@@ -125,7 +125,7 @@ class DaskInterface(PandasInterface):
         indexed = cls.indexed(columns, selection)
         df = df if selection_mask is None else df[selection_mask]
         if indexed and len(df) == 1:
-            return df[columns.vdims[0].name].compute().iloc[0], {}
+            return df[columns.vdims[0].name].compute().iloc[0]
         return df
     
     @classmethod
