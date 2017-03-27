@@ -60,7 +60,8 @@ class Interface(param.Parameterized):
             if data.interface.datatype in datatype:
                 data = data.data
             elif data.interface.gridded:
-                gridded = {data.dimension_values(kd.name, expanded=False) for kd in self.kdims}
+                gridded = {kd.name: data.dimension_values(kd.name, expanded=False)
+                           for kd in data.kdims}
                 for vd in data.vdims:
                     gridded[vd.name] = data.dimension_values(vd, flat=False)
                 data = gridded

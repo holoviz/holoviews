@@ -390,13 +390,19 @@ class Dataset(Element):
         from ...element import Table, Curve
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+            dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
             selection = self.select(**sel)
-            if self.interface.gridded and self.ndims == 2 and len(sel) == 1:
+            new_type = Table
+            kdims = self.kdims
+            if self.interface.gridded and self.ndims == 2 and len(dims) == 1:
                 new_type = Curve
+                selection = selection.columns()
+                kdims = [self.get_dimension(kd) for kd in dims]
+            elif np.isscalar(selection):
+                selection = [samples[0]+(selection,)]
             else:
-                new_type = Table
-            selection = [samples[0]+(selection,)] if np.isscalar(selection) else selection.columns()
-            return self.clone(selection, new_type=Table)
+                selection = selection.columns()
+            return self.clone(selection, kdims=kdims, new_type=new_type)
 
         lens = {len(util.wrap_tuple(s)) for s in samples}
         if len(lens) > 1:
