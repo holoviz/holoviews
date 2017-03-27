@@ -387,10 +387,14 @@ class Dataset(Element):
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
 
-        from ...element import Table
+        from ...element import Table, Curve
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             selection = self.select(**sel)
+            if self.interface.gridded and self.ndims == 2 and len(sel) == 1:
+                new_type = Curve
+            else:
+                new_type = Table
             selection = [samples[0]+(selection,)] if np.isscalar(selection) else selection.columns()
             return self.clone(selection, new_type=Table)
 

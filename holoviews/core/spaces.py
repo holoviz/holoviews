@@ -320,7 +320,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 ysamples = [(ly+uy)/2.0 for ly,uy in zip(yedges[:-1], yedges[1:])]
 
                 Y,X = np.meshgrid(ysamples, xsamples)
-                linsamples = zip(X.flat, Y.flat)
+                linsamples = list(zip(X.flat, Y.flat))
             else:
                 raise NotImplementedError("Regular sampling not implemented "
                                           "for high-dimensional Views.")
