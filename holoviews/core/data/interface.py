@@ -50,22 +50,30 @@ class Interface(param.Parameterized):
             kdims = pvals.get('kdims') if kdims is None else kdims
             vdims = pvals.get('vdims') if vdims is None else vdims
 
+        if datatype is None:
+            datatype = eltype.datatype
+
         # Process Element data
         if isinstance(data, NdElement):
             kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif hasattr(data, 'interface') and issubclass(data.interface, Interface):
-            data = data.data
+        elif (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+            if data.interface.datatype in datatype:
+                data = data.data
+            elif data.interface.gridded:
+                gridded = {data.dimension_values(kd.name, expanded=False) for kd in self.kdims}
+                for vd in data.vdims:
+                    gridded[vd.name] = data.dimension_values(vd, flat=False)
+                data = gridded
+            else:
+                data = data.columns()
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
         elif isinstance(data, util.generator_types):
             data = list(data)
 
         # Set interface priority order
-        if datatype is None:
-            datatype = eltype.datatype
         prioritized = [cls.interfaces[p] for p in datatype
                        if p in cls.interfaces]
-
         head = [intfc for intfc in prioritized if type(data) in intfc.types]
         if head:
             # Prioritize interfaces which have matching types
