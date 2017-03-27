@@ -193,7 +193,7 @@ class Dataset(Element):
         super(Dataset, self).__setstate__(state)
 
 
-    def closest(self, coords):
+    def closest(self, coords=[], **kwargs):
         """
         Given single or multiple samples along the first key dimension
         will return the closest actual sample coordinates.
@@ -201,6 +201,14 @@ class Dataset(Element):
         if self.ndims > 1:
             raise NotImplementedError("Closest method currently only "
                                       "implemented for 1D Elements")
+
+        if kwargs:
+            dim = self.get_dimension(list(kwargs.keys())[0], strict=True)
+            if len(kwargs) > 1:
+                raise NotImplementedError("Closest method currently only "
+                                          "supports 1D indexes")
+            samples = list(kwargs.values())[0]
+            coords = samples if isinstance(samples, list) else [samples]
 
         xs = self.dimension_values(0)
         if xs.dtype.kind in 'SO':
@@ -364,15 +372,30 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[], closest=True):
+    def sample(self, samples=[], closest=True, **kwargs):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
         just the selected samples. Alternatively may supply kwargs
-        to sample a co-ordinate on an object.
+        to sample a coordinate on an object.
         """
-        samples = [util.wrap_tuple(s) for s in samples]
-        if len({len(s) for s in samples}) > 1:
+        if kwargs and samples:
+            raise Exception('Supply explicit list of samples or kwargs, not both.')
+        elif kwargs:
+            sample = [slice(None) for _ in range(self.ndims)]
+            for dim, val in kwargs.items():
+                sample[self.get_dimension_index(dim)] = val
+            samples = [tuple(sample)]
+
+        from ...element import Table
+        if len(samples) == 1:
+            sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+            selection = self.select(**sel)
+            selection = [samples[0]+(selection,)] if np.isscalar(selection) else selection.columns()
+            return self.clone(selection, new_type=Table)
+
+        lens = {len(util.wrap_tuple(s)) for s in samples}
+        if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
         if closest:
@@ -380,7 +403,8 @@ class Dataset(Element):
                 samples = self.closest(samples)
             except NotImplementedError:
                 pass
-        return self.clone(self.interface.sample(self, samples), new_type=Dataset)
+        samples = [util.wrap_tuple(s) for s in samples]
+        return self.clone(self.interface.sample(self, samples), new_type=Table)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):

@@ -337,42 +337,6 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
                               ydensity=self.ydensity, bounds=bounds)
 
 
-    def sample(self, samples=[], closest=True, **kwargs):
-        """
-        Allows sampling of Dataset as an iterator of coordinates
-        matching the key dimensions, returning a new object containing
-        just the selected samples. Alternatively may supply kwargs
-        to sample a coordinate on an object.
-        """
-        if kwargs and samples:
-            raise Exception('Supply explicit list of samples or kwargs, not both.')
-        if len(kwargs) == 1 and self.ndims == 2 and self.interface.gridded:
-            dim, val = list(kwargs.items())[0]
-            kdims = [d for d in self.kdims if d != dim]
-            return Curve(self.select(**kwargs).columns(),
-                         kdims=kdims, vdims=self.vdims)
-        elif kwargs:
-            selected = self.select(**kwargs)
-            if isinstance(selected, Dataset):
-                return self.clone(selected.columns(), new_type=Dataset)
-            elif np.isscalar(selected):
-                data = [kwargs.get(d.name, kwargs.get(d.name)) for d in self.dimensions()]
-                data[self.ndims] = selected
-                return self.clone([tuple(data)], new_type=Dataset)
-        lens = {len(util.wrap_tuple(s)) for s in samples}
-        if len(lens) > 1:
-            raise IndexError('Sample coordinates must all be of the same length.')
-        if closest:
-            length = list(lens)[0]
-            if length == 1:
-                samples = self.closest(**{self.kdims[0].name: samples})
-                if np.isscalar(samples): samples = [samples]
-            else:
-                samples = self.closest(samples)
-        samples = [util.wrap_tuple(s) for s in samples]
-        return self.clone(self.interface.sample(self, samples), new_type=Dataset)
-
-
     def closest(self, coords=[], **kwargs):
         """
         Given a single coordinate or multiple coordinates as
