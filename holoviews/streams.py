@@ -72,7 +72,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, source=None, subscribers=[],
+    def __init__(self, rename={}, source=None, subscribers=[],
                  linked=True, **params):
         """
         Mapping allows multiple streams with similar event state to be
@@ -89,6 +89,7 @@ class Stream(param.Parameterized):
         self.subscribers = subscribers
         self._hidden_subscribers = []
         self.linked = linked
+        self._rename = rename
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may
@@ -98,6 +99,13 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+    def rename(self, **mapping):
+        params = {k:v for k,v in self.get_param_values() if k != 'name'}
+        return self.__class__(rename=mapping,
+                              source=self._source,
+                              subscribers=self.subscribers,
+                              linked=self.linked, **params)
 
 
     def deactivate(self):
@@ -122,8 +130,8 @@ class Stream(param.Parameterized):
 
     @property
     def contents(self):
-        remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        return remapped
+        filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
+        return {self._rename.get(k,k):v for (k,v) in filtered.items()}
 
 
     def update(self, trigger=True, **kwargs):
@@ -150,7 +158,11 @@ class Stream(param.Parameterized):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k,v)
                           for (k,v) in self.get_param_values() if k != 'name')
-        return '%s(%s)' % (cls_name, kwargs)
+        if not self._rename:
+            return '%s(%s)' % (cls_name, kwargs)
+        else:
+            return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
+
 
 
     def __str__(self):
