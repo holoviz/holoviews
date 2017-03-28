@@ -15,53 +15,10 @@ class Preprocessor(param.Parameterized):
     A Preprocessor is a callable that takes a dictionary as an argument
     and returns a dictionary. Where possible, Preprocessors should have
     valid reprs that can be evaluated.
-
-    Preprocessors are used to set the contents of a stream based on the
-    parameter values. They may be used for debugging purposes or to
-    remap or repack parameter values before they are passed onto to the
-    subscribers.
     """
 
     def __call__(self, params):
         return params
-
-
-
-class Rename(Preprocessor):
-    """
-    A preprocessor used to rename parameter values.
-    """
-
-    mapping = param.Dict(default={}, doc="""
-      The mapping from the parameter names to the designated names""")
-
-    def __init__(self, **mapping):
-        super(Rename, self).__init__(mapping=mapping)
-
-    def __call__(self, params):
-        return {self.mapping.get(k,k):v for (k,v) in params.items()}
-
-    def __repr__(self):
-        keywords = ','.join('%s=%r' % (k,v) for (k,v) in sorted(self.mapping.items()))
-        return 'Rename(%s)' % keywords
-
-
-
-class Group(Preprocessor):
-    """
-    A preprocessor that keeps the parameter dictionary together,
-    supplying it as a value associated with the given key.
-    """
-
-    def __init__(self, key):
-        super(Group, self).__init__(key=key)
-
-    def __call__(self, params):
-        return {self.key:params}
-
-    def __repr__(self):
-        return 'Group(%r)' % self.key
-
 
 
 class Stream(param.Parameterized):
