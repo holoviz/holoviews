@@ -38,14 +38,14 @@ class RasterPlot(ColorbarPlot):
         if img.dtype.kind == 'b':
             img = img.astype(np.int8)
 
-        if type(element) is Raster:
+        if isinstance(element, Image):
+            l, b, r, t = element.bounds.lbrt()
+        else:
             img = np.flipud(img.T)
             l, b, r, t = element.extents
-        else:
-            l, b, r, t = element.bounds.lbrt()
-        if self.invert_yaxis:
-            b, t = t, b
         dh, dw = t-b, r-l
+        if type(element) is Raster:
+            b, t = t, b
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
