@@ -231,6 +231,8 @@ class GridInterface(DictInterface):
                 mask &= ind.start <= values
             if ind.stop is not None:
                 mask &= values < ind.stop
+            if mask is True:
+                mask = np.ones(values.shape, dtype=np.bool)
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
@@ -272,15 +274,15 @@ class GridInterface(DictInterface):
             else:
                 values = values[mask]
             value_select.append(mask)
-            data[dim.name] = values
+            data[dim.name] = np.array([values]) if np.isscalar(values) else values
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
         for vdim in dataset.vdims:
             data[vdim.name] = dataset.data[vdim.name][index]
 
-        if indexed and len(data[dataset.vdims[0].name]) == 1:
-            return data[dataset.vdims[0].name][0]
+        if indexed and len(dataset.vdims) == 1:
+            return data[dataset.vdims[0].name][0, 0]
 
         return data
 

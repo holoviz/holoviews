@@ -73,7 +73,11 @@ class CubeInterface(GridInterface):
         if kdims:
             kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
         else:
+            kdims = eltype.kdims
             kdim_names = [kd.name for kd in eltype.kdims]
+
+        if vdims is None:
+            vdims = eltype.vdims
 
         if not isinstance(data, iris.cube.Cube):
             ndims = len(kdim_names)
@@ -280,12 +284,18 @@ class CubeInterface(GridInterface):
         """
         Transform a selection dictionary to an iris Constraint.
         """
+        def get_slicer(start, end):
+            def slicer(cell):
+                return start <= cell.point < end
+            return slicer
         constraint_kwargs = {}
         for dim, constraint in selection.items():
             if isinstance(constraint, slice):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
-                constraint = iris.util.between(*constraint, rh_inclusive=False)
+                if constraint == (None, None):
+                    continue
+                constraint = get_slicer(*constraint)
             dim = dataset.get_dimension(dim, strict=True)
             constraint_kwargs[dim.name] = constraint
         return iris.Constraint(**constraint_kwargs)
@@ -306,6 +316,7 @@ class CubeInterface(GridInterface):
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]
         for d in dropped:
             extracted = iris.util.new_axis(extracted, d)
+
         return extracted
 
 

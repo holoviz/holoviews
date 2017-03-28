@@ -72,7 +72,7 @@ class XArrayInterface(GridInterface):
             if vdims is None:
                 vdims = list(data.data_vars.keys())
             if kdims is None:
-                kdims = [name for name in data.dims
+                kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
 
         if not isinstance(data, xr.Dataset):
