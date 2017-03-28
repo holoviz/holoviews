@@ -72,7 +72,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[],
+    def __init__(self, source=None, subscribers=[],
                  linked=True, **params):
         """
         Mapping allows multiple streams with similar event state to be
@@ -87,7 +87,6 @@ class Stream(param.Parameterized):
         """
         self._source = source
         self.subscribers = subscribers
-        self.preprocessors = preprocessors
         self._hidden_subscribers = []
         self.linked = linked
 
@@ -124,8 +123,6 @@ class Stream(param.Parameterized):
     @property
     def contents(self):
         remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        for preprocessor in self.preprocessors:
-            remapped = preprocessor(remapped)
         return remapped
 
 
@@ -153,10 +150,7 @@ class Stream(param.Parameterized):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k,v)
                           for (k,v) in self.get_param_values() if k != 'name')
-        if not self.preprocessors:
-            return '%s(%s)' % (cls_name, kwargs)
-        else:
-            return '%s(%r, %s)' % (cls_name, self.preprocessors, kwargs)
+        return '%s(%s)' % (cls_name, kwargs)
 
 
     def __str__(self):
@@ -310,9 +304,6 @@ class ParamValues(Stream):
                                for k in self._obj.params().keys() if k!= 'name'}
         else:
             remapped={k:v for k,v in self._obj.get_param_values() if k!= 'name'}
-
-        for preprocessor in self.preprocessors:
-            remapped = preprocessor(remapped)
         return remapped
 
 
