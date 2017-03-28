@@ -241,7 +241,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         if bounds is None:
             xvals = self.dimension_values(0, False)
             l, r, xdensity, _ = util.bound_range(xvals, xdensity)
-            yvals = self.dimension_values(0, False)
+            yvals = self.dimension_values(1, False)
             b, t, ydensity, _ = util.bound_range(yvals, ydensity)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
@@ -274,17 +274,21 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         if selection_specs and not any(self.matches(sp) for sp in selection_specs):
             return self
 
-        selection = {k: slice(*sel) if isinstance(sel, tuple) else sel
+        selection = {self.get_dimension(k).name: slice(*sel) if isinstance(sel, tuple) else sel
                      for k, sel in selection.items()}
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in self.kdims)
+
+        indexed = False
         if not any([isinstance(el, slice) for el in coords]):
+            indexed = True
             selection = {kd.name: c for kd, c in zip(self.kdims, self.closest(coords))}
 
         # Compute new bounds
         shape = self.interface.shape(self)
         ys, xs = shape[:2]
         xidx, yidx = coords
+        xdim, ydim = self.kdims
         l, b, r, t = self.bounds.lbrt()
         xdensity, ydensity = self.xdensity, self.ydensity
         xunit = (1./xdensity)
@@ -301,9 +305,10 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         slc = Slice(bounds, self)
 
         # Apply scalar and list indices
-        kwargs = {}
         l, b, r, t = slc.compute_bounds(self).lbrt()
-        if not isinstance(xidx, slice):
+        if indexed:
+            pass
+        elif not isinstance(xidx, slice):
             if not isinstance(xidx, (list, set)): xidx = [xidx]
             if len(xidx) > 1:
                 xdensity = xdensity*(float(len(xidx))/xs)
@@ -314,6 +319,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
                 ls.append(xc-xunit/2)
                 rs.append(xc+xunit/2)
             l, r = np.min(ls), np.max(rs)
+            selection[xdim.name] = slice(l, r)
         elif not isinstance(yidx, slice):
             if not isinstance(yidx, (set, list)): yidx = [yidx]
             if len(yidx) > 1:
@@ -325,6 +331,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
                 bs.append(yc-yunit/2)
                 ts.append(yc+yunit/2)
             b, t = np.min(bs), np.max(ts)
+            selection[ydim.name] = slice(b, t)
 
         bounds = BoundingBox(points=((l, b), (r, t)))
         data = self.interface.select(self, **selection)
