@@ -89,7 +89,7 @@ class Stream(param.Parameterized):
         self.subscribers = subscribers
         self._hidden_subscribers = []
         self.linked = linked
-        self._rename = rename
+        self._rename = self._validate_rename(rename)
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may
@@ -99,6 +99,16 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+    def _validate_rename(self, mapping):
+        param_names = [k for k in self.params().keys() if k != 'name']
+        for k,v in mapping.items():
+            if k not in param_names:
+                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+            if v in param_names:
+                raise KeyError('Cannot rename to %r as it clashes with a '
+                               'stream parameter of the same name' % v)
+        return mapping
 
     def rename(self, **mapping):
         params = {k:v for k,v in self.get_param_values() if k != 'name'}
