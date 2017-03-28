@@ -98,8 +98,8 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1]:
             l, b, r, t = dataset.bounds.lbrt()
             dim2, dim1 = dataset.data.shape[:2]
-            d1_half_unit = (r - l)/dim1/2.
-            d2_half_unit = (t - b)/dim2/2.
+            d1_half_unit = float(r - l)/dim1/2.
+            d2_half_unit = float(t - b)/dim2/2.
             d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
             d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
             if expanded:
