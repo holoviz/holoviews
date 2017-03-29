@@ -553,21 +553,22 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_image(cls, el1, el2, msg='Image'):
-        cls.compare_dataset(el1, el2, msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_rgb(cls, el1, el2, msg='RGB'):
-        cls.compare_dataset(el1, el2, msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_hsv(cls, el1, el2, msg='HSV'):
-        cls.compare_dataset(el1, el2, msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_surface(cls, el1, el2, msg='Surface'):
+        cls.bounds_check(el1,el2)
         cls.compare_dataset(el1, el2, msg)
 
 
