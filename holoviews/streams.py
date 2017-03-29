@@ -61,8 +61,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, rename={}, source=None, subscribers=[],
-                 linked=True, **params):
+    def __init__(self, rename={}, source=None, linked=True, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -75,7 +74,7 @@ class Stream(param.Parameterized):
         plot, to disable this set linked=False
         """
         self._source = source
-        self.subscribers = subscribers
+        self._subscribers = []
         self._hidden_subscribers = []
         self.linked = linked
         self._rename = self._validate_rename(rename)
@@ -88,6 +87,20 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+
+    @property
+    def subscribers(self):
+        return self._subscribers
+
+    def clear(self):
+        self._subscribers = []
+
+    def add_subscriber(self, subscriber):
+        if callable(subscriber):
+            self._subscribers.append(subscriber)
+        else:
+            raise TypeError('Subscriber must be a callable.')
 
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
@@ -109,7 +122,6 @@ class Stream(param.Parameterized):
         params = {k:v for k,v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=self._source,
-                              subscribers=self.subscribers,
                               linked=self.linked, **params)
 
 
