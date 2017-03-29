@@ -201,7 +201,7 @@ class Raster(Element2D):
 
 
 
-class Image(Dataset, Element2D, SheetCoordinateSystem):
+class Image(Dataset, Raster, SheetCoordinateSystem):
     """
     Image is the atomic unit as which 2D data is stored, along with
     its bounds object. The input data may be a numpy.matrix object or

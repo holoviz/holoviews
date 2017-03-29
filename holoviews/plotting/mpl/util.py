@@ -7,6 +7,7 @@ from matplotlib import ticker
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
 from ...core.util import basestring
+from ...element import Raster, RGB
 
 
 def wrap_formatter(formatter):
@@ -164,3 +165,20 @@ def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
         bbox_extra = TransformedBbox(_bbox, trans)
         bbox_inches = Bbox.union([bbox_inches, bbox_extra])
     return bbox_inches.padded(pad) if pad else bbox_inches
+
+
+def get_raster_data(image):
+    """
+    Return the array data from any Raster or Image type
+    """
+    if isinstance(image, RGB):
+        rgb = image.rgb
+        data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False))
+                          for d in rgb.vdims])
+    else:
+        data = image.dimension_values(2, flat=False)
+        if type(image) is Raster:
+            data = data.T
+        else:
+            data = np.flipud(data)
+    return data

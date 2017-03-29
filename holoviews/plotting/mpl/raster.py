@@ -12,6 +12,7 @@ from ...core.util import match_spec, max_range, unique_iterator, unique_array, i
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
+from .util import get_raster_data
 
 
 class RasterPlot(ColorbarPlot):
@@ -66,16 +67,7 @@ class RasterPlot(ColorbarPlot):
         else:
             l, b, r, t = element.bounds.lbrt()
 
-        if isinstance(element, RGB):
-            rgb = element.rgb
-            data = np.dstack([np.flipud(rgb.dimension_values(d, flat=False))
-                              for d in rgb.vdims])
-        else:
-            data = element.dimension_values(2, flat=False)
-            if type(element) is Raster:
-                data = data.T
-            else:
-                data = np.flipud(data)
+        data = get_raster_data(element)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
@@ -352,12 +344,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                     vmap = self.layout.get(xkey, None)
                 pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key)
                                     if d in vmap.kdims})
-                if pane:
-                    if issubclass(vmap.type, CompositeOverlay): pane = pane.values()[-1]
-                    data = pane.data if pane else None
-                else:
-                    pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
-                    data = pane.data
+                pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
+                data = get_raster_data(pane) if pane else None
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
@@ -388,7 +376,8 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 element = grid.data.get(grid_key, None)
                 if element:
                     plot.set_visible(True)
-                    data = element.values()[0].data if isinstance(element, CompositeOverlay) else element.data
+                    img = element.values()[0] if isinstance(element, CompositeOverlay) else element
+                    data = get_raster_data(img)
                     plot.set_data(data)
                 else:
                     plot.set_visible(False)
