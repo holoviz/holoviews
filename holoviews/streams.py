@@ -60,7 +60,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, rename={}, source=None, linked=True, **params):
+    def __init__(self, rename={}, source=None, subscribers=[], linked=True, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -74,6 +74,9 @@ class Stream(param.Parameterized):
         """
         self._source = source
         self._subscribers = []
+        for subscriber in subscribers:
+            self.add_subscriber(subscriber)
+
         self.linked = linked
         self._rename = self._validate_rename(rename)
 
