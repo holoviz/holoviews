@@ -6,7 +6,8 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import ArrayInterface, NdElementInterface, DictInterface
+from ..core.data import (ArrayInterface, NdElementInterface, DictInterface,
+                         ImageInterface)
 from ..core import (Dimension, NdMapping, Element2D, HoloMap,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -258,6 +259,18 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
+
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style unpickled Image types without an interface
+        use the ImageInterface.
+        """
+        self.__dict__ = state
+        if isinstance(self.data, np.ndarray):
+            self.interface = ImageInterface
+        super(Dataset, self).__setstate__(state)
+
 
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
