@@ -232,7 +232,11 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         if data is None: data = np.array([[0]])
         Dataset.__init__(self, data, extents=extents, bounds=None, **params)
 
-        (dim2, dim1) = self.interface.shape(self)[:2]
+        if isinstance(data, np.ndarray):
+            dim2, dim1 = data.shape[:2]
+        else:
+            dim1, dim2 = tuple([len(self.dimension_values(kd, expanded=False))
+                                  for kd in self.kdims])
         if self.bounds is not None:
             bounds = self.bounds
         elif bounds is None and isinstance(data, np.ndarray):

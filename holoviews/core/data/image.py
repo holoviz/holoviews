@@ -53,7 +53,14 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def shape(cls, dataset):
-        return dataset.data.shape
+        return cls.length(dataset), len(dataset.dimensions()),
+
+
+    @classmethod
+    def length(cls, dataset):
+        print dataset.data.shape
+        return np.product(dataset.data.shape)
+
 
     @classmethod
     def validate(cls, dataset):
