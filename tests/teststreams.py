@@ -9,8 +9,9 @@ def test_all_stream_parameters_constant():
     all_stream_cls = [v for v in globals().values() if
                       isinstance(v, type) and issubclass(v, Stream)]
     for stream_cls in all_stream_cls:
-        for name, param in stream_cls.params().items():
-            if param.constant != True:
+        for name, p in stream_cls.params().items():
+            if name == 'name': continue
+            if p.constant != True:
                 raise TypeError('Parameter %s of stream %s not declared constant'
                                 % (name, stream_cls.__name__))
 
