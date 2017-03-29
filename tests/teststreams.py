@@ -3,9 +3,16 @@ Unit test of the streams system
 """
 import param
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream, PositionX, PositionY, PositionXY, ParamValues
-from holoviews.streams import Rename, Group
+from holoviews.streams import * # noqa (Test all available streams)
 
+def test_all_stream_parameters_constant():
+    all_stream_cls = [v for v in globals().values() if
+                      isinstance(v, type) and issubclass(v, Stream)]
+    for stream_cls in all_stream_cls:
+        for name, param in stream_cls.params().items():
+            if param.constant != True:
+                raise TypeError('Parameter %s of stream %s not declared constant'
+                                % (name, stream_cls.__name__))
 
 class TestSubscriber(object):
 
@@ -138,12 +145,57 @@ class TestSubscribers(ComparisonTestCase):
         self.assertEqual(subscriber2.call_count, 1)
 
 
-class TestPreprocessors(ComparisonTestCase):
+class TestParameterRenaming(ComparisonTestCase):
 
-    def test_rename_preprocessor(self):
-        position = PositionXY([Rename(x='x1',y='y1')], x=1, y=3)
-        self.assertEqual(position.contents, dict(x1=1, y1=3))
+    def test_simple_rename_constructor(self):
+        xy = PositionXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
+        self.assertEqual(xy.contents, {'xtest':0, 'ytest':4})
 
-    def test_group_preprocessor(self):
-        position = PositionXY([Group('mygroup')], x=1, y=3)
-        self.assertEqual(position.contents, dict(mygroup={'x':1,'y':3}))
+    def test_invalid_rename_constructor(self):
+        with self.assertRaises(KeyError) as cm:
+            PositionXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
+            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+
+    def test_clashing_rename_constructor(self):
+        with self.assertRaises(KeyError) as cm:
+            PositionXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
+            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
+
+    def test_simple_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        renamed = xy.rename(x='xtest', y='ytest')
+        self.assertEqual(renamed.contents, {'xtest':0, 'ytest':4})
+
+    def test_invalid_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        with self.assertRaises(KeyError) as cm:
+            renamed = xy.rename(x='xtest', z='ytest')
+            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+
+    def test_clashing_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        with self.assertRaises(KeyError) as cm:
+            renamed = xy.rename(x='xtest', y='x')
+            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
+
+
+class TestPlotSizeTransform(ComparisonTestCase):
+
+    def test_plotsize_initial_contents_1(self):
+        plotsize = PlotSize(width=300, height=400, scale=0.5)
+        self.assertEqual(plotsize.contents, {'width':300, 'height':400, 'scale':0.5})
+
+    def test_plotsize_update_1(self):
+        plotsize = PlotSize(scale=0.5)
+        plotsize.update(width=300, height=400)
+        self.assertEqual(plotsize.contents, {'width':150, 'height':200, 'scale':0.5})
+
+    def test_plotsize_initial_contents_2(self):
+        plotsize = PlotSize(width=600, height=100, scale=2)
+        self.assertEqual(plotsize.contents, {'width':600, 'height':100, 'scale':2})
+
+    def test_plotsize_update_2(self):
+        plotsize = PlotSize(scale=2)
+        plotsize.update(width=600, height=100)
+        self.assertEqual(plotsize.contents, {'width':1200, 'height':200, 'scale':2})
+

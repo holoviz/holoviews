@@ -10,60 +10,6 @@ from collections import defaultdict
 from .core import util
 
 
-class Preprocessor(param.Parameterized):
-    """
-    A Preprocessor is a callable that takes a dictionary as an argument
-    and returns a dictionary. Where possible, Preprocessors should have
-    valid reprs that can be evaluated.
-
-    Preprocessors are used to set the contents of a stream based on the
-    parameter values. They may be used for debugging purposes or to
-    remap or repack parameter values before they are passed onto to the
-    subscribers.
-    """
-
-    def __call__(self, params):
-        return params
-
-
-
-class Rename(Preprocessor):
-    """
-    A preprocessor used to rename parameter values.
-    """
-
-    mapping = param.Dict(default={}, doc="""
-      The mapping from the parameter names to the designated names""")
-
-    def __init__(self, **mapping):
-        super(Rename, self).__init__(mapping=mapping)
-
-    def __call__(self, params):
-        return {self.mapping.get(k,k):v for (k,v) in params.items()}
-
-    def __repr__(self):
-        keywords = ','.join('%s=%r' % (k,v) for (k,v) in sorted(self.mapping.items()))
-        return 'Rename(%s)' % keywords
-
-
-
-class Group(Preprocessor):
-    """
-    A preprocessor that keeps the parameter dictionary together,
-    supplying it as a value associated with the given key.
-    """
-
-    def __init__(self, key):
-        super(Group, self).__init__(key=key)
-
-    def __call__(self, params):
-        return {self.key:params}
-
-    def __repr__(self):
-        return 'Group(%r)' % self.key
-
-
-
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
@@ -115,11 +61,11 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, preprocessors=[], source=None, subscribers=[],
+    def __init__(self, rename={}, source=None, subscribers=[],
                  linked=True, **params):
         """
-        Mapping allows multiple streams with similar event state to be
-        used by remapping parameter names.
+        The rename argument allows multiple streams with similar event
+        state to be used by remapping parameter names.
 
         Source is an optional argument specifying the HoloViews
         datastructure that the stream receives events from, as supported
@@ -130,9 +76,9 @@ class Stream(param.Parameterized):
         """
         self._source = source
         self.subscribers = subscribers
-        self.preprocessors = preprocessors
         self._hidden_subscribers = []
         self.linked = linked
+        self._rename = self._validate_rename(rename)
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may
@@ -142,6 +88,29 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+    def _validate_rename(self, mapping):
+        param_names = [k for k in self.params().keys() if k != 'name']
+        for k,v in mapping.items():
+            if k not in param_names:
+                raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
+            if v in param_names:
+                raise KeyError('Cannot rename to %r as it clashes with a '
+                               'stream parameter of the same name' % v)
+        return mapping
+
+    def rename(self, **mapping):
+        """
+        The rename method allows stream parameters to be allocated to
+        new names to avoid clashes with other stream parameters of the
+        same name. Returns a new clone of the stream instance with the
+        specified name mapping.
+        """
+        params = {k:v for k,v in self.get_param_values() if k != 'name'}
+        return self.__class__(rename=mapping,
+                              source=self._source,
+                              subscribers=self.subscribers,
+                              linked=self.linked, **params)
 
 
     def deactivate(self):
@@ -164,21 +133,24 @@ class Stream(param.Parameterized):
         self.registry[id(source)].append(self)
 
 
+    def transform(self):
+        """
+        Method that can be overwritten by subclasses to process the
+        parameter values before renaming is applied. Returns a
+        dictionary of transformed parameters.
+        """
+        return {}
+
     @property
     def contents(self):
-        remapped = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        for preprocessor in self.preprocessors:
-            remapped = preprocessor(remapped)
-        return remapped
+        filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
+        return {self._rename.get(k,k):v for (k,v) in filtered.items()}
 
 
-    def update(self, trigger=True, **kwargs):
+    def _set_stream_parameters(self, **kwargs):
         """
-        The update method updates the stream parameters in response to
-        some event.
-
-        If trigger is enabled, the trigger classmethod is invoked on
-        this particular Stream instance.
+        Sets the stream parameters which are expected to be declared
+        constant.
         """
         params = self.params().values()
         constants = [p.constant for p in params]
@@ -188,6 +160,19 @@ class Stream(param.Parameterized):
         for (param, const) in zip(params, constants):
             param.constant = const
 
+    def update(self, trigger=True, **kwargs):
+        """
+        The update method updates the stream parameters in response to
+        some event. If the stream has a custom transform method, this
+        is applied to transform the parameter values accordingly.
+
+        If trigger is enabled, the trigger classmethod is invoked on
+        this particular Stream instance.
+        """
+        self._set_stream_parameters(**kwargs)
+        transformed = self.transform()
+        if transformed:
+            self._set_stream_parameters(**transformed)
         if trigger:
             self.trigger([self])
 
@@ -196,10 +181,11 @@ class Stream(param.Parameterized):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k,v)
                           for (k,v) in self.get_param_values() if k != 'name')
-        if not self.preprocessors:
+        if not self._rename:
             return '%s(%s)' % (cls_name, kwargs)
         else:
-            return '%s(%r, %s)' % (cls_name, self.preprocessors, kwargs)
+            return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
+
 
 
     def __str__(self):
@@ -276,9 +262,16 @@ class PlotSize(Stream):
     Returns the dimensions of a plot once it has been displayed.
     """
 
-    width = param.Integer(300, doc="The width of the plot in pixels")
+    width = param.Integer(300, constant=True, doc="The width of the plot in pixels")
 
-    height = param.Integer(300, doc="The height of the plot in pixels")
+    height = param.Integer(300, constant=True, doc="The height of the plot in pixels")
+
+    scale = param.Number(default=1.0, constant=True, doc="""
+       Scale factor to scale width and height values reported by the stream""")
+
+    def transform(self):
+        return {'width':  int(self.width * self.scale),
+                'height': int(self.height * self.scale)}
 
 
 class RangeXY(Stream):
@@ -327,7 +320,7 @@ class Selection1D(Stream):
     A stream representing a 1D selection of objects by their index.
     """
 
-    index = param.List(default=[], doc="""
+    index = param.List(default=[], constant=True, doc="""
         Indices into a 1D datastructure.""")
 
 
@@ -353,9 +346,6 @@ class ParamValues(Stream):
                                for k in self._obj.params().keys() if k!= 'name'}
         else:
             remapped={k:v for k,v in self._obj.get_param_values() if k!= 'name'}
-
-        for preprocessor in self.preprocessors:
-            remapped = preprocessor(remapped)
         return remapped
 
 
