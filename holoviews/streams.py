@@ -265,7 +265,7 @@ class PlotSize(Stream):
 
     def transform(self):
         return {'width':  int(self.width * self.scale),
-                'height': int(self.width * self.scale)}
+                'height': int(self.height * self.scale)}
 
 
 class RangeXY(Stream):
