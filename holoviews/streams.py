@@ -127,28 +127,24 @@ class Stream(param.Parameterized):
         self.registry[id(source)].append(self)
 
 
-    def preprocess(self, param_values):
+    def transform(self):
         """
         Method that can be overwritten by subclasses to process the
-        parameter values before the renaming step. Allows transformation
-        of parameter values as a function of other parameter values.
+        parameter values before renaming is applied. Returns a
+        dictionary of transformed parameters.
         """
-        return param_values
+        return {}
 
     @property
     def contents(self):
         filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        processed = self.preprocess(filtered)
-        return {self._rename.get(k,k):v for (k,v) in processed.items()}
+        return {self._rename.get(k,k):v for (k,v) in filtered.items()}
 
 
-    def update(self, trigger=True, **kwargs):
+    def _set_stream_parameters(self, **kwargs):
         """
-        The update method updates the stream parameters in response to
-        some event.
-
-        If trigger is enabled, the trigger classmethod is invoked on
-        this particular Stream instance.
+        Sets the stream parameters which are expected to be declared
+        constant.
         """
         params = self.params().values()
         constants = [p.constant for p in params]
@@ -158,6 +154,19 @@ class Stream(param.Parameterized):
         for (param, const) in zip(params, constants):
             param.constant = const
 
+    def update(self, trigger=True, **kwargs):
+        """
+        The update method updates the stream parameters in response to
+        some event. If the stream has a custom transform method, this
+        is applied to transform the parameter values accordingly.
+
+        If trigger is enabled, the trigger classmethod is invoked on
+        this particular Stream instance.
+        """
+        self._set_stream_parameters(**kwargs)
+        transformed = self.transform()
+        if transformed:
+            self._set_stream_parameters(**transformed)
         if trigger:
             self.trigger([self])
 
