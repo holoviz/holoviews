@@ -174,28 +174,20 @@ class Stream(param.Parameterized):
 
     def update(self, trigger=True, **kwargs):
         """
-        The update method updates the stream parameters in response to
-        some event. If the stream has a custom transform method, this
-        is applied to transform the parameter values accordingly.
+        The update method updates the stream parameters (without any
+        renaming applied) in response to some event. If the stream has a
+        custom transform method, this is applied to transform the
+        parameter values accordingly.
 
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
         """
-        reverse_map = {v:k for k,v in self._rename.items()}
-        param_kws = {}
-        for (k,v) in kwargs.items():
-            if k in reverse_map:
-               param_kws[reverse_map[k]] = v
-            else:
-                param_kws[k] = v
-
-        self._set_stream_parameters(**param_kws)
+        self._set_stream_parameters(**kwargs)
         transformed = self.transform()
         if transformed:
             self._set_stream_parameters(**transformed)
         if trigger:
             self.trigger([self])
-
 
     def __repr__(self):
         cls_name = self.__class__.__name__
