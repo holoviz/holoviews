@@ -19,9 +19,7 @@ class ImageInterfaceTest(ComparisonTestCase):
 
     def init_data(self):
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
-        self.rgb_array = np.random.rand(10, 10, 3)
         self.image = Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
-        self.rgb = RGB(self.rgb_array, bounds=(-10, 0, 10, 10))
 
     def tearDown(self):
         self.eltype.datatype = self.restore_datatype
@@ -141,11 +139,6 @@ class ImageInterfaceTest(ComparisonTestCase):
             self.assertEqual(self.image.reduce(y=np.mean),
                              Curve((xs, zs), kdims=['x'], vdims=['z']))
 
-    def test_select_value_dimension_rgb(self):
-        self.assertEqual(self.rgb[..., 'R'],
-                         self.image.clone(self.rgb_array[:, :, 0],
-                                          vdims=[Dimension('R', range=(0, 1))]))
-
 
 
 class ImageGridInterfaceTest(ImageInterfaceTest):
@@ -161,12 +154,6 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
-    
-    def test_select_value_dimension_rgb(self):
-        self.assertEqual(self.rgb[..., 'R'],
-                         self.image.clone((self.xs, self.ys, self.rgb_array[:, :, 0]),
-                                          vdims=[Dimension('R', range=(0, 1))]))
-
 
 
 class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
@@ -178,7 +165,6 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
 
     datatype = 'cube'
 
-    
     def init_data(self):
         xs = np.linspace(-9, 9, 10)
         ys = np.linspace(0.5, 9.5, 10)
@@ -194,8 +180,42 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
     def test_reduce_y_dimension(self):
         raise SkipTest("Not supported")
 
+
+class RGBInterfaceTest(ComparisonTestCase):
+
+    datatype = 'image'
+
+    def setUp(self):
+        self.eltype = RGB
+        self.restore_datatype = self.eltype.datatype
+        self.eltype.datatype = [self.datatype]
+        self.init_data()
+
+    def init_data(self):
+        self.rgb_array = np.random.rand(10, 10, 3)
+        self.rgb = RGB(self.rgb_array, bounds=(-10, 0, 10, 10))
+
     def test_select_value_dimension_rgb(self):
-        raise SkipTest("Not supported")
+        self.assertEqual(self.rgb[..., 'R'],
+                         Image(self.rgb_array[:, :, 0], bounds=self.rgb.bounds,
+                               vdims=[Dimension('R', range=(0, 1))]))
 
 
-        
+
+class RGBGridInterfaceTest(RGBInterfaceTest):
+
+    datatype = 'grid'
+
+    def init_data(self):
+        self.xs = np.linspace(-9, 9, 10)
+        self.ys = np.linspace(0.5, 9.5, 10)
+        self.rgb_array = np.random.rand(10, 10, 3)
+        self.rgb = RGB((self.xs, self.ys, np.flipud(self.rgb_array[:, :, 0]),
+                        np.flipud(self.rgb_array[:, :, 1]),
+                        np.flipud(self.rgb_array[:, :, 2])))
+
+
+
+class RGBXArrayInterfaceTest(RGBGridInterfaceTest):
+
+    datatype = 'xarray'
