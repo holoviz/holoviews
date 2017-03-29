@@ -64,8 +64,8 @@ class Stream(param.Parameterized):
     def __init__(self, rename={}, source=None, subscribers=[],
                  linked=True, **params):
         """
-        Mapping allows multiple streams with similar event state to be
-        used by remapping parameter names.
+        The rename argument allows multiple streams with similar event
+        state to be used by remapping parameter names.
 
         Source is an optional argument specifying the HoloViews
         datastructure that the stream receives events from, as supported
@@ -100,6 +100,12 @@ class Stream(param.Parameterized):
         return mapping
 
     def rename(self, **mapping):
+        """
+        The rename method allows stream parameters to be allocated to
+        new names to avoid clashes with other stream parameters of the
+        same name. Returns a new clone of the stream instance with the
+        specified name mapping.
+        """
         params = {k:v for k,v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=self._source,
