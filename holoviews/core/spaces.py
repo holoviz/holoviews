@@ -600,7 +600,7 @@ class DynamicMap(HoloMap):
         stream_params = set(util.stream_parameters(self.streams))
         updated_streams = []
         for stream in self.streams:
-            overlap = set(stream.params().keys()) & stream_params & set(kwargs.keys())
+            overlap = set(stream.contents.keys()) & stream_params & set(kwargs.keys())
             if overlap:
                 stream.update(**dict({k:kwargs[k] for k in overlap}, trigger=False))
                 updated_streams.append(stream)
