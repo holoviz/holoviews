@@ -177,9 +177,16 @@ class Stream(param.Parameterized):
         constants = [p.constant for p in params]
         for param in params:
             param.constant = False
-        self.set_param(**kwargs)
-        for (param, const) in zip(params, constants):
-            param.constant = const
+        try:
+            self.set_param(**kwargs)
+        except Exception as e:
+            for (param, const) in zip(params, constants):
+                param.constant = const
+            raise
+        else:
+            for (param, const) in zip(params, constants):
+                param.constant = const
+
 
     def update(self, trigger=True, **kwargs):
         """
