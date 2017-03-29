@@ -143,3 +143,37 @@ class TestSubscribers(ComparisonTestCase):
 
         self.assertEqual(subscriber2.kwargs, dict(x=50, y=100))
         self.assertEqual(subscriber2.call_count, 1)
+
+
+class TestParameterRenaming(ComparisonTestCase):
+
+    def test_simple_rename_constructor(self):
+        xy = PositionXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
+        self.assertEqual(xy.contents, {'xtest':0, 'ytest':4})
+
+    def test_invalid_rename_constructor(self):
+        with self.assertRaises(KeyError) as cm:
+            PositionXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
+            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+
+    def test_clashing_rename_constructor(self):
+        with self.assertRaises(KeyError) as cm:
+            PositionXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
+            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
+
+    def test_simple_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        renamed = xy.rename(x='xtest', y='ytest')
+        self.assertEqual(renamed.contents, {'xtest':0, 'ytest':4})
+
+    def test_invalid_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        with self.assertRaises(KeyError) as cm:
+            renamed = xy.rename(x='xtest', z='ytest')
+            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+
+    def test_clashing_rename_method(self):
+        xy = PositionXY(x=0, y=4)
+        with self.assertRaises(KeyError) as cm:
+            renamed = xy.rename(x='xtest', y='x')
+            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
