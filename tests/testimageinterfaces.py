@@ -1,8 +1,10 @@
 from unittest import SkipTest
 
 import numpy as np
-from holoviews import Dimension, Image
+from holoviews import Dimension, Image, Curve, RGB
 from holoviews.element.comparison import ComparisonTestCase
+
+from .testdataset import DatatypeContext
 
 
 class ImageInterfaceTest(ComparisonTestCase):
@@ -17,7 +19,9 @@ class ImageInterfaceTest(ComparisonTestCase):
 
     def init_data(self):
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
+        self.rgb_array = np.random.rand(10, 10, 3)
         self.image = Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
+        self.rgb = RGB(self.rgb_array, bounds=(-10, 0, 10, 10))
 
     def tearDown(self):
         self.eltype.datatype = self.restore_datatype
@@ -88,6 +92,60 @@ class ImageInterfaceTest(ComparisonTestCase):
         self.assertEqual(sliced.dimension_values(2, flat=False),
                          self.array[1:5, 6:7])
 
+    def test_range_xdim(self):
+        self.assertEqual(self.image.range(0), (-9, 9))
+
+    def test_range_ydim(self):
+        self.assertEqual(self.image.range(1), (0.5, 9.5))
+
+    def test_range_vdim(self):
+        self.assertEqual(self.image.range(2), (0, 81))
+
+    def test_dimension_values_xcoords(self):
+        self.assertEqual(self.image.dimension_values(0, expanded=False),
+                         np.linspace(-9, 9, 10))
+
+    def test_dimension_values_ycoords(self):
+        self.assertEqual(self.image.dimension_values(1, expanded=False),
+                         np.linspace(0.5, 9.5, 10))
+
+    def test_sample_xcoord(self):
+        ys = np.linspace(0.5, 9.5, 10)
+        zs = [0, 7, 14, 21, 28, 35, 42, 49, 56, 63]
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+            self.assertEqual(self.image.sample(x=5),
+                             Curve((ys, zs), kdims=['y'], vdims=['z']))
+
+    def test_sample_ycoord(self):
+        xs = np.linspace(-9, 9, 10)
+        zs = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36]
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+            self.assertEqual(self.image.sample(y=5),
+                             Curve((xs, zs), kdims=['x'], vdims=['z']))
+
+    def test_reduce_to_scalar(self):
+        self.assertEqual(self.image.reduce(['x', 'y'], function=np.mean),
+                         20.25)
+
+    def test_reduce_x_dimension(self):
+        ys = np.linspace(0.5, 9.5, 10)
+        zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], Image):
+            self.assertEqual(self.image.reduce(x=np.mean),
+                             Curve((ys, zs), kdims=['y'], vdims=['z']))
+
+    def test_reduce_y_dimension(self):
+        xs = np.linspace(-9, 9, 10)
+        zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], Image):
+            self.assertEqual(self.image.reduce(y=np.mean),
+                             Curve((xs, zs), kdims=['x'], vdims=['z']))
+
+    def test_select_value_dimension_rgb(self):
+        self.assertEqual(self.rgb[..., 'R'],
+                         self.image.clone(self.rgb_array[:, :, 0],
+                                          vdims=[Dimension('R', range=(0, 1))]))
+
 
 
 class ImageGridInterfaceTest(ImageInterfaceTest):
@@ -95,10 +153,20 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
     datatype = 'grid'
 
     def init_data(self):
-        xs = np.linspace(-9, 9, 10)
-        ys = np.linspace(0.5, 9.5, 10)
+        self.xs = np.linspace(-9, 9, 10)
+        self.ys = np.linspace(0.5, 9.5, 10)
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
-        self.image = Image((xs, ys, self.array))
+        self.image = Image((self.xs, self.ys, self.array))
+        self.rgb_array = np.random.rand(10, 10, 3)
+        self.rgb = RGB((self.xs, self.ys, self.rgb_array[:, :, 0],
+                        self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
+
+    
+    def test_select_value_dimension_rgb(self):
+        self.assertEqual(self.rgb[..., 'R'],
+                         self.image.clone((self.xs, self.ys, self.rgb_array[:, :, 0]),
+                                          vdims=[Dimension('R', range=(0, 1))]))
+
 
 
 class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
@@ -109,3 +177,25 @@ class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
 class ImageIrisInterfaceTest(ImageGridInterfaceTest):
 
     datatype = 'cube'
+
+    
+    def init_data(self):
+        xs = np.linspace(-9, 9, 10)
+        ys = np.linspace(0.5, 9.5, 10)
+        self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
+        self.image = Image((xs, ys, self.array))
+
+    def test_reduce_to_scalar(self):
+        raise SkipTest("Not supported")
+
+    def test_reduce_x_dimension(self):
+        raise SkipTest("Not supported")
+
+    def test_reduce_y_dimension(self):
+        raise SkipTest("Not supported")
+
+    def test_select_value_dimension_rgb(self):
+        raise SkipTest("Not supported")
+
+
+        

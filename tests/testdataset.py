@@ -25,16 +25,17 @@ except:
 
 class DatatypeContext(object):
 
-    def __init__(self, datatypes):
+    def __init__(self, datatypes, dataset_type=Dataset):
         self.datatypes = datatypes
+        self.dataset_type = dataset_type
         self._old_datatypes = None
 
     def __enter__(self):
-        self._old_datatypes = Dataset.datatype
-        Dataset.datatype = self.datatypes
+        self._old_datatypes = self.dataset_type.datatype
+        self.dataset_type.datatype = self.datatypes
 
     def __exit__(self, *args):
-        Dataset.datatype = self._old_datatypes
+        self.dataset_type.datatype = self._old_datatypes
 
 
 class HomogeneousColumnTypes(object):
