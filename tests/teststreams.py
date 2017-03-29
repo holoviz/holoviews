@@ -4,7 +4,6 @@ Unit test of the streams system
 import param
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream, PositionX, PositionY, PositionXY, ParamValues
-from holoviews.streams import Rename, Group
 
 
 class TestSubscriber(object):
@@ -136,14 +135,3 @@ class TestSubscribers(ComparisonTestCase):
 
         self.assertEqual(subscriber2.kwargs, dict(x=50, y=100))
         self.assertEqual(subscriber2.call_count, 1)
-
-
-class TestPreprocessors(ComparisonTestCase):
-
-    def test_rename_preprocessor(self):
-        position = PositionXY([Rename(x='x1',y='y1')], x=1, y=3)
-        self.assertEqual(position.contents, dict(x1=1, y1=3))
-
-    def test_group_preprocessor(self):
-        position = PositionXY([Group('mygroup')], x=1, y=3)
-        self.assertEqual(position.contents, dict(mygroup={'x':1,'y':3}))
