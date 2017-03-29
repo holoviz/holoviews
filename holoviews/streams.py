@@ -314,7 +314,7 @@ class Selection1D(Stream):
     A stream representing a 1D selection of objects by their index.
     """
 
-    index = param.List(default=[], doc="""
+    index = param.List(default=[], constant=True, doc="""
         Indices into a 1D datastructure.""")
 
 
