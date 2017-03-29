@@ -117,7 +117,8 @@ class notebook_extension(param.ParameterizedFunction):
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
 
-    logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
+    banner = param.Boolean(default=True, doc="""
+        Toggles display of HoloViews logo and loading message.""")
 
     inline = param.Boolean(default=True, doc="""Whether to inline JS and CSS resources,
         if disabled resources are loaded from CDN if one is available.""")
@@ -206,8 +207,8 @@ class notebook_extension(param.ParameterizedFunction):
         loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
                            for r in resources)
 
-        load_hvjs(logo=p.logo, JS=('holoviews' in resources),
-                  message = '%s successfully loaded in this cell.' % loaded)
+        message = '' if not p.banner else '%s successfully loaded in this cell.' % loaded
+        load_hvjs(logo=p.banner, JS=('holoviews' in resources), message = message)
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
 
