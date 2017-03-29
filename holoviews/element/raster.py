@@ -397,6 +397,18 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             return [getter(self.closest_cell_center(*el)) for el in coords]
 
 
+    def range(self, dim, data_range=True):
+        idx = self.get_dimension_index(dim)
+        dimension = self.get_dimension(dim)
+        rng = super(Image, self).range(dim, data_range)
+        if idx in [0, 1] and data_range and dimension.range == (None, None):
+            low, high = rng
+            density = self.ydensity if idx else self.xdensity
+            halfd = (1./density)/2.
+            return (low-halfd, high+halfd)
+        return rng
+
+
     def table(self, datatype=None):
         """
         Converts the data Element to a Table, optionally may

@@ -93,10 +93,10 @@ class ImageInterfaceTest(ComparisonTestCase):
                          self.array[1:5, 6:7])
 
     def test_range_xdim(self):
-        self.assertEqual(self.image.range(0), (-9, 9))
+        self.assertEqual(self.image.range(0), (-10, 10))
 
     def test_range_ydim(self):
-        self.assertEqual(self.image.range(1), (0.5, 9.5))
+        self.assertEqual(self.image.range(1), (0, 10))
 
     def test_range_vdim(self):
         self.assertEqual(self.image.range(2), (0, 81))
