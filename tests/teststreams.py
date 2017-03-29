@@ -177,3 +177,25 @@ class TestParameterRenaming(ComparisonTestCase):
         with self.assertRaises(KeyError) as cm:
             renamed = xy.rename(x='xtest', y='x')
             self.assertEqual(str(cm).endswith('parameter of the same name'), True)
+
+
+class TestPlotSizeTransform(ComparisonTestCase):
+
+    def test_plotsize_initial_contents_1(self):
+        plotsize = PlotSize(width=300, height=400, scale=0.5)
+        self.assertEqual(plotsize.contents, {'width':300, 'height':400, 'scale':0.5})
+
+    def test_plotsize_update_1(self):
+        plotsize = PlotSize(scale=0.5)
+        plotsize.update(width=300, height=400)
+        self.assertEqual(plotsize.contents, {'width':150, 'height':200, 'scale':0.5})
+
+    def test_plotsize_initial_contents_2(self):
+        plotsize = PlotSize(width=600, height=100, scale=2)
+        self.assertEqual(plotsize.contents, {'width':600, 'height':100, 'scale':2})
+
+    def test_plotsize_update_2(self):
+        plotsize = PlotSize(scale=2)
+        plotsize.update(width=600, height=100)
+        self.assertEqual(plotsize.contents, {'width':1200, 'height':200, 'scale':2})
+
