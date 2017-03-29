@@ -232,12 +232,11 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
         Dataset.__init__(self, data, extents=extents, bounds=None, **params)
 
         (dim2, dim1) = self.interface.shape(self)[:2]
-        l, r = self.range(0)
-        b, t = self.range(1)
         if self.bounds is not None:
             bounds = self.bounds
-        elif bounds is None and None in (l, b, r, t):
+        elif bounds is None and isinstance(data, np.ndarray):
             bounds = BoundingBox()
+
         if bounds is None:
             xvals = self.dimension_values(0, False)
             l, r, xdensity, _ = util.bound_range(xvals, xdensity)
@@ -259,6 +258,10 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
+
+    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
+        agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
+        return Curve(agg) if isinstance(agg, Dataset) else agg
 
 
     def select(self, selection_specs=None, **selection):

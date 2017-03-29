@@ -77,9 +77,11 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1] and obj.bounds:
             l, b, r, t = obj.bounds.lbrt()
             if dim_idx:
-                drange = (b, t)
+                halfd = (1./obj.ydensity)/2.
+                drange = (b+halfd, t-halfd)
             else:
-                drange = (l, r)
+                halfd = (1./obj.xdensity)/2.
+                drange = (l+halfd, r-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(obj.data)[:, :, dim_idx]
@@ -246,17 +248,34 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
+    def unpack_scalar(cls, dataset, data):
+        """
+        Given a dataset object and data in the appropriate format for
+        the interface, return a simple scalar.
+        """
+        if np.isscalar(data) or len(data) != 1:
+            return data
+        key = list(data.keys())[0]
+
+        if len(data[key]) == 1 and key in dataset.vdims:
+            return data[key][0]
+
+
+    @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
         kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
-        
+
         data = np.atleast_1d(function(dataset.data, axis=axes, **kwargs))
-        if np.isscalar(data):
-            return data
+        if not kdims and len(dataset.vdims) == 1:
+            if np.isscalar(data):
+                return data
+            else:
+                return data[0]
         elif len(axes) == 1:
             return {kdims[0]: cls.values(dataset, axes[0], expanded=False),
-                    dataset.vdims[0].name: data}
+                    dataset.vdims[0].name: data[::-1] if axes[0] else data}
 
 
 Interface.register(ImageInterface)

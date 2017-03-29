@@ -444,27 +444,28 @@ class Dataset(Element):
         aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
+        ndims = len(dimensions)
+        min_d, max_d = self.params('kdims').bounds
+        new_type = type(self)
+        if (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d):
+            new_type = Dataset
+
         vdims = self.vdims
         if spreadfn:
             error = self.interface.aggregate(self, dimensions, spreadfn)
             spread_name = spreadfn.__name__
             ndims = len(vdims)
-            error = self.clone(error, kdims=kdims)
-            combined = self.clone(aggregated, kdims=kdims)
+            error = self.clone(error, kdims=kdims, new_type=Dataset)
+            combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for i, d in enumerate(vdims):
                 dim = d('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, False, False)
                 combined = combined.add_dimension(dim, ndims+i, dvals, True)
-            return combined
+            return combined.clone(new_type=new_type)
 
-        ndims = len(dimensions)
-        min_d, max_d = self.params('kdims').bounds
         if np.isscalar(aggregated):
             return aggregated
         else:
-            new_type = None
-            if (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d):
-                new_type = Dataset
             try:
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
                                   new_type=new_type)

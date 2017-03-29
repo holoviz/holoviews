@@ -116,7 +116,7 @@ class CubeInterface(GridInterface):
         if vdims is None:
             vdims = [Dimension(data.name(), unit=str(data.units))]
 
-        return data, {'kdims':kdims, 'vdims':vdims}, {'group':data.name()}
+        return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
     @classmethod
