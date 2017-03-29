@@ -127,10 +127,19 @@ class Stream(param.Parameterized):
         self.registry[id(source)].append(self)
 
 
+    def preprocess(self, param_values):
+        """
+        Method that can be overwritten by subclasses to process the
+        parameter values before the renaming step. Allows transformation
+        of parameter values as a function of other parameter values.
+        """
+        return param_values
+
     @property
     def contents(self):
         filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        return {self._rename.get(k,k):v for (k,v) in filtered.items()}
+        processed = self.preprocess(filtered)
+        return {self._rename.get(k,k):v for (k,v) in processed.items()}
 
 
     def update(self, trigger=True, **kwargs):
