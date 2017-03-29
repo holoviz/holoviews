@@ -178,7 +178,15 @@ class Stream(param.Parameterized):
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
         """
-        self._set_stream_parameters(**kwargs)
+        reverse_map = {v:k for k,v in self._rename.items()}
+        param_kws = {}
+        for (k,v) in kwargs.items():
+            if k in reverse_map:
+               param_kws[reverse_map[k]] = v
+            else:
+                param_kws[k] = v
+
+        self._set_stream_parameters(**param_kws)
         transformed = self.transform()
         if transformed:
             self._set_stream_parameters(**transformed)
