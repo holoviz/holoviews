@@ -51,8 +51,7 @@ class Stream(param.Parameterized):
 
         # Currently building a simple set of subscribers
         groups = [stream.subscribers for stream in streams]
-        hidden = [stream._hidden_subscribers for stream in streams]
-        subscribers = util.unique_iterator([s for subscribers in groups+hidden
+        subscribers = util.unique_iterator([s for subscribers in groups
                                             for s in subscribers])
         for subscriber in subscribers:
             subscriber(**dict(union))
@@ -75,7 +74,6 @@ class Stream(param.Parameterized):
         """
         self._source = source
         self._subscribers = []
-        self._hidden_subscribers = []
         self.linked = linked
         self._rename = self._validate_rename(rename)
 
