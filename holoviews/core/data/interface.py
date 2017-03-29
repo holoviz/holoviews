@@ -152,8 +152,8 @@ class Interface(param.Parameterized):
         boolean to indicate whether a scalar value has been indexed.
         """
         selected = list(selection.keys())
-        all_scalar = all(not isinstance(sel, (tuple, slice, set, list))
-                         for sel in selection.values())
+        all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
+                          and not callable(sel)) for sel in selection.values())
         all_kdims = all(d in selected for d in dataset.kdims)
         return all_scalar and all_kdims and len(dataset.vdims) == 1
 

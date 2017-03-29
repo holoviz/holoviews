@@ -275,7 +275,7 @@ class Image(Dataset, Element2D, SheetCoordinateSystem):
             return self
 
         selection = {self.get_dimension(k).name: slice(*sel) if isinstance(sel, tuple) else sel
-                     for k, sel in selection.items()}
+                     for k, sel in selection.items() if k in self.kdims}
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in self.kdims)
 

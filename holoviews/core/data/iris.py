@@ -76,10 +76,10 @@ class CubeInterface(GridInterface):
             kdims = eltype.kdims
             kdim_names = [kd.name for kd in eltype.kdims]
 
-        if vdims is None:
-            vdims = eltype.vdims
 
         if not isinstance(data, iris.cube.Cube):
+            if vdims is None:
+                vdims = eltype.vdims
             ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
@@ -201,7 +201,8 @@ class CubeInterface(GridInterface):
             constraint = iris.Constraint(**dict(zip(constraints, key)))
             extracted = dataset.data.extract(constraint)
             if drop_dim:
-                extracted = group_type(extracted, kdims=slice_dims).columns()
+                extracted = group_type(extracted, kdims=slice_dims,
+                                       vdims=dataset.vdims).columns()
             cube = group_type(extracted, **group_kwargs)
             data.append((key, cube))
         if issubclass(container_type, NdMapping):
