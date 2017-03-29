@@ -594,16 +594,15 @@ class DynamicMap(HoloMap):
 
     def event(self, trigger=True, **kwargs):
         """
-        This method allows any of the available stream parameters to be
-        updated in an event.
+        This method allows any of the available stream parameters
+        (renamed as appropriate) to be updated in an event.
         """
         stream_params = set(util.stream_parameters(self.streams))
         updated_streams = []
         for stream in self.streams:
-            overlap = set(stream.contents.keys()) & stream_params & set(kwargs.keys())
-            if overlap:
-                stream.update(**dict({k:kwargs[k] for k in overlap}, trigger=False))
-                updated_streams.append(stream)
+            rkwargs = util.rename_stream_kwargs(stream, kwargs, reverse=True)
+            stream.update(**dict(rkwargs, trigger=False))
+            updated_streams.append(stream)
 
         if updated_streams and trigger:
             updated_streams[0].trigger(updated_streams)
