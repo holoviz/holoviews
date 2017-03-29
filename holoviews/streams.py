@@ -95,10 +95,9 @@ class Stream(param.Parameterized):
         self._subscribers = []
 
     def add_subscriber(self, subscriber):
-        if callable(subscriber):
-            self._subscribers.append(subscriber)
-        else:
+        if not callable(subscriber):
             raise TypeError('Subscriber must be a callable.')
+        self._subscribers.append(subscriber)
 
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
