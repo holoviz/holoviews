@@ -92,12 +92,21 @@ class Stream(param.Parameterized):
 
     @property
     def subscribers(self):
+        " Property returning the subscriber list"
         return self._subscribers
 
     def clear(self):
+        """
+        Clear all subscribers registered to this stream.
+        """
         self._subscribers = []
 
     def add_subscriber(self, subscriber):
+        """
+        Register a callable subscriber to this stream which will be
+        invoked either when update is called with trigger=True or when
+        this stream is passed to the trigger classmethod.
+        """
         if not callable(subscriber):
             raise TypeError('Subscriber must be a callable.')
         self._subscribers.append(subscriber)
