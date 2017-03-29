@@ -183,9 +183,9 @@ class Stream(param.Parameterized):
             for (param, const) in zip(params, constants):
                 param.constant = const
             raise
-        else:
-            for (param, const) in zip(params, constants):
-                param.constant = const
+
+        for (param, const) in zip(params, constants):
+            param.constant = const
 
 
     def update(self, trigger=True, **kwargs):
