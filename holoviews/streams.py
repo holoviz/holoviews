@@ -10,17 +10,6 @@ from collections import defaultdict
 from .core import util
 
 
-class Preprocessor(param.Parameterized):
-    """
-    A Preprocessor is a callable that takes a dictionary as an argument
-    and returns a dictionary. Where possible, Preprocessors should have
-    valid reprs that can be evaluated.
-    """
-
-    def __call__(self, params):
-        return params
-
-
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
