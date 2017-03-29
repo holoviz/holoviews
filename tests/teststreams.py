@@ -178,6 +178,19 @@ class TestParameterRenaming(ComparisonTestCase):
             renamed = xy.rename(x='xtest', y='x')
             self.assertEqual(str(cm).endswith('parameter of the same name'), True)
 
+    def test_update_rename_valid(self):
+        xy = PositionXY(x=0, y=4)
+        renamed = xy.rename(x='xtest', y='ytest')
+        renamed.update(x=4, y=8)
+        self.assertEqual(renamed.contents, {'xtest':4, 'ytest':8})
+
+    def test_update_rename_invalid(self):
+        xy = PositionXY(x=0, y=4)
+        renamed = xy.rename(x='xtest', y='ytest')
+        with self.assertRaises(ValueError) as cm:
+            renamed.update(xtest=4, ytest=8)
+            self.assertEqual(str(cm).startsswith("'ytest' is not a parameter of"), True)
+
 
 class TestPlotSizeTransform(ComparisonTestCase):
 

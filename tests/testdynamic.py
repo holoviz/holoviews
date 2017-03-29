@@ -226,3 +226,23 @@ class DynamicTestOverlay(ComparisonTestCase):
         self.assertEqual(overlay.Scatter.I, fn(1, 2))
         # Ensure dmap2 callback was called only once
         self.assertEqual(counter[0], 1)
+
+    def test_dynamic_event_renaming_valid(self):
+
+        def fn(x, y):
+            return Scatter([(x, y)])
+
+        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        dmap = DynamicMap(fn, kdims=[], streams=[xy])
+        dmap.event(x1=1, y1=2)
+
+    def test_dynamic_event_renaming_invalid(self):
+        def fn(x, y):
+            return Scatter([(x, y)])
+
+        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        dmap = DynamicMap(fn, kdims=[], streams=[xy])
+        with self.assertRaises(KeyError) as cm:
+            dmap.event(x=1, y=2)
+            self.assertEqual(str(cm).endswith('from renamed equivalent'), True)
+
