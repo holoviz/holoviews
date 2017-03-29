@@ -3,8 +3,16 @@ Unit test of the streams system
 """
 import param
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import Stream, PositionX, PositionY, PositionXY, ParamValues
+from holoviews.streams import * # noqa (Test all available streams)
 
+def test_all_stream_parameters_constant():
+    all_stream_cls = [v for v in globals().values() if
+                      isinstance(v, type) and issubclass(v, Stream)]
+    for stream_cls in all_stream_cls:
+        for name, param in stream_cls.params().items():
+            if param.constant != True:
+                raise TypeError('Parameter %s of stream %s not declared constant'
+                                % (name, stream_cls.__name__))
 
 class TestSubscriber(object):
 
