@@ -55,6 +55,7 @@ except ImportError:
 
 from ..dimension import Dimension
 from ..element import Element
+from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
 from .. import util
 
@@ -387,6 +388,9 @@ class Dataset(Element):
                 sample[self.get_dimension_index(dim)] = val
             samples = [tuple(sample)]
 
+        # Note: Special handling sampling of gridded 2D data as Curve
+        # may be replaced wih more general handling
+        # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
         if len(samples) == 1:
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
@@ -396,12 +400,12 @@ class Dataset(Element):
             kdims = self.kdims
             if self.interface.gridded and self.ndims == 2 and len(dims) == 1:
                 new_type = Curve
-                selection = selection.columns()
                 kdims = [self.get_dimension(kd) for kd in dims]
+                selection = tuple(selection.columns(kdims+self.vdims).values())
             elif np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
-                selection = selection.columns()
+                selection = tuple(selection.columns(kdims+self.vdims).values())
             return self.clone(selection, kdims=kdims, new_type=new_type)
 
         lens = {len(util.wrap_tuple(s)) for s in samples}
@@ -597,7 +601,7 @@ class Dataset(Element):
             dimensions = self.dimensions()
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return {d.name: self.dimension_values(d) for d in dimensions}
+        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
     @property
