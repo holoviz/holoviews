@@ -140,13 +140,9 @@ class ImageInterface(GridInterface):
         if not any([isinstance(el, slice) for el in coords]):
             return dataset.data[dataset.sheet2matrixidx(*coords)]
 
-        # Compute new bounds
-        ys, xs = dataset.data.shape[:2]
+        # Apply slices
         xidx, yidx = coords
         l, b, r, t = dataset.bounds.lbrt()
-        xdensity, ydensity = dataset.xdensity, dataset.ydensity
-        xunit = (1./xdensity)
-        yunit = (1./ydensity)
         if isinstance(xidx, slice):
             l = l if xidx.start is None else max(l, xidx.start)
             r = r if xidx.stop is None else min(r, xidx.stop)
@@ -154,41 +150,8 @@ class ImageInterface(GridInterface):
             b = b if yidx.start is None else max(b, yidx.start)
             t = t if yidx.stop is None else min(t, yidx.stop)
         bounds = BoundingBox(points=((l, b), (r, t)))
-
-        # Apply new bounds
         slc = Slice(bounds, dataset)
         data = slc.submatrix(dataset.data)
-
-        # Apply scalar and list indices
-        l, b, r, t = slc.compute_bounds(dataset).lbrt()
-        if not isinstance(xidx, slice):
-            if not isinstance(xidx, (list, set)): xidx = [xidx]
-            if len(xidx) > 1:
-                xdensity = xdensity*(float(len(xidx))/xs)
-            idxs = []
-            ls, rs = [], []
-            for idx in xidx:
-                xc, _ = dataset.closest_cell_center(idx, b)
-                ls.append(xc-xunit/2)
-                rs.append(xc+xunit/2)
-                _, x = dataset.sheet2matrixidx(idx, b)
-                idxs.append(x)
-            l, r = np.min(ls), np.max(rs)
-            data = data[:, np.array(idxs)]
-        elif not isinstance(yidx, slice):
-            if not isinstance(yidx, (set, list)): yidx = [yidx]
-            if len(yidx) > 1:
-                ydensity = ydensity*(float(len(yidx))/ys)
-            idxs = []
-            bs, ts = [], []
-            for idx in yidx:
-                _, yc = dataset.closest_cell_center(l, idx)
-                bs.append(yc-yunit/2)
-                ts.append(yc+yunit/2)
-                y, _ = dataset.sheet2matrixidx(l, idx)
-                idxs.append(y)
-            b, t = np.min(bs), np.max(ts)
-            data = data[np.array(idxs), :]
         return data
 
 
