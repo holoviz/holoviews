@@ -82,22 +82,6 @@ class DynamicMethods(ComparisonTestCase):
         self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
 
 
-
-class DynamicTestCallableOpen(ComparisonTestCase):
-
-    def test_callable_open_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-        self.assertEqual(dmap.mode, 'open')
-
-    def test_callable_open_clone(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-        self.assertEqual(dmap, dmap.clone())
-
-
-
-
 class DynamicTestCallableBounded(ComparisonTestCase):
 
     def test_callable_bounded_init(self):
