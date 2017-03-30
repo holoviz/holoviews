@@ -480,10 +480,10 @@ class DynamicMap(HoloMap):
        the cache is full.""")
 
     sampled = param.Boolean(default=False, doc="""
-       Allows defining a DynamicMap in bounded mode without defining the
-       dimension bounds or values. The DynamicMap may then be explicitly
-       sampled via getitem or the sampling is determined during plotting
-       by a HoloMap with fixed sampling.
+       Allows defining a DynamicMap without defining the dimension
+       bounds or values. The DynamicMap may then be explicitly sampled
+       via getitem or the sampling is determined during plotting by a
+       HoloMap with fixed sampling.
        """)
 
     def __init__(self, callback, initial_items=None, **params):
@@ -496,13 +496,10 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
 
-        self.mode = 'bounded'
-
-
     def _initial_key(self):
         """
-        Construct an initial key for bounded mode based on the lower
-        range bounds or values on the key dimensions.
+        Construct an initial key for based on the lower range bounds or
+        values on the key dimensions.
         """
         key = []
         for kdim in self.kdims:
@@ -614,7 +611,6 @@ class DynamicMap(HoloMap):
         The data_slice may specify slices into each value in the
         the cross-product.
         """
-        if self.mode != 'bounded': return None
         if not any(isinstance(el, (list, set)) for el in tuple_key):
             return None
         if len(tuple_key)==1:
@@ -651,8 +647,7 @@ class DynamicMap(HoloMap):
         """
         slices = [el for el in tuple_key if isinstance(el, slice)]
         if any(el.step for el in slices):
-            raise Exception("Slices cannot have a step argument "
-                            "in DynamicMap bounded mode ")
+            raise Exception("DynamicMap slices cannot have a step argument")
         elif len(slices) not in [0, len(tuple_key)]:
             raise Exception("Slices must be used exclusively or not at all")
         elif not slices:
@@ -681,11 +676,9 @@ class DynamicMap(HoloMap):
 
     def __getitem__(self, key):
         """
-        Return an element for any key chosen key (in'bounded mode') or
-        for a previously generated key that is still in the cache
-        (for one of the 'open' modes). Also allows for usual deep
-        slicing semantics by slicing values in the cache and applying
-        the deep slice to newly generated values.
+        Return an element for any key chosen key. Also allows for usual
+        deep slicing semantics by slicing values in the cache and
+        applying the deep slice to newly generated values.
         """
         # Split key dimensions and data slices
         sample = False
@@ -698,8 +691,8 @@ class DynamicMap(HoloMap):
             map_slice, data_slice = self._split_index(key)
         tuple_key = util.wrap_tuple_streams(map_slice, self.kdims, self.streams)
 
-        # Validation for bounded mode
-        if self.mode == 'bounded' and not sample:
+        # Validation
+        if not sample:
             sliced = self._slice_bounded(tuple_key, data_slice)
             if sliced is not None:
                 return sliced
@@ -711,14 +704,8 @@ class DynamicMap(HoloMap):
             if dimensionless:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
-            # Return selected cache items in a new DynamicMap
-            if isinstance(cache, DynamicMap) and self.mode=='open':
-                cache = self.clone(cache)
         except KeyError as e:
             cache = None
-            if self.mode == 'open' and len(self.data)>0:
-                raise KeyError(str(e) + " Note: Cannot index outside "
-                               "available cache in open interval mode.")
 
         # If the key expresses a cross product, compute the elements and return
         product = self._cross_product(tuple_key, cache.data if cache else {}, data_slice)
