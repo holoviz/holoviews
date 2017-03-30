@@ -189,10 +189,10 @@ class TestParameterRenaming(ComparisonTestCase):
 
     def test_update_rename_invalid(self):
         xy = PositionXY(x=0, y=4)
-        renamed = xy.rename(x='xtest', y='ytest')
+        renamed = xy.rename(y='ytest')
         regexp = "ytest' is not a parameter of(.+?)"
         with self.assertRaisesRegexp(ValueError, regexp):
-            renamed.update(xtest=4, ytest=8)
+            renamed.update(ytest=8)
 
 
 class TestPlotSizeTransform(ComparisonTestCase):
