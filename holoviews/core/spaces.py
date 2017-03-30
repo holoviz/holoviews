@@ -502,10 +502,6 @@ class DynamicMap(HoloMap):
                 stream.source = self
 
         self.counter = 0
-        if self.callback is None:
-            raise Exception("A suitable callback must be "
-                            "declared to create a DynamicMap")
-
         self.call_mode = self._validate_mode()
         self.mode = 'bounded' if self.call_mode == 'key' else 'open'
 
