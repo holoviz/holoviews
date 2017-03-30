@@ -104,8 +104,9 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
-        # List comparisons
+        # List and tuple comparisons
         cls.equality_type_funcs[list] =         cls.compare_lists
+        cls.equality_type_funcs[tuple] =        cls.compare_tuples
 
         #Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
@@ -214,6 +215,13 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_lists(cls, l1, l2, msg='Lists'):
         cls.assertEqual(len(l1), len(l2), "list lengths mismatched")
+        for v1, v2 in zip(l1, l2):
+            cls.assertEqual(v1, v2)
+
+
+    @classmethod
+    def compare_tuples(cls, l1, l2, msg='Tuples'):
+        cls.assertEqual(len(l1), len(l2), "tuple lengths mismatched")
         for v1, v2 in zip(l1, l2):
             cls.assertEqual(v1, v2)
 
