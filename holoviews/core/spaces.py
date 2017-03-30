@@ -479,11 +479,6 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
-    cache_interval = param.Integer(default=1, doc="""
-       When the element counter modulo the cache_interval is zero, the
-       element will be cached and therefore accessible when casting to a
-       HoloMap.  Applicable in open mode only.""")
-
     sampled = param.Boolean(default=False, doc="""
        Allows defining a DynamicMap in bounded mode without defining the
        dimension bounds or values. The DynamicMap may then be explicitly
@@ -501,9 +496,7 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
 
-        self.counter = 0
-        self.call_mode = self._validate_mode()
-        self.mode = 'bounded' if self.call_mode == 'key' else 'open'
+        self.mode = 'bounded'
 
 
     def _initial_key(self):
@@ -518,23 +511,6 @@ class DynamicMap(HoloMap):
             elif kdim.range:
                 key.append(kdim.range[0])
         return tuple(key)
-
-
-    def _validate_mode(self):
-        """
-        Check the key dimensions and callback to determine the calling mode.
-        """
-        if self.sampled:
-            return 'key'
-        # Any unbounded kdim (any direction) implies open mode
-        for kdim in self.kdims:
-            if kdim.name in util.stream_parameters(self.streams):
-                return 'key'
-            if kdim.values:
-                continue
-            if None in kdim.range:
-                return 'counter'
-        return 'key'
 
 
     def _validate_key(self, key):
@@ -593,8 +569,7 @@ class DynamicMap(HoloMap):
         Execute the callback, validating both the input key and output
         key where applicable.
         """
-        if self.call_mode == 'key':
-            self._validate_key(args)      # Validate input key
+        self._validate_key(args)      # Validate input key
 
         # Additional validation needed to ensure kwargs don't clash
         kdims = [kdim.name for kdim in self.kdims]
@@ -602,15 +577,7 @@ class DynamicMap(HoloMap):
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
         retval = self.callback(*args, **dict(flattened))
-        if self.call_mode=='key':
-            return self._style(retval)
-
-        if isinstance(retval, tuple):
-            self._validate_key(retval[0]) # Validated output key
-            return (retval[0], self._style(retval[1]))
-        else:
-            self._validate_key((self.counter,))
-            return (self.counter, self._style(retval))
+        return self._style(retval)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
@@ -625,13 +592,10 @@ class DynamicMap(HoloMap):
                                                    shared_data, new_type,
                                                    *(data,) + args, **overrides)
 
-
     def reset(self):
         """
         Return a cleared dynamic map with a cleared cached
-        and a reset counter.
         """
-        self.counter = 0
         self.data = OrderedDict()
         return self
 
@@ -764,9 +728,6 @@ class DynamicMap(HoloMap):
         # Not a cross product and nothing cached so compute element.
         if cache is not None: return cache
         val = self._execute_callback(*tuple_key)
-        if self.call_mode == 'counter':
-            val = val[1]
-
         if data_slice:
             val = self._dataslice(val, data_slice)
         self._cache(tuple_key, val)
@@ -811,36 +772,10 @@ class DynamicMap(HoloMap):
         """
         cache_size = (1 if util.dimensionless_contents(self.streams, self.kdims)
                       else self.cache_size)
-        if self.mode == 'open' and (self.counter % self.cache_interval)!=0:
-            return
         if len(self) >= cache_size:
             first_key = next(k for k in self.data)
             self.data.pop(first_key)
         self.data[key] = val
-
-
-    def next(self):
-        """
-        Interface for 'open' mode. For generators, this simply calls the
-        next() method. For callables callback, the counter is supplied
-        as a single argument.
-        """
-        if self.mode == 'bounded':
-            raise Exception("The next() method should only be called in "
-                            "one of the open modes.")
-
-        retval = self._execute_callback(*(self.counter,))
-
-        (key, val) = (retval if isinstance(retval, tuple)
-                      else (self.counter, retval))
-
-        key = util.wrap_tuple_streams(key, self.kdims, self.streams)
-        if len(key) != len(self.key_dimensions):
-            raise Exception("Generated key does not match the number of key dimensions")
-
-        self._cache(key, val)
-        self.counter += 1
-        return val
 
 
     def relabel(self, label=None, group=None, depth=1):

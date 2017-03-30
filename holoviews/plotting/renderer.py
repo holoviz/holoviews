@@ -168,13 +168,7 @@ class Renderer(Exporter):
             if dmap.sampled:
                 # Skip initialization until plotting code
                 continue
-            if dmap.call_mode == 'key':
-                dmap[dmap._initial_key()]
-            else:
-                try:
-                    next(dmap)
-                except StopIteration: # Exhausted DynamicMap
-                    raise SkipRendering("DynamicMap generator exhausted.")
+            dmap[dmap._initial_key()]
 
         if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
