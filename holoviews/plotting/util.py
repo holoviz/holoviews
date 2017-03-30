@@ -179,7 +179,7 @@ def get_dynamic_mode(composite):
     elif dynamic_sampled and not holomaps:
         raise Exception("DynamicMaps in sampled mode must be displayed alongside "
                         "a HoloMap to define the sampling.")
-    return 'bounded' if dynmaps and not holomaps else None, dynamic_sampled
+    return dynmaps and not holomaps, dynamic_sampled
 
 
 def initialize_sampled(obj, dimensions, key):

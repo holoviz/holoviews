@@ -79,7 +79,6 @@ class Dynamic(param.ParameterizedFunction):
                 return self._process(map_obj[key], key)
         else:
             def dynamic_operation(*key, **kwargs):
-                key = key[0] if map_obj.mode == 'open' else key
                 self.p.kwargs.update(kwargs)
                 _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
                 return self._process(el, key)

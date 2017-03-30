@@ -308,12 +308,9 @@ class Renderer(Exporter):
                 widget_type = 'scrubber'
             else:
                 widget_type = 'widgets'
-        elif dynamic == 'open': widget_type = 'scrubber'
-        elif dynamic == 'bounded': widget_type = 'widgets'
-        elif widget_type == 'widgets' and dynamic == 'open':
-            raise ValueError('Selection widgets not supported in dynamic open mode')
-        elif widget_type == 'scrubber' and dynamic == 'bounded':
-            raise ValueError('Scrubber widget not supported in dynamic bounded mode')
+        elif dynamic: widget_type = 'widgets'
+        elif widget_type == 'scrubber' and dynamic:
+            raise ValueError('DynamicMap do not support scrubber widget')
 
         if widget_type in [None, 'auto']:
             holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]
