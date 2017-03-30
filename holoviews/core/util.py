@@ -914,6 +914,41 @@ def wrap_tuple(unwrapped):
     return (unwrapped if isinstance(unwrapped, tuple) else (unwrapped,))
 
 
+def stream_name_mapping(stream, exclude_params=['name'], reverse=False):
+    """
+    Return a complete dictionary mapping between stream parameter names
+    to their applicable renames, excluding parameters listed in
+    exclude_params.
+
+    If reverse is True, the mapping is from the renamed strings to the
+    original stream parameter names.
+    """
+    filtered = [k for k in stream.params().keys() if k not in exclude_params]
+    mapping = {k:stream._rename.get(k,k) for k in filtered}
+    if reverse:
+        return {v:k for k,v in mapping.items()}
+    else:
+        return mapping
+
+def rename_stream_kwargs(stream, kwargs, reverse=False):
+    """
+    Given a stream and a kwargs dictionary of parameter values, map to
+    the corresponding dictionary where the keys are substituted with the
+    appropriately renamed string.
+
+    If reverse, the output will be a dictionary using the original
+    parameter names given a dictionary using the renamed equivalents.
+    """
+    mapped_kwargs = {}
+    mapping = stream_name_mapping(stream, reverse=reverse)
+    for k,v in kwargs.items():
+        if k not in mapping:
+            msg = 'Could not map key {key} {direction} renamed equivalent'
+            direction = 'from' if reverse else 'to'
+            raise KeyError(msg.format(key=repr(k), direction=direction))
+        mapped_kwargs[mapping[k]] = v
+    return mapped_kwargs
+
 
 def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     """

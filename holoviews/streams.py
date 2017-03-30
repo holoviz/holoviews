@@ -51,8 +51,7 @@ class Stream(param.Parameterized):
 
         # Currently building a simple set of subscribers
         groups = [stream.subscribers for stream in streams]
-        hidden = [stream._hidden_subscribers for stream in streams]
-        subscribers = util.unique_iterator([s for subscribers in groups+hidden
+        subscribers = util.unique_iterator([s for subscribers in groups
                                             for s in subscribers])
         for subscriber in subscribers:
             subscriber(**dict(union))
@@ -61,8 +60,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, rename={}, source=None, subscribers=[],
-                 linked=True, **params):
+    def __init__(self, rename={}, source=None, subscribers=[], linked=True, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -75,8 +73,10 @@ class Stream(param.Parameterized):
         plot, to disable this set linked=False
         """
         self._source = source
-        self.subscribers = subscribers
-        self._hidden_subscribers = []
+        self._subscribers = []
+        for subscriber in subscribers:
+            self.add_subscriber(subscriber)
+
         self.linked = linked
         self._rename = self._validate_rename(rename)
 
@@ -88,6 +88,28 @@ class Stream(param.Parameterized):
         super(Stream, self).__init__(**params)
         if source:
             self.registry[id(source)].append(self)
+
+
+    @property
+    def subscribers(self):
+        " Property returning the subscriber list"
+        return self._subscribers
+
+    def clear(self):
+        """
+        Clear all subscribers registered to this stream.
+        """
+        self._subscribers = []
+
+    def add_subscriber(self, subscriber):
+        """
+        Register a callable subscriber to this stream which will be
+        invoked either when update is called with trigger=True or when
+        this stream is passed to the trigger classmethod.
+        """
+        if not callable(subscriber):
+            raise TypeError('Subscriber must be a callable.')
+        self._subscribers.append(subscriber)
 
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
@@ -109,7 +131,6 @@ class Stream(param.Parameterized):
         params = {k:v for k,v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=self._source,
-                              subscribers=self.subscribers,
                               linked=self.linked, **params)
 
 
@@ -156,15 +177,23 @@ class Stream(param.Parameterized):
         constants = [p.constant for p in params]
         for param in params:
             param.constant = False
-        self.set_param(**kwargs)
+        try:
+            self.set_param(**kwargs)
+        except Exception as e:
+            for (param, const) in zip(params, constants):
+                param.constant = const
+            raise
+
         for (param, const) in zip(params, constants):
             param.constant = const
 
+
     def update(self, trigger=True, **kwargs):
         """
-        The update method updates the stream parameters in response to
-        some event. If the stream has a custom transform method, this
-        is applied to transform the parameter values accordingly.
+        The update method updates the stream parameters (without any
+        renaming applied) in response to some event. If the stream has a
+        custom transform method, this is applied to transform the
+        parameter values accordingly.
 
         If trigger is enabled, the trigger classmethod is invoked on
         this particular Stream instance.
@@ -175,7 +204,6 @@ class Stream(param.Parameterized):
             self._set_stream_parameters(**transformed)
         if trigger:
             self.trigger([self])
-
 
     def __repr__(self):
         cls_name = self.__class__.__name__
