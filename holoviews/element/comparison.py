@@ -25,7 +25,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from . import *    # noqa (All Elements need to support comparison)
 from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix)
+                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -105,7 +105,8 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
         #Dictionary comparisons
-        cls.equality_type_funcs[dict] =        cls.compare_dictionaries
+        cls.equality_type_funcs[dict] =         cls.compare_dictionaries
+        cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
