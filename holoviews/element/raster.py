@@ -278,7 +278,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
     def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         agg = super(Image, self).aggregate(dimensions, function, spreadfn, **kwargs)
-        return Curve(agg) if isinstance(agg, Dataset) else agg
+        return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
 
 
     def select(self, selection_specs=None, **selection):

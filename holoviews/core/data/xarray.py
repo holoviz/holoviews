@@ -216,16 +216,18 @@ class XArrayInterface(GridInterface):
         data = dataset.data.sel(**validated)
 
         # Restore constant dimensions
+        indexed = cls.indexed(dataset, selection)
         dropped = {d.name: np.atleast_1d(data[d.name])
                    for d in dataset.kdims
                    if not data[d.name].data.shape}
-        if dropped:
+        if dropped and not indexed:
             data = data.assign_coords(**dropped)
 
-        indexed = cls.indexed(dataset, selection)
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
             return data[dataset.vdims[0].name].item()
+        elif indexed:
+            return np.array([data[vd.name].item() for vd in dataset.vdims])
         return data
 
     @classmethod

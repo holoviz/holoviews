@@ -281,10 +281,13 @@ class GridInterface(DictInterface):
         for vdim in dataset.vdims:
             data[vdim.name] = dataset.data[vdim.name][index]
 
-        if indexed and len(dataset.vdims) == 1:
-            arr = np.squeeze(data[dataset.vdims[0].name])
-            return arr if np.isscalar(arr) else arr[()]
-
+        if indexed:
+            if len(dataset.vdims) == 1:
+                arr = np.squeeze(data[dataset.vdims[0].name])
+                return arr if np.isscalar(arr) else arr[()]
+            else:
+                return np.array([np.squeeze(data[vd.name])
+                                 for vd in dataset.vdims])
         return data
 
 

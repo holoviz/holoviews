@@ -274,11 +274,11 @@ class ImageInterface(GridInterface):
                      for kdim in dataset.kdims if kdim not in kdims)
 
         data = np.atleast_1d(function(dataset.data, axis=axes, **kwargs))
-        if not kdims and len(dataset.vdims) == 1:
-            if np.isscalar(data):
-                return data
+        if not kdims:
+            if len(dataset.vdims) == 1:
+                return data if np.isscalar(data) else data[0]
             else:
-                return data[0]
+                return {vd.name: v for vd, v in zip(dataset.vdims, data)}
         elif len(axes) == 1:
             return {kdims[0]: cls.values(dataset, axes[0], expanded=False),
                     dataset.vdims[0].name: data[::-1] if axes[0] else data}

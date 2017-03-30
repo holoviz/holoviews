@@ -183,7 +183,7 @@ class ArrayInterface(Interface):
             selection_mask = cls.select_mask(dataset, selection)
         indexed = cls.indexed(dataset, selection)
         data = np.atleast_2d(dataset.data[selection_mask, :])
-        if len(data) == 1 and indexed:
+        if len(data) == 1 and indexed and len(dataset.vdims) == 1:
             data = data[0, dataset.ndims]
         return data
 
