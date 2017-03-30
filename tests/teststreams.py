@@ -153,14 +153,15 @@ class TestParameterRenaming(ComparisonTestCase):
         self.assertEqual(xy.contents, {'xtest':0, 'ytest':4})
 
     def test_invalid_rename_constructor(self):
-        with self.assertRaises(KeyError) as cm:
+        regexp = '(.+?)is not a stream parameter'
+        with self.assertRaisesRegexp(KeyError, regexp):
             PositionXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
-            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+            self.assertEqual(str(cm).endswith(), True)
 
     def test_clashing_rename_constructor(self):
-        with self.assertRaises(KeyError) as cm:
+        regexp = '(.+?)parameter of the same name'
+        with self.assertRaisesRegexp(KeyError, regexp):
             PositionXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
-            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
 
     def test_simple_rename_method(self):
         xy = PositionXY(x=0, y=4)
@@ -169,15 +170,16 @@ class TestParameterRenaming(ComparisonTestCase):
 
     def test_invalid_rename_method(self):
         xy = PositionXY(x=0, y=4)
-        with self.assertRaises(KeyError) as cm:
+        regexp = '(.+?)is not a stream parameter'
+        with self.assertRaisesRegexp(KeyError, regexp):
             renamed = xy.rename(x='xtest', z='ytest')
-            self.assertEqual(str(cm).endswith('is not a stream parameter'), True)
+
 
     def test_clashing_rename_method(self):
         xy = PositionXY(x=0, y=4)
-        with self.assertRaises(KeyError) as cm:
+        regexp = '(.+?)parameter of the same name'
+        with self.assertRaisesRegexp(KeyError, regexp):
             renamed = xy.rename(x='xtest', y='x')
-            self.assertEqual(str(cm).endswith('parameter of the same name'), True)
 
     def test_update_rename_valid(self):
         xy = PositionXY(x=0, y=4)
@@ -188,9 +190,9 @@ class TestParameterRenaming(ComparisonTestCase):
     def test_update_rename_invalid(self):
         xy = PositionXY(x=0, y=4)
         renamed = xy.rename(x='xtest', y='ytest')
-        with self.assertRaises(ValueError) as cm:
+        regexp = "ytest' is not a parameter of(.+?)"
+        with self.assertRaisesRegexp(ValueError, regexp):
             renamed.update(xtest=4, ytest=8)
-            self.assertEqual(str(cm).startsswith("'ytest' is not a parameter of"), True)
 
 
 class TestPlotSizeTransform(ComparisonTestCase):
