@@ -460,10 +460,13 @@ class DynamicMap(HoloMap):
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
 
-    callback = param.Parameter(doc="""
+    callback = param.ClassSelector(class_=Callable, doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
-        as any number of stream parameters defined on the input streams.""")
+        as any number of stream parameters defined on the input streams.
+
+        If the callable is an instance of Callable it will be used
+        directly, otherwise it will be automatically wrapped in one.""")
 
     streams = param.List(default=[], doc="""
        List of Stream instances to associate with the DynamicMap. The
