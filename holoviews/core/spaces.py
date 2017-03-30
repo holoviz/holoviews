@@ -111,17 +111,11 @@ class HoloMap(UniformNdMapping, Overlayable):
             grouped =  dict([(g, [v for _, v in group])
                              for g, group in groupby(keys, lambda x: x[0])])
             dimensions = [d(values=grouped[d.name]) for d in dimensions]
-            mode = 'bounded'
             map_obj = None
-        elif (isinstance(self, DynamicMap) and (other, DynamicMap) and
-            self.mode != other.mode):
-            raise ValueError("Cannot overlay DynamicMaps with mismatching mode.")
-        else:
-            map_obj = self if isinstance(self, DynamicMap) else other
-            mode = map_obj.mode
+
+        map_obj = self if isinstance(self, DynamicMap) else other
 
         def dynamic_mul(*key, **kwargs):
-            key = key[0] if mode == 'open' else key
             layers = []
             try:
                 if isinstance(self, DynamicMap):
