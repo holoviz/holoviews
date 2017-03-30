@@ -489,7 +489,7 @@ class DynamicMap(HoloMap):
        """)
 
     def __init__(self, callback, initial_items=None, **params):
-        if not isinstance(callback, (Callable, types.GeneratorType)):
+        if not isinstance(callback, Callable):
             callback = Callable(callable_function=callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
@@ -525,12 +525,6 @@ class DynamicMap(HoloMap):
         """
         Check the key dimensions and callback to determine the calling mode.
         """
-        isgenerator = isinstance(self.callback, types.GeneratorType)
-        if isgenerator:
-            if self.sampled:
-                raise ValueError("Cannot set DynamicMap containing generator "
-                                 "to sampled")
-            return 'generator'
         if self.sampled:
             return 'key'
         # Any unbounded kdim (any direction) implies open mode
@@ -603,15 +597,12 @@ class DynamicMap(HoloMap):
         if self.call_mode == 'key':
             self._validate_key(args)      # Validate input key
 
-        if self.call_mode == 'generator':
-            retval = next(self.callback)
-        else:
-            # Additional validation needed to ensure kwargs don't clash
-            kdims = [kdim.name for kdim in self.kdims]
-            kwarg_items = [s.contents.items() for s in self.streams]
-            flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
-                         if k not in kdims]
-            retval = self.callback(*args, **dict(flattened))
+        # Additional validation needed to ensure kwargs don't clash
+        kdims = [kdim.name for kdim in self.kdims]
+        kwarg_items = [s.contents.items() for s in self.streams]
+        flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
+                     if k not in kdims]
+        retval = self.callback(*args, **dict(flattened))
         if self.call_mode=='key':
             return self._style(retval)
 
@@ -641,8 +632,6 @@ class DynamicMap(HoloMap):
         Return a cleared dynamic map with a cleared cached
         and a reset counter.
         """
-        if self.call_mode == 'generator':
-            raise Exception("Cannot reset generators.")
         self.counter = 0
         self.data = OrderedDict()
         return self
@@ -841,8 +830,7 @@ class DynamicMap(HoloMap):
             raise Exception("The next() method should only be called in "
                             "one of the open modes.")
 
-        args = () if self.call_mode == 'generator' else (self.counter,)
-        retval = self._execute_callback(*args)
+        retval = self._execute_callback(*(self.counter,))
 
         (key, val) = (retval if isinstance(retval, tuple)
                       else (self.counter, retval))
