@@ -598,9 +598,14 @@ class DynamicMap(HoloMap):
         (renamed as appropriate) to be updated in an event.
         """
         stream_params = set(util.stream_parameters(self.streams))
+        for k in stream_params - set(kwargs.keys()):
+            raise KeyError('Key %r does not correspond to any stream parameter')
+
         updated_streams = []
         for stream in self.streams:
-            rkwargs = util.rename_stream_kwargs(stream, kwargs, reverse=True)
+            applicable_kws = {k:v for k,v in kwargs.items()
+                              if k in set(stream.contents.keys())}
+            rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
             stream.update(**dict(rkwargs, trigger=False))
             updated_streams.append(stream)
 
