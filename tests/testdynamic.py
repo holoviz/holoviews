@@ -87,7 +87,6 @@ class DynamicTestCallableBounded(ComparisonTestCase):
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertEqual(dmap.mode, 'bounded')
 
     def test_generator_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -100,7 +99,6 @@ class DynamicTestSampledBounded(ComparisonTestCase):
     def test_sampled_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
-        self.assertEqual(dmap.mode, 'bounded')
 
     def test_sampled_bounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
