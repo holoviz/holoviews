@@ -585,7 +585,7 @@ class GenericElementPlot(DimensionedPlot):
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
-        dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
+        dynamic = isinstance(element, DynamicMap) and not element.sampled
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
