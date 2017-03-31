@@ -168,13 +168,7 @@ class Renderer(Exporter):
             if dmap.sampled:
                 # Skip initialization until plotting code
                 continue
-            if dmap.call_mode == 'key':
-                dmap[dmap._initial_key()]
-            else:
-                try:
-                    next(dmap)
-                except StopIteration: # Exhausted DynamicMap
-                    raise SkipRendering("DynamicMap generator exhausted.")
+            dmap[dmap._initial_key()]
 
         if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
@@ -314,12 +308,9 @@ class Renderer(Exporter):
                 widget_type = 'scrubber'
             else:
                 widget_type = 'widgets'
-        elif dynamic == 'open': widget_type = 'scrubber'
-        elif dynamic == 'bounded': widget_type = 'widgets'
-        elif widget_type == 'widgets' and dynamic == 'open':
-            raise ValueError('Selection widgets not supported in dynamic open mode')
-        elif widget_type == 'scrubber' and dynamic == 'bounded':
-            raise ValueError('Scrubber widget not supported in dynamic bounded mode')
+        elif dynamic: widget_type = 'widgets'
+        elif widget_type == 'scrubber' and dynamic:
+            raise ValueError('DynamicMap do not support scrubber widget')
 
         if widget_type in [None, 'auto']:
             holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]

@@ -82,56 +82,11 @@ class DynamicMethods(ComparisonTestCase):
         self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
 
 
-
-
-class DynamicTestGeneratorOpen(ComparisonTestCase):
-
-    def test_generator_open_init(self):
-        generator = (Image(sine_array(0,i)) for i in range(10))
-        dmap=DynamicMap(generator)
-        self.assertEqual(dmap.mode, 'open')
-
-    def test_generator_open_clone(self):
-        generator = (Image(sine_array(0,i)) for i in range(10))
-        dmap=DynamicMap(generator)
-        self.assertEqual(dmap, dmap.clone())
-
-    def test_generator_open_stopiteration(self):
-        generator = (Image(sine_array(0,i)) for i in range(10))
-        dmap=DynamicMap(generator)
-        for i in range(10):
-            el = next(dmap)
-            self.assertEqual(type(el), Image)
-        try:
-            el = next(dmap)
-            raise AssertionError("StopIteration not raised when expected")
-        except Exception as e:
-            if e.__class__ != StopIteration:
-                raise AssertionError("StopIteration was expected, got %s" % e)
-
-
-
-class DynamicTestCallableOpen(ComparisonTestCase):
-
-    def test_callable_open_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-        self.assertEqual(dmap.mode, 'open')
-
-    def test_callable_open_clone(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-        self.assertEqual(dmap, dmap.clone())
-
-
-
-
 class DynamicTestCallableBounded(ComparisonTestCase):
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
-        self.assertEqual(dmap.mode, 'bounded')
 
     def test_generator_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
@@ -144,7 +99,6 @@ class DynamicTestSampledBounded(ComparisonTestCase):
     def test_sampled_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, sampled=True)
-        self.assertEqual(dmap.mode, 'bounded')
 
     def test_sampled_bounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))

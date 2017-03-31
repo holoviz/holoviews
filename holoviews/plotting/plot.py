@@ -211,10 +211,10 @@ class DimensionedPlot(Plot):
         """
         Get the state of the Plot for a given frame number.
         """
-        if not self.dynamic == 'open' and isinstance(frame, int) and frame > len(self):
+        if isinstance(frame, int) and frame > len(self):
             self.warning("Showing last frame available: %d" % len(self))
         if not self.drawn: self.handles['fig'] = self.initialize_plot()
-        if not self.dynamic == 'open' and not isinstance(frame, tuple):
+        if not isinstance(frame, tuple):
             frame = self.keys[frame]
         self.update_frame(frame)
         return self.state
@@ -267,8 +267,6 @@ class DimensionedPlot(Plot):
         Returns the formatted dimension group strings
         for a particular frame.
         """
-        if self.dynamic == 'open' and self.current_key:
-            key = self.current_key
         if self.layout_dimensions is not None:
             dimensions, key = zip(*self.layout_dimensions.items())
         elif not self.dynamic and (not self.uniform or len(self) == 1) or self.subplot:
@@ -587,7 +585,7 @@ class GenericElementPlot(DimensionedPlot):
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
-        dynamic = False if not isinstance(element, DynamicMap) or element.sampled else element.mode
+        dynamic = isinstance(element, DynamicMap) and not element.sampled
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
@@ -980,17 +978,7 @@ class GenericCompositePlot(DimensionedPlot):
             self.current_key = key
 
         for path, item in self.layout.items():
-            if self.dynamic == 'open':
-                if keyisint:
-                    counts = item.traverse(lambda x: x.counter, (DynamicMap,))
-                    if key[0] >= counts[0]:
-                        item.traverse(lambda x: next(x), (DynamicMap,))
-                    dim_keys = item.traverse(nthkey_fn, (DynamicMap,))[0]
-                else:
-                    dim_keys = zip([d.name for d in self.dimensions
-                                    if d in item.dimensions('key')], key)
-                self.current_key = tuple(k[1] for k in dim_keys)
-            elif item.traverse(lambda x: x, [DynamicMap]):
+            if item.traverse(lambda x: x, [DynamicMap]):
                 key, frame = util.get_dynamic_item(item, self.dimensions, key)
                 layout_frame[path] = frame
                 continue

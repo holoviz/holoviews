@@ -173,20 +173,13 @@ def get_dynamic_mode(composite):
     "Returns the common mode of the dynamic maps in given composite object"
     dynmaps = composite.traverse(lambda x: x, [DynamicMap])
     holomaps = composite.traverse(lambda x: x, ['HoloMap'])
-    dynamic_modes = [m.call_mode for m in dynmaps]
     dynamic_sampled = any(m.sampled for m in dynmaps)
     if holomaps:
         validate_sampled_mode(holomaps, dynmaps)
     elif dynamic_sampled and not holomaps:
         raise Exception("DynamicMaps in sampled mode must be displayed alongside "
                         "a HoloMap to define the sampling.")
-    if len(set(dynamic_modes)) > 1:
-        raise Exception("Cannot display composites of DynamicMap objects "
-                        "with different interval modes (i.e open or bounded mode).")
-    elif dynamic_modes and not holomaps:
-        return 'bounded' if dynamic_modes[0] == 'key' else 'open', dynamic_sampled
-    else:
-        return None, dynamic_sampled
+    return dynmaps and not holomaps, dynamic_sampled
 
 
 def initialize_sampled(obj, dimensions, key):

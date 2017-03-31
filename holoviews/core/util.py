@@ -1177,15 +1177,6 @@ def get_dynamic_item(map_obj, dimensions, key):
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)
         el = map_obj.select(['DynamicMap', 'HoloMap'], **dims)
-    elif key < map_obj.counter:
-        key_offset = max([key-map_obj.cache_size, 0])
-        key = map_obj.keys()[min([key-key_offset,
-                                  len(map_obj)-1])]
-        map_obj.traverse(lambda x: x[key], ['DynamicMap'])
-        el = map_obj.map(lambda x: x[key], ['DynamicMap'])
-    elif key >= map_obj.counter:
-        el = next(map_obj)
-        key = list(map_obj.keys())[-1]
     else:
         el = None
     return key, el
