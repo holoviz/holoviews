@@ -12,7 +12,7 @@ from io import BytesIO, StringIO
 import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store,
-                       NdOverlay, GridSpace, HoloMap, Layout)
+                       NdOverlay, GridSpace, HoloMap, Layout, Cycle)
 from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
@@ -327,6 +327,116 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (0, 0, 98, 98))
+
+    def test_batched_points_size_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Points': dict(style=dict(size=Cycle(values=[1, 2])))}
+        overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        size = np.array([1, 1, 2, 2])
+        color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
+                         dtype='|S7')
+        self.assertEqual(plot.handles['source'].data['color'], color)
+        self.assertEqual(plot.handles['source'].data['size'], size)
+
+    def test_batched_points_line_color_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Points': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_color = np.array(['red', 'red', 'blue', 'blue'])
+        fill_color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
+                         dtype='|S7')
+        self.assertEqual(plot.handles['source'].data['fill_color'], fill_color)
+        self.assertEqual(plot.handles['source'].data['line_color'], line_color)
+
+    def test_batched_points_alpha_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Points': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        alpha = np.array([0.5, 0.5, 1., 1.])
+        color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
+                         dtype='|S7')
+        self.assertEqual(plot.handles['source'].data['alpha'], alpha)
+        self.assertEqual(plot.handles['source'].data['color'], color)
+
+    def test_batched_points_line_width_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Points': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_width = np.array([0.5, 0.5, 1., 1.])
+        color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
+                         dtype='|S7')
+        self.assertEqual(plot.handles['source'].data['line_width'], line_width)
+        self.assertEqual(plot.handles['source'].data['color'], color)
+
+    def test_batched_curve_line_color_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_color = ['red', 'blue']
+        self.assertEqual(plot.handles['source'].data['line_color'], line_color)
+
+    def test_batched_curve_alpha_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Curve': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        alpha = [0.5, 1.]
+        color = ['#30a2da', '#fc4f30']
+        self.assertEqual(plot.handles['source'].data['alpha'], alpha)
+        self.assertEqual(plot.handles['source'].data['color'], color)
+
+    def test_batched_curve_line_width_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Curve': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_width = [0.5, 1.]
+        color = ['#30a2da', '#fc4f30']
+        self.assertEqual(plot.handles['source'].data['line_width'], line_width)
+        self.assertEqual(plot.handles['source'].data['color'], color)
+
+    def test_batched_path_line_color_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Path': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_color = ['red', 'blue']
+        self.assertEqual(plot.handles['source'].data['line_color'], line_color)
+
+    def test_batched_path_alpha_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Path': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        alpha = [0.5, 1.]
+        color = ['#30a2da', '#fc4f30']
+        self.assertEqual(plot.handles['source'].data['alpha'], alpha)
+        self.assertEqual(plot.handles['source'].data['color'], color)
+
+    def test_batched_path_line_width_and_color(self):
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Path': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
+        overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
+                             for i in range(2)})(opts)
+        plot = bokeh_renderer.get_plot(overlay).subplots[()]
+        line_width = [0.5, 1.]
+        color = ['#30a2da', '#fc4f30']
+        self.assertEqual(plot.handles['source'].data['line_width'], line_width)
+        self.assertEqual(plot.handles['source'].data['color'], color)
 
     def _test_hover_info(self, element, tooltips, line_policy='prev'):
         plot = bokeh_renderer.get_plot(element)
