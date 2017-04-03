@@ -113,9 +113,10 @@ class PointPlot(LegendPlot, ColorbarPlot):
                 data[k].append(eld)
 
             # Apply static styles
+            nvals = len(list(eldata.values())[0])
             style = styles[zorder]
             expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping)
+                                 data, elmapping, nvals)
 
             nvals = len(list(data.values()[0])[-1])
             if any(isinstance(t, HoverTool) for t in self.state.tools):
@@ -265,11 +266,11 @@ class CurvePlot(ElementPlot):
             # Apply static styles
             style = styles[zorder]
             expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping)
+                                 data, elmapping, nvals=None)
 
             for d, k in zip(overlay.kdims, key):
                 sanitized = dimension_sanitizer(d.name)
-                data[sanitized].append([k])
+                data[sanitized].append(k)
         data = {opt: vals for opt, vals in data.items()
                 if not any(v is None for v in vals)}
         mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v

@@ -49,9 +49,10 @@ class PathPlot(ElementPlot):
                 data[k].extend(eld)
 
             # Apply static styles
+            nvals = len(list(eldata.values())[0])
             style = styles[zorder]
             expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping, path=True)
+                                 data, elmapping, nvals, multiple=True)
 
         return data, elmapping
 
@@ -95,24 +96,3 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             data[dim_name] = [element.level for _ in range(len(xs))]
 
         return data, mapping
-
-
-    def get_batched_data(self, element, ranges=None, empty=False):
-        data = defaultdict(list)
-        
-        zorders = self._updated_zorders(element)
-        styles = self.lookup_options(element.last, 'style')
-        styles = styles.max_cycles(len(self.ordering))
-
-        for (key, el), zorder in zip(element.data.items(), zorders):
-            self.overlay_dims = dict(zip(element.kdims, key))
-            eldata, elmapping = self.get_data(el, ranges, empty)
-            for k, eld in eldata.items():
-                data[k].extend(eld)
-
-            # Apply static styles
-            style = styles[zorder]
-            expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping, path=True)
-
-        return data, elmapping

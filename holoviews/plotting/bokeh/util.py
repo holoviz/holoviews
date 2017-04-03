@@ -549,15 +549,15 @@ def get_tab_title(key, frame, overlay):
     return title
 
 
-def expand_batched_style(style, opts, data, mapping, path=False):
+def expand_batched_style(style, opts, data, mapping, nvals=None, multiple=False):
     """
-    Expands styles applied to a batched plot by iterating over the
-    supplied list of style options and any options found in the supplied
-    style dictionary to the ColumnDataSource data and mapping. Supply
-    path=True to avoid nesting style options as required by multi_line
-    and patches glyphs.
+    Computes styles applied to a batched plot by iterating over the
+    supplied list of style options and expanding any options found in
+    the supplied style dictionary to the ColumnDataSource data and
+    mapping. Supplying nvals adds the style entry multiple times, added
+    as an array by default. When multiple is active multiple scalar values
+    will be added.
     """
-    nvals = int(path) or len(list(data.values()[0])[-1])
     for opt in opts:
         if 'color' in opt:
             alias = 'color'
@@ -585,4 +585,8 @@ def expand_batched_style(style, opts, data, mapping, path=False):
         mapping[opt] = {'field': opt}
         if 'color' in opt and isinstance(val, tuple):
             val = rgb2hex(val)
-        data[opt].append(val if path else [val]*nvals)
+        vals = val if nvals is None else [val]*nvals
+        if multiple:
+            data[opt].extend(vals)
+        else:
+            data[opt].append(vals)
