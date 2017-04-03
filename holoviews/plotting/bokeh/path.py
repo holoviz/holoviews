@@ -50,7 +50,8 @@ class PathPlot(ElementPlot):
             # Apply static styles
             style = styles[zorder]
             expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping)
+                                 data, elmapping, path=True)
+
         return data, elmapping
 
 
@@ -110,7 +111,6 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             # Apply static styles
             style = styles[zorder]
             expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping)
-
+                                 data, elmapping, path=True)
 
         return data, elmapping

@@ -270,8 +270,9 @@ class CurvePlot(ElementPlot):
                 data[sanitized].append([k])
         data = {opt: vals for opt, vals in data.items()
                 if not any(v is None for v in vals)}
-        return data, dict(xs=elmapping['x'], ys=elmapping['y'],
-                          **{o: o for o in opts if o in data})
+        mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v
+                   for k, v in elmapping.items()}
+        return data, mapping
 
 
 class AreaPlot(PolygonPlot):
