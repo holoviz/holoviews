@@ -643,8 +643,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
                         glyph_props['fill_'+prop] = glyph_prop
 
-                glyph_props.update({k[len(gtype):]: v for k, v in glyph_props.items()
-                                    if k.startswith(gtype)})
+                props = {k[len(gtype):]: v for k, v in glyph_props.items()
+                         if k.startswith(gtype)}
+                if self.batched:
+                    glyph_props = dict(props, **glyph_props)
+                else:
+                    glyph_props.update(props)
             filtered = {k: v for k, v in glyph_props.items()
                         if k in allowed_properties}
             glyph.update(**filtered)
