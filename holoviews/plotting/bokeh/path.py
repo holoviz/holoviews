@@ -8,7 +8,7 @@ from bokeh.models import HoverTool
 from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import get_cmap, rgb2hex
+from .util import get_cmap, rgb2hex, expand_batched_style
 
 
 class PathPlot(ElementPlot):
@@ -19,6 +19,7 @@ class PathPlot(ElementPlot):
     style_opts = ['color'] + line_properties
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
+    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha']
 
     def _hover_opts(self, element):
         if self.batched:
@@ -45,12 +46,11 @@ class PathPlot(ElementPlot):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-            val = styles[zorder].get('color')
-            if val:
-                elmapping['line_color'] = 'color'
-                if isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data['color'] += [val for _ in range(len(list(eldata.values())[0]))]
+
+            # Apply static styles
+            style = styles[zorder]
+            expand_batched_style(style, self._batched_style_opts,
+                                 data, elmapping)
         return data, elmapping
 
 
@@ -58,6 +58,8 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
+    _batched_style_opts = ['line_color', 'fill_color', 'color',
+                           'fill_alpha', 'line_alpha', 'alpha']
 
     def _hover_opts(self, element):
         if self.batched:
@@ -104,11 +106,11 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-            if 'color' not in elmapping:
-                val = styles[zorder].get('color')
-                elmapping['color'] = 'color'
-                if isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data['color'] += [val for _ in range(len(eldata['xs']))]
+
+            # Apply static styles
+            style = styles[zorder]
+            expand_batched_style(style, self._batched_style_opts,
+                                 data, elmapping)
+
 
         return data, elmapping

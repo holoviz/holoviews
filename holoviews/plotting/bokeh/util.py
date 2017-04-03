@@ -547,3 +547,40 @@ def get_tab_title(key, frame, overlay):
         title = ' | '.join([d.pprint_value_string(k) for d, k in
                             zip(overlay.kdims, key)])
     return title
+
+
+def expand_batched_style(style, opts, data, mapping):
+    """
+    Expands styles applied to a batched plot by iterating over the
+    supplied list of style options and any options found in the supplied
+    style dictionary to the ColumnDataSource data and mapping.
+    """
+    nvals = len(list(data.values()[0])[-1])
+    for opt in opts:
+        if 'color' in opt:
+            alias = 'color'
+        elif 'alpha' in opt:
+            alias = 'alpha'
+        else:
+            alias = None
+        if opt not in style:
+            continue
+        elif opt == alias:
+            if alias in mapping:
+                continue
+            elif 'line_'+alias in mapping:
+                if 'fill_'+alias not in opts:
+                    continue
+                opt = 'fill_'+alias
+                val = style[alias]
+            elif 'fill_'+alias in mapping:
+                opt = 'line_'+alias
+                val = style[alias]
+            else:
+                val = style[alias]
+        else:
+            val = style[opt]
+        mapping[opt] = {'field': opt}
+        if 'color' in opt and isinstance(val, tuple):
+            val = rgb2hex(val)
+        data[opt].append([val]*nvals)

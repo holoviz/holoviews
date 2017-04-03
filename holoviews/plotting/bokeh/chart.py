@@ -19,7 +19,8 @@ from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import get_cmap, mpl_to_bokeh, update_plot, rgb2hex, bokeh_version
+from .util import (get_cmap, mpl_to_bokeh, update_plot, rgb2hex,
+                   bokeh_version, expand_batched_style)
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -50,6 +51,8 @@ class PointPlot(LegendPlot, ColorbarPlot):
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
+    _batched_style_opts = ['line_color', 'fill_color', 'color',
+                           'fill_alpha', 'line_alpha', 'alpha']
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -101,25 +104,23 @@ class PointPlot(LegendPlot, ColorbarPlot):
         zorders = self._updated_zorders(element)
         styles = self.lookup_options(element.last, 'style')
         styles = styles.max_cycles(len(self.ordering))
-
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
 
-            nvals = len(data[k][-1])
-            if 'color' not in elmapping:
-                val = styles[zorder].get('color')
-                elmapping['color'] = {'field': 'color'}
-                if isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data['color'].append([val]*nvals)
+            # Apply static styles
+            style = styles[zorder]
+            expand_batched_style(style, self._batched_style_opts,
+                                 data, elmapping)
 
+            nvals = len(list(data.values()[0])[-1])
             if any(isinstance(t, HoverTool) for t in self.state.tools):
                 for dim, k in zip(element.dimensions(), key):
                     sanitized = dimension_sanitizer(dim.name)
                     data[sanitized].append([k]*nvals)
+
         data = {k: np.concatenate(v) for k, v in data.items()}
         return data, elmapping
 
@@ -224,6 +225,7 @@ class CurvePlot(ElementPlot):
     style_opts = line_properties
     _plot_methods = dict(single='line', batched='multi_line')
     _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
+    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha']
 
     def get_data(self, element, ranges=None, empty=False):
         if 'steps' in self.interpolation:
@@ -248,7 +250,6 @@ class CurvePlot(ElementPlot):
 
     def get_batched_data(self, overlay, ranges=None, empty=False):
         data = defaultdict(list)
-        opts = ['color', 'line_alpha', 'line_color']
 
         zorders = self._updated_zorders(overlay)
         styles = self.lookup_options(overlay.last, 'style')
@@ -259,15 +260,10 @@ class CurvePlot(ElementPlot):
             for k, eld in eldata.items():
                 data[k].append(eld)
 
-            # Add options
+            # Apply static styles
             style = styles[zorder]
-            for opt in opts:
-                if opt not in style:
-                    continue
-                val = style[opt]
-                if opt == 'color' and isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data[opt].append([val])
+            expand_batched_style(style, self._batched_style_opts,
+                                 data, elmapping)
 
             for d, k in zip(overlay.kdims, key):
                 sanitized = dimension_sanitizer(d.name)
