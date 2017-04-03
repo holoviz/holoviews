@@ -115,7 +115,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
             expand_batched_style(style, self._batched_style_opts,
                                  data, elmapping, nvals)
 
-            nvals = len(list(data.values()[0])[-1])
+            nvals = len(list(eldata.values())[0])
             if any(isinstance(t, HoverTool) for t in self.state.tools):
                 for dim, k in zip(element.dimensions(), key):
                     sanitized = dimension_sanitizer(dim.name)
