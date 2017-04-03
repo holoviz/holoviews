@@ -19,7 +19,8 @@ class PathPlot(ElementPlot):
     style_opts = ['color'] + line_properties
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
-    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha']
+    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha',
+                           'line_width', 'line_dash', 'line_join', 'line_cap']
 
     def _hover_opts(self, element):
         if self.batched:
@@ -60,7 +61,8 @@ class PolygonPlot(ColorbarPlot, PathPlot):
     style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
     _batched_style_opts = ['line_color', 'fill_color', 'color',
-                           'fill_alpha', 'line_alpha', 'alpha']
+                           'fill_alpha', 'line_alpha', 'alpha', 'line_width',
+                           'line_dash', 'line_join', 'line_cap']
 
     def _hover_opts(self, element):
         if self.batched:

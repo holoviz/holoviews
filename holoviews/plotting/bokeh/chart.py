@@ -47,12 +47,14 @@ class PointPlot(LegendPlot, ColorbarPlot):
       Function applied to size values before applying scaling,
       to remove values lower than zero.""")
 
-    style_opts = (['cmap', 'palette', 'marker', 'size', 's'] +
+    style_opts = (['cmap', 'palette', 'marker', 'size'] +
                   line_properties + fill_properties)
 
     _plot_methods = dict(single='scatter', batched='scatter')
     _batched_style_opts = ['line_color', 'fill_color', 'color',
-                           'fill_alpha', 'line_alpha', 'alpha']
+                           'fill_alpha', 'line_alpha', 'alpha',
+                           'size', 'line_width', 'line_dash',
+                           'line_join', 'line_cap']
 
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
@@ -224,8 +226,8 @@ class CurvePlot(ElementPlot):
 
     style_opts = line_properties
     _plot_methods = dict(single='line', batched='multi_line')
-    _mapping = {p: p for p in ['xs', 'ys', 'color', 'line_alpha']}
-    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha']
+    _batched_style_opts = ['line_color', 'color', 'line_alpha', 'alpha',
+                           'line_width', 'line_dash', 'line_join', 'line_cap']
 
     def get_data(self, element, ranges=None, empty=False):
         if 'steps' in self.interpolation:
