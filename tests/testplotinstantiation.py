@@ -336,7 +336,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         size = np.array([1, 1, 2, 2])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
-                         dtype='|S7')
+                         dtype='<U7')
         self.assertEqual(plot.handles['source'].data['color'], color)
         self.assertEqual(plot.handles['source'].data['size'], size)
 
@@ -348,7 +348,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = np.array(['red', 'red', 'blue', 'blue'])
         fill_color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
-                         dtype='|S7')
+                         dtype='<U7')
         self.assertEqual(plot.handles['source'].data['fill_color'], fill_color)
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
 
@@ -360,7 +360,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = np.array([0.5, 0.5, 1., 1.])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
-                         dtype='|S7')
+                         dtype='<U7')
         self.assertEqual(plot.handles['source'].data['alpha'], alpha)
         self.assertEqual(plot.handles['source'].data['color'], color)
 
@@ -372,7 +372,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = np.array([0.5, 0.5, 1., 1.])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
-                         dtype='|S7')
+                         dtype='<U7')
         self.assertEqual(plot.handles['source'].data['line_width'], line_width)
         self.assertEqual(plot.handles['source'].data['color'], color)
 
