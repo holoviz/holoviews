@@ -2,6 +2,7 @@ from io import BytesIO
 from itertools import groupby
 import warnings
 
+import param
 import numpy as np
 import bokeh
 import bokeh.plotting
@@ -18,11 +19,6 @@ except ImportError:
 from bokeh.models import LogTicker, BasicTicker
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-try:
-    from bokeh import mpl
-except ImportError:
-    mpl = None
-import param
 
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
                      CompositeOverlay, Element, Dimension)
@@ -1057,99 +1053,6 @@ class LegendPlot(ElementPlot):
                 plot.add_layout(legend, opts['pos'])
             else:
                 legend.location = pos
-
-
-
-class BokehMPLWrapper(ElementPlot):
-    """
-    Wraps an existing HoloViews matplotlib plot and converts
-    it to bokeh.
-    """
-
-    def __init__(self, element, plot=None, **params):
-        super(ElementPlot, self).__init__(element, **params)
-        if isinstance(element, HoloMap):
-            etype = element.type
-        else:
-            etype = type(element)
-        plot = Store.registry['matplotlib'][etype]
-        params = dict({k: v.default for k, v in self.params().items()
-                       if k in ['bgcolor']})
-        params = dict(params, **self.lookup_options(element, 'plot').options)
-        style = self.lookup_options(element, 'style')
-        self.mplplot = plot(element, style=style, **params)
-
-
-    def initialize_plot(self, ranges=None, plot=None, plots=None):
-        self.mplplot.initialize_plot(ranges)
-
-        plot = plot if plot else self.handles.get('plot')
-        new_plot = mpl.to_bokeh(self.mplplot.state)
-        if plot:
-            update_plot(plot, new_plot)
-        else:
-            plot = new_plot
-
-        self.handles['plot'] = plot
-        if not self.overlaid:
-            self._update_plot(self.keys[-1], plot, self.hmap.last)
-        return plot
-
-
-    def _update_plot(self, key, plot, element=None):
-        """
-        Updates plot parameters on every frame
-        """
-        plot.update(**self._plot_properties(key, plot, element))
-
-    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
-        self.mplplot.update_frame(key, ranges)
-
-        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
-        if not reused and element is None:
-            element = self._get_frame(key)
-        else:
-            self.current_key = key
-            self.current_frame = element
-
-        plot = mpl.to_bokeh(self.mplplot.state)
-        update_plot(self.handles['plot'], plot)
-        if not self.overlaid:
-            self._update_plot(key, self.handles['plot'], element)
-
-
-class BokehMPLRawWrapper(BokehMPLWrapper):
-    """
-    Wraps an existing HoloViews matplotlib plot, renders it as
-    an image and displays it as a HoloViews object.
-    """
-
-    def initialize_plot(self, ranges=None, plot=None, plots=None):
-        element = self.hmap.last
-        self.mplplot.initialize_plot(ranges)
-        plot = self._render_plot(element, plot)
-        self.handles['plot'] = plot
-        return plot
-
-    def _render_plot(self, element, plot=None):
-        from .raster import RGBPlot
-        bytestream = BytesIO()
-        renderer = self.mplplot.renderer.instance(dpi=120)
-        renderer.save(self.mplplot, bytestream, fmt='png')
-        group = ('RGB' if element.group == type(element).__name__ else
-                 element.group)
-        rgb = RGB.load_image(bytestream, bare=True, group=group,
-                             label=element.label)
-        plot_opts = self.lookup_options(element, 'plot').options
-        rgbplot = RGBPlot(rgb, **plot_opts)
-        return rgbplot.initialize_plot(plot=plot)
-
-
-    def update_frame(self, key, ranges=None, element=None):
-        element = self.get_frame(key)
-        if key in self.hmap:
-            self.mplplot.update_frame(key, ranges)
-            self.handles['plot'] = self._render_plot(element)
 
 
 class OverlayPlot(GenericOverlayPlot, LegendPlot):
