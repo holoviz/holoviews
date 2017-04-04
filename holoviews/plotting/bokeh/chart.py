@@ -20,7 +20,7 @@ from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import (get_cmap, mpl_to_bokeh, update_plot, rgb2hex,
-                   bokeh_version, expand_batched_style)
+                   bokeh_version, expand_batched_style, filter_batched_data)
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -112,16 +112,19 @@ class PointPlot(LegendPlot, ColorbarPlot):
             # Apply static styles
             nvals = len(list(eldata.values())[0])
             style = styles[zorder]
-            expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping, nvals)
+            sdata, smapping = expand_batched_style(style, self._batched_style_opts,
+                                                   elmapping, nvals)
+            elmapping.update(smapping)
+            for k, v in sdata.items():
+                data[k].append(v)
 
-            nvals = len(list(eldata.values())[0])
             if any(isinstance(t, HoverTool) for t in self.state.tools):
                 for dim, k in zip(element.dimensions(), key):
                     sanitized = dimension_sanitizer(dim.name)
                     data[sanitized].append([k]*nvals)
 
         data = {k: np.concatenate(v) for k, v in data.items()}
+        filter_batched_data(data, elmapping)
         return data, elmapping
 
 
@@ -261,8 +264,11 @@ class CurvePlot(ElementPlot):
 
             # Apply static styles
             style = styles[zorder]
-            expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping, nvals=None)
+            sdata, smapping = expand_batched_style(style, self._batched_style_opts,
+                                                   elmapping, nvals=1)
+            elmapping.update(smapping)
+            for k, v in sdata.items():
+                data[k].append(v[0])
 
             for d, k in zip(overlay.kdims, key):
                 sanitized = dimension_sanitizer(d.name)
@@ -271,6 +277,7 @@ class CurvePlot(ElementPlot):
                 if not any(v is None for v in vals)}
         mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v
                    for k, v in elmapping.items()}
+        filter_batched_data(data, elmapping)
         return data, mapping
 
 

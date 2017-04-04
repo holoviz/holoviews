@@ -8,7 +8,8 @@ from bokeh.models import HoverTool
 from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import get_cmap, rgb2hex, expand_batched_style
+from .util import (get_cmap, rgb2hex, expand_batched_style,
+                   filter_batched_data)
 
 
 class PathPlot(ElementPlot):
@@ -50,9 +51,13 @@ class PathPlot(ElementPlot):
             # Apply static styles
             nvals = len(list(eldata.values())[0])
             style = styles[zorder]
-            expand_batched_style(style, self._batched_style_opts,
-                                 data, elmapping, nvals, multiple=True)
+            sdata, smapping = expand_batched_style(style, self._batched_style_opts,
+                                                   elmapping, nvals)
+            elmapping.update(smapping)
+            for k, v in sdata.items():
+                data[k].extend(list(v))
 
+        filter_batched_data(data, elmapping)
         return data, elmapping
 
 

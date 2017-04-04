@@ -27,6 +27,7 @@ if bokeh_version >= '0.12':
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
+from ...core.util import basestring
 
 from ..util import dim_axis_label
 
@@ -549,15 +550,16 @@ def get_tab_title(key, frame, overlay):
     return title
 
 
-def expand_batched_style(style, opts, data, mapping, nvals=None, multiple=False):
+def expand_batched_style(style, opts, mapping, nvals):
     """
     Computes styles applied to a batched plot by iterating over the
     supplied list of style options and expanding any options found in
-    the supplied style dictionary to the ColumnDataSource data and
-    mapping. Supplying nvals adds the style entry multiple times, added
-    as an array by default. When multiple is active multiple scalar values
-    will be added.
+    the supplied style dictionary returning a data and mapping defining
+    the data that should be added to the ColumnDataSource.
     """
+    opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
+    applied_styles = set(mapping)
+    style_data, style_mapping = {}, {}
     for opt in opts:
         if 'color' in opt:
             alias = 'color'
@@ -568,25 +570,39 @@ def expand_batched_style(style, opts, data, mapping, nvals=None, multiple=False)
         if opt not in style:
             continue
         elif opt == alias:
-            if alias in mapping:
+            if alias in applied_styles:
                 continue
-            elif 'line_'+alias in mapping:
+            elif 'line_'+alias in applied_styles:
                 if 'fill_'+alias not in opts:
                     continue
                 opt = 'fill_'+alias
                 val = style[alias]
-            elif 'fill_'+alias in mapping:
+            elif 'fill_'+alias in applied_styles:
                 opt = 'line_'+alias
                 val = style[alias]
             else:
                 val = style[alias]
         else:
             val = style[opt]
-        mapping[opt] = {'field': opt}
+        style_mapping[opt] = {'field': opt}
+        applied_styles.add(opt)
         if 'color' in opt and isinstance(val, tuple):
             val = rgb2hex(val)
-        vals = val if nvals is None else [val]*nvals
-        if multiple:
-            data[opt].extend(vals)
-        else:
-            data[opt].append(vals)
+        style_data[opt] = [val]*nvals
+    return style_data, style_mapping
+
+
+def filter_batched_data(data, mapping):
+    """
+    Iterates over the data and mapping for a ColumnDataSource and
+    replaces columns with repeating values with scalar
+    """
+    for k, v in list(mapping.items()):
+        if isinstance(v, dict) and 'field' in v:
+            v = v['field']
+        elif not isinstance(v, basestring):
+            continue
+        values = data[v]
+        if len(np.unique(values)) == 1:
+            mapping[k] = values[0]
+            del data[v]
