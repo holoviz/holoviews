@@ -149,7 +149,9 @@ class Stream(param.Parameterized):
     @source.setter
     def source(self, source):
         if self._source:
-            raise Exception('source has already been defined on stream.')
+            source_list = self.registry[id(self._source)]
+            if self in source_list:
+                source_list.remove(self)
         self._source = source
         self.registry[id(source)].append(self)
 
