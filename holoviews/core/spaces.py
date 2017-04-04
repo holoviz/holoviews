@@ -847,9 +847,10 @@ class DynamicMap(HoloMap):
                     vstreams = streams.get(i, [])
                 elif isinstance(streams, list):
                     vstreams = streams[i] if i < len(streams) else []
-                def collation_cb(collation_key=k, *args, **kwargs):
-                    return self[args][collation_key]
-                callback = Callable(collation_cb, inputs=[self])
+                def collation_cb(*args, **kwargs):
+                    return self[args][kwargs['collation_key']]
+                callback = Callable(partial(collation_cb, collation_key=k),
+                                    inputs=[self])
                 vdmap = self.clone(callback=callback, shared_data=False,
                                    streams=vstreams)
                 for stream in vstreams:
