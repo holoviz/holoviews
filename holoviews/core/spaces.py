@@ -498,11 +498,17 @@ class DynamicMap(HoloMap):
         values on the key dimensions.
         """
         key = []
+        undefined = []
         for kdim in self.kdims:
             if kdim.values:
                 key.append(kdim.values[0])
             elif kdim.range:
                 key.append(kdim.range[0])
+            else:
+                undefined.append(kdim)
+        if undefined:
+            raise KeyError('dimensions do not specify a range or values, '
+                           'cannot supply initial key' % ', '.join(undefined))
         return tuple(key)
 
 
