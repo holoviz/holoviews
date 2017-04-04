@@ -27,6 +27,7 @@ if bokeh_version >= '0.12':
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
+from ...core.util import basestring
 
 from ..util import dim_axis_label
 
@@ -547,3 +548,61 @@ def get_tab_title(key, frame, overlay):
         title = ' | '.join([d.pprint_value_string(k) for d, k in
                             zip(overlay.kdims, key)])
     return title
+
+
+def expand_batched_style(style, opts, mapping, nvals):
+    """
+    Computes styles applied to a batched plot by iterating over the
+    supplied list of style options and expanding any options found in
+    the supplied style dictionary returning a data and mapping defining
+    the data that should be added to the ColumnDataSource.
+    """
+    opts = sorted(opts, key=lambda x: x in ['color', 'alpha'])
+    applied_styles = set(mapping)
+    style_data, style_mapping = {}, {}
+    for opt in opts:
+        if 'color' in opt:
+            alias = 'color'
+        elif 'alpha' in opt:
+            alias = 'alpha'
+        else:
+            alias = None
+        if opt not in style:
+            continue
+        elif opt == alias:
+            if alias in applied_styles:
+                continue
+            elif 'line_'+alias in applied_styles:
+                if 'fill_'+alias not in opts:
+                    continue
+                opt = 'fill_'+alias
+                val = style[alias]
+            elif 'fill_'+alias in applied_styles:
+                opt = 'line_'+alias
+                val = style[alias]
+            else:
+                val = style[alias]
+        else:
+            val = style[opt]
+        style_mapping[opt] = {'field': opt}
+        applied_styles.add(opt)
+        if 'color' in opt and isinstance(val, tuple):
+            val = rgb2hex(val)
+        style_data[opt] = [val]*nvals
+    return style_data, style_mapping
+
+
+def filter_batched_data(data, mapping):
+    """
+    Iterates over the data and mapping for a ColumnDataSource and
+    replaces columns with repeating values with scalar
+    """
+    for k, v in list(mapping.items()):
+        if isinstance(v, dict) and 'field' in v:
+            v = v['field']
+        elif not isinstance(v, basestring):
+            continue
+        values = data[v]
+        if len(np.unique(values)) == 1:
+            mapping[k] = values[0]
+            del data[v]

@@ -8,7 +8,8 @@ from bokeh.models import HoverTool
 from ...core import util
 from ..util import map_colors
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import get_cmap, rgb2hex
+from .util import (get_cmap, rgb2hex, expand_batched_style,
+                   filter_batched_data)
 
 
 class PathPlot(ElementPlot):
@@ -16,9 +17,10 @@ class PathPlot(ElementPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['color'] + line_properties
+    style_opts = line_properties
     _plot_methods = dict(single='multi_line', batched='multi_line')
     _mapping = dict(xs='xs', ys='ys')
+    _batched_style_opts = line_properties
 
     def _hover_opts(self, element):
         if self.batched:
@@ -45,19 +47,26 @@ class PathPlot(ElementPlot):
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-            val = styles[zorder].get('color')
-            if val:
-                elmapping['line_color'] = 'color'
-                if isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data['color'] += [val for _ in range(len(list(eldata.values())[0]))]
+
+            # Apply static styles
+            nvals = len(list(eldata.values())[0])
+            style = styles[zorder]
+            sdata, smapping = expand_batched_style(style, self._batched_style_opts,
+                                                   elmapping, nvals)
+            elmapping.update(smapping)
+            for k, v in sdata.items():
+                data[k].extend(list(v))
+
+        filter_batched_data(data, elmapping)
         return data, elmapping
 
 
 class PolygonPlot(ColorbarPlot, PathPlot):
 
-    style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
+    style_opts = ['cmap', 'palette'] + line_properties + fill_properties
     _plot_methods = dict(single='patches', batched='patches')
+    _style_opts = ['color', 'cmap', 'palette'] + line_properties + fill_properties
+    _batched_style_opts = line_properties + fill_properties
 
     def _hover_opts(self, element):
         if self.batched:
@@ -90,25 +99,3 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             data[dim_name] = [element.level for _ in range(len(xs))]
 
         return data, mapping
-
-
-    def get_batched_data(self, element, ranges=None, empty=False):
-        data = defaultdict(list)
-        
-        zorders = self._updated_zorders(element)
-        styles = self.lookup_options(element.last, 'style')
-        styles = styles.max_cycles(len(self.ordering))
-
-        for (key, el), zorder in zip(element.data.items(), zorders):
-            self.overlay_dims = dict(zip(element.kdims, key))
-            eldata, elmapping = self.get_data(el, ranges, empty)
-            for k, eld in eldata.items():
-                data[k].extend(eld)
-            if 'color' not in elmapping:
-                val = styles[zorder].get('color')
-                elmapping['color'] = 'color'
-                if isinstance(val, tuple):
-                    val = rgb2hex(val)
-                data['color'] += [val for _ in range(len(eldata['xs']))]
-
-        return data, elmapping
