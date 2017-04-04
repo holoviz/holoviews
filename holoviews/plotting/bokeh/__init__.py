@@ -19,7 +19,7 @@ from ..plot import PlotSelector
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callback # noqa (API import)
-from .element import OverlayPlot, BokehMPLWrapper
+from .element import OverlayPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
                     SideSpikesPlot, AreaPlot, VectorFieldPlot)
@@ -97,25 +97,6 @@ try:
                     Bars: BarPlot}, 'bokeh')
 except ImportError:
     pass
-
-try:
-    from ..mpl.seaborn import TimeSeriesPlot, BivariatePlot, DistributionPlot
-    from ...interface.seaborn import Bivariate, TimeSeries, Distribution
-    Store.register({Distribution: PlotSelector(lambda x: 'bokeh',
-                                               [('mpl', DistributionPlot),
-                                                ('bokeh', BokehMPLWrapper)],
-                                               True),
-                    TimeSeries: PlotSelector(lambda x: 'bokeh',
-                                             [('mpl', TimeSeriesPlot),
-                                              ('bokeh', BokehMPLWrapper)],
-                                             True),
-                    Bivariate: PlotSelector(lambda x: 'bokeh',
-                                        [('mpl', BivariatePlot),
-                                         ('bokeh', BokehMPLWrapper)], True)},
-                   'bokeh')
-except ImportError:
-    pass
-
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
