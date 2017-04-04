@@ -796,6 +796,72 @@ class DynamicMap(HoloMap):
         return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
 
+    def collate(self, streams=[]):
+        """
+        Collation allows collapsing DynamicMaps with invalid nesting
+        hierarchies. This is particularly useful when defining
+        DynamicMaps returning an (Nd)Layout. Collating will split the
+        DynamicMap into an (Nd)Layout of individual DynamicMaps. Note
+        that the Layout should be of consistent length and types for
+        this to work correctly. In order to attach a stream as a source
+        for a particular object in the Layout you may supply either
+        a dictionary or list of lists of streams corresponding to each
+        Element in the Layout.
+        """
+        # Initialize
+        if self.last is not None:
+            pass
+        else:
+            self[self._initial_key()]
+
+        if isinstance(self.last, HoloMap):
+            # Get nested kdims and streams
+            streams = list(self.streams)
+            if isinstance(self.last, DynamicMap):
+                dimensions = [d(values=self.last.dimension_values(d.name))
+                              for d in self.last.kdims]
+                streams += self.last.streams
+                stream_kwargs = set()
+                for stream in streams:
+                    contents = set(stream.contents())
+                    if stream_kwargs & contents:
+                        raise KeyError('Cannot collate DynamicMaps with clashing '
+                                       'stream parameters.')
+            else:
+                dimensions = self.last.kdims
+            kdims = self.kdims+dimensions
+
+            # Define callback
+            def collation_cb(*args, **kwargs):
+                return self[args[:self.ndims]][args[self.ndims:]]
+            callback = Callable(collation_cb, inputs=[self])
+
+            return self.clone(shared_data=False, callback=callback,
+                              kdims=kdims, streams=streams)
+        elif isinstance(self.last, (Layout, NdLayout, GridSpace)):
+            # Expand Layout/NdLayout
+            from ..util import Dynamic
+            new_item = self.last.clone(shared_data=False)
+            for i, (k, v) in enumerate(self.last.items()):
+                if isinstance(streams, dict):
+                    vstreams = streams.get(i, [])
+                elif isinstance(streams, list):
+                    vstreams = streams[i] if i < len(streams) else []
+                def collation_cb(collation_key=k, *args, **kwargs):
+                    return self[args][collation_key]
+                callback = Callable(collation_cb, inputs=[self])
+                vdmap = self.clone(callback=callback, shared_data=False,
+                                   streams=vstreams)
+                for stream in vstreams:
+                    if stream.source is self:
+                        stream.source = vdmap
+                new_item[k] = vdmap
+            return new_item
+        else:
+            self.warning('DynamicMap does not need to be collated.')
+            return dmap
+
+
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
         """
         Implements a dynamic version of a groupby, which will
