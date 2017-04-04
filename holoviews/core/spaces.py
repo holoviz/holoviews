@@ -410,7 +410,9 @@ class Callable(param.Parameterized):
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
-    def __init__(self, **params):
+    def __init__(self, callable_function=None, **params):
+        if callable_function is not None:
+            params['callable_function'] = callable_function
         super(Callable, self).__init__(**params)
         self._memoized = {}
 
