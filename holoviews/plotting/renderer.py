@@ -18,7 +18,7 @@ from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 from .. import DynamicMap
 from . import Plot
 from .comms import JupyterComm
-from .util import displayable, collate
+from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
 
@@ -159,16 +159,12 @@ class Renderer(Exporter):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
+        # Initialize DynamicMaps with first data item
+        initialize_dynamic(obj)
+
         if not isinstance(obj, Plot) and not displayable(obj):
             obj = collate(obj)
-
-        # Initialize DynamicMaps with first data item
-        dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
-        for dmap in dmaps:
-            if dmap.sampled:
-                # Skip initialization until plotting code
-                continue
-            dmap[dmap._initial_key()]
+            initialize_dynamic(obj)
 
         if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
