@@ -83,10 +83,10 @@ class Dynamic(param.ParameterizedFunction):
                 _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
                 return self._process(el, key)
         if isinstance(self.p.operation, ElementOperation):
-            return OperationCallable(callable_function=dynamic_operation,
-                                     inputs=[map_obj], operation=self.p.operation)
+            return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                     operation=self.p.operation)
         else:
-            return Callable(callable_function=dynamic_operation, inputs=[map_obj])
+            return Callable(dynamic_operation, inputs=[map_obj])
 
 
     def _make_dynamic(self, hmap, dynamic_fn):

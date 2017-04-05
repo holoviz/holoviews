@@ -28,8 +28,7 @@ class Overlayable(object):
             def dynamic_mul(*args, **kwargs):
                 element = other[args]
                 return self * element
-            callback = Callable(callable_function=dynamic_mul,
-                                inputs=[self, other])
+            callback = Callable(dynamic_mul, inputs=[self, other])
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):

@@ -138,7 +138,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             except KeyError:
                 pass
             return Overlay(layers)
-        callback = Callable(callable_function=dynamic_mul, inputs=[self, other])
+        callback = Callable(dynamic_mul, inputs=[self, other])
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -205,8 +205,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
                     return element * other
-                callback = Callable(callable_function=dynamic_mul,
-                                    inputs=[self, other])
+                callback = Callable(dynamic_mul, inputs=[self, other])
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -402,16 +401,33 @@ class Callable(param.Parameterized):
     returned value based on the arguments to the function and the
     state of all streams on its inputs, to avoid calling the function
     unnecessarily.
+
+    A Callable may also specify a stream_mapping which specifies the
+    objects that are associated with interactive (i.e linked) streams
+    when composite objects such as Layouts are returned from the
+    callback. This is required for building interactive, linked
+    visualizations (for the backends that support them) when returning
+    Layouts, NdLayouts or GridSpace objects.
+
+    The mapping should map from an appropriate key to a list of
+    streams associated with the selected object. The appropriate key
+    may be a type[.group][.label] specification for Layouts, an
+    integer index or a suitable NdLayout/GridSpace key. For more
+    information see the DynamicMap tutorial at holoviews.org.
     """
 
-    callable_function = param.Callable(default=lambda x: x, doc="""
+    callable = param.Callable(default=None, doc="""
          The callable function being wrapped.""")
 
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
-    def __init__(self, **params):
-        super(Callable, self).__init__(**params)
+    stream_mapping = param.Dict(default={}, doc="""
+         Defines how streams should be mapped to objects returned by
+         the Callable, e.g. when it returns a Layout.""")
+
+    def __init__(self, callable, **params):
+        super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
 
     def __call__(self, *args, **kwargs):
@@ -420,11 +436,10 @@ class Callable(param.Parameterized):
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
-
         hashed_key = util.deephash(key)
         ret = self._memoized.get(hashed_key, None)
         if hashed_key and ret is None:
-            ret = self.callable_function(*args, **kwargs)
+            ret = self.callable(*args, **kwargs)
             self._memoized = {hashed_key : ret}
         return ret
 
@@ -482,7 +497,7 @@ class DynamicMap(HoloMap):
 
     def __init__(self, callback, initial_items=None, **params):
         if not isinstance(callback, Callable):
-            callback = Callable(callable_function=callback)
+            callback = Callable(callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         # Set source to self if not already specified
@@ -496,11 +511,17 @@ class DynamicMap(HoloMap):
         values on the key dimensions.
         """
         key = []
+        undefined = []
         for kdim in self.kdims:
             if kdim.values:
                 key.append(kdim.values[0])
             elif kdim.range:
                 key.append(kdim.range[0])
+            else:
+                undefined.append(kdim)
+        if undefined:
+            raise KeyError('dimensions do not specify a range or values, '
+                           'cannot supply initial key' % ', '.join(undefined))
         return tuple(key)
 
 
@@ -786,6 +807,77 @@ class DynamicMap(HoloMap):
         def dynamic_redim(obj):
             return obj.redim(specs, **dimensions)
         return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
+
+
+    def collate(self):
+        """
+        Collation allows reorganizing DynamicMaps with invalid nesting
+        hierarchies. This is particularly useful when defining
+        DynamicMaps returning an (Nd)Layout or GridSpace
+        types. Collating will split the DynamicMap into individual
+        DynamicMaps for each item in the container. Note that the
+        composite object has to be of consistent length and types for
+        this to work correctly.
+        """
+        # Initialize
+        if self.last is not None:
+            initialized = self
+        else:
+            initialized = self.clone()
+            initialized[initialized._initial_key()]
+
+        if not isinstance(initialized.last, (Layout, NdLayout, GridSpace)):
+            return self
+
+        container = initialized.last.clone(shared_data=False)
+
+        # Get stream mapping from callback
+        remapped_streams = []
+        streams = self.callback.stream_mapping
+        for i, (k, v) in enumerate(initialized.last.data.items()):
+            vstreams = streams.get(i, [])
+            if not vstreams:
+                if isinstance(initialized.last, Layout):
+                    for l in range(len(k)):
+                        path = '.'.join(k[:l])
+                        if path in streams:
+                            vstreams = streams[path]
+                            break
+                else:
+                    vstreams = streams.get(k, [])
+            if any(s in remapped_streams for s in vstreams):
+                raise ValueError(
+                    "The stream_mapping supplied on the Callable "
+                    "is ambiguous please supply more specific Layout "
+                    "path specs.")
+            remapped_streams += vstreams
+
+            # Define collation callback
+            def collation_cb(*args, **kwargs):
+                return self[args][kwargs['selection_key']]
+            callback = Callable(partial(collation_cb, selection_key=k),
+                                inputs=[self])
+            vdmap = self.clone(callback=callback, shared_data=False,
+                               streams=vstreams)
+
+            # Remap source of streams
+            for stream in vstreams:
+                if stream.source is self:
+                    stream.source = vdmap
+            container[k] = vdmap
+
+        unmapped_streams = [repr(stream) for stream in self.streams
+                            if (stream.source is self) and
+                            (stream not in remapped_streams)
+                            and stream.linked]
+        if unmapped_streams:
+            raise ValueError(
+                'The following streams are set to be automatically '
+                'linked to a plot, but no stream_mapping specifying '
+                'which item in the (Nd)Layout to link it to was found:\n%s'
+                % ', '.join(unmapped_streams)
+            )
+        return container
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):

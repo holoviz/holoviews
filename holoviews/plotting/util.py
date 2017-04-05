@@ -42,13 +42,15 @@ def collate(obj):
                                 "structure shown in the Composing Data tutorial"
                                 "(http://git.io/vtIQh)" % nested_type)
         return obj.collate()
+    if isinstance(obj, DynamicMap):
+        return obj.collate()
     if isinstance(obj, HoloMap):
-        display_warning.warning("Nesting %ss within a HoloMap makes it difficult "
+        display_warning.warning("Nesting {0}s within a {1} makes it difficult "
                                 "to access your data or control how it appears; "
-                                "we recommend calling .collate() on the HoloMap "
+                                "we recommend calling .collate() on the {1} "
                                 "in order to follow the recommended nesting "
                                 "structure shown in the Composing Data tutorial"
-                                "(http://git.io/vtIQh)" % obj.type.__name__)
+                                "(http://git.io/vtIQh)".format(obj.type.__name__, type(obj).__name__))
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -68,6 +70,19 @@ def collate(obj):
             raise Exception(undisplayable_info(obj))
     else:
         raise Exception(undisplayable_info(obj))
+
+
+def initialize_dynamic(obj):
+    """
+    Initializes all DynamicMap objects contained by the object
+    """
+    dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
+    for dmap in dmaps:
+        if dmap.sampled:
+            # Skip initialization until plotting code
+            continue
+        if not len(dmap):
+            dmap[dmap._initial_key()]
 
 
 def undisplayable_info(obj, html=False):
