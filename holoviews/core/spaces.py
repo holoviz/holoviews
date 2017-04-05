@@ -821,22 +821,23 @@ class DynamicMap(HoloMap):
         """
         # Initialize
         if self.last is not None:
-            pass
+            initialized = self
         else:
-            self.clone()[self._initial_key()]
+            initialized = self.clone()
+            initialized[initialized._initial_key()]
 
-        if not isinstance(self.last, (Layout, NdLayout, GridSpace)):
+        if not isinstance(initialized.last, (Layout, NdLayout, GridSpace)):
             return self
 
-        container = self.last.clone(shared_data=False)
+        container = initialized.last.clone(shared_data=False)
 
         # Get stream mapping from callback
         remapped_streams = []
         streams = self.callback.stream_mapping
-        for i, (k, v) in enumerate(self.last.data.items()):
+        for i, (k, v) in enumerate(initialized.last.data.items()):
             vstreams = streams.get(i, [])
             if not vstreams:
-                if isinstance(self.last, Layout):
+                if isinstance(initialized.last, Layout):
                     for l in range(len(k)):
                         path = '.'.join(k[:l])
                         if path in streams:
