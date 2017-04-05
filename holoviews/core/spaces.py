@@ -808,13 +808,13 @@ class DynamicMap(HoloMap):
         """
         Collation allows collapsing DynamicMaps with invalid nesting
         hierarchies. This is particularly useful when defining
-        DynamicMaps returning an (Nd)Layout. Collating will split the
-        DynamicMap into an (Nd)Layout of individual DynamicMaps. Note
-        that the Layout should be of consistent length and types for
-        this to work correctly. In order to attach a stream as a source
-        for a particular object in the Layout you may supply either
-        a dictionary or list of lists of streams corresponding to each
-        Element in the Layout.
+        DynamicMaps returning an (Nd)Layout or GridSpace
+        type. Collating will split the DynamicMap into of individual
+        DynamicMaps. Note that the composite object has to be of
+        consistent length and types for this to work
+        correctly. Associating streams with specific viewables in the
+        returned container declare a stream_mapping on the DynamicMap
+        Callable during instantiation.
         """
         # Initialize
         if self.last is not None:
