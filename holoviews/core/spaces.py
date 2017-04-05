@@ -138,7 +138,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             except KeyError:
                 pass
             return Overlay(layers)
-        callback = Callable(callable_function=dynamic_mul, inputs=[self, other])
+        callback = Callable(dynamic_mul, inputs=[self, other])
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -205,8 +205,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
                     return element * other
-                callback = Callable(callable_function=dynamic_mul,
-                                    inputs=[self, other])
+                callback = Callable(dynamic_mul, inputs=[self, other])
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -403,26 +402,33 @@ class Callable(param.Parameterized):
     state of all streams on its inputs, to avoid calling the function
     unnecessarily.
 
-    A Callable may also specify a stream_mapping which allows
-    specifying which objects to attached linked streams to on
-    callbacks which return composite objects like (Nd)Layout and
-    GridSpace objects. The mapping should map between an integer index
-    or a type[.group][.label] specification and lists of streams
-    matching the object.
+    A Callable may also specify a stream_mapping which specifies the
+    objects that are associated with interactive (i.e linked) streams
+    when composite objects such as Layouts are returned from the
+    callback. This is required for building interactive, linked
+    visualizations (for the backends that support them) when returning
+    Layouts, NdLayouts or GridSpace objects.
+
+    The mapping should map from an appropriate key to a list of
+    streams associated with the selected object. The appropriate key
+    may be a type[.group][.label] specification for Layouts, an
+    integer index or a suitable NdLayout/GridSpace key. For more
+    information see the DynamicMap tutorial at holoviews.org.
     """
 
-    callable_function = param.Callable(default=lambda x: x, doc="""
+    callable = param.Callable(default=None, doc="""
          The callable function being wrapped.""")
 
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
-    def __init__(self, callable_function=None, stream_mapping={}, **params):
-        if callable_function is not None:
-            params['callable_function'] = callable_function
-        super(Callable, self).__init__(**params)
+    stream_mapping = param.Dict(default={}, doc="""
+         Defines how streams should be mapped to objects returned by
+         the Callable, e.g. when it returns a Layout.""")
+
+    def __init__(self, callable, **params):
+        super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
-        self.stream_mapping = stream_mapping
 
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
@@ -430,11 +436,10 @@ class Callable(param.Parameterized):
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
-
         hashed_key = util.deephash(key)
         ret = self._memoized.get(hashed_key, None)
         if hashed_key and ret is None:
-            ret = self.callable_function(*args, **kwargs)
+            ret = self.callable(*args, **kwargs)
             self._memoized = {hashed_key : ret}
         return ret
 
@@ -492,7 +497,7 @@ class DynamicMap(HoloMap):
 
     def __init__(self, callback, initial_items=None, **params):
         if not isinstance(callback, Callable):
-            callback = Callable(callable_function=callback)
+            callback = Callable(callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         # Set source to self if not already specified
