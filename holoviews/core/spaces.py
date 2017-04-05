@@ -811,101 +811,72 @@ class DynamicMap(HoloMap):
 
     def collate(self):
         """
-        Collation allows collapsing DynamicMaps with invalid nesting
+        Collation allows reorganizing DynamicMaps with invalid nesting
         hierarchies. This is particularly useful when defining
         DynamicMaps returning an (Nd)Layout or GridSpace
-        type. Collating will split the DynamicMap into of individual
-        DynamicMaps. Note that the composite object has to be of
-        consistent length and types for this to work
-        correctly. Associating streams with specific viewables in the
-        returned container declare a stream_mapping on the DynamicMap
-        Callable during instantiation.
+        types. Collating will split the DynamicMap into individual
+        DynamicMaps for each item in the container. Note that the
+        composite object has to be of consistent length and types for
+        this to work correctly.
         """
         # Initialize
         if self.last is not None:
             pass
         else:
-            self[self._initial_key()]
+            self.clone()[self._initial_key()]
 
-        if isinstance(self.last, HoloMap):
-            # Get nested kdims and streams
-            streams = list(self.streams)
-            if isinstance(self.last, DynamicMap):
-                dimensions = [d(values=self.last.dimension_values(d.name))
-                              for d in self.last.kdims]
-                streams += self.last.streams
-                stream_kwargs = set()
-                for stream in streams:
-                    contents = set(stream.contents())
-                    if stream_kwargs & contents:
-                        raise KeyError('Cannot collate DynamicMaps with clashing '
-                                       'stream parameters.')
-            else:
-                dimensions = self.last.kdims
-            kdims = self.kdims+dimensions
+        if not isinstance(self.last, (Layout, NdLayout, GridSpace)):
+            return self
 
-            # Define callback
-            def collation_cb(*args, **kwargs):
-                return self[args[:self.ndims]][args[self.ndims:]]
-            callback = Callable(collation_cb, inputs=[self])
+        container = self.last.clone(shared_data=False)
 
-            return self.clone(shared_data=False, callback=callback,
-                              kdims=kdims, streams=streams)
-        elif isinstance(self.last, (Layout, NdLayout, GridSpace)):
-            # Expand Layout/NdLayout
-            from ..util import Dynamic
-            new_item = self.last.clone(shared_data=False)
-
-            # Get stream mapping from callback
-            remapped_streams = []
-            streams = self.callback.stream_mapping
-            for i, (k, v) in enumerate(self.last.data.items()):
-                vstreams = streams.get(i, [])
-                if not vstreams:
-                    if isinstance(self.last, Layout):
-                        for l in range(len(k)):
-                            path = '.'.join(k[:l])
-                            if path in streams:
-                                vstreams = streams[path]
-                                break
-                    else:
-                        vstreams = streams.get(k, [])
-                if any(s in remapped_streams for s in vstreams):
-                    raise ValueError(
-                        "The stream_mapping supplied on the Callable "
-                        "is ambiguous please supply more specific Layout "
-                        "path specs.")
-                remapped_streams += vstreams
-
-                # Define collation callback
-                def collation_cb(*args, **kwargs):
-                    return self[args][kwargs['collation_key']]
-                callback = Callable(partial(collation_cb, collation_key=k),
-                                    inputs=[self])
-                vdmap = self.clone(callback=callback, shared_data=False,
-                                   streams=vstreams)
-
-                # Remap source of streams
-                for stream in vstreams:
-                    if stream.source is self:
-                        stream.source = vdmap
-                new_item[k] = vdmap
-
-            unmapped_streams = [repr(stream) for stream in self.streams
-                                if (stream.source is self) and
-                                (stream not in remapped_streams)
-                                and stream.linked]
-            if unmapped_streams:
+        # Get stream mapping from callback
+        remapped_streams = []
+        streams = self.callback.stream_mapping
+        for i, (k, v) in enumerate(self.last.data.items()):
+            vstreams = streams.get(i, [])
+            if not vstreams:
+                if isinstance(self.last, Layout):
+                    for l in range(len(k)):
+                        path = '.'.join(k[:l])
+                        if path in streams:
+                            vstreams = streams[path]
+                            break
+                else:
+                    vstreams = streams.get(k, [])
+            if any(s in remapped_streams for s in vstreams):
                 raise ValueError(
-                   'The following streams are set to be automatically '
-                   'linked to a plot, but no stream_mapping specifying '
-                   'which item in the (Nd)Layout to link it to was found:\n%s'
-                    % ', '.join(unmapped_streams)
-                )
-            return new_item
-        else:
-            self.warning('DynamicMap does not need to be collated.')
-            return dmap
+                    "The stream_mapping supplied on the Callable "
+                    "is ambiguous please supply more specific Layout "
+                    "path specs.")
+            remapped_streams += vstreams
+
+            # Define collation callback
+            def collation_cb(*args, **kwargs):
+                return self[args][kwargs['selection_key']]
+            callback = Callable(partial(collation_cb, selection_key=k),
+                                inputs=[self])
+            vdmap = self.clone(callback=callback, shared_data=False,
+                               streams=vstreams)
+
+            # Remap source of streams
+            for stream in vstreams:
+                if stream.source is self:
+                    stream.source = vdmap
+            container[k] = vdmap
+
+        unmapped_streams = [repr(stream) for stream in self.streams
+                            if (stream.source is self) and
+                            (stream not in remapped_streams)
+                            and stream.linked]
+        if unmapped_streams:
+            raise ValueError(
+                'The following streams are set to be automatically '
+                'linked to a plot, but no stream_mapping specifying '
+                'which item in the (Nd)Layout to link it to was found:\n%s'
+                % ', '.join(unmapped_streams)
+            )
+        return container
 
 
     def groupby(self, dimensions=None, container_type=None, group_type=None, **kwargs):
