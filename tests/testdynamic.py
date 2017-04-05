@@ -1,5 +1,7 @@
 import numpy as np
-from holoviews import Dimension, DynamicMap, Image, HoloMap, Scatter, Curve
+from holoviews import Dimension, NdLayout, GridSpace
+from holoviews.core.spaces import DynamicMap, HoloMap, Callable
+from holoviews.element import Image, Scatter, Curve, Text
 from holoviews.streams import PositionXY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
@@ -201,3 +203,114 @@ class DynamicTestOverlay(ComparisonTestCase):
         with self.assertRaisesRegexp(KeyError, regexp):
             dmap.event(x=1, y=2)
 
+
+
+class DynamicCollate(ComparisonTestCase):
+
+    def test_dynamic_collate_layout(self):
+        def callback():
+            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+        dmap = DynamicMap(callback, kdims=[])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
+        self.assertEqual(layout.Image.I[()], Image(np.array([[0, 1], [2, 3]])))
+
+    def test_dynamic_collate_layout_raise_no_remapping_error(self):
+        def callback(x, y):
+            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+        stream = PositionXY()
+        cb_callable = Callable(callback)
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        with self.assertRaisesRegexp(ValueError, 'The following streams are set to be automatically linked'):
+            layout = dmap.collate()
+
+    def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
+        def callback(x, y):
+            return Image(np.array([[0, 1], [2, 3]])) + Image(np.array([[0, 1], [2, 3]]))
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        with self.assertRaisesRegexp(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
+            layout = dmap.collate()
+
+    def test_dynamic_collate_layout_with_integer_stream_mapping(self):
+        def callback(x, y):
+            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={0: [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
+        self.assertIs(stream.source, layout.Image.I)
+
+    def test_dynamic_collate_layout_with_spec_stream_mapping(self):
+        def callback(x, y):
+            return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [('Image', 'I'), ('Text', 'I')])
+        self.assertIs(stream.source, layout.Image.I)
+
+    def test_dynamic_collate_ndlayout(self):
+        def callback():
+            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+        dmap = DynamicMap(callback, kdims=[])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [1, 2])
+        self.assertEqual(layout[1][()], Image(np.array([[1, 1], [2, 3]])))
+
+    def test_dynamic_collate_ndlayout_with_integer_stream_mapping(self):
+        def callback(x, y):
+            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={0: [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [1, 2])
+        self.assertIs(stream.source, layout[1])
+
+    def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
+        def callback(x, y):
+            return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={(1,): [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
+        layout = dmap.collate()
+        self.assertEqual(list(layout.keys()), [1, 2])
+        self.assertIs(stream.source, layout[1])
+
+    def test_dynamic_collate_grid(self):
+        def callback():
+            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+                              for i in range(1, 3) for j in range(1, 3)})
+        dmap = DynamicMap(callback, kdims=[])
+        grid = dmap.collate()
+        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
+                                             for j in range(1, 3)])
+        self.assertEqual(grid[(0, 1)][()], Image(np.array([[1, 1], [2, 3]])))
+    
+    def test_dynamic_collate_grid_with_integer_stream_mapping(self):
+        def callback():
+            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+                              for i in range(1, 3) for j in range(1, 3)})
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={1: [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[])
+        grid = dmap.collate()
+        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
+                                             for j in range(1, 3)])
+        self.assertEqual(stream.source, grid[(1, 2)])
+
+    def test_dynamic_collate_grid_with_key_stream_mapping(self):
+        def callback():
+            return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
+                              for i in range(1, 3) for j in range(1, 3)})
+        stream = PositionXY()
+        cb_callable = Callable(callback, stream_mapping={(1, 2): [stream]})
+        dmap = DynamicMap(cb_callable, kdims=[])
+        grid = dmap.collate()
+        self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
+                                             for j in range(1, 3)])
+        self.assertEqual(stream.source, grid[(1, 2)])
