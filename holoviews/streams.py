@@ -20,8 +20,9 @@ class Stream(param.Parameterized):
     the parameter dictionary when the trigger classmethod is called.
 
     Depending on the plotting backend certain streams may interactively
-    subscribe to events and changes by the plotting backend. To disable
-    this behavior instantiate the Stream with linked=False.
+    subscribe to events and changes by the plotting backend. For this
+    purpose use the LinkedStream baseclass, which enables the linked
+    option by default.
     """
 
     # Mapping from a source id to a list of streams
@@ -60,7 +61,7 @@ class Stream(param.Parameterized):
             stream.deactivate()
 
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=True, **params):
+    def __init__(self, rename={}, source=None, subscribers=[], linked=False, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -222,7 +223,18 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
-class PositionX(Stream):
+class LinkedStream(Stream):
+    """
+    A LinkedStream indicates is automatically linked to plot interactions
+    on a backend via a Renderer. Not all backends may support dynamically
+    supplying stream data.
+    """
+
+    def __init__(self, linked=True, **params):
+        super(LinkedStream, self).__init__(linked=linked, **params)
+
+
+class PositionX(LinkedStream):
     """
     A position along the x-axis in data coordinates.
 
@@ -234,7 +246,7 @@ class PositionX(Stream):
            Position along the x-axis in data coordinates""", constant=True)
 
 
-class PositionY(Stream):
+class PositionY(LinkedStream):
     """
     A position along the y-axis in data coordinates.
 
@@ -246,7 +258,7 @@ class PositionY(Stream):
            Position along the y-axis in data coordinates""", constant=True)
 
 
-class PositionXY(Stream):
+class PositionXY(LinkedStream):
     """
     A position along the x- and y-axes in data coordinates.
 
@@ -287,7 +299,7 @@ class MouseLeave(PositionXY):
     """
 
 
-class PlotSize(Stream):
+class PlotSize(LinkedStream):
     """
     Returns the dimensions of a plot once it has been displayed.
     """
@@ -304,7 +316,7 @@ class PlotSize(Stream):
                 'height': int(self.height * self.scale)}
 
 
-class RangeXY(Stream):
+class RangeXY(LinkedStream):
     """
     Axis ranges along x- and y-axis in data coordinates.
     """
@@ -316,7 +328,7 @@ class RangeXY(Stream):
       Range of the y-axis of a plot in data coordinates""")
 
 
-class RangeX(Stream):
+class RangeX(LinkedStream):
     """
     Axis range along x-axis in data coordinates.
     """
@@ -325,7 +337,7 @@ class RangeX(Stream):
       Range of the x-axis of a plot in data coordinates""")
 
 
-class RangeY(Stream):
+class RangeY(LinkedStream):
     """
     Axis range along y-axis in data coordinates.
     """
@@ -334,7 +346,7 @@ class RangeY(Stream):
       Range of the y-axis of a plot in data coordinates""")
 
 
-class Bounds(Stream):
+class Bounds(LinkedStream):
     """
     A stream representing the bounds of a box selection as an
     tuple of the left, bottom, right and top coordinates.
@@ -345,7 +357,7 @@ class Bounds(Stream):
         Bounds defined as (left, bottom, top, right) tuple.""")
 
 
-class Selection1D(Stream):
+class Selection1D(LinkedStream):
     """
     A stream representing a 1D selection of objects by their index.
     """

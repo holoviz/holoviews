@@ -42,6 +42,8 @@ def collate(obj):
                                 "structure shown in the Composing Data tutorial"
                                 "(http://git.io/vtIQh)" % nested_type)
         return obj.collate()
+    if isinstance(obj, DynamicMap):
+        return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.warning("Nesting {0}s within a {1} makes it difficult "
                                 "to access your data or control how it appears; "

@@ -402,6 +402,13 @@ class Callable(param.Parameterized):
     returned value based on the arguments to the function and the
     state of all streams on its inputs, to avoid calling the function
     unnecessarily.
+
+    A Callable may also specify a stream_mapping which allows
+    specifying which objects to attached linked streams to on
+    callbacks which return composite objects like (Nd)Layout and
+    GridSpace objects. The mapping should map between an integer index
+    or a type[.group][.label] specification and lists of streams
+    matching the object.
     """
 
     callable_function = param.Callable(default=lambda x: x, doc="""
@@ -410,11 +417,12 @@ class Callable(param.Parameterized):
     inputs = param.List(default=[], doc="""
          The list of inputs the callable function is wrapping.""")
 
-    def __init__(self, callable_function=None, **params):
+    def __init__(self, callable_function=None, stream_mapping={}, **params):
         if callable_function is not None:
             params['callable_function'] = callable_function
         super(Callable, self).__init__(**params)
         self._memoized = {}
+        self.stream_mapping = stream_mapping
 
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
@@ -796,7 +804,7 @@ class DynamicMap(HoloMap):
         return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
 
-    def collate(self, streams=[]):
+    def collate(self):
         """
         Collation allows collapsing DynamicMaps with invalid nesting
         hierarchies. This is particularly useful when defining
@@ -842,21 +850,48 @@ class DynamicMap(HoloMap):
             # Expand Layout/NdLayout
             from ..util import Dynamic
             new_item = self.last.clone(shared_data=False)
+
+            # Get stream mapping from callback
+            remapped_streams = []
+            streams = self.callback.stream_mapping
             for i, (k, v) in enumerate(self.last.items()):
-                if isinstance(streams, dict):
-                    vstreams = streams.get(i, [])
-                elif isinstance(streams, list):
-                    vstreams = streams[i] if i < len(streams) else []
+                vstreams = streams.get(i, [])
+                if not vstreams:
+                    if isinstance(self.last, Layout):
+                        for l in range(len(k)):
+                            path = '.'.join(k[:l])
+                            if path in streams:
+                                vstreams = streams[path]
+                                break
+                    else:
+                        vstreams = streams.get(k, [])
+                remapped_streams += vstreams
+
+                # Define collation callback
                 def collation_cb(*args, **kwargs):
                     return self[args][kwargs['collation_key']]
                 callback = Callable(partial(collation_cb, collation_key=k),
                                     inputs=[self])
                 vdmap = self.clone(callback=callback, shared_data=False,
                                    streams=vstreams)
+
+                # Remap source of streams
                 for stream in vstreams:
                     if stream.source is self:
                         stream.source = vdmap
                 new_item[k] = vdmap
+
+            unmapped_streams = [repr(stream) for stream in self.streams
+                                if (stream.source is self) and
+                                (stream not in remapped_streams)
+                                and stream.linked]
+            if unmapped_streams:
+                raise ValueError(
+                   'The following streams are set to be automatically '
+                   'linked to a plot, but no stream_mapping specifying '
+                   'which item in the (Nd)Layout to link it to was found:\n%s'
+                    % ', '.join(unmapped_streams)
+                )
             return new_item
         else:
             self.warning('DynamicMap does not need to be collated.')
