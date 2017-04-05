@@ -854,7 +854,7 @@ class DynamicMap(HoloMap):
             # Get stream mapping from callback
             remapped_streams = []
             streams = self.callback.stream_mapping
-            for i, (k, v) in enumerate(self.last.items()):
+            for i, (k, v) in enumerate(self.last.data.items()):
                 vstreams = streams.get(i, [])
                 if not vstreams:
                     if isinstance(self.last, Layout):
@@ -865,6 +865,11 @@ class DynamicMap(HoloMap):
                                 break
                     else:
                         vstreams = streams.get(k, [])
+                if any(s in remapped_streams for s in vstreams):
+                    raise ValueError(
+                        "The stream_mapping supplied on the Callable "
+                        "is ambiguous please supply more specific Layout "
+                        "path specs.")
                 remapped_streams += vstreams
 
                 # Define collation callback
