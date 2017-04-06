@@ -11,8 +11,31 @@ try:
 except:
     pd = None
 
+class DimensionNameLabelTest(ComparisonTestCase):
 
-class DimensionTest(ComparisonTestCase):
+    def test_dimension_name(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+
+    def test_dimension_name_tuple(self):
+        dim = Dimension(('test', 'A test'))
+        self.assertEqual(dim.name, 'test')
+
+    def test_dimension_label_tuple(self):
+        dim = Dimension(('test', 'A test'))
+        self.assertEqual(dim.label, 'A test')
+
+    def test_dimension_label_kwarg(self):
+        dim = Dimension('test', label='A test')
+        self.assertEqual(dim.label, 'A test')
+
+    def test_dimension_label_kwarg_and_tuple(self):
+        # Should work but issue a warning
+        dim = Dimension(('test', 'A test'), label='Another test')
+        self.assertEqual(dim.label, 'Another test')
+
+
+class DimensionValuesTest(ComparisonTestCase):
 
     def setUp(self):
         self.values1 = [0,1,2,3,4,5,6]
