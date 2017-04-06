@@ -386,8 +386,11 @@ class ServerCallback(MessageCallback):
         for attr, path in self.attributes.items():
             attr_path = path.split('.')
             if attr_path[0] == 'cb_obj':
+                obj_handle = self.models[0]
                 path = '.'.join(self.models[:1]+attr_path[1:])
-            cb_obj = self.plot_handles.get(self.models[0])
+            else:
+                obj_handle = attr_path[0]
+            cb_obj = self.plot_handles.get(obj_handle)
             msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         self.on_msg(msg)
