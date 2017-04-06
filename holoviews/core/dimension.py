@@ -169,6 +169,22 @@ class Dimension(param.Parameterized):
         super(Dimension, self).__init__(**all_params)
 
 
+    def pprint(self):
+        spec = self.name if self.name == self.label else (self.name, self.label)
+        excluded = ['name'] if self.name == self.label else ['name', 'label']
+        changed_params = {k:v for k,v in self.get_param_values(onlychanged=True)
+                          if k not in excluded}
+        if len(changed_params) == 0:
+            return 'Dimension({spec})'.format(spec=repr(spec))
+
+        ordering = sorted( sorted(changed_params.keys()),
+                           key=lambda k: (- float('inf')
+                                          if self.params(k).precedence is None
+                                          else self.params(k).precedence))
+        kws = ", ".join('%s=%s' % (k, changed_params[k]) for k in ordering)
+        return 'Dimension({spec}, {kws})'.format(spec=repr(spec), kws=kws)
+
+
     def __call__(self, spec=None, **overrides):
         "Aliased to clone method. To be deprecated in 2.0"
         return self.clone(spec=spec, **overrides)
