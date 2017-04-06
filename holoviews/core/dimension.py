@@ -79,11 +79,43 @@ class Dimension(param.Parameterized):
 
     For instance, a Dimension may specify that a set of numeric values
     actually correspond to 'Height' (dimension name), in units of
-    meters, and that allowed values must be floats greater than zero.
+    meters, with a descriptive label 'Height of adult males'.
 
-    In addition, Dimensions can be declared as cyclic, support
-    categorical data using a finite set of allowed, ordered values and
-    support a custom, pretty-printed representation.
+    All dimensions object have a name that identifies them and a label
+    containing a suitable description. If the label is not explicitly
+    specified it matches the name.
+
+    These two parameters define the core identity of the dimension
+    object and must match if two dimension objects are to be considered
+    equivalent. All other parameters are considered optional metadata
+    and are not used when testing for equality.
+
+    Unlike all the other parameters, these core parameters can be used
+    to construct a Dimension object from a tuple. This format is
+    sufficient to define an identical Dimension:
+
+    Dimension('a', label='Dimension A') == Dimension(('a', 'Dimension A'))
+
+    Everything else about a dimension is considered to reflect
+    non-semantic preferences. Examples include the default value (which
+    may be used in a visualization to set an initial slider position),
+    how the value is to rendered as text (which may be used to specify
+    the printed floating point precision) or a suitable range of values
+    to consider for a particular analysis.
+
+    Units
+    -----
+
+    Full unit support with automated conversions are on the HoloViews
+    roadmap. Once rich unit objects are supported, the unit (or more
+    specifically the type of unit) will be part of the core dimension
+    specification used to establish equality.
+
+    Until this feature is implemented, there are two auxillary
+    parameters that hold some partial information about the unit: the
+    name of the unit and whether or not it is cyclic. The name of the
+    unit is used as part of the pretty-printed representation and
+    knowing whether it is cyclic is important for certain operations.
     """
 
     name = param.String(doc="""
