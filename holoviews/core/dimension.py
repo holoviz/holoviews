@@ -187,7 +187,9 @@ class Dimension(param.Parameterized):
             all_params['name'] = name
             all_params['label'] = label
             if 'label' in params and (label != params['label']):
-                self.warning('Ignoring label as supplied by keyword, using tuple format.')
+                self.warning('Using label as supplied by keyword ({!r}), ignoring '
+                             'tuple value {!r}'.format(params['label'], label))
+                all_params['label'] = params['label']
         elif isinstance(spec, basestring):
             all_params['name'] = spec
             all_params['label'] = params.get('label', spec)

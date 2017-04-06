@@ -37,7 +37,7 @@ class DimensionNameLabelTest(ComparisonTestCase):
     def test_dimension_label_kwarg_and_tuple(self):
         # Should work but issue a warning
         dim = Dimension(('test', 'A test'), label='Another test')
-        self.assertEqual(dim.label, 'A test')
+        self.assertEqual(dim.label, 'Another test')
 
 
 class DimensionValuesTest(ComparisonTestCase):
