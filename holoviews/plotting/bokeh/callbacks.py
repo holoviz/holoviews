@@ -12,67 +12,6 @@ from ..comms import JupyterCommJS
 from .util import bokeh_version
 
 
-def attributes_js(attributes, handles):
-    """
-    Generates JS code to look up attributes on JS objects from
-    an attributes specification dictionary. If the specification
-    references a plotting particular plotting handle it will also
-    generate JS code to get the ID of the object.
-
-    Simple example (when referencing cb_data or cb_obj):
-
-    Input  : {'x': 'cb_data.geometry.x'}
-
-    Output : data['x'] = cb_data['geometry']['x']
-
-    Example referencing plot handle:
-
-    Input  : {'x0': 'x_range.attributes.start'}
-
-    Output : if ((x_range !== undefined)) {
-               data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
-             }
-    """
-    code = ''
-    for key, attr_path in attributes.items():
-        data_assign = "data['{key}'] = ".format(key=key)
-        attrs = attr_path.split('.')
-        obj_name = attrs[0]
-        attr_getters = ''.join(["['{attr}']".format(attr=attr)
-                                for attr in attrs[1:]])
-        if obj_name not in ['cb_obj', 'cb_data']:
-            assign_str = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'.format(
-                assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
-            )
-            code += 'if (({obj_name} != undefined)) {{ {assign} }}'.format(
-                obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
-                )
-        else:
-            assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
-            code += assign_str
-    return code
-
-
-def resolve_attr_spec(spec, cb_obj, model):
-    """
-    Resolves a Callback attribute specification looking the
-    corresponding attribute up on the cb_obj, which should be a bokeh
-    model.
-    """
-    if not cb_obj:
-        raise Exception('Bokeh plot attribute %s could not be found' % spec)
-    spec = spec.split('.')
-    resolved = cb_obj
-    for p in spec[1:]:
-        if p == 'attributes':
-            continue
-        if isinstance(resolved, dict):
-            resolved = resolved.get(p)
-        else:
-            resolved = getattr(resolved, p, None)
-    return {'id': model.ref['id'], 'value': resolved}
-
-
 
 class MessageCallback(object):
     """
@@ -284,6 +223,50 @@ class CustomJSCallback(MessageCallback):
 
     _comm_type = JupyterCommJS
 
+    @classmethod
+    def attributes_js(cls, attributes, handles):
+        """
+        Generates JS code to look up attributes on JS objects from
+        an attributes specification dictionary. If the specification
+        references a plotting particular plotting handle it will also
+        generate JS code to get the ID of the object.
+
+        Simple example (when referencing cb_data or cb_obj):
+
+        Input  : {'x': 'cb_data.geometry.x'}
+
+        Output : data['x'] = cb_data['geometry']['x']
+
+        Example referencing plot handle:
+
+        Input  : {'x0': 'x_range.attributes.start'}
+
+        Output : if ((x_range !== undefined)) {
+                    data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
+                 }
+        """
+        assign_template = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'
+        conditional_template = 'if (({obj_name} != undefined)) {{ {assign} }}'
+        code = ''
+        for key, attr_path in attributes.items():
+            data_assign = "data['{key}'] = ".format(key=key)
+            attrs = attr_path.split('.')
+            obj_name = attrs[0]
+            attr_getters = ''.join(["['{attr}']".format(attr=attr)
+                                    for attr in attrs[1:]])
+            if obj_name not in ['cb_obj', 'cb_data']:
+                assign_str = assign_template.format(
+                    assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
+                )
+                code += conditional_template.format(
+                    obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
+                )
+            else:
+                assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
+                code += assign_str
+        return code
+
+
     def get_customjs(self, references):
         """
         Creates a CustomJS callback that will send the requested
@@ -294,7 +277,7 @@ class CustomJSCallback(MessageCallback):
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
-        attributes = attributes_js(self.attributes, references)
+        attributes = self.attributes_js(self.attributes, references)
         conditions = ["%s" % cond for cond in self.skip]
         conditional = ''
         if conditions:
@@ -328,6 +311,27 @@ class ServerCallback(MessageCallback):
     the msg off to the general on_msg handler, which will update the
     Stream(s) attached to the callback.
     """
+
+    @classmethod
+    def resolve_attr_spec(cls, spec, cb_obj, model):
+        """
+        Resolves a Callback attribute specification looking the
+        corresponding attribute up on the cb_obj, which should be a
+        bokeh model.
+        """
+        if not cb_obj:
+            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+        spec = spec.split('.')
+        resolved = cb_obj
+        for p in spec[1:]:
+            if p == 'attributes':
+                continue
+            if isinstance(resolved, dict):
+                resolved = resolved.get(p)
+            else:
+                resolved = getattr(resolved, p, None)
+        return {'id': model.ref['id'], 'value': resolved}
+
 
     def on_change(self, attr, old, new):
         """
@@ -365,7 +369,7 @@ class ServerCallback(MessageCallback):
             msg = {}
             for attr, path in self.attributes.items():
                 model_obj = self.plot_handles.get(self.models[0])
-                msg[attr] = resolve_attr_spec(path, event, model_obj)
+                msg[attr] = self.resolve_attr_spec(path, event, model_obj)
             self.on_msg(msg)
         self.plot.document.add_timeout_callback(self.process_on_event, 50)
 
@@ -381,7 +385,7 @@ class ServerCallback(MessageCallback):
             if attr_path[0] == 'cb_obj':
                 path = '.'.join(self.models[:1]+attr_path[1:])
             cb_obj = self.plot_handles.get(self.models[0])
-            msg[attr] = resolve_attr_spec(path, cb_obj, cb_obj)
+            msg[attr] = self.resolve_attr_spec(path, cb_obj, cb_obj)
 
         self.on_msg(msg)
         self.plot.document.add_timeout_callback(self.process_on_change, 50)
