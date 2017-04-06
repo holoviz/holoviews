@@ -80,6 +80,15 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             return self.diff(plot), info
 
+    @bothmethod
+    def get_widget(self_or_cls, plot, widget_type, **kwargs):
+        if not isinstance(plot, Plot):
+            plot = self_or_cls.get_plot(plot)
+        if self_or_cls.mode == 'server':
+            return BokehServerWidgets(plot, renderer=self_or_cls.instance(), **kwargs)
+        else:
+            return super(BokehRenderer, self).get_widget(plot, widget_type, **kwargs)
+
 
     def server_doc(self, plot, doc=None):
         """
