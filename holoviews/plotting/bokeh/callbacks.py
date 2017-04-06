@@ -187,7 +187,7 @@ class Callback(object):
         }}
 
         // Add current event to queue and process queue if not blocked
-        event_name = cb_obj.event ? cb_obj.event.event_name : undefined
+        event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
         timeout = comm_state.time + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
@@ -444,7 +444,7 @@ class PositionXYCallback(Callback):
     Returns the mouse x/y-position on mousemove event.
     """
 
-    attributes = {'x': 'cb_obj.event.x', 'y': 'cb_obj.event.y'}
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
     events = ['mousemove']
 
@@ -454,7 +454,7 @@ class PositionXCallback(PositionXYCallback):
     Returns the mouse x-position on mousemove event.
     """
 
-    attributes = {'x': 'cb_obj.event.x'}
+    attributes = {'x': 'cb_obj.x'}
 
 
 class PositionYCallback(PositionXYCallback):
@@ -462,7 +462,7 @@ class PositionYCallback(PositionXYCallback):
     Returns the mouse x/y-position on mousemove event.
     """
 
-    attributes = {'y': 'cb_data.event.y'}
+    attributes = {'y': 'cb_data.y'}
 
 
 class TapCallback(PositionXYCallback):
