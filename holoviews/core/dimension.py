@@ -133,32 +133,32 @@ class Dimension(param.Parameterized):
     presets = {} # A dictionary-like mapping name, (name,) or
                  # (name, unit) to a preset Dimension object
 
-    def __init__(self, name, **params):
+    def __init__(self, spec, **params):
         """
         Initializes the Dimension object with the given name.
         """
-        if isinstance(name, Dimension):
-            existing_params = dict(name.get_param_values())
-        elif (name, params.get('unit', None)) in self.presets.keys():
-            preset = self.presets[(str(name), str(params['unit']))]
+        if isinstance(spec, Dimension):
+            existing_params = dict(spec.get_param_values())
+        elif (spec, params.get('unit', None)) in self.presets.keys():
+            preset = self.presets[(str(spec), str(params['unit']))]
             existing_params = dict(preset.get_param_values())
-        elif name in self.presets.keys():
-            existing_params = dict(self.presets[str(name)].get_param_values())
-        elif (name,) in self.presets.keys():
-            existing_params = dict(self.presets[(str(name),)].get_param_values())
+        elif spec in self.presets.keys():
+            existing_params = dict(self.presets[str(spec)].get_param_values())
+        elif (spec,) in self.presets.keys():
+            existing_params = dict(self.presets[(str(spec),)].get_param_values())
         else:
-            existing_params = {'name': name}
+            existing_params = {}
 
         all_params = dict(existing_params, **params)
-        name = all_params['name']
-        label = name
-        if isinstance(name, tuple):
-            name, label = name
+        if isinstance(spec, tuple):
+            name, label = spec
             all_params['name'] = name
-            if 'label' in params:
-                self.warning('Using label as supplied by keyword, ignoring tuple format.')
-
-        all_params['label'] = params.get('label', label)
+            all_params['label'] = label
+            if 'label' in params and (label != params['label']):
+                self.warning('Ignoring label as supplied by keyword, using tuple format.')
+        elif isinstance(spec, basestring):
+            all_params['name'] = spec
+            all_params['label'] = params.get('label', spec)
 
         values = params.get('values', [])
         if isinstance(values, basestring) and values == 'initial':
@@ -169,19 +169,20 @@ class Dimension(param.Parameterized):
         super(Dimension, self).__init__(**all_params)
 
 
-    def __call__(self, name=None, **overrides):
+    def __call__(self, spec=None, **overrides):
         "Aliased to clone method. To be deprecated in 2.0"
-        return self.clone(name=name, **overrides)
+        return self.clone(spec=spec, **overrides)
 
 
-    def clone(self, name=None, **overrides):
+    def clone(self, spec=None, **overrides):
         """
         Derive a new Dimension that inherits existing parameters
         except for the supplied, explicit overrides
         """
         settings = dict(self.get_param_values(onlychanged=True), **overrides)
-        if name is not None: settings['name'] = name
-        return self.__class__(**settings)
+        spec = spec if (spec is not None) else (overrides.get('name', self.name),
+                                                overrides.get('label', self.label))
+        return self.__class__(spec, **{k:v for k,v in settings.items() if k != ['name']})
 
 
     @property
