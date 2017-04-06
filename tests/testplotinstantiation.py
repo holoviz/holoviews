@@ -438,7 +438,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['source'].data['line_width'], line_width)
         self.assertEqual(plot.handles['source'].data['color'], color)
 
-    def _test_hover_info(self, element, tooltips, line_policy='prev'):
+    def _test_hover_info(self, element, tooltips, line_policy='nearest'):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
@@ -461,7 +461,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Curve': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test')])
+        self._test_hover_info(obj, [('Test', '@Test')], 'prev')
 
     def test_curve_overlay_hover(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
