@@ -64,7 +64,8 @@ def replace_dimensions(dimensions, overrides):
         elif isinstance(override, Dimension):
             replaced.append(override)
         elif isinstance(override, dict):
-            replaced.append(d(**override))
+            replaced.append(d(override.get('name',None),
+                              **{k:v for k,v in override.items() if k != 'name'}))
         else:
             raise ValueError('Dimension can only be overridden '
                              'with another dimension or a dictionary '
@@ -169,6 +170,10 @@ class Dimension(param.Parameterized):
         """
         Initializes the Dimension object with the given name.
         """
+        if 'name' in params:
+            raise KeyError('Dimension name must only be passed as the positional argument')
+
+
         if isinstance(spec, Dimension):
             existing_params = dict(spec.get_param_values())
         elif (spec, params.get('unit', None)) in self.presets.keys():
@@ -238,7 +243,7 @@ class Dimension(param.Parameterized):
         settings = dict(self.get_param_values(onlychanged=True), **overrides)
         spec = spec if (spec is not None) else (overrides.get('name', self.name),
                                                 overrides.get('label', self.label))
-        return self.__class__(spec, **{k:v for k,v in settings.items() if k != ['name']})
+        return self.__class__(spec, **{k:v for k,v in settings.items() if k != 'name'})
 
 
     @property
