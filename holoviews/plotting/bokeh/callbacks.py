@@ -360,20 +360,37 @@ class Callback(object):
             self.plot.document.add_timeout_callback(self.trigger, 50)
 
 
+    def on_event(self, event):
+        """
+        Process bokeh UIEvents adding timeout to process multiple concerted
+        value change at once rather than firing off multiple plot updates.
+        """
+        self._event_queue.append((event))
+        if self.trigger not in self.plot.document._session_callbacks:
+            self.plot.document.add_timeout_callback(self.trigger, 50)
+
+
     def trigger(self):
         """
         Trigger callback change event and triggering corresponding streams.
         """
         if not self._event_queue:
             return
+        if self.events:
+            event = self._event_queue[-1]
         self._event_queue = []
 
         values = {}
         for attr, path in self.attributes.items():
             attr_path = path.split('.')
-            if attr_path[0] == 'cb_obj':
-                attr_path = self.models[0]
-            obj = self.plot_handles.get(attr_path[0])
+            if self.events:
+                obj = event
+                model_obj = self.plot_handles.get(self.models[0])
+            else:
+                if attr_path[0] == 'cb_obj':
+                    attr_path = self.models[:1]+attr_path[1:]
+                obj = self.plot_handles.get(attr_path[0])
+                model_obj = obj
             attr_val = obj
             if not obj:
                 raise Exception('Bokeh plot attribute %s could not be found' % path)
@@ -384,7 +401,8 @@ class Callback(object):
                     attr_val = attr_val.get(p)
                 else:
                     attr_val = getattr(attr_val, p, None)
-            values[attr] = {'id': obj.ref['id'], 'value': attr_val}
+            values[attr] = {'id': model_obj.ref['id'],
+                            'value': attr_val}
         self.on_msg(values)
         self.plot.document.add_timeout_callback(self.trigger, 50)
 
@@ -395,7 +413,7 @@ class Callback(object):
         """
         if self.events and bokeh_version >= '0.12.5':
             for event in self.events:
-                handle.on_event(event, self.on_change)
+                handle.on_event(event, self.on_event)
         elif self.change:
             for change in self.change:
                 handle.on_change(change, self.on_change)
