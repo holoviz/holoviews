@@ -277,7 +277,7 @@ class CurvePlot(ElementPlot):
                 if not any(v is None for v in vals)}
         mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v
                    for k, v in elmapping.items()}
-        filter_batched_data(data, elmapping)
+        filter_batched_data(data, mapping)
         return data, mapping
 
 

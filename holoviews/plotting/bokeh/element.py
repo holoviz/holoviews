@@ -778,9 +778,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if glyph:
             properties = self._glyph_properties(plot, element, source, ranges)
+            renderer = self.handles.get('glyph_renderer')
             with abbreviated_exception():
-                self._update_glyphs(self.handles['glyph_renderer'], properties, mapping,
-                                    glyph)
+                self._update_glyphs(renderer, properties, mapping, glyph)
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
