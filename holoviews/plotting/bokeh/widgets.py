@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 
+import math
 import json
 from functools import partial
 
@@ -19,15 +20,19 @@ from .util import serialize_json
 
 class BokehServerWidgets(param.Parameterized):
     """
+    BokehServerWidgets create bokeh widgets corresponding to all the
+    key dimensions found on a BokehPlot instance. It currently supports
+    to types of widgets sliders (which may be discrete or continuous)
+    and dropdown widgets letting you select non-numeric values.
     """
 
-    basejs = param.String(default=None, doc="""
+    basejs = param.String(default=None, precedence=-1, doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
-    extensionjs = param.String(default=None, doc="""
+    extensionjs = param.String(default=None, precedence=-1, doc="""
         Optional javascript extension file for a particular backend.""")
 
-    css = param.String(default=None, doc="""
+    css = param.String(default=None, precedence=-1, doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
     position = param.ObjectSelector(default='right',
@@ -36,6 +41,9 @@ class BokehServerWidgets(param.Parameterized):
     sizing_mode = param.ObjectSelector(default='fixed',
         objects=['fixed', 'stretch_both', 'scale_width',
                  'scale_height', 'scale_both'])
+
+    width = param.Integer(default=200, doc="""
+        Width of the widget box in pixels""")
 
     def __init__(self, plot, renderer=None, **params):
         super(BokehServerWidgets, self).__init__(**params)
@@ -94,22 +102,23 @@ class BokehServerWidgets(param.Parameterized):
             else:
                 start = dim.soft_range[0] if dim.soft_range[0] else dim.range[0]
                 end = dim.soft_range[1] if dim.soft_range[1] else dim.range[1]
+                dim_range = end - start
                 int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                 if isinstance(dim_range, int) or int_type:
                     step = 1
                 else:
-                    step = 10**(round(math.log10(dim_range))-3)
+                    step = 10**((round(math.log10(dim_range))-3))
                 label = TextInput(value=str(start), title=dim.pprint_label)
                 widget = Slider(value=start, start=start,
                                 end=end, step=step, title=None)
         else:
             values = (dim.values if dim.values else
                       list(unique_array(holomap.dimension_values(dim.name))))
-            labels = [str(dim.pprint_value(v)) for v in values]
+            labels = [dim.pprint_value(v) for v in values]
             if isinstance(values[0], np.datetime64) or isnumeric(values[0]):
                 label = AutocompleteInput(value=labels[0], completions=labels,
                                           title=dim.pprint_label)
-                widget = Slider(value=0, end=len(dim.values)-1, title=None)
+                widget = Slider(value=0, end=len(values)-1, title=None, step=1)
             else:
                 widget = Select(title=dim.pprint_label, value=values[0],
                                 options=list(zip(values, labels)))
@@ -139,7 +148,7 @@ class BokehServerWidgets(param.Parameterized):
     def init_layout(self):
         widgets = [widget for d in self.widgets.values()
                    for widget in d if widget]
-        wbox = widgetbox(widgets, width=200)
+        wbox = widgetbox(widgets, width=self.width)
         if self.position in ['right', 'below']:
             plots = [self.plot.state, wbox]
         else:
@@ -231,8 +240,10 @@ class BokehWidget(NdWidget):
                 msg = serialize_json(msg)
             return msg
 
+
 class BokehSelectionWidget(BokehWidget, SelectionWidget):
     pass
+
 
 class BokehScrubberWidget(BokehWidget, ScrubberWidget):
     pass
