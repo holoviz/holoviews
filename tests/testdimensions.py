@@ -39,6 +39,15 @@ class DimensionNameLabelTest(ComparisonTestCase):
         dim = Dimension(('test', 'A test'), label='Another test')
         self.assertEqual(dim.label, 'Another test')
 
+    def test_dimension_invalid_name(self):
+        regexp = 'Dimension name must only be passed as the positional argument'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            dim = Dimension('test', name='something else')
+
+    def test_dimension_invalid_name_tuple(self):
+        regexp = 'Dimension name must only be passed as the positional argument'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            dim = Dimension(('test', 'test dimension'), name='something else')
 
 class DimensionValuesTest(ComparisonTestCase):
 
