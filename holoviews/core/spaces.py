@@ -1016,8 +1016,7 @@ class GridSpace(UniformNdMapping):
     2D parameter spaces.
     """
 
-    kdims = param.List(default=[Dimension(name="X"), Dimension(name="Y")],
-                       bounds=(1,2))
+    kdims = param.List(default=[Dimension("X"), Dimension("Y")], bounds=(1,2))
 
     def __init__(self, initial_items=None, **params):
         super(GridSpace, self).__init__(initial_items, **params)
