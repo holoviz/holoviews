@@ -4,6 +4,7 @@ import json
 from functools import partial
 
 import param
+import numpy as np
 from bokeh.io import _CommsHandle
 from bokeh.util.notebook import get_comms
 from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput
@@ -64,55 +65,75 @@ class BokehServerWidgets(param.Parameterized):
         self._event_queue = []
 
 
-    def get_widgets(self):
-        # Generate widget data
-        widgets = OrderedDict()
-        lookups = {}
-        for idx, dim in enumerate(self.mock_obj.kdims):
-            label, lookup = None, None
-            if self.plot.dynamic:
-                if dim.values:
-                    if all(isnumeric(v) for v in dim.values):
-                        values = dim.values
-                        labels = [unicode(dim.pprint_value(v)) for v in dim.values]
-                        label = AutocompleteInput(value=labels[0], completions=labels,
-                                                  title=dim.pprint_label)
-                        widget = Slider(value=0, end=len(dim.values)-1, title=None, step=1)
-                        lookup = zip(values, labels)
-                    else:
-                        values = [(v, dim.pprint_value(v)) for v in dim.values]
-                        widget = Select(title=dim.pprint_label, value=values[0][0],
-                                        options=values)
-                else:
-                    start = dim.soft_range[0] if dim.soft_range[0] else dim.range[0]
-                    end = dim.soft_range[1] if dim.soft_range[1] else dim.range[1]
-                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
-                    if isinstance(dim_range, int) or int_type:
-                        step = 1
-                    else:
-                        step = 10**(round(math.log10(dim_range))-3)
-                    label = TextInput(value=str(start), title=dim.pprint_label)
-                    widget = Slider(value=start, start=start,
-                                    end=end, step=step, title=None)
-            else:
-                values = (dim.values if dim.values else
-                            list(unique_array(self.mock_obj.dimension_values(dim.name))))
-                labels = [str(dim.pprint_value(v)) for v in values]
-                if isinstance(values[0], np.datetime64) or isnumeric(values[0]):
+    @classmethod
+    def create_widget(self, dim, holomap=None):
+        """"
+        Given a Dimension creates bokeh widgets to select along that
+        dimension. For numeric data a slider widget is created which
+        may be either discrete, if a holomap is supplied or the
+        Dimension.values are set, or a continuous widget for
+        DynamicMaps. If the slider is discrete the returned mapping
+        defines a mapping between values and labels making it possible
+        sync the two slider and label widgets. For non-numeric data
+        a simple dropdown selection widget is generated.
+        """
+        label, mapping = None, None
+        if holomap is None:
+            if dim.values:
+                if all(isnumeric(v) for v in dim.values):
+                    values = dim.values
+                    labels = [unicode(dim.pprint_value(v)) for v in dim.values]
                     label = AutocompleteInput(value=labels[0], completions=labels,
                                               title=dim.pprint_label)
-                    widget = Slider(value=0, end=len(dim.values)-1, title=None)
+                    widget = Slider(value=0, end=len(dim.values)-1, title=None, step=1)
+                    mapping = zip(values, labels)
                 else:
-                    widget = Select(title=dim.pprint_label, value=values[0],
-                                    options=list(zip(values, labels)))
-                lookup = zip(values, labels)
-            if label:
+                    values = [(v, dim.pprint_value(v)) for v in dim.values]
+                    widget = Select(title=dim.pprint_label, value=values[0][0],
+                                    options=values)
+            else:
+                start = dim.soft_range[0] if dim.soft_range[0] else dim.range[0]
+                end = dim.soft_range[1] if dim.soft_range[1] else dim.range[1]
+                int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
+                if isinstance(dim_range, int) or int_type:
+                    step = 1
+                else:
+                    step = 10**(round(math.log10(dim_range))-3)
+                label = TextInput(value=str(start), title=dim.pprint_label)
+                widget = Slider(value=start, start=start,
+                                end=end, step=step, title=None)
+        else:
+            values = (dim.values if dim.values else
+                      list(unique_array(holomap.dimension_values(dim.name))))
+            labels = [str(dim.pprint_value(v)) for v in values]
+            if isinstance(values[0], np.datetime64) or isnumeric(values[0]):
+                label = AutocompleteInput(value=labels[0], completions=labels,
+                                          title=dim.pprint_label)
+                widget = Slider(value=0, end=len(dim.values)-1, title=None)
+            else:
+                widget = Select(title=dim.pprint_label, value=values[0],
+                                options=list(zip(values, labels)))
+            mapping = zip(values, labels)
+        return widget, label, mapping
+
+
+    def get_widgets(self):
+        """
+        Creates a set of widgets representing the dimensions on the
+        plot object used to instantiate the widgets class.
+        """
+        widgets = OrderedDict()
+        mappings = {}
+        for dim in self.mock_obj.kdims:
+            holomap = None if self.plot.dynamic else self.mock_obj
+            widget, label, mapping = self.create_widget(dim, holomap)
+            if label is not None:
                 label.on_change('value', partial(self.on_change, dim.pprint_label, 'label'))
             widget.on_change('value', partial(self.on_change, dim.pprint_label, 'widget'))
             widgets[dim.pprint_label] = (label, widget)
-            if lookup:
-                lookups[dim.pprint_label] = OrderedDict(lookup)
-        return widgets, lookups
+            if mapping:
+                mappings[dim.pprint_label] = OrderedDict(mapping)
+        return widgets, mappings
 
 
     def init_layout(self):
