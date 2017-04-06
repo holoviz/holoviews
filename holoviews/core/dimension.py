@@ -170,6 +170,11 @@ class Dimension(param.Parameterized):
 
 
     def __call__(self, name=None, **overrides):
+        "Aliased to clone method. To be deprecated in 2.0"
+        return self.clone(name=name, **overrides)
+
+
+    def clone(self, name=None, **overrides):
         """
         Derive a new Dimension that inherits existing parameters
         except for the supplied, explicit overrides
