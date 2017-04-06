@@ -251,7 +251,11 @@ class Comparison(ComparisonInterface):
         if dim1.unit != dim2.unit:
             raise cls.failureException("Dimension unit declarations mismatched: %s != %s"
                                        % (dim1.unit , dim2.unit))
-        if dim1.values != dim2.values:
+
+        # Ignoring deprecated 'initial' option
+        dim1_values = [] if dim1.values=='initial' else dim1.values
+        dim2_values = [] if dim2.values=='initial' else dim2.values
+        if dim1_values != dim2_values:
             raise cls.failureException("Dimension value declarations mismatched: %s != %s"
                                        % (dim1.values , dim2.values))
 
