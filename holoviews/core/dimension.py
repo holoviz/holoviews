@@ -116,10 +116,10 @@ class Dimension(param.Parameterized):
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
 
-    values = param.ClassSelector(class_=(str, list), default=[], doc="""
-        Optional set of allowed values for the dimension that can also
-        be used to retain a categorical ordering. Setting values to
-        'initial' indicates that the values will be added during construction.""")
+    values = param.List(default=[], doc="""
+        Optional specification of the allowed value set for the
+        dimension that may also be used to retain a categorical
+        ordering.""")
 
     # Defines default formatting by type
     type_formatters = {}
@@ -151,10 +151,12 @@ class Dimension(param.Parameterized):
             all_params['name'] = name
         self.label = label
 
-        if not isinstance(params.get('values', None), basestring):
-            all_params['values'] = sorted(list(unique_array(params.get('values', []))))
-        elif params['values'] != 'initial':
-            raise Exception("Values argument can only be set with the string 'initial'.")
+        values = params.get('values', [])
+        if isinstance(values, basestring) and values == 'initial':
+            self.warning("The 'initial' string for dimension values is no longer supported.")
+            values = []
+
+        all_params['values'] = sorted(list(unique_array(values)))
         super(Dimension, self).__init__(**all_params)
 
 
