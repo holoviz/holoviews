@@ -155,21 +155,21 @@ class DimensionedTest(ComparisonTestCase):
             raise AssertionError("Label should be a constant parameter.")
         except TypeError: pass
 
-    def test_dimensionsed_redim_string(self):
+    def test_dimensioned_redim_string(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x='Test'))
 
-    def test_dimensionsed_redim_dimension(self):
+    def test_dimensioned_redim_dimension(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x=Dimension('Test')))
 
-    def test_dimensionsed_redim_dict(self):
+    def test_dimensioned_redim_dict(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x={'name': 'Test'}))
 
-    def test_dimensionsed_redim_dict_range(self):
+    def test_dimensioned_redim_dict_range(self):
         redimensioned = Dimensioned('Arbitrary Data', kdims=['x']).redim(x={'range': (0, 10)})
         self.assertEqual(redimensioned.kdims[0].range, (0, 10))
