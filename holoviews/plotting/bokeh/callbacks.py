@@ -508,7 +508,7 @@ class Callback(CustomJSCallback, ServerCallback):
             if self.plot.renderer.mode == 'server':
                 self.set_server_callback(handle)
             else:
-                js_callback = self.get_customjs(requested)
+                js_callback = self.get_customjs(handles)
                 self.set_customjs_callback(js_callback, handle)
                 self.callbacks.append(js_callback)
             self._callbacks[cb_hash] = self

@@ -87,7 +87,7 @@ class BokehRenderer(Renderer):
         if self_or_cls.mode == 'server':
             return BokehServerWidgets(plot, renderer=self_or_cls.instance(), **kwargs)
         else:
-            return super(BokehRenderer, self).get_widget(plot, widget_type, **kwargs)
+            return super(BokehRenderer, self_or_cls).get_widget(plot, widget_type, **kwargs)
 
 
     def server_doc(self, plot, doc=None):
