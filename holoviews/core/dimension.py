@@ -91,6 +91,11 @@ class Dimension(param.Parameterized):
        'weight'. Valid Python identifiers make good names, because they
        can be used conveniently as a keyword in many contexts.""")
 
+    label = param.String(doc="""
+        Unrestricted label used to describe the dimension. A label
+        should succinctly describe the dimension and may contain any
+        characters, including Unicode and LaTeX expression.""")
+
     cyclic = param.Boolean(default=False, doc="""
         Whether the range of this feature is cyclic such that the
         maximum allowed value (defined by the range parameter) is
@@ -150,7 +155,10 @@ class Dimension(param.Parameterized):
         if isinstance(name, tuple):
             name, label = name
             all_params['name'] = name
-        self.label = label
+            if 'label' in params:
+                self.warning('Using label as supplied by keyword, ignoring tuple format.')
+
+        all_params['label'] = params.get('label', label)
 
         values = params.get('values', [])
         if isinstance(values, basestring) and values == 'initial':
