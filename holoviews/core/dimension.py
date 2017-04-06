@@ -87,8 +87,9 @@ class Dimension(param.Parameterized):
     """
 
     name = param.String(doc="""
-        Optional name associated with the Dimension. For instance,
-        'height' or 'weight'.""")
+       Short name associated with the Dimension, such as 'height' or
+       'weight'. Valid Python identifiers make good names, because they
+       can be used conveniently as a keyword in many contexts.""")
 
     cyclic = param.Boolean(default=False, doc="""
         Whether the range of this feature is cyclic such that the
