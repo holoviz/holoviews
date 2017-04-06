@@ -92,15 +92,31 @@ class MessageCallback(object):
             stream._metadata = {}
 
 
-    def _get_plot_handles(self, plots):
+    def _init_plot_handles(self):
         """
-        Iterate over plots and find all unique plotting handles.
+        Find all requested plotting handles and cache them along
+        with the IDs of the models callbacks will be attached to.
         """
+        plots = [self.plot]
+        if self.plot.subplots:
+            plots += list(self.plot.subplots.values())
+
         handles = {}
         for plot in plots:
             for k, v in plot.handles.items():
                 handles[k] = v
-        return handles
+        self.plot_handles = handles
+
+        requested = {}
+        for h in self.models+self.extra_models:
+            if h in self.plot_handles:
+                requested[h] = handles[h]
+            elif h in self.extra_models:
+                print("Warning %s could not find the %s model. "
+                      "The corresponding stream may not work.")
+        self.handle_ids.update(self._get_stream_handle_ids(requested))
+
+        return requested
 
 
     def _get_stream_handle_ids(self, handles):
@@ -468,49 +484,34 @@ class Callback(CustomJSCallback, ServerCallback):
     """
 
     def initialize(self):
-        plots = [self.plot]
-        if self.plot.subplots:
-            plots += list(self.plot.subplots.values())
+        handles = self._init_plot_handles()
+        for handle_name in self.models:
+            if handle_name not in handles:
+                warn_args = (handle_name, type(self.plot).__name__,
+                             type(self).__name__)
+                print('%s handle not found on %s, cannot '
+                      'attach %s callback' % warn_args)
+                continue
+            handle = handles[handle_name]
 
-        self.plot_handles = self._get_plot_handles(plots)
-        requested = {}
-        for h in self.models+self.extra_models:
-            if h in self.plot_handles:
-                requested[h] = self.plot_handles[h]
-            elif h in self.extra_models:
-                print("Warning %s could not find the %s model. "
-                      "The corresponding stream may not work.")
-        self.handle_ids.update(self._get_stream_handle_ids(requested))
+            # Hash the plot handle with Callback type allowing multiple
+            # callbacks on one handle to be merged
+            cb_hash = (id(handle), id(type(self)))
+            if cb_hash in self._callbacks:
+                # Merge callbacks if another callback has already been attached
+                cb = self._callbacks[cb_hash]
+                cb.streams += self.streams
+                for k, v in self.handle_ids.items():
+                    cb.handle_ids[k].update(v)
+                continue
 
-        found = []
-        for plot in plots:
-            for handle_name in self.models:
-                if handle_name not in self.plot_handles:
-                    warn_args = (handle_name, type(self.plot).__name__,
-                                 type(self).__name__)
-                    print('%s handle not found on %s, cannot '
-                          'attach %s callback' % warn_args)
-                    continue
-                handle = self.plot_handles[handle_name]
-
-                # Hash the plot handle with Callback type allowing multiple
-                # callbacks on one handle to be merged
-                cb_hash = (id(handle), id(type(self)))
-                if cb_hash in self._callbacks:
-                    # Merge callbacks if another callback has already been attached
-                    cb = self._callbacks[cb_hash]
-                    cb.streams += self.streams
-                    for k, v in self.handle_ids.items():
-                        cb.handle_ids[k].update(v)
-                    continue
-
-                if self.plot.renderer.mode == 'server':
-                    self.set_server_callback(handle)
-                else:
-                    js_callback = self.get_customjs(requested)
-                    self.set_customjs_callback(js_callback, handle)
-                    self.callbacks.append(js_callback)
-                self._callbacks[cb_hash] = self
+            if self.plot.renderer.mode == 'server':
+                self.set_server_callback(handle)
+            else:
+                js_callback = self.get_customjs(requested)
+                self.set_customjs_callback(js_callback, handle)
+                self.callbacks.append(js_callback)
+            self._callbacks[cb_hash] = self
 
 
 
