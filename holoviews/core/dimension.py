@@ -169,6 +169,12 @@ class Dimension(param.Parameterized):
         super(Dimension, self).__init__(**all_params)
 
 
+    @property
+    def spec(self):
+        "Returns the corresponding tuple specification"
+        return (self.name, self.label)
+
+
     def pprint(self):
         spec = self.name if self.name == self.label else (self.name, self.label)
         excluded = ['name'] if self.name == self.label else ['name', 'label']
