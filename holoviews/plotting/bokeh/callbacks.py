@@ -36,7 +36,7 @@ class MessageCallback(object):
     on_events = []
 
     # List of change events on the models to listen to
-    on_change = []
+    on_changes = []
 
     _callbacks = {}
 
@@ -224,7 +224,7 @@ class CustomJSCallback(MessageCallback):
     _comm_type = JupyterCommJS
 
     @classmethod
-    def attributes_js(cls, attributes, handles):
+    def attributes_js(cls, attributes):
         """
         Generates JS code to look up attributes on JS objects from
         an attributes specification dictionary. If the specification
@@ -249,17 +249,17 @@ class CustomJSCallback(MessageCallback):
         conditional_template = 'if (({obj_name} != undefined)) {{ {assign} }}'
         code = ''
         for key, attr_path in attributes.items():
-            data_assign = "data['{key}'] = ".format(key=key)
+            data_assign = 'data["{key}"] = '.format(key=key)
             attrs = attr_path.split('.')
             obj_name = attrs[0]
-            attr_getters = ''.join(["['{attr}']".format(attr=attr)
+            attr_getters = ''.join(['["{attr}"]'.format(attr=attr)
                                     for attr in attrs[1:]])
             if obj_name not in ['cb_obj', 'cb_data']:
                 assign_str = assign_template.format(
                     assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
                 )
                 code += conditional_template.format(
-                    obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
+                    obj_name=obj_name, assign=assign_str
                 )
             else:
                 assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
@@ -277,7 +277,7 @@ class CustomJSCallback(MessageCallback):
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
-        attributes = self.attributes_js(self.attributes, references)
+        attributes = self.attributes_js(self.attributes)
         conditions = ["%s" % cond for cond in self.skip]
         conditional = ''
         if conditions:
@@ -313,14 +313,17 @@ class ServerCallback(MessageCallback):
     """
 
     @classmethod
-    def resolve_attr_spec(cls, spec, cb_obj, model):
+    def resolve_attr_spec(cls, spec, cb_obj, model=None):
         """
         Resolves a Callback attribute specification looking the
         corresponding attribute up on the cb_obj, which should be a
-        bokeh model.
+        bokeh model. If not model is supplied cb_obj is assumed to
+        be the same as the model.
         """
         if not cb_obj:
             raise Exception('Bokeh plot attribute %s could not be found' % spec)
+        if model is None:
+            model = cb_obj
         spec = spec.split('.')
         resolved = cb_obj
         for p in spec[1:]:
@@ -385,7 +388,7 @@ class ServerCallback(MessageCallback):
             if attr_path[0] == 'cb_obj':
                 path = '.'.join(self.models[:1]+attr_path[1:])
             cb_obj = self.plot_handles.get(self.models[0])
-            msg[attr] = self.resolve_attr_spec(path, cb_obj, cb_obj)
+            msg[attr] = self.resolve_attr_spec(path, cb_obj)
 
         self.on_msg(msg)
         self.plot.document.add_timeout_callback(self.process_on_change, 50)
@@ -531,7 +534,7 @@ class PositionYCallback(PositionXYCallback):
     Returns the mouse x/y-position on mousemove event.
     """
 
-    attributes = {'y': 'cb_data.y'}
+    attributes = {'y': 'cb_obj.y'}
 
 
 class TapCallback(PositionXYCallback):
