@@ -60,7 +60,7 @@ class BokehRenderer(Renderer):
 
     _loaded = False
 
-    def __call__(self, obj, fmt=None):
+    def __call__(self, obj, fmt=None, doc=None):
         """
         Render the supplied HoloViews component using the appropriate
         backend. The output is not a file format but a suitable,
@@ -70,22 +70,23 @@ class BokehRenderer(Renderer):
         info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
         if self.mode == 'server':
-            return self.server_doc(plot), info
+            return self.server_doc(plot, doc), info
         elif isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
         elif fmt == 'html':
-            html = self.figure_data(plot)
+            html = self.figure_data(plot, doc=doc)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
             return self.diff(plot), info
 
 
-    def server_doc(self, plot):
+    def server_doc(self, plot, doc=None):
         """
         Get server document.
         """
-        doc = curdoc()
+        if doc is None:
+            doc = curdoc()
         if isinstance(plot, BokehServerWidgets):
             plot.plot.document = doc
         else:
@@ -94,9 +95,9 @@ class BokehRenderer(Renderer):
         return doc
 
 
-    def figure_data(self, plot, fmt='html', **kwargs):
+    def figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
-        doc = Document()
+        doc = Document() if doc is None else doc
         for m in model.references():
             m._document = None
         doc.add_root(model)
