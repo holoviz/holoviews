@@ -17,6 +17,11 @@ class DimensionNameLabelTest(ComparisonTestCase):
         dim = Dimension('test')
         self.assertEqual(dim.name, 'test')
 
+    def test_dimension_name_and_label(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'test')
+
     def test_dimension_name_tuple(self):
         dim = Dimension(('test', 'A test'))
         self.assertEqual(dim.name, 'test')
