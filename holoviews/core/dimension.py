@@ -124,7 +124,7 @@ class Dimension(param.Parameterized):
        'weight'. Valid Python identifiers make good names, because they
        can be used conveniently as a keyword in many contexts.""")
 
-    label = param.String(doc="""
+    label = param.String(default=None, doc="""
         Unrestricted label used to describe the dimension. A label
         should succinctly describe the dimension and may contain any
         characters, including Unicode and LaTeX expression.""")
