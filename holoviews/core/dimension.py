@@ -228,8 +228,16 @@ class Dimension(param.Parameterized):
         except for the supplied, explicit overrides
         """
         settings = dict(self.get_param_values(onlychanged=True), **overrides)
-        spec = spec if (spec is not None) else (overrides.get('name', self.name),
-                                                overrides.get('label', self.label))
+
+        if spec is None:
+            spec = (self.name, overrides.get('label', self.label))
+        if 'label' in overrides and isinstance(spec, basestring) :
+            spec = (spec, overrides['label'])
+        elif 'label' in overrides and isinstance(spec, tuple) :
+            self.warning('Using label as supplied by keyword ({!r}), ignoring '
+                             'tuple value {!r}'.format(overrides['label'], spec[1]))
+            spec = (spec[0],  overrides['label'])
+
         return self.__class__(spec, **{k:v for k,v in settings.items()
                                        if k not in ['name', 'label']})
 
