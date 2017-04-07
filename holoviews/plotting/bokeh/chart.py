@@ -493,6 +493,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         if len(element.dimensions()) == 1:
             if self.batched:
                 bs, ts = [], []
+                # Iterate over current NdOverlay and compute extents
+                # from position and length plot options
                 for el in self.current_frame.values():
                     opts = self.lookup_options(el, 'plot').options
                     pos = opts.get('position', self.position)
