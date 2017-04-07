@@ -20,6 +20,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         self.dimension8 = Dimension('dim1', values=['a', 'b'])
         self.dimension9 = Dimension('dim1', type=int)
         self.dimension10 = Dimension('dim1', type=float)
+        self.dimension11 = Dimension(('dim1','Test Dimension'), range=(0,1))
 
     def test_dimension_comparison_equal1(self):
         self.assertEqual(self.dimension1, self.dimension1)
@@ -37,6 +38,12 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
             self.assertEqual(self.dimension1, self.dimension2)
         except AssertionError as e:
             self.assertEqual(str(e),  'Dimension names mismatched: dim1 != dim2')
+
+    def test_dimension_comparison_labels_unequal(self):
+        try:
+            self.assertEqual(self.dimension1, self.dimension11)
+        except AssertionError as e:
+            self.assertEqual(str(e),  'Dimension labels mismatched: dim1 != Test Dimension')
 
     def test_dimension_comparison_range_unequal1(self):
         try:
