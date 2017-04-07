@@ -545,6 +545,18 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         source = plot.handles['source']
         self.assertEqual(source.data['Value'], list(range(5)))
 
+    def test_polygons_colored_batched_unsanitized(self):
+        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)] for i in range(2)],
+                                          level=j, vdims=['some ? unescaped name'])
+                              for j in range(5)})(plot=dict(legend_limit=0))
+        plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 4)
+        source = plot.handles['source']
+        self.assertEqual(source.data['some_question_mark_unescaped_name'],
+                         [j for i in range(5) for j in [i, i]])
+
     def test_points_colormapping(self):
         points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(plot=dict(color_index=3))
         self._test_colormapping(points, 3)
