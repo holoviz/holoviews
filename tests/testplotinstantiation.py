@@ -288,6 +288,15 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         lines = ax.get_xgridlines()
         self.assertEqual(lines[0].get_color(), 'red')
 
+    def test_polygons_colored(self):
+        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+                              for j in range(5)})
+        plot = mpl_renderer.get_plot(polygons)
+        for j, splot in enumerate(plot.subplots.values()):
+            artist = splot.handles['artist']
+            self.assertEqual(artist.get_array(), np.array([j]))
+            self.assertEqual(artist.get_clim(), (0, 4))
+
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
@@ -327,6 +336,15 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (0, 0, 98, 98))
+
+    def test_batched_spike_plot(self):
+        overlay = NdOverlay({i: Spikes([i], kdims=['Time'])(plot=dict(position=0.1*i,
+                                                                      spike_length=0.1,
+                                                                      show_legend=False))
+                             for i in range(10)})
+        plot = bokeh_renderer.get_plot(overlay)
+        extents = plot.get_extents(overlay, {})
+        self.assertEqual(extents, (0, 0, 9, 1))
 
     def test_batched_points_size_and_color(self):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
@@ -505,6 +523,27 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(cmapper.high, high)
         mapper_type = LogColorMapper if log else LinearColorMapper
         self.assertTrue(isinstance(cmapper, mapper_type))
+
+    def test_polygons_colored(self):
+        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+                              for j in range(5)})
+        plot = bokeh_renderer.get_plot(polygons)
+        for i, splot in enumerate(plot.subplots.values()):
+            cmapper = splot.handles['color_mapper']
+            self.assertEqual(cmapper.low, 0)
+            self.assertEqual(cmapper.high, 4)
+            source = splot.handles['source']
+            self.assertEqual(source.data['Value'], np.array([i]))
+
+    def test_polygons_colored_batched(self):
+        polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
+                              for j in range(5)})(plot=dict(legend_limit=0))
+        plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low, 0)
+        self.assertEqual(cmapper.high, 4)
+        source = plot.handles['source']
+        self.assertEqual(source.data['Value'], list(range(5)))
 
     def test_points_colormapping(self):
         points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(plot=dict(color_index=3))
