@@ -277,6 +277,18 @@ class Dimension(param.Parameterized):
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
 
+    def pprint(self):
+        changed = dict(self.get_param_values(onlychanged=True))
+        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
+            return 'Dimension({spec})'.format(spec=repr(self.name))
+
+        ordering = sorted( sorted(changed.keys()),
+                           key=lambda k: (- float('inf')
+                                          if self.params(k).precedence is None
+                                          else self.params(k).precedence))
+        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
+        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
+
 
     def pprint_value(self, value):
         """
@@ -298,19 +310,6 @@ class Dimension(param.Parameterized):
                 else:
                     return formatter % value
         return unicode(bytes_to_unicode(value))
-
-
-    def pprint(self):
-        changed = dict(self.get_param_values(onlychanged=True))
-        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
-            return 'Dimension({spec})'.format(spec=repr(self.name))
-
-        ordering = sorted( sorted(changed.keys()),
-                           key=lambda k: (- float('inf')
-                                          if self.params(k).precedence is None
-                                          else self.params(k).precedence))
-        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
-        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
     def pprint_value_string(self, value):
         """
