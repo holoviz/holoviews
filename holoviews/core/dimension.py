@@ -173,7 +173,6 @@ class Dimension(param.Parameterized):
         if 'name' in params:
             raise KeyError('Dimension name must only be passed as the positional argument')
 
-
         if isinstance(spec, Dimension):
             existing_params = dict(spec.get_param_values())
         elif (spec, params.get('unit', None)) in self.presets.keys():
@@ -219,19 +218,6 @@ class Dimension(param.Parameterized):
         return (self.name, self.label)
 
 
-    def pprint(self):
-        changed = dict(self.get_param_values(onlychanged=True))
-        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
-            return 'Dimension({spec})'.format(spec=repr(self.name))
-
-        ordering = sorted( sorted(changed.keys()),
-                           key=lambda k: (- float('inf')
-                                          if self.params(k).precedence is None
-                                          else self.params(k).precedence))
-        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
-        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
-
-
     def __call__(self, spec=None, **overrides):
         "Aliased to clone method. To be deprecated in 2.0"
         return self.clone(spec=spec, **overrides)
@@ -247,6 +233,41 @@ class Dimension(param.Parameterized):
                                                 overrides.get('label', self.label))
         return self.__class__(spec, **{k:v for k,v in settings.items() if k != 'name'})
 
+    def __hash__(self):
+        """
+        The hash allows Dimension objects to be used as dictionary keys in Python 3.
+        """
+        return hash(self.spec)
+
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.label = self.name
+
+    def __eq__(self, other):
+        "Implements equals operator including sanitized comparison."
+
+        if isinstance(other, Dimension):
+            return self.spec == other.spec
+
+        # For comparison to strings. Name may be sanitized.
+        return other in [self.name, self.label,  dimension_sanitizer(self.name)]
+
+    def __ne__(self, other):
+        "Implements not equal operator including sanitized comparison."
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        "Dimensions are sorted alphanumerically by name"
+        return self.name < other.name if isinstance(other, Dimension) else self.name < other
+
+    def __str__(self):
+        return self.pprint_label
+
+    def __repr__(self):
+        return self.pprint()
 
     @property
     def pprint_label(self):
@@ -278,9 +299,17 @@ class Dimension(param.Parameterized):
         return unicode(bytes_to_unicode(value))
 
 
-    def __repr__(self):
-        return self.pprint()
+    def pprint(self):
+        changed = dict(self.get_param_values(onlychanged=True))
+        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
+            return 'Dimension({spec})'.format(spec=repr(self.name))
 
+        ordering = sorted( sorted(changed.keys()),
+                           key=lambda k: (- float('inf')
+                                          if self.params(k).precedence is None
+                                          else self.params(k).precedence))
+        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
+        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
     def pprint_value_string(self, value):
         """
@@ -291,42 +320,6 @@ class Dimension(param.Parameterized):
         unit = '' if self.unit is None else ' ' + bytes_to_unicode(self.unit)
         value = self.pprint_value(value)
         return title_format.format(name=bytes_to_unicode(self.label), val=value, unit=unit)
-
-
-    def __hash__(self):
-        """
-        The hash allows Dimension objects to be used as dictionary keys in Python 3.
-        """
-        return hash(self.spec)
-
-    def __setstate__(self, d):
-        """
-        Compatibility for pickles before alias attribute was introduced.
-        """
-        super(Dimension, self).__setstate__(d)
-        self.label = self.name
-
-
-    def __str__(self):
-        return self.pprint_label
-
-    def __eq__(self, other):
-        "Implements equals operator including sanitized comparison."
-
-        if isinstance(other, Dimension):
-            return self.spec == other.spec
-
-        # For comparison to strings. Name may be sanitized.
-        return other in [self.name, self.label,  dimension_sanitizer(self.name)]
-
-    def __ne__(self, other):
-        "Implements not equal operator including sanitized comparison."
-        return not self.__eq__(other)
-
-    def __lt__(self, other):
-        "Dimensions are sorted alphanumerically by name"
-        return self.name < other.name if isinstance(other, Dimension) else self.name < other
-
 
 
 class LabelledData(param.Parameterized):
