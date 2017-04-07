@@ -37,7 +37,9 @@ class BokehRenderer(Renderer):
 
     mode = param.ObjectSelector(default='default',
                                 objects=['default', 'server'], doc="""
-         Whether to render the DynamicMap in regular or server mode. """)
+        Whether to render the object in regular or server mode. In server
+        mode a bokeh Document will be returned which can be served as a
+        bokeh server app. By default renders all output is rendered to HTML.""")
 
     # Defines the valid output formats for each mode.
     mode_formats = {'fig': {'default': ['html', 'json', 'auto'],

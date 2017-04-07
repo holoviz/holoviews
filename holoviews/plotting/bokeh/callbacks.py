@@ -95,7 +95,7 @@ class MessageCallback(object):
     def _init_plot_handles(self):
         """
         Find all requested plotting handles and cache them along
-        with the IDs of the models callbacks will be attached to.
+        with the IDs of the models the callbacks will be attached to.
         """
         plots = [self.plot]
         if self.plot.subplots:
