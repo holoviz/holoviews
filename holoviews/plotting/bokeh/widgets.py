@@ -120,10 +120,10 @@ class BokehServerWidgets(param.Parameterized):
                 label = AutocompleteInput(value=labels[0], completions=labels,
                                           title=dim.pprint_label)
                 widget = Slider(value=0, end=len(values)-1, title=None, step=1)
-                mapping = list(zip(values, labels))
             else:
                 widget = Select(title=dim.pprint_label, value=values[0],
                                 options=list(zip(values, labels)))
+            mapping = list(zip(values, labels))
         return widget, label, mapping
 
 
@@ -138,8 +138,8 @@ class BokehServerWidgets(param.Parameterized):
             holomap = None if self.plot.dynamic else self.mock_obj
             widget, label, mapping = self.create_widget(dim, holomap)
             if label is not None:
-                label.on_change('value', partial(self.on_change, dim.pprint_label, 'label'))
-            widget.on_change('value', partial(self.on_change, dim.pprint_label, 'widget'))
+                label.on_change('value', partial(self.on_change, dim, 'label'))
+            widget.on_change('value', partial(self.on_change, dim, 'widget'))
             widgets[dim.pprint_label] = (label, widget)
             if mapping:
                 mappings[dim.pprint_label] = OrderedDict(mapping)
@@ -179,18 +179,22 @@ class BokehServerWidgets(param.Parameterized):
         if not self._queue:
             return
         dim, widget_type, attr, old, new = self._queue[-1]
+        dim_label = dim.pprint_label
 
-        label, widget = self.widgets[dim]
+        label, widget = self.widgets[dim_label]
         if widget_type == 'label':
             if isinstance(label, AutocompleteInput):
-                value = self.reverse_lookups[dim][new]
+                value = self.reverse_lookups[dim_label][new]
                 widget.value = value
             else:
                 widget.value = float(new)
-        else:
-            if label:
-                text = self.lookups[dim][new]
+        elif label:
+            if isinstance(label, AutocompleteInput):
+                text = self.lookups[dim_label][new]
                 label.value = text
+            else:
+                label.value = dim.pprint_value(new)
+
         key = []
         for dim, (label, widget) in self.widgets.items():
             if label and isinstance(label, AutocompleteInput):

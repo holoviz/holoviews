@@ -109,4 +109,4 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(widget.value, 'A')
         self.assertEqual(widget.options, list(zip(keys, keys)))
         self.assertEqual(widget.title, dim.pprint_label)
-        self.assertIs(mapping, None)
+        self.assertEqual(mapping, list(zip(keys, keys)))
