@@ -21,6 +21,8 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         self.dimension9 = Dimension('dim1', type=int)
         self.dimension10 = Dimension('dim1', type=float)
         self.dimension11 = Dimension(('dim1','Test Dimension'), range=(0,1))
+        self.dimension12 = Dimension('dim1', value_format=lambda x: x)
+        self.dimension13 = Dimension('dim1', value_format=lambda x: x)
 
     def test_dimension_comparison_equal1(self):
         self.assertEqual(self.dimension1, self.dimension1)
@@ -81,6 +83,12 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         except AssertionError as e:
             self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <type 'int'> != <type 'float'>")
 
+
+    def test_dimension_comparison_value_format_unequal(self):
+        # Comparing callables is skipped
+        self.assertEqual(self.dimension12, self.dimension13)
+        self.assertNotEqual(str(self.dimension12.value_format),
+                            str(self.dimension13.value_format))
 
 
 class DimensionedComparisonTestCase(ComparisonTestCase):
