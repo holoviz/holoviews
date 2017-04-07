@@ -471,7 +471,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'), ('y', '@y')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')])
 
     def test_curve_overlay_hover_batched(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
@@ -479,14 +479,14 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Curve': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test')], 'prev')
+        self._test_hover_info(obj, [('Test', '@{Test}')], 'prev')
 
     def test_curve_overlay_hover(self):
         obj = NdOverlay({i: Curve(np.random.rand(10,2)) for i in range(5)},
                         kdims=['Test'])
         opts = {'Curve': {'tools': ['hover']}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'), ('y', '@y')], 'nearest')
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')], 'nearest')
 
     def test_points_overlay_hover(self):
         obj = NdOverlay({i: Points(np.random.rand(10,2)) for i in range(5)},
@@ -494,8 +494,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Points': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test'), ('x', '@x'),
-                                    ('y', '@y')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'),
+                                    ('y', '@{y}')])
 
     def test_path_overlay_hover(self):
         obj = NdOverlay({i: Path([np.random.rand(10,2)]) for i in range(5)},
@@ -503,7 +503,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Path': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test')])
+        self._test_hover_info(obj, [('Test', '@{Test}')])
 
     def test_polygons_overlay_hover(self):
         obj = NdOverlay({i: Polygons([np.random.rand(10,2)], vdims=['z'], level=0)
@@ -511,7 +511,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'Polygons': {'tools': ['hover']},
                 'NdOverlay': {'legend_limit': 0}}
         obj = obj(plot=opts)
-        self._test_hover_info(obj, [('Test', '@Test'), ('z', '@z')])
+        self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)

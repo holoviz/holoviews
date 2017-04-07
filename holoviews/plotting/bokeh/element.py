@@ -221,7 +221,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Processes the list of tools to be supplied to the plot.
         """
         tooltips, hover_opts = self._hover_opts(element)
-        tooltips = [(ttp.pprint_label, '@'+util.dimension_sanitizer(ttp.name))
+        tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
 
         callbacks = callbacks+self.callbacks
