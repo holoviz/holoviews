@@ -177,10 +177,10 @@ class Dimension(param.Parameterized):
         elif (spec, params.get('unit', None)) in self.presets.keys():
             preset = self.presets[(str(spec), str(params['unit']))]
             existing_params = dict(preset.get_param_values())
-        elif spec in self.presets.keys():
-            existing_params = dict(self.presets[str(spec)].get_param_values())
-        elif (spec,) in self.presets.keys():
-            existing_params = dict(self.presets[(str(spec),)].get_param_values())
+        elif spec in self.presets:
+            existing_params = dict(self.presets[spec].get_param_values())
+        elif (spec,) in self.presets:
+            existing_params = dict(self.presets[(spec,)].get_param_values())
         else:
             existing_params = {}
 
