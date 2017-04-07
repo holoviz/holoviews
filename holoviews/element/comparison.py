@@ -237,27 +237,33 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_dimensions(cls, dim1, dim2, msg=None):
+
+        # 'Weak' equality semantics
         if dim1.name != dim2.name:
             raise cls.failureException("Dimension names mismatched: %s != %s"
                                        % (dim1.name, dim2.name))
-        if dim1.cyclic != dim2.cyclic:
-            raise cls.failureException("Dimension cyclic declarations mismatched.")
-        if dim1.range != dim2.range:
-            raise cls.failureException("Dimension ranges mismatched: %s != %s"
-                                       % (dim1.range, dim2.range))
-        if dim1.type != dim2.type:
-            raise cls.failureException("Dimension type declarations mismatched: %s != %s"
-                                       % (dim1.type,dim2.type))
-        if dim1.unit != dim2.unit:
-            raise cls.failureException("Dimension unit declarations mismatched: %s != %s"
-                                       % (dim1.unit , dim2.unit))
+        if dim1.label != dim2.label:
+            raise cls.failureException("Dimension labels mismatched: %s != %s"
+                                       % (dim1.label, dim2.label))
 
-        # Ignoring deprecated 'initial' option
-        dim1_values = [] if dim1.values=='initial' else dim1.values
-        dim2_values = [] if dim2.values=='initial' else dim2.values
-        if dim1_values != dim2_values:
-            raise cls.failureException("Dimension value declarations mismatched: %s != %s"
-                                       % (dim1.values , dim2.values))
+        # 'Deep' equality of dimension metadata (all parameters)
+        dim1_params = dict(dim1.get_param_values())
+        dim2_params = dict(dim2.get_param_values())
+
+        # Special handling of deprecated 'initial' values argument
+        dim1_params['values'] = [] if dim1.values=='initial' else dim1.values
+        dim2_params['values'] = [] if dim2.values=='initial' else dim2.values
+
+        if set(dim1_params.keys()) != set(dim2_params.keys()):
+            raise cls.failureException("Dimension parameter sets mismatched: %s != %s"
+                                       % (set(dim1_params.keys()), set(dim2_params.keys())))
+
+        for k in dim1_params.keys():
+            try:  # This is needed as two lists are not compared by contents using ==
+                cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
+            except AssertionError as e:
+                msg = 'Dimension parameter %r mismatched: ' % k
+                raise cls.failureException("%s%s" % (msg, str(e)))
 
     @classmethod
     def compare_labelled_data(cls, obj1, obj2, msg=None):
