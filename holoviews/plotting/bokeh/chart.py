@@ -258,6 +258,7 @@ class CurvePlot(ElementPlot):
         styles = styles.max_cycles(len(self.ordering))
 
         for (key, el), zorder in zip(overlay.data.items(), zorders):
+            self.set_param(**self.lookup_options(el, 'plot').options)
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
                 data[k].append(eld)
@@ -490,7 +491,18 @@ class SpikesPlot(PathPlot, ColorbarPlot):
     def get_extents(self, element, ranges):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
         if len(element.dimensions()) == 1:
-            b, t = self.position, self.position+self.spike_length
+            if self.batched:
+                bs, ts = [], []
+                for el in self.current_frame.values():
+                    opts = self.lookup_options(el, 'plot').options
+                    pos = opts.get('position', self.position)
+                    length = opts.get('spike_length', self.spike_length)
+                    bs.append(pos)
+                    ts.append(pos+length)
+                b = np.nanmin(bs)
+                t = np.nanmax(ts)
+            else:
+                b, t = self.position, self.position+self.spike_length
         else:
             b = np.nanmin([0, b])
             t = np.nanmax([0, t])
@@ -505,11 +517,11 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         if empty:
             xs, ys = [], []
         elif len(dims) > 1:
-            xs, ys = zip(*(((x, x), (pos+y, pos))
+            xs, ys = zip(*((np.array([x, x]), np.array([pos+y, pos]))
                            for x, y in element.array(dims[:2])))
         else:
             height = self.spike_length
-            xs, ys = zip(*(((x[0], x[0]), (pos+height, pos))
+            xs, ys = zip(*((np.array([x[0], x[0]]), np.array([pos+height, pos]))
                            for x in element.array(dims[:1])))
 
         if not empty and self.invert_axes: xs, ys = ys, xs

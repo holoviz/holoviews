@@ -43,6 +43,7 @@ class PathPlot(ElementPlot):
         styles = styles.max_cycles(len(self.ordering))
 
         for (key, el), zorder in zip(element.data.items(), zorders):
+            self.set_param(**self.lookup_options(el, 'plot').options)
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
