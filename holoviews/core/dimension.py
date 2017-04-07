@@ -310,16 +310,14 @@ class Dimension(param.Parameterized):
     def __str__(self):
         return self.pprint_label
 
-
     def __eq__(self, other):
         "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, self.label, dimension_sanitizer(self.label)]
-        if self is other:
-            return True
-        elif isinstance(other, Dimension):
-            return bool({other.name, other.label} & set(dim_matches))
-        else:
-            return other in dim_matches
+
+        if isinstance(other, Dimension):
+            return self.spec == other.spec
+
+        # For comparison to strings. Name may be sanitized.
+        return other in [self.name, self.label,  dimension_sanitizer(self.name)]
 
     def __ne__(self, other):
         "Implements not equal operator including sanitized comparison."
