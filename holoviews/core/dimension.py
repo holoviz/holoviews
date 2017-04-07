@@ -295,9 +295,7 @@ class Dimension(param.Parameterized):
         """
         The hash allows Dimension objects to be used as dictionary keys in Python 3.
         """
-        return sum([hash(value) for _, value in self.get_param_values()
-                    if not isinstance(value, list)])
-
+        return hash(self.spec)
 
     def __setstate__(self, d):
         """
