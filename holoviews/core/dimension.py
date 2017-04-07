@@ -199,6 +199,11 @@ class Dimension(param.Parameterized):
             all_params['name'] = spec
             all_params['label'] = params.get('label', spec)
 
+        if all_params['name'] == '':
+            raise ValueError('Dimension name cannot be the empty string')
+        if all_params['label'] in ['', None]:
+            raise ValueError('Dimension label cannot be None or the empty string')
+
         values = params.get('values', [])
         if isinstance(values, basestring) and values == 'initial':
             self.warning("The 'initial' string for dimension values is no longer supported.")
