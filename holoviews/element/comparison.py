@@ -259,6 +259,9 @@ class Comparison(ComparisonInterface):
                                        % (set(dim1_params.keys()), set(dim2_params.keys())))
 
         for k in dim1_params.keys():
+            if (dim1.params(k).__class__.__name__ == 'Callable'
+                and dim2.params(k).__class__.__name__ == 'Callable'):
+                continue
             try:  # This is needed as two lists are not compared by contents using ==
                 cls.assertEqual(dim1_params[k], dim2_params[k], msg=None)
             except AssertionError as e:
