@@ -465,13 +465,13 @@ class Comparison(ComparisonInterface):
         dimension_data = [(d, el1[d], el2[d]) for d in el1.dimensions()]
         for dim, d1, d2 in dimension_data:
             if d1.dtype != d2.dtype:
-                cls.failureException("%s %s columns have different type." % (msg, dim)
+                cls.failureException("%s %s columns have different type." % (msg, dim.pprint_label)
                                      + " First has type %s, and second has type %s."
                                      % (d1, d2))
             if d1.dtype.kind in 'SUOV':
                 if list(d1) == list(d2):
                     cls.failureException("%s along dimension %s not equal." %
-                                         (msg, dim))
+                                         (msg, dim.pprint_label))
             else:
                 cls.compare_arrays(d1, d2, msg)
 
