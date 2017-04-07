@@ -1,10 +1,11 @@
 """
 Test cases for Dimension and Dimensioned object comparison.
 """
-
+import sys
 from holoviews.core import Dimension, Dimensioned
 from holoviews.element.comparison import ComparisonTestCase
 
+py3 = (sys.version_info.major == 3)
 
 class DimensionsComparisonTestCase(ComparisonTestCase):
 
@@ -81,7 +82,10 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension9, self.dimension10)
         except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <type 'int'> != <type 'float'>")
+            if py3:
+                self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <class 'int'> != <class 'float'>")
+            else:
+                self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <type 'int'> != <type 'float'>")
 
 
     def test_dimension_comparison_value_format_unequal(self):
