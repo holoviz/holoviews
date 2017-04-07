@@ -231,7 +231,8 @@ class Dimension(param.Parameterized):
         settings = dict(self.get_param_values(onlychanged=True), **overrides)
         spec = spec if (spec is not None) else (overrides.get('name', self.name),
                                                 overrides.get('label', self.label))
-        return self.__class__(spec, **{k:v for k,v in settings.items() if k != 'name'})
+        return self.__class__(spec, **{k:v for k,v in settings.items()
+                                       if k not in ['name', 'label']})
 
     def __hash__(self):
         """
