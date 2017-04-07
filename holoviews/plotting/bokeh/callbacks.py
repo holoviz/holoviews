@@ -264,7 +264,7 @@ class CustomJSCallback(MessageCallback):
         assign_template = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'
         conditional_template = 'if (({obj_name} != undefined)) {{ {assign} }}'
         code = ''
-        for key, attr_path in attributes.items():
+        for key, attr_path in sorted(attributes.items()):
             data_assign = 'data["{key}"] = '.format(key=key)
             attrs = attr_path.split('.')
             obj_name = attrs[0]

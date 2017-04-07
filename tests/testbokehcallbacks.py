@@ -35,7 +35,7 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
     def test_customjs_callback_attributes_js_for_cb_obj(self):
         js_code = Callback.attributes_js({'x': 'cb_obj.x',
                                           'y': 'cb_obj.y'})
-        code = 'data["y"] = cb_obj["y"];\ndata["x"] = cb_obj["x"];\n'
+        code = 'data["x"] = cb_obj["x"];\ndata["y"] = cb_obj["y"];\n'
         self.assertEqual(js_code, code)
 
     def test_customjs_callback_attributes_js_for_cb_data(self):
@@ -43,10 +43,10 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
                                           'x1': 'cb_data.geometry.x1',
                                           'y0': 'cb_data.geometry.y0',
                                           'y1': 'cb_data.geometry.y1'})
-        code = ('data["y1"] = cb_data["geometry"]["y1"];\n'
+        code = ('data["x0"] = cb_data["geometry"]["x0"];\n'
+                'data["x1"] = cb_data["geometry"]["x1"];\n'
                 'data["y0"] = cb_data["geometry"]["y0"];\n'
-                'data["x0"] = cb_data["geometry"]["x0"];\n'
-                'data["x1"] = cb_data["geometry"]["x1"];\n')
+                'data["y1"] = cb_data["geometry"]["y1"];\n')
         self.assertEqual(js_code, code)
 
 
