@@ -43,6 +43,7 @@ class PathPlot(ElementPlot):
         styles = styles.max_cycles(len(self.ordering))
 
         for (key, el), zorder in zip(element.data.items(), zorders):
+            self.set_param(**self.lookup_options(el, 'plot').options)
             self.overlay_dims = dict(zip(element.kdims, key))
             eldata, elmapping = self.get_data(el, ranges, empty)
             for k, eld in eldata.items():
@@ -86,9 +87,10 @@ class PolygonPlot(ColorbarPlot, PathPlot):
 
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
+            dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
-            data[cdim.name] = [] if empty else element.dimension_values(2)
-            mapping['fill_color'] = {'field': cdim.name,
+            data[dim_name] = [] if empty else [element.level for _ in range(len(xs))]
+            mapping['fill_color'] = {'field': dim_name,
                                      'transform': cmapper}
 
         if any(isinstance(t, HoverTool) for t in self.state.tools):

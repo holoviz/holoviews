@@ -27,7 +27,7 @@ if bokeh_version >= '0.12':
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
-from ...core.util import basestring
+from ...core.util import basestring, unique_array
 
 from ..util import dim_axis_label
 
@@ -567,7 +567,7 @@ def expand_batched_style(style, opts, mapping, nvals):
             alias = 'alpha'
         else:
             alias = None
-        if opt not in style:
+        if opt not in style or opt in mapping:
             continue
         elif opt == alias:
             if alias in applied_styles:
@@ -595,14 +595,20 @@ def expand_batched_style(style, opts, mapping, nvals):
 def filter_batched_data(data, mapping):
     """
     Iterates over the data and mapping for a ColumnDataSource and
-    replaces columns with repeating values with scalar
+    replaces columns with repeating values with a scalar. This is
+    purely and optimization for scalar types.
     """
     for k, v in list(mapping.items()):
         if isinstance(v, dict) and 'field' in v:
+            if 'transform' in v:
+                continue
             v = v['field']
         elif not isinstance(v, basestring):
             continue
         values = data[v]
-        if len(np.unique(values)) == 1:
-            mapping[k] = values[0]
-            del data[v]
+        try:
+            if len(unique_array(values)) == 1:
+                mapping[k] = values[0]
+                del data[v]
+        except:
+            pass
