@@ -291,6 +291,14 @@ class Dimension(param.Parameterized):
         return title_format.format(name=bytes_to_unicode(self.label), val=value, unit=unit)
 
 
+    def __hash__(self):
+        """
+        The hash allows Dimension objects to be used as dictionary keys in Python 3.
+        """
+        return sum([hash(value) for _, value in self.get_param_values()
+                    if not isinstance(value, list)])
+
+
     def __setstate__(self, d):
         """
         Compatibility for pickles before alias attribute was introduced.
