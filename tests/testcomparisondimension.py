@@ -42,37 +42,37 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension1, self.dimension3)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension ranges mismatched: (0, 1) != (0, 2)')
+            self.assertEqual(str(e), "Dimension parameter 'range' mismatched: (0, 1) != (0, 2)")
 
     def test_dimension_comparison_cyclic_unequal(self):
         try:
             self.assertEqual(self.dimension4, self.dimension5)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension cyclic declarations mismatched.')
+            self.assertEqual(str(e), "Dimension parameter 'cyclic' mismatched: False != True")
 
     def test_dimension_comparison_range_unequal2(self):
         try:
             self.assertEqual(self.dimension5, self.dimension6)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension ranges mismatched: (None, None) != (0, 1)')
+            self.assertEqual(str(e), "Dimension parameter 'range' mismatched: (None, None) != (0, 1)")
 
     def test_dimension_comparison_units_unequal(self):
         try:
             self.assertEqual(self.dimension6, self.dimension7)
         except AssertionError as e:
-            self.assertEqual(str(e), 'Dimension unit declarations mismatched: None != ms')
+            self.assertEqual(str(e), "Dimension parameter 'unit' mismatched: None != 'ms'")
 
     def test_dimension_comparison_values_unequal(self):
         try:
             self.assertEqual(self.dimension4, self.dimension8)
         except AssertionError as e:
-            self.assertEqual(str(e), "Dimension value declarations mismatched: [] != ['a', 'b']")
+            self.assertEqual(str(e), "Dimension parameter 'values' mismatched: [] != ['a', 'b']")
 
     def test_dimension_comparison_types_unequal(self):
         try:
             self.assertEqual(self.dimension9, self.dimension10)
         except AssertionError as e:
-            self.assertEqual(str(e)[:39], "Dimension type declarations mismatched:")
+            self.assertEqual(str(e), "Dimension parameter 'type' mismatched: <type 'int'> != <type 'float'>")
 
 
 
