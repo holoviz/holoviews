@@ -430,7 +430,7 @@ class MultiDimensionalMapping(Dimensioned):
                 dmin, dmax = self.range(d.name)
                 if d.value_format:
                     dmin, dmax = d.value_format(dmin), d.value_format(dmax)
-                info_str += '\t %s: %s...%s \n' % (str(d), dmin, dmax)
+                info_str += '\t %s: %s...%s \n' % (d.pprint_label, dmin, dmax)
         print(info_str)
 
 

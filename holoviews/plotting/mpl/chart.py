@@ -888,7 +888,7 @@ class BarPlot(LegendPlot):
                     bars[tuple(val_key)] = bar
                     prev += val if np.isfinite(val) else 0
                     labels.append(label)
-        title = [str(element.kdims[indices[cg]])
+        title = [element.kdims[indices[cg]].pprint_label
                  for cg in self.color_by if indices[cg] < ndims]
 
         if self.show_legend and any(len(l) for l in labels):

@@ -99,7 +99,7 @@ class Plot3D(ColorbarPlot):
 
         elif not isinstance(dim, Dimension):
             dim = element.get_dimension(dim)
-        label = str(dim)
+        label = dim.pprint_label
         cbar = fig.colorbar(artist, shrink=0.7, ax=ax)
         self.handles['cax'] = cbar.ax
         self._adjust_cbar(cbar, label, dim)

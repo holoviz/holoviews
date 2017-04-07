@@ -18,7 +18,6 @@ from ..core.util import (basestring, sanitize_identifier,
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
-
 # Alias parameter support for pickle loading
 
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
@@ -265,7 +264,7 @@ class Dimension(param.Parameterized):
         return self.name < other.name if isinstance(other, Dimension) else self.name < other
 
     def __str__(self):
-        return self.pprint_label
+        return self.name
 
     def __repr__(self):
         return self.pprint()
