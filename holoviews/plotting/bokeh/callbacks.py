@@ -4,6 +4,7 @@ import param
 import numpy as np
 from bokeh.models import CustomJS
 
+from ...core import OrderedDict
 from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
                         RangeY, PositionX, PositionY, Bounds, Tap,
                         DoubleTap, MouseEnter, MouseLeave, PlotSize)
@@ -11,108 +12,135 @@ from ..comms import JupyterCommJS
 from .util import bokeh_version
 
 
-def attributes_js(attributes, handles):
+
+class MessageCallback(object):
     """
-    Generates JS code to look up attributes on JS objects from
-    an attributes specification dictionary. If the specification
-    references a plotting particular plotting handle it will also
-    generate JS code to get the ID of the object.
-
-    Simple example (when referencing cb_data or cb_obj):
-
-    Input  : {'x': 'cb_data.geometry.x'}
-
-    Output : data['x'] = cb_data['geometry']['x']
-
-    Example referencing plot handle:
-
-    Input  : {'x0': 'x_range.attributes.start'}
-
-    Output : if ((x_range !== undefined)) {
-               data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
-             }
+    A MessageCallback is an abstract baseclass used to supply Streams
+    with events originating from bokeh plot interactions. The baseclass
+    defines how messages are handled and the basic specification required
+    to define a Callback.
     """
-    code = ''
-    for key, attr_path in attributes.items():
-        data_assign = "data['{key}'] = ".format(key=key)
-        attrs = attr_path.split('.')
-        obj_name = attrs[0]
-        attr_getters = ''.join(["['{attr}']".format(attr=attr)
-                                for attr in attrs[1:]])
-        if obj_name not in ['cb_obj', 'cb_data']:
-            assign_str = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'.format(
-                assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
-            )
-            code += 'if (({obj_name} != undefined)) {{ {assign} }}'.format(
-                obj_name=obj_name, id=handles[obj_name].ref['id'], assign=assign_str
-                )
-        else:
-            assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
-            code += assign_str
-    return code
-
-
-class Callback(object):
-    """
-    Provides a baseclass to define callbacks, which return data from
-    bokeh model callbacks, events and attribute changes. The callback
-    then makes this data available to any streams attached to it.
-
-    The definition of a callback consists of a number of components:
-
-    * models      : Defines which bokeh models the callback will be
-                    attached on referencing the model by its key in
-                    the plots handles, e.g. this could be the x_range,
-                    y_range, plot, a plotting tool or any other
-                    bokeh mode.
-
-    * extra_models: Any additional models available in handles which
-                    should be made available in the namespace of the
-                    objects, e.g. to make a tool available to skip
-                    checks.
-
-    * attributes  : The attributes define which attributes to send
-                    back to Python. They are defined as a dictionary
-                    mapping between the name under which the variable
-                    is made available to Python and the specification
-                    of the attribute. The specification should start
-                    with the variable name that is to be accessed and
-                    the location of the attribute separated by
-                    periods.  All models defined by the models and
-                    extra_models attributes can be addressed in this
-                    way, e.g. to get the start of the x_range as 'x'
-                    you can supply {'x': 'x_range.attributes.start'}.
-                    Additionally certain handles additionally make the
-                    cb_data and cb_obj variables available containing
-                    additional information about the event.
-
-    * skip        : Conditions when the Callback should be skipped
-                    specified as a list of valid JS expressions, which
-                    can reference models requested by the callback,
-                    e.g. ['pan.attributes.active'] would skip the
-                    callback if the pan tool is active.
-
-    * code        : Defines any additional JS code to be executed,
-                    which can modify the data object that is sent to
-                    the backend.
-
-    * events      : If the Callback should listen to bokeh events this
-                    should declare the types of event as a list (optional)
-
-    * change      : If the Callback should listen to model attribute
-                    changes on the defined ``models`` (optional)
-
-    If either the event or change attributes are declared the Callback
-    will be registered using the on_event or on_change machinery,
-    otherwise it will be treated as a regular callback on the model.
-    The callback can also define a _process_msg method, which can
-    modify the data sent by the callback before it is passed to the
-    streams.
-    """
-
-    code = ""
 
     attributes = {}
+
+    # The plotting handle(s) to attach the JS callback on
+    models = []
+
+    # Additional models available to the callback
+    extra_models = []
+
+    # Conditions when callback should be skipped
+    skip = []
+
+    # Callback will listen to events of the supplied type on the models
+    on_events = []
+
+    # List of change events on the models to listen to
+    on_changes = []
+
+    _callbacks = {}
+
+    def _process_msg(self, msg):
+        """
+        Subclassable method to preprocess JSON message in callback
+        before passing to stream.
+        """
+        return msg
+
+
+    def __init__(self, plot, streams, source, **params):
+        self.plot = plot
+        self.streams = streams
+        if plot.renderer.mode != 'server':
+            self.comm = self._comm_type(plot, on_msg=self.on_msg)
+        self.source = source
+        self.handle_ids = defaultdict(dict)
+        self.callbacks = []
+        self.plot_handles = {}
+        self._queue = []
+
+
+    def _filter_msg(self, msg, ids):
+        """
+        Filter event values that do not originate from the plotting
+        handles associated with a particular stream using their
+        ids to match them.
+        """
+        filtered_msg = {}
+        for k, v in msg.items():
+            if isinstance(v, dict) and 'id' in v:
+                if v['id'] in ids:
+                    filtered_msg[k] = v['value']
+            else:
+                filtered_msg[k] = v
+        return filtered_msg
+
+
+    def on_msg(self, msg):
+        for stream in self.streams:
+            handle_ids = self.handle_ids[stream]
+            ids = list(handle_ids.values())
+            filtered_msg = self._filter_msg(msg, ids)
+            processed_msg = self._process_msg(filtered_msg)
+            if not processed_msg:
+                continue
+            stream.update(trigger=False, **processed_msg)
+            stream._metadata = {h: {'id': hid, 'events': self.on_events}
+                                for h, hid in handle_ids.items()}
+        Stream.trigger(self.streams)
+        for stream in self.streams:
+            stream._metadata = {}
+
+
+    def _init_plot_handles(self):
+        """
+        Find all requested plotting handles and cache them along
+        with the IDs of the models the callbacks will be attached to.
+        """
+        plots = [self.plot]
+        if self.plot.subplots:
+            plots += list(self.plot.subplots.values())
+
+        handles = {}
+        for plot in plots:
+            for k, v in plot.handles.items():
+                handles[k] = v
+        self.plot_handles = handles
+
+        requested = {}
+        for h in self.models+self.extra_models:
+            if h in self.plot_handles:
+                requested[h] = handles[h]
+            elif h in self.extra_models:
+                print("Warning %s could not find the %s model. "
+                      "The corresponding stream may not work.")
+        self.handle_ids.update(self._get_stream_handle_ids(requested))
+
+        return requested
+
+
+    def _get_stream_handle_ids(self, handles):
+        """
+        Gather the ids of the plotting handles attached to this callback
+        This allows checking that a stream is not given the state
+        of a plotting handle it wasn't attached to
+        """
+        stream_handle_ids = defaultdict(dict)
+        for stream in self.streams:
+            for h in self.models:
+                if h in handles:
+                    handle_id = handles[h].ref['id']
+                    stream_handle_ids[stream][h] = handle_id
+        return stream_handle_ids
+
+
+
+class CustomJSCallback(MessageCallback):
+    """
+    The CustomJSCallback attaches CustomJS callbacks to a bokeh plot,
+    which looks up the requested attributes and sends back a message
+    to Python using a Comms instance.
+    """
 
     js_callback = """
         function unique_events(events) {{
@@ -187,7 +215,7 @@ class Callback(object):
         }}
 
         // Add current event to queue and process queue if not blocked
-        event_name = cb_obj.event ? cb_obj.event.event_name : undefined
+        event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
         timeout = comm_state.time + {timeout};
         if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel == undefined)) {{
@@ -201,22 +229,7 @@ class Callback(object):
         }}
     """
 
-    # The plotting handle(s) to attach the JS callback on
-    models = []
-
-    # Additional models available to the callback
-    extra_models = []
-
-    # Conditions when callback should be skipped
-    skip = []
-
-    # Callback will listen to events of the supplied type on the models
-    events = []
-
-    # List of attributes on the models to listen to
-    change = []
-
-    _comm_type = JupyterCommJS
+    code = ""
 
     # Timeout if a comm message is swallowed
     timeout = 20000
@@ -224,110 +237,50 @@ class Callback(object):
     # Timeout before the first event is processed
     debounce = 20
 
-    _callbacks = {}
+    _comm_type = JupyterCommJS
 
-    def __init__(self, plot, streams, source, **params):
-        self.plot = plot
-        self.streams = streams
-        self.comm = self._comm_type(plot, on_msg=self.on_msg)
-        self.source = source
-        self.handle_ids = defaultdict(dict)
-        self.callbacks = []
-
-
-    def initialize(self):
-        plots = [self.plot]
-        if self.plot.subplots:
-            plots += list(self.plot.subplots.values())
-
-        handles = self._get_plot_handles(plots)
-        requested = {}
-        for h in self.models+self.extra_models:
-            if h in handles:
-                requested[h] = handles[h]
-            elif h in self.extra_models:
-                print("Warning %s could not find the %s model. "
-                      "The corresponding stream may not work.")
-        self.handle_ids.update(self._get_stream_handle_ids(requested))
-
-        for plot in plots:
-            for handle_name in self.models:
-                if handle_name not in handles:
-                    warn_args = (handle_name, type(self.plot).__name__,
-                                 type(self).__name__)
-                    self.warning('%s handle not found on %s, cannot'
-                                 'attach %s callback' % warn_args)
-                    continue
-                handle = handles[handle_name]
-                js_callback = self.get_customjs(requested)
-                self.set_customjs(js_callback, handle)
-                self.callbacks.append(js_callback)
-
-
-    def _filter_msg(self, msg, ids):
+    @classmethod
+    def attributes_js(cls, attributes):
         """
-        Filter event values that do not originate from the plotting
-        handles associated with a particular stream using their
-        ids to match them.
+        Generates JS code to look up attributes on JS objects from
+        an attributes specification dictionary. If the specification
+        references a plotting particular plotting handle it will also
+        generate JS code to get the ID of the object.
+
+        Simple example (when referencing cb_data or cb_obj):
+
+        Input  : {'x': 'cb_data.geometry.x'}
+
+        Output : data['x'] = cb_data['geometry']['x']
+
+        Example referencing plot handle:
+
+        Input  : {'x0': 'x_range.attributes.start'}
+
+        Output : if ((x_range !== undefined)) {
+                    data['x0'] = {id: x_range['id'], value: x_range['attributes']['start']}
+                 }
         """
-        filtered_msg = {}
-        for k, v in msg.items():
-            if isinstance(v, dict) and 'id' in v:
-                if v['id'] in ids:
-                    filtered_msg[k] = v['value']
+        assign_template = '{assign}{{id: {obj_name}["id"], value: {obj_name}{attr_getters}}};\n'
+        conditional_template = 'if (({obj_name} != undefined)) {{ {assign} }}'
+        code = ''
+        for key, attr_path in sorted(attributes.items()):
+            data_assign = 'data["{key}"] = '.format(key=key)
+            attrs = attr_path.split('.')
+            obj_name = attrs[0]
+            attr_getters = ''.join(['["{attr}"]'.format(attr=attr)
+                                    for attr in attrs[1:]])
+            if obj_name not in ['cb_obj', 'cb_data']:
+                assign_str = assign_template.format(
+                    assign=data_assign, obj_name=obj_name, attr_getters=attr_getters
+                )
+                code += conditional_template.format(
+                    obj_name=obj_name, assign=assign_str
+                )
             else:
-                filtered_msg[k] = v
-        return filtered_msg
-
-
-    def on_msg(self, msg):
-        for stream in self.streams:
-            handle_ids = self.handle_ids[stream]
-            ids = list(handle_ids.values())
-            filtered_msg = self._filter_msg(msg, ids)
-            processed_msg = self._process_msg(filtered_msg)
-            if not processed_msg:
-                continue
-            stream.update(trigger=False, **processed_msg)
-            stream._metadata = {h: {'id': hid, 'events': self.events}
-                                for h, hid in handle_ids.items()}
-        Stream.trigger(self.streams)
-        for stream in self.streams:
-            stream._metadata = {}
-
-
-    def _process_msg(self, msg):
-        """
-        Subclassable method to preprocess JSON message in callback
-        before passing to stream.
-        """
-        return msg
-
-
-    def _get_plot_handles(self, plots):
-        """
-        Iterate over plots and find all unique plotting handles.
-        """
-        handles = {}
-        for plot in plots:
-            for k, v in plot.handles.items():
-                handles[k] = v
-        return handles
-
-
-    def _get_stream_handle_ids(self, handles):
-        """
-        Gather the ids of the plotting handles attached to this callback
-        This allows checking that a stream is not given the state
-        of a plotting handle it wasn't attached to
-        """
-        stream_handle_ids = defaultdict(dict)
-        for stream in self.streams:
-            for h in self.models:
-                if h in handles:
-                    handle_id = handles[h].ref['id']
-                    stream_handle_ids[stream][h] = handle_id
-        return stream_handle_ids
+                assign_str = ''.join([data_assign, obj_name, attr_getters, ';\n'])
+                code += assign_str
+        return code
 
 
     def get_customjs(self, references):
@@ -340,7 +293,7 @@ class Callback(object):
                                                 timeout=self.timeout,
                                                 debounce=self.debounce)
 
-        attributes = attributes_js(self.attributes, references)
+        attributes = self.attributes_js(self.attributes)
         conditions = ["%s" % cond for cond in self.skip]
         conditional = ''
         if conditions:
@@ -350,35 +303,215 @@ class Callback(object):
         return CustomJS(args=references, code=code)
 
 
-    def set_customjs(self, js_callback, handle):
+    def set_customjs_callback(self, js_callback, handle):
         """
         Generates a CustomJS callback by generating the required JS
         code and gathering all plotting handles and installs it on
         the requested callback handle.
         """
-
-        # Hash the plot handle with Callback type allowing multiple
-        # callbacks on one handle to be merged
-        cb_hash = (id(handle), id(type(self)))
-        if cb_hash in self._callbacks:
-            # Merge callbacks if another callback has already been attached
-            cb = self._callbacks[cb_hash]
-            if isinstance(cb, type(self)):
-                cb.streams += self.streams
-                for k, v in self.handle_ids.items():
-                    cb.handle_ids[k].update(v)
-            return
-
-        self._callbacks[cb_hash] = self
-        if self.events and bokeh_version >= '0.12.5':
-            for event in self.events:
+        if self.on_events and bokeh_version >= '0.12.5':
+            for event in self.on_events:
                 handle.js_on_event(event, js_callback)
-        elif self.change and bokeh_version >= '0.12.5':
-            for change in self.change:
+        elif self.on_changes:
+            for change in self.on_changes:
                 handle.js_on_change(change, js_callback)
         elif hasattr(handle, 'callback'):
             handle.callback = js_callback
 
+
+
+class ServerCallback(MessageCallback):
+    """
+    Implements methods to set up bokeh server callbacks. A ServerCallback
+    resolves the requested attributes on the Python end and then hands
+    the msg off to the general on_msg handler, which will update the
+    Stream(s) attached to the callback.
+    """
+
+    @classmethod
+    def resolve_attr_spec(cls, spec, cb_obj, model=None):
+        """
+        Resolves a Callback attribute specification looking the
+        corresponding attribute up on the cb_obj, which should be a
+        bokeh model. If not model is supplied cb_obj is assumed to
+        be the same as the model.
+        """
+        if not cb_obj:
+            raise Exception('Bokeh plot attribute %s could not be found' % spec)
+        if model is None:
+            model = cb_obj
+        spec = spec.split('.')
+        resolved = cb_obj
+        for p in spec[1:]:
+            if p == 'attributes':
+                continue
+            if isinstance(resolved, dict):
+                resolved = resolved.get(p)
+            else:
+                resolved = getattr(resolved, p, None)
+        return {'id': model.ref['id'], 'value': resolved}
+
+
+    def on_change(self, attr, old, new):
+        """
+        Process change events adding timeout to process multiple concerted
+        value change at once rather than firing off multiple plot updates.
+        """
+        self._queue.append((attr, old, new))
+        if self.process_on_change not in self.plot.document._session_callbacks:
+            self.plot.document.add_timeout_callback(self.process_on_change, 50)
+
+
+    def on_event(self, event):
+        """
+        Process bokeh UIEvents adding timeout to process multiple concerted
+        value change at once rather than firing off multiple plot updates.
+        """
+        self._queue.append((event))
+        if self.process_on_event not in self.plot.document._session_callbacks:
+            self.plot.document.add_timeout_callback(self.process_on_event, 50)
+
+
+    def process_on_event(self):
+        """
+        Trigger callback change event and triggering corresponding streams.
+        """
+        if not self._queue:
+            return
+        # Get unique event types in the queue
+        events = list(OrderedDict([(event.event_name, event)
+                                   for event in self._queue]).values())
+        self._queue = []
+
+        # Process event types
+        for event in events:
+            msg = {}
+            for attr, path in self.attributes.items():
+                model_obj = self.plot_handles.get(self.models[0])
+                msg[attr] = self.resolve_attr_spec(path, event, model_obj)
+            self.on_msg(msg)
+        self.plot.document.add_timeout_callback(self.process_on_event, 50)
+
+
+    def process_on_change(self):
+        if not self._queue:
+            return
+        self._queue = []
+
+        msg = {}
+        for attr, path in self.attributes.items():
+            attr_path = path.split('.')
+            if attr_path[0] == 'cb_obj':
+                obj_handle = self.models[0]
+                path = '.'.join(self.models[:1]+attr_path[1:])
+            else:
+                obj_handle = attr_path[0]
+            cb_obj = self.plot_handles.get(obj_handle)
+            msg[attr] = self.resolve_attr_spec(path, cb_obj)
+
+        self.on_msg(msg)
+        self.plot.document.add_timeout_callback(self.process_on_change, 50)
+
+
+    def set_server_callback(self, handle):
+        """
+        Set up on_change events for bokeh server interactions.
+        """
+        if self.on_events and bokeh_version >= '0.12.5':
+            for event in self.on_events:
+                handle.on_event(event, self.on_event)
+        elif self.on_changes:
+            for change in self.on_changes:
+                handle.on_change(change, self.on_change)
+
+
+
+class Callback(CustomJSCallback, ServerCallback):
+    """
+    Provides a baseclass to define callbacks, which return data from
+    bokeh model callbacks, events and attribute changes. The callback
+    then makes this data available to any streams attached to it.
+
+    The definition of a callback consists of a number of components:
+
+    * models      : Defines which bokeh models the callback will be
+                    attached on referencing the model by its key in
+                    the plots handles, e.g. this could be the x_range,
+                    y_range, plot, a plotting tool or any other
+                    bokeh mode.
+
+    * extra_models: Any additional models available in handles which
+                    should be made available in the namespace of the
+                    objects, e.g. to make a tool available to skip
+                    checks.
+
+    * attributes  : The attributes define which attributes to send
+                    back to Python. They are defined as a dictionary
+                    mapping between the name under which the variable
+                    is made available to Python and the specification
+                    of the attribute. The specification should start
+                    with the variable name that is to be accessed and
+                    the location of the attribute separated by
+                    periods.  All models defined by the models and
+                    extra_models attributes can be addressed in this
+                    way, e.g. to get the start of the x_range as 'x'
+                    you can supply {'x': 'x_range.attributes.start'}.
+                    Additionally certain handles additionally make the
+                    cb_data and cb_obj variables available containing
+                    additional information about the event.
+
+    * skip        : Conditions when the Callback should be skipped
+                    specified as a list of valid JS expressions, which
+                    can reference models requested by the callback,
+                    e.g. ['pan.attributes.active'] would skip the
+                    callback if the pan tool is active.
+
+    * code        : Defines any additional JS code to be executed,
+                    which can modify the data object that is sent to
+                    the backend.
+
+    * on_events   : If the Callback should listen to bokeh events this
+                    should declare the types of event as a list (optional)
+
+    * on_changes  : If the Callback should listen to model attribute
+                    changes on the defined ``models`` (optional)
+
+    If either on_events or on_changes are declared the Callback will
+    be registered using the on_event or on_change machinery, otherwise
+    it will be treated as a regular callback on the model.  The
+    callback can also define a _process_msg method, which can modify
+    the data sent by the callback before it is passed to the streams.
+    """
+
+    def initialize(self):
+        handles = self._init_plot_handles()
+        for handle_name in self.models:
+            if handle_name not in handles:
+                warn_args = (handle_name, type(self.plot).__name__,
+                             type(self).__name__)
+                print('%s handle not found on %s, cannot '
+                      'attach %s callback' % warn_args)
+                continue
+            handle = handles[handle_name]
+
+            # Hash the plot handle with Callback type allowing multiple
+            # callbacks on one handle to be merged
+            cb_hash = (id(handle), id(type(self)))
+            if cb_hash in self._callbacks:
+                # Merge callbacks if another callback has already been attached
+                cb = self._callbacks[cb_hash]
+                cb.streams += self.streams
+                for k, v in self.handle_ids.items():
+                    cb.handle_ids[k].update(v)
+                continue
+
+            if self.plot.renderer.mode == 'server':
+                self.set_server_callback(handle)
+            else:
+                js_callback = self.get_customjs(handles)
+                self.set_customjs_callback(js_callback, handle)
+                self.callbacks.append(js_callback)
+            self._callbacks[cb_hash] = self
 
 
 
@@ -387,9 +520,9 @@ class PositionXYCallback(Callback):
     Returns the mouse x/y-position on mousemove event.
     """
 
-    attributes = {'x': 'cb_obj.event.x', 'y': 'cb_obj.event.y'}
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
-    events = ['mousemove']
+    on_events = ['mousemove']
 
 
 class PositionXCallback(PositionXYCallback):
@@ -397,7 +530,7 @@ class PositionXCallback(PositionXYCallback):
     Returns the mouse x-position on mousemove event.
     """
 
-    attributes = {'x': 'cb_obj.event.x'}
+    attributes = {'x': 'cb_obj.x'}
 
 
 class PositionYCallback(PositionXYCallback):
@@ -405,7 +538,7 @@ class PositionYCallback(PositionXYCallback):
     Returns the mouse x/y-position on mousemove event.
     """
 
-    attributes = {'y': 'cb_data.event.y'}
+    attributes = {'y': 'cb_obj.y'}
 
 
 class TapCallback(PositionXYCallback):
@@ -413,7 +546,7 @@ class TapCallback(PositionXYCallback):
     Returns the mouse x/y-position on tap event.
     """
 
-    events = ['tap']
+    on_events = ['tap']
 
 
 class DoubleTapCallback(PositionXYCallback):
@@ -421,7 +554,7 @@ class DoubleTapCallback(PositionXYCallback):
     Returns the mouse x/y-position on doubletap event.
     """
 
-    events = ['doubletap']
+    on_events = ['doubletap']
 
 
 class MouseEnterCallback(PositionXYCallback):
@@ -430,7 +563,7 @@ class MouseEnterCallback(PositionXYCallback):
     mouse enters the plot canvas.
     """
 
-    events = ['mouseenter']
+    on_events = ['mouseenter']
 
 
 class MouseLeaveCallback(PositionXYCallback):
@@ -439,7 +572,7 @@ class MouseLeaveCallback(PositionXYCallback):
     mouse leaves the plot canvas.
     """
 
-    events = ['mouseleave']
+    on_events = ['mouseleave']
 
 
 class RangeXYCallback(Callback):
@@ -452,7 +585,7 @@ class RangeXYCallback(Callback):
                   'y0': 'y_range.attributes.start',
                   'y1': 'y_range.attributes.end'}
     models = ['x_range', 'y_range']
-    change = ['start', 'end']
+    on_changes = ['start', 'end']
 
     def _process_msg(self, msg):
         data = {}
@@ -504,7 +637,7 @@ class PlotSizeCallback(Callback):
     models = ['plot']
     attributes = {'width': 'cb_obj.inner_width',
                   'height': 'cb_obj.inner_height'}
-    change = ['inner_width', 'inner_height']
+    on_changes = ['inner_width', 'inner_height']
 
 
 class BoundsCallback(Callback):
@@ -532,7 +665,7 @@ class Selection1DCallback(Callback):
 
     attributes = {'index': 'cb_obj.selected.1d.indices'}
     models = ['source']
-    change = ['selected']
+    on_changes = ['selected']
 
     def _process_msg(self, msg):
         if 'index' in msg:

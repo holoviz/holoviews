@@ -81,6 +81,18 @@ class BokehPlot(DimensionedPlot):
         raise NotImplementedError
 
 
+    def push(self):
+        """
+        Pushes updated plot data via the Comm.
+        """
+        if self.renderer.mode == 'server':
+            return
+        if self.comm is None:
+            raise Exception('Renderer does not have a comm.')
+        diff = self.renderer.diff(self)
+        self.comm.send(diff)
+
+
     def set_root(self, root):
         """
         Sets the current document on all subplots.
@@ -342,6 +354,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 subplot = plotting_class(view, dimensions=self.dimensions,
                                          show_title=False, subplot=True,
+                                         renderer=self.renderer,
                                          ranges=frame_ranges, uniform=self.uniform,
                                          keys=self.keys, **dict(opts, **kwargs))
                 collapsed_layout[coord] = (subplot.layout
@@ -569,6 +582,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                                 layout_dimensions=layout_dimensions,
                                 ranges=ranges, subplot=True,
                                 uniform=self.uniform, layout_num=num,
+                                renderer=self.renderer,
                                 **dict({'shared_axes': self.shared_axes},
                                        **plotopts))
             subplots[pos] = subplot

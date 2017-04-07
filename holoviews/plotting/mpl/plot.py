@@ -406,7 +406,7 @@ class GridPlot(CompositePlot):
                               dimensions=self.dimensions, show_title=False,
                               subplot=not create_axes, ranges=frame_ranges,
                               uniform=self.uniform, keys=self.keys,
-                              show_legend=False)
+                              show_legend=False, renderer=self.renderer)
                 plotting_class = Store.registry['matplotlib'][vtype]
                 subplot = plotting_class(view,  **dict(opts, **dict(params, **kwargs)))
                 collapsed_layout[coord] = subplot.layout if isinstance(subplot, CompositePlot) else subplot.hmap
@@ -1022,7 +1022,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                                       layout_dimensions=layout_dimensions,
                                       ranges=ranges, subplot=True,
                                       uniform=self.uniform, layout_num=num,
-                                      **plotopts)
+                                      renderer=self.renderer, **plotopts)
             if isinstance(view, (Element, HoloMap, Collator, CompositeOverlay)):
                 adjoint_clone[pos] = subplots[pos].hmap
             else:
