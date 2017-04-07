@@ -10,7 +10,7 @@ try:
     from holoviews.plotting.bokeh.widgets import BokehServerWidgets
     from holoviews.plotting.bokeh.util import bokeh_version
 
-    from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput
+    from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput, Div
 except:
     BokehServerWidgets = None
 
@@ -23,7 +23,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
 
     def test_bokeh_server_dynamic_range_int(self):
         dim = Dimension('x', range=(3, 11))
-        widget, label, mapping = BokehServerWidgets.create_widget(dim)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 3)
         self.assertEqual(widget.start, 3)
@@ -36,7 +36,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
 
     def test_bokeh_server_dynamic_range_float(self):
         dim = Dimension('x', range=(3.1, 11.2))
-        widget, label, mapping = BokehServerWidgets.create_widget(dim)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 3.1)
         self.assertEqual(widget.start, 3.1)
@@ -47,10 +47,22 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(label.value, '3.1')
         self.assertIs(mapping, None)
 
+    def test_bokeh_server_dynamic_range_not_editable(self):
+        dim = Dimension('x', range=(3.1, 11.2))
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=False)
+        self.assertIsInstance(widget, Slider)
+        self.assertEqual(widget.value, 3.1)
+        self.assertEqual(widget.start, 3.1)
+        self.assertEqual(widget.end, 11.2)
+        self.assertEqual(widget.step, 0.01)
+        self.assertIsInstance(label, Div)
+        self.assertEqual(label.text, '<b>%s</b>' % dim.pprint_value_string(3.1))
+        self.assertIs(mapping, None)
+
     def test_bokeh_server_dynamic_values_int(self):
         values = list(range(3, 11))
         dim = Dimension('x', values=values)
-        widget, label, mapping = BokehServerWidgets.create_widget(dim)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 0)
         self.assertEqual(widget.start, 0)
@@ -61,10 +73,23 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(label.value, '3')
         self.assertEqual(mapping, [(v, dim.pprint_value(v)) for v in values])
 
-    def test_bokeh_server_dynamic_values_float(self):
+    def test_bokeh_server_dynamic_values_float_not_editable(self):
         values = list(np.linspace(3.1, 11.2, 7))
         dim = Dimension('x', values=values)
-        widget, label, mapping = BokehServerWidgets.create_widget(dim)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=False)
+        self.assertIsInstance(widget, Slider)
+        self.assertEqual(widget.value, 0)
+        self.assertEqual(widget.start, 0)
+        self.assertEqual(widget.end, 6)
+        self.assertEqual(widget.step, 1)
+        self.assertIsInstance(label, Div)
+        self.assertEqual(label.text, '<b>%s</b>' % dim.pprint_value_string(3.1))
+        self.assertEqual(mapping, [(v, dim.pprint_value(v)) for v in values])
+
+    def test_bokeh_server_dynamic_values_float_editable(self):
+        values = list(np.linspace(3.1, 11.2, 7))
+        dim = Dimension('x', values=values)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 0)
         self.assertEqual(widget.start, 0)
@@ -78,7 +103,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
     def test_bokeh_server_dynamic_values_str(self):
         values = [chr(65+i) for i in range(10)]
         dim = Dimension('x', values=values)
-        widget, label, mapping = BokehServerWidgets.create_widget(dim)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
         self.assertIsInstance(widget, Select)
         self.assertEqual(widget.value, 'A')
         self.assertEqual(widget.options, list(zip(values, values)))
@@ -89,7 +114,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
     def test_bokeh_server_static_numeric_values(self):
         dim = Dimension('x')
         ndmap = NdMapping({i: None for i in range(3, 12)}, kdims=['x']) 
-        widget, label, mapping = BokehServerWidgets.create_widget(dim, ndmap)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, ndmap, editable=True)
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 0)
         self.assertEqual(widget.start, 0)
@@ -104,7 +129,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         keys = [chr(65+i) for i in range(10)]
         ndmap = NdMapping({i: None for i in keys}, kdims=['x'])
         dim = Dimension('x') 
-        widget, label, mapping = BokehServerWidgets.create_widget(dim, ndmap)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, ndmap, editable=True)
         self.assertIsInstance(widget, Select)
         self.assertEqual(widget.value, 'A')
         self.assertEqual(widget.options, list(zip(keys, keys)))

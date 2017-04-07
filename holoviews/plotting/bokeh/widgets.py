@@ -8,7 +8,7 @@ import param
 import numpy as np
 from bokeh.io import _CommsHandle
 from bokeh.util.notebook import get_comms
-from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput
+from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput, Div
 from bokeh.layouts import layout, gridplot, widgetbox, row, column
 
 from ...core import Store, NdMapping, OrderedDict
@@ -27,14 +27,9 @@ class BokehServerWidgets(param.Parameterized):
     and dropdown widgets letting you select non-numeric values.
     """
 
-    basejs = param.String(default=None, precedence=-1, doc="""
-        Defines the local CSS file to be loaded for this widget.""")
-
-    extensionjs = param.String(default=None, precedence=-1, doc="""
-        Optional javascript extension file for a particular backend.""")
-
-    css = param.String(default=None, precedence=-1, doc="""
-        Defines the local CSS file to be loaded for this widget.""")
+    editable = param.Boolean(default=False, doc="""
+        Whether the slider text fields should be editable. Disabled
+        by default for a more compact widget layout.""")
 
     position = param.ObjectSelector(default='right',
         objects=['right', 'left', 'above', 'below'])
@@ -43,8 +38,17 @@ class BokehServerWidgets(param.Parameterized):
         objects=['fixed', 'stretch_both', 'scale_width',
                  'scale_height', 'scale_both'])
 
-    width = param.Integer(default=200, doc="""
+    width = param.Integer(default=250, doc="""
         Width of the widget box in pixels""")
+
+    basejs = param.String(default=None, precedence=-1, doc="""
+        Defines the local CSS file to be loaded for this widget.""")
+
+    extensionjs = param.String(default=None, precedence=-1, doc="""
+        Optional javascript extension file for a particular backend.""")
+
+    css = param.String(default=None, precedence=-1, doc="""
+        Defines the local CSS file to be loaded for this widget.""")
 
     def __init__(self, plot, renderer=None, **params):
         super(BokehServerWidgets, self).__init__(**params)
@@ -75,7 +79,7 @@ class BokehServerWidgets(param.Parameterized):
 
 
     @classmethod
-    def create_widget(self, dim, holomap=None):
+    def create_widget(self, dim, holomap=None, editable=False):
         """"
         Given a Dimension creates bokeh widgets to select along that
         dimension. For numeric data a slider widget is created which
@@ -92,8 +96,11 @@ class BokehServerWidgets(param.Parameterized):
                 if all(isnumeric(v) for v in dim.values):
                     values = dim.values
                     labels = [unicode(dim.pprint_value(v)) for v in dim.values]
-                    label = AutocompleteInput(value=labels[0], completions=labels,
-                                              title=dim.pprint_label)
+                    if editable:
+                        label = AutocompleteInput(value=labels[0], completions=labels,
+                                                  title=dim.pprint_label)
+                    else:
+                        label = Div(text='<b>%s</b>' % dim.pprint_value_string(labels[0]))
                     widget = Slider(value=0, end=len(dim.values)-1, title=None, step=1)
                     mapping = list(zip(values, labels))
                 else:
@@ -109,7 +116,10 @@ class BokehServerWidgets(param.Parameterized):
                     step = 1
                 else:
                     step = 10**((round(math.log10(dim_range))-3))
-                label = TextInput(value=str(start), title=dim.pprint_label)
+                if editable:
+                    label = TextInput(value=str(start), title=dim.pprint_label)
+                else:
+                    label = Div(text='<b>%s</b>' % dim.pprint_value_string(start))
                 widget = Slider(value=start, start=start,
                                 end=end, step=step, title=None)
         else:
@@ -117,8 +127,11 @@ class BokehServerWidgets(param.Parameterized):
                       list(unique_array(holomap.dimension_values(dim.name))))
             labels = [dim.pprint_value(v) for v in values]
             if isinstance(values[0], np.datetime64) or isnumeric(values[0]):
-                label = AutocompleteInput(value=labels[0], completions=labels,
-                                          title=dim.pprint_label)
+                if editable:
+                    label = AutocompleteInput(value=labels[0], completions=labels,
+                                              title=dim.pprint_label)
+                else:
+                    label = Div(text='<b>%s</b>' % (dim.pprint_value_string(labels[0])))
                 widget = Slider(value=0, end=len(values)-1, title=None, step=1)
             else:
                 widget = Select(title=dim.pprint_label, value=values[0],
@@ -136,8 +149,8 @@ class BokehServerWidgets(param.Parameterized):
         mappings = {}
         for dim in self.mock_obj.kdims:
             holomap = None if self.plot.dynamic else self.mock_obj
-            widget, label, mapping = self.create_widget(dim, holomap)
-            if label is not None:
+            widget, label, mapping = self.create_widget(dim, holomap, self.editable)
+            if label is not None and not isinstance(label, Div):
                 label.on_change('value', partial(self.on_change, dim, 'label'))
             widget.on_change('value', partial(self.on_change, dim, 'widget'))
             widgets[dim.pprint_label] = (label, widget)
@@ -184,21 +197,27 @@ class BokehServerWidgets(param.Parameterized):
         label, widget = self.widgets[dim_label]
         if widget_type == 'label':
             if isinstance(label, AutocompleteInput):
-                value = self.reverse_lookups[dim_label][new]
+                value = [new]
                 widget.value = value
             else:
                 widget.value = float(new)
         elif label:
-            if isinstance(label, AutocompleteInput):
-                text = self.lookups[dim_label][new]
+            lookups = self.lookups.get(dim_label)
+            if not self.editable:
+                if lookups:
+                    new = list(lookups.keys())[widget.value]
+                label.text = '<b>%s</b>' % dim.pprint_value_string(new)
+            elif isinstance(label, AutocompleteInput):
+                text = lookups[new]
                 label.value = text
             else:
                 label.value = dim.pprint_value(new)
 
         key = []
         for dim, (label, widget) in self.widgets.items():
-            if label and isinstance(label, AutocompleteInput):
-                val = list(self.lookups[dim].keys())[widget.value]
+            lookups = self.lookups.get(dim)
+            if label and lookups:
+                val = list(lookups.keys())[widget.value]
             else:
                 val = widget.value
             key.append(val)
