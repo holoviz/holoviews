@@ -63,8 +63,8 @@ def replace_dimensions(dimensions, overrides):
         elif isinstance(override, Dimension):
             replaced.append(override)
         elif isinstance(override, dict):
-            replaced.append(d(override.get('name',None),
-                              **{k:v for k,v in override.items() if k != 'name'}))
+            replaced.append(d.clone(override.get('name',None),
+                                    **{k:v for k,v in override.items() if k != 'name'}))
         else:
             raise ValueError('Dimension can only be overridden '
                              'with another dimension or a dictionary '
