@@ -11,11 +11,11 @@ from ..core.data import (ArrayInterface, NdElementInterface, DictInterface,
 from ..core import (Dimension, NdMapping, Element2D, HoloMap,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
-from ..core.sheetcoords import SheetCoordinateSystem, Slice
+from ..core.sheetcoords import SheetCoordinateSystem
 from ..core.util import pd
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges, categorical_aggregate2d
+from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
 
 try:
     from ..core.data import PandasInterface
@@ -211,7 +211,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     access to the data, via the .data attribute.
     """
 
-    bounds = param.ClassSelector(class_=BoundingRegion, default=None, doc="""
+    bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
     datatype = param.List(default=['image', 'grid', 'xarray', 'dataframe', 'dictionary'])
@@ -224,24 +224,15 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         of a string or dimension object.""")
 
     vdims = param.List(default=[Dimension('z')],
-                       bounds=(1, None), doc="""
+                       bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
     def __init__(self, data, bounds=None, extents=None, xdensity=None, ydensity=None, **params):
         extents = extents if extents else (None, None, None, None)
         if data is None: data = np.array([[0]])
-        Dataset.__init__(self, data, extents=extents, bounds=None, **params)
+        Dataset.__init__(self, data, extents=extents, **params)
 
-        if isinstance(data, np.ndarray):
-            dim2, dim1 = data.shape[:2]
-        else:
-            dim1, dim2 = tuple([len(self.dimension_values(kd, expanded=False))
-                                  for kd in self.kdims])
-        if self.bounds is not None:
-            bounds = self.bounds
-        elif bounds is None and isinstance(data, np.ndarray):
-            bounds = BoundingBox()
-
+        dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
             xvals = self.dimension_values(0, False)
             l, r, xdensity, _ = util.bound_range(xvals, xdensity)
@@ -299,61 +290,16 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in self.kdims)
 
-        indexed = False
-        if not any([isinstance(el, slice) for el in coords]):
-            indexed = True
+        if any([isinstance(el, slice) for el in coords]):
+            shape = self.interface.shape(self, gridded=True)
+            bounds = compute_slice_bounds(coords, self, shape[:2])
+
+            xdim, ydim = self.kdims
+            l, b, r, t = bounds.lbrt()
+            selection = {xdim.name: slice(l, r), ydim.name: slice(b, t)}
+        else:
             selection = {kd.name: c for kd, c in zip(self.kdims, self.closest(coords))}
 
-        # Compute new bounds
-        shape = self.interface.shape(self)
-        ys, xs = shape[:2]
-        xidx, yidx = coords
-        xdim, ydim = self.kdims
-        l, b, r, t = self.bounds.lbrt()
-        xdensity, ydensity = self.xdensity, self.ydensity
-        xunit = (1./xdensity)
-        yunit = (1./ydensity)
-        if isinstance(xidx, slice):
-            l = l if xidx.start is None else max(l, xidx.start)
-            r = r if xidx.stop is None else min(r, xidx.stop)
-        if isinstance(yidx, slice):
-            b = b if yidx.start is None else max(b, yidx.start)
-            t = t if yidx.stop is None else min(t, yidx.stop)
-        bounds = BoundingBox(points=((l, b), (r, t)))
-
-        # Apply new bounds
-        slc = Slice(bounds, self)
-
-        # Apply scalar and list indices
-        l, b, r, t = slc.compute_bounds(self).lbrt()
-        if indexed:
-            pass
-        elif not isinstance(xidx, slice):
-            if not isinstance(xidx, (list, set)): xidx = [xidx]
-            if len(xidx) > 1:
-                xdensity = xdensity*(float(len(xidx))/xs)
-            idxs = []
-            ls, rs = [], []
-            for idx in xidx:
-                xc, _ = self.closest_cell_center(idx, b)
-                ls.append(xc-xunit/2)
-                rs.append(xc+xunit/2)
-            l, r = np.min(ls), np.max(rs)
-            selection[xdim.name] = slice(l, r)
-        elif not isinstance(yidx, slice):
-            if not isinstance(yidx, (set, list)): yidx = [yidx]
-            if len(yidx) > 1:
-                ydensity = ydensity*(float(len(yidx))/ys)
-            idxs = []
-            bs, ts = [], []
-            for idx in yidx:
-                _, yc = self.closest_cell_center(l, idx)
-                bs.append(yc-yunit/2)
-                ts.append(yc+yunit/2)
-            b, t = np.min(bs), np.max(ts)
-            selection[ydim.name] = slice(b, t)
-
-        bounds = BoundingBox(points=((l, b), (r, t)))
         data = self.interface.select(self, **selection)
         if isinstance(data, np.ndarray) and data.ndim == 1:
             return self.clone([tuple(data)], kdims=[], new_type=Dataset)
@@ -404,13 +350,12 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     def range(self, dim, data_range=True):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
-        rng = super(Image, self).range(dim, data_range)
+        low, high = super(Image, self).range(dim, data_range)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
-            low, high = rng
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
             return (low-halfd, high+halfd)
-        return rng
+        return low, high
 
 
     def table(self, datatype=None):
@@ -715,6 +660,7 @@ class QuadMesh(Raster):
         idx = self.get_dimension_index(dimension)
         data = self.data[idx]
         if idx in [0, 1]:
+            # Handle grid
             if not self._grid:
                 return data.flatten()
             odim = self.data[2].shape[idx] if expanded else 1
@@ -724,8 +670,10 @@ class QuadMesh(Raster):
             else:
                 return vals
         elif idx == 2:
+            # Value dimension
             return data.flatten() if flat else data
         else:
+            # Handle constant dimensions
             return super(QuadMesh, self).dimension_values(idx)
 
 
