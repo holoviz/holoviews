@@ -471,10 +471,10 @@ class GridPlot(CompositePlot):
             if tick_fontsize: ax_obj.set_tick_params(**tick_fontsize)
 
         # Set labels
-        layout_axis.set_xlabel(str(layout.kdims[0]),
+        layout_axis.set_xlabel(layout.kdims[0].pprint_label,
                                **self._fontsize('xlabel'))
         if layout.ndims == 2:
-            layout_axis.set_ylabel(str(layout.kdims[1]),
+            layout_axis.set_ylabel(layout.kdims[1].pprint_label,
                                **self._fontsize('ylabel'))
 
         # Compute and set x- and y-ticks
@@ -486,7 +486,7 @@ class GridPlot(CompositePlot):
             layout_axis.get_yaxis().set_visible(False)
         else:
             dim1_keys, dim2_keys = zip(*keys)
-            layout_axis.set_ylabel(str(dims[1]))
+            layout_axis.set_ylabel(dims[1].pprint_label)
             layout_axis.set_aspect(float(self.rows)/self.cols)
 
         # Process ticks

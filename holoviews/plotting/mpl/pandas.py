@@ -108,11 +108,11 @@ class DFrameViewPlot(ElementPlot):
 
     def get_axis_kwargs(self, element):
         if element.x:
-            xlabel = str(element.get_dimension(element.x))
+            xlabel = element.get_dimension(element.x).pprint_label
         if element.x2:
-            ylabel = str(element.get_dimension(element.x2))
+            ylabel = element.get_dimension(element.x2).pprint_label
         elif element.y:
-            ylabel = str(element.get_dimension(element.y))
+            ylabel = element.get_dimension(element.y).pprint_label
         return dict(xlabel=xlabel, ylabel=ylabel)
 
 

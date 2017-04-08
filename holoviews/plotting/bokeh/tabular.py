@@ -51,7 +51,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.handles['source'] = source
 
         dims = element.dimensions()
-        columns = [TableColumn(field=d.name, title=str(d)) for d in dims]
+        columns = [TableColumn(field=d.name, title=d.pprint_label) for d in dims]
         properties = self.lookup_options(element, 'style')[self.cyclic_index]
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **properties)

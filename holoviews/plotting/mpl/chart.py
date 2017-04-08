@@ -557,7 +557,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             if sizes is None:
                 eltype = type(element).__name__
                 self.warning('%s dimension is not numeric, cannot '
-                             'use to scale %s size.' % (sdim, eltype))
+                             'use to scale %s size.' % (sdim.pprint_label, eltype))
             else:
                 style['s'] = sizes
         style['edgecolors'] = style.pop('edgecolors', 'none')
@@ -888,7 +888,7 @@ class BarPlot(LegendPlot):
                     bars[tuple(val_key)] = bar
                     prev += val if np.isfinite(val) else 0
                     labels.append(label)
-        title = [str(element.kdims[indices[cg]])
+        title = [element.kdims[indices[cg]].pprint_label
                  for cg in self.color_by if indices[cg] < ndims]
 
         if self.show_legend and any(len(l) for l in labels):

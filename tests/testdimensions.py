@@ -11,8 +11,116 @@ try:
 except:
     pd = None
 
+class DimensionNameLabelTest(ComparisonTestCase):
 
-class DimensionTest(ComparisonTestCase):
+    def test_dimension_name(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+
+    def test_dimension_name_and_label(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.label, 'test')
+
+    def test_dimension_name_tuple(self):
+        dim = Dimension(('test', 'A test'))
+        self.assertEqual(dim.name, 'test')
+
+    def test_dimension_label_tuple(self):
+        dim = Dimension(('test', 'A test'))
+        self.assertEqual(dim.label, 'A test')
+
+    def test_dimension_label_kwarg(self):
+        dim = Dimension('test', label='A test')
+        self.assertEqual(dim.label, 'A test')
+
+    def test_dimension_label_kwarg_and_tuple(self):
+        # Should work but issue a warning
+        dim = Dimension(('test', 'A test'), label='Another test')
+        self.assertEqual(dim.label, 'Another test')
+
+    def test_dimension_invalid_name(self):
+        regexp = 'Dimension name must only be passed as the positional argument'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            dim = Dimension('test', name='something else')
+
+    def test_dimension_invalid_name_tuple(self):
+        regexp = 'Dimension name must only be passed as the positional argument'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            dim = Dimension(('test', 'test dimension'), name='something else')
+
+
+class DimensionReprTest(ComparisonTestCase):
+
+    def test_name_dimension_repr(self):
+        dim = Dimension('test')
+        self.assertEqual(repr(dim), "Dimension('test')")
+
+    def test_name_dimension_repr_eval_equality(self):
+        dim = Dimension('test')
+        self.assertEqual(eval(repr(dim)) == dim, True)
+
+    def test_name_dimension_repr_tuple(self):
+        dim = Dimension(('test', 'Test Dimension'))
+        self.assertEqual(repr(dim), "Dimension('test', label='Test Dimension')")
+
+    def test_name_dimension_repr_tuple_eval_equality(self):
+        dim = Dimension(('test', 'Test Dimension'))
+        self.assertEqual(eval(repr(dim)) == dim, True)
+
+    def test_name_dimension_repr_params(self):
+        dim = Dimension('test', label='Test Dimension', unit='m')
+        self.assertEqual(repr(dim), "Dimension('test', label='Test Dimension', unit='m')")
+
+    def test_name_dimension_repr_params_eval_equality(self):
+        dim = Dimension('test', label='Test Dimension', unit='m')
+        self.assertEqual(eval(repr(dim)) == dim, True)
+
+
+class DimensionEqualityTest(ComparisonTestCase):
+
+    def test_simple_dim_equality(self):
+        dim1 = Dimension('test')
+        dim2 = Dimension('test')
+        self.assertEqual(dim1==dim2, True)
+
+    def test_simple_str_equality(self):
+        dim1 = Dimension('test')
+        dim2 = Dimension('test')
+        self.assertEqual(dim1==str(dim2), True)
+
+    def test_simple_dim_inequality(self):
+        dim1 = Dimension('test1')
+        dim2 = Dimension('test2')
+        self.assertEqual(dim1==dim2, False)
+
+    def test_simple_str_inequality(self):
+        dim1 = Dimension('test1')
+        dim2 = Dimension('test2')
+        self.assertEqual(dim1==str(dim2), False)
+
+    def test_label_dim_inequality(self):
+        dim1 = Dimension(('test', 'label1'))
+        dim2 = Dimension(('test', 'label2'))
+        self.assertEqual(dim1==dim2, False)
+
+    def test_label_str_equality(self):
+        dim1 = Dimension(('test', 'label1'))
+        dim2 = Dimension(('test', 'label2'))
+        self.assertEqual(dim1==str(dim2), True)
+
+    def test_weak_dim_equality(self):
+        dim1 = Dimension('test', cyclic=True, unit='m', type=float)
+        dim2 = Dimension('test', cyclic=False, unit='km', type=int)
+        self.assertEqual(dim1==dim2, True)
+
+    def test_weak_str_equality(self):
+        dim1 = Dimension('test', cyclic=True, unit='m', type=float)
+        dim2 = Dimension('test', cyclic=False, unit='km', type=int)
+        self.assertEqual(dim1==str(dim2), True)
+
+
+class DimensionValuesTest(ComparisonTestCase):
 
     def setUp(self):
         self.values1 = [0,1,2,3,4,5,6]
@@ -84,6 +192,35 @@ class DimensionTest(ComparisonTestCase):
         self.assertEqual(dim.values, self.values2)
 
 
+class DimensionCloneTest(ComparisonTestCase):
+
+    def test_simple_clone(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+        self.assertEqual(dim.clone('bar').name, 'bar')
+
+    def test_simple_label_clone(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+        clone = dim.clone(label='label')
+        self.assertEqual(clone.name, 'test')
+        self.assertEqual(clone.label, 'label')
+
+    def test_simple_values_clone(self):
+        dim = Dimension('test', values=[1,2,3])
+        self.assertEqual(dim.values, [1,2,3])
+        clone = dim.clone(values=[4,5,6])
+        self.assertEqual(clone.name, 'test')
+        self.assertEqual(clone.values, [4,5,6])
+
+    def test_tuple_clone(self):
+        dim = Dimension('test')
+        self.assertEqual(dim.name, 'test')
+        clone = dim.clone(('test', 'A test'))
+        self.assertEqual(clone.name, 'test')
+        self.assertEqual(clone.label, 'A test')
+
+
 class DimensionedTest(ComparisonTestCase):
 
     def test_dimensioned_init(self):
@@ -98,21 +235,21 @@ class DimensionedTest(ComparisonTestCase):
             raise AssertionError("Label should be a constant parameter.")
         except TypeError: pass
 
-    def test_dimensionsed_redim_string(self):
+    def test_dimensioned_redim_string(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x='Test'))
 
-    def test_dimensionsed_redim_dimension(self):
+    def test_dimensioned_redim_dimension(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x=Dimension('Test')))
 
-    def test_dimensionsed_redim_dict(self):
+    def test_dimensioned_redim_dict(self):
         dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
         redimensioned = dimensioned.clone(kdims=['Test'])
         self.assertEqual(redimensioned, dimensioned.redim(x={'name': 'Test'}))
 
-    def test_dimensionsed_redim_dict_range(self):
+    def test_dimensioned_redim_dict_range(self):
         redimensioned = Dimensioned('Arbitrary Data', kdims=['x']).redim(x={'range': (0, 10)})
         self.assertEqual(redimensioned.kdims[0].range, (0, 10))

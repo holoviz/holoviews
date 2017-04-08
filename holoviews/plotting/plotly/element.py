@@ -144,7 +144,7 @@ class ElementPlot(PlotlyPlot, GenericElementPlot):
     def init_graph(self, plot_args, plot_kwargs):
         return self.graph_obj(*plot_args, **plot_kwargs)
 
-    
+
     def get_data(self, element, ranges):
         return {}
 
@@ -232,7 +232,7 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         # Get element key and ranges for frame
         return self.generate_plot(list(self.hmap.data.keys())[0], ranges)
 
-    
+
     def generate_plot(self, key, ranges):
         element = self._get_frame(key)
 

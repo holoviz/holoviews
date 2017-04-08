@@ -18,7 +18,6 @@ from ..core.util import (basestring, sanitize_identifier,
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
-
 # Alias parameter support for pickle loading
 
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
@@ -64,7 +63,8 @@ def replace_dimensions(dimensions, overrides):
         elif isinstance(override, Dimension):
             replaced.append(override)
         elif isinstance(override, dict):
-            replaced.append(d(**override))
+            replaced.append(d.clone(override.get('name',None),
+                                    **{k:v for k,v in override.items() if k != 'name'}))
         else:
             raise ValueError('Dimension can only be overridden '
                              'with another dimension or a dictionary '
@@ -79,16 +79,54 @@ class Dimension(param.Parameterized):
 
     For instance, a Dimension may specify that a set of numeric values
     actually correspond to 'Height' (dimension name), in units of
-    meters, and that allowed values must be floats greater than zero.
+    meters, with a descriptive label 'Height of adult males'.
 
-    In addition, Dimensions can be declared as cyclic, support
-    categorical data using a finite set of allowed, ordered values and
-    support a custom, pretty-printed representation.
+    All dimensions object have a name that identifies them and a label
+    containing a suitable description. If the label is not explicitly
+    specified it matches the name.
+
+    These two parameters define the core identity of the dimension
+    object and must match if two dimension objects are to be considered
+    equivalent. All other parameters are considered optional metadata
+    and are not used when testing for equality.
+
+    Unlike all the other parameters, these core parameters can be used
+    to construct a Dimension object from a tuple. This format is
+    sufficient to define an identical Dimension:
+
+    Dimension('a', label='Dimension A') == Dimension(('a', 'Dimension A'))
+
+    Everything else about a dimension is considered to reflect
+    non-semantic preferences. Examples include the default value (which
+    may be used in a visualization to set an initial slider position),
+    how the value is to rendered as text (which may be used to specify
+    the printed floating point precision) or a suitable range of values
+    to consider for a particular analysis.
+
+    Units
+    -----
+
+    Full unit support with automated conversions are on the HoloViews
+    roadmap. Once rich unit objects are supported, the unit (or more
+    specifically the type of unit) will be part of the core dimension
+    specification used to establish equality.
+
+    Until this feature is implemented, there are two auxillary
+    parameters that hold some partial information about the unit: the
+    name of the unit and whether or not it is cyclic. The name of the
+    unit is used as part of the pretty-printed representation and
+    knowing whether it is cyclic is important for certain operations.
     """
 
     name = param.String(doc="""
-        Optional name associated with the Dimension. For instance,
-        'height' or 'weight'.""")
+       Short name associated with the Dimension, such as 'height' or
+       'weight'. Valid Python identifiers make good names, because they
+       can be used conveniently as a keyword in many contexts.""")
+
+    label = param.String(default=None, doc="""
+        Unrestricted label used to describe the dimension. A label
+        should succinctly describe the dimension and may contain any
+        characters, including Unicode and LaTeX expression.""")
 
     cyclic = param.Boolean(default=False, doc="""
         Whether the range of this feature is cyclic such that the
@@ -116,10 +154,10 @@ class Dimension(param.Parameterized):
         instance, the string 'm' may be used represent units of meters
         and 's' to represent units of seconds.""")
 
-    values = param.ClassSelector(class_=(str, list), default=[], doc="""
-        Optional set of allowed values for the dimension that can also
-        be used to retain a categorical ordering. Setting values to
-        'initial' indicates that the values will be added during construction.""")
+    values = param.List(default=[], doc="""
+        Optional specification of the allowed value set for the
+        dimension that may also be used to retain a categorical
+        ordering.""")
 
     # Defines default formatting by type
     type_formatters = {}
@@ -127,46 +165,117 @@ class Dimension(param.Parameterized):
     presets = {} # A dictionary-like mapping name, (name,) or
                  # (name, unit) to a preset Dimension object
 
-    def __init__(self, name, **params):
+    def __init__(self, spec, **params):
         """
         Initializes the Dimension object with the given name.
         """
-        if isinstance(name, Dimension):
-            existing_params = dict(name.get_param_values())
-        elif (name, params.get('unit', None)) in self.presets.keys():
-            preset = self.presets[(str(name), str(params['unit']))]
+        if 'name' in params:
+            raise KeyError('Dimension name must only be passed as the positional argument')
+
+        if isinstance(spec, Dimension):
+            existing_params = dict(spec.get_param_values())
+        elif (spec, params.get('unit', None)) in self.presets.keys():
+            preset = self.presets[(str(spec), str(params['unit']))]
             existing_params = dict(preset.get_param_values())
-        elif name in self.presets.keys():
-            existing_params = dict(self.presets[str(name)].get_param_values())
-        elif (name,) in self.presets.keys():
-            existing_params = dict(self.presets[(str(name),)].get_param_values())
+        elif spec in self.presets:
+            existing_params = dict(self.presets[spec].get_param_values())
+        elif (spec,) in self.presets:
+            existing_params = dict(self.presets[(spec,)].get_param_values())
         else:
-            existing_params = {'name': name}
+            existing_params = {}
 
         all_params = dict(existing_params, **params)
-        name = all_params['name']
-        label = name
-        if isinstance(name, tuple):
-            name, label = name
+        if isinstance(spec, tuple):
+            name, label = spec
             all_params['name'] = name
-        self.label = label
+            all_params['label'] = label
+            if 'label' in params and (label != params['label']):
+                self.warning('Using label as supplied by keyword ({!r}), ignoring '
+                             'tuple value {!r}'.format(params['label'], label))
+                all_params['label'] = params['label']
+        elif isinstance(spec, basestring):
+            all_params['name'] = spec
+            all_params['label'] = params.get('label', spec)
 
-        if not isinstance(params.get('values', None), basestring):
-            all_params['values'] = sorted(list(unique_array(params.get('values', []))))
-        elif params['values'] != 'initial':
-            raise Exception("Values argument can only be set with the string 'initial'.")
+        if all_params['name'] == '':
+            raise ValueError('Dimension name cannot be the empty string')
+        if all_params['label'] in ['', None]:
+            raise ValueError('Dimension label cannot be None or the empty string')
+
+        values = params.get('values', [])
+        if isinstance(values, basestring) and values == 'initial':
+            self.warning("The 'initial' string for dimension values is no longer supported.")
+            values = []
+
+        all_params['values'] = sorted(list(unique_array(values)))
         super(Dimension, self).__init__(**all_params)
 
 
-    def __call__(self, name=None, **overrides):
+    @property
+    def spec(self):
+        "Returns the corresponding tuple specification"
+        return (self.name, self.label)
+
+
+    def __call__(self, spec=None, **overrides):
+        "Aliased to clone method. To be deprecated in 2.0"
+        return self.clone(spec=spec, **overrides)
+
+
+    def clone(self, spec=None, **overrides):
         """
         Derive a new Dimension that inherits existing parameters
         except for the supplied, explicit overrides
         """
         settings = dict(self.get_param_values(onlychanged=True), **overrides)
-        if name is not None: settings['name'] = name
-        return self.__class__(**settings)
 
+        if spec is None:
+            spec = (self.name, overrides.get('label', self.label))
+        if 'label' in overrides and isinstance(spec, basestring) :
+            spec = (spec, overrides['label'])
+        elif 'label' in overrides and isinstance(spec, tuple) :
+            self.warning('Using label as supplied by keyword ({!r}), ignoring '
+                             'tuple value {!r}'.format(overrides['label'], spec[1]))
+            spec = (spec[0],  overrides['label'])
+
+        return self.__class__(spec, **{k:v for k,v in settings.items()
+                                       if k not in ['name', 'label']})
+
+    def __hash__(self):
+        """
+        The hash allows Dimension objects to be used as dictionary keys in Python 3.
+        """
+        return hash(self.spec)
+
+    def __setstate__(self, d):
+        """
+        Compatibility for pickles before alias attribute was introduced.
+        """
+        super(Dimension, self).__setstate__(d)
+        self.label = self.name
+
+    def __eq__(self, other):
+        "Implements equals operator including sanitized comparison."
+
+        if isinstance(other, Dimension):
+            return self.spec == other.spec
+
+        # For comparison to strings. Name may be sanitized.
+        return other in [self.name, self.label,  dimension_sanitizer(self.name)]
+
+    def __ne__(self, other):
+        "Implements not equal operator including sanitized comparison."
+        return not self.__eq__(other)
+
+    def __lt__(self, other):
+        "Dimensions are sorted alphanumerically by name"
+        return self.name < other.name if isinstance(other, Dimension) else self.name < other
+
+    def __str__(self):
+        return self.name
+
+    def __repr__(self):
+        return self.pprint()
 
     @property
     def pprint_label(self):
@@ -174,6 +283,18 @@ class Dimension(param.Parameterized):
         unit = ('' if self.unit is None
                 else type(self.unit)(self.unit_format).format(unit=self.unit))
         return bytes_to_unicode(self.label) + bytes_to_unicode(unit)
+
+    def pprint(self):
+        changed = dict(self.get_param_values(onlychanged=True))
+        if len(set([changed.get(k, k) for k in ['name','label']])) == 1:
+            return 'Dimension({spec})'.format(spec=repr(self.name))
+
+        ordering = sorted( sorted(changed.keys()),
+                           key=lambda k: (- float('inf')
+                                          if self.params(k).precedence is None
+                                          else self.params(k).precedence))
+        kws = ", ".join('%s=%r' % (k, changed[k]) for k in ordering if k != 'name')
+        return 'Dimension({spec}, {kws})'.format(spec=repr(self.name), kws=kws)
 
 
     def pprint_value(self, value):
@@ -197,11 +318,6 @@ class Dimension(param.Parameterized):
                     return formatter % value
         return unicode(bytes_to_unicode(value))
 
-
-    def __repr__(self):
-        return self.pprint()
-
-
     def pprint_value_string(self, value):
         """
         Pretty prints the dimension name and value using the global
@@ -211,48 +327,6 @@ class Dimension(param.Parameterized):
         unit = '' if self.unit is None else ' ' + bytes_to_unicode(self.unit)
         value = self.pprint_value(value)
         return title_format.format(name=bytes_to_unicode(self.label), val=value, unit=unit)
-
-
-    def __hash__(self):
-        """
-        The hash allows two Dimension objects to be compared; if the
-        hashes are equal, all the parameters of the Dimensions are
-        also equal.
-        """
-        return sum([hash(value) for _, value in self.get_param_values()
-                    if not isinstance(value, list)])
-
-
-    def __setstate__(self, d):
-        """
-        Compatibility for pickles before alias attribute was introduced.
-        """
-        super(Dimension, self).__setstate__(d)
-        self.label = self.name
-
-
-    def __str__(self):
-        return self.pprint_label
-
-
-    def __eq__(self, other):
-        "Implements equals operator including sanitized comparison."
-        dim_matches = [self.name, self.label, dimension_sanitizer(self.label)]
-        if self is other:
-            return True
-        elif isinstance(other, Dimension):
-            return bool({other.name, other.label} & set(dim_matches))
-        else:
-            return other in dim_matches
-
-    def __ne__(self, other):
-        "Implements not equal operator including sanitized comparison."
-        return not self.__eq__(other)
-
-    def __lt__(self, other):
-        "Dimensions are sorted alphanumerically by name"
-        return self.name < other.name if isinstance(other, Dimension) else self.name < other
-
 
 
 class LabelledData(param.Parameterized):

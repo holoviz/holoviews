@@ -32,8 +32,8 @@ class BarsComparisonTest(ComparisonTestCase):
     def setUp(self):
         "Variations on the constructors in the Elements notebook"
 
-        key_dims1=[Dimension('Car occupants', values='initial')]
-        key_dims2=[Dimension('Cyclists', values='initial')]
+        key_dims1=[Dimension('Car occupants')]
+        key_dims2=[Dimension('Cyclists')]
         value_dims1=['Count']
         self.bars1 = Bars([('one',8),('two', 10), ('three', 16)],
                           kdims=key_dims1, vdims=value_dims1)

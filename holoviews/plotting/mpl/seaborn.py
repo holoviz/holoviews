@@ -119,8 +119,8 @@ class TimeSeriesPlot(SeabornPlot):
         style.pop('zorder', None)
         if 'label' in style:
             style['condition'] = style.pop('label')
-        axis_kwargs = {'xlabel': str(element.kdims[0]),
-                       'ylabel': str(element.vdims[0])}
+        axis_kwargs = {'xlabel': element.kdims[0].pprint_label,
+                       'ylabel': element.vdims[0].pprint_label}
         return (element.data, element.xdata), style, axis_kwargs
 
     def init_artists(self, ax, plot_data, plot_kwargs):
