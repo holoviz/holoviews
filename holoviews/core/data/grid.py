@@ -342,18 +342,17 @@ class GridInterface(DictInterface):
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
-        if dropped_kdims and any(len(dataset.data[kd.name]) > 1 for kd in dropped_kdims):
-            raise ValueError('Compressed format does not allow dropping key dimensions '
-                             'which are not constant.')
-        if (any(kd for kd in kdims if kd not in dataset.kdims) or
-            any(vd for vd in vdims if vd not in dataset.vdims)):
-            return dataset.clone(dataset.columns()).reindex(kdims, vdims)
         dropped_vdims = ([vdim for vdim in dataset.vdims
                           if vdim not in vdims] if vdims else [])
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
         data = {k: values for k, values in dataset.data.items()
                 if k not in dropped_kdims+dropped_vdims}
 
-        if kdims != dataset.kdims:
+        if len(constant) == len(dropped_kdims):
             joined_dims = kdims+dropped_kdims
             axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
                          for d in joined_dims)
@@ -366,6 +365,9 @@ class GridInterface(DictInterface):
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
                 data[vdim.name] = vdata
+            return data
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
         return data
 
 

@@ -191,6 +191,16 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
+        dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
+        if len(constant) == len(dropped_kdims):
+            return dataset.data.sel(**constant)
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
         return dataset.data
 
     @classmethod

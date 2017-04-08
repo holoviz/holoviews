@@ -139,6 +139,19 @@ class ImageInterfaceTest(ComparisonTestCase):
             self.assertEqual(self.image.reduce(y=np.mean),
                              Curve((xs, zs), kdims=['x'], vdims=['z']))
 
+    def test_dataset_reindex_constant(self):
+        selected = Dataset(self.image.select(x=0))
+        reindexed = selected.reindex(['y'])
+        data = Dataset(selected.columns(['y', 'z']),
+                       kdims=['y'], vdims=['z'])
+        self.assertEqual(reindexed, data)
+
+    def test_dataset_reindex_non_constant(self):
+        ds = Dataset(self.image)
+        reindexed = ds.reindex(['y'])
+        data = Dataset(ds.columns(['y', 'z']),
+                       kdims=['y'], vdims=['z'])
+        self.assertEqual(reindexed, data)
 
 
 class ImageGridInterfaceTest(ImageInterfaceTest):
@@ -292,6 +305,20 @@ class RGBInterfaceTest(ComparisonTestCase):
             self.assertEqual(self.rgb.sample(y=5),
                              self.rgb.clone(data, kdims=['x'],
                                             new_type=Curve))
+
+    def test_dataset_reindex_constant(self):
+        ds = Dataset(self.rgb.select(x=0))
+        reindexed = ds.reindex(['y'], ['R'])
+        data = Dataset(ds.columns(['y', 'R']),
+                       kdims=['y'], vdims=[ds.vdims[0]])
+        self.assertEqual(reindexed, data)
+
+    def test_dataset_reindex_non_constant(self):
+        ds = Dataset(self.rgb)
+        reindexed = ds.reindex(['y'], ['R'])
+        data = Dataset(ds.columns(['y', 'R']),
+                       kdims=['y'], vdims=[ds.vdims[0]])
+        self.assertEqual(reindexed, data)
 
 
 

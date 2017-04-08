@@ -2,6 +2,7 @@ import param
 import numpy as np
 
 from ..element import Element, NdElement
+from ..ndmapping import OrderedDict
 from .. import util
 
 
@@ -60,13 +61,13 @@ class Interface(param.Parameterized):
             if data.interface.datatype in datatype:
                 data = data.data
             elif data.interface.gridded:
-                gridded = {kd.name: data.dimension_values(kd.name, expanded=False)
-                           for kd in data.kdims}
+                gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
+                                       for kd in data.kdims])
                 for vd in data.vdims:
                     gridded[vd.name] = data.dimension_values(vd, flat=False)
-                data = gridded
+                data = tuple(gridded.values())
             else:
-                data = data.columns()
+                data = tuple(data.columns())
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
         elif isinstance(data, util.generator_types):
@@ -85,7 +86,7 @@ class Interface(param.Parameterized):
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
-            except:
+            except Exception as e:
                 pass
         else:
             raise ValueError("None of the available storage backends "

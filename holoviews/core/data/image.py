@@ -73,11 +73,20 @@ class ImageInterface(GridInterface):
         return dataset.data
 
     @classmethod
-    def reindex(cls, columns, kdims=None, vdims=None):
-        data = columns.data
-        if vdims is not None and vdims != columns.vdims and len(columns.vdims) > 1:
-            inds = [columns.get_dimension_index(vd)-columns.ndims for vd in vdims]
-            return data[:, :, inds] if len(inds) > 1 else data[:, :, inds[0]]
+    def reindex(cls, dataset, kdims=None, vdims=None):
+        data = dataset.data
+        dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
+        if dropped_kdims or constant:
+            return tuple(dataset.columns(kdims+vdims).values())
+
+        if vdims is not None and vdims != dataset.vdims and len(dataset.vdims) > 1:
+            inds = [dataset.get_dimension_index(vd)-dataset.ndims for vd in vdims]
+            return data[..., inds] if len(inds) > 1 else data[..., inds[0]]
         return data
 
     @classmethod

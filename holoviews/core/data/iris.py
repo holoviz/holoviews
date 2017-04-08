@@ -164,19 +164,18 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
-        """
-        Since cubes are never indexed directly the data itself
-        does not need to be reindexed, the Element can simply
-        reorder its key dimensions.
-        """
-        dropped = {d.name: cls.values(dataset, d, False)[0]
-                   for d in dataset.kdims if d not in kdims
-                   and len(cls.values(dataset, d, False)) == 1}
-        if dropped:
-            constraints = iris.Constraint(**dropped)
+        dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
+        if len(constant) == len(dropped_kdims):
+            constraints = iris.Constraint(**constant)
             return dataset.data.extract(constraints)
-        else:
-            return dataset.data
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
+        return dataset.data
 
 
     @classmethod

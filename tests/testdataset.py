@@ -28,14 +28,23 @@ class DatatypeContext(object):
     def __init__(self, datatypes, dataset_type=Dataset):
         self.datatypes = datatypes
         self.dataset_type = dataset_type
-        self._old_datatypes = None
+        self._old_datatypes = {}
 
     def __enter__(self):
-        self._old_datatypes = self.dataset_type.datatype
-        self.dataset_type.datatype = self.datatypes
+        if isinstance(self.dataset_type, tuple):
+            for ds in self.dataset_type:
+                self._old_datatypes[ds] = ds.datatype
+                ds.datatype = self.datatypes
+        else:
+            self._old_datatypes = self.dataset_type.datatype
+            self.dataset_type.datatype = self.datatypes
 
     def __exit__(self, *args):
-        self.dataset_type.datatype = self._old_datatypes
+        if isinstance(self.dataset_type, tuple):
+            for ds in self.dataset_type:
+                ds.datatype = self._old_datatypes[ds]
+        else:
+            self.dataset_type.datatype = self._old_datatypes
 
 
 class HomogeneousColumnTypes(object):
@@ -865,7 +874,8 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(11, 11)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
-        grouped = dataset.groupby('x', dynamic=True)
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], dataset):
+            grouped = dataset.groupby('x', dynamic=True)
         first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
                         kdims=['y'], vdims=['z'])
         self.assertEqual(grouped[0], first)
@@ -874,7 +884,8 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(11, 11)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=[('x', 'X'), ('y', 'Y')], vdims=[('z', 'Z')])
-        grouped = dataset.groupby('X', dynamic=True)
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], dataset):
+            grouped = dataset.groupby('X', dynamic=True)
         first = Dataset({'y': self.y_ints, 'z': array[:, 0]},
                         kdims=[('y', 'Y')], vdims=[('z', 'Z')])
         self.assertEqual(grouped[0], first)
@@ -893,7 +904,7 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(3, 20, 10)
         ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], (ds, Dataset)):
             partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y')
         self.assertEqual(partial.last['Val'], array[:, -1, :].T.flatten())
 
@@ -901,7 +912,7 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(3, 20, 10)
         ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array},
                      kdims=['x', 'y', 'z'], vdims=['Val'])
-        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], (ds, Dataset)):
             partial = ds.to(Dataset, kdims=['x'], vdims=['Val'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
 
@@ -909,7 +920,7 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(3, 20, 10)
         ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], (ds, Dataset)):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y')
         self.assertEqual(partial.last['Val'], array[:, -1, :].T.flatten())
 
@@ -917,7 +928,7 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         array = np.random.rand(3, 20, 10)
         ds = Dataset({'x': range(10), 'y': range(20), 'z': range(3), 'Val': array, 'Val2': array*2},
                      kdims=['x', 'y', 'z'], vdims=['Val', 'Val2'])
-        with DatatypeContext([self.datatype, 'columns', 'dataframe']):
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], (ds, Dataset)):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
 

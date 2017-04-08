@@ -105,7 +105,11 @@ class DataConversion(object):
             groupby = [groupby]
 
         if self._element.interface.gridded:
-            selected = self._element
+            dropped_kdims = [kd for kd in self._element.kdims if kd not in groupby+kdims]
+            if dropped_kdims:
+                selected = self._element.reindex(groupby+kdims, vdims)
+            else:
+                selected = self._element
         else:
             selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
@@ -114,7 +118,7 @@ class DataConversion(object):
         if selected.group != selected.params()['group'].default:
             params['group'] = selected.group
         params.update(kwargs)
-        if len(kdims) == selected.ndims:
+        if len(kdims) == selected.ndims or not groupby:
             element = new_type(selected, **params)
             return element.sort() if sort else element
         group = selected.groupby(groupby, container_type=HoloMap,
