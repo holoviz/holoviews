@@ -373,7 +373,7 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[], closest=True, **kwargs):
+    def sample(self, samples=[], **kwargs):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
@@ -396,27 +396,30 @@ class Dataset(Element):
             sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
             dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
             selection = self.select(**sel)
-            new_type = Table
-            kdims = self.kdims
+
+            # If a 1D cross-section of 2D space return Curve
             if self.interface.gridded and self.ndims == 2 and len(dims) == 1:
                 new_type = Curve
                 kdims = [self.get_dimension(kd) for kd in dims]
-                selection = tuple(selection.columns(kdims+self.vdims).values())
-            elif np.isscalar(selection):
+            else:
+                new_type = Table
+                kdims = self.kdims
+
+            if np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
                 selection = tuple(selection.columns(kdims+self.vdims).values())
+
             return self.clone(selection, kdims=kdims, new_type=new_type)
 
-        lens = {len(util.wrap_tuple(s)) for s in samples}
+        lens = set(len(util.wrap_tuple(s)) for s in samples)
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
-        if closest:
-            try:
-                samples = self.closest(samples)
-            except NotImplementedError:
-                pass
+        try:
+            samples = self.closest(samples)
+        except NotImplementedError:
+            pass
         samples = [util.wrap_tuple(s) for s in samples]
         return self.clone(self.interface.sample(self, samples), new_type=Table)
 

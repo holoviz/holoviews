@@ -151,8 +151,7 @@ class ImageInterface(GridInterface):
             t = t if yidx.stop is None else min(t, yidx.stop)
         bounds = BoundingBox(points=((l, b), (r, t)))
         slc = Slice(bounds, dataset)
-        data = slc.submatrix(dataset.data)
-        return data
+        return slc.submatrix(dataset.data)
 
 
     @classmethod
@@ -166,11 +165,10 @@ class ImageInterface(GridInterface):
         tuple.
         """
         if len(samples[0]) == 1:
-            return dataset.select(**{dataset.kdims[0].name:
-                                     [s[0] for s in samples]}).columns()
-        else:
-            return [c+(dataset.data[dataset._coord2matrix(c)],)
-                    for c in samples]
+            select = {dataset.kdims[0].name: [s[0] for s in samples]}
+            return tuple(dataset.select(**select).columns().values())
+        return [c+(dataset.data[dataset._coord2matrix(c)],) for c in samples]
+
 
     @classmethod
     def length(cls, dataset):
@@ -193,15 +191,11 @@ class ImageInterface(GridInterface):
 
         if len(dimensions) == 1:
             didx = dataset.get_dimension_index(dimensions[0])
-            coords = dataset.dimension_values(dimensions[0], False)
-            xvals = dataset.dimension_values(abs(didx-1), False)
+            coords = dataset.dimension_values(dimensions[0], expanded=False)
+            xvals = dataset.dimension_values(abs(didx-1), expanded=False)
             samples = [(i, slice(None)) if didx else (slice(None), i)
                        for i in range(dataset.data.shape[abs(didx-1)])]
-            if didx:
-                samples = samples[::-1]
-                data = dataset.data
-            else:
-                data = dataset.data[::-1, :]
+            data = np.flipud(dataset.data)
             groups = [(c, group_type((xvals, data[s]), **group_kwargs))
                        for s, c in zip(samples, coords)]
         else:

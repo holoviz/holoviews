@@ -231,6 +231,7 @@ class GridInterface(DictInterface):
                 mask &= ind.start <= values
             if ind.stop is not None:
                 mask &= values < ind.stop
+            # Expand empty mask
             if mask is True:
                 mask = np.ones(values.shape, dtype=np.bool)
         elif isinstance(ind, (set, list)):
