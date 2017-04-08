@@ -6,8 +6,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, GridImage,
-                        VectorField)
+                        Table, ItemTable, Area, HSV, QuadMesh, VectorField)
 from ...core.options import Options, Cycle
 
 try:
@@ -54,7 +53,6 @@ associations = {Overlay: OverlayPlot,
 
                 # Rasters
                 Image: RasterPlot,
-                GridImage: RasterPlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,

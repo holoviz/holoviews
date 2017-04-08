@@ -12,7 +12,7 @@ from ...core.util import match_spec, max_range, unique_iterator, unique_array, i
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
-from .util import get_raster_data
+from .util import get_raster_array
 
 
 class RasterPlot(ColorbarPlot):
@@ -67,7 +67,7 @@ class RasterPlot(ColorbarPlot):
         else:
             l, b, r, t = element.bounds.lbrt()
 
-        data = get_raster_data(element)
+        data = get_raster_array(element)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
@@ -345,7 +345,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 pane = vmap.select(**{d.name: val for d, val in zip(self.dimensions, key)
                                     if d in vmap.kdims})
                 pane = vmap.last.values()[-1] if issubclass(vmap.type, CompositeOverlay) else vmap.last
-                data = get_raster_data(pane) if pane else None
+                data = get_raster_array(pane) if pane else None
                 ranges = self.compute_ranges(vmap, key, ranges)
                 opts = self.lookup_options(pane, 'style')[self.cyclic_index]
                 plot = self.handles['axis'].imshow(data, extent=(x,x+w, y, y+h), **opts)
@@ -377,7 +377,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
                 if element:
                     plot.set_visible(True)
                     img = element.values()[0] if isinstance(element, CompositeOverlay) else element
-                    data = get_raster_data(img)
+                    data = get_raster_array(img)
                     plot.set_data(data)
                 else:
                     plot.set_visible(False)

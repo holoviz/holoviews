@@ -141,7 +141,6 @@ Store.register({Curve: CurvePlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
-                GridImage: RasterPlot,
 
                 # Annotation plots
                 VLine: VLinePlot,

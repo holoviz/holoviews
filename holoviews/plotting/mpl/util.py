@@ -167,7 +167,7 @@ def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
     return bbox_inches.padded(pad) if pad else bbox_inches
 
 
-def get_raster_data(image):
+def get_raster_array(image):
     """
     Return the array data from any Raster or Image type
     """
