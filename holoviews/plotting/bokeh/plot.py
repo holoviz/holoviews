@@ -17,7 +17,7 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import get_dynamic_mode, initialize_sampled
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
-                   filter_toolboxes, make_axis)
+                   filter_toolboxes, make_axis, update_shared_sources)
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -153,6 +153,8 @@ class BokehPlot(DimensionedPlot):
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])
         grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
+        shared_sources = []
+        source_cols = {}
         for _, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
@@ -169,6 +171,10 @@ class BokehPlot(DimensionedPlot):
                     else:
                         renderer.update(source=new_source)
                     plot.handles['source'] = new_source
+                shared_sources.append(new_source)
+                source_cols[id(new_source)] = [c for c in new_source.data]
+        self.handles['shared_sources'] = shared_sources
+        self.handles['source_cols'] = source_cols
 
 
 
@@ -441,7 +447,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot = Column(*models)
         return plot
 
-
+    @update_shared_sources
     def update_frame(self, key, ranges=None):
         """
         Update the internal state of the Plot to represent the given
@@ -450,7 +456,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         """
         ranges = self.compute_ranges(self.layout, key, ranges)
         for coord in self.layout.keys(full_grid=True):
-            subplot = self.subplots.get(coord, None)
+            subplot = self.subplots.get(wrap_tuple(coord), None)
             if subplot is not None:
                 subplot.update_frame(key, ranges)
         title = self._get_title(key)
@@ -692,7 +698,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
         return self.handles['plot']
 
-
+    @update_shared_sources
     def update_frame(self, key, ranges=None):
         """
         Update the internal state of the Plot to represent the given

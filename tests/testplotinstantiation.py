@@ -11,7 +11,7 @@ from io import BytesIO, StringIO
 
 import param
 import numpy as np
-from holoviews import (Dimension, Overlay, DynamicMap, Store,
+from holoviews import (Dimension, Overlay, DynamicMap, Store, Dataset,
                        NdOverlay, GridSpace, HoloMap, Layout, Cycle)
 from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
@@ -1224,6 +1224,79 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual((x_range.start, x_range.end), (-.5, .5))
         self.assertEqual((y_range.start, y_range.end), (-.5, .5))
 
+    def test_layout_shared_source_synced_update(self):
+        hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
+                                    for j in range(4)}, kdims=['A', 'B', 'C', 'D'])
+                        for i in range(3)})
+
+        # Create two holomaps of points sharing the same data source
+        hmap1=  hmap.map(lambda x: Points(x.clone(kdims=['A', 'B'])), Dataset)
+        hmap2 = hmap.map(lambda x: Points(x.clone(kdims=['D', 'C'])), Dataset)
+
+        # Pop key (1,) for one of the HoloMaps and make Layout
+        hmap2.pop((1,))
+        layout = (hmap1 + hmap2)(plot=dict(shared_datasource=True))
+
+        # Get plot
+        plot = bokeh_renderer.get_plot(layout)
+
+        # Check plot created shared data source and recorded expected columns
+        sources = plot.handles.get('shared_sources', [])
+        source_cols = plot.handles.get('source_cols', {})
+        self.assertEqual(len(sources), 1)
+        source = sources[0]
+        data = source.data
+        cols = source_cols[id(source)]
+        self.assertEqual(set(cols), {'A', 'B', 'C', 'D'})
+
+        # Ensure the source contains the expected columns
+        self.assertEqual(set(data.keys()), {'A', 'B', 'C', 'D'})
+
+        # Update to key (1,) and check the source contains data
+        # corresponding to hmap1 and filled in NaNs for hmap2,
+        # which was popped above
+        plot.update((1,))
+        self.assertEqual(data['A'], hmap1[1].dimension_values(0))
+        self.assertEqual(data['B'], hmap1[1].dimension_values(1))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+
+    def test_grid_shared_source_synced_update(self):
+        hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
+                                    for j in range(4)}, kdims=['A', 'B', 'C', 'D'])
+                        for i in range(3)})
+
+        # Create two holomaps of points sharing the same data source
+        hmap1=  hmap.map(lambda x: Points(x.clone(kdims=['A', 'B'])), Dataset)
+        hmap2 = hmap.map(lambda x: Points(x.clone(kdims=['D', 'C'])), Dataset)
+
+        # Pop key (1,) for one of the HoloMaps and make GridSpace
+        hmap2.pop(1)
+        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X'])(plot=dict(shared_datasource=True))
+
+        # Get plot
+        plot = bokeh_renderer.get_plot(grid)
+
+        # Check plot created shared data source and recorded expected columns
+        sources = plot.handles.get('shared_sources', [])
+        source_cols = plot.handles.get('source_cols', {})
+        self.assertEqual(len(sources), 1)
+        source = sources[0]
+        data = source.data
+        cols = source_cols[id(source)]
+        self.assertEqual(set(cols), {'A', 'B', 'C', 'D'})
+
+        # Ensure the source contains the expected columns
+        self.assertEqual(set(data.keys()), {'A', 'B', 'C', 'D'})
+
+        # Update to key (1,) and check the source contains data
+        # corresponding to hmap1 and filled in NaNs for hmap2,
+        # which was popped above
+        plot.update((1,))
+        self.assertEqual(data['A'], hmap1[1].dimension_values(0))
+        self.assertEqual(data['B'], hmap1[1].dimension_values(1))
+        self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+        self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
 
 
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
