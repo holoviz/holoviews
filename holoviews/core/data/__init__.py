@@ -373,12 +373,14 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[], **kwargs):
+    def sample(self, samples=[], closest=True, **kwargs):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
         just the selected samples. Alternatively may supply kwargs
-        to sample a coordinate on an object.
+        to sample a coordinate on an object. By default it will attempt
+        to snap to the nearest coordinate if the Element supports it,
+        snapping may be disabled with the closest argument.
         """
         if kwargs and samples:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
@@ -416,10 +418,11 @@ class Dataset(Element):
         if len(lens) > 1:
             raise IndexError('Sample coordinates must all be of the same length.')
 
-        try:
-            samples = self.closest(samples)
-        except NotImplementedError:
-            pass
+        if closest:
+            try:
+                samples = self.closest(samples)
+            except NotImplementedError:
+                pass
         samples = [util.wrap_tuple(s) for s in samples]
         return self.clone(self.interface.sample(self, samples), new_type=Table)
 
