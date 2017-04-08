@@ -106,6 +106,8 @@ class Comparison(ComparisonInterface):
 
         # List and tuple comparisons
         cls.equality_type_funcs[list] =         cls.compare_lists
+        cls.equality_type_funcs[tuple] =        cls.compare_tuples
+
 
         #Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
@@ -213,16 +215,22 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_lists(cls, l1, l2, msg='Lists'):
-        cls.assertEqual(len(l1), len(l2), "list lengths mismatched")
-        for v1, v2 in zip(l1, l2):
-            cls.assertEqual(v1, v2)
+        try:
+            cls.assertEqual(len(l1), len(l2))
+            for v1, v2 in zip(l1, l2):
+                cls.assertEqual(v1, v2)
+        except AssertionError:
+            raise AssertionError('%s != %s' % (repr(l1), repr(l2)))
 
 
     @classmethod
-    def compare_tuples(cls, l1, l2, msg='Tuples'):
-        cls.assertEqual(len(l1), len(l2), "tuple lengths mismatched")
-        for v1, v2 in zip(l1, l2):
-            cls.assertEqual(v1, v2)
+    def compare_tuples(cls, t1, t2, msg='Tuples'):
+        try:
+            cls.assertEqual(len(t1), len(t2))
+            for i1, i2 in zip(t1, t2):
+                cls.assertEqual(i1, i2)
+        except AssertionError:
+            raise AssertionError('%s != %s' % (repr(t1), repr(t2)))
 
 
     #=====================#

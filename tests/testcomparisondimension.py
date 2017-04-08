@@ -76,7 +76,7 @@ class DimensionsComparisonTestCase(ComparisonTestCase):
         try:
             self.assertEqual(self.dimension4, self.dimension8)
         except AssertionError as e:
-            self.assertEqual(str(e), "Dimension parameter 'values' mismatched: list lengths mismatched")
+            self.assertEqual(str(e), "Dimension parameter 'values' mismatched: [] != ['a', 'b']")
 
     def test_dimension_comparison_types_unequal(self):
         try:
