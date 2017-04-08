@@ -1220,10 +1220,8 @@ def bound_range(vals, density):
     """
     low, high = vals.min(), vals.max()
     invert = False
-    diff = np.diff(vals)
-    if diff.max() < 0:
+    if vals[0] > vals[1]:
         invert = True
-        diff = -diff
     if not density:
         density = round(1./((high-low)/(len(vals)-1)), sys.float_info.dig)
     halfd = 0.5/density
