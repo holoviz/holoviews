@@ -106,7 +106,6 @@ class Comparison(ComparisonInterface):
 
         # List and tuple comparisons
         cls.equality_type_funcs[list] =         cls.compare_lists
-        cls.equality_type_funcs[tuple] =        cls.compare_tuples
 
         #Dictionary comparisons
         cls.equality_type_funcs[dict] =         cls.compare_dictionaries
