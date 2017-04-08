@@ -1214,9 +1214,9 @@ def is_nan(x):
 
 def bound_range(vals, density):
     """
-    Computes a bounding range from a number of evenly spaced samples.
-    Will raise an error if samples are not evenly spaced within
-    tolerance.
+    Computes a bounding range and density from a number of samples
+    assumed to be evenly spaced. Density is rounded to machine precision
+    using significant digits reported by sys.float_info.dig.
     """
     low, high = vals.min(), vals.max()
     invert = False
