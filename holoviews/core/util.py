@@ -1212,7 +1212,7 @@ def is_nan(x):
         return False
 
 
-def bound_range(vals, density, TOL=10e-9):
+def bound_range(vals, density):
     """
     Computes a bounding range from a number of evenly spaced samples.
     Will raise an error if samples are not evenly spaced within
@@ -1225,9 +1225,6 @@ def bound_range(vals, density, TOL=10e-9):
         invert = True
         diff = -diff
     if not density:
-        unit = np.unique(np.round(diff/TOL).astype(int))*TOL
-        if len(unit) > 1:
-            raise ValueError('Data is not sampled on a grid.')
-        density = 1./unit[0]
+        density = 1./((high-low)/(len(vals)-1))
     halfd = 0.5/density
     return low-halfd, high+halfd, density, invert
