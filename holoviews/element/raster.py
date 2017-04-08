@@ -260,6 +260,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         """
         Ensures old-style unpickled Image types without an interface
         use the ImageInterface.
+
+        Note: Deprecate as part of 2.0
         """
         self.__dict__ = state
         if isinstance(self.data, np.ndarray):

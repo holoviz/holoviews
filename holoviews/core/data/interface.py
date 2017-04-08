@@ -67,7 +67,7 @@ class Interface(param.Parameterized):
                     gridded[vd.name] = data.dimension_values(vd, flat=False)
                 data = tuple(gridded.values())
             else:
-                data = tuple(data.columns())
+                data = tuple(data.columns().values())
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
         elif isinstance(data, util.generator_types):

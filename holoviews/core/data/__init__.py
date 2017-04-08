@@ -200,8 +200,12 @@ class Dataset(Element):
 
     def closest(self, coords=[], **kwargs):
         """
-        Given single or multiple samples along the first key dimension
-        will return the closest actual sample coordinates.
+        Given a single coordinate or multiple coordinates as
+        a tuple or list of tuples or keyword arguments matching
+        the dimension closest will find the closest actual x/y
+        coordinates. Different Element types should implement this
+        appropriately depending on the space they represent, if the
+        Element does not support snapping raise NotImplementedError.
         """
         if self.ndims > 1:
             raise NotImplementedError("Closest method currently only "
@@ -460,9 +464,7 @@ class Dataset(Element):
 
         ndims = len(dimensions)
         min_d, max_d = self.params('kdims').bounds
-        new_type = type(self)
-        if (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d):
-            new_type = Dataset
+        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
 
         vdims = self.vdims
         if spreadfn:
@@ -475,7 +477,7 @@ class Dataset(Element):
                 dim = d('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, False, False)
                 combined = combined.add_dimension(dim, ndims+i, dvals, True)
-            return combined.clone(new_type=new_type)
+            return combined.clone(new_type=Dataset if generic_type else type(self))
 
         if np.isscalar(aggregated):
             return aggregated
@@ -486,7 +488,8 @@ class Dataset(Element):
             except:
                 datatype = self.params('datatype').default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=new_type, datatype=datatype)
+                                  new_type=Dataset if generic_type else None,
+                                  datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
