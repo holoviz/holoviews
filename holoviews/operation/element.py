@@ -322,7 +322,7 @@ class gradient(ElementOperation):
 
         matrix_dim = matrix.vdims[0]
 
-        data = matrix.data
+        data = np.flipud(matrix.dimension_values(matrix_dim, flat=False))
         r, c = data.shape
 
         if  matrix_dim.cyclic and (None in matrix_dim.range):
@@ -382,8 +382,9 @@ class convolve(ElementOperation):
 
         k = kernel.data if self.p.kernel_roi == (0,0,0,0) else kernel[xslice, yslice].data
 
-        fft1 = np.fft.fft2(target.data)
-        fft2 = np.fft.fft2(k, s= target.data.shape)
+        data = np.flipud(target.dimension_values(2, flat=False))
+        fft1 = np.fft.fft2(data)
+        fft2 = np.fft.fft2(k, s=data.shape)
         convolved_raw = np.fft.ifft2(fft1 * fft2).real
 
         k_rows, k_cols = k.shape
@@ -430,11 +431,11 @@ class contours(ElementOperation):
         else:
             contour_fn = plt.contour
             contour_type = Contours
+
         if type(element) is Raster:
             data = [np.flipud(element.data)]
-        elif isinstance(element, Raster):
-            data = [element.data]
-        
+        elif isinstance(element, Image):
+            data = [np.flipud(element.dimension_values(2, flat=False))]
         elif isinstance(element, QuadMesh):
             data = (element.dimension_values(0, False),
                     element.dimension_values(1, False),

@@ -72,7 +72,7 @@ class XArrayInterface(GridInterface):
             if vdims is None:
                 vdims = list(data.data_vars.keys())
             if kdims is None:
-                kdims = [name for name in data.dims
+                kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
 
         if not isinstance(data, xr.Dataset):
@@ -191,6 +191,16 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
+        dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
+        if len(constant) == len(dropped_kdims):
+            return dataset.data.sel(**constant)
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
         return dataset.data
 
     @classmethod
@@ -216,16 +226,18 @@ class XArrayInterface(GridInterface):
         data = dataset.data.sel(**validated)
 
         # Restore constant dimensions
+        indexed = cls.indexed(dataset, selection)
         dropped = {d.name: np.atleast_1d(data[d.name])
                    for d in dataset.kdims
                    if not data[d.name].data.shape}
-        if dropped:
+        if dropped and not indexed:
             data = data.assign_coords(**dropped)
 
-        indexed = cls.indexed(dataset, selection)
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
             return data[dataset.vdims[0].name].item()
+        elif indexed:
+            return np.array([data[vd.name].item() for vd in dataset.vdims])
         return data
 
     @classmethod

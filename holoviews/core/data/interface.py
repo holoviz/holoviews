@@ -2,6 +2,7 @@ import param
 import numpy as np
 
 from ..element import Element, NdElement
+from ..ndmapping import OrderedDict
 from .. import util
 
 
@@ -50,22 +51,31 @@ class Interface(param.Parameterized):
             kdims = pvals.get('kdims') if kdims is None else kdims
             vdims = pvals.get('vdims') if vdims is None else vdims
 
+        if datatype is None:
+            datatype = eltype.datatype
+
         # Process Element data
         if isinstance(data, NdElement):
             kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif hasattr(data, 'interface') and issubclass(data.interface, Interface):
-            data = data.data
+        elif (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+            if data.interface.datatype in datatype:
+                data = data.data
+            elif data.interface.gridded:
+                gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
+                                       for kd in data.kdims])
+                for vd in data.vdims:
+                    gridded[vd.name] = data.dimension_values(vd, flat=False)
+                data = tuple(gridded.values())
+            else:
+                data = tuple(data.columns().values())
         elif isinstance(data, Element):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
         elif isinstance(data, util.generator_types):
             data = list(data)
 
         # Set interface priority order
-        if datatype is None:
-            datatype = eltype.datatype
         prioritized = [cls.interfaces[p] for p in datatype
                        if p in cls.interfaces]
-
         head = [intfc for intfc in prioritized if type(data) in intfc.types]
         if head:
             # Prioritize interfaces which have matching types
@@ -76,7 +86,7 @@ class Interface(param.Parameterized):
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
-            except:
+            except Exception as e:
                 pass
         else:
             raise ValueError("None of the available storage backends "
@@ -143,10 +153,10 @@ class Interface(param.Parameterized):
         boolean to indicate whether a scalar value has been indexed.
         """
         selected = list(selection.keys())
-        all_scalar = all(not isinstance(sel, (tuple, slice, set, list))
-                         for sel in selection.values())
+        all_scalar = all((not isinstance(sel, (tuple, slice, set, list))
+                          and not callable(sel)) for sel in selection.values())
         all_kdims = all(d in selected for d in dataset.kdims)
-        return all_scalar and all_kdims and len(dataset.vdims) == 1
+        return all_scalar and all_kdims
 
 
     @classmethod

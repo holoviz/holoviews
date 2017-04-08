@@ -92,8 +92,11 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def shape(cls, dataset):
-        return cls.length(dataset), len(dataset.dimensions()),
+    def shape(cls, dataset, gridded=False):
+        if gridded:
+            return dataset.data[dataset.vdims[0].name].shape
+        else:
+            return (cls.length(dataset), len(dataset.dimensions()))
 
 
     @classmethod
@@ -141,7 +144,7 @@ class GridInterface(DictInterface):
                 invert = True
             else:
                 slices.append(slice(None))
-        data = data.__getitem__(slices) if invert else data
+        data = data[slices] if invert else data
 
         # Transpose data
         dims = [name for name in coord_dims[::-1]
@@ -231,6 +234,9 @@ class GridInterface(DictInterface):
                 mask &= ind.start <= values
             if ind.stop is not None:
                 mask &= values < ind.stop
+            # Expand empty mask
+            if mask is True:
+                mask = np.ones(values.shape, dtype=np.bool)
         elif isinstance(ind, (set, list)):
             iter_slcs = []
             for ik in ind:
@@ -272,16 +278,20 @@ class GridInterface(DictInterface):
             else:
                 values = values[mask]
             value_select.append(mask)
-            data[dim.name] = values
+            data[dim.name] = np.array([values]) if np.isscalar(values) else values
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
         for vdim in dataset.vdims:
             data[vdim.name] = dataset.data[vdim.name][index]
 
-        if indexed and len(data[dataset.vdims[0].name]) == 1:
-            return data[dataset.vdims[0].name][0]
-
+        if indexed:
+            if len(dataset.vdims) == 1:
+                arr = np.squeeze(data[dataset.vdims[0].name])
+                return arr if np.isscalar(arr) else arr[()]
+            else:
+                return np.array([np.squeeze(data[vd.name])
+                                 for vd in dataset.vdims])
         return data
 
 
@@ -294,10 +304,6 @@ class GridInterface(DictInterface):
         dimensions = dataset.dimensions(label='name')
         arrays = [dataset.data[vdim.name] for vdim in dataset.vdims]
         data = defaultdict(list)
-
-        first_sample = util.wrap_tuple(samples[0])
-        if any(len(util.wrap_tuple(s)) != len(first_sample) for s in samples):
-            raise IndexError('Sample coordinates must all be of the same length.')
 
         for sample in samples:
             if np.isscalar(sample): sample = [sample]
@@ -336,18 +342,17 @@ class GridInterface(DictInterface):
     @classmethod
     def reindex(cls, dataset, kdims, vdims):
         dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
-        if dropped_kdims and any(len(dataset.data[kd.name]) > 1 for kd in dropped_kdims):
-            raise ValueError('Compressed format does not allow dropping key dimensions '
-                             'which are not constant.')
-        if (any(kd for kd in kdims if kd not in dataset.kdims) or
-            any(vd for vd in vdims if vd not in dataset.vdims)):
-            return dataset.clone(dataset.columns()).reindex(kdims, vdims)
         dropped_vdims = ([vdim for vdim in dataset.vdims
                           if vdim not in vdims] if vdims else [])
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
         data = {k: values for k, values in dataset.data.items()
                 if k not in dropped_kdims+dropped_vdims}
 
-        if kdims != dataset.kdims:
+        if len(constant) == len(dropped_kdims):
             joined_dims = kdims+dropped_kdims
             axes = tuple(dataset.ndims-dataset.kdims.index(d)-1
                          for d in joined_dims)
@@ -360,6 +365,9 @@ class GridInterface(DictInterface):
                 if dropped_axes:
                     vdata = vdata.squeeze(axis=dropped_axes)
                 data[vdim.name] = vdata
+            return data
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
         return data
 
 

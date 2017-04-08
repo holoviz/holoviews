@@ -73,9 +73,13 @@ class CubeInterface(GridInterface):
         if kdims:
             kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
         else:
+            kdims = eltype.kdims
             kdim_names = [kd.name for kd in eltype.kdims]
 
+
         if not isinstance(data, iris.cube.Cube):
+            if vdims is None:
+                vdims = eltype.vdims
             ndims = len(kdim_names)
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
                      for kd in kdims]
@@ -112,13 +116,21 @@ class CubeInterface(GridInterface):
         if vdims is None:
             vdims = [Dimension(data.name(), unit=str(data.units))]
 
-        return data, {'kdims':kdims, 'vdims':vdims}, {'group':data.name()}
+        return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
     @classmethod
     def validate(cls, dataset):
         if len(dataset.vdims) > 1:
             raise ValueError("Iris cubes do not support more than one value dimension")
+
+
+    @classmethod
+    def shape(cls, dataset, gridded=False):
+        if gridded:
+            return dataset.data.shape
+        else:
+            return (cls.length(dataset), len(dataset.dimensions()))
 
 
     @classmethod
@@ -152,19 +164,18 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def reindex(cls, dataset, kdims=None, vdims=None):
-        """
-        Since cubes are never indexed directly the data itself
-        does not need to be reindexed, the Element can simply
-        reorder its key dimensions.
-        """
-        dropped = {d.name: cls.values(dataset, d, False)[0]
-                   for d in dataset.kdims if d not in kdims
-                   and len(cls.values(dataset, d, False)) == 1}
-        if dropped:
-            constraints = iris.Constraint(**dropped)
+        dropped_kdims = [kd for kd in dataset.kdims if kd not in kdims]
+        constant = {}
+        for kd in dropped_kdims:
+            vals = cls.values(dataset, kd.name, expanded=False)
+            if len(vals) == 1:
+                constant[kd.name] = vals[0]
+        if len(constant) == len(dropped_kdims):
+            constraints = iris.Constraint(**constant)
             return dataset.data.extract(constraints)
-        else:
-            return dataset.data
+        elif dropped_kdims:
+            return tuple(dataset.columns(kdims+vdims).values())
+        return dataset.data
 
 
     @classmethod
@@ -197,7 +208,8 @@ class CubeInterface(GridInterface):
             constraint = iris.Constraint(**dict(zip(constraints, key)))
             extracted = dataset.data.extract(constraint)
             if drop_dim:
-                extracted = group_type(extracted, kdims=slice_dims).columns()
+                extracted = group_type(extracted, kdims=slice_dims,
+                                       vdims=dataset.vdims).columns()
             cube = group_type(extracted, **group_kwargs)
             data.append((key, cube))
         if issubclass(container_type, NdMapping):
@@ -280,12 +292,18 @@ class CubeInterface(GridInterface):
         """
         Transform a selection dictionary to an iris Constraint.
         """
+        def get_slicer(start, end):
+            def slicer(cell):
+                return start <= cell.point < end
+            return slicer
         constraint_kwargs = {}
         for dim, constraint in selection.items():
             if isinstance(constraint, slice):
                 constraint = (constraint.start, constraint.stop)
             if isinstance(constraint, tuple):
-                constraint = iris.util.between(*constraint, rh_inclusive=False)
+                if constraint == (None, None):
+                    continue
+                constraint = get_slicer(*constraint)
             dim = dataset.get_dimension(dim, strict=True)
             constraint_kwargs[dim.name] = constraint
         return iris.Constraint(**constraint_kwargs)
@@ -306,6 +324,7 @@ class CubeInterface(GridInterface):
         dropped = [c for c in pre_dim_coords if c not in post_dim_coords]
         for d in dropped:
             extracted = iris.util.new_axis(extracted, d)
+
         return extracted
 
 

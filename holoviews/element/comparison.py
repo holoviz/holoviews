@@ -25,7 +25,7 @@ from numpy.testing import assert_array_equal, assert_array_almost_equal
 from . import *    # noqa (All Elements need to support comparison)
 from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
-                    GridSpace, DynamicMap, GridMatrix)
+                    GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
@@ -104,8 +104,14 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[np.float32] =   cls.compare_floats
         cls.equality_type_funcs[np.float64] =   cls.compare_floats
 
+        # List and tuple comparisons
+        cls.equality_type_funcs[list] =         cls.compare_lists
+        cls.equality_type_funcs[tuple] =        cls.compare_tuples
+
+
         #Dictionary comparisons
-        cls.equality_type_funcs[dict] =        cls.compare_dictionaries
+        cls.equality_type_funcs[dict] =         cls.compare_dictionaries
+        cls.equality_type_funcs[OrderedDict] =  cls.compare_dictionaries
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
@@ -205,6 +211,27 @@ class Comparison(ComparisonInterface):
             raise cls.failureException(msg)
         for k in keys:
             cls.assertEqual(d1[k], d2[k])
+
+
+    @classmethod
+    def compare_lists(cls, l1, l2, msg='Lists'):
+        try:
+            cls.assertEqual(len(l1), len(l2))
+            for v1, v2 in zip(l1, l2):
+                cls.assertEqual(v1, v2)
+        except AssertionError:
+            raise AssertionError('%s != %s' % (repr(l1), repr(l2)))
+
+
+    @classmethod
+    def compare_tuples(cls, t1, t2, msg='Tuples'):
+        try:
+            cls.assertEqual(len(t1), len(t2))
+            for i1, i2 in zip(t1, t2):
+                cls.assertEqual(i1, i2)
+        except AssertionError:
+            raise AssertionError('%s != %s' % (repr(t1), repr(t2)))
+
 
     #=====================#
     # Literal comparisons #
@@ -549,31 +576,27 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_heatmap(cls, el1, el2, msg='HeatMap'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_image(cls, el1, el2, msg='Image'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_rgb(cls, el1, el2, msg='RGB'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_hsv(cls, el1, el2, msg='HSV'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg=msg)
         cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_surface(cls, el1, el2, msg='Surface'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg=msg)
+        cls.bounds_check(el1,el2)
+        cls.compare_dataset(el1, el2, msg)
 
 
     #========#

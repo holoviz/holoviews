@@ -4,7 +4,9 @@ import param
 import numpy as np
 
 from ..core import Dataset, OrderedDict
+from ..core.boundingregion import BoundingBox
 from ..core.operation import ElementOperation
+from ..core.sheetcoords import Slice
 from ..core.util import (is_nan, sort_topologically, one_to_one,
                          cartesian_product, is_cyclic)
 
@@ -25,17 +27,6 @@ except:
     xr = None
 
 
-def toarray(v, index_value=False):
-    """
-    Interface helper function to turn dask Arrays into numpy arrays as
-    necessary. If index_value is True, a value is returned instead of
-    an array holding a single value.
-    """
-    if dask and isinstance(v, dask.array.Array):
-        arr =  v.compute()
-        return arr[()] if index_value else arr
-    else:
-        return v
 
 def compute_edges(edges):
     """
@@ -50,6 +41,54 @@ def compute_edges(edges):
         raise ValueError('Centered bins have to be of equal width.')
     edges -= width/2.
     return np.concatenate([edges, [edges[-1]+width]])
+
+
+def compute_slice_bounds(slices, scs, shape):
+    """
+    Given a 2D selection consisting of slices/coordinates, a
+    SheetCoordinateSystem and the shape of the array returns a new
+    BoundingBox representing the sliced region.
+    """
+    xidx, yidx = slices
+    ys, xs = shape
+    l, b, r, t = scs.bounds.lbrt()
+    xdensity, ydensity = scs.xdensity, scs.ydensity
+    xunit = (1./xdensity)
+    yunit = (1./ydensity)
+    if isinstance(xidx, slice):
+        l = l if xidx.start is None else max(l, xidx.start)
+        r = r if xidx.stop is None else min(r, xidx.stop)
+    if isinstance(yidx, slice):
+        b = b if yidx.start is None else max(b, yidx.start)
+        t = t if yidx.stop is None else min(t, yidx.stop)
+    bounds = BoundingBox(points=((l, b), (r, t)))
+
+    # Apply new bounds
+    slc = Slice(bounds, scs)
+
+    # Apply scalar and list indices
+    l, b, r, t = slc.compute_bounds(scs).lbrt()
+    if not isinstance(xidx, slice):
+        if not isinstance(xidx, (list, set)): xidx = [xidx]
+        if len(xidx) > 1:
+            xdensity = xdensity*(float(len(xidx))/xs)
+        ls, rs = [], []
+        for idx in xidx:
+            xc, _ = scs.closest_cell_center(idx, b)
+            ls.append(xc-xunit/2)
+            rs.append(xc+xunit/2)
+        l, r = np.min(ls), np.max(rs)
+    elif not isinstance(yidx, slice):
+        if not isinstance(yidx, (set, list)): yidx = [yidx]
+        if len(yidx) > 1:
+            ydensity = ydensity*(float(len(yidx))/ys)
+        bs, ts = [], []
+        for idx in yidx:
+            _, yc = scs.closest_cell_center(l, idx)
+            bs.append(yc-yunit/2)
+            ts.append(yc+yunit/2)
+        b, t = np.min(bs), np.max(ts)
+    return BoundingBox(points=((l, b), (r, t)))
 
 
 def reduce_fn(x):

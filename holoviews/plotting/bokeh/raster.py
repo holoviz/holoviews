@@ -34,24 +34,25 @@ class RasterPlot(ColorbarPlot):
 
 
     def get_data(self, element, ranges=None, empty=False):
-        img = element.data
+        img = element.dimension_values(2, flat=False)
+        if img.dtype.kind == 'b':
+            img = img.astype(np.int8)
+
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
+            img = np.flipud(img.T)
             l, b, r, t = element.extents
-        dh = t-b
+        dh, dw = t-b, r-l
         if type(element) is Raster:
-            b = t
-
-        if img.dtype.kind == 'b':
-            img = img.astype(np.int8)
+            b, t = t, b
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
             data = dict(image=[], x=[], y=[], dw=[], dh=[])
         else:
-            data = dict(image=[np.flipud(img)], x=[l],
-                        y=[b], dw=[r-l], dh=[dh])
+            data = dict(image=[img], x=[l],
+                        y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
 
 
@@ -66,36 +67,18 @@ class RasterPlot(ColorbarPlot):
 
 
 
-class ImagePlot(RasterPlot):
-
-    def get_data(self, element, ranges=None, empty=False):
-        img = element.dimension_values(2, flat=False)
-        if img.dtype.kind == 'b':
-            img = img.astype(np.int8)
-
-        l, b, r, t = element.bounds.lbrt()
-        dh, dw = t-b, r-l
-        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
-        if empty:
-            data = dict(image=[], x=[], y=[], dw=[], dh=[])
-        else:
-            data = dict(image=[img], x=[l],
-                        y=[b], dw=[dw], dh=[dh])
-        return (data, mapping)
-
-
 class RGBPlot(RasterPlot):
 
     style_opts = []
     _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges=None, empty=False):
-        data, mapping = super(RGBPlot, self).get_data(element, ranges, empty)
-        img = data['image'][0]
+        l, b, r, t = element.bounds.lbrt()
+        dh, dw = t-b, r-l
 
-        if empty:
-            data['image'] = []
-        elif img.ndim == 3:
+        img = np.dstack([element.dimension_values(d, flat=False)
+                         for d in element.vdims])
+        if img.ndim == 3:
             if img.shape[2] == 3: # alpha channel not included
                 alpha = np.ones(img.shape[:2])
                 if img.dtype.name == 'uint8':
@@ -106,9 +89,14 @@ class RGBPlot(RasterPlot):
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
-            data['image'] = [img]
-        return data, mapping
 
+        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        if empty:
+            data = dict(image=[], x=[], y=[], dw=[], dh=[])
+        else:
+            data = dict(image=[img], x=[l],
+                        y=[b], dw=[dw], dh=[dh])
+        return (data, mapping)
 
     def _glyph_properties(self, plot, element, source, ranges):
         return ElementPlot._glyph_properties(self, plot, element,
@@ -117,8 +105,7 @@ class RGBPlot(RasterPlot):
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges=None, empty=False):
-        rgb = RGB(hsv_to_rgb(element.data))
-        return super(HSVPlot, self).get_data(rgb, ranges, empty)
+        return super(HSVPlot, self).get_data(element.rgb, ranges, empty)
 
 
 class HeatmapPlot(ColorbarPlot):

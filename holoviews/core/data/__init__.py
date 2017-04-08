@@ -14,6 +14,7 @@ from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
+from .image import ImageInterface
 from .ndelement import NdElementInterface
 
 datatypes = ['array', 'dictionary', 'grid', 'ndelement']
@@ -54,6 +55,7 @@ except ImportError:
 
 from ..dimension import Dimension
 from ..element import Element
+from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
 from .. import util
 
@@ -97,13 +99,27 @@ class DataConversion(object):
         if vdims is None:
             vdims = self._element.vdims
         if vdims and not isinstance(vdims, list): vdims = [vdims]
+
+        # Checks Element type supports dimensionality
+        type_name = new_type.__name__
+        for dim_type, dims in (('kdims', kdims), ('vdims', vdims)):
+            min_d, max_d = new_type.params(dim_type).bounds
+            if ((min_d is not None and len(dims) < min_d) or
+                (max_d is not None and len(dims) > max_d)):
+                raise ValueError("%s %s must be between length %s and %s." %
+                                 (type_name, dim_type, min_d, max_d))
+
         if groupby is None:
             groupby = [d for d in self._element.kdims if d not in kdims+vdims]
         elif groupby and not isinstance(groupby, list):
             groupby = [groupby]
 
         if self._element.interface.gridded:
-            selected = self._element
+            dropped_kdims = [kd for kd in self._element.kdims if kd not in groupby+kdims]
+            if dropped_kdims:
+                selected = self._element.reindex(groupby+kdims, vdims)
+            else:
+                selected = self._element
         else:
             selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
@@ -112,7 +128,7 @@ class DataConversion(object):
         if selected.group != selected.params()['group'].default:
             params['group'] = selected.group
         params.update(kwargs)
-        if len(kdims) == selected.ndims:
+        if len(kdims) == selected.ndims or not groupby:
             element = new_type(selected, **params)
             return element.sort() if sort else element
         group = selected.groupby(groupby, container_type=HoloMap,
@@ -149,6 +165,9 @@ class Dataset(Element):
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
+    _vdim_reductions = {}
+    _kdim_reductions = {}
+
     def __init__(self, data, **kwargs):
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
@@ -166,7 +185,7 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        super(Dataset, self).__init__(data, **dict(extra_kws, **dict(kwargs, **dims)))
+        super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self)
 
 
@@ -188,19 +207,33 @@ class Dataset(Element):
 
         super(Dataset, self).__setstate__(state)
 
-    def closest(self, coords):
+
+    def closest(self, coords=[], **kwargs):
         """
-        Given single or multiple samples along the first key dimension
-        will return the closest actual sample coordinates.
+        Given a single coordinate or multiple coordinates as
+        a tuple or list of tuples or keyword arguments matching
+        the dimension closest will find the closest actual x/y
+        coordinates. Different Element types should implement this
+        appropriately depending on the space they represent, if the
+        Element does not support snapping raise NotImplementedError.
         """
         if self.ndims > 1:
-            NotImplementedError("Closest method currently only "
-                                "implemented for 1D Elements")
+            raise NotImplementedError("Closest method currently only "
+                                      "implemented for 1D Elements")
 
-        if not isinstance(coords, list): coords = [coords]
+        if kwargs:
+            dim = self.get_dimension(list(kwargs.keys())[0], strict=True)
+            if len(kwargs) > 1:
+                raise NotImplementedError("Closest method currently only "
+                                          "supports 1D indexes")
+            samples = list(kwargs.values())[0]
+            coords = samples if isinstance(samples, list) else [samples]
+
         xs = self.dimension_values(0)
+        if xs.dtype.kind in 'SO':
+            raise NotImplementedError("Closest only supported for numeric types")
         idxs = [np.argmin(np.abs(xs-coord)) for coord in coords]
-        return [xs[idx] for idx in idxs] if len(coords) > 1 else xs[idxs[0]]
+        return [xs[idx] for idx in idxs]
 
 
     def sort(self, by=[]):
@@ -285,6 +318,7 @@ class Dataset(Element):
             return self
 
         data = self.interface.select(self, **selection)
+
         if np.isscalar(data):
             return data
         else:
@@ -301,13 +335,16 @@ class Dataset(Element):
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
 
+        new_type = None
         if vdims is None:
             val_dims = [d for d in self.vdims if not kdims or d not in kdims]
         else:
             val_dims = [self.get_dimension(v, strict=True) for v in vdims]
+            new_type = self._vdim_reductions.get(len(val_dims), type(self))
 
         data = self.interface.reindex(self, key_dims, val_dims)
-        return self.clone(data, kdims=key_dims, vdims=val_dims)
+        return self.clone(data, kdims=key_dims, vdims=val_dims,
+                          new_type=new_type)
 
 
     def __getitem__(self, slices):
@@ -330,7 +367,7 @@ class Dataset(Element):
         if isinstance(slices, np.ndarray) and slices.dtype.kind == 'b':
             if not len(slices) == len(self):
                 raise IndexError("Boolean index must match length of sliced object")
-            return self.clone(self.interface.select(self, selection_mask=slices))
+            return self.clone(self.select(selection_mask=slices))
         elif slices in [(), Ellipsis]:
             return self
         if not isinstance(slices, tuple): slices = (slices,)
@@ -342,7 +379,7 @@ class Dataset(Element):
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
-            raise Exception("%r is not an available value dimension'" % slices[self.ndims])
+            raise Exception("%r is not an available value dimension" % slices[self.ndims])
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)
@@ -354,13 +391,58 @@ class Dataset(Element):
         return data
 
 
-    def sample(self, samples=[]):
+    def sample(self, samples=[], closest=True, **kwargs):
         """
         Allows sampling of Dataset as an iterator of coordinates
         matching the key dimensions, returning a new object containing
-        just the selected samples.
+        just the selected samples. Alternatively may supply kwargs
+        to sample a coordinate on an object. By default it will attempt
+        to snap to the nearest coordinate if the Element supports it,
+        snapping may be disabled with the closest argument.
         """
-        return self.clone(self.interface.sample(self, samples))
+        if kwargs and samples:
+            raise Exception('Supply explicit list of samples or kwargs, not both.')
+        elif kwargs:
+            sample = [slice(None) for _ in range(self.ndims)]
+            for dim, val in kwargs.items():
+                sample[self.get_dimension_index(dim)] = val
+            samples = [tuple(sample)]
+
+        # Note: Special handling sampling of gridded 2D data as Curve
+        # may be replaced wih more general handling
+        # see https://github.com/ioam/holoviews/issues/1173
+        from ...element import Table, Curve
+        if len(samples) == 1:
+            sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+            dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
+            selection = self.select(**sel)
+
+            # If a 1D cross-section of 2D space return Curve
+            if self.interface.gridded and self.ndims == 2 and len(dims) == 1:
+                new_type = Curve
+                kdims = [self.get_dimension(kd) for kd in dims]
+            else:
+                new_type = Table
+                kdims = self.kdims
+
+            if np.isscalar(selection):
+                selection = [samples[0]+(selection,)]
+            else:
+                selection = tuple(selection.columns(kdims+self.vdims).values())
+
+            return self.clone(selection, kdims=kdims, new_type=new_type)
+
+        lens = set(len(util.wrap_tuple(s)) for s in samples)
+        if len(lens) > 1:
+            raise IndexError('Sample coordinates must all be of the same length.')
+
+        if closest:
+            try:
+                samples = self.closest(samples)
+            except NotImplementedError:
+                pass
+        samples = [util.wrap_tuple(s) for s in samples]
+        return self.clone(self.interface.sample(self, samples), new_type=Table)
 
 
     def reduce(self, dimensions=[], function=None, spreadfn=None, **reduce_map):
@@ -390,24 +472,34 @@ class Dataset(Element):
         aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
+        ndims = len(dimensions)
+        min_d, max_d = self.params('kdims').bounds
+        generic_type = (min_d is not None and ndims < min_d) or (max_d is not None and ndims > max_d)
+
         vdims = self.vdims
         if spreadfn:
             error = self.interface.aggregate(self, dimensions, spreadfn)
             spread_name = spreadfn.__name__
             ndims = len(vdims)
-            error = self.clone(error, kdims=kdims)
-            combined = self.clone(aggregated, kdims=kdims)
+            error = self.clone(error, kdims=kdims, new_type=Dataset)
+            combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for i, d in enumerate(vdims):
                 dim = d('_'.join([d.name, spread_name]))
                 dvals = error.dimension_values(d, False, False)
                 combined = combined.add_dimension(dim, ndims+i, dvals, True)
-            return combined
+            return combined.clone(new_type=Dataset if generic_type else type(self))
 
         if np.isscalar(aggregated):
             return aggregated
         else:
-            return self.clone(aggregated, kdims=kdims, vdims=vdims)
-
+            try:
+                return self.clone(aggregated, kdims=kdims, vdims=vdims,
+                                  new_type=new_type)
+            except:
+                datatype = self.params('datatype').default
+                return self.clone(aggregated, kdims=kdims, vdims=vdims,
+                                  new_type=Dataset if generic_type else None,
+                                  datatype=datatype)
 
 
     def groupby(self, dimensions=[], container_type=HoloMap, group_type=None,
@@ -532,7 +624,7 @@ class Dataset(Element):
             dimensions = self.dimensions()
         else:
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
-        return {d.name: self.dimension_values(d) for d in dimensions}
+        return OrderedDict([(d.name, self.dimension_values(d)) for d in dimensions])
 
 
     @property

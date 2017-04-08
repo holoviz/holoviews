@@ -1210,3 +1210,19 @@ def is_nan(x):
         return np.isnan(x)
     except:
         return False
+
+
+def bound_range(vals, density):
+    """
+    Computes a bounding range and density from a number of samples
+    assumed to be evenly spaced. Density is rounded to machine precision
+    using significant digits reported by sys.float_info.dig.
+    """
+    low, high = vals.min(), vals.max()
+    invert = False
+    if vals[0] > vals[1]:
+        invert = True
+    if not density:
+        density = round(1./((high-low)/(len(vals)-1)), sys.float_info.dig)
+    halfd = 0.5/density
+    return low-halfd, high+halfd, density, invert

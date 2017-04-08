@@ -6,8 +6,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, GridImage,
-                        VectorField)
+                        Table, ItemTable, Area, HSV, QuadMesh, VectorField)
 from ...core.options import Options, Cycle
 
 try:
@@ -25,7 +24,7 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideSpikesPlot, AreaPlot, VectorFieldPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import (RasterPlot, ImagePlot, RGBPlot, HeatmapPlot,
+from .raster import (RasterPlot, RGBPlot, HeatmapPlot,
                      HSVPlot, QuadMeshPlot)
 from .renderer import BokehRenderer
 from .tabular import TablePlot
@@ -54,7 +53,6 @@ associations = {Overlay: OverlayPlot,
 
                 # Rasters
                 Image: RasterPlot,
-                GridImage: ImagePlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,

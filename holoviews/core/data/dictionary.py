@@ -219,7 +219,7 @@ class DictInterface(Interface):
         indexed = cls.indexed(dataset, selection)
         data = OrderedDict((k, list(compress(v, selection_mask)))
                            for k, v in dataset.data.items())
-        if indexed and len(list(data.values())[0]) == 1:
+        if indexed and len(list(data.values())[0]) == 1 and len(dataset.vdims) == 1:
             return data[dataset.vdims[0].name][0]
         return data
 
