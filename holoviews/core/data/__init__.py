@@ -99,6 +99,16 @@ class DataConversion(object):
         if vdims is None:
             vdims = self._element.vdims
         if vdims and not isinstance(vdims, list): vdims = [vdims]
+
+        # Checks Element type supports dimensionality
+        type_name = new_type.__name__
+        for dim_type, dims in (('kdims', kdims), ('vdims', vdims)):
+            min_d, max_d = new_type.params(dim_type).bounds
+            if ((min_d is not None and len(dims) < min_d) or
+                (max_d is not None and len(dims) > max_d)):
+                raise ValueError("%s %s must be between length %s and %s." %
+                                 (type_name, dim_type, min_d, max_d))
+
         if groupby is None:
             groupby = [d for d in self._element.kdims if d not in kdims+vdims]
         elif groupby and not isinstance(groupby, list):
