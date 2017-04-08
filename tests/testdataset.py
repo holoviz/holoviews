@@ -816,6 +816,19 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(table.vdims[1], 'Z')
         self.compare_arrays(table.dimension_values('Z'), np.array(list(range(1,12))))
 
+    def test_dataset_2D_columnar_shape(self):
+        array = np.random.rand(11, 11)
+        dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(dataset.shape, (11*11, 3))
+
+    def test_dataset_2D_gridded_shape(self):
+        array = np.random.rand(12, 11)
+        dataset = Dataset({'x':self.xs, 'y': range(12), 'z': array},
+                          kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(dataset.interface.shape(dataset, gridded=True),
+                         (12, 11))
+
     def test_dataset_2D_aggregate_partial_hm(self):
         array = np.random.rand(11, 11)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},

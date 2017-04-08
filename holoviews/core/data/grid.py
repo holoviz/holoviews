@@ -92,8 +92,11 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def shape(cls, dataset):
-        return cls.length(dataset), len(dataset.dimensions()),
+    def shape(cls, dataset, gridded=False):
+        if gridded:
+            return dataset.data[dataset.vdims[0].name].shape
+        else:
+            return (cls.length(dataset), len(dataset.dimensions()))
 
 
     @classmethod

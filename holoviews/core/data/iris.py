@@ -126,6 +126,14 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def shape(cls, dataset, gridded=False):
+        if gridded:
+            return dataset.data.shape
+        else:
+            return (cls.length(dataset), len(dataset.dimensions()))
+
+
+    @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
         dim = dataset.get_dimension(dim, strict=True)
         if expanded:
