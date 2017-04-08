@@ -53,11 +53,14 @@ class MPLRenderer(Renderer):
         Output render multi-frame (typically animated) format. If
         None, no multi-frame rendering will occur.""")
 
+    interactive = param.Boolean(default=False, doc="""
+        Whether to enable interactive plotting allowing interactive
+        plotting with explicitly calling show.""")
+
     mode = param.ObjectSelector(default='default',
                                 objects=['default', 'mpld3', 'nbagg'], doc="""
          The 'mpld3' mode uses the mpld3 library whereas the 'nbagg' uses
          matplotlib's the experimental nbagg backend. """)
-
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
@@ -110,6 +113,31 @@ class MPLRenderer(Renderer):
         data = self._apply_post_render_hooks(data, obj, fmt)
         return data, {'file-ext':fmt,
                       'mime_type':MIME_TYPES[fmt]}
+
+
+    def show(self, obj):
+        """
+        Renders the supplied object and displays it using the active
+        GUI backend.
+        """
+        if self.interactive:
+            if isinstance(obj, list):
+                return [self.get_plot(o) for o in obj]
+            return self.get_plot(obj)
+
+        from .plot import MPLPlot
+        MPLPlot._close_figures = False
+        try:
+            plots = []
+            objects = obj if isinstance(obj, list) else [obj]
+            for o in obj:
+                plots.append(self.get_plot(o))
+            plt.show()
+        except:
+            MPLPlot._close_figures = True
+            raise
+        MPLPlot._close_figures = True
+        return plots[0] if len(plots) == 1 else plots
 
 
     @classmethod
@@ -279,3 +307,11 @@ class MPLRenderer(Renderer):
                                   "matplotlib:nbagg.\nSwitching widget mode to 'live'.")
             options['widgets'] = 'live'
         return options
+
+    @classmethod
+    def load_nb(cls, inline=True):
+        """
+        Initialize matplotlib backend
+        """
+        import matplotlib.pyplot as plt
+        plt.switch_backend('agg')
