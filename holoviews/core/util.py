@@ -1225,6 +1225,6 @@ def bound_range(vals, density):
         invert = True
         diff = -diff
     if not density:
-        density = 1./((high-low)/(len(vals)-1))
+        density = round(1./((high-low)/(len(vals)-1)), sys.float_info.dig)
     halfd = 0.5/density
     return low-halfd, high+halfd, density, invert
