@@ -9,20 +9,78 @@ from numbers import Number
 from collections import defaultdict
 from .core import util
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def triggering_streams(streams):
+    """
+    Temporarily declares the streams as being in a triggered state.
+    Needed by DynamicMap to determine whether to memoize on a Callable,
+    i.e. if a stream has memoization disabled and is in triggered state
+    Callable should disable lookup in the memoization cache. This is
+    done by the dynamicmap_memoization context manager.
+    """
+    for stream in streams:
+        stream._triggering = True
+    try:
+        yield
+    except:
+        raise
+    finally:
+        for stream in streams:
+            stream._triggering = False
+
+
+@contextmanager
+def disable_constant(parameterized):
+    """
+    Temporarily set parameters on Parameterized object to
+    constant=False.
+    """
+    params = parameterized.params().values()
+    constants = [p.constant for p in params]
+    for param in params:
+        param.constant = False
+    try:
+        yield
+    except:
+        raise
+    finally:
+        for (param, const) in zip(params, constants):
+            param.constant = const
+
 
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
-    change over time in response to update events. Parameters are
-    updated via the update method.
+    change over time in response to update events and may trigger
+    downstream events on its subscribers. The Stream parameters can be
+    updated using the update method, which will optionally trigger the
+    stream. This will notify the subscribers which may be supplied as
+    a list of callables or added later using the add_subscriber
+    method. The subscribers will be passed a dictionary mapping of the
+    parameters of the stream, which are available on the instance as
+    the ``contents``.
 
-    Streams may have one or more subscribers which are callables passed
-    the parameter dictionary when the trigger classmethod is called.
+    Depending on the plotting backend certain streams may
+    interactively subscribe to events and changes by the plotting
+    backend. For this purpose use the LinkedStream baseclass, which
+    enables the linked option by default. A source for the linking may
+    be supplied to the constructor in the form of another viewable
+    object specifying which part of a plot the data should come from.
 
-    Depending on the plotting backend certain streams may interactively
-    subscribe to events and changes by the plotting backend. For this
-    purpose use the LinkedStream baseclass, which enables the linked
-    option by default.
+    The transient option allows treating stream events as discrete
+    updates, resetting the parameters to their default after the
+    stream has been triggered. A downstream callback can therefore
+    determine whether a stream is active by checking whether the
+    stream values match the default (usually None).
+
+    The Stream class is meant for subclassing and subclasses should
+    generally add one or more parameters but may also override the
+    transform and reset method to preprocess parameters before they
+    are passed to subscribers and reset them using custom logic
+    respectively.
     """
 
     # Mapping from a source id to a list of streams
@@ -54,14 +112,19 @@ class Stream(param.Parameterized):
         groups = [stream.subscribers for stream in streams]
         subscribers = util.unique_iterator([s for subscribers in groups
                                             for s in subscribers])
-        for subscriber in subscribers:
-            subscriber(**dict(union))
+
+        with triggering_streams(streams):
+            for subscriber in subscribers:
+                subscriber(**dict(union))
 
         for stream in streams:
-            stream.deactivate()
+            with disable_constant(stream):
+                if stream.transient:
+                    stream.reset()
 
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=False, **params):
+    def __init__(self, rename={}, source=None, subscribers=[], linked=False,
+                 transient=False, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -80,6 +143,10 @@ class Stream(param.Parameterized):
 
         self.linked = linked
         self._rename = self._validate_rename(rename)
+        self.transient = transient
+
+        # Whether this stream is currently triggering its subscribers
+        self._triggering = False
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may
@@ -96,11 +163,23 @@ class Stream(param.Parameterized):
         " Property returning the subscriber list"
         return self._subscribers
 
+
     def clear(self):
         """
         Clear all subscribers registered to this stream.
         """
         self._subscribers = []
+
+
+    def reset(self):
+        """
+        Resets stream parameters to their defaults.
+        """
+        with disable_constant(self):
+            for k, p in self.params().items():
+                if k != 'name':
+                    setattr(self, k, p.default)
+
 
     def add_subscriber(self, subscriber):
         """
@@ -112,6 +191,7 @@ class Stream(param.Parameterized):
             raise TypeError('Subscriber must be a callable.')
         self._subscribers.append(subscriber)
 
+
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
         for k,v in mapping.items():
@@ -121,6 +201,7 @@ class Stream(param.Parameterized):
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping
+
 
     def rename(self, **mapping):
         """
@@ -134,18 +215,10 @@ class Stream(param.Parameterized):
                               source=self._source,
                               linked=self.linked, **params)
 
-
-    def deactivate(self):
-        """
-        Allows defining an action after the stream has been triggered,
-        e.g. resetting parameters on streams with transient events.
-        """
-        pass
-
-
     @property
     def source(self):
         return self._source
+
 
     @source.setter
     def source(self, source):
@@ -165,6 +238,7 @@ class Stream(param.Parameterized):
         """
         return {}
 
+
     @property
     def contents(self):
         filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
@@ -176,19 +250,8 @@ class Stream(param.Parameterized):
         Sets the stream parameters which are expected to be declared
         constant.
         """
-        params = self.params().values()
-        constants = [p.constant for p in params]
-        for param in params:
-            param.constant = False
-        try:
+        with disable_constant(self) as constant:
             self.set_param(**kwargs)
-        except Exception as e:
-            for (param, const) in zip(params, constants):
-                param.constant = const
-            raise
-
-        for (param, const) in zip(params, constants):
-            param.constant = const
 
 
     def update(self, trigger=True, **kwargs):
@@ -208,6 +271,7 @@ class Stream(param.Parameterized):
         if trigger:
             self.trigger([self])
 
+
     def __repr__(self):
         cls_name = self.__class__.__name__
         kwargs = ','.join('%s=%r' % (k,v)
@@ -216,7 +280,6 @@ class Stream(param.Parameterized):
             return '%s(%s)' % (cls_name, kwargs)
         else:
             return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
-
 
 
     def __str__(self):
@@ -242,8 +305,9 @@ class PositionX(LinkedStream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
-           Position along the x-axis in data coordinates""", constant=True)
+    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Position along the x-axis in data coordinates""")
 
 
 class PositionY(LinkedStream):
@@ -254,8 +318,9 @@ class PositionY(LinkedStream):
     position of the mouse/trackpad cursor.
     """
 
-    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
-           Position along the y-axis in data coordinates""", constant=True)
+    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Position along the y-axis in data coordinates""")
 
 
 class PositionXY(LinkedStream):
@@ -266,11 +331,13 @@ class PositionXY(LinkedStream):
     position of the mouse/trackpad cursor.
     """
 
-    x = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
-           Position along the x-axis in data coordinates""", constant=True)
+    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=(Number, util.basestring), default=0, doc="""
-           Position along the y-axis in data coordinates""", constant=True)
+    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Position along the y-axis in data coordinates""")
 
 
 class Tap(PositionXY):

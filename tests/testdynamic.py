@@ -1,8 +1,10 @@
+from collections import deque
+
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text
-from holoviews.streams import PositionXY
+from holoviews.streams import PositionXY, PositionX, PositionY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -203,6 +205,113 @@ class DynamicTestOverlay(ComparisonTestCase):
         with self.assertRaisesRegexp(KeyError, regexp):
             dmap.event(x=1, y=2)
 
+
+class DynamicCallableMemoize(ComparisonTestCase):
+
+    def test_dynamic_callable_memoize(self):
+        # Always memoized only one of each held
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+
+        x = PositionX()
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+
+        for i in range(2):
+            x.update(x=1)
+
+        self.assertEqual(dmap[()], Curve([1]))
+
+        for i in range(2):
+            x.update(x=2)
+
+        self.assertEqual(dmap[()], Curve([1, 2]))
+
+
+    def test_dynamic_callable_disable_callable_memoize(self):
+        # Disabling Callable.memoize means no memoization is applied,
+        # every access to DynamicMap calls callback and adds sample
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+
+        x = PositionX()
+        callable_obj = Callable(history_callback, memoize=False)
+        dmap = DynamicMap(callable_obj, kdims=[], streams=[x])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+
+        for i in range(2):
+            x.update(x=1)
+        self.assertEqual(dmap[()], Curve([1, 1, 1]))
+
+        for i in range(2):
+            x.update(x=2)
+        self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+
+
+
+class DynamicStreamReset(ComparisonTestCase):
+
+    def test_dynamic_callable_stream_transient(self):
+        # Enable transient stream meaning memoization only happens when
+        # stream is inactive, should have sample for each call to
+        # stream.update
+        def history_callback(x, history=deque(maxlen=10)):
+            if x is not None:
+                history.append(x)
+            return Curve(list(history))
+
+        x = PositionX(transient=True)
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+
+        for i in range(2):
+            x.update(x=1)
+        self.assertEqual(dmap[()], Curve([1, 1]))
+
+        for i in range(2):
+            x.update(x=2)
+
+        self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
+
+    def test_dynamic_stream_transients(self):
+        # Ensure Stream reset option resets streams to default value
+        # when not triggering
+        global xresets, yresets
+        xresets, yresets = 0, 0
+        def history_callback(x, y, history=deque(maxlen=10)):
+            global xresets, yresets
+            if x is None:
+                xresets += 1
+            else:
+                history.append(x)
+            if y is None:
+                yresets += 1
+
+            return Curve(list(history))
+
+        x = PositionX(transient=True)
+        y = PositionY(transient=True)
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+        y.add_subscriber(lambda **kwargs: dmap[()])
+
+        # Update each stream and count when None default appears
+        for i in range(2):
+            x.update(x=i)
+            y.update(y=i)
+
+        self.assertEqual(xresets, 2)
+        self.assertEqual(yresets, 2)
 
 
 class DynamicCollate(ComparisonTestCase):
