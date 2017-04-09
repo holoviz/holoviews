@@ -612,3 +612,29 @@ def filter_batched_data(data, mapping):
                 del data[v]
         except:
             pass
+
+
+def update_shared_sources(f):
+    """
+    Context manager to ensures data sources shared between multiple
+    plots are cleared and updated appropriately avoiding warnings and
+    allowing empty frames on subplots. Expects a list of
+    shared_sources and a mapping of the columns expected columns for
+    each source in the plots handles.
+    """
+    def wrapper(self, *args, **kwargs):
+        source_cols = self.handles.get('source_cols', {})
+        shared_sources = self.handles.get('shared_sources', [])
+        for source in shared_sources:
+            source.data.clear()
+
+        ret = f(self, *args, **kwargs)
+
+        for source in shared_sources:
+            expected = source_cols[id(source)]
+            found = [c for c in expected if c in source.data]
+            empty = np.full_like(source.data[found[0]], np.NaN) if found else []
+            patch = {c: empty for c in expected if c not in source.data}
+            source.data.update(patch)
+        return ret
+    return wrapper
