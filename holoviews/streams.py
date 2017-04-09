@@ -9,6 +9,24 @@ from numbers import Number
 from collections import defaultdict
 from .core import util
 
+from contextlib import contextmanager
+
+
+@contextmanager
+def triggering_streams(streams):
+    """
+    Temporarily declares the streams as being in a triggered state.
+    Needed by DynamicMap to determine whether to memoize on a Callable,
+    i.e. if a stream has memoization disabled and is in triggered state
+    Callable should disable lookup in the memoization cache. This is
+    done by the dynamicmap_memoization context manager.
+    """
+    for stream in streams:
+        stream._triggering = True
+    yield
+    for stream in streams:
+        stream._triggering = False
+
 
 class Stream(param.Parameterized):
     """
@@ -54,14 +72,25 @@ class Stream(param.Parameterized):
         groups = [stream.subscribers for stream in streams]
         subscribers = util.unique_iterator([s for subscribers in groups
                                             for s in subscribers])
-        for subscriber in subscribers:
-            subscriber(**dict(union))
+
+        with triggering_streams(streams):
+            for subscriber in subscribers:
+                subscriber(**dict(union))
 
         for stream in streams:
+            params = stream.params().values()
+            constants = [p.constant for p in params]
+            for param in params:
+                param.constant = False
+
             stream.deactivate()
 
+            for (param, const) in zip(params, constants):
+                param.constant = const
 
-    def __init__(self, rename={}, source=None, subscribers=[], linked=False, **params):
+
+    def __init__(self, rename={}, source=None, subscribers=[], linked=False,
+                 memoize=True, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -78,8 +107,12 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             self.add_subscriber(subscriber)
 
+        self.memoize = memoize
         self.linked = linked
         self._rename = self._validate_rename(rename)
+
+        # Whether this stream is currently triggering its subscribers
+        self._triggering = False
 
         # The metadata may provide information about the currently
         # active event, i.e. the source of the stream values may

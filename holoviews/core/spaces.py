@@ -3,6 +3,7 @@ import types
 from numbers import Number
 from itertools import groupby
 from functools import partial
+from contextlib import contextmanager
 
 import numpy as np
 import param
@@ -398,10 +399,14 @@ class Callable(param.Parameterized):
     allowing their inputs (and in future outputs) to be defined.
     This makes it possible to wrap DynamicMaps with streams and
     makes it possible to traverse the graph of operations applied
-    to a DynamicMap. Additionally a Callable will memoize the last
-    returned value based on the arguments to the function and the
-    state of all streams on its inputs, to avoid calling the function
-    unnecessarily.
+    to a DynamicMap.
+
+    Additionally, if the memoize attribute is True, a Callable will
+    memoize the last returned value based on the arguments to the
+    function and the state of all streams on its inputs, to avoid
+    calling the function unnecessarily. Note that because memoization
+    includes the streams found on the inputs it may be disabled if the
+    stream requires it and is triggering.
 
     A Callable may also specify a stream_mapping which specifies the
     objects that are associated with interactive (i.e linked) streams
@@ -417,30 +422,38 @@ class Callable(param.Parameterized):
     information see the DynamicMap tutorial at holoviews.org.
     """
 
-    callable = param.Callable(default=None, doc="""
+    callable = param.Callable(default=None, constant=True, doc="""
          The callable function being wrapped.""")
 
-    inputs = param.List(default=[], doc="""
-         The list of inputs the callable function is wrapping.""")
+    inputs = param.List(default=[], constant=True, doc="""
+         The list of inputs the callable function is wrapping. Used
+         to allow deep access to streams in chained Callables.""")
 
-    stream_mapping = param.Dict(default={}, doc="""
+    stream_mapping = param.Dict(default={}, constant=True, doc="""
          Defines how streams should be mapped to objects returned by
          the Callable, e.g. when it returns a Layout.""")
 
     def __init__(self, callable, **params):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
+        self.memoize = True
 
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
-        streams = [s for i in inputs for s in get_nested_streams(i)]
+        streams = []
+        for stream in [s for i in inputs for s in get_nested_streams(i)]:
+            if stream not in streams: streams.append(stream)
+
+        memoize = self.memoize and all(s.memoize or not s._triggering for s in streams)
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
         hashed_key = util.deephash(key)
-        ret = self._memoized.get(hashed_key, None)
-        if hashed_key and ret is None:
-            ret = self.callable(*args, **kwargs)
+        if memoize and hashed_key in self._memoized:
+            return self._memoized[hashed_key]
+
+        ret = self.callable(*args, **kwargs)
+        if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
 
@@ -457,6 +470,20 @@ def get_nested_streams(dmap):
         if isinstance(o, DynamicMap):
             layer_streams += get_nested_streams(o)
     return list(set(layer_streams))
+
+
+@contextmanager
+def dynamicmap_memoization(callable_obj, streams):
+    """
+    Determine whether the Callable should have memoization enabled
+    based on the supplied streams (typically by a
+    DynamicMap). Memoization is disabled if any of the streams require
+    it it and are currently in a triggered state.
+    """
+    memoization_state = bool(callable_obj.memoize)
+    callable_obj.memoize &= all(s.memoize or not s._triggering for s in streams)
+    yield
+    callable_obj.memoize = memoization_state
 
 
 class DynamicMap(HoloMap):
@@ -589,7 +616,8 @@ class DynamicMap(HoloMap):
         kwarg_items = [s.contents.items() for s in self.streams]
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
-        retval = self.callback(*args, **dict(flattened))
+        with dynamicmap_memoization(self.callback, self.streams):
+            retval = self.callback(*args, **dict(flattened))
         return self._style(retval)
 
 
