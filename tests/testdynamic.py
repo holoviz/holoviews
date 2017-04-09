@@ -4,7 +4,7 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text
-from holoviews.streams import PositionXY, PositionX
+from holoviews.streams import PositionXY, PositionX, PositionY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -206,7 +206,7 @@ class DynamicTestOverlay(ComparisonTestCase):
             dmap.event(x=1, y=2)
 
 
-class DynamicCallable(ComparisonTestCase):
+class DynamicCallableMemoize(ComparisonTestCase):
 
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
@@ -276,6 +276,42 @@ class DynamicCallable(ComparisonTestCase):
         for i in range(2):
             x.update(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+
+
+
+class DynamicStreamReset(ComparisonTestCase):
+
+    def test_dynamic_stream_reset(self):
+        # Ensure Stream reset option resets streams to default value
+        # when not triggering
+        global xresets, yresets
+        xresets, yresets = 0, 0
+        def history_callback(x, y, history=deque(maxlen=10)):
+            global xresets, yresets
+            if x is None:
+                xresets += 1
+            else:
+                history.append(x)
+            if y is None:
+                yresets += 1
+
+            return Curve(list(history))
+
+        x = PositionX(reset=True, memoize=False, x=None)
+        y = PositionY(reset=True, memoize=False, y=None)
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+        y.add_subscriber(lambda **kwargs: dmap[()])
+
+        # Update each stream and count when None default appears
+        for i in range(2):
+            x.update(x=i)
+            y.update(y=i)
+
+        self.assertEqual(xresets, 2)
+        self.assertEqual(yresets, 2)
 
 
 class DynamicCollate(ComparisonTestCase):

@@ -131,7 +131,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
     def test_dynamic_streams_refresh(self):
-        stream = PositionXY()
+        stream = PositionXY(x=0, y=0)
         dmap = DynamicMap(lambda x, y: Points([(x, y)]),
                              kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
@@ -151,7 +151,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX()
+        stream = PositionX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         mpl_renderer(plot)
@@ -706,7 +706,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX()
+        stream = PositionX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
@@ -1298,7 +1298,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX()
+        stream = PositionX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = plotly_renderer.get_plot(dmap)
         plotly_renderer(plot)
