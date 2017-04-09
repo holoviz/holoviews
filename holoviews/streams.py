@@ -23,9 +23,14 @@ def triggering_streams(streams):
     """
     for stream in streams:
         stream._triggering = True
-    yield
-    for stream in streams:
-        stream._triggering = False
+    try:
+        yield
+    except:
+        raise
+    finally:
+        for stream in streams:
+            stream._triggering = False
+
 
 
 class Stream(param.Parameterized):

@@ -482,8 +482,12 @@ def dynamicmap_memoization(callable_obj, streams):
     """
     memoization_state = bool(callable_obj.memoize)
     callable_obj.memoize &= all(s.memoize or not s._triggering for s in streams)
-    yield
-    callable_obj.memoize = memoization_state
+    try:
+        yield
+    except:
+        raise
+    finally:
+        callable_obj.memoize = memoization_state
 
 
 class DynamicMap(HoloMap):
