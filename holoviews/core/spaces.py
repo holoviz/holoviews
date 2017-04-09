@@ -429,6 +429,11 @@ class Callable(param.Parameterized):
          The list of inputs the callable function is wrapping. Used
          to allow deep access to streams in chained Callables.""")
 
+    memoize = param.Boolean(default=True, doc="""
+         Whether the return value of the callable should be memoized
+         based on the call arguments and any streams attached to the
+         inputs.""")
+
     stream_mapping = param.Dict(default={}, constant=True, doc="""
          Defines how streams should be mapped to objects returned by
          the Callable, e.g. when it returns a Layout.""")
@@ -436,7 +441,6 @@ class Callable(param.Parameterized):
     def __init__(self, callable, **params):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
-        self.memoize = True
 
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
@@ -444,7 +448,7 @@ class Callable(param.Parameterized):
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
             if stream not in streams: streams.append(stream)
 
-        memoize = self.memoize and all(s.memoize or not s._triggering for s in streams)
+        memoize = self.memoize and not any(s.transient and s._triggering for s in streams)
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
@@ -481,7 +485,7 @@ def dynamicmap_memoization(callable_obj, streams):
     it it and are currently in a triggered state.
     """
     memoization_state = bool(callable_obj.memoize)
-    callable_obj.memoize &= all(s.memoize or not s._triggering for s in streams)
+    callable_obj.memoize &= not any(s.transient and s._triggering for s in streams)
     try:
         yield
     except:

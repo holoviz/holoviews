@@ -70,12 +70,11 @@ class Stream(param.Parameterized):
     be supplied to the constructor in the form of another viewable
     object specifying which part of a plot the data should come from.
 
-    Since a Stream may represent a transient event you may disable
-    stream parameters from being memoized, indicating that each stream
-    event should trigger an update in a downstream DynamicMap callback.
-    By enabling reset in the constructor the reset method will get
-    called each time the stream is triggered, resetting all Stream
-    parameters to their defaults.
+    The transient option allows treating stream events as discrete
+    updates, resetting the parameters to their default after the
+    stream has been triggered. A downstream callback can therefore
+    determine whether a stream is active by checking whether the
+    stream values match the default (usually None).
 
     The Stream class is meant for subclassing and subclasses should
     generally add one or more parameters but may also override the
@@ -120,12 +119,12 @@ class Stream(param.Parameterized):
 
         for stream in streams:
             with disable_constant(stream):
-                if stream._reset:
+                if stream.transient:
                     stream.reset()
 
 
     def __init__(self, rename={}, source=None, subscribers=[], linked=False,
-                 memoize=True, reset=False, **params):
+                 transient=False, **params):
         """
         The rename argument allows multiple streams with similar event
         state to be used by remapping parameter names.
@@ -142,10 +141,9 @@ class Stream(param.Parameterized):
         for subscriber in subscribers:
             self.add_subscriber(subscriber)
 
-        self.memoize = memoize
         self.linked = linked
         self._rename = self._validate_rename(rename)
-        self._reset = reset
+        self.transient = transient
 
         # Whether this stream is currently triggering its subscribers
         self._triggering = False
@@ -282,7 +280,6 @@ class Stream(param.Parameterized):
             return '%s(%s)' % (cls_name, kwargs)
         else:
             return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
-
 
 
     def __str__(self):

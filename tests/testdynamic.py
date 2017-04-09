@@ -231,30 +231,6 @@ class DynamicCallableMemoize(ComparisonTestCase):
         self.assertEqual(dmap[()], Curve([1, 2]))
 
 
-    def test_dynamic_callable_disable_stream_memoize(self):
-        # Diable stream memoize means memoization only happens when
-        # stream is inactive, should have sample for each call to
-        # stream.update
-        def history_callback(x, history=deque(maxlen=10)):
-            history.append(x)
-            return Curve(list(history))
-
-        x = PositionX(memoize=False)
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
-
-        # Add stream subscriber mocking plot
-        x.add_subscriber(lambda **kwargs: dmap[()])
-
-        for i in range(2):
-            x.update(x=1)
-        self.assertEqual(dmap[()], Curve([1, 1]))
-
-        for i in range(2):
-            x.update(x=2)
-
-        self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
-
-
     def test_dynamic_callable_disable_callable_memoize(self):
         # Disabling Callable.memoize means no memoization is applied,
         # every access to DynamicMap calls callback and adds sample
@@ -263,8 +239,8 @@ class DynamicCallableMemoize(ComparisonTestCase):
             return Curve(list(history))
 
         x = PositionX()
-        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
-        dmap.callback.memoize = False
+        callable_obj = Callable(history_callback, memoize=False)
+        dmap = DynamicMap(callable_obj, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
         x.add_subscriber(lambda **kwargs: dmap[()])
@@ -281,7 +257,31 @@ class DynamicCallableMemoize(ComparisonTestCase):
 
 class DynamicStreamReset(ComparisonTestCase):
 
-    def test_dynamic_stream_reset(self):
+    def test_dynamic_callable_stream_transient(self):
+        # Enable transient stream meaning memoization only happens when
+        # stream is inactive, should have sample for each call to
+        # stream.update
+        def history_callback(x, history=deque(maxlen=10)):
+            if x is not None:
+                history.append(x)
+            return Curve(list(history))
+
+        x = PositionX(transient=True)
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+
+        for i in range(2):
+            x.update(x=1)
+        self.assertEqual(dmap[()], Curve([1, 1]))
+
+        for i in range(2):
+            x.update(x=2)
+
+        self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
+
+    def test_dynamic_stream_transients(self):
         # Ensure Stream reset option resets streams to default value
         # when not triggering
         global xresets, yresets
@@ -297,8 +297,8 @@ class DynamicStreamReset(ComparisonTestCase):
 
             return Curve(list(history))
 
-        x = PositionX(reset=True, memoize=False, x=None)
-        y = PositionY(reset=True, memoize=False, y=None)
+        x = PositionX(transient=True)
+        y = PositionY(transient=True)
         dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
 
         # Add stream subscriber mocking plot
