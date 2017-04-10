@@ -157,7 +157,9 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     kdims = [kdim.name for kdim in kdims]
     stream_params = stream_parameters(streams)
     defaults = argspec.defaults if argspec.defaults else []
-    posargs = argspec.args[:-len(defaults)]
+    all_posargs = argspec.args[:-len(defaults)] if defaults else argspec.args
+    # Filter out any posargs for streams
+    posargs = [arg for arg in all_posargs if arg not in stream_params]
     kwargs = argspec.args[-len(defaults):]
 
     if argspec.keywords is None:
@@ -170,17 +172,11 @@ def validate_dynamic_argspec(argspec, kdims, streams):
         return []
     if set(kdims) == set(posargs): # Posargs match, can all be passed as kwargs
         return kdims
-    elif len(posargs) == kdims:    # Posargs  match kdims length, supplying names
+    elif len(posargs) == kdims:    # Posargs match kdims length, supplying names
         return posargs
     elif argspec.varargs:          # Posargs missing, passed to Callable directly
         return None
-
-    # Handle positional arguments matching stream parameter names
-    stream_posargs = [arg for arg in posargs if arg in stream_params]
-    if len(stream_posargs) != len(posargs):
-        raise Exception('Supplied callback signature does not accommodate '
-                        'required kdims and stream parameters')
-    return stream_posargs
+    return None                    # Use strict invocation
 
 
 def process_ellipses(obj, key, vdim_selection=False):
