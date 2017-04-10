@@ -61,3 +61,25 @@ class MockLoggingHandler(logging.Handler):
             raise AssertionError(msg.format(method=methods[level],
                                             last_line=repr(last_line[0]),
                                             substring=repr(substring)))
+
+
+
+class LoggingComparisonTestCase(ComparisonTestCase):
+    """
+    ComparisonTestCase with support for capturing param logging output.
+
+    Subclasses must call super setUp to make the
+    tests independent. Testing can then be done via the
+    self.log_handler.tail and self.log_handler.assertEndsWith methods.
+    """
+
+    @classmethod
+    def setUpClass(cls):
+        super(LoggingComparisonTestCase, cls).setUpClass()
+        log = param.parameterized.get_logger()
+        cls.log_handler = MockLoggingHandler(level='DEBUG')
+        log.addHandler(cls.log_handler)
+
+    def setUp(self):
+        super(LoggingComparisonTestCase, self).setUp()
+        self.log_handler.reset()
