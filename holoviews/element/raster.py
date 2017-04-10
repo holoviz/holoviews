@@ -12,7 +12,7 @@ from ..core import (Dimension, NdMapping, Element2D, HoloMap,
                     Overlay, Element, Dataset, NdElement)
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem
-from ..core.util import pd
+from ..core.util import pd, max_range
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
@@ -74,6 +74,21 @@ class Raster(Element2D):
         else:
             return self.clone(np.expand_dims(data, axis=slc_types.index(True)),
                               extents=None)
+
+
+    def range(self, dim, data_range=True):
+        idx = self.get_dimension_index(dim)
+        if data_range and idx == 2:
+            dimension = self.get_dimension(dim)
+            drange = self.data.min(), self.data.max()
+            drange = max_range([drange, dimension.soft_range])
+            if dimension.range[0] is not None:
+                return (dimension.range[0], drange[1])
+            elif dimension.range[1] is not None:
+                return (drange[0], dimension.range[1])
+            else:
+                return drange
+        return super(Raster, self).range(dim, data_range)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
