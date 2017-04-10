@@ -817,6 +817,22 @@ class DynamicMap(HoloMap):
         self.data[key] = val
 
 
+    def map(self, map_fn, specs=None, clone=True):
+        """
+        Recursively replaces elements using a map function when the
+        specification applies. Extends regular map with functionality
+        to dynamically apply functions.
+        """
+        deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
+        if isinstance(deep_mapped, type(self)):
+            from ..util import Dynamic
+            def apply_map(obj):
+                return obj.map(map_fn, specs, clone)
+            dmap = Dynamic(deep_mapped, shared_data=True, operation=apply_map)
+            return dmap
+        return deep_mapped
+
+
     def relabel(self, label=None, group=None, depth=1):
         """
         Assign a new label and/or group to an existing LabelledData
