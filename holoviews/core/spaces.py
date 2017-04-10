@@ -556,6 +556,9 @@ class DynamicMap(HoloMap):
             callback = Callable(callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
+        self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
+                                                          self.kdims,
+                                                          self.streams)
         # Set source to self if not already specified
         for stream in self.streams:
             if stream.source is None:
