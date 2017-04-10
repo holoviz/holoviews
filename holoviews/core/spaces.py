@@ -460,6 +460,22 @@ class Callable(param.Parameterized):
         if memoize and hashed_key in self._memoized:
             return self._memoized[hashed_key]
 
+        if self.argspec.varargs is not None:
+            # Missing information on positional argument names, cannot promote to keywords
+            pass
+        elif len(args) != 0: # Turn positional arguments into keyword arguments
+            pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
+            ignored = range(len(self.argspec.args),len(args))
+            if len(ignored):
+                self.warning('Ignoring extra positional argument %s'
+                             % ', '.join('%s' % i for i in ignored))
+            clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
+            if clashes:
+                self.warning('Positional arguments %r overriden by keywords'
+                             % list(clashes))
+            args, kwargs = (), dict(pos_kwargs, **kwargs)
+
+
         ret = self.callable(*args, **kwargs)
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
