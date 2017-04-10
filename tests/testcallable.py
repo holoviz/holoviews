@@ -200,7 +200,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
 
-    def test_dynamic_split_mismatched_kdims_example1(self):
+    def test_dynamic_split_mismatched_kdims(self):
         # Corresponds to the old style of kdims as posargs and streams
         # as kwargs. Positional arg names don't have to match
         def fn(B, x=1, y=2):
@@ -210,16 +210,19 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
-    def test_dynamic_split_mismatched_kdims_example2(self):
+    def test_dynamic_split_mismatched_kdims_invalid(self):
         # Corresponds to the old style of kdims as posargs and streams
         # as kwargs. Positional arg names don't have to match and the
-        # stream parameters can be passed by position
+        # stream parameters can be passed by position but *only* if they
+        # come first
         def fn(x, y, B):
             return Scatter([(x,y)], label=B)
 
         xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
-        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+        regexp = ("Unmatched positional kdim arguments only allowed "
+                  "at the start of the signature")
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
 
     def test_dynamic_split_args_and_kwargs(self):
         # Corresponds to the old style of kdims as posargs and streams

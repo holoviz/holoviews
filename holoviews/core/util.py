@@ -173,6 +173,10 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs
         return kdims
     elif len(posargs) == len(kdims): # Posargs match kdims length, supplying names
+        if argspec.args[:len(kdims)] != posargs:
+            raise KeyError('Unmatched positional kdim arguments only '
+                           'allowed at the start of the signature')
+
         return posargs
     elif argspec.varargs:            # Posargs missing, passed to Callable directly
         return None
