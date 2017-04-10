@@ -172,11 +172,14 @@ def validate_dynamic_argspec(argspec, kdims, streams):
         return []
     if set(kdims) == set(posargs): # Posargs match, can all be passed as kwargs
         return kdims
-    elif len(posargs) == kdims:    # Posargs match kdims length, supplying names
+    elif len(posargs) == len(kdims):    # Posargs match kdims length, supplying names
         return posargs
     elif argspec.varargs:          # Posargs missing, passed to Callable directly
         return None
-    return None                    # Use strict invocation
+    else:
+        raise Exception('Callback positional arguments {posargs} do not accommodate '
+                        'required kdims {kdims}'.format(posargs=posargs, kdims=kdims))
+
 
 
 def process_ellipses(obj, key, vdim_selection=False):
