@@ -1,4 +1,8 @@
 import os, sys
+import param
+import logging
+
+from holoviews.element.comparison import ComparisonTestCase
 
 try:
     # Standardize backend due to random inconsistencies
