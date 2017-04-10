@@ -1,10 +1,13 @@
 # -*- coding: utf-8 -*-
 """
-Unit tests of the Callable object that wraps user callbacks
+Unit tests of the Callable object that wraps user callbacks. Also test
+how DynamicMap validates and invokes Callable based on its signature.
 """
 import param
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.core.spaces import Callable
+from holoviews.element import Scatter
+from holoviews import streams
+from holoviews.core.spaces import Callable, DynamicMap
 from functools import partial
 
 from . import LoggingComparisonTestCase
@@ -59,6 +62,7 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
     def test_callable_paramfunc_instance(self):
         self.assertEqual(Callable(ParamFunc.instance())(3,b=5), 15)
 
+
 class TestCallableArgspec(ComparisonTestCase):
 
     def test_callable_fn_argspec(self):
@@ -88,6 +92,7 @@ class TestCallableArgspec(ComparisonTestCase):
         self.assertEqual(Callable(ParamFunc.instance()).argspec.args, ['a'])
         self.assertEqual(Callable(ParamFunc.instance()).argspec.keywords, 'params')
         self.assertEqual(Callable(ParamFunc.instance()).argspec.varargs, None)
+
 
 class TestKwargCallableInvocation(ComparisonTestCase):
     """
@@ -123,3 +128,103 @@ class TestMixedCallableInvocation(ComparisonTestCase):
         def mixed_example(a,b, c=10, d=20):
             return a+b+c+d
         self.assertEqual(Callable(mixed_example)(3,5,5), 33)
+
+
+class TestDynamicMapInvocation(ComparisonTestCase):
+    """
+    Test that DynamicMap passes kdims and stream parameters correctly to
+    Callables.
+    """
+
+    def test_dynamic_kdims_only(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['A','B'], sampled=True)
+        self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
+
+    def test_dynamic_kdims_only_invalid(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        regexp="Callback positional arguments (.+?) do not accommodate required kdims (.+?)"
+        with self.assertRaisesRegexp(KeyError, regexp):
+            dmap = DynamicMap(fn, kdims=['A'], sampled=True)
+
+
+    def test_dynamic_kdims_args_only(self):
+        def fn(*args):
+            (A,B) = args
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['A','B'], sampled=True)
+        self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
+
+
+    def test_dynamic_streams_only_kwargs(self):
+        def fn(x=1, y=2):
+            return Scatter([(x,y)], label='default')
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=[], streams=[xy], sampled=True)
+        self.assertEqual(dmap[:], Scatter([(1, 2)], label='default'))
+
+
+    def test_dynamic_streams_only_keywords(self):
+        def fn(**kwargs):
+            return Scatter([(kwargs['x'],kwargs['y'])], label='default')
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=[], streams=[xy], sampled=True)
+        self.assertEqual(dmap[:], Scatter([(1, 2)], label='default'))
+
+
+    def test_dynamic_split_kdims_and_streams(self):
+        # Corresponds to the old style of kdims as posargs and streams
+        # as kwargs
+        def fn(A, x=1, y=2):
+            return Scatter([(x,y)], label=A)
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
+    def test_dynamic_split_args_and_kwargs(self):
+        # Corresponds to the old style of kdims as posargs and streams
+        # as kwargs, captured as *args and **kwargs
+        def fn(*args, **kwargs):
+            return Scatter([(kwargs['x'],kwargs['y'])], label=args[0])
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
+    def test_dynamic_all_keywords(self):
+        def fn(A='default', x=1, y=2):
+            return Scatter([(x,y)], label=A)
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
+    def test_dynamic_keywords_and_kwargs(self):
+        def fn(A='default', x=1, y=2, **kws):
+            return Scatter([(x,y)], label=A)
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
+    def test_dynamic_mixed_kwargs(self):
+        def fn(x, A, y):
+            return Scatter([(x, y)], label=A)
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
