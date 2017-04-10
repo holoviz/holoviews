@@ -399,7 +399,7 @@ class DynamicCollate(ComparisonTestCase):
         self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
                                              for j in range(1, 3)])
         self.assertEqual(grid[(0, 1)][()], Image(np.array([[1, 1], [2, 3]])))
-    
+
     def test_dynamic_collate_grid_with_integer_stream_mapping(self):
         def callback():
             return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
