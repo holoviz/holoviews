@@ -261,6 +261,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
+            elif isinstance(data[dim], np.ndarray) and data[dim].dtype.kind == 'M':
+                data[dim+'_dt_strings'] = [d.pprint_value(v) for v in data[dim]]
 
         for k, v in self.overlay_dims.items():
             dim = util.dimension_sanitizer(k.name)
@@ -573,7 +575,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 (isinstance(column, list) or column.dtype.kind not in 'SU')):
                 data[col] = [dims[i].pprint_value(v) for v in column]
 
-
     def _get_factors(self, element):
         """
         Get factors for categorical axes.
@@ -664,6 +665,27 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
+    def _postprocess_hover(self, renderer, source):
+        """
+        Attaches renderer to hover tool and processes tooltips to
+        ensure datetime data is displayed correctly.
+        """
+        hover = self.handles.get('hover')
+        if hover is None:
+            return
+        hover.renderers = [renderer]
+
+        # If datetime column is in the data replace hover formatter
+        for k, v in source.data.items():
+            if k+'_dt_strings' in source.data:
+                tooltips = []
+                for name, formatter in hover.tooltips:
+                    if formatter == '@{%s}' % k:
+                        formatter = '@{%s_dt_strings}' % k
+                    tooltips.append((name, formatter))
+                hover.tooltips = tooltips
+
+
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
         """
         Initializes a new plot object with the last available frame.
@@ -709,8 +731,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if isinstance(renderer, Renderer):
             self.handles['glyph_renderer'] = renderer
 
-        if 'hover' in self.handles:
-            self.handles['hover'].renderers = [renderer]
+        self._postprocess_hover(renderer, source)
 
         # Update plot, source and glyph
         with abbreviated_exception():
