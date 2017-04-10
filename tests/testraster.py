@@ -38,3 +38,15 @@ class TestRaster(ComparisonTestCase):
         self.assertEqual(image.sample(y=0.25),
                          Curve(np.array([(-0.333333, 0), (0, 1), (0.333333, 2)]),
                                kdims=['x'], vdims=['z']))
+
+    def test_raster_range_masked(self):
+        arr = np.random.rand(10,10)-0.5
+        arr = np.ma.masked_where(arr<=0, arr)
+        rrange = Raster(arr).range(2)
+        self.assertEqual(rrange, (np.min(arr), np.max(arr)))
+
+    def test_image_range_masked(self):
+        arr = np.random.rand(10,10)-0.5
+        arr = np.ma.masked_where(arr<=0, arr)
+        rrange = Image(arr).range(2)
+        self.assertEqual(rrange, (np.min(arr), np.max(arr)))
