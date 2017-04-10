@@ -168,7 +168,7 @@ def validate_dynamic_argspec(argspec, kdims, streams):
             raise KeyError('Callable missing keywords to accept %s stream parameters'
                            % ', '.join(unassigned_streams))
 
-    if posargs == []:              # No posargs, stream kwargs already validated
+    if kdims == []:                    # Can be no posargs, stream kwargs already validated
         return []
     if set(kdims) == set(posargs): # Posargs match, can all be passed as kwargs
         return kdims
@@ -176,9 +176,16 @@ def validate_dynamic_argspec(argspec, kdims, streams):
         return posargs
     elif argspec.varargs:          # Posargs missing, passed to Callable directly
         return None
+    elif set(posargs) - set(kdims):
+        raise KeyError('Callable accepts more positional arguments {posargs} '
+                       'than there are key dimensions {kdims}'.format(posargs=posargs,
+                                                                      kdims=kdims))
+    elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
+        return kdims
     else:
-        raise KeyError('Callback positional arguments {posargs} do not accommodate '
-                       'required kdims {kdims}'.format(posargs=posargs, kdims=kdims))
+        raise KeyError('Callback signature over {names} do not accommodate '
+                       'required kdims {kdims}'.format(names=list(set(posargs+kwargs)),
+                                                       kdims=kdims))
 
 
 
