@@ -133,6 +133,52 @@ def argspec(callable_obj):
                            keywords = spec.keywords,
                            defaults = spec.defaults)
 
+
+
+def validate_dynamic_argspec(argspec, kdims, streams):
+    """
+    Utility used by DynamicMap to ensure the supplied callback has an
+    appropriate signature.
+
+    If validation succeeds, returns a list of strings to be zipped with
+    the positional arguments i.e kdim values. The zipped values can then
+    be merged with the stream values to pass everything to the Callable
+    as keywords.
+
+    If the callbacks use *args, None is returned to indicate that kdim
+    values must be passed to the Callable by position. In this
+    situation, Callable passes *args and **kwargs directly to the
+    callback.
+
+    If the callback doesn't use **kwargs, the accepted keywords are
+    validated against the stream parameter names.
+    """
+
+    kdims = [kdim.name for kdim in kdims]
+    stream_params = stream_parameters(streams)
+    defaults = argspec.defaults if argspec.defaults else []
+    posargs = argspec.args[:-len(defaults)]
+    kwargs = argspec.args[-len(defaults):]
+
+    if argspec.keywords is None:
+        unassigned_streams = set(stream_params) - set(kwargs)
+        if unassigned_streams:
+            raise KeyError('Callable missing keywords to accept %s stream parameters'
+                           % ', '.join(unassigned_streams))
+
+    if posargs == []:              # No posargs, stream kwargs already validated
+        return []
+    if set(kdims) == set(posargs): # Posargs match, can all be passed as kwargs
+        return kdims
+    elif len(posargs) == kdims:    # Posargs  match kdims length, supplying names
+        return posargs
+    elif argspec.varargs:          # Posargs missing, passed to Callable directly
+        return None
+    else:
+        raise Exception('Supplied callback signature does not accommodate '
+                        'required kdims and stream parameters')
+
+
 def process_ellipses(obj, key, vdim_selection=False):
     """
     Helper function to pad a __getitem__ key with the right number of
