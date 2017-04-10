@@ -9,3 +9,55 @@ except:
 
 cwd = os.path.abspath(os.path.split(__file__)[0])
 sys.path.insert(0, os.path.join(cwd, '..'))
+
+
+class MockLoggingHandler(logging.Handler):
+    """
+    Mock logging handler to check for expected logs used by
+    LoggingComparisonTestCase.
+
+    Messages are available from an instance's ``messages`` dict, in
+    order, indexed by a lowercase log level string (e.g., 'debug',
+    'info', etc.)."""
+
+    def __init__(self, *args, **kwargs):
+        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
+                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        super(MockLoggingHandler, self).__init__(*args, **kwargs)
+
+    def emit(self, record):
+        "Store a message to the instance's messages dictionary"
+        self.acquire()
+        try:
+            self.messages[record.levelname].append(record.getMessage())
+        finally:
+            self.release()
+
+    def reset(self):
+        self.acquire()
+        try:
+            for message_list in self.messages.values():
+                message_list = []
+        finally:
+            self.release()
+
+    def tail(self, level, n=1):
+        "Returns the last n lines captured at the given level"
+        return [str(el) for el in self.messages[level][-n:]]
+
+    def assertEndsWith(self, level, substring):
+        """
+        Assert that the last line captured at the given level ends with
+        a particular substring.
+        """
+        methods = {'WARNING':'param.warning()', 'INFO':'param.message()',
+                   'VERBOSE':'param.verbose()', 'DEBUG':'param.debug()'}
+        msg='\n\n{method}: {last_line}\ndoes not end with:\n{substring}'
+        last_line = self.tail(level, n=1)
+        if len(last_line) == 0:
+            raise AssertionError('Missing {method} output: {repr(substring)}'.format(
+                method=methods[level], substring=repr(substring)))
+        if not last_line[0].endswith(substring):
+            raise AssertionError(msg.format(method=methods[level],
+                                            last_line=repr(last_line[0]),
+                                            substring=repr(substring)))
