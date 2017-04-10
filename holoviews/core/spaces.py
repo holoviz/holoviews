@@ -442,6 +442,10 @@ class Callable(param.Parameterized):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
 
+    @property
+    def argspec(self):
+        return util.argspec(self.callable)
+
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
