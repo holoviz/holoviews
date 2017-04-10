@@ -47,6 +47,19 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(label.value, '3.1')
         self.assertIs(mapping, None)
 
+    def test_bokeh_server_dynamic_range_float_step(self):
+        dim = Dimension('x', range=(3.1, 11.2), step=0.1)
+        widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=True)
+        self.assertIsInstance(widget, Slider)
+        self.assertEqual(widget.value, 3.1)
+        self.assertEqual(widget.start, 3.1)
+        self.assertEqual(widget.end, 11.2)
+        self.assertEqual(widget.step, 0.1)
+        self.assertIsInstance(label, TextInput)
+        self.assertEqual(label.title, dim.pprint_label)
+        self.assertEqual(label.value, '3.1')
+        self.assertIs(mapping, None)
+
     def test_bokeh_server_dynamic_range_not_editable(self):
         dim = Dimension('x', range=(3.1, 11.2))
         widget, label, mapping = BokehServerWidgets.create_widget(dim, editable=False)

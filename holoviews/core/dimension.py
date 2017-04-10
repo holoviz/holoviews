@@ -149,6 +149,11 @@ class Dimension(param.Parameterized):
         may be an inbuilt constructor (such as int, str, float) or a
         custom class object.""")
 
+    step = param.Number(default=None, doc="""
+        Optional floating point step specifying how frequently the
+        underlying space should be sampled. May be used to define a
+        discrete sampling of over the range.""")
+
     unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
         instance, the string 'm' may be used represent units of meters
