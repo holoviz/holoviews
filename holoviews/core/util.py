@@ -108,7 +108,7 @@ def argspec(callable_obj):
     methods, classmethods and partials.
 
     Note that the args list for instance and class methods are those as
-    seen by the user. In other words, the first argument with is
+    seen by the user. In other words, the first argument which is
     conventionally called 'self' or 'cls' is omitted in these cases.
     """
     if inspect.isfunction(callable_obj):    # functions and staticmethods
