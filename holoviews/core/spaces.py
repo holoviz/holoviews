@@ -442,6 +442,10 @@ class Callable(param.Parameterized):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
 
+    @property
+    def argspec(self):
+        return util.argspec(self.callable)
+
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -455,6 +459,22 @@ class Callable(param.Parameterized):
         hashed_key = util.deephash(key)
         if memoize and hashed_key in self._memoized:
             return self._memoized[hashed_key]
+
+        if self.argspec.varargs is not None:
+            # Missing information on positional argument names, cannot promote to keywords
+            pass
+        elif len(args) != 0: # Turn positional arguments into keyword arguments
+            pos_kwargs = {k:v for k,v in zip(self.argspec.args, args)}
+            ignored = range(len(self.argspec.args),len(args))
+            if len(ignored):
+                self.warning('Ignoring extra positional argument %s'
+                             % ', '.join('%s' % i for i in ignored))
+            clashes = set(pos_kwargs.keys()) & set(kwargs.keys())
+            if clashes:
+                self.warning('Positional arguments %r overriden by keywords'
+                             % list(clashes))
+            args, kwargs = (), dict(pos_kwargs, **kwargs)
+
 
         ret = self.callable(*args, **kwargs)
         if hashed_key is not None:
@@ -536,6 +556,9 @@ class DynamicMap(HoloMap):
             callback = Callable(callback)
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
+        self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
+                                                          self.kdims,
+                                                          self.streams)
         # Set source to self if not already specified
         for stream in self.streams:
             if stream.source is None:
@@ -624,8 +647,15 @@ class DynamicMap(HoloMap):
         kwarg_items = [s.contents.items() for s in self.streams]
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
+
+        if self._posarg_keys:
+            kwargs = dict(flattened, **dict(zip(self._posarg_keys, args)))
+            args = ()
+        else:
+            kwargs = dict(flattened)
+
         with dynamicmap_memoization(self.callback, self.streams):
-            retval = self.callback(*args, **dict(flattened))
+            retval = self.callback(*args, **kwargs)
         return self._style(retval)
 
 

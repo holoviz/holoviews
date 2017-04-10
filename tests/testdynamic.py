@@ -211,16 +211,16 @@ class DynamicTestOverlay(ComparisonTestCase):
 
     def test_dynamic_event_renaming_valid(self):
 
-        def fn(x, y):
-            return Scatter([(x, y)])
+        def fn(x1, y1):
+            return Scatter([(x1, y1)])
 
         xy = PositionXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
         dmap.event(x1=1, y1=2)
 
     def test_dynamic_event_renaming_invalid(self):
-        def fn(x, y):
-            return Scatter([(x, y)])
+        def fn(x1, y1):
+            return Scatter([(x1, y1)])
 
         xy = PositionXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])

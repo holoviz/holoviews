@@ -1,10 +1,12 @@
 import os, sys, warnings, operator
 import numbers
+import inspect
 import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
 from collections import defaultdict, Counter
+from functools import partial
 
 import numpy as np
 import param
@@ -97,6 +99,98 @@ else:
     unicode = unicode
     from itertools import izip
     generator_types = (izip, xrange, types.GeneratorType)
+
+
+
+def argspec(callable_obj):
+    """
+    Returns an ArgSpec object for functions, staticmethods, instance
+    methods, classmethods and partials.
+
+    Note that the args list for instance and class methods are those as
+    seen by the user. In other words, the first argument which is
+    conventionally called 'self' or 'cls' is omitted in these cases.
+    """
+    if (isinstance(callable_obj, type)
+        and issubclass(callable_obj, param.ParameterizedFunction)):
+        # Parameterized function.__call__ considered function in py3 but not py2
+        spec = inspect.getargspec(callable_obj.__call__)
+        args=spec.args[1:]
+    elif inspect.isfunction(callable_obj):    # functions and staticmethods
+        return inspect.getargspec(callable_obj)
+    elif isinstance(callable_obj, partial): # partials
+        arglen = len(callable_obj.args)
+        spec =  inspect.getargspec(callable_obj.func)
+        args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+    elif inspect.ismethod(callable_obj):    # instance and class methods
+        spec = inspect.getargspec(callable_obj)
+        args = spec.args[1:]
+    else:                                   # callable objects
+        return argspec(callable_obj.__call__)
+
+    return inspect.ArgSpec(args     = args,
+                           varargs  = spec.varargs,
+                           keywords = spec.keywords,
+                           defaults = spec.defaults)
+
+
+
+def validate_dynamic_argspec(argspec, kdims, streams):
+    """
+    Utility used by DynamicMap to ensure the supplied callback has an
+    appropriate signature.
+
+    If validation succeeds, returns a list of strings to be zipped with
+    the positional arguments i.e kdim values. The zipped values can then
+    be merged with the stream values to pass everything to the Callable
+    as keywords.
+
+    If the callbacks use *args, None is returned to indicate that kdim
+    values must be passed to the Callable by position. In this
+    situation, Callable passes *args and **kwargs directly to the
+    callback.
+
+    If the callback doesn't use **kwargs, the accepted keywords are
+    validated against the stream parameter names.
+    """
+
+    kdims = [kdim.name for kdim in kdims]
+    stream_params = stream_parameters(streams)
+    defaults = argspec.defaults if argspec.defaults else []
+    all_posargs = argspec.args[:-len(defaults)] if defaults else argspec.args
+    # Filter out any posargs for streams
+    posargs = [arg for arg in all_posargs if arg not in stream_params]
+    kwargs = argspec.args[-len(defaults):]
+
+    if argspec.keywords is None:
+        unassigned_streams = set(stream_params) - set(argspec.args)
+        if unassigned_streams:
+            raise KeyError('Callable missing keywords to accept %s stream parameters'
+                           % ', '.join(unassigned_streams))
+
+    if kdims == []:                  # Can be no posargs, stream kwargs already validated
+        return []
+    if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs
+        return kdims
+    elif len(posargs) == len(kdims): # Posargs match kdims length, supplying names
+        if argspec.args[:len(kdims)] != posargs:
+            raise KeyError('Unmatched positional kdim arguments only '
+                           'allowed at the start of the signature')
+
+        return posargs
+    elif argspec.varargs:            # Posargs missing, passed to Callable directly
+        return None
+    elif set(posargs) - set(kdims):
+        raise KeyError('Callable accepts more positional arguments {posargs} '
+                       'than there are key dimensions {kdims}'.format(posargs=posargs,
+                                                                      kdims=kdims))
+    elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
+        return kdims
+    else:
+        raise KeyError('Callback signature over {names} does not accommodate '
+                       'required kdims {kdims}'.format(names=list(set(posargs+kwargs)),
+                                                       kdims=kdims))
+
 
 
 def process_ellipses(obj, key, vdim_selection=False):
