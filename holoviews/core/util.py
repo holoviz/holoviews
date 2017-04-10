@@ -161,7 +161,7 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     kwargs = argspec.args[-len(defaults):]
 
     if argspec.keywords is None:
-        unassigned_streams = set(stream_params) - set(kwargs)
+        unassigned_streams = set(stream_params) - set(argspec.args)
         if unassigned_streams:
             raise KeyError('Callable missing keywords to accept %s stream parameters'
                            % ', '.join(unassigned_streams))
@@ -174,9 +174,13 @@ def validate_dynamic_argspec(argspec, kdims, streams):
         return posargs
     elif argspec.varargs:          # Posargs missing, passed to Callable directly
         return None
-    else:
+
+    # Handle positional arguments matching stream parameter names
+    stream_posargs = [arg for arg in posargs if arg in stream_params]
+    if len(stream_posargs) != len(posargs):
         raise Exception('Supplied callback signature does not accommodate '
                         'required kdims and stream parameters')
+    return stream_posargs
 
 
 def process_ellipses(obj, key, vdim_selection=False):
