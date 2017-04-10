@@ -1053,6 +1053,17 @@ class DynamicMap(HoloMap):
         else:
             return hist
 
+    def reindex(self, kdims=[], force=False):
+        raise NotImplementedError('Cannot reindex a DynamicMap, '
+                                  'cast to a HoloMap first.')
+
+    def drop_dimension(self, dimensions):
+        raise NotImplementedError('Cannot drop dimensions from a DynamicMap, '
+                                  'cast to a HoloMap first.')
+
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
+        raise NotImplementedError('Cannot add dimensions to a DynamicMap, '
+                                  'cast to a HoloMap first.')
 
     # For Python 2 and 3 compatibility
     __next__ = next
