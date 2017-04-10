@@ -190,6 +190,17 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
 
+    def test_dynamic_split_mismatched_kdims_and_streams(self):
+        # Corresponds to the old style of kdims as posargs and streams
+        # as kwargs. Positional arg names don't have to match
+        def fn(B, x=1, y=2):
+            return Scatter([(x,y)], label=B)
+
+        xy = streams.PositionXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
+
+
     def test_dynamic_split_args_and_kwargs(self):
         # Corresponds to the old style of kdims as posargs and streams
         # as kwargs, captured as *args and **kwargs
