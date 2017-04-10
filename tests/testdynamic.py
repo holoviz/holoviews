@@ -1,7 +1,7 @@
 from collections import deque
 
 import numpy as np
-from holoviews import Dimension, NdLayout, GridSpace
+from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text
 from holoviews.streams import PositionXY, PositionX, PositionY
@@ -84,6 +84,30 @@ class DynamicMethods(ComparisonTestCase):
         fn = lambda i: Curve(np.arange(i))
         dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
         self.assertEqual(dmap.select(DynamicMap, x=(5, 10))[10], fn(10))
+
+    def test_deep_map_apply_element_function(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = dmap.map(lambda x: x.clone(x.data*2), Curve)
+        curve = fn(10)
+        self.assertEqual(mapped[10], curve.clone(curve.data*2))
+
+    def test_deep_map_apply_dmap_function(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        mapped = (dmap1 + dmap2).map(lambda x: x[10], DynamicMap)
+        self.assertEqual(mapped, Layout([('DynamicMap.I', fn(10)),
+                                         ('DynamicMap.II', fn(10))]))
+
+    def test_deep_map_apply_dmap_function_no_clone(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap2 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        layout = (dmap1 + dmap2)
+        mapped = layout.map(lambda x: x[10], DynamicMap, clone=False)
+        self.assertIs(mapped, layout)
+
 
 
 class DynamicTestCallableBounded(ComparisonTestCase):
