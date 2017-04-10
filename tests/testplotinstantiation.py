@@ -135,10 +135,9 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]),
                              kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
-        plot.initialize_plot()
         pre = mpl_renderer(plot, fmt='png')
+        plot.state.set_dpi(72)
         stream.update(x=1, y=1)
-        plot.refresh()
         post = mpl_renderer(plot, fmt='png')
         self.assertNotEqual(pre, post)
 
@@ -156,6 +155,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot = mpl_renderer.get_plot(dmap)
         mpl_renderer(plot)
         for i in range(20):
+            plot.state.set_dpi(72)
             stream.update(x=i)
         x, y = plot.handles['artist'].get_data()
         self.assertEqual(x, np.arange(10))
