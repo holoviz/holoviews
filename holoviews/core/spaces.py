@@ -648,7 +648,14 @@ class DynamicMap(HoloMap):
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
         with dynamicmap_memoization(self.callback, self.streams):
-            retval = self.callback(*args, **dict(flattened))
+
+            if self._posarg_keys:
+                kwargs = dict(flattened, **dict(zip(self._posarg_keys, args)))
+                args = ()
+            else:
+                kwargs = dict(flattened)
+
+            retval = self.callback(*args, **kwargs)
         return self._style(retval)
 
 
