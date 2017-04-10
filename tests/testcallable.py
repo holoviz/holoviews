@@ -20,9 +20,9 @@ class ParamFunc(param.ParameterizedFunction):
     a = param.Integer(default=1)
     b = param.Number(default=1)
 
-    def __call__(self, **params):
+    def __call__(self, a, **params):
         p = param.ParamOverrides(self, params)
-        return p.a * p.b
+        return a * p.b
 
 
 class TestSimpleCallableInvocation(LoggingComparisonTestCase):
@@ -54,8 +54,10 @@ class TestSimpleCallableInvocation(LoggingComparisonTestCase):
         self.assertEqual(Callable(CallableClass())(1,2,3,4), 10)
 
     def test_callable_paramfunc(self):
-        self.assertEqual(Callable(ParamFunc)(a=3,b=5), 15)
+        self.assertEqual(Callable(ParamFunc)(3,b=5), 15)
 
+    def test_callable_paramfunc_instance(self):
+        self.assertEqual(Callable(ParamFunc.instance())(3,b=5), 15)
 
 class TestCallableArgspec(ComparisonTestCase):
 
@@ -78,10 +80,14 @@ class TestCallableArgspec(ComparisonTestCase):
         self.assertEqual(Callable(CallableClass()).argspec.varargs, 'testargs')
 
     def test_callable_paramfunc_argspec(self):
-        self.assertEqual(Callable(ParamFunc).argspec.args, [])
+        self.assertEqual(Callable(ParamFunc).argspec.args, ['a'])
         self.assertEqual(Callable(ParamFunc).argspec.keywords, 'params')
         self.assertEqual(Callable(ParamFunc).argspec.varargs, None)
 
+    def test_callable_paramfunc_instance_argspec(self):
+        self.assertEqual(Callable(ParamFunc.instance()).argspec.args, ['a'])
+        self.assertEqual(Callable(ParamFunc.instance()).argspec.keywords, 'params')
+        self.assertEqual(Callable(ParamFunc.instance()).argspec.varargs, None)
 
 class TestKwargCallableInvocation(ComparisonTestCase):
     """
