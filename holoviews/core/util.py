@@ -1,10 +1,12 @@
 import os, sys, warnings, operator
 import numbers
+import inspect
 import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
 from collections import defaultdict, Counter
+from functools import partial
 
 import numpy as np
 import param
@@ -98,6 +100,33 @@ else:
     from itertools import izip
     generator_types = (izip, xrange, types.GeneratorType)
 
+
+
+def argspec(callable_obj):
+    """
+    Returns an ArgSpec object for functions, staticmethods, instance
+    methods, classmethods and partials.
+
+    Note that the args list for instance and class methods are those as
+    seen by the user. In other words, the first argument with is
+    conventionally called 'self' or 'cls' is omitted in these cases.
+    """
+    if inspect.isfunction(callable_obj):    # functions and staticmethods
+        return inspect.getargspec(callable_obj)
+    elif isinstance(callable_obj, partial): # partials
+        arglen = len(callable_obj.args)
+        spec =  inspect.getargspec(callable_obj.func)
+        args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
+    elif inspect.ismethod(callable_obj):    # instance and class methods
+        spec = inspect.getargspec(callable_obj)
+        args = spec.args[1:]
+    else:                                   # callable objects
+        return argspec(callable_obj.__call__)
+
+    return inspect.ArgSpec(args     = args,
+                           varargs  = spec.varargs,
+                           keywords = spec.keywords,
+                           defaults = spec.defaults)
 
 def process_ellipses(obj, key, vdim_selection=False):
     """
