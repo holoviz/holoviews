@@ -4,6 +4,7 @@ Test cases for Dimension and Dimensioned object behaviour.
 from unittest import SkipTest
 from holoviews.core import Dimensioned, Dimension
 from holoviews.element.comparison import ComparisonTestCase
+from . import LoggingComparisonTestCase
 
 import numpy as np
 try:
@@ -11,7 +12,10 @@ try:
 except:
     pd = None
 
-class DimensionNameLabelTest(ComparisonTestCase):
+class DimensionNameLabelTest(LoggingComparisonTestCase):
+
+    def setUp(self):
+        super(DimensionNameLabelTest, self).setUp()
 
     def test_dimension_name(self):
         dim = Dimension('test')
@@ -35,8 +39,9 @@ class DimensionNameLabelTest(ComparisonTestCase):
         self.assertEqual(dim.label, 'A test')
 
     def test_dimension_label_kwarg_and_tuple(self):
-        # Should work but issue a warning
         dim = Dimension(('test', 'A test'), label='Another test')
+        substr = "Using label as supplied by keyword ('Another test'), ignoring tuple value 'A test'"
+        self.log_handler.assertEndsWith('WARNING', substr)
         self.assertEqual(dim.label, 'Another test')
 
     def test_dimension_invalid_name(self):
