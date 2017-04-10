@@ -177,8 +177,8 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     elif argspec.varargs:          # Posargs missing, passed to Callable directly
         return None
     else:
-        raise Exception('Callback positional arguments {posargs} do not accommodate '
-                        'required kdims {kdims}'.format(posargs=posargs, kdims=kdims))
+        raise KeyError('Callback positional arguments {posargs} do not accommodate '
+                       'required kdims {kdims}'.format(posargs=posargs, kdims=kdims))
 
 
 
