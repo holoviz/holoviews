@@ -3,7 +3,7 @@ from collections import deque
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
-from holoviews.element import Image, Scatter, Curve, Text
+from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.streams import PositionXY, PositionX, PositionY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
@@ -108,6 +108,24 @@ class DynamicMethods(ComparisonTestCase):
         mapped = layout.map(lambda x: x[10], DynamicMap, clone=False)
         self.assertIs(mapped, layout)
 
+    def test_dynamic_reindex_reorder(self):
+        def history_callback(x, y, history=deque(maxlen=10)):
+            history.append((x, y))
+            return Points(list(history))
+        dmap = DynamicMap(history_callback, kdims=['x', 'y'])
+        reindexed = dmap.reindex(['y', 'x'])
+        points = reindexed[2, 1]
+        self.assertEqual(points, Points([(1, 2)]))
+
+    def test_dynamic_reindex_drop_raises_exception(self):
+        def history_callback(x, y, history=deque(maxlen=10)):
+            history.append((x, y))
+            return Points(list(history))
+        dmap = DynamicMap(history_callback, kdims=['x', 'y'])
+        exception = ("DynamicMap does not allow dropping dimensions, "
+                     "reindex may only be used to reorder dimensions.")
+        with self.assertRaisesRegexp(ValueError, exception):
+            reindexed = dmap.reindex(['x'])
 
 
 class DynamicTestCallableBounded(ComparisonTestCase):
@@ -120,6 +138,7 @@ class DynamicTestCallableBounded(ComparisonTestCase):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
+
 
 
 class DynamicTestSampledBounded(ComparisonTestCase):

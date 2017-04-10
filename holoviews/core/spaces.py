@@ -1084,6 +1084,35 @@ class DynamicMap(HoloMap):
             return hist
 
 
+    def reindex(self, kdims=[], force=False):
+        """
+        Reindexing a DynamicMap allows reordering the dimensions but
+        not dropping an individual dimension. The force argument which
+        usually allows dropping non-constant dimensions is therefore
+        ignored and only for API consistency.
+        """
+        kdims = [self.get_dimension(kd, strict=True) for kd in kdims]
+        dropped = [kd for kd in self.kdims if kd not in kdims]
+        if dropped:
+            raise ValueError("DynamicMap does not allow dropping dimensions, "
+                             "reindex may only be used to reorder dimensions.")
+        reindexed = super(DynamicMap, self).reindex(kdims, force)
+        def reindex(*args, **kwargs):
+            keymap = {kd.name: arg for kd, arg in zip(self.kdims, args)}
+            keymap.update(kwargs)
+            args = tuple(keymap[kd.name] for kd in kdims)
+            return reindexed[args]
+        return reindexed.clone(callback=Callable(reindex, inputs=[self]))
+
+
+    def drop_dimension(self, dimensions):
+        raise NotImplementedError('Cannot drop dimensions from a DynamicMap, '
+                                  'cast to a HoloMap first.')
+
+    def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
+        raise NotImplementedError('Cannot add dimensions to a DynamicMap, '
+                                  'cast to a HoloMap first.')
+
     # For Python 2 and 3 compatibility
     __next__ = next
 
