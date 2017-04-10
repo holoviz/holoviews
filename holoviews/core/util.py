@@ -111,7 +111,12 @@ def argspec(callable_obj):
     seen by the user. In other words, the first argument which is
     conventionally called 'self' or 'cls' is omitted in these cases.
     """
-    if inspect.isfunction(callable_obj):    # functions and staticmethods
+    if (isinstance(callable_obj, type)
+        and issubclass(callable_obj, param.ParameterizedFunction)):
+        # Parameterized function.__call__ considered function in py3 but not py2
+        spec = inspect.getargspec(callable_obj.__call__)
+        args=spec.args[1:]
+    elif inspect.isfunction(callable_obj):    # functions and staticmethods
         return inspect.getargspec(callable_obj)
     elif isinstance(callable_obj, partial): # partials
         arglen = len(callable_obj.args)
