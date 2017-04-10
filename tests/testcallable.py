@@ -196,7 +196,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
             return Scatter([(x,y)], label=B)
 
         xy = streams.PositionXY(x=1, y=2)
-        regexp = "Callback signature over (.+?) do not accommodate required kdims"
+        regexp = "Callback signature over (.+?) does not accommodate required kdims"
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
 

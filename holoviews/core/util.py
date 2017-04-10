@@ -187,7 +187,7 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
         return kdims
     else:
-        raise KeyError('Callback signature over {names} do not accommodate '
+        raise KeyError('Callback signature over {names} does not accommodate '
                        'required kdims {kdims}'.format(names=list(set(posargs+kwargs)),
                                                        kdims=kdims))
 
