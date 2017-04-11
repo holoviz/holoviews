@@ -51,7 +51,12 @@ for running unit tests, you can use::
 
   pip install 'holoviews[all]'
 
-To get the latest development version you can instead clone our git
+Between releases, development snapshots are made available on conda and
+can be installed using::
+
+  conda install -c ioam/label/dev holoviews
+
+To get the very latest development version you can clone our git
 repositories::
 
   git clone git://github.com/ioam/param.git
