@@ -2,6 +2,8 @@
 Definition and registration of display hooks for the IPython Notebook.
 """
 from functools import wraps
+from contextlib import contextmanager
+
 import sys, traceback
 
 import IPython
@@ -95,13 +97,25 @@ def last_frame(obj):
 # Display hooks #
 #===============#
 
-def option_state(element, state=None):
+def dynamic_optstate(element, state=None):
     # Temporary fix to avoid issues with DynamicMap traversal
     DynamicMap._deep_indexable = False
     optstate = StoreOptions.state(element,state=state)
     DynamicMap._deep_indexable = True
     return optstate
 
+@contextmanager
+def option_state(element):
+    optstate = dynamic_optstate(element)
+    raised_exception = False
+    try:
+        yield
+    except Exception:
+        raised_exception = True
+        raise
+    finally:
+        if raised_exception:
+            dynamic_optstate(element, state=optstate)
 
 def display_hook(fn):
     @wraps(fn)
@@ -109,7 +123,7 @@ def display_hook(fn):
         global FULL_TRACEBACK
         if Store.current_backend is None:
             return
-        optstate = option_state(element)
+
         try:
             html = fn(element,
                       max_frames=OutputMagic.options['max_frames'],
@@ -130,8 +144,7 @@ def display_hook(fn):
                 sys.stderr.write("Rendering process skipped: %s" % str(e))
             return None
         except AbbreviatedException as e:
-            try: option_state(element, state=optstate)
-            except: pass
+
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
                                                                   e.traceback))
@@ -140,13 +153,8 @@ def display_hook(fn):
             msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
             return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
 
-        except Exception as e:
-            t, v, tb = sys.exc_info()
-            try: option_state(element, state=optstate)
-            except Exception: pass
-            if sys.version_info[0] < 3:
-                raise (t, v, tb)
-            raise v.with_traceback(tb)
+        except Exception:
+            raise
     return wrapped
 
 
@@ -215,13 +223,17 @@ def display(obj, raw=False, **kwargs):
     the raw HTML is returned instead of displaying it directly.
     """
     if isinstance(obj, GridSpace):
-        html = grid_display(obj)
+        with option_state(obj):
+            html = grid_display(obj)
     elif isinstance(obj, (CompositeOverlay, ViewableElement)):
-        html = element_display(obj)
+        with option_state(obj):
+            html = element_display(obj)
     elif isinstance(obj, (Layout, NdLayout, AdjointLayout)):
-        html = layout_display(obj)
+        with option_state(obj):
+            html = layout_display(obj)
     elif isinstance(obj, (HoloMap, DynamicMap)):
-        html = map_display(obj)
+        with option_state(obj):
+            html = map_display(obj)
     else:
         return repr(obj) if raw else IPython.display.display(obj, **kwargs)
     return html if raw else IPython.display.display(IPython.display.HTML(html))
