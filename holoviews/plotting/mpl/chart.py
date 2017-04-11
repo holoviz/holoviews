@@ -304,7 +304,7 @@ class HistogramPlot(ChartPlot):
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
 
-        return self._finalize_axis(self.keys[-1], ranges=el_ranges, **ax_settings)
+        return self._finalize_axis(self.keys[-1], ranges=el_ranges, element=hist, **ax_settings)
 
 
     def _process_hist(self, hist):
@@ -801,7 +801,7 @@ class BarPlot(LegendPlot):
 
         self.handles['artist'], self.handles['xticks'], xdims = self._create_bars(axis, element)
         return self._finalize_axis(key, ranges=ranges, xticks=self.handles['xticks'],
-                                   dimensions=[xdims, vdim])
+                                   element=element, dimensions=[xdims, vdim])
 
 
     def _finalize_ticks(self, axis, element, xticks, yticks, zticks):

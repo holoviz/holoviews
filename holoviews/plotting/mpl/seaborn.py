@@ -242,7 +242,7 @@ class SNSFramePlot(DFrameViewPlot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], element=dfview)
 
 
     def _process_style(self, styles):
@@ -272,7 +272,7 @@ class SNSFramePlot(DFrameViewPlot):
 
         axis_kwargs = self.update_handles(key, axis, element, key, ranges, style)
         if axis:
-            self._finalize_axis(key, **(axis_kwargs if axis_kwargs else {}))
+            self._finalize_axis(key, element=element, **(axis_kwargs if axis_kwargs else {}))
 
 
     def _update_plot(self, axis, view, style):
