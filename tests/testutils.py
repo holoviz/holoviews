@@ -497,16 +497,30 @@ class TestTreePathUtils(unittest.TestCase):
 
     def test_make_path_unique_no_clash(self):
         path = ('Element', 'A')
-        new_path = make_path_unique(path, {})
+        new_path = make_path_unique(path, {}, True)
         self.assertEqual(new_path, path)
 
     def test_make_path_unique_clash_without_label(self):
         path = ('Element',)
-        new_path = make_path_unique(path, {path: 1})
+        new_path = make_path_unique(path, {path: 1}, True)
         self.assertEqual(new_path, path+('I',))
 
     def test_make_path_unique_clash_with_label(self):
         path = ('Element', 'A')
-        new_path = make_path_unique(path, {path: 1})
+        new_path = make_path_unique(path, {path: 1}, True)
         self.assertEqual(new_path, path+('I',))
 
+    def test_make_path_unique_no_clash_old(self):
+        path = ('Element', 'A')
+        new_path = make_path_unique(path, {}, False)
+        self.assertEqual(new_path, path)
+
+    def test_make_path_unique_clash_without_label_old(self):
+        path = ('Element',)
+        new_path = make_path_unique(path, {path: 1}, False)
+        self.assertEqual(new_path, path+('I',))
+
+    def test_make_path_unique_clash_with_label_old(self):
+        path = ('Element', 'A')
+        new_path = make_path_unique(path, {path: 1}, False)
+        self.assertEqual(new_path, path[:-1]+('I',))
