@@ -430,7 +430,7 @@ class Layout(AttrTree, Dimensioned):
             if type(item) is cls:
                 cls._initial_paths(item.items(), paths)
                 continue
-            paths.append(get_path(item))
+            paths.append(get_path(item) if path is None else path)
         return paths
 
 
@@ -445,9 +445,9 @@ class Layout(AttrTree, Dimensioned):
         for item in objs:
             path, obj = item if isinstance(item, tuple) else (None, item)
             if type(obj) is cls:
-                cls._unpack_paths(obj, items, counts)
+                cls._unpack_paths(obj.items(), items, counts)
                 continue
-            path = get_path(item)
+            path = get_path(item) if path is None else path
             new_path = make_path_unique(path, counts)
             items.append((new_path, obj))
 
