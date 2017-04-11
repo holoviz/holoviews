@@ -666,12 +666,12 @@ class OptsMagic(Magics):
         for backend in Store.loaded_backends():
             available_elements |= set(Store.options(backend).children)
 
-            spec_elements = set(k.split('.')[0] for k in spec.keys())
-            unknown_elements = spec_elements - available_elements
-            if unknown_elements:
-                msg = ("<b>WARNING:</b>: Unknown elements {unknown} not registered "
-                       "with any of the loaded backends.")
-                display(HTML(msg.format(unknown=', '.join(unknown_elements))))
+        spec_elements = set(k.split('.')[0] for k in spec.keys())
+        unknown_elements = spec_elements - available_elements
+        if unknown_elements:
+            msg = ("<b>WARNING:</b> Unknown elements {unknown} not registered "
+                   "with any of the loaded backends.")
+            display(HTML(msg.format(unknown=', '.join(unknown_elements))))
 
         if cell:
             self.register_custom_spec(spec)
