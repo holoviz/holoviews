@@ -16,7 +16,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import (unique_array, get_path, make_path_unique)
+from .util import (unique_array, get_path, make_path_unique, int_to_roman)
 from . import traversal
 
 
@@ -408,30 +408,33 @@ class Layout(AttrTree, Dimensioned):
             return vals.data
         elif not isinstance(vals, (list, tuple)):
             vals = [vals]
-        paths = cls._initial_paths(vals)
-        path_counter = Counter(paths)
         items = []
         counts = defaultdict(lambda: 1)
-        counts.update({k: 1 for k, v in path_counter.items() if v > 1})
         cls._unpack_paths(vals, items, counts)
+        items = cls._deduplicate_items(items)
         return items
 
 
     @classmethod
-    def _initial_paths(cls, items, paths=None):
+    def _deduplicate_items(cls, items):
         """
-        Recurses the passed items finding paths for each. Useful for
-        determining which paths are not unique and have to be resolved.
+        Iterates over the paths a second time and ensures that partial
+        paths are not overlapping.
         """
-        if paths is None:
-            paths = []
-        for item in items:
-            path, item = item if isinstance(item, tuple) else (None, item)
-            if type(item) is cls:
-                cls._initial_paths(item.items(), paths)
-                continue
-            paths.append(get_path(item) if path is None else path)
-        return paths
+        counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
+        if sum(counter.values()) == len(counter):
+            return items
+
+        new_items = []
+        counts = defaultdict(lambda: 0)
+        for i, (path, item) in enumerate(items):
+            if counter[path] > 1:
+                path = path + (int_to_roman(counts[path]+1),)
+            elif counts[path]:
+                path = path[:-1] + (int_to_roman(counts[path]+1),)
+            new_items.append((path, item))
+            counts[path] += 1
+        return new_items
 
 
     @classmethod
@@ -445,10 +448,11 @@ class Layout(AttrTree, Dimensioned):
         for item in objs:
             path, obj = item if isinstance(item, tuple) else (None, item)
             if type(obj) is cls:
-                cls._unpack_paths(obj.items(), items, counts)
+                cls._unpack_paths(obj, items, counts)
                 continue
-            path = get_path(item) if path is None else path
-            new_path = make_path_unique(path, counts)
+            new = path is None or len(path) == 1
+            path = get_path(item) if new else path
+            new_path = make_path_unique(path, counts, new)
             items.append((new_path, obj))
 
 
