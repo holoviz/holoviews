@@ -68,7 +68,10 @@ def get_color_cycle():
     return mpl.rcParams['axes.color_cycle']
 
 Cycle.default_cycles.update({'default_colors': get_color_cycle()})
-Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad})
+
+# Filter spectral colormaps to avoid warning in mpl 2.0
+Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
+                          if cm not in ['spectral', 'spectral_r']})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
