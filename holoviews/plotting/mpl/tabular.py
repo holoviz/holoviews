@@ -126,7 +126,7 @@ class TablePlot(ElementPlot):
 
         self.handles['artist'] = table
 
-        return self._finalize_axis(self.keys[-1])
+        return self._finalize_axis(self.keys[-1], element=element)
 
 
     def update_handles(self, key, axis, element, ranges, style):

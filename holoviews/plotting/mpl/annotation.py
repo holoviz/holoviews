@@ -28,7 +28,7 @@ class AnnotationPlot(ElementPlot):
         with abbreviated_exception():
             handles = self.draw_annotation(axis, annotation.data, opts)
         self.handles['annotations'] = handles
-        return self._finalize_axis(key, ranges=ranges)
+        return self._finalize_axis(key, element=annotation, ranges=ranges)
 
     def update_handles(self, key, axis, annotation, ranges, style):
         # Clear all existing annotations

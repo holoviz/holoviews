@@ -76,7 +76,8 @@ class DFrameViewPlot(ElementPlot):
         if 'fig' in self.handles and self.handles['fig'] != plt.gcf():
             self.handles['fig'] = plt.gcf()
 
-        return self._finalize_axis(self.keys[-1], **self.get_axis_kwargs(element))
+        return self._finalize_axis(self.keys[-1], element=element,
+                                   **self.get_axis_kwargs(element))
 
 
     def _process_style(self, style):

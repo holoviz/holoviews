@@ -132,7 +132,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def _finalize_axis(self, key, title=None, dimensions=None, ranges=None, xticks=None,
+    def _finalize_axis(self, key, element=None, title=None, dimensions=None, ranges=None, xticks=None,
                        yticks=None, zticks=None, xlabel=None, ylabel=None, zlabel=None):
         """
         Applies all the axis settings before the axis or figure is returned.
@@ -141,7 +141,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         When the number of the frame is supplied as n, this method looks
         up and computes the appropriate title, axis labels and axis bounds.
         """
-        element = self._get_frame(key)
+        if element is None:
+            element = self._get_frame(key)
         self.current_frame = element
         if not dimensions and element and not self.subplots:
             el = element.traverse(lambda x: x, [Element])
@@ -462,7 +463,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         label = element.label if self.show_legend else ''
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
         axis_kwargs = self.update_handles(key, axis, element, ranges, style)
-        self._finalize_axis(key, ranges=ranges, **(axis_kwargs if axis_kwargs else {}))
+        self._finalize_axis(key, element=element, ranges=ranges,
+                            **(axis_kwargs if axis_kwargs else {}))
 
 
     @mpl_rc_context
@@ -486,7 +488,8 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             handles = self.init_artists(ax, plot_data, plot_kwargs)
         self.handles.update(handles)
 
-        return self._finalize_axis(self.keys[-1], ranges=ranges, **axis_kwargs)
+        return self._finalize_axis(self.keys[-1], element=element, ranges=ranges,
+                                   **axis_kwargs)
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
@@ -831,7 +834,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.show_legend:
             self._adjust_legend(element, axis)
 
-        return self._finalize_axis(key, ranges=ranges, title=self._format_title(key))
+        return self._finalize_axis(key, element=element, ranges=ranges,
+                                   title=self._format_title(key))
 
 
     def update_frame(self, key, ranges=None, element=None):
@@ -866,4 +870,4 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         if self.show_legend:
             self._adjust_legend(element, axis)
 
-        self._finalize_axis(key, ranges=ranges)
+        self._finalize_axis(key, element=element, ranges=ranges)
