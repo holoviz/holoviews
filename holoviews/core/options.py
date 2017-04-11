@@ -870,6 +870,14 @@ class Store(object):
             cls._options[backend] = val
 
     @classmethod
+    def loaded_backends(cls):
+        """
+        Returns a list of the backends that have been loaded, based on
+        the available OptionTrees.
+        """
+        return list(cls._options.keys())
+
+    @classmethod
     def custom_options(cls, val=None, backend=None):
         backend = cls.current_backend if backend is None else backend
         if val is None:
