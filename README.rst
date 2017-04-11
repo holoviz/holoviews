@@ -14,7 +14,11 @@ together with `Matplotlib <http://matplotlib.org/>`_ or
 `Bokeh <http://bokeh.pydata.org>`_, making use of the 
 `Jupyter/IPython Notebook <http://jupyter.org>`_.  
 
-Clone holoviews directly from GitHub with::
+Try out our latest development version by installing from conda:
+
+   conda install -c ioam/label/dev holoviews
+
+Or clone holoviews directly from GitHub with::
 
    git clone git://github.com/ioam/holoviews.git
 
