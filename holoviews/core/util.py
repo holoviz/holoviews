@@ -1185,17 +1185,24 @@ def get_path(item):
     return tuple(capitalize(fn(p)) for (p, fn) in zip(path, sanitizers))
 
 
-def make_path_unique(path, counts):
+def make_path_unique(path, counts, new):
     """
     Given a path, a list of existing paths and counts for each of the
     existing paths.
     """
-    while path in counts:
+    added = False
+    while any(path == c[:i] for c in counts for i in range(1, len(c)+1)):
         count = counts[path]
         counts[path] += 1
+        if (not new and len(path) > 1) or added:
+            path = path[:-1]
+        else:
+            added = True
         path = path + (int_to_roman(count),)
     if len(path) == 1:
         path = path + (int_to_roman(counts.get(path, 1)),)
+    if path not in counts:
+        counts[path] = 1
     return path
 
 
