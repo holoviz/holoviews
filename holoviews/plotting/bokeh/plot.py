@@ -285,13 +285,17 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     plot_size = param.Integer(default=120, doc="""
         Defines the width and height of each plot in the grid""")
 
-    def __init__(self, layout, ranges=None, layout_num=1, **params):
+    def __init__(self, layout, ranges=None, layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         super(GridPlot, self).__init__(layout=layout, layout_num=layout_num,
-                                       ranges=ranges, **params)
+                                       ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
+        top_level = keys is None
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _create_subplots(self, layout, ranges):
@@ -478,9 +482,13 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
-    def __init__(self, layout, **params):
-        super(LayoutPlot, self).__init__(layout, **params)
+    def __init__(self, layout, keys=None, **params):
+        super(LayoutPlot, self).__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
+        top_level = keys is None
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _init_layout(self, layout):

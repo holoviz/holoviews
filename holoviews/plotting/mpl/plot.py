@@ -296,11 +296,11 @@ class GridPlot(CompositePlot):
         Rotation angle of the yticks.""")
 
     def __init__(self, layout, axis=None, create_axes=True, ranges=None,
-                 layout_num=1, **params):
+                 layout_num=1, keys=None, **params):
         if not isinstance(layout, GridSpace):
             raise Exception("GridPlot only accepts GridSpace.")
         super(GridPlot, self).__init__(layout, layout_num=layout_num,
-                                       ranges=ranges, **params)
+                                       ranges=ranges, keys=keys, **params)
         # Compute ranges layoutwise
         grid_kwargs = {}
         if axis is not None:
@@ -316,6 +316,10 @@ class GridPlot(CompositePlot):
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
                                                                              ranges, create_axes)
+        top_level = keys is None
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _get_size(self):
@@ -729,10 +733,14 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
     # Whether to enable fix for non-square figures
     v17_layout_format = True
 
-    def __init__(self, layout, **params):
-        super(LayoutPlot, self).__init__(layout=layout, **params)
+    def __init__(self, layout, keys=None, **params):
+        super(LayoutPlot, self).__init__(layout=layout, keys=keys, **params)
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
+        top_level = keys is None
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _compute_gridspec(self, layout):
