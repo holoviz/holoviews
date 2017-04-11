@@ -15,7 +15,7 @@ Python distributions::
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
 more interactive `Bokeh <http://bokeh.pydata.org>`_ plotting library
-backend, and the `Jupyter/IPython Notebook <http://ipython.org/notebook>`_.
+backend, and the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 A similar set of packages can be installed using ``pip``, if that
 command is available on your system::
