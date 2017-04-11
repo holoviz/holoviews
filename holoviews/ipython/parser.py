@@ -8,6 +8,7 @@ cleaner and easier to understand.
 Pyparsing is required by matplotlib and will therefore be available if
 HoloViews is being used in conjunction with matplotlib.
 """
+from __future__ import division
 import param
 from itertools import groupby
 import pyparsing as pp
