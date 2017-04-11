@@ -446,6 +446,19 @@ class Callable(param.Parameterized):
     def argspec(self):
         return util.argspec(self.callable)
 
+
+    def clone(self, callable=None, **overrides):
+        """
+        Allows making a copy of the Callable optionally overriding
+        the callable and other parameters.
+        """
+        old = {k: v for k, v in self.get_param_values()
+               if k not in ['callable', 'name']}
+        params = dict(old, **overrides)
+        callable = self.callable if callable is None else callable
+        return self.__class__(callable, **params)
+
+
     def __call__(self, *args, **kwargs):
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -667,9 +680,19 @@ class DynamicMap(HoloMap):
         """
         if data is None and shared_data:
             data = self.data
-        return super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
-                                                   shared_data, new_type,
-                                                   *(data,) + args, **overrides)
+        clone = super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
+                                                    shared_data, new_type,
+                                                    *(data,) + args, **overrides)
+
+        # Ensure the clone references this object to ensure
+        # stream sources are inherited
+        if clone.callback is self.callback:
+            clone.callback = self.callback.clone()
+        if self not in clone.callback.inputs:
+            with util.disable_constant(clone.callback):
+                clone.callback.inputs = clone.callback.inputs+[self]
+        return clone
+
 
     def reset(self):
         """

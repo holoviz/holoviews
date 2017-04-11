@@ -7,6 +7,7 @@ import unicodedata
 import datetime as dt
 from collections import defaultdict, Counter
 from functools import partial
+from contextlib import contextmanager
 
 import numpy as np
 import param
@@ -980,6 +981,25 @@ def get_param_values(data):
         isinstance(type(data).group, property)):
         params['group'] = data.group
     return params
+
+
+@contextmanager
+def disable_constant(parameterized):
+    """
+    Temporarily set parameters on Parameterized object to
+    constant=False.
+    """
+    params = parameterized.params().values()
+    constants = [p.constant for p in params]
+    for param in params:
+        param.constant = False
+    try:
+        yield
+    except:
+        raise
+    finally:
+        for (param, const) in zip(params, constants):
+            param.constant = const
 
 
 def get_ndmapping_label(ndmapping, attr):

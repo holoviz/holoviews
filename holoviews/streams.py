@@ -32,25 +32,6 @@ def triggering_streams(streams):
             stream._triggering = False
 
 
-@contextmanager
-def disable_constant(parameterized):
-    """
-    Temporarily set parameters on Parameterized object to
-    constant=False.
-    """
-    params = parameterized.params().values()
-    constants = [p.constant for p in params]
-    for param in params:
-        param.constant = False
-    try:
-        yield
-    except:
-        raise
-    finally:
-        for (param, const) in zip(params, constants):
-            param.constant = const
-
-
 class Stream(param.Parameterized):
     """
     A Stream is simply a parameterized object with parameters that
@@ -118,7 +99,7 @@ class Stream(param.Parameterized):
                 subscriber(**dict(union))
 
         for stream in streams:
-            with disable_constant(stream):
+            with util.disable_constant(stream):
                 if stream.transient:
                     stream.reset()
 
@@ -175,7 +156,7 @@ class Stream(param.Parameterized):
         """
         Resets stream parameters to their defaults.
         """
-        with disable_constant(self):
+        with util.disable_constant(self):
             for k, p in self.params().items():
                 if k != 'name':
                     setattr(self, k, p.default)
@@ -250,7 +231,7 @@ class Stream(param.Parameterized):
         Sets the stream parameters which are expected to be declared
         constant.
         """
-        with disable_constant(self) as constant:
+        with util.disable_constant(self) as constant:
             self.set_param(**kwargs)
 
 
