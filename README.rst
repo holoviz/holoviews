@@ -14,7 +14,9 @@ together with `Matplotlib <http://matplotlib.org/>`_ or
 `Bokeh <http://bokeh.pydata.org>`_, making use of the 
 `Jupyter/IPython Notebook <http://jupyter.org>`_.  
 
-Try out our latest development version by installing from conda:
+It is currently recommended that you install a HoloViews development
+snapshot to ensure compatibility with recent bokeh and matplotlib
+releases:
 
    conda install -c ioam/label/dev holoviews
 
