@@ -1096,13 +1096,7 @@ class DynamicMap(HoloMap):
         if dropped:
             raise ValueError("DynamicMap does not allow dropping dimensions, "
                              "reindex may only be used to reorder dimensions.")
-        reindexed = super(DynamicMap, self).reindex(kdims, force)
-        def reindex(*args, **kwargs):
-            keymap = {kd.name: arg for kd, arg in zip(self.kdims, args)}
-            keymap.update(kwargs)
-            args = tuple(keymap[kd.name] for kd in kdims)
-            return reindexed[args]
-        return reindexed.clone(callback=Callable(reindex, inputs=[self]))
+        return super(DynamicMap, self).reindex(kdims, force)
 
 
     def drop_dimension(self, dimensions):
