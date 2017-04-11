@@ -27,7 +27,7 @@ from ...core import util
 from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, get_sources
+from ..util import dynamic_update, get_sources, attach_streams
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
                    bokeh_version, mplcmap_to_palette, py2js_tickformatter,

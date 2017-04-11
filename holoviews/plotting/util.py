@@ -306,7 +306,8 @@ def attach_streams(plot, obj):
     """
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            stream.add_subscriber(plot.refresh)
+            if plot.refresh not in stream._subscribers:
+                stream.add_subscriber(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
 
 

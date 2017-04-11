@@ -509,14 +509,13 @@ class DimensionedPlot(Plot):
         self.comm.send(diff)
 
 
-    def init_comm(self, obj):
+    def init_comm(self):
         """
         Initializes comm and attaches streams.
         """
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
             comm = self.renderer.comms[self.renderer.mode][0](self)
-            attach_streams(self, obj)
         return comm
 
 
@@ -589,12 +588,16 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
-        if top_level:
-            self.comm = self.init_comm(element)
         streams = []
         if isinstance(self.hmap, DynamicMap):
             streams = get_nested_streams(self.hmap)
         self.streams = streams
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
+
+        if not self.overlaid:
+            attach_streams(self, self.hmap)
 
         # Update plot and style options for batched plots
         if self.batched:
@@ -790,8 +793,8 @@ class GenericOverlayPlot(GenericElementPlot):
 
     _passed_handles = []
 
-    def __init__(self, overlay, ranges=None, batched=True, **params):
-        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges,
+    def __init__(self, overlay, ranges=None, batched=True, keys=None, **params):
+        super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, keys=keys,
                                                  batched=batched, **params)
 
         # Apply data collapse
@@ -799,6 +802,10 @@ class GenericOverlayPlot(GenericElementPlot):
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
+        top_level = keys is None
+        if top_level:
+            self.comm = self.init_comm()
+            self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
 
     def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
@@ -955,9 +962,6 @@ class GenericCompositePlot(DimensionedPlot):
                                                    dynamic=dynamic,
                                                    dimensions=dimensions,
                                                    **params)
-        if top_level:
-            self.comm = self.init_comm(layout)
-        self.traverse(lambda x: setattr(x, 'comm', self.comm))
         nested_streams = layout.traverse(lambda x: get_nested_streams(x),
                                          [DynamicMap])
         self.streams = list(set([s for streams in nested_streams for s in streams]))
