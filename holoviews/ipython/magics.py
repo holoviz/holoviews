@@ -669,10 +669,9 @@ class OptsMagic(Magics):
             spec_elements = set(k.split('.')[0] for k in spec.keys())
             unknown_elements = spec_elements - available_elements
             if unknown_elements:
-                msg = ("<b>Unknown elements</b>: {unknown} not registered "
+                msg = ("<b>WARNING:</b>: Unknown elements {unknown} not registered "
                        "with any of the loaded backends.")
                 display(HTML(msg.format(unknown=', '.join(unknown_elements))))
-                return
 
         if cell:
             self.register_custom_spec(spec)
