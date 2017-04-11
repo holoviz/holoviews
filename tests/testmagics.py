@@ -48,6 +48,20 @@ class TestOptsMagic(ExtensionTestCase):
                                  self.get_object('mat1'), 'style').options.get('cmap',None),'hot')
 
 
+    def test_cell_opts_plot_float_division(self):
+
+        self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
+
+        self.assertEqual(self.get_object('mat1').id, None)
+        self.cell_magic('opts', " Image [aspect=3/4]", 'mat1')
+        self.assertEqual(self.get_object('mat1').id, 0)
+
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
+        self.assertEqual(
+            Store.lookup_options('matplotlib',
+                                 self.get_object('mat1'), 'plot').options.get('aspect',False), 3/4.0)
+
+
     def test_cell_opts_plot(self):
 
         self.cell("mat1 = Image(np.random.rand(5,5), name='mat1')")
