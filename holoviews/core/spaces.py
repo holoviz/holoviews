@@ -1034,7 +1034,9 @@ class DynamicMap(HoloMap):
                     dim_vals = [(d.name, d.values) for d in inner_kdims]
                     dim_vals += [(d.name, [v]) for d, v in
                                    zip(outer_kdims, util.wrap_tuple(outer_key))]
-                    return group_type(self.select(**dict(dim_vals))).reindex(inner_kdims)
+                    with item_check(False):
+                        selected = HoloMap(self.select(**dict(dim_vals)))
+                        return group_type(selected.reindex(inner_kdims))
             if outer_kdims:
                 return self.clone([], callback=outer_fn, kdims=outer_kdims)
             else:
@@ -1059,7 +1061,9 @@ class DynamicMap(HoloMap):
                 else:
                     inner_vals = [(d.name, self.get_dimension(d).values)
                                      for d in inner_kdims]
-                    group = group_type(self.select(**dict(outer_vals+inner_vals)).reindex(inner_kdims))
+                    with item_check(False):
+                        selected = HoloMap(self.select(**dict(outer_vals+inner_vals)))
+                        group = group_type(selected.reindex(inner_kdims))
                     groups.append((outer, group))
             return container_type(groups, kdims=outer_kdims)
 
