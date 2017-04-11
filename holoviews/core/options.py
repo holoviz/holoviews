@@ -862,7 +862,7 @@ class Store(object):
     current_backend = 'matplotlib'
 
     @classmethod
-    def options(cls, val=None, backend=None):
+    def options(cls, backend=None, val=None):
         backend = cls.current_backend if backend is None else backend
         if val is None:
             return cls._options[backend]
