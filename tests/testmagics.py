@@ -95,7 +95,6 @@ class TestOptsMagic(ExtensionTestCase):
 class TestOutputMagic(ExtensionTestCase):
 
     def tearDown(self):
-        ipython.OutputMagic.options = ipython.OutputMagic.defaults
         super(TestOutputMagic, self).tearDown()
 
     def test_output_svg(self):
@@ -126,7 +125,7 @@ class TestOutputMagic(ExtensionTestCase):
 
     def test_output_invalid_size(self):
         self.line_magic('output', "size=-50")
-        self.assertEqual(ipython.OutputMagic.options.get('size', None), 100)
+        self.assertEqual(ipython.OutputMagic.options.get('size', None), None)
 
 
 class TestCompositorMagic(ExtensionTestCase):
