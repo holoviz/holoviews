@@ -1,3 +1,10 @@
+"""
+An example demonstrating how to put together a crossfilter app based
+on the Auto MPG dataset. Demonstrates how to dynamically generate
+bokeh plots using the HoloViews API and replacing the bokeh plot
+based on the current widget selections.
+"""
+
 import numpy as np
 import pandas as pd
 import holoviews as hv
@@ -35,7 +42,6 @@ discrete = [x for x in columns if df[x].dtype == object]
 continuous = [x for x in columns if x not in discrete]
 quantileable = [x for x in continuous if len(df[x].unique()) > 20]
 
-hv.Store.current_backend = 'bokeh'
 renderer = hv.Store.renderers['bokeh']
 options = hv.Store.options(backend='bokeh')
 options.Points = hv.Options('plot', width=800, height=600, size_index=None,)
@@ -52,7 +58,6 @@ def create_figure():
         opts['scaling_factor'] = (1./df[size.value].max())*200
     points = hv.Points(df, kdims=kdims, label=label)(plot=opts, style=style)
     plot = renderer.get_plot(points)
-    plot.initialize_plot()
     return plot.state
 
 def update(attr, old, new):

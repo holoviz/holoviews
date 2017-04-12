@@ -4,10 +4,13 @@ import numpy as np
 import param
 from param.parameterized import bothmethod
 
+
+from bokeh.application.handlers import FunctionHandler
+from bokeh.application import Application
 from bokeh.charts import Chart
 from bokeh.document import Document
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, curdoc
+from bokeh.io import load_notebook, curdoc, show
 from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
                           WidgetBox, Div, DataTable, Tabs)
 from bokeh.plotting import Figure
@@ -90,6 +93,28 @@ class BokehRenderer(Renderer):
             return BokehServerWidgets(plot, renderer=self_or_cls.instance(), **kwargs)
         else:
             return super(BokehRenderer, self_or_cls).get_widget(plot, widget_type, **kwargs)
+
+
+    @bothmethod
+    def app(self_or_cls, plot, notebook=False):
+        """
+        Creates a bokeh app from a HoloViews object or plot. By
+        default simply uses attaches plot to bokeh's curdoc and
+        returns the Document, if notebook option is supplied creates
+        an Application instance, displays it and returns it.
+        """
+        renderer = self_or_cls.instance(mode='server')
+        if not notebook:
+            doc, _ = renderer(plot)
+            return doc
+
+        def modify_doc(doc):
+            renderer(plot, doc=doc)
+
+        handler = FunctionHandler(modify_doc)
+        app = Application(handler)
+        show(app)
+        return app
 
 
     def server_doc(self, plot, doc=None):
