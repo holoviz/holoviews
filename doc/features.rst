@@ -8,7 +8,7 @@ ________
 * Includes a rich `library of composable elements <Tutorials/Elements.html>`_ that can be overlaid, nested, and positioned with ease.
 * Supports `rapid data exploration <Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <Tutorials/Exporting.html>`_.
 * You can create complex animated or interactive visualizations with minimal code.
-* Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <Tutorials/Transforming_Data.html>`_.
+* Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <Tutorials/Sampling_Data.html>`_.
 * Every parameter of every object includes easy-to-access documentation.
 * All features `available in vanilla Python 2 or 3 <Tutorials/Options.html>`_, with minimal dependencies.
 * All examples on the website are tested automatically each night, using the latest version of the code.
@@ -25,7 +25,7 @@ ________
 **Analysis and data access features**
 
 * Allows you to annotate your data with dimensions, units, labels and data ranges.
-* Easily `slice and access <Tutorials/Transforming_Data.html>`_ regions of your data, no matter how high the dimensionality.
+* Easily `slice and access <Tutorials/Sampling_Data.html>`_ regions of your data, no matter how high the dimensionality.
 * Apply any suitable function to collapse your data or reduce dimensionality.
 * Helpful textual representation to inform you how every level of your data may be accessed.
 * Includes small library of common operations for any scientific or engineering data.
