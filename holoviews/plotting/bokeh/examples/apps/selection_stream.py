@@ -1,3 +1,9 @@
+"""
+Example app demonstrating how to use the HoloViews API to generate
+a bokeh app with complex interactivity. Uses a Selection1D stream
+to compute the mean y-value of the current selection.
+"""
+
 import numpy as np
 import holoviews as hv
 import holoviews.plotting.bokeh

@@ -1,3 +1,10 @@
+"""
+An example demonstrating how to put together a crossfilter app based
+on the Auto MPG dataset. Demonstrates how to dynamically generate
+bokeh plots using the HoloViews API and replacing the bokeh plot
+based on the current widget selections.
+"""
+
 import numpy as np
 import pandas as pd
 import holoviews as hv

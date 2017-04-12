@@ -1,11 +1,13 @@
 # -*- coding: utf-8 -*-
+"""
+Example of a simple player widget demonstrating how to connnect
+a simple HoloViews plot with custom widgets and combine them
+into a bokeh layout.
+"""
 import numpy as np
 from bokeh.io import curdoc
 from bokeh.layouts import layout
-from bokeh.models import (
-    ColumnDataSource, HoverTool, SingleIntervalTicker, Slider, Button, Label,
-    CategoricalColorMapper,
-)
+from bokeh.models import Slider, Button
 import holoviews as hv
 import holoviews.plotting.bokeh
 
