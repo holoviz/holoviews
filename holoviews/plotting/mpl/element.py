@@ -667,8 +667,10 @@ class ColorbarPlot(ElementPlot):
         opts['vmax'] = clim[1]
 
         # Check whether the colorbar should indicate clipping
-        values = np.asarray(element.dimension_values(vdim))
-        if values.dtype.kind not in 'OSUM':
+        values = element.dimension_values(vdim)
+        if not len(values):
+            el_min, el_max = np.NaN, np.NaN
+        elif values.dtype.kind not in 'OSUM':
             el_min, el_max = np.nanmin(values), np.nanmax(values)
         else:
             el_min, el_max = -np.inf, np.inf

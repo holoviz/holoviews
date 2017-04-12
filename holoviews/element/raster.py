@@ -261,8 +261,15 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = BoundingBox(points=((l, b), (r, t)))
 
         l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else dim1/float(r-l)
-        ydensity = ydensity if ydensity else dim2/float(t-b)
+        if dim1:
+            xdensity = xdensity if xdensity else dim1/float(r-l)
+        else:
+            xdensity = 1
+
+        if dim2:
+            ydensity = ydensity if ydensity else dim2/float(t-b)
+        else:
+            ydensity = 1
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
 
         if len(self.shape) == 3:

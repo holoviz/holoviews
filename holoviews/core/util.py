@@ -1341,6 +1341,8 @@ def bound_range(vals, density):
     assumed to be evenly spaced. Density is rounded to machine precision
     using significant digits reported by sys.float_info.dig.
     """
+    if not len(vals):
+        return 0, 0, density or 0, False
     low, high = vals.min(), vals.max()
     invert = False
     if vals[0] > vals[1]:

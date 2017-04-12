@@ -47,6 +47,12 @@ class RasterPlot(ColorbarPlot):
         if type(element) is Raster:
             b, t = t, b
 
+        # Handle empty image
+        dh = dh or 1
+        dw = dw or 1
+        if img.shape == (0, 0):
+            img = np.full((1, 1), np.NaN, dtype=img.dtype)
+
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
             data = dict(image=[], x=[], y=[], dw=[], dh=[])
@@ -89,6 +95,12 @@ class RGBPlot(RasterPlot):
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
+
+        # Handle empty image
+        dh = dh or 1
+        dw = dw or 1
+        if img.shape == (0, 0):
+            img = np.zeros((1, 1), dtype=img.dtype)
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
