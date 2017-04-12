@@ -130,7 +130,7 @@ class aggregate(ElementOperation):
         paths = []
         kdims = obj.kdims
         vdims = obj.vdims
-        x, y = obj.dimensions(label=True)[:2]
+        dims = obj.dimensions(label=True)[:2]
         if isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
@@ -139,17 +139,28 @@ class aggregate(ElementOperation):
                     df[obj.vdims[0].name] = p.level
                 paths.append(df)
         elif isinstance(obj, CompositeOverlay):
+            element = None
             for key, el in obj.data.items():
                 x, y, element, glyph = cls.get_agg_data(el)
+                dims = (x, y)
                 df = PandasInterface.as_dframe(element)
                 if isinstance(obj, NdOverlay):
                     df = df.assign(**dict(zip(obj.dimensions('key', True), key)))
                 paths.append(df)
-            kdims += element.kdims
-            vdims = element.vdims
+            if element is None:
+                dims = None
+            else:
+                kdims += element.kdims
+                vdims = element.vdims
         elif isinstance(obj, Element):
             glyph = 'line' if isinstance(obj, Curve) else 'points'
             paths.append(PandasInterface.as_dframe(obj))
+
+        if dims is None or len(dims) != 2:
+            return None, None, None, None
+        else:
+            x, y = dims
+
         if len(paths) > 1:
             if glyph == 'line':
                 path = paths[0][:1]
@@ -168,6 +179,13 @@ class aggregate(ElementOperation):
             df = paths[0]
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
+
+        for d in (x, y):
+            if df[d].dtype.kind == 'M':
+                param.warning('Casting %s dimension data to integer '
+                              'datashader cannot process datetime data ')
+                df[d] = df[d].astype('int64') / 1000000.
+
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
@@ -175,6 +193,15 @@ class aggregate(ElementOperation):
         agg_fn = self.p.aggregator
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
         x, y, data, glyph = self.get_agg_data(element, category)
+
+        if x is None or y is None:
+            x0, x1 = self.p.x_range or (-0.5, 0.5)
+            y0, y1 = self.p.y_range or (-0.5, 0.5)
+            xc = np.linspace(x0, x1, self.p.width)
+            yc = np.linspace(y0, y1, self.p.height)
+            xarray = xr.DataArray(np.full((self.p.height, self.p.width), np.NaN, dtype=np.float32),
+                                  dims=['y', 'x'], coords={'x': xc, 'y': yc})
+            return self.p.element_type(xarray)
 
         xstart, xend = self.p.x_range if self.p.x_range else data.range(x)
         ystart, yend = self.p.y_range if self.p.y_range else data.range(y)
@@ -307,7 +334,12 @@ class shade(ElementOperation):
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
-            img = tf.shade(array, **shade_opts)
+            if np.isnan(array.data).all():
+                arr = np.zeros(array.data.shape, dtype=np.uint32)
+                img = array.copy()
+                img.data = arr
+            else:
+                img = tf.shade(array, **shade_opts)
         params = dict(get_param_values(element), kdims=kdims,
                       bounds=bounds, vdims=RGB.vdims[:])
         return RGB(self.uint32_to_uint8(img.data), **params)
