@@ -314,7 +314,7 @@ class Options(param.Parameterized):
         """
         Create a new Options object that inherits the parent options.
         """
-        allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
+        allowed_keywords=self.allowed_keywords if allowed_keywords in [None,[]] else allowed_keywords
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
