@@ -350,15 +350,12 @@ class OutputMagic(OptionsMagic):
             options = OrderedDict([(k, v) for k, v in OutputMagic.options.items()
                                    if k in self.remembered])
             new_options = self.get_options(line, options, cell is None)
-            if 'backend' not in new_options:
-                new_options['backend'] = Store.current_backend
-            self._set_render_options(new_options)
+            backend = new_options['backend'] if 'backend' in new_options else prev_backend
+            self._set_render_options(new_options, backend)
             OutputMagic.options = new_options
         except Exception as e:
-            backend = self.last_backend if 'backend' in new_options else Store.current_backend
-            self.update_options(options, {'backend': backend})
             OutputMagic.options = restore_copy
-            self._set_render_options(restore_copy)
+            self._set_render_options(restore_copy, prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
             return
@@ -366,8 +363,7 @@ class OutputMagic(OptionsMagic):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-            self.set_backend(prev_backend)
-            self._set_render_options(restore_copy)
+            self._set_render_options(restore_copy, prev_backend)
 
 
     @classmethod
@@ -376,24 +372,24 @@ class OutputMagic(OptionsMagic):
         Switch default options and backend if new backend
         is supplied in items.
         """
-        backend = items.get('backend', '')
+        backend = items.get('backend', Store.current_backend)
         prev_backend = Store.current_backend
-        renderer = Store.renderers[Store.current_backend]
+        renderer = Store.renderers[prev_backend]
         prev_backend += ':%s' % renderer.mode
 
         if 'backend' not in options:
-            options['backend'] = backend if backend else Store.current_backend
+            options['backend'] = backend
+
+        for p in ['fig', 'holomap']:
+            cls.allowed[p] = list_formats(p, backend)
 
         available = backend in Store.renderers.keys()
         if (not backend) or (not available) or backend == prev_backend:
             return options
 
+        backend_options = dict(cls._backend_options[backend])
         cls._backend_options[prev_backend] = {k: v for k, v in cls.options.items()
                                               if k in cls.remembered}
-
-        backend_options = dict(cls._backend_options[backend])
-        for p in ['fig', 'holomap']:
-            cls.allowed[p] = list_formats(p, backend)
 
         backend = backend.split(':')[0]
         for opt in options:
@@ -404,7 +400,6 @@ class OutputMagic(OptionsMagic):
             if opt not in backend_options:
                 backend_options[opt] = cls.defaults[opt]
 
-        cls.set_backend(backend)
         return backend_options
 
 
@@ -414,11 +409,11 @@ class OutputMagic(OptionsMagic):
         backend = cls.options.get('backend', Store.current_backend)
         if backend in Store.renderers:
             cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
-            cls._set_render_options({})
-            cls.set_backend(backend)
+            cls._set_render_options({}, backend)
         else:
             cls.options['backend'] = None
             cls.set_backend(None)
+
 
     @classmethod
     def set_backend(cls, backend):
@@ -427,16 +422,18 @@ class OutputMagic(OptionsMagic):
 
 
     @classmethod
-    def _set_render_options(cls, options):
+    def _set_render_options(cls, options, backend=None):
         """
         Set options on current Renderer.
         """
-        if 'backend' in options:
-            split = options['backend'].split(':')
+        if backend:
+            split = backend.split(':')
             backend, mode = split if len(split)==2 else (split[0], 'default')
             options['mode'] = mode
         else:
             backend = Store.current_backend
+
+        cls.set_backend(backend)
         if 'widgets' in options:
             options['widget_mode'] = options['widgets']
         renderer = Store.renderers[backend]
