@@ -33,6 +33,9 @@ from .util import bokeh_version
 
 Store.renderers['bokeh'] = BokehRenderer.instance()
 
+if len(Store.renderers) == 1:
+    Store.current_backend = 'bokeh'
+
 associations = {Overlay: OverlayPlot,
                 NdOverlay: OverlayPlot,
                 GridSpace: GridPlot,
