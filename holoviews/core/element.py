@@ -193,15 +193,6 @@ class Element(ViewableElement, Composable, Overlayable):
         return np.column_stack(columns)
 
 
-    def __len__(self):
-        """
-        Elements must define a length, by default will simply be
-        computed from dimension values, subclasses may override this
-        for efficiency and correctness.
-        """
-        return len(self.dimension_values(0))
-
-
 
 class Tabular(Element):
     """
