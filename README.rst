@@ -49,7 +49,7 @@ Features
 
 * Lets you build data structures that both contain and visualize your data.
 * Includes a rich `library of composable elements <http://www.holoviews.org/Tutorials/Elements.html>`_ that can be overlaid, nested and positioned with ease.
-* Supports `rapid data exploration <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <Tutorials/Exporting.html>`_.
+* Supports `rapid data exploration <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <http://www.holoviews.org/Tutorials/Exporting.html>`_.
 * You can create complex animated or interactive visualizations with minimal code.
 * Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <http://www.holoviews.org/Tutorials/Sampling_Data.html>`_.
 * Every parameter of every object includes easy-to-access documentation.
