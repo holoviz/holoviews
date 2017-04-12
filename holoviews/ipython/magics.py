@@ -97,7 +97,6 @@ class OptionsMagic(Magics):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-
         return cls._validate(options, items, linemagic)
 
     @classmethod
@@ -231,21 +230,28 @@ class OutputMagic(OptionsMagic):
                                           'max-width', 'min-width', 'max-height',
                                           'min-height', 'outline', 'float']}}
 
-    defaults = OrderedDict([('backend'     , 'matplotlib'),
-                            ('fig'         , 'png'),
-                            ('holomap'     , 'widgets'),
-                            ('widgets'     , 'embed'),
-                            ('fps'         , 20),
+    defaults = OrderedDict([('backend'     , None),
+                            ('fig'         , None),
+                            ('holomap'     , None),
+                            ('widgets'     , None),
+                            ('fps'         , None),
                             ('max_frames'  , 500),
                             ('max_branches', 2),
-                            ('size'        , 100),
-                            ('dpi'         , 72),
+                            ('size'        , None),
+                            ('dpi'         , None),
                             ('charwidth'   , 80),
                             ('filename'    , None),
                             ('info'        , False),
-                            ('css'         , {})])
+                            ('css'         , None)])
 
-    options = OrderedDict(defaults.items())
+    # Defines the options the OutputMagic remembers the remainder
+    # is simply state on the backend specific Renderer
+    remembered = ['max_frames', 'max_branches', 'charwidth', 'info', 'filename']
+
+    # Remaining backend specific options renderer options
+    render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css', 'widget_mode', 'mode']
+
+    options = OrderedDict()
     _backend_options = defaultdict(dict)
 
     # Used to disable info output in testing
@@ -286,22 +292,23 @@ class OutputMagic(OptionsMagic):
 
     @classmethod
     def _generate_docstring(cls):
+        renderer = Store.renderers[Store.current_backend]
         intro = ["Magic for setting HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
         backend = "backend      : The backend used by HoloViews %r"  % cls.allowed['backend']
         fig =     "fig          : The static figure format %r" % cls.allowed['fig']
         holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
-        widgets = "widgets      : The widget mode for widgets %r" % cls.allowed['widgets']
+        widgets = "widgets      : The widget mode for widgets %r" % renderer.widget_mode
         fps =    ("fps          : The frames per second for animations (default %r)"
-                  % cls.defaults['widgets'])
+                  % renderer.fps)
         frames=  ("max_frames   : The max number of frames rendered (default %r)"
                   % cls.defaults['max_frames'])
         branches=("max_branches : The max number of Layout branches rendered (default %r)"
                   % cls.defaults['max_branches'])
         size =   ("size         : The percentage size of displayed output (default %r)"
-                  % cls.defaults['size'])
+                  % renderer.size)
         dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
-                  % cls.defaults['dpi'])
+                  % renderer.dpi)
         chars =  ("charwidth    : The max character width for displaying the output magic (default %r)"
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
@@ -338,13 +345,18 @@ class OutputMagic(OptionsMagic):
             return
 
         restore_copy = OrderedDict(OutputMagic.options.items())
+        prev_backend = Store.current_backend
         try:
-            options = OrderedDict(OutputMagic.options.items())
+            options = OrderedDict([(k, v) for k, v in OutputMagic.options.items()
+                                   if k in self.remembered])
             new_options = self.get_options(line, options, cell is None)
+            if 'backend' not in new_options:
+                new_options['backend'] = Store.current_backend
             self._set_render_options(new_options)
             OutputMagic.options = new_options
         except Exception as e:
-            self.update_options(options, {'backend': restore_copy['backend']})
+            backend = self.last_backend if 'backend' in new_options else Store.current_backend
+            self.update_options(options, {'backend': backend})
             OutputMagic.options = restore_copy
             self._set_render_options(restore_copy)
             print('Error: %s' % str(e))
@@ -353,8 +365,8 @@ class OutputMagic(OptionsMagic):
 
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            self.update_options(options, {'backend': restore_copy['backend']})
             OutputMagic.options = restore_copy
+            self.set_backend(prev_backend)
             self._set_render_options(restore_copy)
 
 
@@ -369,33 +381,28 @@ class OutputMagic(OptionsMagic):
         renderer = Store.renderers[Store.current_backend]
         prev_backend += ':%s' % renderer.mode
 
+        if 'backend' not in options:
+            options['backend'] = backend if backend else Store.current_backend
+
         available = backend in Store.renderers.keys()
         if (not backend) or (not available) or backend == prev_backend:
             return options
 
-        cls._backend_options[prev_backend] = cls.options
+        cls._backend_options[prev_backend] = {k: v for k, v in cls.options.items()
+                                              if k in cls.remembered}
 
-        backend_options = cls._backend_options[backend]
+        backend_options = dict(cls._backend_options[backend])
         for p in ['fig', 'holomap']:
-            opts = list_formats(p, backend)
-            cls.allowed[p] = opts
-            cls.defaults[p] = opts[0]
-            if p not in backend_options:
-                backend_options[p] = opts[0]
+            cls.allowed[p] = list_formats(p, backend)
 
         backend = backend.split(':')[0]
-        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
-        for p in render_params:
-            if p in backend_options:
-                opt = backend_options[p]
-                cls.defaults[p] = opt
-            else:
-                opt = cls.defaults[p]
-                backend_options[p] = opt
-
         for opt in options:
             if opt not in backend_options:
                 backend_options[opt] = options[opt]
+
+        for opt in cls.remembered:
+            if opt not in backend_options:
+                backend_options[opt] = cls.defaults[opt]
 
         cls.set_backend(backend)
         return backend_options
@@ -404,14 +411,13 @@ class OutputMagic(OptionsMagic):
     @classmethod
     def initialize(cls, backend_list):
         cls.backend_list = backend_list
-        backend = cls.options.get('backend', cls.defaults['backend'])
+        backend = cls.options.get('backend', Store.current_backend)
         if backend in Store.renderers:
-            cls.options = dict(cls.defaults)
-            cls._set_render_options(cls.defaults)
+            cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
+            cls._set_render_options({})
             cls.set_backend(backend)
         else:
             cls.options['backend'] = None
-            cls.defaults['backend'] = None
             cls.set_backend(None)
 
     @classmethod
@@ -425,13 +431,17 @@ class OutputMagic(OptionsMagic):
         """
         Set options on current Renderer.
         """
-        split = options['backend'].split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
+        if 'backend' in options:
+            split = options['backend'].split(':')
+            backend, mode = split if len(split)==2 else (split[0], 'default')
+            options['mode'] = mode
+        else:
+            backend = Store.current_backend
+        if 'widgets' in options:
+            options['widget_mode'] = options['widgets']
         renderer = Store.renderers[backend]
-        render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css']
-        render_options = {k: options[k] for k in render_params}
-        renderer.set_param(**dict(render_options, widget_mode=options['widgets'],
-                                  mode=mode))
+        render_options = {k: options[k] for k in cls.render_params if k in options}
+        renderer.set_param(**render_options)
 
 
 @magics_class
