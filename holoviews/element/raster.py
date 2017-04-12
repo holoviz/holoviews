@@ -229,7 +229,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    datatype = param.List(default=['image', 'grid', 'xarray', 'dataframe', 'dictionary'])
+    datatype = param.List(default=['image', 'grid', 'xarray', 'cube', 'dataframe', 'dictionary'])
 
     group = param.String(default='Image', constant=True)
 

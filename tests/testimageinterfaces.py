@@ -153,6 +153,15 @@ class ImageInterfaceTest(ComparisonTestCase):
                        kdims=['y'], vdims=['z'])
         self.assertEqual(reindexed, data)
 
+    def test_aggregate_with_spreadfn(self):
+        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+            agg = self.image.aggregate('x', np.mean, np.std)
+        xs = self.image.dimension_values('x', expanded=False)
+        mean = self.array.mean(axis=0)
+        std = self.array.std(axis=0)
+        self.assertEqual(agg, Curve((xs, mean, std), kdims=['x'],
+                                    vdims=['z', 'z_std']))
+
 
 class ImageGridInterfaceTest(ImageInterfaceTest):
 
@@ -189,6 +198,10 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
 
     def test_reduce_y_dimension(self):
         raise SkipTest("Not supported")
+
+    def test_aggregate_with_spreadfn(self):
+        raise SkipTest("Not supported")
+
 
 
 class RGBInterfaceTest(ComparisonTestCase):
