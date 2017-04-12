@@ -346,6 +346,9 @@ class OutputMagic(OptionsMagic):
 
         restore_copy = OrderedDict(OutputMagic.options.items())
         prev_backend = Store.current_backend
+        renderer = Store.renderers[prev_backend]
+        render_params = [(k, v) for k, v in renderer.get_param_values()
+                         if k in self.render_params]
         try:
             options = OrderedDict([(k, v) for k, v in OutputMagic.options.items()
                                    if k in self.remembered])
@@ -355,7 +358,7 @@ class OutputMagic(OptionsMagic):
             OutputMagic.options = new_options
         except Exception as e:
             OutputMagic.options = restore_copy
-            self._set_render_options(restore_copy, prev_backend)
+            self._set_render_options(dict(render_params, **restore_copy), prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
             return
@@ -363,7 +366,7 @@ class OutputMagic(OptionsMagic):
         if cell is not None:
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             OutputMagic.options = restore_copy
-            self._set_render_options(restore_copy, prev_backend)
+            self._set_render_options(dict(render_params, **restore_copy), prev_backend)
 
 
     @classmethod
