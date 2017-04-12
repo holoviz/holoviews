@@ -179,6 +179,13 @@ class aggregate(ElementOperation):
             df = paths[0]
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
+
+        for d in (x, y):
+            if df[d].dtype.kind == 'M':
+                param.warning('Casting %s dimension data to integer '
+                              'datashader cannot process datetime data ')
+                df[d] = df[d].astype('int64') / 1000000.
+
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
