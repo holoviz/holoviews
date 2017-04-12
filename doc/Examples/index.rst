@@ -95,4 +95,4 @@ HoloViews for easier visualization and analysis:
   `Fischer (2014)
   <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_ with
   `associated notebook
-  <http://ioam.github.io/media/topo/gcal_all.html>`_)
+  <http://ioam.github.io/topographica/Tutorials/gcal_all.html>`_)

@@ -39,11 +39,11 @@ ____________
 Installation
 ____________
 
-HoloViews works with Python `2.7, 3.3, and 3.4 <https://travis-ci.org/ioam/holoviews>`_.
-HoloViews is pure Python, but it also provides optional extensions
-enabled with ``hv.notebook_extension()`` above that make it integrate
-well with `Jupyter/IPython Notebook <http://ipython.org/notebook>`_ 2
-and 3.
+HoloViews works with Python `2.7 and Python 3
+<https://travis-ci.org/ioam/holoviews>`_.  HoloViews is pure Python, but
+it also provides optional extensions enabled with
+``hv.notebook_extension()`` above that make it integrate well with
+`Jupyter/IPython Notebook <http://jupyter.org>`_ versions 3, 4 and 5.
 
 The quickest and easiest way to get the latest version of all the
 recommended packages for working with HoloViews on Linux, Windows, or

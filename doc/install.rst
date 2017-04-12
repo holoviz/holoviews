@@ -15,7 +15,7 @@ Python distributions::
 This recommended installation includes the default `Matplotlib
 <http://matplotlib.org>`_ plotting library backend, the
 more interactive `Bokeh <http://bokeh.pydata.org>`_ plotting library
-backend, and the `Jupyter/IPython Notebook <http://ipython.org/notebook>`_.
+backend, and the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 A similar set of packages can be installed using ``pip``, if that
 command is available on your system::
@@ -51,7 +51,12 @@ for running unit tests, you can use::
 
   pip install 'holoviews[all]'
 
-To get the latest development version you can instead clone our git
+Between releases, development snapshots are made available on conda and
+can be installed using::
+
+  conda install -c ioam/label/dev holoviews
+
+To get the very latest development version you can clone our git
 repositories::
 
   git clone git://github.com/ioam/param.git
