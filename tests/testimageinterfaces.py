@@ -214,6 +214,9 @@ class RGBInterfaceTest(ComparisonTestCase):
         self.eltype.datatype = [self.datatype]
         self.init_data()
 
+    def tearDown(self):
+        self.eltype.datatype = self.restore_datatype
+
     def init_data(self):
         self.rgb_array = np.random.rand(10, 10, 3)
         self.rgb = RGB(self.rgb_array[::-1], bounds=(-10, 0, 10, 10))
