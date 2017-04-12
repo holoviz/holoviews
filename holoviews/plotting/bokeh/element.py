@@ -1028,7 +1028,11 @@ class ColorbarPlot(ElementPlot):
             colormapper = LogColorMapper if self.logz else LinearColorMapper
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
-            opts = {'low': low, 'high': high}
+            opts = {}
+            if np.isfinite(low):
+                opts['low'] = low
+            if np.isfinite(high):
+                opts['high'] = high
             color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
             opts.update({opt: colors[name] for name, opt in color_opts if name in colors})
         else:
