@@ -35,9 +35,9 @@ including examples that may be run live on `mybinder.org
 
 
 For general discussion, we have a `gitter channel
-<https://gitter.im/ioam/holoviews>`_.  In addition we have a
-`wiki page
-<https://github.com/ioam/holoviews/wiki/Experimental-Features>`_
+<https://gitter.im/ioam/holoviews>`_.  In addition we have
+`a user-contributed wiki
+<https://github.com/ioam/holoviews-contrib/wiki>`_
 describing current work-in-progress and experimental features. If
 you find any bugs or have any feature suggestions please file a
 GitHub Issue or submit a pull request.
