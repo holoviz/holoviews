@@ -46,7 +46,7 @@ class XArrayInterface(GridInterface):
                 vdim = vdim_param.default[0]
             vdims = [vdim]
             kdims = [Dimension(d) for d in data.dims[::-1]]
-            data = xr.Dataset({vdim.name: data})
+            data = data.to_dataset(name=vdim.name)
         elif not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
