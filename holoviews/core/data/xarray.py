@@ -15,7 +15,7 @@ from .interface import Interface
 
 class XArrayInterface(GridInterface):
 
-    types = (xr.Dataset if xr else None,)
+    types = (xr.Dataset, xr.DataArray)
 
     datatype = 'xarray'
 
