@@ -162,22 +162,29 @@ class notebook_extension(param.ParameterizedFunction):
                 __import__('holoviews.plotting.%s' % imp)
                 if selected_backend is None:
                     selected_backend = backend
-            except ImportError:
+            except Exception as e:
                 if backend in args:
                     args.pop(args.index(backend))
                 if backend in params:
                     params.pop(backend)
-                self.warning("HoloViews %s backend could not be imported, "
-                             "ensure %s is installed." % (backend, backend))
+                if isinstance(e, ImportError):
+                    self.warning("HoloViews %s backend could not be imported, "
+                                 "ensure %s is installed." % (backend, backend))
+                else:
+                    self.warning("Holoviews %s backend could not be imported, "
+                                 "it raised the following exception: %s('%s')" %
+                                 (backend, type(e).__name__, e))
             finally:
                 if backend == 'matplotlib' and not notebook_extension._loaded:
-                    svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,
-                                                                          fig='svg')
-                    holoviews.archive.exporters = [svg_exporter] +\
-                                                  holoviews.archive.exporters
+                    if 'matplotlib' in Store.renderers:
+                        svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,
+                                                                              fig='svg')
+                        holoviews.archive.exporters = [svg_exporter] +\
+                                                      holoviews.archive.exporters
                 OutputMagic.allowed['backend'] = list_backends()
                 OutputMagic.allowed['fig'] = list_formats('fig', backend)
                 OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
+
         resources = self._get_resources(args, params)
 
         ip = params.pop('ip', None)
@@ -198,6 +205,11 @@ class notebook_extension(param.ParameterizedFunction):
             set_display_hooks(ip)
             notebook_extension._loaded = True
 
+        if selected_backend is None:
+            raise ImportError('None of the backends could be imported')
+        else:
+            Store.current_backend = selected_backend
+
         css = ''
         if p.width is not None:
             css += '<style>div.container { width: %s%% }</style>' % p.width
@@ -206,13 +218,11 @@ class notebook_extension(param.ParameterizedFunction):
         if css:
             display(HTML(css))
 
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
-        if selected_backend is not None:
-            Store.current_backend = selected_backend
-
         resources = list(resources)
         if len(resources) == 0: return
+
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb(inline=p.inline)
 
         # Create a message for the logo (if shown)
         js_names = {'holoviews':'HoloViewsJS'} # resource : displayed name
