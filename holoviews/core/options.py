@@ -351,6 +351,13 @@ class Options(param.Parameterized):
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
 
+    def keywords_target(self, target):
+        """
+        Helper method to easily set the target on the allowed_keywords Keywords.
+        """
+        self.allowed_keywords.target = target
+        return self
+
     def filtered(self, allowed):
         """
         Return a new Options object that is filtered by the specified
