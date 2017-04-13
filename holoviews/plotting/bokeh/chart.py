@@ -15,12 +15,12 @@ from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...operation import interpolate_curve
 from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
-                    map_colors, get_min_distance)
+                    map_colors, get_min_distance, rgb2hex)
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import (get_cmap, mpl_to_bokeh, update_plot, rgb2hex,
-                   bokeh_version, expand_batched_style, filter_batched_data)
+from .util import (get_cmap, mpl_to_bokeh, update_plot, bokeh_version,
+                   expand_batched_style, filter_batched_data)
 
 
 class PointPlot(LegendPlot, ColorbarPlot):

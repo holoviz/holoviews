@@ -6,10 +6,9 @@ import param
 from bokeh.models import HoverTool
 
 from ...core import util
-from ..util import map_colors
+from ..util import map_colors, rgb2hex
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import (get_cmap, rgb2hex, expand_batched_style,
-                   filter_batched_data)
+from .util import get_cmap, expand_batched_style, filter_batched_data
 
 
 class PathPlot(ElementPlot):

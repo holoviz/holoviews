@@ -29,7 +29,7 @@ from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array
 
-from ..util import dim_axis_label
+from ..util import dim_axis_label, rgb2hex
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -60,14 +60,6 @@ MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
                   'Plot', 'Range1d', 'FactorRange', 'CategoricalAxis',
                   'LinearAxis', 'ColumnDataSource']
 
-
-def rgb2hex(rgb):
-    """
-    Convert RGB(A) tuple to hex.
-    """
-    if len(rgb) > 3:
-        rgb = rgb[:-1]
-    return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
 def rgba_tuple(rgba):
