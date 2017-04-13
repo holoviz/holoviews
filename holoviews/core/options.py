@@ -502,11 +502,6 @@ class OptionTree(AttrTree):
         name from the existing Options on the node and the
         new Options which are passed in.
         """
-        override_kwargs = dict(options.kwargs)
-        old_allowed = (self[identifier][group_name].allowed_keywords
-                       if identifier in self.children else Keywords())
-        override_kwargs['allowed_keywords'] = options.allowed_keywords + old_allowed
-
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
@@ -517,6 +512,11 @@ class OptionTree(AttrTree):
             #When creating a node (nothing to merge with) ensure it is empty
             group_options = Options(group_name,
                      allowed_keywords=self.groups[group_name].allowed_keywords)
+
+        override_kwargs = dict(options.kwargs)
+        old_allowed = group_options.allowed_keywords
+        override_kwargs['allowed_keywords'] = options.allowed_keywords + old_allowed
+
         try:
             return (group_options(**override_kwargs)
                     if options.merge_keywords else Options(group_name, **override_kwargs))
@@ -525,7 +525,6 @@ class OptionTree(AttrTree):
                               e.allowed_keywords,
                               group_name=group_name,
                               path = self.path)
-
 
     def __getitem__(self, item):
         if item in self.groups:
