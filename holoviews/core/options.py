@@ -34,14 +34,15 @@ Store:
 """
 import pickle
 import traceback
+import difflib
 from contextlib import contextmanager
-from collections import OrderedDict
+from collections import OrderedDict, defaultdict
 
 import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring
 from .pprint import InfoPrinter
 
 
@@ -76,7 +77,7 @@ class OptionError(Exception):
 
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
         msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(sorted(list(set(allowed_keywords))))))
+               % (repr(invalid_keyword), str(allowed_keywords)))
         if path and group_name:
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
@@ -123,6 +124,63 @@ class abbreviated_exception(object):
     def __exit__(self, etype, value, traceback):
         if isinstance(value, Exception):
             raise AbbreviatedException(etype, value, traceback)
+
+
+class Keywords(param.Parameterized):
+    """
+    A keywords objects represents a set of Python keywords. It is
+    list-like and ordered but it is also a set without duplicates. When
+    passed as **kwargs, Python keywords are not ordered but this class
+    always lists keywords in sorted order.
+
+    In addition to containing the list of keywords, Keywords has an
+    optional target which describes what the keywords are applicable to.
+
+    This class is for internal use only and should not be in the user
+    namespace.
+    """
+
+    values = param.List(doc="Set of keywords as a sorted list.")
+
+    target = param.String(allow_None=True, doc="""
+       Optional string description of what the keywords apply to.""")
+
+    def __init__(self, values=[], target=None):
+
+        strings = [isinstance(v, (str,basestring)) for v in values]
+        if False in strings:
+            raise ValueError('All keywords must be strings: {0}'.format(values))
+        super(Keywords, self).__init__(values=sorted(values),
+                                              target=target)
+
+    def __add__(self, other):
+        if (self.target and other.target) and (self.target != other.target):
+            raise Exception('Targets must match to combine Keywords')
+        target = self.target or other.target
+        return Keywords(sorted(set(self.values + other.values)), target=target)
+
+    def fuzzy_match(self, kw):
+        """
+        Given a string, fuzzy match against the Keyword values,
+        returning a list of close matches.
+        """
+        return difflib.get_close_matches(kw, self.values)
+
+    def __repr__(self):
+        if self.target:
+            msg = 'Keywords({values}, target={target})'
+            info = dict(values=self.values, target=self.target)
+        else:
+            msg = 'Keywords({values})'
+            info = dict(values=self.values)
+        return msg.format(**info)
+
+    def __str__(self):           return str(self.values)
+    def __iter__(self):          return iter(self.values)
+    def __bool__(self):          return bool(self.values)
+    def __nonzero__(self):       return bool(self.values)
+    def __contains__(self, val): return val in self.values
+
 
 
 class Cycle(param.Parameterized):
@@ -257,7 +315,7 @@ class Options(param.Parameterized):
     can create a new Options object inheriting the parent options.
     """
 
-    allowed_keywords = param.List(default=None, allow_None=True, doc="""
+    allowed_keywords = param.ClassSelector(class_=Keywords, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
     key = param.String(default=None, allow_None=True, doc="""
@@ -277,7 +335,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -288,15 +346,26 @@ class Options(param.Parameterized):
                 else:
                     raise OptionError(kwarg, allowed_keywords)
 
+        for invalid_kw in invalid_kws:
+            error = OptionError(invalid_kw, allowed_keywords, group_name=key)
+            StoreOptions.record_option_error(error)
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
-                         % (repr(invalid_kws), str(sorted(list(set(allowed_keywords))))))
+                         % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
-        allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
+        allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
+                            else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
+
+    def keywords_target(self, target):
+        """
+        Helper method to easily set the target on the allowed_keywords Keywords.
+        """
+        self.allowed_keywords.target = target
+        return self
 
     def filtered(self, allowed):
         """
@@ -314,7 +383,7 @@ class Options(param.Parameterized):
         """
         Create a new Options object that inherits the parent options.
         """
-        allowed_keywords=self.allowed_keywords if allowed_keywords is None else allowed_keywords
+        allowed_keywords=self.allowed_keywords if allowed_keywords in [None,[]] else allowed_keywords
         inherited_style = dict(allowed_keywords=allowed_keywords, **kwargs)
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
@@ -434,12 +503,6 @@ class OptionTree(AttrTree):
         name from the existing Options on the node and the
         new Options which are passed in.
         """
-        override_kwargs = dict(options.kwargs)
-        allowed_kws = [] if options.allowed_keywords is None else options.allowed_keywords
-        old_allowed = self[identifier][group_name].allowed_keywords if identifier in self.children else []
-        old_allowed = [] if old_allowed is None else old_allowed
-        override_kwargs['allowed_keywords'] = sorted(allowed_kws + old_allowed)
-
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
 
@@ -450,6 +513,11 @@ class OptionTree(AttrTree):
             #When creating a node (nothing to merge with) ensure it is empty
             group_options = Options(group_name,
                      allowed_keywords=self.groups[group_name].allowed_keywords)
+
+        override_kwargs = dict(options.kwargs)
+        old_allowed = group_options.allowed_keywords
+        override_kwargs['allowed_keywords'] = options.allowed_keywords + old_allowed
+
         try:
             return (group_options(**override_kwargs)
                     if options.merge_keywords else Options(group_name, **override_kwargs))
@@ -458,7 +526,6 @@ class OptionTree(AttrTree):
                               e.allowed_keywords,
                               group_name=group_name,
                               path = self.path)
-
 
     def __getitem__(self, item):
         if item in self.groups:
@@ -1036,6 +1103,9 @@ class Store(object):
             with param.logging_level('CRITICAL'):
                 plot.style_opts = style_opts
 
+            plot_opts =  Keywords(plot_opts,  target=view_class.__name__)
+            style_opts = Keywords(style_opts, target=view_class.__name__)
+
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
@@ -1051,7 +1121,7 @@ class Store(object):
 class StoreOptions(object):
     """
     A collection of utilities for advanced users for creating and
-    setting customized option tress on the Store. Designed for use by
+    setting customized option trees on the Store. Designed for use by
     either advanced users or the %opts line and cell magics which use
     this machinery.
 
@@ -1060,7 +1130,41 @@ class StoreOptions(object):
     access it is best to minimize the number of methods implemented on
     that class and implement the necessary utilities on StoreOptions
     instead.
+
+    Lastly this class offers a means to record all OptionErrors
+    generated by an option specification. This is used for validation
+    purposes.
     """
+
+    #=======================#
+    # OptionError recording #
+    #=======================#
+
+    _errors_recorded = None
+    _option_class_settings = None
+
+    @classmethod
+    def start_recording_errors(cls):
+        "Start collected errors supplied via record_option_error method"
+        cls._option_class_settings = (Options.skip_invalid, Options.warn_on_skip)
+        (Options.skip_invalid, Options.warn_on_skip) = (True, False)
+        cls._errors_recorded = []
+
+    @classmethod
+    def stop_recording_errors(cls):
+        "Stop recording errors and return recorded errors"
+        if cls._errors_recorded is None:
+            raise Exception('Cannot stop recording before it is started')
+        recorded = cls._errors_recorded[:]
+        (Options.skip_invalid ,Options.warn_on_skip) = cls._option_class_settings
+        cls._errors_recorded = None
+        return recorded
+
+    @classmethod
+    def record_option_error(cls, error):
+        "Record an option error if currently recording"
+        if cls._errors_recorded is not None:
+            cls._errors_recorded.append(error)
 
     #===============#
     # ID management #
@@ -1133,21 +1237,47 @@ class StoreOptions(object):
             else:
                 customization = {k:(Options(**v) if isinstance(v, dict) else v)
                                  for k,v in spec[key].items()}
+
+            # Set the Keywords target on Options from the {type} part of the key.
+            customization = {k:v.keywords_target(key.split('.')[0])
+                             for k,v in customization.items()}
             options[str(key)] = customization
         return options
 
-
     @classmethod
-    def validate_spec(cls, spec, skip=Options.skip_invalid):
+    def validate_spec(cls, spec, backends=None):
         """
-        Given a specification, validated it against the default
-        options tree (Store.options). Only tends to be useful when
-        invalid keywords generate exceptions instead of skipping.
+        Given a specification, validated it against the options tree for
+        the specified backends by raising OptionError for invalid
+        options. If backends is None, validates against all the
+        currently loaded backend.
+
+        Only useful when invalid keywords generate exceptions instead of
+        skipping i.e Options.skip_invalid is False.
         """
-        if skip: return
-        options = OptionTree(items=Store.options().data.items(),
-                             groups=Store.options().groups)
-        return cls.apply_customizations(spec, options)
+        loaded_backends =  Store.loaded_backends()if backends is None else backends
+
+        error_info     = {}
+        backend_errors = defaultdict(set)
+        for backend in loaded_backends:
+            cls.start_recording_errors()
+            options = OptionTree(items=Store.options(backend).data.items(),
+                                 groups=Store.options(backend).groups)
+            cls.apply_customizations(spec, options)
+            for error in cls.stop_recording_errors():
+                error_key = (error.invalid_keyword,
+                             error.allowed_keywords.target,
+                             error.group_name)
+                error_info[error_key+(backend,)] = error.allowed_keywords
+                backend_errors[error_key].add(backend)
+
+        for ((keyword, target, group_name), backends) in backend_errors.items():
+            # If the keyword failed for the target across all loaded backends...
+            if set(backends) == set(loaded_backends):
+                key = (keyword, target, group_name, Store.current_backend)
+                raise OptionError(keyword,
+                                  group_name=group_name,
+                                  allowed_keywords=error_info[key])
 
 
     @classmethod
