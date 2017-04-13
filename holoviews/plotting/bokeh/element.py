@@ -772,8 +772,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not element or (not self.dynamic and self.static):
             return
 
-        style_element = element.last if self.batched else element
-        self.style = self.lookup_options(style_element, 'style')
+        if self.batched:
+            style_element = element.last
+            max_cycles = None
+        else:
+            style_element = element
+            max_cycles = len(self.style._options)
+        style = self.lookup_options(style_element, 'style')
+        self.style = style.max_cycles(max_cycles) if max_cycles else style
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.set_param(**self.lookup_options(style_element, 'plot').options)

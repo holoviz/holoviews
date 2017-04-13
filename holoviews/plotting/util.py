@@ -356,6 +356,15 @@ def get_min_distance(element):
     return distances[distances>0].min()
 
 
+def rgb2hex(rgb):
+    """
+    Convert RGB(A) tuple to hex.
+    """
+    if len(rgb) > 3:
+        rgb = rgb[:-1]
+    return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
 # linear_kryw_0_100_c71 (aka "fire"):
 # A perceptually uniform equivalent of matplotlib's "hot" colormap, from
 # http://peterkovesi.com/projects/colourmaps

@@ -12,7 +12,8 @@ from io import BytesIO, StringIO
 import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store, Dataset,
-                       NdOverlay, GridSpace, HoloMap, Layout, Cycle)
+                       NdOverlay, GridSpace, HoloMap, Layout, Cycle,
+                       Palette)
 from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
@@ -21,6 +22,7 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY, PositionX
 from holoviews.plotting import comms
+from holoviews.plotting.util import rgb2hex
 
 # Standardize backend due to random inconsistencies
 try:
@@ -81,6 +83,7 @@ class ParamLogStream(object):
         param.parameterized.logger = self._param_logger
         self._handler.close()
         self.stream.seek(0)
+
 
 
 class TestMPLPlotInstantiation(ComparisonTestCase):
@@ -357,6 +360,18 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          dtype='<U7')
         self.assertEqual(plot.handles['source'].data['color'], color)
         self.assertEqual(plot.handles['source'].data['size'], size)
+
+    def test_cyclic_palette_curves(self):
+        palette = Palette('Set1')
+        opts = dict(color=palette)
+        hmap = HoloMap({i: NdOverlay({j: Curve(np.random.rand(3))(style=opts)
+                                      for j in range(3)})
+                        for i in range(3)})
+        colors = palette[3].values
+        plot = bokeh_renderer.get_plot(hmap)
+        for subp, color in zip(plot.subplots.values(), colors):
+            self.assertEqual(subp.handles['glyph'].line_color, rgb2hex(color))
+
 
     def test_batched_points_line_color_and_color(self):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
