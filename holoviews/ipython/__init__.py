@@ -146,15 +146,22 @@ class notebook_extension(param.ParameterizedFunction):
                  'plotly': 'plotly'}
 
     def __call__(self, *args, **params):
-        imports = [(name, b) for name, b in self._backends.items()
-                   if name in args or params.get(name, False)]
-        if not imports or 'matplotlib' not in Store.renderers:
-            imports = imports + [('matplotlib', 'mpl')]
+        # Get requested backends
+        imports = [(arg, self._backends[arg]) for arg in args
+                   if arg in self._backends]
+        for p, val in sorted(params.items()):
+            if p in self._backends:
+                imports.append((p, self._backends[p]))
+        if not imports:
+            imports = [('matplotlib', 'mpl')]
 
         args = list(args)
+        selected_backend = None
         for backend, imp in imports:
             try:
                 __import__('holoviews.plotting.%s' % imp)
+                if selected_backend is None:
+                    selected_backend = backend
             except ImportError:
                 if backend in args:
                     args.pop(args.index(backend))
@@ -187,7 +194,7 @@ class notebook_extension(param.ParameterizedFunction):
             ip = get_ipython() if ip is None else ip # noqa (get_ipython)
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputMagic.initialize(list( self._backends.keys()))
+            OutputMagic.initialize([backend for backend, _ in imports])
             set_display_hooks(ip)
             notebook_extension._loaded = True
 
@@ -199,6 +206,11 @@ class notebook_extension(param.ParameterizedFunction):
         if css:
             display(HTML(css))
 
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb(inline=p.inline)
+        if selected_backend is not None:
+            Store.current_backend = selected_backend
+
         resources = list(resources)
         if len(resources) == 0: return
 
@@ -209,11 +221,7 @@ class notebook_extension(param.ParameterizedFunction):
 
         message = '' if not p.banner else '%s successfully loaded in this cell.' % loaded
         load_hvjs(logo=p.banner, JS=('holoviews' in resources), message = message)
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
 
-        if resources[-1] != 'holoviews':
-            get_ipython().magic(u"output backend=%r" % resources[-1]) # noqa (get_ipython))
 
 
     def _get_resources(self, args, params):

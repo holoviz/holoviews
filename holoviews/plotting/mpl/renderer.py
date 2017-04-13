@@ -43,6 +43,9 @@ class MPLRenderer(Renderer):
 
     backend = param.String('matplotlib', doc="The backend name.")
 
+    dpi=param.Integer(72, doc="""
+        The render resolution in dpi (dots per inch)""")
+
     fig = param.ObjectSelector(default='auto',
                                objects=['png', 'svg', 'pdf', 'html', None, 'auto'], doc="""
         Output render format for static figures. If None, no figure
