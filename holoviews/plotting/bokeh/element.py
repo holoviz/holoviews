@@ -38,7 +38,7 @@ if bokeh_version >= '0.12':
 else:
     FuncTickFormatter = None
 
-property_prefixes = ['selection', 'nonselection', 'muted']
+property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
 # Define shared style properties for bokeh plots
 line_properties = ['line_color', 'line_alpha', 'color', 'alpha', 'line_width',
@@ -628,7 +628,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
-        for glyph_type in ('', 'selection_', 'nonselection_'):
+        for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
             if not glyph or (not renderer and glyph_type):
