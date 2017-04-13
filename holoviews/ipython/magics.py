@@ -636,8 +636,8 @@ class OptsMagic(Magics):
 
     @classmethod
     def _format_options_error(cls, err):
-        info = (err.invalid_keyword, err.group_name, ', '.join(err.allowed_keywords))
-        return "Keyword <b>%r</b> not one of following %s options:<br><br><b>%s</b>" % info
+        info = (err.invalid_keyword, ', '.join(err.allowed_keywords))
+        return "Keyword <b>%r</b> not supported by any of the loaded backends. Valid options are :<br><br><b>%s</b>" % info
 
     @classmethod
     def register_custom_spec(cls, spec):
