@@ -1257,7 +1257,7 @@ class StoreOptions(object):
         """
         loaded_backends =  Store.loaded_backends()if backends is None else backends
 
-        error_info     = defaultdict(Keywords)
+        error_info     = {}
         backend_errors = defaultdict(set)
         for backend in loaded_backends:
             cls.start_recording_errors()
@@ -1266,13 +1266,14 @@ class StoreOptions(object):
             cls.apply_customizations(spec, options)
             for error in cls.stop_recording_errors():
                 error_key = (error.invalid_keyword, error.allowed_keywords.target)
-                error_info[error_key] += error.allowed_keywords
+                error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
         for ((keyword, target), backends) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
             if set(backends) == set(loaded_backends):
-                raise OptionError(keyword, allowed_keywords=error_info[(keyword, target)])
+                allowed_keywords = error_info[(keyword, target, Store.current_backend)]
+                raise OptionError(keyword, allowed_keywords=allowed_keywords)
 
 
     @classmethod
