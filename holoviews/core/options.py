@@ -488,10 +488,9 @@ class OptionTree(AttrTree):
         new Options which are passed in.
         """
         override_kwargs = dict(options.kwargs)
-        allowed_kws = [] if options.allowed_keywords is None else options.allowed_keywords
-        old_allowed = self[identifier][group_name].allowed_keywords if identifier in self.children else []
-        old_allowed = [] if old_allowed is None else old_allowed
-        override_kwargs['allowed_keywords'] = sorted(set(allowed_kws + old_allowed))
+        old_allowed = (self[identifier][group_name].allowed_keywords
+                       if identifier in self.children else Keywords())
+        override_kwargs['allowed_keywords'] = options.allowed_keywords + old_allowed
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
