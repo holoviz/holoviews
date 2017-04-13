@@ -41,7 +41,7 @@ import numpy as np
 
 import param
 from .tree import AttrTree
-from .util import sanitize_identifier, group_sanitizer,label_sanitizer
+from .util import sanitize_identifier, group_sanitizer,label_sanitizer, basestring
 from .pprint import InfoPrinter
 
 
@@ -123,6 +123,56 @@ class abbreviated_exception(object):
     def __exit__(self, etype, value, traceback):
         if isinstance(value, Exception):
             raise AbbreviatedException(etype, value, traceback)
+
+
+class Keywords(param.Parameterized):
+    """
+    A keywords objects represents a set of Python keywords. It is
+    list-like and ordered but it is also a set without duplicates. When
+    passed as **kwargs, Python keywords are not ordered but this class
+    always lists keywords in sorted order.
+
+    In addition to containing the list of keywords, Keywords has an
+    optional target which describes what the keywords are applicable to.
+
+    This class is for internal use only and should not be in the user
+    namespace.
+    """
+
+    values = param.List(doc="Set of keywords as a sorted list.")
+
+    target = param.String(allow_None=True, doc="""
+       Optional string description of what the keywords apply to.""")
+
+    def __init__(self, values=[], target=None):
+
+        strings = [isinstance(v, (str,basestring)) for v in values]
+        if False in strings:
+            raise ValueError('All keywords must be strings: {0}'.format(values))
+        super(Keywords, self).__init__(values=sorted(values),
+                                              target=target)
+
+    def __add__(self, other):
+        if (self.target and other.target) and (self.target != other.target):
+            raise Exception('Targets must match to combine Keywords')
+        target = self.target or other.target
+        return Keywords(sorted(set(self.values + other.values)), target=target)
+
+    def __repr__(self):
+        if self.target:
+            msg = 'Keywords({values}, target={target})'
+            info = dict(values=self.values, target=self.target)
+        else:
+            msg = 'Keywords({values})'
+            info = dict(values=self.values)
+        return msg.format(**info)
+
+    def __str__(self):           return str(self.values)
+    def __iter__(self):          return iter(self.values)
+    def __bool__(self):          return bool(self.values)
+    def __nonzero__(self):       return bool(self.values)
+    def __contains__(self, val): return val in self.values
+
 
 
 class Cycle(param.Parameterized):
