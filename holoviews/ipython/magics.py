@@ -244,8 +244,8 @@ class OutputMagic(OptionsMagic):
                             ('info'        , False),
                             ('css'         , None)])
 
-    # Defines the options the OutputMagic remembers the remainder
-    # is simply state on the backend specific Renderer
+    # Defines the options the OutputMagic remembers. All other options
+    # are held by the backend specific Renderer.
     remembered = ['max_frames', 'max_branches', 'charwidth', 'info', 'filename']
 
     # Remaining backend specific options renderer options
