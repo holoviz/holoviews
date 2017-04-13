@@ -84,7 +84,7 @@ class Renderer(Exporter):
         The full, lowercase name of the rendering backend or third
         part plotting package used e.g 'matplotlib' or 'cairo'.""")
 
-    dpi=param.Integer(72, doc="""
+    dpi=param.Integer(None, doc="""
         The render resolution in dpi (dots per inch)""")
 
     fig = param.ObjectSelector(default='auto', objects=['auto'], doc="""
