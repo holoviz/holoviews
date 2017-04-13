@@ -1229,6 +1229,10 @@ class StoreOptions(object):
             else:
                 customization = {k:(Options(**v) if isinstance(v, dict) else v)
                                  for k,v in spec[key].items()}
+
+            # Set the Keywords target on Options from the {type} part of the key.
+            customization = {k:v.keywords_target(key.split('.')[0])
+                             for k,v in customization.items()}
             options[str(key)] = customization
         return options
 
