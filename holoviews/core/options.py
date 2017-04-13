@@ -34,6 +34,7 @@ Store:
 """
 import pickle
 import traceback
+import difflib
 from contextlib import contextmanager
 from collections import OrderedDict, defaultdict
 
@@ -157,6 +158,13 @@ class Keywords(param.Parameterized):
             raise Exception('Targets must match to combine Keywords')
         target = self.target or other.target
         return Keywords(sorted(set(self.values + other.values)), target=target)
+
+    def fuzzy_match(self, kw):
+        """
+        Given a string, fuzzy match against the Keyword values,
+        returning a list of close matches.
+        """
+        return difflib.get_close_matches(kw, self.values)
 
     def __repr__(self):
         if self.target:
