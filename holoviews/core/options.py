@@ -307,7 +307,7 @@ class Options(param.Parameterized):
     can create a new Options object inheriting the parent options.
     """
 
-    allowed_keywords = param.List(default=None, allow_None=True, doc="""
+    allowed_keywords = param.ClassSelector(class_=Keywords, doc="""
        Optional list of strings corresponding to the allowed keywords.""")
 
     key = param.String(default=None, allow_None=True, doc="""
@@ -327,7 +327,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=None, merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -342,11 +342,12 @@ class Options(param.Parameterized):
             StoreOptions.record_option_error(OptionError(invalid_kw, allowed_keywords))
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
-                         % (repr(invalid_kws), str(sorted(list(set(allowed_keywords))))))
+                         % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = kwargs
         self._options = self._expand_options(kwargs)
-        allowed_keywords = sorted(allowed_keywords) if allowed_keywords else None
+        allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
+                            else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
 
