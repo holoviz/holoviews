@@ -354,7 +354,7 @@ class Renderer(Exporter):
             filename.write(encoded)
             filename.seek(0)
         else:
-            with open(filename, 'w') as f:
+            with open(filename, 'wb') as f:
                 f.write(encoded)
 
 
