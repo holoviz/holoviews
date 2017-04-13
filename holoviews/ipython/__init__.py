@@ -206,6 +206,11 @@ class notebook_extension(param.ParameterizedFunction):
         if css:
             display(HTML(css))
 
+        for r in [r for r in resources if r != 'holoviews']:
+            Store.renderers[r].load_nb(inline=p.inline)
+        if selected_backend is not None:
+            Store.current_backend = selected_backend
+
         resources = list(resources)
         if len(resources) == 0: return
 
@@ -217,9 +222,6 @@ class notebook_extension(param.ParameterizedFunction):
         message = '' if not p.banner else '%s successfully loaded in this cell.' % loaded
         load_hvjs(logo=p.banner, JS=('holoviews' in resources), message = message)
 
-        for r in [r for r in resources if r != 'holoviews']:
-            Store.renderers[r].load_nb(inline=p.inline)
-        Store.current_backend = selected_backend
 
 
     def _get_resources(self, args, params):
