@@ -636,8 +636,34 @@ class OptsMagic(Magics):
 
     @classmethod
     def _format_options_error(cls, err):
-        info = (err.invalid_keyword, ', '.join(err.allowed_keywords))
-        return "Keyword <b>%r</b> not supported by any of the loaded backends. Valid options are :<br><br><b>%s</b>" % info
+        """
+        Return a fuzzy match message string based on the supplied OptionError
+        """
+        allowed_keywords = err.allowed_keywords
+        target = allowed_keywords.target
+        matches = allowed_keywords.fuzzy_match(err.invalid_keyword)
+        if not matches:
+            matches = allowed_keywords.values
+            similarity = 'Possible'
+        else:
+            similarity = 'Similar'
+
+        loaded_backends = Store.loaded_backends()
+        target = 'for {0}'.format(target) if target else ''
+
+        if len(loaded_backends) == 1:
+            loaded=' in loaded backend {0!r}'.format(loaded_backends[0])
+        else:
+            backend_list = ', '.join(['%r'% b for b in loaded_backends[:-1]])
+            loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
+                                                            loaded_backends[-1])
+
+        msg=('Unexpected keyword {kw} {target}{loaded}.<br><br>'
+             '{similarity} keywords in the currently active '
+             '{current_backend} backend are: {matches}')
+        return msg.format(kw="'%s'" % err.invalid_keyword, target=target,
+                          loaded=loaded, similarity=similarity,
+                          current_backend=repr(Store.current_backend), matches=matches)
 
     @classmethod
     def register_custom_spec(cls, spec):
