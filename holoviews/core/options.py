@@ -1247,22 +1247,25 @@ class StoreOptions(object):
         Only useful when invalid keywords generate exceptions instead of
         skipping i.e Options.skip_invalid is False.
         """
-        backends =  Store.loaded_backends()if backends is None else backends
+        loaded_backends =  Store.loaded_backends()if backends is None else backends
 
-        error_info = defaultdict(set)
-        for backend in backends:
+        error_info     = defaultdict(Keywords)
+        backend_errors = defaultdict(set)
+        for backend in loaded_backends:
             cls.start_recording_errors()
             options = OptionTree(items=Store.options(backend).data.items(),
                                  groups=Store.options(backend).groups)
             cls.apply_customizations(spec, options)
             for error in cls.stop_recording_errors():
-                error_info[(error.invalid_keyword, backend)] |= set(error.allowed_keywords)
+                error_key = (error.invalid_keyword, error.allowed_keywords.target)
+                error_info[error_key] += error.allowed_keywords
+                backend_errors[error_key].add(backend)
 
-        for key in set(k for k,_ in error_info.keys()):
-            if set([(key, b) for b in backends]).issubset(set(error_info.keys())):
-                all_allowed = [ error_info[(key,b)] for b in backends ]
-                allowed_union = set().union(*all_allowed)
-                raise OptionError(key, allowed_keywords=sorted(allowed_union))
+        for ((keyword, target), backends) in backend_errors.items():
+            # If the keyword failed for the target across all loaded backends...
+            if set(backends) == set(loaded_backends):
+                raise OptionError(keyword, allowed_keywords=error_info[(keyword, target)])
+
 
     @classmethod
     def expand_compositor_keys(cls, spec):
