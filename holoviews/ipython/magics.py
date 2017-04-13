@@ -347,7 +347,7 @@ class OutputMagic(OptionsMagic):
         # Make backup of previous options
         prev_backend = Store.current_backend
         prev_renderer = Store.renderers[prev_backend]
-        prev_mode = prev_renderer.mode
+        prev_backend_spec = prev_backend+':'+prev_renderer.mode
         prev_params = {k: v for k, v in prev_renderer.get_param_values()
                        if k in self.render_params}
         prev_restore = dict(OutputMagic.options)
@@ -357,18 +357,18 @@ class OutputMagic(OptionsMagic):
 
             # Make backup of options on selected renderer
             if 'backend' in new_options:
-                backend = new_options['backend']
-                if ':' not in backend:
-                    backend += ':default'
+                backend_spec = new_options['backend']
+                if ':' not in backend_spec:
+                    backend_spec += ':default'
             else:
-                backend = prev_backend+':'+prev_mode
-            renderer = Store.renderers[backend.split(':')[0]]
+                backend_spec = prev_backend_spec
+            renderer = Store.renderers[backend_spec.split(':')[0]]
             render_params = {k: v for k, v in renderer.get_param_values()
                              if k in self.render_params}
 
             # Set options on selected renderer and set display hook options
             OutputMagic.options = new_options
-            self._set_render_options(new_options, backend)
+            self._set_render_options(new_options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
             OutputMagic.options = prev_restore
@@ -382,10 +382,10 @@ class OutputMagic(OptionsMagic):
             # After cell magic restore previous options and restore
             # temporarily selected renderer
             OutputMagic.options = prev_restore
-            self._set_render_options(render_params, backend)
-            if backend.split(':')[0] != prev_backend:
+            self._set_render_options(render_params, backend_spec)
+            if backend_spec.split(':')[0] != prev_backend:
                 self.set_backend(prev_backend)
-                self._set_render_options(prev_params, prev_backend+':'+prev_mode)
+                self._set_render_options(prev_params, prev_backend_spec)
 
 
     @classmethod
@@ -394,31 +394,31 @@ class OutputMagic(OptionsMagic):
         Switch default options and backend if new backend
         is supplied in items.
         """
+        # Get new backend
+        backend_spec = items.get('backend', Store.current_backend)
+        split = backend_spec.split(':')
+        backend, mode = split if len(split)==2 else (split[0], 'default')
+        if ':' not in backend_spec:
+            backend_spec += ':default'
+
         # Get previous backend
         prev_backend = Store.current_backend
         renderer = Store.renderers[prev_backend]
-        prev_backend += ':%s' % renderer.mode
-
-        # Get new backend
-        backend = items.get('backend', Store.current_backend)
-        split = backend.split(':')
-        core_backend, mode = split if len(split)==2 else (split[0], 'default')
-        if ':' not in backend:
-            backend += ':default'
+        prev_backend_spec = prev_backend+':'+renderer.mode
 
         # Update allowed formats
         for p in ['fig', 'holomap']:
-            cls.allowed[p] = list_formats(p, backend)
+            cls.allowed[p] = list_formats(p, backend_spec)
 
         # Return if backend invalid and let validation error
-        if core_backend not in Store.renderers:
-            options['backend'] = core_backend
+        if backend not in Store.renderers:
+            options['backend'] = backend_spec
             return options
 
         # Get backend specific options
-        backend_options = dict(cls._backend_options[backend])
-        cls._backend_options[prev_backend] = {k: v for k, v in cls.options.items()
-                                              if k in cls.remembered}
+        backend_options = dict(cls._backend_options[backend_spec])
+        cls._backend_options[prev_backend_spec] = {k: v for k, v in cls.options.items()
+                                                   if k in cls.remembered}
 
         # Fill in remembered options with defaults
         for opt in cls.remembered:
@@ -431,8 +431,8 @@ class OutputMagic(OptionsMagic):
                 backend_options[p] = cls.allowed[p][0]
 
         # Ensure backend and mode are set
+        backend_options['backend'] = backend_spec
         backend_options['mode'] = mode
-        backend_options['backend'] = backend
 
         return backend_options
 
