@@ -387,7 +387,7 @@ class Renderer(Exporter):
             backends = [cls.backend] if cls.backend else []
 
         # Get all the widgets and find the set of required js widget files
-        widgets = [wdgt for r in Renderer.__subclasses__()
+        widgets = [wdgt for r in [Renderer]+Renderer.__subclasses__()
                    for wdgt in r.widgets.values()]
         css = list({wdgt.css for wdgt in widgets})
         basejs = list({wdgt.basejs for wdgt in widgets})
