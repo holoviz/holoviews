@@ -76,7 +76,7 @@ class OptionError(Exception):
 
     def message(self, invalid_keyword, allowed_keywords, group_name, path):
         msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(sorted(list(set(allowed_keywords))))))
+               % (repr(invalid_keyword), str(allowed_keywords)))
         if path and group_name:
             msg = ("Invalid key for group %r on path %r;\n"
                     % (group_name, path)) + msg
