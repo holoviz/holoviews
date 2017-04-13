@@ -438,7 +438,7 @@ class OptionTree(AttrTree):
         allowed_kws = [] if options.allowed_keywords is None else options.allowed_keywords
         old_allowed = self[identifier][group_name].allowed_keywords if identifier in self.children else []
         old_allowed = [] if old_allowed is None else old_allowed
-        override_kwargs['allowed_keywords'] = sorted(allowed_kws + old_allowed)
+        override_kwargs['allowed_keywords'] = sorted(set(allowed_kws + old_allowed))
 
         if group_name not in self.groups:
             raise KeyError("Group %s not defined on SettingTree" % group_name)
