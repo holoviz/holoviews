@@ -45,7 +45,10 @@ def process_object(obj):
 
 def render(obj, **kwargs):
     info = process_object(obj)
-    if info: return info
+    if info:
+        IPython.display.display(IPython.display.HTML(info))
+        return
+
 
     if render_anim is not None:
         return render_anim(obj)
@@ -161,7 +164,10 @@ def display_hook(fn):
 @display_hook
 def element_display(element, max_frames, max_branches):
     info = process_object(element)
-    if info: return info
+    if info:
+        IPython.display.display(IPython.display.HTML(info))
+        return
+
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
@@ -258,7 +264,10 @@ def element_png_display(element, max_frames, max_branches):
     if 'png' not in Store.display_formats:
         return None
     info = process_object(element)
-    if info: return info
+    if info:
+        IPython.display.display(IPython.display.HTML(info))
+        return
+
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
@@ -280,7 +289,10 @@ def element_svg_display(element, max_frames, max_branches):
     if 'svg' not in Store.display_formats:
         return None
     info = process_object(element)
-    if info: return info
+    if info:
+        IPython.display.display(IPython.display.HTML(info))
+        return
+
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
