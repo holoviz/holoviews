@@ -347,7 +347,8 @@ class Options(param.Parameterized):
                     raise OptionError(kwarg, allowed_keywords)
 
         for invalid_kw in invalid_kws:
-            StoreOptions.record_option_error(OptionError(invalid_kw, allowed_keywords))
+            error = OptionError(invalid_kw, allowed_keywords, group_name=key)
+            StoreOptions.record_option_error(error)
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
@@ -1264,15 +1265,19 @@ class StoreOptions(object):
                                  groups=Store.options(backend).groups)
             cls.apply_customizations(spec, options)
             for error in cls.stop_recording_errors():
-                error_key = (error.invalid_keyword, error.allowed_keywords.target)
+                error_key = (error.invalid_keyword,
+                             error.allowed_keywords.target,
+                             error.group_name)
                 error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
 
-        for ((keyword, target), backends) in backend_errors.items():
+        for ((keyword, target, group_name), backends) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
             if set(backends) == set(loaded_backends):
-                allowed_keywords = error_info[(keyword, target, Store.current_backend)]
-                raise OptionError(keyword, allowed_keywords=allowed_keywords)
+                key = (keyword, target, group_name, Store.current_backend)
+                raise OptionError(keyword,
+                                  group_name=group_name,
+                                  allowed_keywords=error_info[key])
 
 
     @classmethod
