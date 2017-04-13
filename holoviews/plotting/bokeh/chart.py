@@ -630,7 +630,9 @@ class ChartPlot(LegendPlot):
             self.current_key = key
             self.current_frame = element
 
-        self.style = self.lookup_options(element, 'style')
+        max_cycles = len(self.style._options)
+        self.style = self.lookup_options(style_element, 'style').max_cycles(max_cycles)
+
         self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = match_spec(element, ranges)
