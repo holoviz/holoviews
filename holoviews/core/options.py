@@ -1088,6 +1088,9 @@ class Store(object):
             with param.logging_level('CRITICAL'):
                 plot.style_opts = style_opts
 
+            plot_opts =  Keywords(plot_opts,  target=view_class.__name__)
+            style_opts = Keywords(style_opts, target=view_class.__name__)
+
             opt_groups = {'plot': Options(allowed_keywords=plot_opts)}
             if not isinstance(view_class, CompositeOverlay) or hasattr(plot, 'style_opts'):
                  opt_groups.update({'style': Options(allowed_keywords=style_opts),
