@@ -352,12 +352,7 @@ class Layout(AttrTree, Dimensioned):
     their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
-    with the cols method and the display policy is set with the
-    display method. A display policy of 'auto' may use the string repr
-    of the tree for large trees that would otherwise take a long time
-    to display wheras a policy of 'all' will always display all the
-    available leaves. The detailed settings for the 'auto' policy may
-    be set using the max_branches option of the %output magic.
+    with the cols method.
     """
 
     group = param.String(default='Layout', constant=True)
