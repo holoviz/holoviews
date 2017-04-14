@@ -22,7 +22,7 @@ from ..core import (ElementOperation, Element, Dimension, NdOverlay,
                     Overlay, CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
-from ..element import GridImage, Image, Path, Curve, Contours, RGB
+from ..element import Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY
 
 
@@ -117,7 +117,7 @@ class aggregate(ElementOperation):
         for dynamic interaction with the plot.""")
 
     element_type = param.ClassSelector(class_=(Dataset,), instantiate=False,
-                                        is_instance=False, default=GridImage,
+                                        is_instance=False, default=Image,
                                         doc="""
         The type of the returned Elements, must be a 2D Dataset type.""")
 
@@ -267,7 +267,7 @@ class shade(ElementOperation):
     @classmethod
     def concatenate(cls, overlay):
         """
-        Concatenates an NdOverlay of GridImage types into a single 3D
+        Concatenates an NdOverlay of Image types into a single 3D
         xarray Dataset.
         """
         if not isinstance(overlay, NdOverlay):
@@ -409,10 +409,10 @@ class dynspread(ElementOperation):
                             how=self.p.how, shape=self.p.shape).data
 
     def _process(self, element, key=None):
-        if not isinstance(element, (Image, GridImage)):
+        if not isinstance(element, Image):
             raise ValueError('dynspread can only be applied to Image Elements.')
 
-        if isinstance(element, GridImage):
+        if isinstance(element, Image):
             new_data = {kd.name: element.dimension_values(kd, expanded=False)
                         for kd in element.kdims}
             for vd in element.vdims:
