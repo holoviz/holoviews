@@ -198,14 +198,9 @@ def layout_display(layout, max_frames, max_branches):
     if not isinstance(layout, (Layout, NdLayout)): return None
 
     nframes = len(unique_dimkeys(layout)[1])
-    if isinstance(layout, Layout):
-        if layout._display == 'auto':
-            branches = len(set([path[0] for path in list(layout.data.keys())]))
-            if branches > max_branches:
-                return '<tt>'+ sanitize_HTML(layout) + '</tt>'
-            elif len(layout.data) * nframes > max_frames:
-                max_frame_warning(max_frames)
-                return '<tt>'+ sanitize_HTML(layout) + '</tt>'
+    if nframes > max_frames:
+        max_frame_warning(max_frames)
+        return '<tt>'+ sanitize_HTML(layout) + '</tt>'
 
     return render(layout)
 
