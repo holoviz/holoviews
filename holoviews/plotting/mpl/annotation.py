@@ -84,7 +84,8 @@ class ArrowPlot(AnnotationPlot):
     style_opts = sorted(set(_arrow_style_opts + _text_style_opts))
 
     def draw_annotation(self, axis, data, opts):
-        direction, text, xy, points, arrowstyle = data
+        x, y, text, direction, points, arrowstyle = data
+        direction = direction.lower()
         arrowprops = dict({'arrowstyle':arrowstyle},
                           **{k: opts[k] for k in self._arrow_style_opts if k in opts})
         textopts = {k: opts[k] for k in self._text_style_opts if k in opts}
@@ -92,7 +93,7 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
-        return [axis.annotate(text, xy=xy, textcoords='offset points',
+        return [axis.annotate(text, xy=(x, y), textcoords='offset points',
                               xytext=xytext, ha="center", va="center",
                               arrowprops=arrowprops, **textopts)]
 
