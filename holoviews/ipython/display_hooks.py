@@ -130,7 +130,7 @@ def display_hook(fn):
         try:
             html = fn(element,
                       max_frames=OutputMagic.options['max_frames'],
-                      max_branches = OutputMagic.options['max_branches'])
+                      max_branches = None)
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
