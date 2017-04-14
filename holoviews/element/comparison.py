@@ -214,23 +214,23 @@ class Comparison(ComparisonInterface):
 
 
     @classmethod
-    def compare_lists(cls, l1, l2, msg='Lists'):
+    def compare_lists(cls, l1, l2, msg=None):
         try:
             cls.assertEqual(len(l1), len(l2))
             for v1, v2 in zip(l1, l2):
                 cls.assertEqual(v1, v2)
         except AssertionError:
-            raise AssertionError('%s != %s' % (repr(l1), repr(l2)))
+            raise AssertionError(msg or '%s != %s' % (repr(l1), repr(l2)))
 
 
     @classmethod
-    def compare_tuples(cls, t1, t2, msg='Tuples'):
+    def compare_tuples(cls, t1, t2, msg=None):
         try:
             cls.assertEqual(len(t1), len(t2))
             for i1, i2 in zip(t1, t2):
                 cls.assertEqual(i1, i2)
         except AssertionError:
-            raise AssertionError('%s != %s' % (repr(t1), repr(t2)))
+            raise AssertionError(msg or '%s != %s' % (repr(t1), repr(t2)))
 
 
     #=====================#
