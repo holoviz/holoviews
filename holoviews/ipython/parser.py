@@ -211,6 +211,8 @@ class OptsSpec(Parser):
                'show_xaxis':      'xaxis',
                'show_yaxis':      'yaxis'}
 
+    deprecations = [('GridImage', 'Image')]
+
     @classmethod
     def process_normalization(cls, parse_group):
         """
@@ -306,6 +308,17 @@ class OptsSpec(Parser):
 
         return merged
 
+    @classmethod
+    def apply_deprecations(cls, path):
+        "Convert any potentially deprecated paths and issue appropriate warnings"
+        split = path.split('.')
+        msg = 'Element {old} deprecated. Use {new} instead.'
+        for old, new in cls.deprecations:
+            if split[0] == old:
+                parsewarning.warning(msg.format(old=old, new=new))
+                return '.'.join([new] + split[1:])
+        return path
+
 
     @classmethod
     def parse(cls, line, ns={}):
@@ -345,7 +358,7 @@ class OptsSpec(Parser):
                 parse[pathspec] = cls._merge_options(parse.get(pathspec, {}), options)
 
         return {
-            path: {
+            cls.apply_deprecations(path): {
                 option_type: Options(**option_pairs)
                 for option_type, option_pairs in options.items()
             }

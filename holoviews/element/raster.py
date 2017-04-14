@@ -393,7 +393,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         return self.sheet2matrixidx(*coord)
 
 
-GridImage = Image
+class GridImage(Image):
+    def __init__(self, *args, **kwargs):
+        self.warning('GridImage is now deprecated. Please use Image element instead.')
+        super(GridImage, self).__init__(*args, **kwargs)
 
 
 class RGB(Image):
