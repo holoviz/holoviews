@@ -352,12 +352,7 @@ class Layout(AttrTree, Dimensioned):
     their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
-    with the cols method and the display policy is set with the
-    display method. A display policy of 'auto' may use the string repr
-    of the tree for large trees that would otherwise take a long time
-    to display wheras a policy of 'all' will always display all the
-    available leaves. The detailed settings for the 'auto' policy may
-    be set using the max_branches option of the %output magic.
+    with the cols method.
     """
 
     group = param.String(default='Layout', constant=True)
@@ -365,7 +360,6 @@ class Layout(AttrTree, Dimensioned):
     _deep_indexable = True
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
-        self.__dict__['_display'] = 'auto'
         self.__dict__['_max_cols'] = 4
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
@@ -474,7 +468,6 @@ class Layout(AttrTree, Dimensioned):
         # Standard relabel method except _max_cols and _display transferred
         relabelled = super(Layout, self).relabel(label=label, group=group, depth=depth)
         relabelled.__dict__['_max_cols'] = self.__dict__['_max_cols']
-        relabelled.__dict__['_display'] = self.__dict__['_display']
         return relabelled
 
     def clone(self, *args, **overrides):
@@ -483,7 +476,6 @@ class Layout(AttrTree, Dimensioned):
         display mode is also propagated.
         """
         clone = super(Layout, self).clone(*args, **overrides)
-        clone._display = self._display
         clone._max_cols = self._max_cols
         clone.id = self.id
         return clone
@@ -510,16 +502,12 @@ class Layout(AttrTree, Dimensioned):
 
     def display(self, option):
         "Sets the display policy of the Layout before returning self"
-        options = ['auto', 'all']
-        if option not in options:
-            raise Exception("Display option must be one of %s" %
-                            ','.join(repr(el) for el in options))
-        self._display = option
+        self.warning('Layout display option is deprecated and no longer needs to be used')
         return self
 
 
     def select(self, selection_specs=None, **selections):
-        return super(Layout, self).select(selection_specs, **selections).display(self._display)
+        return super(Layout, self).select(selection_specs, **selections)
 
 
     def grid_items(self):
@@ -557,7 +545,7 @@ class Layout(AttrTree, Dimensioned):
 
 
     def __add__(self, other):
-        return Layout.from_values([self, other]).display('all')
+        return Layout.from_values([self, other])
 
 
 
