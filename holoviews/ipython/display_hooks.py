@@ -129,8 +129,7 @@ def display_hook(fn):
 
         try:
             html = fn(element,
-                      max_frames=OutputMagic.options['max_frames'],
-                      max_branches = None)
+                      max_frames=OutputMagic.options['max_frames'])
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
@@ -162,7 +161,7 @@ def display_hook(fn):
 
 
 @display_hook
-def element_display(element, max_frames, max_branches):
+def element_display(element, max_frames):
     info = process_object(element)
     if info:
         IPython.display.display(IPython.display.HTML(info))
@@ -181,7 +180,7 @@ def element_display(element, max_frames, max_branches):
 
 
 @display_hook
-def map_display(vmap, max_frames, max_branches):
+def map_display(vmap, max_frames):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
     if len(vmap) == 0 and (not isinstance(vmap, DynamicMap) or vmap.sampled):
         return sanitize_HTML(vmap)
@@ -193,7 +192,7 @@ def map_display(vmap, max_frames, max_branches):
 
 
 @display_hook
-def layout_display(layout, max_frames, max_branches):
+def layout_display(layout, max_frames):
     if isinstance(layout, AdjointLayout): layout = Layout.from_values(layout)
     if not isinstance(layout, (Layout, NdLayout)): return None
 
@@ -206,7 +205,7 @@ def layout_display(layout, max_frames, max_branches):
 
 
 @display_hook
-def grid_display(grid, max_frames, max_branches):
+def grid_display(grid, max_frames):
     if not isinstance(grid, GridSpace): return None
 
     nframes = len(unique_dimkeys(grid)[1])
@@ -252,7 +251,7 @@ def pprint_display(obj):
 
 
 @display_hook
-def element_png_display(element, max_frames, max_branches):
+def element_png_display(element, max_frames):
     """
     Used to render elements to PNG if requested in the display formats.
     """
@@ -277,7 +276,7 @@ def element_png_display(element, max_frames, max_branches):
 
 
 @display_hook
-def element_svg_display(element, max_frames, max_branches):
+def element_svg_display(element, max_frames):
     """
     Used to render elements to SVG if requested in the display formats.
     """
