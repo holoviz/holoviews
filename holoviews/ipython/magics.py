@@ -219,7 +219,7 @@ class OutputMagic(OptionsMagic):
                'widgets'     : ['embed', 'live'],
                'fps'         : (0, float('inf')),
                'max_frames'  : (0, float('inf')),
-               'max_branches': (0, float('inf')),
+               'max_branches': {None},            # Deprecated
                'size'        : (0, float('inf')),
                'dpi'         : (1, float('inf')),
                'charwidth'   : (0, float('inf')),
@@ -236,7 +236,6 @@ class OutputMagic(OptionsMagic):
                             ('widgets'     , None),
                             ('fps'         , None),
                             ('max_frames'  , 500),
-                            ('max_branches', 2),
                             ('size'        , None),
                             ('dpi'         , None),
                             ('charwidth'   , 80),
@@ -246,7 +245,7 @@ class OutputMagic(OptionsMagic):
 
     # Defines the options the OutputMagic remembers. All other options
     # are held by the backend specific Renderer.
-    remembered = ['max_frames', 'max_branches', 'charwidth', 'info', 'filename']
+    remembered = ['max_frames', 'charwidth', 'info', 'filename']
 
     # Remaining backend specific options renderer options
     render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css', 'widget_mode', 'mode']
@@ -274,7 +273,7 @@ class OutputMagic(OptionsMagic):
             raise ValueError("Backend %r does not exist" % value)
 
     custom_exceptions = {'holomap':missing_dependency_exception,
-                         'backend': missing_backend_exception }
+                         'backend': missing_backend_exception}
 
     # Counter for nbagg figures
     nbagg_counter = 0
@@ -303,8 +302,6 @@ class OutputMagic(OptionsMagic):
                   % renderer.fps)
         frames=  ("max_frames   : The max number of frames rendered (default %r)"
                   % cls.defaults['max_frames'])
-        branches=("max_branches : The max number of Layout branches rendered (default %r)"
-                  % cls.defaults['max_branches'])
         size =   ("size         : The percentage size of displayed output (default %r)"
                   % renderer.size)
         dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
@@ -317,7 +314,7 @@ class OutputMagic(OptionsMagic):
                   % cls.defaults['info'])
         css =   ("css     : Optional css style attributes to apply to the figure image tag")
 
-        descriptions = [backend, fig, holomap, widgets, fps, frames, branches, size, dpi, chars, fname, page, css]
+        descriptions = [backend, fig, holomap, widgets, fps, frames, size, dpi, chars, fname, page, css]
         return '\n'.join(intro + descriptions)
 
 
@@ -400,6 +397,10 @@ class OutputMagic(OptionsMagic):
         backend, mode = split if len(split)==2 else (split[0], 'default')
         if ':' not in backend_spec:
             backend_spec += ':default'
+
+        if 'max_branches' in items:
+            print('Warning: The max_branches option is now deprecated. Ignoring.')
+            del items['max_branches']
 
         # Get previous backend
         prev_backend = Store.current_backend
