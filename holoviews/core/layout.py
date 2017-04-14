@@ -529,6 +529,9 @@ class Layout(AttrTree, Dimensioned):
             if key < len(self):
                 return self.data.values()[key]
             raise KeyError("Element out of range.")
+        elif isinstance(key, slice):
+            raise KeyError("A Layout may not be sliced, ensure that you "
+                           "are slicing on a leaf (i.e. not a branch) of the Layout.")
         if len(key) == 2 and not any([isinstance(k, str) for k in key]):
             if key == (slice(None), slice(None)): return self
             row, col = key
