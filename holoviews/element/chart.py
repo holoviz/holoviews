@@ -384,3 +384,20 @@ class Area(Curve):
     """
 
     group = param.String(default='Area', constant=True)
+
+    @classmethod
+    def stack(cls, areas):
+        """
+        Stacks an (Nd)Overlay of Area or Curve Elements by offsetting
+        their baselines. To stack a HoloMap or DynamicMap use the
+        stack_area Element operation or apply it using the map method.
+        """
+        baseline = np.zeros(len(areas.get(0)))
+        stacked = areas.clone(shared_data=False)
+        vdims = [areas.get(0).vdims[0], 'Baseline']
+        for k, area in areas.items():
+            x, y = (area.dimension_values(i) for i in range(2))
+            stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
+                                    new_type=Area)
+            baseline += y
+        return stacked
