@@ -63,6 +63,15 @@ class Element(ViewableElement, Composable, Overlayable):
             raise NotImplementedError("%s currently does not support getitem" %
                                       type(self).__name__)
 
+    def __nonzero__(self):
+        """
+        Subclasses may override this to signal that the Element contains
+        no data and can safely be dropped during indexing.
+        """
+        return True
+
+    __bool__ = __nonzero__
+
 
     @classmethod
     def collapse_data(cls, data, function=None, kdims=None, **kwargs):

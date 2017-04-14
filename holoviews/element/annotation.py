@@ -30,6 +30,8 @@ class Annotation(Element2D):
     def __init__(self, data, **params):
         super(Annotation, self).__init__(data, **params)
 
+    def __len__(self):
+        return 1
 
     def __getitem__(self, key):
         if key in self.dimensions(): return self.dimension_values(key)
@@ -146,16 +148,31 @@ class Arrow(Annotation):
     def __init__(self, x, y, text='', direction='<',
                  points=40, arrowstyle='->', **params):
 
-        info = (direction.lower(), text, (x,y), points, arrowstyle)
+        info = (x, y, text, direction, points, arrowstyle)
         super(Arrow, self).__init__(info, x=x, y=y,
                                     text=text, direction=direction,
                                     points=points, arrowstyle=arrowstyle,
                                     **params)
 
+    def __setstate__(self, d):
+        """
+        Add compatibility for unpickling old Arrow types with different
+        .data format.
+        """
+        super(Arrow, self).__setstate__(d)
+        if len(self.data) == 5:
+            direction, text, (x, y), points, arrowstyle = self.data
+            self.data = (x, y, text, direction, points, arrowstyle)
+
+
     # Note: This version of clone is identical in Text and path.BaseShape
     # Consider implementing a mix-in class if it is needed again.
     def clone(self, *args, **overrides):
-        settings = dict(self.get_param_values(), **overrides)
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+        arg_names = ['x', 'y', 'text', 'direction', 'points', 'arrowstyle']
+        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
+                    if k not in arg_names[:len(args)]}
         return self.__class__(*args, **settings)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
@@ -165,7 +182,7 @@ class Arrow(Annotation):
         elif index == 1:
             return np.array([self.y])
         else:
-            return super(Text, self).dimension_values(dimension)
+            return super(Arrow, self).dimension_values(dimension)
 
 
 
@@ -205,5 +222,9 @@ class Text(Annotation):
                                    halign=halign, valign=valign, **params)
 
     def clone(self, *args, **overrides):
-        settings = dict(self.get_param_values(), **overrides)
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+        arg_names = ['x', 'y', 'text', 'fontsize', 'halign', 'valign', 'rotation']
+        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
+                    if k not in arg_names[:len(args)]}
         return self.__class__(*args, **settings)
