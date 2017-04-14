@@ -154,6 +154,17 @@ class Arrow(Annotation):
                                     points=points, arrowstyle=arrowstyle,
                                     **params)
 
+    def __setstate__(self, d):
+        """
+        Add compatibility for unpickling old Arrow types with different
+        .data format.
+        """
+        super(Arrow, self).__setstate__(d)
+        if len(self.data) == 5:
+            direction, text, (x, y), points, arrowstyle = self.data
+            self.data = (x, y, text, direction, points, arrowstyle)
+
+
     # Note: This version of clone is identical in Text and path.BaseShape
     # Consider implementing a mix-in class if it is needed again.
     def clone(self, *args, **overrides):
