@@ -80,7 +80,8 @@ class Dynamic(param.ParameterizedFunction):
         else:
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
-                _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
+                safe_key = () if not map_obj.kdims else key
+                el = map_obj[key]
                 return self._process(el, key)
         if isinstance(self.p.operation, ElementOperation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],

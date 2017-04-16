@@ -135,7 +135,15 @@ class Overlay(Layout, CompositeOverlay):
 
 
     def __mul__(self, other):
-        if not isinstance(other, ViewableElement):
+        if type(other).__name__ == 'DynamicMap':
+            from .spaces import OverlayCallable
+            def dynamic_mul(*args, **kwargs):
+                element = other[args]
+                return self * element
+            callback = OverlayCallable(dynamic_mul, inputs=[self, other])
+            return other.clone(shared_data=False, callback=callback,
+                               streams=[])
+        elif not isinstance(other, ViewableElement):
             raise NotImplementedError
         return Overlay.from_values([self, other])
 
