@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from collections import defaultdict
 
 import numpy as np
 import param
@@ -310,39 +309,6 @@ def attach_streams(plot, obj):
             if plot.refresh not in stream._subscribers:
                 stream.add_subscriber(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
-
-
-def get_sources(obj, branch=0, isbranch=True):
-    """
-    Traverses Callable graph to resolve sources on DynamicMap objects,
-    returning a dictionary of sources indexed by the Overlay layer. The
-    branch and isbranch variables are used for internal record-keeping
-    while recursing through the graph.
-    """
-    inputs = defaultdict(list)
-    if not isinstance(obj, DynamicMap):
-        inputs[branch].append(obj)
-        return inputs
-
-    isbranch = isbranch and isinstance(obj.last, CompositeOverlay)
-    if isbranch and isinstance(obj.callback, OverlayCallable):
-        # Detects root branches of dynamic overlays and iterates into them
-        inputs[None].append(obj)
-        offset = 0
-        for i, inp in enumerate(obj.callback.inputs):
-            dinputs = get_sources(inp, branch=i+offset)
-            offset += max(dinputs.keys())-(i+offset)
-            for k, v in dinputs.items():
-                inputs[k] = list(unique_iterator(inputs[k]+dinputs[k]))
-    else:
-        # Traverses into any non-overlay nodes in the callable graph
-        inputs[branch].append(obj)
-        for inp in obj.callback.inputs:
-            dinputs = get_sources(inp, branch=branch, isbranch=isbranch)
-            for k, v in dinputs.items():
-                inputs[k] = list(unique_iterator((inputs[k]+dinputs[k])))
-
-    return inputs
 
 
 def traverse_setter(obj, attribute, value):

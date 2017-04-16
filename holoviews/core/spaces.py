@@ -4,6 +4,7 @@ from numbers import Number
 from itertools import groupby
 from functools import partial
 from contextlib import contextmanager
+from collections import defaultdict
 
 import numpy as np
 import param
@@ -522,6 +523,45 @@ def get_nested_streams(dmap):
     return list(set(layer_streams))
 
 
+
+def get_sources(obj, branch=0, isbranch=True):
+    """
+    Traverses Callable graph to resolve sources on DynamicMap objects,
+    returning a dictionary of sources indexed by the Overlay layer. The
+    branch and isbranch variables are used for internal record-keeping
+    while recursing through the graph.
+    """
+    inputs = defaultdict(list)
+    if not isinstance(obj, DynamicMap):
+        if isinstance(obj, CompositeOverlay):
+            for i, o in enumerate(obj):
+                inputs[branch+i] = [o, obj]
+        else:
+            if obj not in inputs[branch]:
+                inputs[branch].append(obj)
+        return inputs
+
+    isbranch = isinstance(obj.last, CompositeOverlay)
+    if isbranch and isinstance(obj.callback, OverlayCallable):
+        # Detects root branches of dynamic overlays and iterates into them
+        offset = 0
+        for i, inp in enumerate(obj.callback.inputs):
+            dinputs = get_sources(inp, branch=i+offset, isbranch=isbranch)
+            offset += max(dinputs.keys())-(i+offset)
+            for k, v in dinputs.items():
+                inputs[k] = list(util.unique_iterator(inputs[k]+dinputs[k]))
+    else:
+        # Traverses into any non-overlay nodes in the callable graph
+        if obj not in inputs[branch] and not isbranch:
+            inputs[branch].append(obj)
+        for inp in obj.callback.inputs:
+            dinputs = get_sources(inp, branch=branch, isbranch=isbranch)
+            for k, v in dinputs.items():
+                inputs[k] = list(util.unique_iterator((inputs[k]+dinputs[k])))
+
+    return inputs
+
+
 @contextmanager
 def dynamicmap_memoization(callable_obj, streams):
     """
@@ -699,11 +739,14 @@ class DynamicMap(HoloMap):
 
         # Ensure the clone references this object to ensure
         # stream sources are inherited
-        if clone.callback is self.callback:
-            clone.callback = self.callback.clone()
-        if self not in clone.callback.inputs:
+        if isinstance(clone.callback, OverlayCallable):
+            from ..util import Dynamic
+            return Dynamic(clone)
+        elif clone.callback is self.callback:
+            clone.callback = clone.callback.clone()
+        if self not in [inp for inputs in get_sources(clone).values() for inp in inputs]:
             with util.disable_constant(clone.callback):
-                clone.callback.inputs = clone.callback.inputs+[self]
+                clone.callback.inputs = [self]+self.callback.inputs
         return clone
 
 
