@@ -23,7 +23,6 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import (Store, HoloMap, Overlay, DynamicMap,
                      CompositeOverlay, Element, Dimension)
 from ...core.options import abbreviated_exception, SkipRendering
-from ...core.spaces import get_sources
 from ...core import util
 from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
@@ -191,9 +190,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes any callbacks for streams which have defined
         the plotted object as a source.
         """
+        if isinstance(self, OverlayPlot):
+            zorders = []
+        elif self.batched:
+            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
+        else:
+            zorders = [self.zorder]
         if not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [(i, o) for i, inputs in get_sources(self.hmap).items()
-                       for o in inputs if i in [None, self.zorder]]
+            sources = [(i, o) for i, inputs in self.stream_sources.items()
+                       for o in inputs if i in zorders]
         else:
             sources = [(self.zorder, self.hmap.last)]
         cb_classes = set()
@@ -208,6 +213,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cb_streams = [s for _, s in group]
             cbs.append(cb(self, cb_streams, source))
         return cbs
+
 
     def _hover_opts(self, element):
         if self.batched:

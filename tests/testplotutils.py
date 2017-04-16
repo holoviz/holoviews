@@ -1,6 +1,7 @@
 from unittest import SkipTest
 
-from holoviews.core.spaces import DynamicMap, get_sources
+from holoviews import NdOverlay
+from holoviews.core.spaces import DynamicMap, get_stream_sources
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Curve, Area
@@ -15,32 +16,33 @@ except:
 
 class TestPlotUtils(ComparisonTestCase):
 
-    def test_dynamic_get_sources_two_mixed_layers(self):
+    def test_dynamic_get_stream_sources_two_mixed_layers(self):
         area = Area(range(10))
-        dmap = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve = Curve(range(10))
+        dmap = DynamicMap(lambda: curve, kdims=[])
         combined = area*dmap
         combined[()]
-        sources = get_sources(combined)
+        sources = get_stream_sources(combined)
         self.assertEqual(sources[0], [area])
-        self.assertEqual(sources[1], [dmap])
+        self.assertEqual(sources[1], [dmap, curve])
 
-    def test_dynamic_get_sources_two_dynamic_layers(self):
+    def test_dynamic_get_stream_sources_two_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
         dmap = DynamicMap(lambda: Curve(range(10)), kdims=[])
         combined = area*dmap
         combined[()]
-        sources = get_sources(combined)
+        sources = get_stream_sources(combined)
         self.assertEqual(sources[0], [area])
         self.assertEqual(sources[1], [dmap])
 
-    def test_dynamic_get_sources_two_deep_dynamic_layers(self):
+    def test_dynamic_get_stream_sources_two_deep_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
         curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
         area_redim = area.redim(x='x2')
         curve_redim = curve.redim(x='x2')
         combined = area_redim*curve_redim
         combined[()]
-        sources = get_sources(combined)
+        sources = get_stream_sources(combined)
         self.assertIn(area_redim, sources[0])
         self.assertIn(area, sources[0])
         self.assertNotIn(curve_redim, sources[0])
@@ -50,7 +52,7 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(area_redim, sources[1])
         self.assertNotIn(area, sources[1])
 
-    def test_dynamic_get_sources_three_deep_dynamic_layers(self):
+    def test_dynamic_get_stream_sources_three_deep_dynamic_layers(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
         curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
         curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
@@ -60,7 +62,7 @@ class TestPlotUtils(ComparisonTestCase):
         combined = area_redim*curve_redim
         combined1 = (combined*curve2_redim)
         combined1[()]
-        sources = get_sources(combined1)
+        sources = get_stream_sources(combined1)
         self.assertIn(area_redim, sources[0])
         self.assertIn(area, sources[0])
         self.assertNotIn(curve_redim, sources[0])
@@ -82,7 +84,7 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(curve_redim, sources[2])
         self.assertNotIn(curve, sources[2])
 
-    def test_dynamic_get_sources_three_deep_dynamic_layers_cloned(self):
+    def test_dynamic_get_stream_sources_three_deep_dynamic_layers_cloned(self):
         area = DynamicMap(lambda: Area(range(10)), kdims=[])
         curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
         curve2 = DynamicMap(lambda: Curve(range(10)), kdims=[])
@@ -92,7 +94,7 @@ class TestPlotUtils(ComparisonTestCase):
         combined = area_redim*curve_redim
         combined1 = (combined*curve2_redim).redim(y='y2')
         combined1[()]
-        sources = get_sources(combined1)
+        sources = get_stream_sources(combined1)
         self.assertIn(area_redim, sources[0])
         self.assertIn(area, sources[0])
         self.assertNotIn(curve_redim, sources[0])
@@ -114,7 +116,7 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(curve_redim, sources[2])
         self.assertNotIn(curve, sources[2])
 
-    def test_dynamic_get_sources_mixed_dynamic_and_non_dynamic_overlays(self):
+    def test_dynamic_get_stream_sources_mixed_dynamic_and_non_dynamic_overlays(self):
         area1 = Area(range(10))
         area2 = Area(range(10))
         overlay = area1 * area2
@@ -122,7 +124,7 @@ class TestPlotUtils(ComparisonTestCase):
         curve_redim = curve.redim(x='x2')
         combined = overlay*curve_redim
         combined[()]
-        sources = get_sources(combined)
+        sources = get_stream_sources(combined)
 
         self.assertIn(area1, sources[0])
         self.assertIn(overlay, sources[0])
@@ -137,6 +139,28 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertIn(curve_redim, sources[2])
         self.assertIn(curve, sources[2])
         self.assertNotIn(overlay, sources[2])
+
+    def test_dynamic_get_stream_sources_mixed_dynamic_and_non_dynamic_ndoverlays(self):
+        ndoverlay = NdOverlay({i: Area(range(10+i)) for i in range(2)})
+        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve_redim = curve.redim(x='x2')
+        combined = ndoverlay*curve_redim
+        combined[()]
+        sources = get_stream_sources(combined)
+
+        self.assertIn(ndoverlay[0], sources[0])
+        self.assertIn(ndoverlay, sources[0])
+        self.assertNotIn(curve_redim, sources[0])
+        self.assertNotIn(curve, sources[0])
+
+        self.assertIn(ndoverlay[1], sources[1])
+        self.assertIn(ndoverlay, sources[1])
+        self.assertNotIn(curve_redim, sources[1])
+        self.assertNotIn(curve, sources[1])
+
+        self.assertIn(curve_redim, sources[2])
+        self.assertIn(curve, sources[2])
+        self.assertNotIn(ndoverlay, sources[2])
 
 
 

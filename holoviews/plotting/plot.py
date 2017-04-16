@@ -17,7 +17,7 @@ from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
-from ..core.spaces import HoloMap, DynamicMap
+from ..core.spaces import HoloMap, DynamicMap, get_stream_sources
 from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
@@ -554,7 +554,7 @@ class GenericElementPlot(DimensionedPlot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
-                 overlay_dims={}, **params):
+                 overlay_dims={}, stream_sources=[], **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
@@ -566,6 +566,11 @@ class GenericElementPlot(DimensionedPlot):
                                kdims=['Frame'], id=element.id)
         else:
             self.hmap = element
+
+        if overlaid:
+            self.stream_sources = stream_sources
+        else:
+            self.stream_sources = get_stream_sources(self.hmap)
 
         plot_element = self.hmap.last
         if self.batched and not isinstance(self, GenericOverlayPlot):
@@ -836,6 +841,7 @@ class GenericOverlayPlot(GenericElementPlot):
         ordering = util.layer_sort(self.hmap)
         registry = Store.registry[self.renderer.backend]
         batched = self.batched and type(self.hmap.last) is NdOverlay
+        stream_sources = self.stream_sources
         if batched:
             batchedplot = registry.get(type(self.hmap.last.last))
         if (batched and batchedplot and 'batched' in batchedplot._plot_methods and
@@ -902,7 +908,7 @@ class GenericOverlayPlot(GenericElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
-                            renderer=self.renderer,
+                            renderer=self.renderer, stream_sources=stream_sources,
                             zorder=zorder, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)

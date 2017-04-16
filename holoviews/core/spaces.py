@@ -517,12 +517,12 @@ def get_nested_streams(dmap):
 
 
 
-def get_sources(obj, branch=0, isbranch=True):
+def get_stream_sources(obj, branch=0):
     """
     Traverses Callable graph to resolve sources on DynamicMap objects,
     returning a dictionary of sources indexed by the Overlay layer. The
-    branch and isbranch variables are used for internal record-keeping
-    while recursing through the graph.
+    branch variables is used for internal record-keeping while recursing
+    through the graph.
     """
     inputs = defaultdict(list)
     if not isinstance(obj, DynamicMap):
@@ -535,22 +535,24 @@ def get_sources(obj, branch=0, isbranch=True):
         return inputs
 
     isbranch = isinstance(obj.last, CompositeOverlay)
-    if isbranch and isinstance(obj.callback, OverlayCallable):
-        # Detects root branches of dynamic overlays and iterates into them
-        offset = 0
-        for i, inp in enumerate(obj.callback.inputs):
-            dinputs = get_sources(inp, branch=i+offset, isbranch=isbranch)
-            offset += max(dinputs.keys())-(i+offset)
-            for k, v in dinputs.items():
-                inputs[k] = list(util.unique_iterator(inputs[k]+dinputs[k]))
-    else:
-        # Traverses into any non-overlay nodes in the callable graph
-        if obj not in inputs[branch] and not isbranch:
-            inputs[branch].append(obj)
-        for inp in obj.callback.inputs:
-            dinputs = get_sources(inp, branch=branch, isbranch=isbranch)
-            for k, v in dinputs.items():
-                inputs[k] = list(util.unique_iterator((inputs[k]+dinputs[k])))
+
+    if obj not in inputs[branch] and not isbranch:
+        inputs[branch].append(obj)
+
+    # Process the inputs of the DynamicMap callback
+    offset = 0
+    for i, inp in enumerate(obj.callback.inputs):
+        i = i if isbranch else 0
+        dinputs = get_stream_sources(inp, branch=branch+i+offset)
+        offset += max(dinputs.keys())-(branch+offset+i)
+        for k, v in dinputs.items():
+            inputs[k] = list(util.unique_iterator(inputs[k]+dinputs[k]))
+
+    # If object branches but does not declare inputs
+    if isbranch and not isinstance(obj.callback, OverlayCallable):
+        for i, o in enumerate(obj.last):
+            if o not in inputs[branch+i]:
+                inputs[branch+i].append(o)
 
     return inputs
 
@@ -737,7 +739,7 @@ class DynamicMap(HoloMap):
             return Dynamic(clone, shared_data=shared_data)
         elif clone.callback is self.callback:
             clone.callback = clone.callback.clone()
-        if self not in [inp for inputs in get_sources(clone).values() for inp in inputs]:
+        if not any(inp is self for inputs in get_stream_sources(clone).values() for inp in inputs):
             with util.disable_constant(clone.callback):
                 clone.callback.inputs = [self]+self.callback.inputs
         return clone
