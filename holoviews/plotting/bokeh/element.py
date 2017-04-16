@@ -191,8 +191,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         the plotted object as a source.
         """
         if not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [(i, o) for i, o in get_sources(self.hmap)
-                       if i in [None, self.zorder]]
+            sources = [(i, o) for i, inputs in get_sources(self.hmap).items()
+                       for o in inputs if i in [None, self.zorder]]
         else:
             sources = [(self.zorder, self.hmap.last)]
         cb_classes = set()
