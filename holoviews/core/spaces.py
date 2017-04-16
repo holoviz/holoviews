@@ -100,7 +100,6 @@ class HoloMap(UniformNdMapping, Overlayable):
         return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
-
     def _dynamic_mul(self, dimensions, other, keys):
         """
         Implements dynamic version of overlaying operation overlaying
@@ -119,29 +118,24 @@ class HoloMap(UniformNdMapping, Overlayable):
 
         def dynamic_mul(*key, **kwargs):
             layers = []
-            key_map = {d.name: k for d, k in zip(dimensions, key)}
             try:
-                if isinstance(self, HoloMap):
-                    if self.kdims:
-                        self_el = self.select(**key_map)
-                    else:
-                        self_el = self[()]
+                if isinstance(self, DynamicMap):
+                    safe_key = () if not self.kdims else key
+                    _, self_el = util.get_dynamic_item(self, dimensions, safe_key)
                     if self_el is not None:
                         layers.append(self_el)
                 else:
-                    layers.append(self)
+                    layers.append(self[key])
             except KeyError:
                 pass
             try:
-                if isinstance(other, HoloMap):
-                    if other.kdims:
-                        other_el = other.select(**key_map)
-                    else:
-                        other_el = other[()]
+                if isinstance(other, DynamicMap):
+                    safe_key = () if not other.kdims else key
+                    _, other_el = util.get_dynamic_item(other, dimensions, safe_key)
                     if other_el is not None:
                         layers.append(other_el)
                 else:
-                    layers.append(other)
+                    layers.append(other[key])
             except KeyError:
                 pass
             return Overlay(layers)
@@ -501,7 +495,6 @@ class Callable(param.Parameterized):
         return ret
 
 
-
 class OverlayCallable(Callable):
     """
     A Callable subclass specifically meant to indicate that the Callable
@@ -741,7 +734,7 @@ class DynamicMap(HoloMap):
         # stream sources are inherited
         if isinstance(clone.callback, OverlayCallable):
             from ..util import Dynamic
-            return Dynamic(clone)
+            return Dynamic(clone, shared_data=shared_data)
         elif clone.callback is self.callback:
             clone.callback = clone.callback.clone()
         if self not in [inp for inputs in get_sources(clone).values() for inp in inputs]:
