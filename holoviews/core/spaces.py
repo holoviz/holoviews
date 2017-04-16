@@ -139,7 +139,7 @@ class HoloMap(UniformNdMapping, Overlayable):
             except KeyError:
                 pass
             return Overlay(layers)
-        callback = Callable(dynamic_mul, inputs=[self, other])
+        callback = OverlayCallable(dynamic_mul, inputs=[self, other])
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -206,7 +206,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
                     return element * other
-                callback = Callable(dynamic_mul, inputs=[self, other])
+                callback = OverlayCallable(dynamic_mul, inputs=[self, other])
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -493,6 +493,14 @@ class Callable(param.Parameterized):
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
+
+
+
+class OverlayCallable(Callable):
+    """
+    A Callable subclass specifically meant to indicate that the Callable
+    represents an overlay operation between two objects.
+    """
 
 
 def get_nested_streams(dmap):

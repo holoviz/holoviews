@@ -24,11 +24,11 @@ class Overlayable(object):
 
     def __mul__(self, other):
         if type(other).__name__ == 'DynamicMap':
-            from .spaces import Callable
+            from .spaces import OverlayCallable
             def dynamic_mul(*args, **kwargs):
                 element = other[args]
                 return self * element
-            callback = Callable(dynamic_mul, inputs=[self, other])
+            callback = OverlayCallable(dynamic_mul, inputs=[self, other])
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
@@ -38,7 +38,6 @@ class Overlayable(object):
             return NotImplemented
 
         return Overlay.from_values([self, other])
-
 
 
 
