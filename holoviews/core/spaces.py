@@ -120,27 +120,11 @@ class HoloMap(UniformNdMapping, Overlayable):
             key_map = {d.name: k for d, k in zip(dimensions, key)}
             layers = []
             try:
-                if isinstance(self, DynamicMap):
-                    if self.kdims:
-                        self_el = self.select(**key_map)
-                    else:
-                        self_el = self[()]
-                    if self_el is not None:
-                        layers.append(self_el)
-                else:
-                    layers.append(self[key])
+                self_el = self.select(**key_map) if self.kdims else self[()]
             except KeyError:
                 pass
             try:
-                if isinstance(other, DynamicMap):
-                    if other.kdims:
-                        other_el = other.select(**key_map)
-                    else:
-                        other_el = other[()]
-                    if other_el is not None:
-                        layers.append(other_el)
-                else:
-                    layers.append(other[key])
+                other_el = other.select(**key_map) if other.kdims else other[()]
             except KeyError:
                 pass
             return Overlay(layers)
