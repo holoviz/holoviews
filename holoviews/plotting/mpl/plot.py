@@ -16,7 +16,7 @@ from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
-from ..util import get_dynamic_mode, initialize_sampled
+from ..util import get_dynamic_mode
 from .util import compute_ratios, fix_aspect
 
 

@@ -14,7 +14,7 @@ from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot)
-from ..util import get_dynamic_mode, initialize_sampled
+from ..util import get_dynamic_mode
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
                    filter_toolboxes, make_axis, update_shared_sources)
