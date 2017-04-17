@@ -128,8 +128,8 @@ class aggregate(ElementOperation):
         xarray Dataset that can be aggregated.
         """
         paths = []
-        kdims = obj.kdims
-        vdims = obj.vdims
+        kdims = list(obj.kdims)
+        vdims = list(obj.vdims)
         dims = obj.dimensions(label=True)[:2]
         if isinstance(obj, Path):
             glyph = 'line'
