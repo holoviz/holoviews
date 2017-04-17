@@ -574,13 +574,6 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
-    sampled = param.Boolean(default=False, doc="""
-       Allows defining a DynamicMap without defining the dimension
-       bounds or values. The DynamicMap may then be explicitly sampled
-       via getitem or the sampling is determined during plotting by a
-       HoloMap with fixed sampling.
-       """)
-
     def __init__(self, callback, initial_items=None, **params):
         if not isinstance(callback, Callable):
             callback = Callable(callback)
@@ -594,6 +587,18 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
         self.redim = redim(self, mode='dynamic')
+
+    @property
+    def sampled(self):
+        """
+        Whether the DynamicMap cannot generate an initial key and has to be sampled.
+        This read-only property replaces the deprecated sampled parameter.
+        """
+        try:
+            self._initial_key()
+        except KeyError:
+            return True
+        return False
 
     def _initial_key(self):
         """
