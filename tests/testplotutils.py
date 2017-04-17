@@ -6,6 +6,7 @@ from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Curve, Area
 from holoviews.plotting.util import compute_overlayable_zorders
+from holoviews.streams import PositionX
 
 try:
     from holoviews.plotting.bokeh import util
@@ -163,6 +164,49 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(curve, sources[0])
 
         self.assertIn(ndoverlay[1], sources[1])
+        self.assertIn(ndoverlay, sources[1])
+        self.assertNotIn(curve_redim, sources[1])
+        self.assertNotIn(curve, sources[1])
+
+        self.assertIn(curve_redim, sources[2])
+        self.assertIn(curve, sources[2])
+        self.assertNotIn(ndoverlay, sources[2])
+
+
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
+        ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
+                               kdims=[], streams=[PositionX()])
+        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve_redim = curve.redim(x='x2')
+        combined = ndoverlay*curve_redim
+        combined[()]
+        sources = compute_overlayable_zorders(combined)
+
+        self.assertIn(ndoverlay, sources[0])
+        self.assertNotIn(curve_redim, sources[0])
+        self.assertNotIn(curve, sources[0])
+
+        self.assertIn(ndoverlay, sources[1])
+        self.assertNotIn(curve_redim, sources[1])
+        self.assertNotIn(curve, sources[1])
+
+        self.assertIn(curve_redim, sources[2])
+        self.assertIn(curve, sources[2])
+        self.assertNotIn(ndoverlay, sources[2])
+
+    def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(self):
+        ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
+                               kdims=[], streams=[PositionX()])
+        curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
+        curve_redim = curve.redim(x='x2')
+        combined = ndoverlay*curve_redim
+        combined[()]
+        sources = compute_overlayable_zorders(combined.clone())
+
+        self.assertIn(ndoverlay, sources[0])
+        self.assertNotIn(curve_redim, sources[0])
+        self.assertNotIn(curve, sources[0])
+
         self.assertIn(ndoverlay, sources[1])
         self.assertNotIn(curve_redim, sources[1])
         self.assertNotIn(curve, sources[1])
