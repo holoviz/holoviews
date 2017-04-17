@@ -8,6 +8,7 @@ import param
 from ...core.options import Store
 from ...interface.pandas import DFrame, DataFrameView, pd
 from .element import ElementPlot
+from .plot import mpl_rc_context
 
 
 class DFrameViewPlot(ElementPlot):
@@ -65,7 +66,7 @@ class DFrameViewPlot(ElementPlot):
         if self.hmap.last.plot_type and 'plot_type' not in params:
             self.plot_type = self.hmap.last.plot_type
 
-
+    @mpl_rc_context
     def initialize_plot(self, ranges=None):
         element = self.hmap.last
         self._validate(element)

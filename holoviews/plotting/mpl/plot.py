@@ -1,6 +1,7 @@
 from __future__ import division
 
 from itertools import chain
+from contextlib import contextmanager
 
 import numpy as np
 import matplotlib as mpl
@@ -19,12 +20,27 @@ from ..util import get_dynamic_mode, initialize_sampled
 from .util import compute_ratios, fix_aspect
 
 
+@contextmanager
+def rc_context(rcparams):
+    """
+    Context manager that temporarily overrides the pyplot rcParams.
+    """
+    old_rcparams = plt.rcParams.copy()
+    plt.rcParams.update(rcparams)
+    try:
+        yield
+    except:
+        pass
+    finally:
+        plt.rcParams = old_rcparams
+
 def mpl_rc_context(f):
     """
-    Applies matplotlib rc params while when method is called.
+    Decorator for MPLPlot methods applying the matplotlib rc params
+    in the plots fig_rcparams while when method is called.
     """
     def wrapper(self, *args, **kwargs):
-        with mpl.rc_context(rc=self.fig_rcparams):
+        with rc_context(self.fig_rcparams):
             return f(self, *args, **kwargs)
     return wrapper
 
