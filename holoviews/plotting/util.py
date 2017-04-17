@@ -132,7 +132,9 @@ def compute_overlayable_zorders(obj, path=[]):
             # Skips branches of graph that collapse Overlay layers
             # to avoid adding layers that have been reduced or removed
             continue
-        elif depth is not None and depth < overlay_depth(inp):
+
+        input_depth = overlay_depth(inp)
+        if depth is not None and input_depth is not None and depth < input_depth:
             # Skips branch of graph where the number of elements in an
             # overlay has been reduced
             continue
