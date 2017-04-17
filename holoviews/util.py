@@ -29,14 +29,14 @@ class Dynamic(param.ParameterizedFunction):
         Keyword arguments passed to the function.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         If Dynamic is applied to another DynamicMap, determines if
+         If Dynamic is applied to another DynamicMap, determines whether
          linked streams attached to its Callable inputs are
          transferred to the output of the utility.
 
          For example if the Dynamic utility is applied to a DynamicMap
-         with an RangeXY stream determines if the output of the
-         utility will update the stream on the input with current axis
-         ranges for backends that support linked streams.""")
+         with an RangeXY, this switch determines whether the
+         corresponding visualization should update this stream with
+         range changes originating from the newly generated axes.""")
 
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")

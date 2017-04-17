@@ -406,7 +406,7 @@ class Callable(param.Parameterized):
     visualizations (for the backends that support them) when returning
     Layouts, NdLayouts or GridSpace objects. When chaining multiple
     DynamicMaps into a pipeline, the link_inputs parameter declares
-    whether the visualization generated from this Callable will
+    whether the visualization generated using this Callable will
     inherit the linked streams. This parameter is used as a hint by
     the applicable backend.
 
@@ -426,13 +426,13 @@ class Callable(param.Parameterized):
 
     link_inputs = param.Boolean(default=True, doc="""
          If the Callable wraps around other DynamicMaps in its inputs,
-         determines if linked streams attached to the inputs areb
+         determines whether linked streams attached to the inputs are
          transferred to the objects returned by the Callable.
 
-         For example if the Callable wraps a DynamicMap with an
-         RangeXY stream determines if the output of the Callable will
-         update the stream on the input with current axis ranges for
-         backends that support linked streams.""")
+         For example the Callable wraps a DynamicMap with an RangeXY
+         stream, this switch determines whether the corresponding
+         visualization should update this stream with range changes
+         originating from the newly generated axes.""")
 
     memoize = param.Boolean(default=True, doc="""
          Whether the return value of the callable should be memoized
