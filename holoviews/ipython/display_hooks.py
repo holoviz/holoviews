@@ -140,7 +140,7 @@ def display_hook(fn):
             return html
         except SkipRendering as e:
             if e.warn:
-                sys.stderr.write("Rendering process skipped: %s" % str(e))
+                sys.stderr.write(str(e))
             return None
         except AbbreviatedException as e:
 
