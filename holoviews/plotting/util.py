@@ -9,7 +9,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.spaces import get_nested_streams, Callable
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, unique_iterator)
-
+from ..streams import LinkedStream
 
 def displayable(obj):
     """
@@ -150,9 +150,12 @@ def compute_overlayable_zorders(obj, path=[]):
     # If object branches but does not declare inputs (e.g. user defined
     # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
     found = any(isinstance(p, DynamicMap) and p.callback._is_overlay for p in path)
-    if found and isoverlay and not isdynoverlay:
+    linked =  any(isinstance(s, LinkedStream) and s.linked for s in obj.streams)
+    if (found or linked) and isoverlay and not isdynoverlay:
         offset = max(zorder_map.keys())
         for z, o in enumerate(obj.last):
+            if isoverlay and linked:
+                zorder_map[offset+z].append(obj)
             if o not in zorder_map[offset+z]:
                 zorder_map[offset+z].append(o)
     return zorder_map
