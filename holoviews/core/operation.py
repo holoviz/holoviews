@@ -103,6 +103,9 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
+    link_inputs = param.Boolean(default=False, doc="""
+       Whether to link to any stream sources on the inputs.""")
+
     streams = param.List(default=[], doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
@@ -139,8 +142,8 @@ class ElementOperation(Operation):
             processed = element.clone(grid_data)
         elif dynamic:
             from ..util import Dynamic
-            streams = getattr(self.p, 'streams', [])
-            processed = Dynamic(element, streams=streams,
+            processed = Dynamic(element, streams=self.p.streams,
+                                link_inputs=self.p.link.inputs,
                                 operation=self, kwargs=params)
         elif isinstance(element, ViewableElement):
             processed = self._process(element)

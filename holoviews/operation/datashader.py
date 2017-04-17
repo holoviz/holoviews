@@ -264,6 +264,9 @@ class shade(ElementOperation):
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+       Whether to link to any stream sources on the inputs.""")
+
     @classmethod
     def concatenate(cls, overlay):
         """
@@ -394,6 +397,9 @@ class dynspread(ElementOperation):
         of adjacent non-empty pixels reaches this threshold.
         Higher values give more spreading, up to the max_px
         allowed.""")
+
+    link_inputs = param.Boolean(default=True, doc="""
+       Whether to link to any stream sources on the inputs.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):

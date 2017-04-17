@@ -1113,7 +1113,7 @@ class DynamicMap(HoloMap):
                             adjoin=False, **kwargs)
 
         from ..util import Dynamic
-        hist = Dynamic(self, operation=dynamic_hist)
+        hist = Dynamic(self, link_inputs=False, operation=dynamic_hist)
         if adjoin:
             return self << hist
         else:

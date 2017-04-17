@@ -28,6 +28,9 @@ class Dynamic(param.ParameterizedFunction):
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the function.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+       Whether to link to any stream sources on the inputs.""")
+
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
@@ -85,9 +88,11 @@ class Dynamic(param.ParameterizedFunction):
                 return self._process(el, key)
         if isinstance(self.p.operation, ElementOperation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                     link_inputs=self.p.link_inputs,
                                      operation=self.p.operation)
         else:
-            return Callable(dynamic_operation, inputs=[map_obj])
+            return Callable(dynamic_operation, inputs=[map_obj],
+                            link_inputs=self.p.link_inputs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn):
