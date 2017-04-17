@@ -50,6 +50,10 @@ class redim(object):
         self.parent = parent
         # Can be 'dataset', 'dynamic' or None
         self.mode = mode
+
+    def __str__(self):
+        return "<holoviews.core.dimension.redim method>"
+
     @classmethod
     def replace_dimensions(cls, dimensions, overrides):
         """
@@ -153,6 +157,8 @@ class redim(object):
 
     def values(self, specs=None, **ranges):
         return self._redim('values', specs, **ranges)
+
+
 
 class Dimension(param.Parameterized):
     """
