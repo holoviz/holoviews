@@ -9,7 +9,6 @@ except ImportError:
 import numpy as np
 import param
 
-from ..dimension import replace_dimensions
 from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -562,29 +561,6 @@ class Dataset(Element):
     def shape(self):
         "Returns the shape of the data."
         return self.interface.shape(self)
-
-
-    def redim(self, specs=None, **dimensions):
-        """
-        Replace dimensions on the dataset and allows renaming
-        dimensions in the dataset. Dimension mapping should map
-        between the old dimension name and a dictionary of the new
-        attributes, a completely new dimension or a new string name.
-        """
-        if specs is not None:
-            if not isinstance(specs, list):
-                specs = [specs]
-            if not any(self.matches(spec) for spec in specs):
-                return self
-
-        kdims = replace_dimensions(self.kdims, dimensions)
-        vdims = replace_dimensions(self.vdims, dimensions)
-        zipped_dims = zip(self.kdims+self.vdims, kdims+vdims)
-        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
-        data = self.data
-        if renames:
-            data = self.interface.redim(self, renames)
-        return self.clone(data, kdims=kdims, vdims=vdims)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
