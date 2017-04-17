@@ -420,7 +420,10 @@ class Callable(param.Parameterized):
     when composite objects such as Layouts are returned from the
     callback. This is required for building interactive, linked
     visualizations (for the backends that support them) when returning
-    Layouts, NdLayouts or GridSpace objects.
+    Layouts, NdLayouts or GridSpace objects. When chaining multiple
+    DynamicMaps into a pipeline the link_inputs parameter declares
+    whether a plot created from the Callable owner is linked to objects
+    referenced in the inputs.
 
     The mapping should map from an appropriate key to a list of
     streams associated with the selected object. The appropriate key
@@ -437,7 +440,8 @@ class Callable(param.Parameterized):
          to allow deep access to streams in chained Callables.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         Whether the inputs on the Callable should be linked.""")
+         Whether a plot created from this Callable should be linked
+         to the declared inputs.""")
 
     memoize = param.Boolean(default=True, doc="""
          Whether the return value of the callable should be memoized

@@ -265,7 +265,8 @@ class shade(ElementOperation):
         arguments.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-       Whether to link to any stream sources on the inputs.""")
+         Whether a plot created from the output of this operation
+         should be linked to the inputs of this operation.""")
 
     @classmethod
     def concatenate(cls, overlay):
@@ -399,7 +400,8 @@ class dynspread(ElementOperation):
         allowed.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-       Whether to link to any stream sources on the inputs.""")
+         Whether a plot created from the output of this operation
+         should be linked to the inputs of this operation.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):

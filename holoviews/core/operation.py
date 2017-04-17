@@ -104,7 +104,8 @@ class ElementOperation(Operation):
        component is Normalization.keys. """)
 
     link_inputs = param.Boolean(default=False, doc="""
-       Whether to link to any stream sources on the inputs.""")
+         Whether a plot created from the output of this operation
+         should be linked to the inputs of this operation.""")
 
     streams = param.List(default=[], doc="""
         List of streams that are applied if dynamic=True, allowing

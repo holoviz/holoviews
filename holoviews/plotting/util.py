@@ -74,18 +74,24 @@ def collate(obj):
 
 
 def isoverlay_fn(obj):
+    """
+    Determines whether object is a DynamicMap returning (Nd)Overlay types.
+    """
     return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
 
 
 def linked_zorders(obj, path=[]):
     """
-    Traverses Callable graph to resolve sources on DynamicMap objects,
-    returning a dictionary of sources indexed by the Overlay layer. The
-    branch variables is used for internal record-keeping while recursing
-    through the graph.
+    Traverses the Callables on DynamicMap to determine which objects
+    in the graph are associated with specific (Nd)Overlay layers.
+    Returns a mapping between the zorders of each layer and lists of
+    objects associated with each. This is required to determine which
+    subplots should be linked with Stream callbacks.
     """
     path = path+[obj]
     zorder_map = defaultdict(list)
+
+    # Process non-dynamic layers
     if not isinstance(obj, DynamicMap):
         if isinstance(obj, CompositeOverlay):
             for i, o in enumerate(obj):
@@ -98,7 +104,6 @@ def linked_zorders(obj, path=[]):
     isoverlay = isinstance(obj.last, CompositeOverlay)
     isdynoverlay = obj.callback._overlay
     found = any(isinstance(p, DynamicMap) and p.callback._overlay for p in path)
-
     if obj not in zorder_map[0] and not isoverlay:
         zorder_map[0].append(obj)
 
@@ -106,14 +111,19 @@ def linked_zorders(obj, path=[]):
     dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
     for i, inp in enumerate(dmap_inputs):
         if any(not (isoverlay_fn(p) or p.last is None) for p in path) and isoverlay_fn(inp):
+            # Skips branches of graph that collapse Overlay layers
+            # to avoid adding layers that have been reduced or removed
             continue
+
+        # Recurse into DynamicMap.callback.inputs and update zorder_map
         i = i if isdynoverlay else 0
         dinputs = linked_zorders(inp, path=path)
         offset = max(zorder_map.keys())
         for k, v in dinputs.items():
             zorder_map[offset+k+i] = list(unique_iterator(zorder_map[offset+k+i]+v))
 
-    # If object branches but does not declare inputs
+    # If object branches but does not declare inputs (e.g. user defined
+    # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
     if found and isoverlay and not isdynoverlay:
         offset = max(zorder_map.keys())
         for i, o in enumerate(obj.last):

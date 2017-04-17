@@ -29,7 +29,8 @@ class Dynamic(param.ParameterizedFunction):
         Keyword arguments passed to the function.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-       Whether to link to any stream sources on the inputs.""")
+         Whether a plot created from the output of this utility should
+         be linked to the inputs passed to this utility.""")
 
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
