@@ -9,6 +9,7 @@ except ImportError:
 import numpy as np
 import param
 
+from ..dimension import redim
 from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -186,6 +187,8 @@ class Dataset(Element):
         (data, self.interface, dims, extra_kws) = initialized
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self)
+
+        self.redim = redim(self, mode='dataset')
 
 
     def __setstate__(self, state):

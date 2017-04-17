@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement
+from .dimension import OrderedDict, Dimension, ViewableElement, redim
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
@@ -585,6 +585,7 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
+        self.redim = redim(self, mode='dynamic')
 
     def _initial_key(self):
         """

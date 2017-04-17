@@ -46,6 +46,10 @@ class redim(object):
     redim method.
     """
 
+    def __init__(self, parent, mode=None):
+        self.parent = parent
+        # Can be 'dataset', 'dynamic' or None
+        self.mode = mode
     @classmethod
     def replace_dimensions(cls, dimensions, overrides):
         """
@@ -705,6 +709,7 @@ class Dimensioned(LabelledData):
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
         self._settings = None
+        self.redim = redim(self)
 
 
     def _valid_dimensions(self, dimensions):
