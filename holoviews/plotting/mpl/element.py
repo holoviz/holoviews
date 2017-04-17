@@ -424,6 +424,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             tick.set_rotation(rotation)
 
 
+    @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
         """
         Set the plot(s) to the given frame number.  Operates by
@@ -838,6 +839,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                                    title=self._format_title(key))
 
 
+    @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
         if element is None:

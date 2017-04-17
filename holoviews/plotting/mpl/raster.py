@@ -365,7 +365,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         kwargs = self._get_axis_kwargs()
         return self._finalize_axis(key, ranges=ranges, **kwargs)
 
-
+    @mpl_rc_context
     def update_frame(self, key, ranges=None):
         grid = self._get_frame(key)
         ranges = self.compute_ranges(self.layout, key, ranges)
