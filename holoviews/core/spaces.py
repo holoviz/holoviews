@@ -577,6 +577,12 @@ class DynamicMap(HoloMap):
     def __init__(self, callback, initial_items=None, **params):
         if not isinstance(callback, Callable):
             callback = Callable(callback)
+
+        if 'sampled' in params:
+            self.warning('DynamicMap sampled parameter is deprecated '
+                         'and no longer neededs to be specified.')
+            del params['sampled']
+
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
