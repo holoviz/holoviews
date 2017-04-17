@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from collections import defaultdict
 
 import numpy as np
 import param
@@ -7,7 +8,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store, Dataset)
 from ..core.spaces import get_nested_streams, Callable
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
-                         get_overlay_spec, unique_iterator)
+                         get_overlay_spec, unique_iterator, unique_iterator)
 
 
 def displayable(obj):
@@ -70,6 +71,91 @@ def collate(obj):
             raise Exception(undisplayable_info(obj))
     else:
         raise Exception(undisplayable_info(obj))
+
+
+def isoverlay_fn(obj):
+    """
+    Determines whether object is a DynamicMap returning (Nd)Overlay types.
+    """
+    return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
+
+
+def overlay_depth(obj):
+    """
+    Computes the depth of a DynamicMap overlay if it can be determined
+    otherwise return None.
+    """
+    if isinstance(obj, DynamicMap):
+        if isinstance(obj.last, CompositeOverlay):
+            return len(obj.last)
+        elif obj.last is None:
+            return None
+        return 1
+    else:
+        return 1
+
+
+def compute_overlayable_zorders(obj, path=[]):
+    """
+    Traverses an overlayable composite container to determine which
+    objects are associated with specific (Nd)Overlay layers by
+    z-order, making sure to take DynamicMap Callables into
+    account. Returns a mapping between the zorders of each layer and a
+    corresponding lists of objects.
+
+    Used to determine which overlaid subplots should be linked with
+    Stream callbacks.
+    """
+    path = path+[obj]
+    zorder_map = defaultdict(list)
+
+    # Process non-dynamic layers
+    if not isinstance(obj, DynamicMap):
+        if isinstance(obj, CompositeOverlay):
+            for z, o in enumerate(obj):
+                zorder_map[z] = [o, obj]
+        else:
+            if obj not in zorder_map[0]:
+                zorder_map[0].append(obj)
+        return zorder_map
+
+    isoverlay = isinstance(obj.last, CompositeOverlay)
+    isdynoverlay = obj.callback._is_overlay
+    if obj not in zorder_map[0] and not isoverlay:
+        zorder_map[0].append(obj)
+    depth = overlay_depth(obj)
+
+    # Process the inputs of the DynamicMap callback
+    dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
+    for z, inp in enumerate(dmap_inputs):
+        if any(not (isoverlay_fn(p) or p.last is None) for p in path) and isoverlay_fn(inp):
+            # Skips branches of graph that collapse Overlay layers
+            # to avoid adding layers that have been reduced or removed
+            continue
+
+        input_depth = overlay_depth(inp)
+        if depth is not None and input_depth is not None and depth < input_depth:
+            # Skips branch of graph where the number of elements in an
+            # overlay has been reduced
+            continue
+
+        # Recurse into DynamicMap.callback.inputs and update zorder_map
+        z = z if isdynoverlay else 0
+        deep_zorders = compute_overlayable_zorders(inp, path=path)
+        offset = max(zorder_map.keys())
+        for dz, objs in deep_zorders.items():
+            global_z = offset+dz+z
+            zorder_map[global_z] = list(unique_iterator(zorder_map[global_z]+objs))
+
+    # If object branches but does not declare inputs (e.g. user defined
+    # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
+    found = any(isinstance(p, DynamicMap) and p.callback._is_overlay for p in path)
+    if found and isoverlay and not isdynoverlay:
+        offset = max(zorder_map.keys())
+        for z, o in enumerate(obj.last):
+            if o not in zorder_map[offset+z]:
+                zorder_map[offset+z].append(o)
+    return zorder_map
 
 
 def initialize_dynamic(obj):
@@ -309,31 +395,6 @@ def attach_streams(plot, obj):
             if plot.refresh not in stream._subscribers:
                 stream.add_subscriber(plot.refresh)
     return obj.traverse(append_refresh, [DynamicMap])
-
-
-def get_sources(obj, index=None):
-    """
-    Traverses Callable graph to resolve sources on
-    DynamicMap objects, returning a list of sources
-    indexed by the Overlay layer.
-    """
-    layers = [(index, obj)]
-    if not isinstance(obj, DynamicMap) or not isinstance(obj.callback, Callable):
-        return layers
-    index = 0 if index is None else int(index)
-    for o in obj.callback.inputs:
-        if isinstance(o, Overlay):
-            layers.append((None, o))
-            for i, o in enumerate(overlay):
-                layers.append((index+i, o))
-            index += len(o)
-        elif isinstance(o, DynamicMap):
-            layers += get_sources(o, index)
-            index = layers[-1][0]+1
-        else:
-            layers.append((index, o))
-            index += 1
-    return layers
 
 
 def traverse_setter(obj, attribute, value):

@@ -117,29 +117,21 @@ class HoloMap(UniformNdMapping, Overlayable):
         map_obj = self if isinstance(self, DynamicMap) else other
 
         def dynamic_mul(*key, **kwargs):
+            key_map = {d.name: k for d, k in zip(dimensions, key)}
             layers = []
             try:
-                if isinstance(self, DynamicMap):
-                    safe_key = () if not self.kdims else key
-                    _, self_el = util.get_dynamic_item(self, dimensions, safe_key)
-                    if self_el is not None:
-                        layers.append(self_el)
-                else:
-                    layers.append(self[key])
+                self_el = self.select(**key_map) if self.kdims else self[()]
+                layers.append(self_el)
             except KeyError:
                 pass
             try:
-                if isinstance(other, DynamicMap):
-                    safe_key = () if not other.kdims else key
-                    _, other_el = util.get_dynamic_item(other, dimensions, safe_key)
-                    if other_el is not None:
-                        layers.append(other_el)
-                else:
-                    layers.append(other[key])
+                other_el = other.select(**key_map) if other.kdims else other[()]
+                layers.append(other_el)
             except KeyError:
                 pass
             return Overlay(layers)
         callback = Callable(dynamic_mul, inputs=[self, other])
+        callback._is_overlay = True
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -207,6 +199,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                     element = self[args]
                     return element * other
                 callback = Callable(dynamic_mul, inputs=[self, other])
+                callback._is_overlay = True
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -413,7 +406,11 @@ class Callable(param.Parameterized):
     when composite objects such as Layouts are returned from the
     callback. This is required for building interactive, linked
     visualizations (for the backends that support them) when returning
-    Layouts, NdLayouts or GridSpace objects.
+    Layouts, NdLayouts or GridSpace objects. When chaining multiple
+    DynamicMaps into a pipeline, the link_inputs parameter declares
+    whether the visualization generated using this Callable will
+    inherit the linked streams. This parameter is used as a hint by
+    the applicable backend.
 
     The mapping should map from an appropriate key to a list of
     streams associated with the selected object. The appropriate key
@@ -429,6 +426,16 @@ class Callable(param.Parameterized):
          The list of inputs the callable function is wrapping. Used
          to allow deep access to streams in chained Callables.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+         If the Callable wraps around other DynamicMaps in its inputs,
+         determines whether linked streams attached to the inputs are
+         transferred to the objects returned by the Callable.
+
+         For example the Callable wraps a DynamicMap with an RangeXY
+         stream, this switch determines whether the corresponding
+         visualization should update this stream with range changes
+         originating from the newly generated axes.""")
+
     memoize = param.Boolean(default=True, doc="""
          Whether the return value of the callable should be memoized
          based on the call arguments and any streams attached to the
@@ -441,6 +448,8 @@ class Callable(param.Parameterized):
     def __init__(self, callable, **params):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
+        self._is_overlay = False
+
 
     @property
     def argspec(self):
@@ -687,10 +696,7 @@ class DynamicMap(HoloMap):
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
-            clone.callback = self.callback.clone()
-        if self not in clone.callback.inputs:
-            with util.disable_constant(clone.callback):
-                clone.callback.inputs = clone.callback.inputs+[self]
+            clone.callback = clone.callback.clone(inputs=[self])
         return clone
 
 
@@ -1104,7 +1110,7 @@ class DynamicMap(HoloMap):
                             adjoin=False, **kwargs)
 
         from ..util import Dynamic
-        hist = Dynamic(self, operation=dynamic_hist)
+        hist = Dynamic(self, link_inputs=False, operation=dynamic_hist)
         if adjoin:
             return self << hist
         else:

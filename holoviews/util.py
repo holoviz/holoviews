@@ -28,6 +28,16 @@ class Dynamic(param.ParameterizedFunction):
     kwargs = param.Dict(default={}, doc="""
         Keyword arguments passed to the function.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+         If Dynamic is applied to another DynamicMap, determines whether
+         linked streams attached to its Callable inputs are
+         transferred to the output of the utility.
+
+         For example if the Dynamic utility is applied to a DynamicMap
+         with an RangeXY, this switch determines whether the
+         corresponding visualization should update this stream with
+         range changes originating from the newly generated axes.""")
+
     shared_data = param.Boolean(default=False, doc="""
         Whether the cloned DynamicMap will share the same cache.""")
 
@@ -80,13 +90,15 @@ class Dynamic(param.ParameterizedFunction):
         else:
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
-                _, el = util.get_dynamic_item(map_obj, map_obj.kdims, key)
-                return self._process(el, key)
+                safe_key = () if not map_obj.kdims else key
+                return self._process(map_obj[key], key)
         if isinstance(self.p.operation, ElementOperation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
+                                     link_inputs=self.p.link_inputs,
                                      operation=self.p.operation)
         else:
-            return Callable(dynamic_operation, inputs=[map_obj])
+            return Callable(dynamic_operation, inputs=[map_obj],
+                            link_inputs=self.p.link_inputs)
 
 
     def _make_dynamic(self, hmap, dynamic_fn):

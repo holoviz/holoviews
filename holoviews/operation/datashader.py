@@ -264,6 +264,11 @@ class shade(ElementOperation):
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+         By default, the link_inputs parameter is set to True so that
+         when applying shade, backends that support linked streams
+         update RangeXY streams on the inputs of the shade operation.""")
+
     @classmethod
     def concatenate(cls, overlay):
         """
@@ -394,6 +399,11 @@ class dynspread(ElementOperation):
         of adjacent non-empty pixels reaches this threshold.
         Higher values give more spreading, up to the max_px
         allowed.""")
+
+    link_inputs = param.Boolean(default=True, doc="""
+         By default, the link_inputs parameter is set to True so that
+         when applying dynspread, backends that support linked streams
+         update RangeXY streams on the inputs of the dynspread operation.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):

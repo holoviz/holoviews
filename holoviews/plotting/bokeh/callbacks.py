@@ -500,7 +500,7 @@ class Callback(CustomJSCallback, ServerCallback):
             if cb_hash in self._callbacks:
                 # Merge callbacks if another callback has already been attached
                 cb = self._callbacks[cb_hash]
-                cb.streams += self.streams
+                cb.streams = list(set(cb.streams+self.streams))
                 for k, v in self.handle_ids.items():
                     cb.handle_ids[k].update(v)
                 continue

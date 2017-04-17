@@ -29,6 +29,7 @@ class Overlayable(object):
                 element = other[args]
                 return self * element
             callback = Callable(dynamic_mul, inputs=[self, other])
+            callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
@@ -38,7 +39,6 @@ class Overlayable(object):
             return NotImplemented
 
         return Overlay.from_values([self, other])
-
 
 
 
@@ -136,7 +136,16 @@ class Overlay(Layout, CompositeOverlay):
 
 
     def __mul__(self, other):
-        if not isinstance(other, ViewableElement):
+        if type(other).__name__ == 'DynamicMap':
+            from .spaces import Callable
+            def dynamic_mul(*args, **kwargs):
+                element = other[args]
+                return self * element
+            callback = Callable(dynamic_mul, inputs=[self, other])
+            callback._is_overlay = True
+            return other.clone(shared_data=False, callback=callback,
+                               streams=[])
+        elif not isinstance(other, ViewableElement):
             raise NotImplementedError
         return Overlay.from_values([self, other])
 

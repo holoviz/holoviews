@@ -103,6 +103,16 @@ class ElementOperation(Operation):
        first component is a Normalization.ranges list and the second
        component is Normalization.keys. """)
 
+    link_inputs = param.Boolean(default=False, doc="""
+       If the operation is dynamic, whether or not linked streams
+       should be transferred from the operation inputs for backends
+       that support linked streams.
+
+       For example if an operation is applied to a DynamicMap with an
+       RangeXY, this switch determines whether the corresponding
+       visualization should update this stream with range changes
+       originating from the newly generated axes.""")
+
     streams = param.List(default=[], doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
@@ -139,8 +149,8 @@ class ElementOperation(Operation):
             processed = element.clone(grid_data)
         elif dynamic:
             from ..util import Dynamic
-            streams = getattr(self.p, 'streams', [])
-            processed = Dynamic(element, streams=streams,
+            processed = Dynamic(element, streams=self.p.streams,
+                                link_inputs=self.p.link_inputs,
                                 operation=self, kwargs=params)
         elif isinstance(element, ViewableElement):
             processed = self._process(element)

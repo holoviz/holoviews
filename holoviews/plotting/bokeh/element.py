@@ -27,7 +27,7 @@ from ...core import util
 from ...element import RGB
 from ...streams import Stream, RangeXY, RangeX, RangeY
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, get_sources, attach_streams
+from ..util import dynamic_update, attach_streams
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
                    bokeh_version, mplcmap_to_palette, py2js_tickformatter,
@@ -190,9 +190,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes any callbacks for streams which have defined
         the plotted object as a source.
         """
+        if isinstance(self, OverlayPlot):
+            zorders = []
+        elif self.batched:
+            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
+        else:
+            zorders = [self.zorder]
+
+        if isinstance(self, OverlayPlot) and not self.batched:
+            sources = []
         if not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [(i, o) for i, o in get_sources(self.hmap)
-                       if i in [None, self.zorder]]
+            sources = [(i, o) for i, inputs in self.stream_sources.items()
+                       for o in inputs if i in zorders]
         else:
             sources = [(self.zorder, self.hmap.last)]
         cb_classes = set()
@@ -207,6 +216,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             cb_streams = [s for _, s in group]
             cbs.append(cb(self, cb_streams, source))
         return cbs
+
 
     def _hover_opts(self, element):
         if self.batched:
