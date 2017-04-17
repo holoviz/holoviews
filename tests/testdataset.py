@@ -137,6 +137,14 @@ class HomogeneousColumnTypes(object):
         self.assertEqual(redimmed.dimension_values('Time'),
                          self.dataset_hm.dimension_values('x'))
 
+    def test_dataset_redim_hm_kdim_range_aux(self):
+        redimmed = self.dataset_hm.redim.range(x=(-100,3))
+        self.assertEqual(redimmed.kdims[0].range, (-100,3))
+
+    def test_dataset_redim_hm_kdim_soft_range_aux(self):
+        redimmed = self.dataset_hm.redim.soft_range(x=(-100,30))
+        self.assertEqual(redimmed.kdims[0].soft_range, (-100,30))
+
     def test_dataset_redim_hm_kdim_alias(self):
         redimmed = self.dataset_hm_alias.redim(x='Time')
         self.assertEqual(redimmed.dimension_values('Time'),

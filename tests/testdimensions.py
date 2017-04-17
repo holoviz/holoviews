@@ -258,3 +258,13 @@ class DimensionedTest(ComparisonTestCase):
     def test_dimensioned_redim_dict_range(self):
         redimensioned = Dimensioned('Arbitrary Data', kdims=['x']).redim(x={'range': (0, 10)})
         self.assertEqual(redimensioned.kdims[0].range, (0, 10))
+
+    def test_dimensioned_redim_range_aux(self):
+        dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
+        redimensioned = dimensioned.redim.range(x=(-10,42))
+        self.assertEqual(redimensioned.kdims[0].range, (-10,42))
+
+    def test_dimensioned_redim_cyclic_aux(self):
+        dimensioned = Dimensioned('Arbitrary Data', kdims=['x'])
+        redimensioned = dimensioned.redim.cyclic(x=True)
+        self.assertEqual(redimensioned.kdims[0].cyclic, True)

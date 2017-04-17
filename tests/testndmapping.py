@@ -121,6 +121,21 @@ class NdIndexableMappingTest(ComparisonTestCase):
         self.assertEqual(redimmed.kdims, [Dimension('Integer', type=int),
                                           Dimension('floatdim', type=float)])
 
+    def test_idxmapping_redim_range_aux(self):
+        data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
+        ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
+        redimmed = ndmap.redim.range(intdim=(-9,9))
+        self.assertEqual(redimmed.kdims, [Dimension('intdim', type=int, range=(-9,9)),
+                                          Dimension('floatdim', type=float)])
+
+    def test_idxmapping_redim_type_aux(self):
+        data = [((0, 0.5), 'a'), ((1, 0.5), 'b')]
+        ndmap = MultiDimensionalMapping(data, kdims=[self.dim1, self.dim2])
+        redimmed = ndmap.redim.type(intdim=str)
+        self.assertEqual(redimmed.kdims, [Dimension('intdim', type=str),
+                                          Dimension('floatdim', type=float)])
+
+
     def test_idxmapping_add_dimension(self):
         ndmap = MultiDimensionalMapping(self.init_items_1D_list, kdims=[self.dim1])
         ndmap2d = ndmap.add_dimension(self.dim2, 0, 0.5)
