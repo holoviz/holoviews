@@ -29,7 +29,7 @@ class Overlayable(object):
                 element = other[args]
                 return self * element
             callback = Callable(dynamic_mul, inputs=[self, other])
-            callback._overlay = True
+            callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         if isinstance(other, UniformNdMapping) and not isinstance(other, CompositeOverlay):
@@ -142,7 +142,7 @@ class Overlay(Layout, CompositeOverlay):
                 element = other[args]
                 return self * element
             callback = Callable(dynamic_mul, inputs=[self, other])
-            callback._overlay = True
+            callback._is_overlay = True
             return other.clone(shared_data=False, callback=callback,
                                streams=[])
         elif not isinstance(other, ViewableElement):

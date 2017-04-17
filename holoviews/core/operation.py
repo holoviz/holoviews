@@ -104,8 +104,12 @@ class ElementOperation(Operation):
        component is Normalization.keys. """)
 
     link_inputs = param.Boolean(default=False, doc="""
-         Whether a plot created from the output of this operation
-         should be linked to the inputs of this operation.""")
+         If the operation is dynamic, whether or not linked streams
+         should be transferred from the operation inputs for backends
+         that support linked streams. For example if an operation is
+         applied to a DynamicMap with an RangeXY determines if the
+         output of the operation will update the stream on the input
+         with current axis ranges.""")
 
     streams = param.List(default=[], doc="""
         List of streams that are applied if dynamic=True, allowing

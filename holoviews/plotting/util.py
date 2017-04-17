@@ -80,13 +80,15 @@ def isoverlay_fn(obj):
     return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
 
 
-def linked_zorders(obj, path=[]):
+def compute_overlayable_zorders(obj, path=[]):
     """
     Traverses the Callables on DynamicMap to determine which objects
     in the graph are associated with specific (Nd)Overlay layers.
     Returns a mapping between the zorders of each layer and lists of
-    objects associated with each. This is required to determine which
-    subplots should be linked with Stream callbacks.
+    objects associated with each.
+
+    Used to determine which subplots should be linked with Stream
+    callbacks.
     """
     path = path+[obj]
     zorder_map = defaultdict(list)
@@ -102,7 +104,7 @@ def linked_zorders(obj, path=[]):
         return zorder_map
 
     isoverlay = isinstance(obj.last, CompositeOverlay)
-    isdynoverlay = obj.callback._overlay
+    isdynoverlay = obj.callback._is_overlay
     found = any(isinstance(p, DynamicMap) and p.callback._overlay for p in path)
     if obj not in zorder_map[0] and not isoverlay:
         zorder_map[0].append(obj)
@@ -117,7 +119,7 @@ def linked_zorders(obj, path=[]):
 
         # Recurse into DynamicMap.callback.inputs and update zorder_map
         i = i if isdynoverlay else 0
-        dinputs = linked_zorders(inp, path=path)
+        dinputs = compute_overlayable_zorders(inp, path=path)
         offset = max(zorder_map.keys())
         for k, v in dinputs.items():
             zorder_map[offset+k+i] = list(unique_iterator(zorder_map[offset+k+i]+v))

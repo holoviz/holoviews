@@ -265,8 +265,9 @@ class shade(ElementOperation):
         arguments.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         Whether a plot created from the output of this operation
-         should be linked to the inputs of this operation.""")
+         By default, the link_inputs parameter is set to True so that
+         when applying shade, backends that support linked streams
+         update RangeXY streams on the inputs of the shade operation.""")
 
     @classmethod
     def concatenate(cls, overlay):
@@ -400,8 +401,9 @@ class dynspread(ElementOperation):
         allowed.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         Whether a plot created from the output of this operation
-         should be linked to the inputs of this operation.""")
+         By default, the link_inputs parameter is set to True so that
+         when applying dynspread, backends that support linked streams
+         update RangeXY streams on the inputs of the dynspread operation.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):

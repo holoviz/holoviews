@@ -145,7 +145,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                 pass
             return Overlay(layers)
         callback = Callable(dynamic_mul, inputs=[self, other])
-        callback._overlay = True
+        callback._is_overlay = True
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -213,7 +213,7 @@ class HoloMap(UniformNdMapping, Overlayable):
                     element = self[args]
                     return element * other
                 callback = Callable(dynamic_mul, inputs=[self, other])
-                callback._overlay = True
+                callback._is_overlay = True
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -421,9 +421,10 @@ class Callable(param.Parameterized):
     callback. This is required for building interactive, linked
     visualizations (for the backends that support them) when returning
     Layouts, NdLayouts or GridSpace objects. When chaining multiple
-    DynamicMaps into a pipeline the link_inputs parameter declares
-    whether a plot created from the Callable owner is linked to objects
-    referenced in the inputs.
+    DynamicMaps into a pipeline, the link_inputs parameter declares
+    whether the visualization generated from this Callable will
+    inherit the linked streams. This parameter is used as a hint by
+    the applicable backend.
 
     The mapping should map from an appropriate key to a list of
     streams associated with the selected object. The appropriate key
@@ -440,8 +441,14 @@ class Callable(param.Parameterized):
          to allow deep access to streams in chained Callables.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         Whether a plot created from this Callable should be linked
-         to the declared inputs.""")
+         If the Callable wraps around other DynamicMaps in its inputs,
+         determines if linked streams attached to the inputs areb
+         transferred to the objects returned by the Callable.
+
+         For example if the Callable wraps a DynamicMap with an
+         RangeXY stream determines if the output of the Callable will
+         update the stream on the input with current axis ranges for
+         backends that support linked streams.""")
 
     memoize = param.Boolean(default=True, doc="""
          Whether the return value of the callable should be memoized
@@ -455,7 +462,7 @@ class Callable(param.Parameterized):
     def __init__(self, callable, **params):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
-        self._overlay = False
+        self._is_overlay = False
 
 
     @property
