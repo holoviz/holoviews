@@ -40,37 +40,43 @@ def param_aliases(d):
     return d
 
 
-def replace_dimensions(dimensions, overrides):
+class redim(object):
     """
-    Replaces dimensions in a list with a dictionary of overrides.
-    Overrides should be indexed by the dimension name with values that
-    is either a Dimension object, a string name or a dictionary
-    specifying the dimension parameters to override.
+    Utility that supports re-dimensioning any HoloViews object via the
+    redim method.
     """
-    replaced = []
-    for d in dimensions:
-        if d.name in overrides:
-            override = overrides[d.name]
-        elif d.label in overrides:
-            override = overrides[d.label]
-        else:
-            override = None
 
-        if override is None:
-            replaced.append(d)
-        elif isinstance(override, (basestring, tuple)):
-            replaced.append(d(override))
-        elif isinstance(override, Dimension):
-            replaced.append(override)
-        elif isinstance(override, dict):
-            replaced.append(d.clone(override.get('name',None),
-                                    **{k:v for k,v in override.items() if k != 'name'}))
-        else:
-            raise ValueError('Dimension can only be overridden '
-                             'with another dimension or a dictionary '
-                             'of attributes')
-    return replaced
+    @classmethod
+    def replace_dimensions(cls, dimensions, overrides):
+        """
+        Replaces dimensions in a list with a dictionary of overrides.
+        Overrides should be indexed by the dimension name with values that
+        is either a Dimension object, a string name or a dictionary
+        specifying the dimension parameters to override.
+        """
+        replaced = []
+        for d in dimensions:
+            if d.name in overrides:
+                override = overrides[d.name]
+            elif d.label in overrides:
+                override = overrides[d.label]
+            else:
+                override = None
 
+            if override is None:
+                replaced.append(d)
+            elif isinstance(override, (basestring, tuple)):
+                replaced.append(d(override))
+            elif isinstance(override, Dimension):
+                replaced.append(override)
+            elif isinstance(override, dict):
+                replaced.append(d.clone(override.get('name',None),
+                                        **{k:v for k,v in override.items() if k != 'name'}))
+            else:
+                raise ValueError('Dimension can only be overridden '
+                                 'with another dimension or a dictionary '
+                                 'of attributes')
+        return replaced
 
 class Dimension(param.Parameterized):
     """
