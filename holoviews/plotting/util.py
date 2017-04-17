@@ -1,13 +1,14 @@
 from __future__ import unicode_literals
+from collections import defaultdict
 
 import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store, Dataset)
-from ..core.spaces import get_nested_streams, Callable, OverlayCallable
+from ..core.spaces import get_nested_streams, Callable
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
-                         get_overlay_spec, unique_iterator)
+                         get_overlay_spec, unique_iterator, unique_iterator)
 
 
 def displayable(obj):
@@ -70,6 +71,55 @@ def collate(obj):
             raise Exception(undisplayable_info(obj))
     else:
         raise Exception(undisplayable_info(obj))
+
+
+def isoverlay_fn(obj):
+    return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
+
+
+def linked_zorders(obj, path=[]):
+    """
+    Traverses Callable graph to resolve sources on DynamicMap objects,
+    returning a dictionary of sources indexed by the Overlay layer. The
+    branch variables is used for internal record-keeping while recursing
+    through the graph.
+    """
+    path = path+[obj]
+    zorder_map = defaultdict(list)
+    if not isinstance(obj, DynamicMap):
+        if isinstance(obj, CompositeOverlay):
+            for i, o in enumerate(obj):
+                zorder_map[i] = [o, obj]
+        else:
+            if obj not in zorder_map[0]:
+                zorder_map[0].append(obj)
+        return zorder_map
+
+    isoverlay = isinstance(obj.last, CompositeOverlay)
+    isdynoverlay = obj.callback._overlay
+    found = any(isinstance(p, DynamicMap) and p.callback._overlay for p in path)
+
+    if obj not in zorder_map[0] and not isoverlay:
+        zorder_map[0].append(obj)
+
+    # Process the inputs of the DynamicMap callback
+    dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
+    for i, inp in enumerate(dmap_inputs):
+        if any(not (isoverlay_fn(p) or p.last is None) for p in path) and isoverlay_fn(inp):
+            continue
+        i = i if isdynoverlay else 0
+        dinputs = linked_zorders(inp, path=path)
+        offset = max(zorder_map.keys())
+        for k, v in dinputs.items():
+            zorder_map[offset+k+i] = list(unique_iterator(zorder_map[offset+k+i]+v))
+
+    # If object branches but does not declare inputs
+    if found and isoverlay and not isdynoverlay:
+        offset = max(zorder_map.keys())
+        for i, o in enumerate(obj.last):
+            if o not in zorder_map[offset+i]:
+                zorder_map[offset+i].append(o)
+    return zorder_map
 
 
 def initialize_dynamic(obj):

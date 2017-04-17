@@ -17,11 +17,12 @@ from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
-from ..core.spaces import HoloMap, DynamicMap, get_stream_sources
+from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
-                   attach_streams, traverse_setter, get_nested_streams)
+                   attach_streams, traverse_setter, get_nested_streams,
+                   linked_zorders)
 
 
 class Plot(param.Parameterized):
@@ -570,7 +571,7 @@ class GenericElementPlot(DimensionedPlot):
         if overlaid:
             self.stream_sources = stream_sources
         else:
-            self.stream_sources = get_stream_sources(self.hmap)
+            self.stream_sources = linked_zorders(self.hmap)
 
         plot_element = self.hmap.last
         if self.batched and not isinstance(self, GenericOverlayPlot):

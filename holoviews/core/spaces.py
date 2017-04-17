@@ -4,7 +4,6 @@ from numbers import Number
 from itertools import groupby
 from functools import partial
 from contextlib import contextmanager
-from collections import defaultdict
 
 import numpy as np
 import param
@@ -100,6 +99,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         return [tuple(zip([d.name for d in self.kdims], [k] if self.ndims == 1 else k))
                 for k in self.keys()]
 
+
     def _dynamic_mul(self, dimensions, other, keys):
         """
         Implements dynamic version of overlaying operation overlaying
@@ -117,11 +117,14 @@ class HoloMap(UniformNdMapping, Overlayable):
         map_obj = self if isinstance(self, DynamicMap) else other
 
         def dynamic_mul(*key, **kwargs):
+            key_map = {d.name: k for d, k in zip(dimensions, key)}
             layers = []
             try:
                 if isinstance(self, DynamicMap):
-                    safe_key = () if not self.kdims else key
-                    _, self_el = util.get_dynamic_item(self, dimensions, safe_key)
+                    if self.kdims:
+                        self_el = self.select(**key_map)
+                    else:
+                        self_el = self[()]
                     if self_el is not None:
                         layers.append(self_el)
                 else:
@@ -130,8 +133,10 @@ class HoloMap(UniformNdMapping, Overlayable):
                 pass
             try:
                 if isinstance(other, DynamicMap):
-                    safe_key = () if not other.kdims else key
-                    _, other_el = util.get_dynamic_item(other, dimensions, safe_key)
+                    if other.kdims:
+                        other_el = other.select(**key_map)
+                    else:
+                        other_el = other[()]
                     if other_el is not None:
                         layers.append(other_el)
                 else:
@@ -139,7 +144,8 @@ class HoloMap(UniformNdMapping, Overlayable):
             except KeyError:
                 pass
             return Overlay(layers)
-        callback = OverlayCallable(dynamic_mul, inputs=[self, other])
+        callback = Callable(dynamic_mul, inputs=[self, other])
+        callback._overlay = True
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
                                  kdims=dimensions, streams=[])
@@ -206,7 +212,8 @@ class HoloMap(UniformNdMapping, Overlayable):
                 def dynamic_mul(*args, **kwargs):
                     element = self[args]
                     return element * other
-                callback = OverlayCallable(dynamic_mul, inputs=[self, other])
+                callback = Callable(dynamic_mul, inputs=[self, other])
+                callback._overlay = True
                 return self.clone(shared_data=False, callback=callback,
                                   streams=[])
             items = [(k, v * other) for (k, v) in self.data.items()]
@@ -429,6 +436,9 @@ class Callable(param.Parameterized):
          The list of inputs the callable function is wrapping. Used
          to allow deep access to streams in chained Callables.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+         Whether the inputs on the Callable should be linked.""")
+
     memoize = param.Boolean(default=True, doc="""
          Whether the return value of the callable should be memoized
          based on the call arguments and any streams attached to the
@@ -441,6 +451,8 @@ class Callable(param.Parameterized):
     def __init__(self, callable, **params):
         super(Callable, self).__init__(callable=callable, **params)
         self._memoized = {}
+        self._overlay = False
+
 
     @property
     def argspec(self):
@@ -495,13 +507,6 @@ class Callable(param.Parameterized):
         return ret
 
 
-class OverlayCallable(Callable):
-    """
-    A Callable subclass specifically meant to indicate that the Callable
-    represents an overlay operation between two objects.
-    """
-
-
 def get_nested_streams(dmap):
     """
     Get all (potentially nested) streams from DynamicMap with Callable
@@ -514,47 +519,6 @@ def get_nested_streams(dmap):
         if isinstance(o, DynamicMap):
             layer_streams += get_nested_streams(o)
     return list(set(layer_streams))
-
-
-
-def get_stream_sources(obj, branch=0):
-    """
-    Traverses Callable graph to resolve sources on DynamicMap objects,
-    returning a dictionary of sources indexed by the Overlay layer. The
-    branch variables is used for internal record-keeping while recursing
-    through the graph.
-    """
-    inputs = defaultdict(list)
-    if not isinstance(obj, DynamicMap):
-        if isinstance(obj, CompositeOverlay):
-            for i, o in enumerate(obj):
-                inputs[branch+i] = [o, obj]
-        else:
-            if obj not in inputs[branch]:
-                inputs[branch].append(obj)
-        return inputs
-
-    isbranch = isinstance(obj.last, CompositeOverlay)
-
-    if obj not in inputs[branch] and not isbranch:
-        inputs[branch].append(obj)
-
-    # Process the inputs of the DynamicMap callback
-    offset = 0
-    for i, inp in enumerate(obj.callback.inputs):
-        i = i if isbranch else 0
-        dinputs = get_stream_sources(inp, branch=branch+i+offset)
-        offset += max(dinputs.keys())-(branch+offset+i)
-        for k, v in dinputs.items():
-            inputs[k] = list(util.unique_iterator(inputs[k]+dinputs[k]))
-
-    # If object branches but does not declare inputs
-    if isbranch and not isinstance(obj.callback, OverlayCallable):
-        for i, o in enumerate(obj.last):
-            if o not in inputs[branch+i]:
-                inputs[branch+i].append(o)
-
-    return inputs
 
 
 @contextmanager
@@ -734,14 +698,8 @@ class DynamicMap(HoloMap):
 
         # Ensure the clone references this object to ensure
         # stream sources are inherited
-        if isinstance(clone.callback, OverlayCallable):
-            from ..util import Dynamic
-            return Dynamic(clone, shared_data=shared_data)
-        elif clone.callback is self.callback:
-            clone.callback = clone.callback.clone()
-        if not any(inp is self for inputs in get_stream_sources(clone).values() for inp in inputs):
-            with util.disable_constant(clone.callback):
-                clone.callback.inputs = [self]+self.callback.inputs
+        if clone.callback is self.callback:
+            clone.callback = clone.callback.clone(inputs=[self])
         return clone
 
 
