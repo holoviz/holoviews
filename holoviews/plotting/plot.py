@@ -602,7 +602,8 @@ class GenericElementPlot(DimensionedPlot):
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
-        if not self.overlaid:
+        # Attach streams if not overlaid and not a batched ElementPlot
+        if not (self.overlaid or (self.batched and not isinstance(self, GenericOverlayPlot))):
             attach_streams(self, self.hmap)
 
         # Update plot and style options for batched plots

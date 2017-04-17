@@ -349,6 +349,17 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (0, 0, 9, 1))
 
+    def test_batched_curve_subscribers_correctly_attached(self):
+        posx = PositionX()
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
+                                                  for i in range(2)})(opts), kdims=[],
+                             streams=[posx])
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertIn(plot.refresh, posx.subscribers)
+        self.assertNotIn(list(plot.subplots.values())[0].refresh, posx.subscribers)
+
     def test_batched_points_size_and_color(self):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Points': dict(style=dict(size=Cycle(values=[1, 2])))}
