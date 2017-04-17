@@ -21,7 +21,7 @@ from .util import compute_ratios, fix_aspect
 
 
 @contextmanager
-def rc_context(rcparams):
+def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
@@ -40,7 +40,7 @@ def mpl_rc_context(f):
     in the plots fig_rcparams while when method is called.
     """
     def wrapper(self, *args, **kwargs):
-        with rc_context(self.fig_rcparams):
+        with _rc_context(self.fig_rcparams):
             return f(self, *args, **kwargs)
     return wrapper
 
