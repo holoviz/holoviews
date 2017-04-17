@@ -82,6 +82,49 @@ class redim(object):
                                  'of attributes')
         return replaced
 
+
+    def __call__(self, specs=None, **dimensions):
+        """
+        Replace dimensions on the dataset and allows renaming
+        dimensions in the dataset. Dimension mapping should map
+        between the old dimension name and a dictionary of the new
+        attributes, a completely new dimension or a new string name.
+        """
+        parent = self.parent
+        redimmed = parent
+        if parent._deep_indexable and self.mode != 'dataset':
+            deep_mapped = [(k, v.redim(specs, **dimensions))
+                           for k, v in parent.items()]
+            redimmed = parent.clone(deep_mapped)
+
+        if specs is not None:
+            if not isinstance(specs, list):
+                specs = [specs]
+            matches = any(parent.matches(spec) for spec in specs)
+            if self.mode != 'dynamic' and not matches:
+                return redimmed
+
+
+        kdims = self.replace_dimensions(parent.kdims, dimensions)
+        vdims = self.replace_dimensions(parent.vdims, dimensions)
+        zipped_dims = zip(parent.kdims+parent.vdims, kdims+vdims)
+        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+
+        if self.mode == 'dataset':
+            data = parent.data
+            if renames:
+                data = parent.interface.redim(parent, renames)
+            return parent.clone(data, kdims=kdims, vdims=vdims)
+
+        redimmed = redimmed.clone(kdims=kdims, vdims=vdims)
+        if self.mode != 'dynamic':
+            return redimmed
+
+        from ..util import Dynamic
+        def dynamic_redim(obj):
+            return obj.redim(specs, **dimensions)
+        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
+
 class Dimension(param.Parameterized):
     """
     Dimension objects are used to specify some important general
