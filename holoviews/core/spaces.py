@@ -605,7 +605,7 @@ class DynamicMap(HoloMap):
         for kdim in self.kdims:
             if kdim.values:
                 key.append(kdim.values[0])
-            elif kdim.range:
+            elif kdim.range[0] is not None:
                 key.append(kdim.range[0])
             else:
                 undefined.append(kdim)
