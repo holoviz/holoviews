@@ -7,6 +7,7 @@ import param
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store, Dataset)
 from ..core.spaces import get_nested_streams, Callable
+from ..core.options import SkipRendering
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator, unique_iterator)
 from ..streams import LinkedStream
@@ -171,7 +172,12 @@ def initialize_dynamic(obj):
             # Skip initialization until plotting code
             continue
         if not len(dmap):
-            dmap[dmap._initial_key()]
+            try:
+                dmap[dmap._initial_key()]
+            except KeyError as e:
+                suffix_msg = (' required for display.\n'
+                              'Try using DynamicMap redim.range or redim.values methods.')
+                raise SkipRendering(str(e)[1:-1] + suffix_msg, warn=True)
 
 
 def undisplayable_info(obj, html=False):
