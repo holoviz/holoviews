@@ -19,6 +19,11 @@ class AnnotationTests(ComparisonTestCase):
         self.assertEqual(hline.range(0), (0, 0))
         self.assertEqual(hline.range(1), (None, None))
 
+    def test_arrow_redim_range_aux(self):
+        annotations = Arrow(0, 0)
+        redimmed = annotations.redim.range(x=(-0.5,0.5))
+        self.assertEqual(redimmed.kdims[0].range, (-0.5,0.5))
+
     def test_deep_clone_map_select_redim(self):
         annotations = (Text(0, 0, 'A') + Arrow(0, 0) + HLine(0) + VLine(0))
         selected = annotations.select(x=(0, 5))

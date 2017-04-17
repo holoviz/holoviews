@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from . import traversal, util
-from .dimension import OrderedDict, Dimension, ViewableElement
+from .dimension import OrderedDict, Dimension, ViewableElement, redim
 from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
@@ -585,6 +585,7 @@ class DynamicMap(HoloMap):
         for stream in self.streams:
             if stream.source is None:
                 stream.source = self
+        self.redim = redim(self, mode='dynamic')
 
     def _initial_key(self):
         """
@@ -904,21 +905,6 @@ class DynamicMap(HoloMap):
                 return obj.relabel(group=group, label=label, depth=depth-1)
             return Dynamic(relabelled, shared_data=True, operation=dynamic_relabel)
         return relabelled
-
-
-    def redim(self, specs=None, **dimensions):
-        """
-        Replaces existing dimensions in an object with new dimensions
-        or changing specific attributes of a dimensions. Dimension
-        mapping should map between the old dimension name and a
-        dictionary of the new attributes, a completely new dimension
-        or a new string name.
-        """
-        redimmed = super(DynamicMap, self).redim(specs, **dimensions)
-        from ..util import Dynamic
-        def dynamic_redim(obj):
-            return obj.redim(specs, **dimensions)
-        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
 
     def collate(self):

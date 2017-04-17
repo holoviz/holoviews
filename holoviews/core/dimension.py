@@ -40,36 +40,124 @@ def param_aliases(d):
     return d
 
 
-def replace_dimensions(dimensions, overrides):
+class redim(object):
     """
-    Replaces dimensions in a list with a dictionary of overrides.
-    Overrides should be indexed by the dimension name with values that
-    is either a Dimension object, a string name or a dictionary
-    specifying the dimension parameters to override.
+    Utility that supports re-dimensioning any HoloViews object via the
+    redim method.
     """
-    replaced = []
-    for d in dimensions:
-        if d.name in overrides:
-            override = overrides[d.name]
-        elif d.label in overrides:
-            override = overrides[d.label]
-        else:
-            override = None
 
-        if override is None:
-            replaced.append(d)
-        elif isinstance(override, (basestring, tuple)):
-            replaced.append(d(override))
-        elif isinstance(override, Dimension):
-            replaced.append(override)
-        elif isinstance(override, dict):
-            replaced.append(d.clone(override.get('name',None),
-                                    **{k:v for k,v in override.items() if k != 'name'}))
-        else:
-            raise ValueError('Dimension can only be overridden '
-                             'with another dimension or a dictionary '
-                             'of attributes')
-    return replaced
+    def __init__(self, parent, mode=None):
+        self.parent = parent
+        # Can be 'dataset', 'dynamic' or None
+        self.mode = mode
+
+    def __str__(self):
+        return "<holoviews.core.dimension.redim method>"
+
+    @classmethod
+    def replace_dimensions(cls, dimensions, overrides):
+        """
+        Replaces dimensions in a list with a dictionary of overrides.
+        Overrides should be indexed by the dimension name with values that
+        is either a Dimension object, a string name or a dictionary
+        specifying the dimension parameters to override.
+        """
+        replaced = []
+        for d in dimensions:
+            if d.name in overrides:
+                override = overrides[d.name]
+            elif d.label in overrides:
+                override = overrides[d.label]
+            else:
+                override = None
+
+            if override is None:
+                replaced.append(d)
+            elif isinstance(override, (basestring, tuple)):
+                replaced.append(d(override))
+            elif isinstance(override, Dimension):
+                replaced.append(override)
+            elif isinstance(override, dict):
+                replaced.append(d.clone(override.get('name',None),
+                                        **{k:v for k,v in override.items() if k != 'name'}))
+            else:
+                raise ValueError('Dimension can only be overridden '
+                                 'with another dimension or a dictionary '
+                                 'of attributes')
+        return replaced
+
+
+    def __call__(self, specs=None, **dimensions):
+        """
+        Replace dimensions on the dataset and allows renaming
+        dimensions in the dataset. Dimension mapping should map
+        between the old dimension name and a dictionary of the new
+        attributes, a completely new dimension or a new string name.
+        """
+        parent = self.parent
+        redimmed = parent
+        if parent._deep_indexable and self.mode != 'dataset':
+            deep_mapped = [(k, v.redim(specs, **dimensions))
+                           for k, v in parent.items()]
+            redimmed = parent.clone(deep_mapped)
+
+        if specs is not None:
+            if not isinstance(specs, list):
+                specs = [specs]
+            matches = any(parent.matches(spec) for spec in specs)
+            if self.mode != 'dynamic' and not matches:
+                return redimmed
+
+
+        kdims = self.replace_dimensions(parent.kdims, dimensions)
+        vdims = self.replace_dimensions(parent.vdims, dimensions)
+        zipped_dims = zip(parent.kdims+parent.vdims, kdims+vdims)
+        renames = {pk.name: nk for pk, nk in zipped_dims if pk != nk}
+
+        if self.mode == 'dataset':
+            data = parent.data
+            if renames:
+                data = parent.interface.redim(parent, renames)
+            return parent.clone(data, kdims=kdims, vdims=vdims)
+
+        redimmed = redimmed.clone(kdims=kdims, vdims=vdims)
+        if self.mode != 'dynamic':
+            return redimmed
+
+        from ..util import Dynamic
+        def dynamic_redim(obj):
+            return obj.redim(specs, **dimensions)
+        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
+
+
+    def _redim(self, name, specs, **dims):
+        dimensions = {k:{name:v} for k,v in dims.items()}
+        return self(specs, **dimensions)
+
+    def cyclic(self, specs=None, **values):
+        return self._redim('cyclic', specs, **values)
+
+    def value_format(self, specs=None, **values):
+        return self._redim('value_format', specs, **values)
+
+    def range(self, specs=None, **values):
+        return self._redim('range', specs, **values)
+
+    def soft_range(self, specs=None, **values):
+        return self._redim('soft_range', specs, **values)
+
+    def type(self, specs=None, **values):
+        return self._redim('type', specs, **values)
+
+    def step(self, specs=None, **values):
+        return self._redim('step', specs, **values)
+
+    def unit(self, specs=None, **values):
+        return self._redim('unit', specs, **values)
+
+    def values(self, specs=None, **ranges):
+        return self._redim('values', specs, **ranges)
+
 
 
 class Dimension(param.Parameterized):
@@ -699,6 +787,7 @@ class Dimensioned(LabelledData):
         cdims = [(d.name, val) for d, val in self.cdims.items()]
         self._cached_constants = OrderedDict(cdims)
         self._settings = None
+        self.redim = redim(self)
 
 
     def _valid_dimensions(self, dimensions):
@@ -908,35 +997,6 @@ class Dimensioned(LabelledData):
                     items.append((k, v))
             selection = selection.clone(items)
         return selection
-
-
-    def redim(self, specs=None, **dimensions):
-        """
-        Replaces existing dimensions in an object with new dimensions
-        or changing specific attributes of a dimensions. Dimension
-        mapping should map between the old dimension name and a
-        dictionary of the new attributes, a completely new dimension
-        or a new string name.
-        """
-        if specs is None:
-            applies = True
-        else:
-            if not isinstance(specs, list):
-                specs = [specs]
-            applies = any(self.matches(spec) for spec in specs)
-
-        redimmed = self
-        if self._deep_indexable:
-            deep_mapped = [(k, v.redim(specs, **dimensions))
-                           for k, v in self.items()]
-            redimmed = self.clone(deep_mapped)
-
-        if applies:
-            kdims = replace_dimensions(self.kdims, dimensions)
-            vdims = replace_dimensions(self.vdims, dimensions)
-            return redimmed.clone(kdims=kdims, vdims=vdims)
-        else:
-            return redimmed
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):

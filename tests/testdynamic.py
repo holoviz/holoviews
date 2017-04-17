@@ -33,6 +33,21 @@ class DynamicMethods(ComparisonTestCase):
         dmap = DynamicMap(fn).redim(Default='New')
         self.assertEqual(dmap.kdims[0].name, 'New')
 
+    def test_redim_dimension_range_aux(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim.range(Default=(0,1))
+        self.assertEqual(dmap.kdims[0].range, (0,1))
+
+    def test_redim_dimension_unit_aux(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim.unit(Default='m/s')
+        self.assertEqual(dmap.kdims[0].unit, 'm/s')
+
+    def test_redim_dimension_type_aux(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap = DynamicMap(fn).redim.type(Default=int)
+        self.assertEqual(dmap.kdims[0].type, int)
+
     def test_deep_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap = DynamicMap(fn).redim(x='X')
