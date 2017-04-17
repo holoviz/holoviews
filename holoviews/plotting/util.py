@@ -80,6 +80,21 @@ def isoverlay_fn(obj):
     return isinstance(obj, DynamicMap) and (isinstance(obj.last, CompositeOverlay))
 
 
+def overlay_depth(obj):
+    """
+    Computes the depth of a DynamicMap overlay if it can be determined
+    otherwise return None.
+    """
+    if isinstance(obj, DynamicMap):
+        if isinstance(obj.last, CompositeOverlay):
+            return len(obj.last)
+        elif obj.last is None:
+            return None
+        return 1
+    else:
+        return 1
+
+
 def compute_overlayable_zorders(obj, path=[]):
     """
     Traverses an overlayable composite container to determine which
@@ -108,6 +123,7 @@ def compute_overlayable_zorders(obj, path=[]):
     isdynoverlay = obj.callback._is_overlay
     if obj not in zorder_map[0] and not isoverlay:
         zorder_map[0].append(obj)
+    depth = overlay_depth(obj)
 
     # Process the inputs of the DynamicMap callback
     dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
@@ -116,13 +132,18 @@ def compute_overlayable_zorders(obj, path=[]):
             # Skips branches of graph that collapse Overlay layers
             # to avoid adding layers that have been reduced or removed
             continue
+        elif depth is not None and depth < overlay_depth(inp):
+            # Skips branch of graph where the number of elements in an
+            # overlay has been reduced
+            continue
 
         # Recurse into DynamicMap.callback.inputs and update zorder_map
         z = z if isdynoverlay else 0
-        dinputs = compute_overlayable_zorders(inp, path=path)
+        deep_zorders = compute_overlayable_zorders(inp, path=path)
         offset = max(zorder_map.keys())
-        for k, v in dinputs.items():
-            zorder_map[offset+k+z] = list(unique_iterator(zorder_map[offset+k+z]+v))
+        for dz, objs in deep_zorders.items():
+            global_z = offset+dz+z
+            zorder_map[global_z] = list(unique_iterator(zorder_map[global_z]+objs))
 
     # If object branches but does not declare inputs (e.g. user defined
     # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
