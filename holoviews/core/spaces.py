@@ -610,7 +610,7 @@ class DynamicMap(HoloMap):
             else:
                 undefined.append(kdim)
         if undefined:
-            msg = ('Dimensions {undefined_dims} do not specify range or values needed '
+            msg = ('Dimension(s) {undefined_dims} do not specify range or values needed '
                    'to generate initial key')
             undefined_dims = ', '.join(['%r' % str(dim) for dim in undefined])
             raise KeyError(msg.format(undefined_dims=undefined_dims))
