@@ -125,6 +125,35 @@ class redim(object):
             return obj.redim(specs, **dimensions)
         return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
 
+
+    def _redim(self, name, specs, **dims):
+        dimensions = {k:{name:v} for k,v in dims.items()}
+        return self(specs, **dimensions)
+
+    def cyclic(self, specs=None, **values):
+        return self._redim('cyclic', specs, **values)
+
+    def value_format(self, specs=None, **values):
+        return self._redim('value_format', specs, **values)
+
+    def range(self, specs=None, **values):
+        return self._redim('range', specs, **values)
+
+    def soft_range(self, specs=None, **values):
+        return self._redim('soft_range', specs, **values)
+
+    def type(self, specs=None, **values):
+        return self._redim('type', specs, **values)
+
+    def step(self, specs=None, **values):
+        return self._redim('step', specs, **values)
+
+    def unit(self, specs=None, **values):
+        return self._redim('unit', specs, **values)
+
+    def values(self, specs=None, **ranges):
+        return self._redim('values', specs, **ranges)
+
 class Dimension(param.Parameterized):
     """
     Dimension objects are used to specify some important general
