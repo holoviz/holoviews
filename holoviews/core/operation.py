@@ -150,7 +150,7 @@ class ElementOperation(Operation):
         elif dynamic:
             from ..util import Dynamic
             processed = Dynamic(element, streams=self.p.streams,
-                                link_inputs=self.p.link.inputs,
+                                link_inputs=self.p.link_inputs,
                                 operation=self, kwargs=params)
         elif isinstance(element, ViewableElement):
             processed = self._process(element)

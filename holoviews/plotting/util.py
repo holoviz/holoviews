@@ -82,13 +82,14 @@ def isoverlay_fn(obj):
 
 def compute_overlayable_zorders(obj, path=[]):
     """
-    Traverses the Callables on DynamicMap to determine which objects
-    in the graph are associated with specific (Nd)Overlay layers.
-    Returns a mapping between the zorders of each layer and lists of
-    objects associated with each.
+    Traverses an overlayable composite container to determine which
+    objects are associated with specific (Nd)Overlay layers by
+    z-order, making sure to take DynamicMap Callables into
+    account. Returns a mapping between the zorders of each layer and a
+    corresponding lists of objects.
 
-    Used to determine which subplots should be linked with Stream
-    callbacks.
+    Used to determine which overlaid subplots should be linked with
+    Stream callbacks.
     """
     path = path+[obj]
     zorder_map = defaultdict(list)
@@ -96,8 +97,8 @@ def compute_overlayable_zorders(obj, path=[]):
     # Process non-dynamic layers
     if not isinstance(obj, DynamicMap):
         if isinstance(obj, CompositeOverlay):
-            for i, o in enumerate(obj):
-                zorder_map[i] = [o, obj]
+            for z, o in enumerate(obj):
+                zorder_map[z] = [o, obj]
         else:
             if obj not in zorder_map[0]:
                 zorder_map[0].append(obj)
@@ -105,32 +106,32 @@ def compute_overlayable_zorders(obj, path=[]):
 
     isoverlay = isinstance(obj.last, CompositeOverlay)
     isdynoverlay = obj.callback._is_overlay
-    found = any(isinstance(p, DynamicMap) and p.callback._overlay for p in path)
     if obj not in zorder_map[0] and not isoverlay:
         zorder_map[0].append(obj)
 
     # Process the inputs of the DynamicMap callback
     dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
-    for i, inp in enumerate(dmap_inputs):
+    for z, inp in enumerate(dmap_inputs):
         if any(not (isoverlay_fn(p) or p.last is None) for p in path) and isoverlay_fn(inp):
             # Skips branches of graph that collapse Overlay layers
             # to avoid adding layers that have been reduced or removed
             continue
 
         # Recurse into DynamicMap.callback.inputs and update zorder_map
-        i = i if isdynoverlay else 0
+        z = z if isdynoverlay else 0
         dinputs = compute_overlayable_zorders(inp, path=path)
         offset = max(zorder_map.keys())
         for k, v in dinputs.items():
-            zorder_map[offset+k+i] = list(unique_iterator(zorder_map[offset+k+i]+v))
+            zorder_map[offset+k+z] = list(unique_iterator(zorder_map[offset+k+z]+v))
 
     # If object branches but does not declare inputs (e.g. user defined
     # DynamicMaps returning (Nd)Overlay) add the items on the DynamicMap.last
+    found = any(isinstance(p, DynamicMap) and p.callback._is_overlay for p in path)
     if found and isoverlay and not isdynoverlay:
         offset = max(zorder_map.keys())
-        for i, o in enumerate(obj.last):
-            if o not in zorder_map[offset+i]:
-                zorder_map[offset+i].append(o)
+        for z, o in enumerate(obj.last):
+            if o not in zorder_map[offset+z]:
+                zorder_map[offset+z].append(o)
     return zorder_map
 
 
