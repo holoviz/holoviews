@@ -125,9 +125,10 @@ class redim(object):
             return redimmed
 
         from ..util import Dynamic
-        def dynamic_redim(obj):
+        def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)
-        return Dynamic(redimmed, shared_data=True, operation=dynamic_redim)
+        return Dynamic(redimmed, shared_data=True, streams=parent.streams,
+                       operation=dynamic_redim)
 
 
     def _redim(self, name, specs, **dims):

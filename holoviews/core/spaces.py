@@ -114,7 +114,14 @@ class HoloMap(UniformNdMapping, Overlayable):
             dimensions = [d(values=grouped[d.name]) for d in dimensions]
             map_obj = None
 
+        # Combine streams
         map_obj = self if isinstance(self, DynamicMap) else other
+        if isinstance(self, DynamicMap) and isinstance(other, DynamicMap):
+            self_streams = util.dimensioned_streams(self.streams)
+            other_streams = util.dimensioned_streams(other.streams)
+            streams = self_streams+other_streams
+        else:
+            streams = map_obj.streams
 
         def dynamic_mul(*key, **kwargs):
             key_map = {d.name: k for d, k in zip(dimensions, key)}
@@ -134,9 +141,10 @@ class HoloMap(UniformNdMapping, Overlayable):
         callback._is_overlay = True
         if map_obj:
             return map_obj.clone(callback=callback, shared_data=False,
-                                 kdims=dimensions, streams=[])
+                                 kdims=dimensions, streams=streams)
         else:
-            return DynamicMap(callback=callback, kdims=dimensions)
+            return DynamicMap(callback=callback, kdims=dimensions,
+                              streams=streams)
 
 
     def __mul__(self, other):
@@ -746,8 +754,8 @@ class DynamicMap(HoloMap):
 
         if data_slice:
             from ..util import Dynamic
-            return Dynamic(product, operation=lambda obj: obj[data_slice],
-                           shared_data=True)
+            return Dynamic(product, operation=lambda obj, **dynkwargs: obj[data_slice],
+                           streams=self.streams, shared_data=True)
         return product
 
 
@@ -781,8 +789,8 @@ class DynamicMap(HoloMap):
                 if len(self):
                     slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
                     sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
-                return Dynamic(sliced, operation=lambda obj: obj[data_slice],
-                               shared_data=True)
+                return Dynamic(sliced, operation=lambda obj, **dynkwargs: obj[data_slice],
+                               streams=self.streams, shared_data=True)
         return sliced
 
 
@@ -848,7 +856,7 @@ class DynamicMap(HoloMap):
         if selection_specs is not None and not isinstance(selection_specs, (list, tuple)):
             selection_specs = [selection_specs]
         selection = super(DynamicMap, self).select(selection_specs, **kwargs)
-        def dynamic_select(obj):
+        def dynamic_select(obj, **dynkwargs):
             if selection_specs is not None:
                 matches = any(obj.matches(spec) for spec in selection_specs)
             else:
@@ -862,7 +870,7 @@ class DynamicMap(HoloMap):
         else:
             from ..util import Dynamic
             return Dynamic(selection, operation=dynamic_select,
-                           shared_data=True)
+                           streams=self.streams, shared_data=True)
 
 
     def _cache(self, key, val):
@@ -886,9 +894,10 @@ class DynamicMap(HoloMap):
         deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
             from ..util import Dynamic
-            def apply_map(obj):
+            def apply_map(obj, **dynkwargs):
                 return obj.map(map_fn, specs, clone)
-            dmap = Dynamic(deep_mapped, shared_data=True, operation=apply_map)
+            dmap = Dynamic(deep_mapped, operation=apply_map,
+                           streams=self.streams, shared_data=True)
             return dmap
         return deep_mapped
 
@@ -901,9 +910,10 @@ class DynamicMap(HoloMap):
         relabelled = super(DynamicMap, self).relabel(label, group, depth)
         if depth > 0:
             from ..util import Dynamic
-            def dynamic_relabel(obj):
+            def dynamic_relabel(obj, **dynkwargs):
                 return obj.relabel(group=group, label=label, depth=depth-1)
-            return Dynamic(relabelled, shared_data=True, operation=dynamic_relabel)
+            return Dynamic(relabelled, streams=self.streams, shared_data=True,
+                           operation=dynamic_relabel)
         return relabelled
 
 
@@ -1013,9 +1023,9 @@ class DynamicMap(HoloMap):
                             'values to apply a groupby')
 
         if outer_dynamic:
-            def outer_fn(*outer_key):
+            def outer_fn(*outer_key, **dynkwargs):
                 if inner_dynamic:
-                    def inner_fn(*inner_key):
+                    def inner_fn(*inner_key, **dynkwargs):
                         outer_vals = zip(outer_kdims, util.wrap_tuple(outer_key))
                         inner_vals = zip(inner_kdims, util.wrap_tuple(inner_key))
                         inner_sel = [(k.name, v) for k, v in inner_vals]
@@ -1040,7 +1050,7 @@ class DynamicMap(HoloMap):
             for outer in outer_product:
                 outer_vals = [(d.name, [o]) for d, o in zip(outer_kdims, outer)]
                 if inner_dynamic or not inner_kdims:
-                    def inner_fn(outer_vals, *key):
+                    def inner_fn(outer_vals, *key, **dynkwargs):
                         inner_dims = zip(inner_kdims, util.wrap_tuple(key))
                         inner_vals = [(d.name, k) for d, k in inner_dims]
                         return self.select(**dict(outer_vals+inner_vals)).last
@@ -1088,7 +1098,7 @@ class DynamicMap(HoloMap):
         for the first value dimension, which may be overridden by
         supplying an explicit ``dimension``.
         """
-        def dynamic_hist(obj):
+        def dynamic_hist(obj, **dynkwargs):
             if isinstance(obj, (NdOverlay, Overlay)):
                 index = kwargs.get('index', 0)
                 obj = obj.get(index)
@@ -1096,7 +1106,8 @@ class DynamicMap(HoloMap):
                             adjoin=False, **kwargs)
 
         from ..util import Dynamic
-        hist = Dynamic(self, link_inputs=False, operation=dynamic_hist)
+        hist = Dynamic(self, streams=self.streams, link_inputs=False,
+                       operation=dynamic_hist)
         if adjoin:
             return self << hist
         else:

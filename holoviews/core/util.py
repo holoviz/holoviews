@@ -1305,6 +1305,19 @@ def get_dynamic_item(map_obj, dimensions, key):
     return key, el
 
 
+def dimensioned_streams(dmap):
+    """
+    Given a DynamicMap return all streams that have any dimensioned
+    parameters i.e parameters also listed in the key dimensions.
+    """
+    dimensioned = []
+    for stream in dmap.streams:
+        stream_params = stream_parameters([stream])
+        if set([str(k) for k in dmap.kdims]) & set(stream_params):
+            dimensioned.append(stream)
+    return dimensioned
+
+
 def expand_grid_coords(dataset, dim):
     """
     Expand the coordinates along a dimension of the gridded
