@@ -580,7 +580,7 @@ class decimate(ElementOperation):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
         if element.interface not in column_interfaces:
-            element = plot.current_frame.clone(datatype=['dataframe', 'dictionary'])
+            element = element.current_frame.clone(datatype=['dataframe', 'dictionary'])
 
         xstart, xend = self.p.x_range if self.p.x_range else element.range(0)
         ystart, yend = self.p.y_range if self.p.y_range else element.range(1)
