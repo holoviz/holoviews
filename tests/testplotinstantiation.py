@@ -583,6 +583,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(cmapper.low, 0)
         self.assertEqual(cmapper.high, 4)
         source = plot.handles['source']
+        self.assertEqual(plot.handles['glyph'].fill_color['transform'], cmapper)
         self.assertEqual(source.data['Value'], list(range(5)))
 
     def test_polygons_colored_batched_unsanitized(self):
