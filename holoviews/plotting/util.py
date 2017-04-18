@@ -168,16 +168,11 @@ def initialize_dynamic(obj):
     """
     dmaps = obj.traverse(lambda x: x, specs=[DynamicMap])
     for dmap in dmaps:
-        if dmap.sampled:
+        if dmap.unbounded:
             # Skip initialization until plotting code
             continue
         if not len(dmap):
-            try:
-                dmap[dmap._initial_key()]
-            except KeyError as e:
-                suffix_msg = (' required for display.\n'
-                              'Try using DynamicMap redim.range or redim.values methods.')
-                raise SkipRendering(str(e)[1:-1] + suffix_msg, warn=True)
+            dmap[dmap._initial_key()]
 
 
 def undisplayable_info(obj, html=False):
@@ -265,14 +260,14 @@ def within_range(range1, range2):
             (range1[1] is None or range2[1] is None or range1[1] <= range2[1]))
 
 
-def validate_sampled_mode(holomaps, dynmaps):
+def validate_unbounded_mode(holomaps, dynmaps):
     composite = HoloMap(enumerate(holomaps), kdims=['testing_kdim'])
     holomap_kdims = set(unique_iterator([kd.name for dm in holomaps for kd in dm.kdims]))
     hmranges = {d: composite.range(d) for d in holomap_kdims}
     if any(not set(d.name for d in dm.kdims) <= holomap_kdims
                         for dm in dynmaps):
-        raise Exception('In sampled mode DynamicMap key dimensions must be a '
-                        'subset of dimensions of the HoloMap(s) defining the sampling.')
+        raise Exception('DynamicMap that are unbounded must have key dimensions that are a '
+                        'subset of dimensions of the HoloMap(s) defining the keys.')
     elif not all(within_range(hmrange, dm.range(d)) for dm in dynmaps
                               for d, hmrange in hmranges.items() if d in dm.kdims):
         raise Exception('HoloMap(s) have keys outside the ranges specified on '
@@ -283,18 +278,18 @@ def get_dynamic_mode(composite):
     "Returns the common mode of the dynamic maps in given composite object"
     dynmaps = composite.traverse(lambda x: x, [DynamicMap])
     holomaps = composite.traverse(lambda x: x, ['HoloMap'])
-    dynamic_sampled = any(m.sampled for m in dynmaps)
+    dynamic_unbounded = any(m.unbounded for m in dynmaps)
     if holomaps:
-        validate_sampled_mode(holomaps, dynmaps)
-    elif dynamic_sampled and not holomaps:
-        raise Exception("DynamicMaps in sampled mode must be displayed alongside "
+        validate_unbounded_mode(holomaps, dynmaps)
+    elif dynamic_unbounded and not holomaps:
+        raise Exception("DynamicMaps in unbounded mode must be displayed alongside "
                         "a HoloMap to define the sampling.")
-    return dynmaps and not holomaps, dynamic_sampled
+    return dynmaps and not holomaps, dynamic_unbounded
 
 
-def initialize_sampled(obj, dimensions, key):
+def initialize_unbounded(obj, dimensions, key):
     """
-    Initializes any DynamicMaps in sampled mode.
+    Initializes any DynamicMaps in unbounded mode.
     """
     select = dict(zip([d.name for d in dimensions], key))
     try:
