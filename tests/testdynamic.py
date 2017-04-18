@@ -17,6 +17,42 @@ def sine_array(phase, freq):
 
 
 
+class DynamicMapConstructor(ComparisonTestCase):
+
+    def test_simple_constructor(self):
+        DynamicMap(lambda x: x)
+
+    def test_simple_constructor_kdims(self):
+        DynamicMap(lambda x: x, kdims=['test'])
+
+    def test_simple_constructor_invalid(self):
+        regexp = ("Callback signature over \['x'\] does not accommodate "
+                  "required kdims \['x', 'y'\]")
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x, kdims=['x','y'])
+
+    def test_simple_constructor_streams(self):
+        DynamicMap(lambda x: x, streams=[PointerX()])
+
+    def test_simple_constructor_streams_invalid_uninstantiated(self):
+        regexp = ("The supplied streams list contains objects "
+                  "that are not Stream instances:(.+?)")
+        with self.assertRaisesRegexp(TypeError, regexp):
+            DynamicMap(lambda x: x, streams=[PointerX])
+
+    def test_simple_constructor_streams_invalid_type(self):
+        regexp = ("The supplied streams list contains objects "
+                  "that are not Stream instances:(.+?)")
+        with self.assertRaisesRegexp(TypeError, regexp):
+            DynamicMap(lambda x: x, streams=[3])
+
+    def test_simple_constructor_streams_invalid_mismatch(self):
+        regexp = 'Callable missing keywords to accept y stream parameters'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x, streams=[PointerXY()])
+
+
+
 class DynamicMapMethods(ComparisonTestCase):
 
     def test_deep_relabel_label(self):
