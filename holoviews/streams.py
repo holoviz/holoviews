@@ -290,69 +290,69 @@ class LinkedStream(Stream):
         super(LinkedStream, self).__init__(linked=linked, **params)
 
 
-class PositionX(LinkedStream):
+class PointerX(LinkedStream):
     """
-    A position along the x-axis in data coordinates.
+    A pointer position along the x-axis in data coordinates.
 
-    With the appropriate plotting backend, this may correspond to the
+    With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad cursor.
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the x-axis in data coordinates""")
+           Pointer position along the x-axis in data coordinates""")
 
 
-class PositionY(LinkedStream):
+class PointerY(LinkedStream):
     """
-    A position along the y-axis in data coordinates.
+    A pointer position along the y-axis in data coordinates.
 
-    With the appropriate plotting backend, this may correspond to the
+    With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad cursor.
     """
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the y-axis in data coordinates""")
+           Pointer position along the y-axis in data coordinates""")
 
 
-class PositionXY(LinkedStream):
+class PointerXY(LinkedStream):
     """
-    A position along the x- and y-axes in data coordinates.
+    A pointer position along the x- and y-axes in data coordinates.
 
-    With the appropriate plotting backend, this may correspond to the
+    With the appropriate plotting backend, this corresponds to the
     position of the mouse/trackpad cursor.
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the x-axis in data coordinates""")
+           Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the y-axis in data coordinates""")
+           Pointer position along the y-axis in data coordinates""")
 
 
-class Tap(PositionXY):
+class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.
     """
 
 
-class DoubleTap(PositionXY):
+class DoubleTap(PointerXY):
     """
     The x/y-position of a double-tap or -click in data coordinates.
     """
 
 
-class MouseEnter(PositionXY):
+class MouseEnter(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
 
 
-class MouseLeave(PositionXY):
+class MouseLeave(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
