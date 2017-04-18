@@ -302,7 +302,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         xy = PositionXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
-        regexp = '(.+?)does not correspond to any stream parameter'
+        regexp = '(.+?)do not correspond to stream parameters'
         with self.assertRaisesRegexp(KeyError, regexp):
             dmap.event(x=1, y=2)
 
