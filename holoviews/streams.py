@@ -273,7 +273,7 @@ class Counter(Stream):
     parameter every time it is updated.
     """
 
-    counter = param.Integer(default=0, bounds=(0,None))
+    counter = param.Integer(default=0, constant=True, bounds=(0,None))
 
     def transform(self):
         return {'counter': self.counter + 1}
