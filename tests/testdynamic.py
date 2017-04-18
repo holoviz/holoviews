@@ -4,7 +4,7 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
-from holoviews.streams import PositionXY, PositionX, PositionY
+from holoviews.streams import PointerXY, PointerX, PointerY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -169,8 +169,8 @@ class DynamicMapBounded(ComparisonTestCase):
 class DynamicTransferStreams(ComparisonTestCase):
 
     def setUp(self):
-        self.dimstream = PositionX(x=0)
-        self.stream = PositionY(y=0)
+        self.dimstream = PointerX(x=0)
+        self.stream = PointerY(y=0)
         self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
                                kdims=['x', 'z'], streams=[self.stream, self.dimstream])
 
@@ -203,10 +203,10 @@ class DynamicTransferStreams(ComparisonTestCase):
         self.assertEqual(hist.streams, self.dmap.streams[1:])
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
-        exception = ("The supplied stream objects PositionX\(x=None\) and "
-                     "PositionX\(x=0\) clash on the following parameters: \['x'\]")
+        exception = ("The supplied stream objects PointerX\(x=None\) and "
+                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegexp(Exception, exception):
-            hist = Dynamic(self.dmap, streams=[PositionX])
+            hist = Dynamic(self.dmap, streams=[PointerX])
 
 
 
@@ -266,13 +266,13 @@ class DynamicTestOverlay(ComparisonTestCase):
         """Tests that Callable memoizes unchanged callbacks"""
         def fn(x, y):
             return Scatter([(x, y)])
-        dmap = DynamicMap(fn, kdims=[], streams=[PositionXY()])
+        dmap = DynamicMap(fn, kdims=[], streams=[PointerXY()])
 
         counter = [0]
         def fn2(x, y):
             counter[0] += 1
             return Image(np.random.rand(10, 10))
-        dmap2 = DynamicMap(fn2, kdims=[], streams=[PositionXY()])
+        dmap2 = DynamicMap(fn2, kdims=[], streams=[PointerXY()])
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
@@ -290,7 +290,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         def fn(x1, y1):
             return Scatter([(x1, y1)])
 
-        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        xy = PointerXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
         dmap.event(x1=1, y1=2)
 
@@ -298,7 +298,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         def fn(x1, y1):
             return Scatter([(x1, y1)])
 
-        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        xy = PointerXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
         regexp = '(.+?)do not correspond to stream parameters'
@@ -314,7 +314,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
             history.append(x)
             return Curve(list(history))
 
-        x = PositionX()
+        x = PointerX()
         dmap = DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
@@ -338,7 +338,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
             history.append(x)
             return Curve(list(history))
 
-        x = PositionX()
+        x = PointerX()
         callable_obj = Callable(history_callback, memoize=False)
         dmap = DynamicMap(callable_obj, kdims=[], streams=[x])
 
@@ -366,7 +366,7 @@ class DynamicStreamReset(ComparisonTestCase):
                 history.append(x)
             return Curve(list(history))
 
-        x = PositionX(transient=True)
+        x = PointerX(transient=True)
         dmap = DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
@@ -397,8 +397,8 @@ class DynamicStreamReset(ComparisonTestCase):
 
             return Curve(list(history))
 
-        x = PositionX(transient=True)
-        y = PositionY(transient=True)
+        x = PointerX(transient=True)
+        y = PointerY(transient=True)
         dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
 
         # Add stream subscriber mocking plot
@@ -427,7 +427,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_raise_no_remapping_error(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The following streams are set to be automatically linked'):
@@ -436,7 +436,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Image(np.array([[0, 1], [2, 3]]))
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
@@ -445,7 +445,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -455,7 +455,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_with_spec_stream_mapping(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -473,7 +473,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_ndlayout_with_integer_stream_mapping(self):
         def callback(x, y):
             return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -483,7 +483,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
         def callback(x, y):
             return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={(1,): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -504,7 +504,7 @@ class DynamicCollate(ComparisonTestCase):
         def callback():
             return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={1: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
@@ -516,7 +516,7 @@ class DynamicCollate(ComparisonTestCase):
         def callback():
             return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={(1, 2): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()

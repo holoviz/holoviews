@@ -26,22 +26,22 @@ class TestSubscriber(object):
         self.kwargs = kwargs
 
 
-class TestPositionStreams(ComparisonTestCase):
+class TestPointerStreams(ComparisonTestCase):
 
     def test_positionX_init(self):
-        PositionX()
+        PointerX()
 
     def test_positionXY_init_contents(self):
-        position = PositionXY(x=1, y=3)
+        position = PointerXY(x=1, y=3)
         self.assertEqual(position.contents, dict(x=1, y=3))
 
     def test_positionXY_update_contents(self):
-        position = PositionXY()
+        position = PointerXY()
         position.update(x=5, y=10)
         self.assertEqual(position.contents, dict(x=5, y=10))
 
     def test_positionY_const_parameter(self):
-        position = PositionY()
+        position = PointerY()
         try:
             position.y = 5
             raise Exception('No constant parameter exception')
@@ -92,14 +92,14 @@ class TestSubscribers(ComparisonTestCase):
 
     def test_exception_subscriber(self):
         subscriber = TestSubscriber()
-        position = PositionXY(subscribers=[subscriber])
+        position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.update(**kwargs)
         self.assertEqual(subscriber.kwargs, kwargs)
 
     def test_subscriber_disabled(self):
         subscriber = TestSubscriber()
-        position = PositionXY(subscribers=[subscriber])
+        position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
         position.update(trigger=False, **kwargs)
         self.assertEqual(subscriber.kwargs, None)
@@ -108,7 +108,7 @@ class TestSubscribers(ComparisonTestCase):
     def test_subscribers(self):
         subscriber1 = TestSubscriber()
         subscriber2 = TestSubscriber()
-        position = PositionXY(subscribers=[subscriber1, subscriber2])
+        position = PointerXY(subscribers=[subscriber1, subscriber2])
         kwargs = dict(x=3, y=4)
         position.update(**kwargs)
         self.assertEqual(subscriber1.kwargs, kwargs)
@@ -117,8 +117,8 @@ class TestSubscribers(ComparisonTestCase):
     def test_batch_subscriber(self):
         subscriber = TestSubscriber()
 
-        positionX = PositionX(subscribers=[subscriber])
-        positionY = PositionY(subscribers=[subscriber])
+        positionX = PointerX(subscribers=[subscriber])
+        positionY = PointerY(subscribers=[subscriber])
 
         positionX.update(trigger=False, x=5)
         positionY.update(trigger=False, y=10)
@@ -131,8 +131,8 @@ class TestSubscribers(ComparisonTestCase):
         subscriber1 = TestSubscriber()
         subscriber2 = TestSubscriber()
 
-        positionX = PositionX(subscribers=[subscriber1, subscriber2])
-        positionY = PositionY(subscribers=[subscriber1, subscriber2])
+        positionX = PointerX(subscribers=[subscriber1, subscriber2])
+        positionY = PointerY(subscribers=[subscriber1, subscriber2])
 
         positionX.update(trigger=False, x=50)
         positionY.update(trigger=False, y=100)
@@ -149,46 +149,46 @@ class TestSubscribers(ComparisonTestCase):
 class TestParameterRenaming(ComparisonTestCase):
 
     def test_simple_rename_constructor(self):
-        xy = PositionXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
+        xy = PointerXY(rename={'x':'xtest', 'y':'ytest'}, x=0, y=4)
         self.assertEqual(xy.contents, {'xtest':0, 'ytest':4})
 
     def test_invalid_rename_constructor(self):
         regexp = '(.+?)is not a stream parameter'
         with self.assertRaisesRegexp(KeyError, regexp):
-            PositionXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
+            PointerXY(rename={'x':'xtest', 'z':'ytest'}, x=0, y=4)
             self.assertEqual(str(cm).endswith(), True)
 
     def test_clashing_rename_constructor(self):
         regexp = '(.+?)parameter of the same name'
         with self.assertRaisesRegexp(KeyError, regexp):
-            PositionXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
+            PointerXY(rename={'x':'xtest', 'y':'x'}, x=0, y=4)
 
     def test_simple_rename_method(self):
-        xy = PositionXY(x=0, y=4)
+        xy = PointerXY(x=0, y=4)
         renamed = xy.rename(x='xtest', y='ytest')
         self.assertEqual(renamed.contents, {'xtest':0, 'ytest':4})
 
     def test_invalid_rename_method(self):
-        xy = PositionXY(x=0, y=4)
+        xy = PointerXY(x=0, y=4)
         regexp = '(.+?)is not a stream parameter'
         with self.assertRaisesRegexp(KeyError, regexp):
             renamed = xy.rename(x='xtest', z='ytest')
 
 
     def test_clashing_rename_method(self):
-        xy = PositionXY(x=0, y=4)
+        xy = PointerXY(x=0, y=4)
         regexp = '(.+?)parameter of the same name'
         with self.assertRaisesRegexp(KeyError, regexp):
             renamed = xy.rename(x='xtest', y='x')
 
     def test_update_rename_valid(self):
-        xy = PositionXY(x=0, y=4)
+        xy = PointerXY(x=0, y=4)
         renamed = xy.rename(x='xtest', y='ytest')
         renamed.update(x=4, y=8)
         self.assertEqual(renamed.contents, {'xtest':4, 'ytest':8})
 
     def test_update_rename_invalid(self):
-        xy = PositionXY(x=0, y=4)
+        xy = PointerXY(x=0, y=4)
         renamed = xy.rename(y='ytest')
         regexp = "ytest' is not a parameter of(.+?)"
         with self.assertRaisesRegexp(ValueError, regexp):
