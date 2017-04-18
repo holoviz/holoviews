@@ -322,10 +322,12 @@ class LinkedStream(Stream):
 
 class PointerX(LinkedStream):
     """
-    A pointer position along the x-axis in data coordinates.
+    A pointer position along the x-axis in data coordinates which may be
+    a numeric or categorical dimension.
 
     With the appropriate plotting backend, this corresponds to the
-    position of the mouse/trackpad cursor.
+    position of the mouse/trackpad cursor. If the pointer is outside the
+    plot bounds, the position is set to None.
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
@@ -335,11 +337,14 @@ class PointerX(LinkedStream):
 
 class PointerY(LinkedStream):
     """
-    A pointer position along the y-axis in data coordinates.
+    A pointer position along the y-axis in data coordinates which may be
+    a numeric or categorical dimension.
 
     With the appropriate plotting backend, this corresponds to the
-    position of the mouse/trackpad cursor.
+    position of the mouse/trackpad pointer. If the pointer is outside
+    the plot bounds, the position is set to None.
     """
+
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
@@ -348,10 +353,12 @@ class PointerY(LinkedStream):
 
 class PointerXY(LinkedStream):
     """
-    A pointer position along the x- and y-axes in data coordinates.
+    A pointer position along the x- and y-axes in data coordinates which
+    may numeric or categorical dimensions.
 
     With the appropriate plotting backend, this corresponds to the
-    position of the mouse/trackpad cursor.
+    position of the mouse/trackpad pointer. If the pointer is outside
+    the plot bounds, the position values are set to None.
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
