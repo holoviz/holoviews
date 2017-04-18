@@ -26,9 +26,6 @@ ABBREVIATE_TRACEBACKS = True
 # Helper functions #
 #==================#
 
-def sanitize_HTML(obj):
-    "Sanitize text output for HTML display"
-    return repr(obj).replace('\n', '<br>').replace(' ', '&nbsp;')
 
 def max_frame_warning(max_frames):
     sys.stderr.write("Skipping regular visual display to avoid "
@@ -183,10 +180,10 @@ def element_display(element, max_frames):
 def map_display(vmap, max_frames):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
     if len(vmap) == 0 and (not isinstance(vmap, DynamicMap) or vmap.sampled):
-        return sanitize_HTML(vmap)
+        return None
     elif len(vmap) > max_frames:
         max_frame_warning(max_frames)
-        return sanitize_HTML(vmap)
+        return None
 
     return render(vmap)
 
@@ -199,7 +196,7 @@ def layout_display(layout, max_frames):
     nframes = len(unique_dimkeys(layout)[1])
     if nframes > max_frames:
         max_frame_warning(max_frames)
-        return '<tt>'+ sanitize_HTML(layout) + '</tt>'
+        return None
 
     return render(layout)
 
@@ -211,7 +208,7 @@ def grid_display(grid, max_frames):
     nframes = len(unique_dimkeys(grid)[1])
     if nframes > max_frames:
         max_frame_warning(max_frames)
-        return sanitize_HTML(grid)
+        return None
 
     return render(grid)
 
