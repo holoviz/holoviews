@@ -226,7 +226,7 @@
 	}
     var widget_ids = new Array({{ Nwidget }});
     {% for dim in dimensions %}
-    widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
+    widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim | replace ("\\", "\\\\") }}";
     {% endfor %}
     var frame_data = {{ frames | safe }};
     var dim_vals = {{ init_dim_vals }};
