@@ -53,7 +53,7 @@ class PathPlot(ElementPlot):
             style = styles[zorder]
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
-            elmapping.update(smapping)
+            elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})
             for k, v in sdata.items():
                 data[k].extend(list(v))
 
