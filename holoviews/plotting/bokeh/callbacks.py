@@ -8,6 +8,7 @@ from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, Bounds, Tap,
                         DoubleTap, MouseEnter, MouseLeave, PlotSize)
+from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
 
@@ -689,3 +690,8 @@ callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+
+# Aliases for deprecated streams
+callbacks[PositionXY]  = PointerXYCallback
+callbacks[PositionX]   = PointerXCallback
+callbacks[PositionY]   = PointerYCallback
