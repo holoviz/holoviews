@@ -595,16 +595,19 @@ class DynamicMap(HoloMap):
         self.redim = redim(self, mode='dynamic')
 
     @property
-    def sampled(self):
+    def unbounded(self):
         """
-        Whether the DynamicMap cannot generate an initial key and has to be sampled.
-        This read-only property replaces the deprecated sampled parameter.
+        Returns a list of key dimensions that are unbounded. If any key
+        dimensions are unbounded, the DynamicMap as a whole is also
+        unbounded.
         """
-        try:
-            self._initial_key()
-        except KeyError:
-            return True
-        return False
+        unbounded_dims = []
+        for kdim in self.kdims:
+            if kdim.values:
+                continue
+            if None in kdim.range:
+                unbounded_dims.append(str(kdim))
+        return unbounded_dims
 
     def _initial_key(self):
         """
