@@ -788,6 +788,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Get aspects
             main = layout_view.main
             main = main.last if isinstance(main, HoloMap) else main
+            if main:
+                colorbar = any(self._traverse_options(main, 'plot', ['colorbar'],
+                                                      [Element])['colorbar'])
+            else:
+                colorbar = False
             main_options = self.lookup_options(main, 'plot').options if main else {}
             if main and not isinstance(main_options.get('aspect', 1), basestring):
                 main_aspect = np.nan if isinstance(main, Empty) else main_options.get('aspect', 1)
@@ -795,17 +800,18 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             else:
                 main_aspect = np.nan
 
+            width = 5 if colorbar else 4
             if layout_type in ['Dual', 'Triple']:
                 el = layout_view.get('right', None)
                 eltype = type(el)
                 if el and eltype in MPLPlot.sideplots:
                     plot_type = MPLPlot.sideplots[type(el)]
                     ratio = 0.6*(plot_type.subplot_size+plot_type.border_size)
-                    width_ratios = [4, 4*ratio]
+                    width_ratios = [width, 4*ratio]
                 else:
-                    width_ratios = [4, 1]
+                    width_ratios = [width, 1]
             else:
-                width_ratios = [4]
+                width_ratios = [width]
 
             inv_aspect = 1./main_aspect if main_aspect else np.NaN
             if layout_type in ['Embedded Dual', 'Triple']:
@@ -814,11 +820,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
                 if el and eltype in MPLPlot.sideplots:
                     plot_type = MPLPlot.sideplots[type(el)]
                     ratio = 0.6*(plot_type.subplot_size+plot_type.border_size)
-                    height_ratios = [4*ratio, 4]
+                    height_ratios = [4*ratio, width]
                 else:
-                    height_ratios = [1, 4]
+                    height_ratios = [1, width]
             else:
-                height_ratios = [4]
+                height_ratios = [width]
 
             if not isinstance(main_aspect, (basestring, type(None))):
                 width_ratios = [wratio * main_aspect for wratio in width_ratios]
