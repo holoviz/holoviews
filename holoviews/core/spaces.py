@@ -14,6 +14,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
+from ..streams import Stream
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
@@ -584,6 +585,11 @@ class DynamicMap(HoloMap):
             del params['sampled']
 
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
+        invalid = [s for s in self.streams if not isinstance(s, Stream)]
+        if invalid:
+            msg = ('The supplied streams list contains objects that '
+                   'are not Stream instances: {objs}')
+            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
