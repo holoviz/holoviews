@@ -671,8 +671,10 @@ class DynamicMap(HoloMap):
         """
         if self.streams == []: return
         stream_params = set(util.stream_parameters(self.streams))
-        for k in stream_params - set(kwargs.keys()):
-            raise KeyError('Key %r does not correspond to any stream parameter')
+        invalid = [k for k in kwargs.keys() if k not in stream_params]
+        if invalid:
+            msg = 'Key(s) {invalid} do not correspond to stream parameters'
+            raise KeyError(msg.format(invalid = ', '.join('%r' % i for i in invalid)))
 
         updated_streams = []
         for stream in self.streams:
