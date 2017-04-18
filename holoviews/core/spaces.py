@@ -669,6 +669,7 @@ class DynamicMap(HoloMap):
         This method allows any of the available stream parameters
         (renamed as appropriate) to be updated in an event.
         """
+        if self.streams == []: return
         stream_params = set(util.stream_parameters(self.streams))
         for k in stream_params - set(kwargs.keys()):
             raise KeyError('Key %r does not correspond to any stream parameter')
