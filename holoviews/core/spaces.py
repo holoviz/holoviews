@@ -676,16 +676,14 @@ class DynamicMap(HoloMap):
             msg = 'Key(s) {invalid} do not correspond to stream parameters'
             raise KeyError(msg.format(invalid = ', '.join('%r' % i for i in invalid)))
 
-        updated_streams = []
         for stream in self.streams:
             applicable_kws = {k:v for k,v in kwargs.items()
                               if k in set(stream.contents.keys())}
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
             stream.update(**dict(rkwargs, trigger=False))
-            updated_streams.append(stream)
 
-        if updated_streams and trigger:
-            updated_streams[0].trigger(updated_streams)
+        if trigger:
+            Stream.trigger(self.streams)
 
 
     def _style(self, retval):
