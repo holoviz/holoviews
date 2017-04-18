@@ -603,8 +603,10 @@ class DynamicMap(HoloMap):
         """
         unbounded_dims = []
         # Dimensioned streams do not need to be bounded
-        kdims = sorted(set(self.kdims) - set(util.stream_parameters(self.streams)))
-        for kdim in kdims:
+        stream_params = set(util.stream_parameters(self.streams))
+        for kdim in self.kdims:
+            if str(kdim) in stream_params:
+                continue
             if kdim.values:
                 continue
             if None in kdim.range:
