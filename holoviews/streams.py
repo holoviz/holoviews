@@ -476,3 +476,19 @@ class ParamValues(Stream):
 
     def __str__(self):
         return repr(self)
+
+
+class PositionX(PointerX):
+    def __init__(self, **params):
+        self.warning('PositionX stream deprecated: use PointerX instead')
+        super(PositionX, self).__init__(**params)
+
+class PositionY(PointerY):
+    def __init__(self, **params):
+        self.warning('PositionY stream deprecated: use PointerY instead')
+        super(PositionY, self).__init__(**params)
+
+class PositionXY(PointerXY):
+    def __init__(self, **params):
+        self.warning('PositionXY stream deprecated: use PointerXY instead')
+        super(PositionXY, self).__init__(**params)
