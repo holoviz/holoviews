@@ -64,7 +64,7 @@ class Dynamic(param.ParameterizedFunction):
         of supplied stream classes and instances are processed and
         added to the list.
         """
-        streams = util.dimensioned_streams(map_obj) if isinstance(map_obj, DynamicMap) else []
+        streams = []
         for stream in self.p.streams:
             if inspect.isclass(stream) and issubclass(stream, Stream):
                 stream = stream()
@@ -75,8 +75,10 @@ class Dynamic(param.ParameterizedFunction):
                            if v is None and k in self.p.operation.p}
                 if updates:
                     stream.update(trigger=False, **updates)
-            if stream not in streams:
-                streams.append(stream)
+            streams.append(stream)
+        if isinstance(map_obj, DynamicMap):
+            dim_streams = util.dimensioned_streams(map_obj)
+            streams = list(util.unique_iterator(streams + dim_streams))
         return streams
 
 

@@ -155,6 +155,49 @@ class DynamicTestCallableBounded(ComparisonTestCase):
         self.assertEqual(dmap, dmap.clone())
 
 
+class DynamicTransferStreams(ComparisonTestCase):
+
+    def setUp(self):
+        self.dimstream = PositionX(x=0)
+        self.stream = PositionY(y=0)
+        self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
+                               kdims=['x', 'z'], streams=[self.stream, self.dimstream])
+
+    def test_dynamic_redim_inherits_streams(self):
+        redimmed = self.dmap.redim.range(z=(0, 5))
+        self.assertEqual(redimmed.streams, self.dmap.streams)
+
+    def test_dynamic_relabel_inherits_streams(self):
+        relabelled = self.dmap.relabel(label='Test')
+        self.assertEqual(relabelled.streams, self.dmap.streams)
+
+    def test_dynamic_map_inherits_streams(self):
+        mapped = self.dmap.map(lambda x: x, Curve)
+        self.assertEqual(mapped.streams, self.dmap.streams)
+
+    def test_dynamic_select_inherits_streams(self):
+        selected = self.dmap.select(Curve, x=(0, 5))
+        self.assertEqual(selected.streams, self.dmap.streams)
+
+    def test_dynamic_hist_inherits_streams(self):
+        hist = self.dmap.hist(adjoin=False)
+        self.assertEqual(hist.streams, self.dmap.streams)
+
+    def test_dynamic_mul_inherits_dim_streams(self):
+        hist = self.dmap * self.dmap
+        self.assertEqual(hist.streams, self.dmap.streams[1:])
+
+    def test_dynamic_util_inherits_dim_streams(self):
+        hist = Dynamic(self.dmap)
+        self.assertEqual(hist.streams, self.dmap.streams[1:])
+
+    def test_dynamic_util_inherits_dim_streams_clash(self):
+        exception = ("The supplied stream objects PositionX\(x=None\) and "
+                     "PositionX\(x=0\) clash on the following parameters: \['x'\]")
+        with self.assertRaisesRegexp(Exception, exception):
+            hist = Dynamic(self.dmap, streams=[PositionX])
+        
+
 
 class DynamicTestSampledBounded(ComparisonTestCase):
 

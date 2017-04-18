@@ -1082,9 +1082,9 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
         clash_streams = [s for s in streams for c in clashes if c in s.contents]
         if clashes:
             clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
-            raise KeyError('The supplied stream objects %s and %s '
-                           'clash on the following parameters: %r'
-                           % (clashing, str(clash_streams[-1]), clashes))
+            raise Exception('The supplied stream objects %s and %s '
+                            'clash on the following parameters: %r'
+                            % (clashing, clash_streams[-1], clashes))
     return [name for name in names if name not in exclude]
 
 

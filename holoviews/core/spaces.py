@@ -119,7 +119,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         if isinstance(self, DynamicMap) and isinstance(other, DynamicMap):
             self_streams = util.dimensioned_streams(self)
             other_streams = util.dimensioned_streams(other)
-            streams = self_streams+other_streams
+            streams = list(util.unique_iterator(self_streams+other_streams))
         else:
             streams = map_obj.streams
 
