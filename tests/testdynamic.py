@@ -16,6 +16,7 @@ def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
 
 
+
 class DynamicMethods(ComparisonTestCase):
 
     def test_deep_relabel_label(self):
@@ -143,16 +144,26 @@ class DynamicMethods(ComparisonTestCase):
             reindexed = dmap.reindex(['x'])
 
 
-class DynamicTestCallableBounded(ComparisonTestCase):
+class DynamicMapBounded(ComparisonTestCase):
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
 
-    def test_generator_bounded_clone(self):
+    def test_callable_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
+
+    def test_sampled_bounded_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn)
+
+    def test_sampled_bounded_resample(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn)
+        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
+
 
 
 class DynamicTransferStreams(ComparisonTestCase):
@@ -196,19 +207,7 @@ class DynamicTransferStreams(ComparisonTestCase):
                      "PositionX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegexp(Exception, exception):
             hist = Dynamic(self.dmap, streams=[PositionX])
-        
 
-
-class DynamicTestSampledBounded(ComparisonTestCase):
-
-    def test_sampled_bounded_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-
-    def test_sampled_bounded_resample(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
-        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
 
 
 class DynamicTestOperation(ComparisonTestCase):
