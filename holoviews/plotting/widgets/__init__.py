@@ -293,11 +293,18 @@ class SelectionWidget(NdWidget):
                                                                 for v in dim.values]))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
+
+                    value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim.values]))
                 else:
                     widget_type = 'slider'
                     value_labels = []
                     dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
                                 dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
+
+                    value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim_vals]))
+
                     dim_range = dim_vals[1] - dim_vals[0]
                     int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
                     if isinstance(dim_range, int) or int_type:
