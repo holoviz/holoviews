@@ -267,6 +267,18 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
+class Counter(Stream):
+    """
+    Simple stream that automatically increments an integer counter
+    parameter every time it is updated.
+    """
+
+    counter = param.Integer(default=0, bounds=(0,None))
+
+    def transform(self):
+        return {'counter': self.counter + 1}
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
