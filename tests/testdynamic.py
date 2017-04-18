@@ -17,46 +17,46 @@ def sine_array(phase, freq):
 
 
 
-class DynamicMethods(ComparisonTestCase):
+class DynamicMapMethods(ComparisonTestCase):
 
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).relabel(label='Test')
+        dmap = DynamicMap(fn, kdims=['i']).relabel(label='Test')
         self.assertEqual(dmap[0].label, 'Test')
 
     def test_deep_relabel_group(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).relabel(group='Test')
+        dmap = DynamicMap(fn, kdims=['i']).relabel(group='Test')
         self.assertEqual(dmap[0].group, 'Test')
 
     def test_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(Default='New')
+        dmap = DynamicMap(fn, kdims=['i']).redim(i='New')
         self.assertEqual(dmap.kdims[0].name, 'New')
 
     def test_redim_dimension_range_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.range(Default=(0,1))
+        dmap = DynamicMap(fn, kdims=['i']).redim.range(i=(0,1))
         self.assertEqual(dmap.kdims[0].range, (0,1))
 
     def test_redim_dimension_unit_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.unit(Default='m/s')
+        dmap = DynamicMap(fn, kdims=['i']).redim.unit(i='m/s')
         self.assertEqual(dmap.kdims[0].unit, 'm/s')
 
     def test_redim_dimension_type_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.type(Default=int)
+        dmap = DynamicMap(fn, kdims=['i']).redim.type(i=int)
         self.assertEqual(dmap.kdims[0].type, int)
 
     def test_deep_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(x='X')
+        dmap = DynamicMap(fn, kdims=['i']).redim(x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
     def test_deep_redim_dimension_name_with_spec(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(Image, x='X')
+        dmap = DynamicMap(fn, kdims=['i']).redim(Image, x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
     def test_deep_getitem_bounded_kdims(self):
@@ -161,7 +161,7 @@ class DynamicMapBounded(ComparisonTestCase):
 
     def test_sampled_bounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
 
 
@@ -214,14 +214,14 @@ class DynamicTestOperation(ComparisonTestCase):
 
     def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
 
     def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
         dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
@@ -233,31 +233,31 @@ class DynamicTestOverlay(ComparisonTestCase):
 
     def test_dynamic_element_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = dmap * Image(sine_array(0,10))
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_element_underlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = Image(sine_array(0,10)) * dmap
         overlaid = Image(sine_array(0,10)) * Image(sine_array(0,5))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_dynamicmap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
         fn2 = lambda i: Image(sine_array(0,i*2))
-        dmap2=DynamicMap(fn2)
+        dmap2=DynamicMap(fn2, kdims=['i'])
         dynamic_overlay = dmap * dmap2
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_holomap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn)
-        hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)})
+        dmap = DynamicMap(fn, kdims=['i'])
+        hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)}, kdims=['i'])
         dynamic_overlay = dmap * hmap
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
