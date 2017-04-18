@@ -597,12 +597,14 @@ class DynamicMap(HoloMap):
     @property
     def unbounded(self):
         """
-        Returns a list of key dimensions that are unbounded. If any key
-        dimensions are unbounded, the DynamicMap as a whole is also
-        unbounded.
+        Returns a list of key dimensions that are unbounded, excluding
+        stream parameters. If any of theses key dimensions are
+        unbounded, the DynamicMap as a whole is also unbounded.
         """
         unbounded_dims = []
-        for kdim in self.kdims:
+        # Dimensioned streams do not need to be bounded
+        kdims = sorted(set(self.kdims) - set(util.stream_parameters(self.streams)))
+        for kdim in kdims:
             if kdim.values:
                 continue
             if None in kdim.range:
