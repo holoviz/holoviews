@@ -21,6 +21,7 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                BoxWhisker)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PositionXY, PositionX
+from holoviews.operation import gridmatrix
 from holoviews.plotting import comms
 from holoviews.plotting.util import rgb2hex
 
@@ -1081,6 +1082,25 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          {'value': '18pt'})
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
                          {'value': '14pt'})
+
+    def test_gridmatrix_overlaid_batched(self):
+        ds = Dataset((['A']*5+['B']*5, np.random.rand(10), np.random.rand(10)),
+                     kdims=['a', 'b', 'c'])
+        gmatrix = gridmatrix(ds.groupby('a', container_type=NdOverlay))
+        plot = bokeh_renderer.get_plot(gmatrix)
+
+        sp1 = plot.subplots[('b', 'c')]
+        self.assertEqual(sp1.state.xaxis[0].visible, False)
+        self.assertEqual(sp1.state.yaxis[0].visible, True)
+        sp2 = plot.subplots[('b', 'b')]
+        self.assertEqual(sp2.state.xaxis[0].visible, True)
+        self.assertEqual(sp2.state.yaxis[0].visible, True)
+        sp3 = plot.subplots[('c', 'b')]
+        self.assertEqual(sp3.state.xaxis[0].visible, True)
+        self.assertEqual(sp3.state.yaxis[0].visible, False)
+        sp4 = plot.subplots[('c', 'c')]
+        self.assertEqual(sp4.state.xaxis[0].visible, False)
+        self.assertEqual(sp4.state.yaxis[0].visible, False)
 
     def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)

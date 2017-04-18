@@ -850,6 +850,9 @@ class GenericOverlayPlot(GenericElementPlot):
             (not self.show_legend or len(ordering) > self.legend_limit)):
             self.batched = True
             keys, vmaps = [()], [self.hmap]
+            param_vals = dict(self.get_param_values())
+            propagate = {opt: param_vals[opt] for opt in self._propagate_options
+                         if opt in param_vals}
         else:
             self.batched = False
             keys, vmaps = self.hmap.split_overlays()
@@ -899,6 +902,7 @@ class GenericOverlayPlot(GenericElementPlot):
             elif self.batched and 'batched' in plottype._plot_methods:
                 opts['batched'] = self.batched
                 opts['overlaid'] = self.overlaid
+                opts.update(propagate)
             if len(ordering) > self.legend_limit:
                 opts['show_legend'] = False
             style = self.lookup_options(vmap.last, 'style').max_cycles(group_length)
