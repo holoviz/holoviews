@@ -556,6 +556,10 @@ class DynamicMap(HoloMap):
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
 
+    kdims = param.List(default=[], constant=True, doc="""
+        The key dimensions of a DynamicMap map to the arguments of the
+        callback. This mapping can be by position or by name.""")
+
     callback = param.ClassSelector(class_=Callable, doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
