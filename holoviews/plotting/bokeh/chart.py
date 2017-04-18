@@ -144,6 +144,11 @@ class VectorFieldPlot(ColorbarPlot):
        it will be assumed that the lengths have already been correctly
        normalized.""")
 
+    pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
+                                 doc="""
+       The point around which the arrows should pivot valid options
+       include 'mid', 'tip' and 'tail'.""")
+
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
@@ -181,10 +186,21 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute segments and arrowheads
         xs = element.dimension_values(xidx)
         ys = element.dimension_values(yidx)
+
+        # Compute offset depending on pivot option
         xoffsets = np.cos(rads)*lens/2.
         yoffsets = np.sin(rads)*lens/2.
-        x0s, x1s = (xs + xoffsets, xs - xoffsets)
-        y0s, y1s = (ys + yoffsets, ys - yoffsets)
+        if self.pivot == 'mid':
+            nxoff, pxoff = xoffsets, xoffsets
+            nyoff, pyoff = yoffsets, yoffsets
+        elif self.pivot == 'tip':
+            nxoff, pxoff = 0, xoffsets*2
+            nyoff, pyoff = 0, yoffsets*2
+        elif self.pivot == 'tail':
+            nxoff, pxoff = xoffsets*2, 0
+            nyoff, pyoff = yoffsets*2, 0
+        x0s, x1s = (xs + nxoff, xs - pxoff)
+        y0s, y1s = (ys + nyoff, ys - pyoff)
 
         if self.arrow_heads:
             arrow_len = (lens/4.)
