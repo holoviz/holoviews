@@ -47,26 +47,39 @@ class Dynamic(param.ParameterizedFunction):
     def __call__(self, map_obj, **params):
         self.p = param.ParamOverrides(self, params)
         callback = self._dynamic_operation(map_obj)
+        streams = self._get_streams(map_obj)
         if isinstance(map_obj, DynamicMap):
             dmap = map_obj.clone(callback=callback, shared_data=self.p.shared_data,
-                                 streams=[])
+                                 streams=streams)
         else:
-            dmap = self._make_dynamic(map_obj, callback)
-        if isinstance(self.p.operation, ElementOperation):
-            streams = []
-            for stream in self.p.streams:
-                if inspect.isclass(stream) and issubclass(stream, Stream):
-                    stream = stream()
-                elif not isinstance(stream, Stream):
-                    raise ValueError('Stream must only contain Stream '
-                                     'classes or instances')
+            dmap = self._make_dynamic(map_obj, callback, streams)
+        return dmap
+
+
+    def _get_streams(self, map_obj):
+        """
+        Generates a list of streams to attach to the returned DynamicMap.
+        If the input is a DynamicMap any streams that are supplying values
+        for the key dimension of the input are inherited. And the list
+        of supplied stream classes and instances are processed and
+        added to the list.
+        """
+        streams = []
+        for stream in self.p.streams:
+            if inspect.isclass(stream) and issubclass(stream, Stream):
+                stream = stream()
+            elif not isinstance(stream, Stream):
+                raise ValueError('Streams must be Stream classes or instances')
+            if isinstance(self.p.operation, ElementOperation):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in self.p.operation.p}
                 if updates:
                     stream.update(trigger=False, **updates)
-                streams.append(stream)
-            return dmap.clone(streams=streams)
-        return dmap
+            streams.append(stream)
+        if isinstance(map_obj, DynamicMap):
+            dim_streams = util.dimensioned_streams(map_obj)
+            streams = list(util.unique_iterator(streams + dim_streams))
+        return streams
 
 
     def _process(self, element, key=None):
@@ -101,7 +114,7 @@ class Dynamic(param.ParameterizedFunction):
                             link_inputs=self.p.link_inputs)
 
 
-    def _make_dynamic(self, hmap, dynamic_fn):
+    def _make_dynamic(self, hmap, dynamic_fn, streams):
         """
         Accepts a HoloMap and a dynamic callback function creating
         an equivalent DynamicMap from the HoloMap.
@@ -112,4 +125,4 @@ class Dynamic(param.ParameterizedFunction):
         params = util.get_param_values(hmap)
         kdims = [d(values=list(set(values))) for d, values in
                  zip(hmap.kdims, dim_values)]
-        return DynamicMap(dynamic_fn, **dict(params, kdims=kdims))
+        return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))

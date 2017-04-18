@@ -1078,9 +1078,13 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
-        clashes = set([n for n in names if names.count(n) > 1])
+        clashes = sorted(set([n for n in names if names.count(n) > 1]))
+        clash_streams = [s for s in streams for c in clashes if c in s.contents]
         if clashes:
-            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+            clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
+            raise Exception('The supplied stream objects %s and %s '
+                            'clash on the following parameters: %r'
+                            % (clashing, clash_streams[-1], clashes))
     return [name for name in names if name not in exclude]
 
 
@@ -1303,6 +1307,19 @@ def get_dynamic_item(map_obj, dimensions, key):
     else:
         el = None
     return key, el
+
+
+def dimensioned_streams(dmap):
+    """
+    Given a DynamicMap return all streams that have any dimensioned
+    parameters i.e parameters also listed in the key dimensions.
+    """
+    dimensioned = []
+    for stream in dmap.streams:
+        stream_params = stream_parameters([stream])
+        if set([str(k) for k in dmap.kdims]) & set(stream_params):
+            dimensioned.append(stream)
+    return dimensioned
 
 
 def expand_grid_coords(dataset, dim):
