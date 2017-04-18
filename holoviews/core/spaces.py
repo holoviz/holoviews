@@ -620,8 +620,11 @@ class DynamicMap(HoloMap):
         """
         key = []
         undefined = []
+        stream_params = set(util.stream_parameters(self.streams))
         for kdim in self.kdims:
-            if kdim.values:
+            if str(kdim) in stream_params:
+                key.append(None)
+            elif kdim.values:
                 key.append(kdim.values[0])
             elif kdim.range[0] is not None:
                 key.append(kdim.range[0])
