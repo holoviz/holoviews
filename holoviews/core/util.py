@@ -1078,9 +1078,13 @@ def stream_parameters(streams, no_duplicates=True, exclude=['name']):
     names = [name for group in param_groups for name in group]
 
     if no_duplicates:
-        clashes = set([n for n in names if names.count(n) > 1])
+        clashes = sorted(set([n for n in names if names.count(n) > 1]))
+        clash_streams = [s for s in streams for c in clashes if c in s.contents]
         if clashes:
-            raise KeyError('Parameter name clashes for keys: %r' % clashes)
+            clashing = ', '.join([repr(c) for c in clash_streams[:-1]])
+            raise KeyError('The supplied stream objects %s and %s '
+                           'clash on the following parameters: %r'
+                           % (clashing, str(clash_streams[-1]), clashes))
     return [name for name in names if name not in exclude]
 
 
