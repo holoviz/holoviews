@@ -152,6 +152,7 @@ class notebook_extension(param.ParameterizedFunction):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
+            args = ['matplotlib']
             imports = [('matplotlib', 'mpl')]
 
         args = list(args)
