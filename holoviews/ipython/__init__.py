@@ -221,6 +221,7 @@ class notebook_extension(param.ParameterizedFunction):
         resources = list(resources)
         if len(resources) == 0: return
 
+        Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
 

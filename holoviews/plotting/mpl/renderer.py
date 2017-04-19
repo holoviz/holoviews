@@ -93,9 +93,6 @@ class MPLRenderer(Renderer):
              'nbagg':   (NbAggJupyterComm, None),
              'mpld3':   (JupyterComm, mpld3_msg_handler)}
 
-    # Whether in a notebook context
-    _notebook = False
-
     def __call__(self, obj, fmt='auto'):
         """
         Render the supplied HoloViews component or MPLPlot instance
@@ -321,4 +318,3 @@ class MPLRenderer(Renderer):
         """
         import matplotlib.pyplot as plt
         plt.switch_backend('agg')
-        cls._notebook = True

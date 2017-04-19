@@ -138,7 +138,7 @@ class MPLPlot(DimensionedPlot):
         if self.renderer.interactive:
             plt.ion()
             self._close_figures = False
-        elif not self.renderer._notebook:
+        elif not self.renderer.notebook_context:
             plt.ioff()
 
         with mpl.rc_context(rc=self.fig_rcparams):
