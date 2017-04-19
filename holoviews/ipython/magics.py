@@ -9,7 +9,7 @@ except:
 
 from ..core import OrderedDict
 from ..core import util
-from ..core.options import Options, OptionError, Store, StoreOptions
+from ..core.options import Options, OptionError, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
 
 from IPython.display import display, HTML
@@ -755,7 +755,8 @@ class OptsMagic(Magics):
                 display(HTML(self._format_options_error(e)))
                 return
 
-            StoreOptions.apply_customizations(spec, Store.options())
+            with options_policy(skip_invalid=True, warn_on_skip=False):
+                StoreOptions.apply_customizations(spec, Store.options())
         OptsMagic.error_message = None
 
 
