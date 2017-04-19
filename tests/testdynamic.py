@@ -370,12 +370,12 @@ class DynamicCallableMemoize(ComparisonTestCase):
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         for i in range(2):
-            x.update(x=1)
+            x.event(x=1)
 
         self.assertEqual(dmap[()], Curve([1]))
 
         for i in range(2):
-            x.update(x=2)
+            x.event(x=2)
 
         self.assertEqual(dmap[()], Curve([1, 2]))
 
@@ -395,11 +395,11 @@ class DynamicCallableMemoize(ComparisonTestCase):
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         for i in range(2):
-            x.update(x=1)
+            x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1, 1]))
 
         for i in range(2):
-            x.update(x=2)
+            x.event(x=2)
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
@@ -422,11 +422,11 @@ class DynamicStreamReset(ComparisonTestCase):
         x.add_subscriber(lambda **kwargs: dmap[()])
 
         for i in range(2):
-            x.update(x=1)
+            x.event(x=1)
         self.assertEqual(dmap[()], Curve([1, 1]))
 
         for i in range(2):
-            x.update(x=2)
+            x.event(x=2)
 
         self.assertEqual(dmap[()], Curve([1, 1, 2, 2]))
 
@@ -456,8 +456,8 @@ class DynamicStreamReset(ComparisonTestCase):
 
         # Update each stream and count when None default appears
         for i in range(2):
-            x.update(x=i)
-            y.update(y=i)
+            x.event(x=i)
+            y.event(y=i)
 
         self.assertEqual(xresets, 2)
         self.assertEqual(yresets, 2)

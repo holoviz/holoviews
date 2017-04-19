@@ -37,7 +37,7 @@ class TestPointerStreams(ComparisonTestCase):
 
     def test_positionXY_update_contents(self):
         position = PointerXY()
-        position.update(x=5, y=10)
+        position.event(x=5, y=10)
         self.assertEqual(position.contents, dict(x=5, y=10))
 
     def test_positionY_const_parameter(self):
@@ -77,13 +77,13 @@ class TestParamValuesStream(ComparisonTestCase):
         obj = self.inner()
         stream = ParamValues(obj)
         self.assertEqual(stream.contents, {'x':0, 'y':0})
-        stream.update(x=5, y=10)
+        stream.event(x=5, y=10)
         self.assertEqual(stream.contents, {'x':5, 'y':10})
 
     def test_class_value_update(self):
         stream = ParamValues(self.inner)
         self.assertEqual(stream.contents, {'x':0, 'y':0})
-        stream.update(x=5, y=10)
+        stream.event(x=5, y=10)
         self.assertEqual(stream.contents, {'x':5, 'y':10})
 
 
@@ -94,7 +94,7 @@ class TestSubscribers(ComparisonTestCase):
         subscriber = TestSubscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
-        position.update(**kwargs)
+        position.event(**kwargs)
         self.assertEqual(subscriber.kwargs, kwargs)
 
     def test_subscriber_disabled(self):
@@ -110,7 +110,7 @@ class TestSubscribers(ComparisonTestCase):
         subscriber2 = TestSubscriber()
         position = PointerXY(subscribers=[subscriber1, subscriber2])
         kwargs = dict(x=3, y=4)
-        position.update(**kwargs)
+        position.event(**kwargs)
         self.assertEqual(subscriber1.kwargs, kwargs)
         self.assertEqual(subscriber2.kwargs, kwargs)
 
@@ -184,7 +184,7 @@ class TestParameterRenaming(ComparisonTestCase):
     def test_update_rename_valid(self):
         xy = PointerXY(x=0, y=4)
         renamed = xy.rename(x='xtest', y='ytest')
-        renamed.update(x=4, y=8)
+        renamed.event(x=4, y=8)
         self.assertEqual(renamed.contents, {'xtest':4, 'ytest':8})
 
     def test_update_rename_invalid(self):
@@ -192,7 +192,7 @@ class TestParameterRenaming(ComparisonTestCase):
         renamed = xy.rename(y='ytest')
         regexp = "ytest' is not a parameter of(.+?)"
         with self.assertRaisesRegexp(ValueError, regexp):
-            renamed.update(ytest=8)
+            renamed.event(ytest=8)
 
 
 class TestPlotSizeTransform(ComparisonTestCase):
@@ -203,7 +203,7 @@ class TestPlotSizeTransform(ComparisonTestCase):
 
     def test_plotsize_update_1(self):
         plotsize = PlotSize(scale=0.5)
-        plotsize.update(width=300, height=400)
+        plotsize.event(width=300, height=400)
         self.assertEqual(plotsize.contents, {'width':150, 'height':200, 'scale':0.5})
 
     def test_plotsize_initial_contents_2(self):
@@ -212,6 +212,6 @@ class TestPlotSizeTransform(ComparisonTestCase):
 
     def test_plotsize_update_2(self):
         plotsize = PlotSize(scale=2)
-        plotsize.update(width=600, height=100)
+        plotsize.event(width=600, height=100)
         self.assertEqual(plotsize.contents, {'width':1200, 'height':200, 'scale':2})
 

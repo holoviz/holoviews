@@ -141,7 +141,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot = mpl_renderer.get_plot(dmap)
         pre = mpl_renderer(plot, fmt='png')
         plot.state.set_dpi(72)
-        stream.update(x=1, y=1)
+        stream.event(x=1, y=1)
         post = mpl_renderer(plot, fmt='png')
         self.assertNotEqual(pre, post)
 
@@ -160,7 +160,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         mpl_renderer(plot)
         for i in range(20):
             plot.state.set_dpi(72)
-            stream.update(x=i)
+            stream.event(x=i)
         x, y = plot.handles['artist'].get_data()
         self.assertEqual(x, np.arange(10))
         self.assertEqual(y, np.arange(10, 20))
@@ -753,7 +753,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
         for i in range(20):
-            stream.update(x=i)
+            stream.event(x=i)
         data = plot.handles['source'].data
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
@@ -1437,7 +1437,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         plot = plotly_renderer.get_plot(dmap)
         plotly_renderer(plot)
         for i in range(20):
-            stream.update(x=i)
+            stream.event(x=i)
         state = plot.state
         self.assertEqual(state['data'][0]['x'], np.arange(10))
         self.assertEqual(state['data'][0]['y'], np.arange(10, 20))
