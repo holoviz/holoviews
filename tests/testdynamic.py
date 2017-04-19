@@ -19,11 +19,14 @@ def sine_array(phase, freq):
 
 class DynamicMapConstructor(ComparisonTestCase):
 
-    def test_simple_constructor(self):
-        DynamicMap(lambda x: x)
-
     def test_simple_constructor_kdims(self):
         DynamicMap(lambda x: x, kdims=['test'])
+
+    def test_simple_constructor_invalid_no_kdims(self):
+        regexp = ('Callable accepts more positional arguments than there are '
+                  'kdims and stream parameters')
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
         regexp = ("Callback signature over \['x'\] does not accommodate "
