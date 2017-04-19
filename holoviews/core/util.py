@@ -1292,22 +1292,29 @@ def arglexsort(arrays):
     return recarray.argsort()
 
 
-def get_dynamic_item(map_obj, dimensions, key):
+def get_dynamic_item(map_obj, dimensions, key, cached=False):
     """
     Looks up an item in a DynamicMap given a list of dimensions
     and a corresponding key. The dimensions must be a subset
-    of the map_obj key dimensions.
+    of the map_obj key dimensions. The cached option simply
+    returns the last item in the DynamicMap cache ignoring the
+    key (this option should only be used by plotting initialization
+    where the precise key does not matter).
     """
     dmaps = map_obj.traverse(lambda x: x, ['DynamicMap'])
     dmap = dmaps[0] if dmaps else map_obj
     if key == () and (not dimensions or not dmap.kdims):
-        map_obj.traverse(lambda x: x[()], ['DynamicMap'])
+        if not cached:
+            map_obj.traverse(lambda x: x[()], ['DynamicMap'])
         return key, map_obj.map(lambda x: x.last, ['DynamicMap'])
     elif isinstance(key, tuple):
         dims = {d.name: k for d, k in zip(dimensions, key)
                 if d in map_obj.kdims}
         key = tuple(dims.get(d.name) for d in map_obj.kdims)
-        el = map_obj.select(['DynamicMap', 'HoloMap'], **dims)
+        if cached:
+            el = map_obj.map(lambda x: x.last, ['DynamicMap', 'HoloMap'])
+        else:
+            el = map_obj.select(['DynamicMap', 'HoloMap'], **dims)
     else:
         el = None
     return key, el

@@ -201,7 +201,7 @@ class DimensionedPlot(Plot):
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self.comm = None
-        self._force = True
+        self._force = False
 
         params = {k: v for k, v in params.items()
                   if k in self.params()}
@@ -637,7 +637,11 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
             self.current_key = key
             return self.current_frame
+        elif key == self.current_key and not self._force:
+            return self.current_frame
         elif self.dynamic:
+            if (self.current_key is None and key == self.hmap._initial_key()) and not self._force:
+                return self.hmap.last
             key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
             traverse_setter(self, '_force', False)
             if not isinstance(key, tuple): key = (key,)
@@ -984,6 +988,7 @@ class GenericCompositePlot(DimensionedPlot):
         Creates a clone of the Layout with the nth-frame for each
         Element.
         """
+        initial = self.current_key is None
         layout_frame = self.layout.clone(shared_data=False)
         keyisint = isinstance(key, int)
         if not isinstance(key, tuple): key = (key,)
@@ -996,7 +1001,8 @@ class GenericCompositePlot(DimensionedPlot):
 
         for path, item in self.layout.items():
             if item.traverse(lambda x: x, [DynamicMap]):
-                key, frame = util.get_dynamic_item(item, self.dimensions, key)
+                key, frame = util.get_dynamic_item(item, self.dimensions, key,
+                                                   cached=initial)
                 layout_frame[path] = frame
                 continue
             elif self.uniform:
