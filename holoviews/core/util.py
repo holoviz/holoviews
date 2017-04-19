@@ -169,6 +169,10 @@ def validate_dynamic_argspec(argspec, kdims, streams):
             raise KeyError('Callable missing keywords to accept %s stream parameters'
                            % ', '.join(unassigned_streams))
 
+
+    if len(posargs) > len(kdims) + len(stream_params):
+        raise KeyError('Callable accepts more positional arguments than '
+                       'there are kdims and stream parameters')
     if kdims == []:                  # Can be no posargs, stream kwargs already validated
         return []
     if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs

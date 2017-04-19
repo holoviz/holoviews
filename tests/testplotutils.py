@@ -6,7 +6,7 @@ from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Curve, Area
 from holoviews.plotting.util import compute_overlayable_zorders
-from holoviews.streams import PositionX
+from holoviews.streams import PointerX
 
 try:
     from holoviews.plotting.bokeh import util
@@ -175,7 +175,7 @@ class TestPlotUtils(ComparisonTestCase):
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams(self):
         ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
-                               kdims=[], streams=[PositionX()])
+                               kdims=[], streams=[PointerX()])
         curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = ndoverlay*curve_redim
@@ -196,7 +196,7 @@ class TestPlotUtils(ComparisonTestCase):
 
     def test_dynamic_compute_overlayable_zorders_mixed_dynamic_and_dynamic_ndoverlay_with_streams_cloned(self):
         ndoverlay = DynamicMap(lambda x: NdOverlay({i: Area(range(10+i)) for i in range(2)}),
-                               kdims=[], streams=[PositionX()])
+                               kdims=[], streams=[PointerX()])
         curve = DynamicMap(lambda: Curve(range(10)), kdims=[])
         curve_redim = curve.redim(x='x2')
         combined = ndoverlay*curve_redim

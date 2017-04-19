@@ -19,7 +19,7 @@ from holoviews.core.util import (
     deephash, merge_dimensions, get_path, make_path_unique
 )
 from holoviews import Dimension, Element
-from holoviews.streams import PositionXY
+from holoviews.streams import PointerXY
 from holoviews.element.comparison import ComparisonTestCase
 
 py_version = sys.version_info.major
@@ -442,13 +442,13 @@ class TestWrapTupleStreams(unittest.TestCase):
     def test_no_streams_one_stream_substitution(self):
         result = wrap_tuple_streams((None,3),
                                     [Dimension('x'), Dimension('y')],
-                                    [PositionXY(x=-5,y=10)])
+                                    [PointerXY(x=-5,y=10)])
         self.assertEqual(result, (-5,3))
 
     def test_no_streams_two_stream_substitution(self):
         result = wrap_tuple_streams((None,None),
                                     [Dimension('x'), Dimension('y')],
-                                    [PositionXY(x=0,y=5)])
+                                    [PointerXY(x=0,y=5)])
         self.assertEqual(result, (0,5))
 
 

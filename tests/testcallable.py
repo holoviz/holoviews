@@ -140,16 +140,16 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A,B):
             return Scatter([(A,2)], label=A)
 
-        dmap = DynamicMap(fn, kdims=['A','B'], sampled=True)
+        dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_kdims_only_invalid(self):
         def fn(A,B):
             return Scatter([(A,2)], label=A)
 
-        regexp="Callable accepts more positional arguments (.+?) than there are key dimensions (.+?)"
+        regexp="Callable accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegexp(KeyError, regexp):
-            dmap = DynamicMap(fn, kdims=['A'], sampled=True)
+            dmap = DynamicMap(fn, kdims=['A'])
 
 
     def test_dynamic_kdims_args_only(self):
@@ -157,7 +157,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
             (A,B) = args
             return Scatter([(A,2)], label=A)
 
-        dmap = DynamicMap(fn, kdims=['A','B'], sampled=True)
+        dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
 
@@ -165,8 +165,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(x=1, y=2):
             return Scatter([(x,y)], label='default')
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=[], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=[], streams=[xy])
         self.assertEqual(dmap[:], Scatter([(1, 2)], label='default'))
 
 
@@ -174,8 +174,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(**kwargs):
             return Scatter([(kwargs['x'],kwargs['y'])], label='default')
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=[], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=[], streams=[xy])
         self.assertEqual(dmap[:], Scatter([(1, 2)], label='default'))
 
 
@@ -185,44 +185,44 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A, x=1, y=2):
             return Scatter([(x,y)], label=A)
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_split_kdims_and_streams_invalid(self):
         # Corresponds to the old style of kdims as posargs and streams
-        # as kwargs. Positional arg names don't have to match
+        # as kwargs. Pointeral arg names don't have to match
         def fn(x=1, y=2, B='default'):
             return Scatter([(x,y)], label=B)
 
-        xy = streams.PositionXY(x=1, y=2)
+        xy = streams.PointerXY(x=1, y=2)
         regexp = "Callback signature over (.+?) does not accommodate required kdims"
         with self.assertRaisesRegexp(KeyError, regexp):
-            DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+            DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_mismatched_kdims(self):
         # Corresponds to the old style of kdims as posargs and streams
-        # as kwargs. Positional arg names don't have to match
+        # as kwargs. Pointeral arg names don't have to match
         def fn(B, x=1, y=2):
             return Scatter([(x,y)], label=B)
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
     def test_dynamic_split_mismatched_kdims_invalid(self):
         # Corresponds to the old style of kdims as posargs and streams
-        # as kwargs. Positional arg names don't have to match and the
+        # as kwargs. Pointeral arg names don't have to match and the
         # stream parameters can be passed by position but *only* if they
         # come first
         def fn(x, y, B):
             return Scatter([(x,y)], label=B)
 
-        xy = streams.PositionXY(x=1, y=2)
+        xy = streams.PointerXY(x=1, y=2)
         regexp = ("Unmatched positional kdim arguments only allowed "
                   "at the start of the signature")
         with self.assertRaisesRegexp(KeyError, regexp):
-            DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+            DynamicMap(fn, kdims=['A'], streams=[xy])
 
     def test_dynamic_split_args_and_kwargs(self):
         # Corresponds to the old style of kdims as posargs and streams
@@ -230,8 +230,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(*args, **kwargs):
             return Scatter([(kwargs['x'],kwargs['y'])], label=args[0])
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
 
@@ -239,8 +239,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A='default', x=1, y=2):
             return Scatter([(x,y)], label=A)
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
 
@@ -248,8 +248,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A='default', x=1, y=2, **kws):
             return Scatter([(x,y)], label=A)
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
 
@@ -257,8 +257,8 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(x, A, y):
             return Scatter([(x, y)], label=A)
 
-        xy = streams.PositionXY(x=1, y=2)
-        dmap = DynamicMap(fn, kdims=['A'], streams=[xy], sampled=True)
+        xy = streams.PointerXY(x=1, y=2)
+        dmap = DynamicMap(fn, kdims=['A'], streams=[xy])
         self.assertEqual(dmap['Test'], Scatter([(1, 2)], label='Test'))
 
 

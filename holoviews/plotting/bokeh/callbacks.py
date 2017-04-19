@@ -5,9 +5,10 @@ import numpy as np
 from bokeh.models import CustomJS
 
 from ...core import OrderedDict
-from ...streams import (Stream, PositionXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PositionX, PositionY, Bounds, Tap,
+from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
+                        RangeY, PointerX, PointerY, Bounds, Tap,
                         DoubleTap, MouseEnter, MouseLeave, PlotSize)
+from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
 
@@ -515,7 +516,7 @@ class Callback(CustomJSCallback, ServerCallback):
 
 
 
-class PositionXYCallback(Callback):
+class PointerXYCallback(Callback):
     """
     Returns the mouse x/y-position on mousemove event.
     """
@@ -525,7 +526,7 @@ class PositionXYCallback(Callback):
     on_events = ['mousemove']
 
 
-class PositionXCallback(PositionXYCallback):
+class PointerXCallback(PointerXYCallback):
     """
     Returns the mouse x-position on mousemove event.
     """
@@ -533,7 +534,7 @@ class PositionXCallback(PositionXYCallback):
     attributes = {'x': 'cb_obj.x'}
 
 
-class PositionYCallback(PositionXYCallback):
+class PointerYCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on mousemove event.
     """
@@ -541,7 +542,7 @@ class PositionYCallback(PositionXYCallback):
     attributes = {'y': 'cb_obj.y'}
 
 
-class TapCallback(PositionXYCallback):
+class TapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
     """
@@ -549,7 +550,7 @@ class TapCallback(PositionXYCallback):
     on_events = ['tap']
 
 
-class DoubleTapCallback(PositionXYCallback):
+class DoubleTapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on doubletap event.
     """
@@ -557,7 +558,7 @@ class DoubleTapCallback(PositionXYCallback):
     on_events = ['doubletap']
 
 
-class MouseEnterCallback(PositionXYCallback):
+class MouseEnterCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on mouseenter event, i.e. when
     mouse enters the plot canvas.
@@ -566,7 +567,7 @@ class MouseEnterCallback(PositionXYCallback):
     on_events = ['mouseenter']
 
 
-class MouseLeaveCallback(PositionXYCallback):
+class MouseLeaveCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on mouseleave event, i.e. when
     mouse leaves the plot canvas.
@@ -676,9 +677,9 @@ class Selection1DCallback(Callback):
 
 callbacks = Stream._callbacks['bokeh']
 
-callbacks[PositionXY]  = PositionXYCallback
-callbacks[PositionX]   = PositionXCallback
-callbacks[PositionY]   = PositionYCallback
+callbacks[PointerXY]  = PointerXYCallback
+callbacks[PointerX]   = PointerXCallback
+callbacks[PointerY]   = PointerYCallback
 callbacks[Tap]         = TapCallback
 callbacks[DoubleTap]   = DoubleTapCallback
 callbacks[MouseEnter]  = MouseEnterCallback
@@ -689,3 +690,8 @@ callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+
+# Aliases for deprecated streams
+callbacks[PositionXY]  = PointerXYCallback
+callbacks[PositionX]   = PointerXCallback
+callbacks[PositionY]   = PointerYCallback

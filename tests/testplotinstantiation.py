@@ -20,7 +20,7 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                Scatter3D, Path, Polygons, Bars, Text,
                                BoxWhisker)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import PositionXY, PositionX
+from holoviews.streams import PointerXY, PointerX
 from holoviews.operation import gridmatrix
 from holoviews.plotting import comms
 from holoviews.plotting.util import rgb2hex
@@ -135,7 +135,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
     def test_dynamic_streams_refresh(self):
-        stream = PositionXY(x=0, y=0)
+        stream = PointerXY(x=0, y=0)
         dmap = DynamicMap(lambda x, y: Points([(x, y)]),
                              kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
@@ -154,7 +154,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX(x=0)
+        stream = PointerX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = mpl_renderer.get_plot(dmap)
         mpl_renderer(plot)
@@ -351,7 +351,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(extents, (0, 0, 9, 1))
 
     def test_batched_curve_subscribers_correctly_attached(self):
-        posx = PositionX()
+        posx = PointerX()
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
@@ -719,7 +719,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_stream_callback(self):
         if bokeh_version < str('0.12.5'):
             raise SkipTest("Bokeh >= 0.12.5 required to test streams")
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
         plot.callbacks[0].on_msg({"x": 10, "y": -10})
@@ -731,7 +731,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         if bokeh_version < str('0.12.5'):
             raise SkipTest("Bokeh >= 0.12.5 required to test streams")
 
-        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PositionXY()])
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
         model = plot.state
@@ -748,7 +748,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX(x=0)
+        stream = PointerX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = bokeh_renderer.get_plot(dmap)
         bokeh_renderer(plot)
@@ -1432,7 +1432,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         def history_callback(x, history=deque(maxlen=10)):
             history.append(x)
             return Curve(list(history))
-        stream = PositionX(x=0)
+        stream = PointerX(x=0)
         dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
         plot = plotly_renderer.get_plot(dmap)
         plotly_renderer(plot)

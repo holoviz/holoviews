@@ -4,7 +4,7 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
-from holoviews.streams import PositionXY, PositionX, PositionY
+from holoviews.streams import XY, PointerXY, PointerX, PointerY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -16,46 +16,86 @@ def sine_array(phase, freq):
     return np.sin(phase + (freq*x**2+freq*y**2))
 
 
-class DynamicMethods(ComparisonTestCase):
+
+class DynamicMapConstructor(ComparisonTestCase):
+
+    def test_simple_constructor_kdims(self):
+        DynamicMap(lambda x: x, kdims=['test'])
+
+    def test_simple_constructor_invalid_no_kdims(self):
+        regexp = ('Callable accepts more positional arguments than there are '
+                  'kdims and stream parameters')
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x)
+
+    def test_simple_constructor_invalid(self):
+        regexp = ("Callback signature over \['x'\] does not accommodate "
+                  "required kdims \['x', 'y'\]")
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x, kdims=['x','y'])
+
+    def test_simple_constructor_streams(self):
+        DynamicMap(lambda x: x, streams=[PointerX()])
+
+    def test_simple_constructor_streams_invalid_uninstantiated(self):
+        regexp = ("The supplied streams list contains objects "
+                  "that are not Stream instances:(.+?)")
+        with self.assertRaisesRegexp(TypeError, regexp):
+            DynamicMap(lambda x: x, streams=[PointerX])
+
+    def test_simple_constructor_streams_invalid_type(self):
+        regexp = ("The supplied streams list contains objects "
+                  "that are not Stream instances:(.+?)")
+        with self.assertRaisesRegexp(TypeError, regexp):
+            DynamicMap(lambda x: x, streams=[3])
+
+    def test_simple_constructor_streams_invalid_mismatch(self):
+        regexp = 'Callable missing keywords to accept y stream parameters'
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(lambda x: x, streams=[PointerXY()])
+
+
+
+class DynamicMapMethods(ComparisonTestCase):
 
     def test_deep_relabel_label(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).relabel(label='Test')
+        dmap = DynamicMap(fn, kdims=['i']).relabel(label='Test')
         self.assertEqual(dmap[0].label, 'Test')
 
     def test_deep_relabel_group(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).relabel(group='Test')
+        dmap = DynamicMap(fn, kdims=['i']).relabel(group='Test')
         self.assertEqual(dmap[0].group, 'Test')
 
     def test_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(Default='New')
+        dmap = DynamicMap(fn, kdims=['i']).redim(i='New')
         self.assertEqual(dmap.kdims[0].name, 'New')
 
     def test_redim_dimension_range_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.range(Default=(0,1))
+        dmap = DynamicMap(fn, kdims=['i']).redim.range(i=(0,1))
         self.assertEqual(dmap.kdims[0].range, (0,1))
 
     def test_redim_dimension_unit_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.unit(Default='m/s')
+        dmap = DynamicMap(fn, kdims=['i']).redim.unit(i='m/s')
         self.assertEqual(dmap.kdims[0].unit, 'm/s')
 
     def test_redim_dimension_type_aux(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim.type(Default=int)
+        dmap = DynamicMap(fn, kdims=['i']).redim.type(i=int)
         self.assertEqual(dmap.kdims[0].type, int)
 
     def test_deep_redim_dimension_name(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(x='X')
+        dmap = DynamicMap(fn, kdims=['i']).redim(x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
     def test_deep_redim_dimension_name_with_spec(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn).redim(Image, x='X')
+        dmap = DynamicMap(fn, kdims=['i']).redim(Image, x='X')
         self.assertEqual(dmap[0].kdims[0].name, 'X')
 
     def test_deep_getitem_bounded_kdims(self):
@@ -143,23 +183,43 @@ class DynamicMethods(ComparisonTestCase):
             reindexed = dmap.reindex(['x'])
 
 
-class DynamicTestCallableBounded(ComparisonTestCase):
+class DynamicMapUnboundedProperty(ComparisonTestCase):
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertEqual(dmap.unbounded, [])
 
-    def test_generator_bounded_clone(self):
+    def test_callable_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
+        self.assertEqual(dmap.unbounded, [])
 
+    def test_sampled_unbounded_init(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=['i'])
+        self.assertEqual(dmap.unbounded, ['i'])
+
+    def test_sampled_unbounded_resample(self):
+        fn = lambda i: Image(sine_array(0,i))
+        dmap=DynamicMap(fn, kdims=['i'])
+        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
+        self.assertEqual(dmap.unbounded, ['i'])
+
+    def test_mixed_kdim_streams_unbounded(self):
+        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        self.assertEqual(dmap.unbounded, ['z'])
+
+    def test_mixed_kdim_streams_bounded_redim(self):
+        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
 
 class DynamicTransferStreams(ComparisonTestCase):
 
     def setUp(self):
-        self.dimstream = PositionX(x=0)
-        self.stream = PositionY(y=0)
+        self.dimstream = PointerX(x=0)
+        self.stream = PointerY(y=0)
         self.dmap = DynamicMap(lambda x, y, z: Curve([x, y, z]),
                                kdims=['x', 'z'], streams=[self.stream, self.dimstream])
 
@@ -192,37 +252,25 @@ class DynamicTransferStreams(ComparisonTestCase):
         self.assertEqual(hist.streams, self.dmap.streams[1:])
 
     def test_dynamic_util_inherits_dim_streams_clash(self):
-        exception = ("The supplied stream objects PositionX\(x=None\) and "
-                     "PositionX\(x=0\) clash on the following parameters: \['x'\]")
+        exception = ("The supplied stream objects PointerX\(x=None\) and "
+                     "PointerX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegexp(Exception, exception):
-            hist = Dynamic(self.dmap, streams=[PositionX])
-        
+            hist = Dynamic(self.dmap, streams=[PointerX])
 
-
-class DynamicTestSampledBounded(ComparisonTestCase):
-
-    def test_sampled_bounded_init(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
-
-    def test_sampled_bounded_resample(self):
-        fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
-        self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
 
 
 class DynamicTestOperation(ComparisonTestCase):
 
     def test_dynamic_operation(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
+        dmap=DynamicMap(fn, kdims=['i'])
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
 
     def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
+        dmap=DynamicMap(fn, kdims=['i'])
         def fn(x, multiplier=2):
             return x.clone(x.data*multiplier)
         dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
@@ -234,31 +282,31 @@ class DynamicTestOverlay(ComparisonTestCase):
 
     def test_dynamic_element_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
+        dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = dmap * Image(sine_array(0,10))
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_element_underlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
+        dmap=DynamicMap(fn, kdims=['i'])
         dynamic_overlay = Image(sine_array(0,10)) * dmap
         overlaid = Image(sine_array(0,10)) * Image(sine_array(0,5))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_dynamicmap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn, sampled=True)
+        dmap=DynamicMap(fn, kdims=['i'])
         fn2 = lambda i: Image(sine_array(0,i*2))
-        dmap2=DynamicMap(fn2, sampled=True)
+        dmap2=DynamicMap(fn2, kdims=['i'])
         dynamic_overlay = dmap * dmap2
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
 
     def test_dynamic_holomap_overlay(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap = DynamicMap(fn, sampled=True)
-        hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)})
+        dmap = DynamicMap(fn, kdims=['i'])
+        hmap = HoloMap({i: Image(sine_array(0,i*2)) for i in range(10)}, kdims=['i'])
         dynamic_overlay = dmap * hmap
         overlaid = Image(sine_array(0,5)) * Image(sine_array(0,10))
         self.assertEqual(dynamic_overlay[5], overlaid)
@@ -267,13 +315,13 @@ class DynamicTestOverlay(ComparisonTestCase):
         """Tests that Callable memoizes unchanged callbacks"""
         def fn(x, y):
             return Scatter([(x, y)])
-        dmap = DynamicMap(fn, kdims=[], streams=[PositionXY()])
+        dmap = DynamicMap(fn, kdims=[], streams=[PointerXY()])
 
         counter = [0]
         def fn2(x, y):
             counter[0] += 1
             return Image(np.random.rand(10, 10))
-        dmap2 = DynamicMap(fn2, kdims=[], streams=[PositionXY()])
+        dmap2 = DynamicMap(fn2, kdims=[], streams=[PointerXY()])
 
         overlaid = dmap * dmap2
         overlay = overlaid[()]
@@ -291,7 +339,7 @@ class DynamicTestOverlay(ComparisonTestCase):
         def fn(x1, y1):
             return Scatter([(x1, y1)])
 
-        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        xy = PointerXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
         dmap.event(x1=1, y1=2)
 
@@ -299,10 +347,10 @@ class DynamicTestOverlay(ComparisonTestCase):
         def fn(x1, y1):
             return Scatter([(x1, y1)])
 
-        xy = PositionXY(rename={'x':'x1','y':'y1'})
+        xy = PointerXY(rename={'x':'x1','y':'y1'})
         dmap = DynamicMap(fn, kdims=[], streams=[xy])
 
-        regexp = '(.+?)does not correspond to any stream parameter'
+        regexp = '(.+?)do not correspond to stream parameters'
         with self.assertRaisesRegexp(KeyError, regexp):
             dmap.event(x=1, y=2)
 
@@ -315,7 +363,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
             history.append(x)
             return Curve(list(history))
 
-        x = PositionX()
+        x = PointerX()
         dmap = DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
@@ -339,7 +387,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
             history.append(x)
             return Curve(list(history))
 
-        x = PositionX()
+        x = PointerX()
         callable_obj = Callable(history_callback, memoize=False)
         dmap = DynamicMap(callable_obj, kdims=[], streams=[x])
 
@@ -367,7 +415,7 @@ class DynamicStreamReset(ComparisonTestCase):
                 history.append(x)
             return Curve(list(history))
 
-        x = PositionX(transient=True)
+        x = PointerX(transient=True)
         dmap = DynamicMap(history_callback, kdims=[], streams=[x])
 
         # Add stream subscriber mocking plot
@@ -398,8 +446,8 @@ class DynamicStreamReset(ComparisonTestCase):
 
             return Curve(list(history))
 
-        x = PositionX(transient=True)
-        y = PositionY(transient=True)
+        x = PointerX(transient=True)
+        y = PointerY(transient=True)
         dmap = DynamicMap(history_callback, kdims=[], streams=[x, y])
 
         # Add stream subscriber mocking plot
@@ -428,7 +476,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_raise_no_remapping_error(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The following streams are set to be automatically linked'):
@@ -437,7 +485,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Image(np.array([[0, 1], [2, 3]]))
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
@@ -446,7 +494,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -456,7 +504,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_layout_with_spec_stream_mapping(self):
         def callback(x, y):
             return Image(np.array([[0, 1], [2, 3]])) + Text(0, 0, 'Test')
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -474,7 +522,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_ndlayout_with_integer_stream_mapping(self):
         def callback(x, y):
             return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={0: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -484,7 +532,7 @@ class DynamicCollate(ComparisonTestCase):
     def test_dynamic_collate_ndlayout_with_key_stream_mapping(self):
         def callback(x, y):
             return NdLayout({i: Image(np.array([[i, 1], [2, 3]])) for i in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={(1,): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         layout = dmap.collate()
@@ -505,7 +553,7 @@ class DynamicCollate(ComparisonTestCase):
         def callback():
             return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={1: [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()
@@ -517,7 +565,7 @@ class DynamicCollate(ComparisonTestCase):
         def callback():
             return GridSpace({(i, j): Image(np.array([[i, j], [2, 3]]))
                               for i in range(1, 3) for j in range(1, 3)})
-        stream = PositionXY()
+        stream = PointerXY()
         cb_callable = Callable(callback, stream_mapping={(1, 2): [stream]})
         dmap = DynamicMap(cb_callable, kdims=[])
         grid = dmap.collate()

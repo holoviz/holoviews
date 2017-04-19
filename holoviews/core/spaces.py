@@ -14,6 +14,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
+from ..streams import Stream
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
@@ -555,6 +556,10 @@ class DynamicMap(HoloMap):
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
 
+    kdims = param.List(default=[], constant=True, doc="""
+        The key dimensions of a DynamicMap map to the arguments of the
+        callback. This mapping can be by position or by name.""")
+
     callback = param.ClassSelector(class_=Callable, doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
@@ -574,17 +579,21 @@ class DynamicMap(HoloMap):
        cache where the least recently used item is overwritten once
        the cache is full.""")
 
-    sampled = param.Boolean(default=False, doc="""
-       Allows defining a DynamicMap without defining the dimension
-       bounds or values. The DynamicMap may then be explicitly sampled
-       via getitem or the sampling is determined during plotting by a
-       HoloMap with fixed sampling.
-       """)
-
     def __init__(self, callback, initial_items=None, **params):
         if not isinstance(callback, Callable):
             callback = Callable(callback)
+
+        if 'sampled' in params:
+            self.warning('DynamicMap sampled parameter is deprecated '
+                         'and no longer neededs to be specified.')
+            del params['sampled']
+
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)
+        invalid = [s for s in self.streams if not isinstance(s, Stream)]
+        if invalid:
+            msg = ('The supplied streams list contains objects that '
+                   'are not Stream instances: {objs}')
+            raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
@@ -595,6 +604,25 @@ class DynamicMap(HoloMap):
                 stream.source = self
         self.redim = redim(self, mode='dynamic')
 
+    @property
+    def unbounded(self):
+        """
+        Returns a list of key dimensions that are unbounded, excluding
+        stream parameters. If any of theses key dimensions are
+        unbounded, the DynamicMap as a whole is also unbounded.
+        """
+        unbounded_dims = []
+        # Dimensioned streams do not need to be bounded
+        stream_params = set(util.stream_parameters(self.streams))
+        for kdim in self.kdims:
+            if str(kdim) in stream_params:
+                continue
+            if kdim.values:
+                continue
+            if None in kdim.range:
+                unbounded_dims.append(str(kdim))
+        return unbounded_dims
+
     def _initial_key(self):
         """
         Construct an initial key for based on the lower range bounds or
@@ -602,16 +630,22 @@ class DynamicMap(HoloMap):
         """
         key = []
         undefined = []
+        stream_params = set(util.stream_parameters(self.streams))
         for kdim in self.kdims:
-            if kdim.values:
+            if str(kdim) in stream_params:
+                key.append(None)
+            elif kdim.values:
                 key.append(kdim.values[0])
-            elif kdim.range:
+            elif kdim.range[0] is not None:
                 key.append(kdim.range[0])
             else:
                 undefined.append(kdim)
         if undefined:
-            raise KeyError('dimensions do not specify a range or values, '
-                           'cannot supply initial key' % ', '.join(undefined))
+            msg = ('Dimension(s) {undefined_dims} do not specify range or values needed '
+                   'to generate initial key')
+            undefined_dims = ', '.join(['%r' % str(dim) for dim in undefined])
+            raise KeyError(msg.format(undefined_dims=undefined_dims))
+
         return tuple(key)
 
 
@@ -639,20 +673,21 @@ class DynamicMap(HoloMap):
         This method allows any of the available stream parameters
         (renamed as appropriate) to be updated in an event.
         """
+        if self.streams == []: return
         stream_params = set(util.stream_parameters(self.streams))
-        for k in stream_params - set(kwargs.keys()):
-            raise KeyError('Key %r does not correspond to any stream parameter')
+        invalid = [k for k in kwargs.keys() if k not in stream_params]
+        if invalid:
+            msg = 'Key(s) {invalid} do not correspond to stream parameters'
+            raise KeyError(msg.format(invalid = ', '.join('%r' % i for i in invalid)))
 
-        updated_streams = []
         for stream in self.streams:
             applicable_kws = {k:v for k,v in kwargs.items()
                               if k in set(stream.contents.keys())}
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
             stream.update(**dict(rkwargs, trigger=False))
-            updated_streams.append(stream)
 
-        if updated_streams and trigger:
-            updated_streams[0].trigger(updated_streams)
+        if trigger:
+            Stream.trigger(self.streams)
 
 
     def _style(self, retval):

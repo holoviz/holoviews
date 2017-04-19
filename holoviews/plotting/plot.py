@@ -20,7 +20,7 @@ from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
 from ..core.util import stream_parameters
 from ..element import Table
-from .util import (get_dynamic_mode, initialize_sampled, dim_axis_label,
+from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders)
 
@@ -590,7 +590,7 @@ class GenericElementPlot(DimensionedPlot):
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
-        dynamic = isinstance(element, DynamicMap) and not element.sampled
+        dynamic = isinstance(element, DynamicMap) and not element.unbounded
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
@@ -966,9 +966,9 @@ class GenericCompositePlot(DimensionedPlot):
         if top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
-        dynamic, sampled = get_dynamic_mode(layout)
-        if sampled:
-            initialize_sampled(layout, dimensions, keys[0])
+        dynamic, unbounded = get_dynamic_mode(layout)
+        if unbounded:
+            initialize_unbounded(layout, dimensions, keys[0])
         self.layout = layout
         super(GenericCompositePlot, self).__init__(keys=keys,
                                                    dynamic=dynamic,

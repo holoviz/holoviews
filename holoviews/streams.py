@@ -267,6 +267,48 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
+class Counter(Stream):
+    """
+    Simple stream that automatically increments an integer counter
+    parameter every time it is updated.
+    """
+
+    counter = param.Integer(default=0, constant=True, bounds=(0,None))
+
+    def transform(self):
+        return {'counter': self.counter + 1}
+
+
+class X(Stream):
+    """
+    Simple numeric stream representing a position along the x-axis.
+    """
+
+    x = param.Number(default=0, constant=True, doc="""
+       Numeric position along the x-axis.""")
+
+
+class Y(Stream):
+    """
+    Simple numeric stream representing a position along the y-axis.
+    """
+
+    y = param.Number(default=0, constant=True, doc="""
+       Numeric position along the y-axis.""")
+
+
+class XY(Stream):
+    """
+    Simple numeric stream representing a position along the x- and y-axes.
+    """
+
+    x = param.Number(default=0, constant=True, doc="""
+       Numeric position along the x-axis.""")
+
+    y = param.Number(default=0, constant=True, doc="""
+       Numeric position along the y-axis.""")
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
@@ -278,69 +320,76 @@ class LinkedStream(Stream):
         super(LinkedStream, self).__init__(linked=linked, **params)
 
 
-class PositionX(LinkedStream):
+class PointerX(LinkedStream):
     """
-    A position along the x-axis in data coordinates.
+    A pointer position along the x-axis in data coordinates which may be
+    a numeric or categorical dimension.
 
-    With the appropriate plotting backend, this may correspond to the
-    position of the mouse/trackpad cursor.
-    """
-
-    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
-                            constant=True, doc="""
-           Position along the x-axis in data coordinates""")
-
-
-class PositionY(LinkedStream):
-    """
-    A position along the y-axis in data coordinates.
-
-    With the appropriate plotting backend, this may correspond to the
-    position of the mouse/trackpad cursor.
-    """
-
-    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
-                            constant=True, doc="""
-           Position along the y-axis in data coordinates""")
-
-
-class PositionXY(LinkedStream):
-    """
-    A position along the x- and y-axes in data coordinates.
-
-    With the appropriate plotting backend, this may correspond to the
-    position of the mouse/trackpad cursor.
+    With the appropriate plotting backend, this corresponds to the
+    position of the mouse/trackpad cursor. If the pointer is outside the
+    plot bounds, the position is set to None.
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the x-axis in data coordinates""")
+           Pointer position along the x-axis in data coordinates""")
+
+
+class PointerY(LinkedStream):
+    """
+    A pointer position along the y-axis in data coordinates which may be
+    a numeric or categorical dimension.
+
+    With the appropriate plotting backend, this corresponds to the
+    position of the mouse/trackpad pointer. If the pointer is outside
+    the plot bounds, the position is set to None.
+    """
+
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=None,
                             constant=True, doc="""
-           Position along the y-axis in data coordinates""")
+           Pointer position along the y-axis in data coordinates""")
 
 
-class Tap(PositionXY):
+class PointerXY(LinkedStream):
+    """
+    A pointer position along the x- and y-axes in data coordinates which
+    may numeric or categorical dimensions.
+
+    With the appropriate plotting backend, this corresponds to the
+    position of the mouse/trackpad pointer. If the pointer is outside
+    the plot bounds, the position values are set to None.
+    """
+
+    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Pointer position along the x-axis in data coordinates""")
+
+    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
+                            constant=True, doc="""
+           Pointer position along the y-axis in data coordinates""")
+
+
+class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.
     """
 
 
-class DoubleTap(PositionXY):
+class DoubleTap(PointerXY):
     """
     The x/y-position of a double-tap or -click in data coordinates.
     """
 
 
-class MouseEnter(PositionXY):
+class MouseEnter(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
     """
 
 
-class MouseLeave(PositionXY):
+class MouseLeave(PointerXY):
     """
     The x/y-position where the mouse/cursor entered the plot area
     in data coordinates.
@@ -464,3 +513,19 @@ class ParamValues(Stream):
 
     def __str__(self):
         return repr(self)
+
+
+class PositionX(PointerX):
+    def __init__(self, **params):
+        self.warning('PositionX stream deprecated: use PointerX instead')
+        super(PositionX, self).__init__(**params)
+
+class PositionY(PointerY):
+    def __init__(self, **params):
+        self.warning('PositionY stream deprecated: use PointerY instead')
+        super(PositionY, self).__init__(**params)
+
+class PositionXY(PointerXY):
+    def __init__(self, **params):
+        self.warning('PositionXY stream deprecated: use PointerXY instead')
+        super(PositionXY, self).__init__(**params)
