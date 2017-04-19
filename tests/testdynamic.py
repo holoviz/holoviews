@@ -4,7 +4,7 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
-from holoviews.streams import PointerXY, PointerX, PointerY
+from holoviews.streams import XY, PointerXY, PointerX, PointerY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -201,12 +201,19 @@ class DynamicMapUnboundedProperty(ComparisonTestCase):
         dmap=DynamicMap(fn, kdims=['i'])
         self.assertEqual(dmap.unbounded, ['i'])
 
-    def test_sampled_bounded_resample(self):
+    def test_sampled_unbounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
         self.assertEqual(dmap.unbounded, ['i'])
 
+    def test_mixed_kdim_streams_unbounded(self):
+        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        self.assertEqual(dmap.unbounded, ['z'])
+
+    def test_mixed_kdim_streams_bounded_redim(self):
+        dmap=DynamicMap(lambda x,y,z: x+y, kdims=['z'], streams=[XY()])
+        self.assertEqual(dmap.redim.range(z=(-0.5,0.5)).unbounded, [])
 
 class DynamicTransferStreams(ComparisonTestCase):
 
