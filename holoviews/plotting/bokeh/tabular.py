@@ -29,10 +29,12 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         dims = element.dimensions()
-        return ({d.name: [] if empty else
-                 [d.pprint_value(v) for v in element.dimension_values(d)]
-                 for d in dims},
-                {d.name: d.name for d in dims})
+        data = {d: np.array([]) if empty else element.dimension_values(d)
+                 for d in dims}
+        mapping = {d.name: d.name for d in dims}
+        data = {d.name: values if values.dtype.kind in "if" else map(d.pprint_value, values)
+                for d, values in data.items()}
+        return data, mapping
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
