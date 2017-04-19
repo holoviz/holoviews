@@ -126,6 +126,18 @@ class abbreviated_exception(object):
             raise AbbreviatedException(etype, value, traceback)
 
 
+@contextmanager
+def options_policy(skip_invalid, warn_on_skip):
+    """
+    Context manager to temporarily set the skip_invalid and warn_on_skip
+    class parameters on Options.
+    """
+    settings = (Options.skip_invalid, Options.warn_on_skip)
+    (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
+    yield
+    (Options.skip_invalid, Options.warn_on_skip) = settings
+
+
 class Keywords(param.Parameterized):
     """
     A keywords objects represents a set of Python keywords. It is
@@ -348,7 +360,7 @@ class Options(param.Parameterized):
 
         for invalid_kw in invalid_kws:
             error = OptionError(invalid_kw, allowed_keywords, group_name=key)
-            StoreOptions.record_option_error(error)
+            StoreOptions.record_skipped_option(error)
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
@@ -1141,28 +1153,33 @@ class StoreOptions(object):
     #=======================#
 
     _errors_recorded = None
-    _option_class_settings = None
 
     @classmethod
-    def start_recording_errors(cls):
-        "Start collected errors supplied via record_option_error method"
-        cls._option_class_settings = (Options.skip_invalid, Options.warn_on_skip)
-        (Options.skip_invalid, Options.warn_on_skip) = (True, False)
+    def start_recording_skipped(cls):
+        """
+        Start collecting OptionErrors for all skipped options recorded
+        with the record_skipped_option method
+        """
         cls._errors_recorded = []
 
     @classmethod
-    def stop_recording_errors(cls):
-        "Stop recording errors and return recorded errors"
+    def stop_recording_skipped(cls):
+        """
+        Stop collecting OptionErrors recorded with the
+        record_skipped_option method and return them
+        """
         if cls._errors_recorded is None:
             raise Exception('Cannot stop recording before it is started')
         recorded = cls._errors_recorded[:]
-        (Options.skip_invalid ,Options.warn_on_skip) = cls._option_class_settings
         cls._errors_recorded = None
         return recorded
 
     @classmethod
-    def record_option_error(cls, error):
-        "Record an option error if currently recording"
+    def record_skipped_option(cls, error):
+        """
+        Record the OptionError associated with a skipped option if
+        currently recording
+        """
         if cls._errors_recorded is not None:
             cls._errors_recorded.append(error)
 
@@ -1260,11 +1277,13 @@ class StoreOptions(object):
         error_info     = {}
         backend_errors = defaultdict(set)
         for backend in loaded_backends:
-            cls.start_recording_errors()
-            options = OptionTree(items=Store.options(backend).data.items(),
-                                 groups=Store.options(backend).groups)
-            cls.apply_customizations(spec, options)
-            for error in cls.stop_recording_errors():
+            cls.start_recording_skipped()
+            with options_policy(skip_invalid=True, warn_on_skip=False):
+                options = OptionTree(items=Store.options(backend).data.items(),
+                                     groups=Store.options(backend).groups)
+                cls.apply_customizations(spec, options)
+
+            for error in cls.stop_recording_skipped():
                 error_key = (error.invalid_keyword,
                              error.allowed_keywords.target,
                              error.group_name)
