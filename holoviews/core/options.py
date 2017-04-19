@@ -126,6 +126,18 @@ class abbreviated_exception(object):
             raise AbbreviatedException(etype, value, traceback)
 
 
+@contextmanager
+def options_policy(skip_invalid, warn_on_skip):
+    """
+    Context manager to temporarily set the skip_invalid and warn_on_skip
+    class parameters on Options.
+    """
+    settings = (Options.skip_invalid, Options.warn_on_skip)
+    (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
+    yield
+    (Options.skip_invalid, Options.warn_on_skip) = settings
+
+
 class Keywords(param.Parameterized):
     """
     A keywords objects represents a set of Python keywords. It is
