@@ -179,7 +179,7 @@ def element_display(element, max_frames):
 @display_hook
 def map_display(vmap, max_frames):
     if not isinstance(vmap, (HoloMap, DynamicMap)): return None
-    if isinstance(vmap, DynamicMap) and vmap.unbounded:
+    if len(vmap) == 0  and isinstance(vmap, DynamicMap) and vmap.unbounded:
         dims = ', '.join('%r' % dim for dim in  vmap.unbounded)
         msg = ('DynamicMap cannot be displayed without explicit indexing '
                'as {dims} dimension(s) are unbounded. '
