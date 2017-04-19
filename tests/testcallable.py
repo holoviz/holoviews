@@ -147,7 +147,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A,B):
             return Scatter([(A,2)], label=A)
 
-        regexp="Callable accepts more positional arguments (.+?) than there are key dimensions (.+?)"
+        regexp="Callable accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegexp(KeyError, regexp):
             dmap = DynamicMap(fn, kdims=['A'])
 
