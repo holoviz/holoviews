@@ -1153,13 +1153,10 @@ class StoreOptions(object):
     #=======================#
 
     _errors_recorded = None
-    _option_class_settings = None
 
     @classmethod
     def start_recording_errors(cls):
         "Start collected errors supplied via record_option_error method"
-        cls._option_class_settings = (Options.skip_invalid, Options.warn_on_skip)
-        (Options.skip_invalid, Options.warn_on_skip) = (True, False)
         cls._errors_recorded = []
 
     @classmethod
@@ -1168,7 +1165,6 @@ class StoreOptions(object):
         if cls._errors_recorded is None:
             raise Exception('Cannot stop recording before it is started')
         recorded = cls._errors_recorded[:]
-        (Options.skip_invalid ,Options.warn_on_skip) = cls._option_class_settings
         cls._errors_recorded = None
         return recorded
 
@@ -1273,9 +1269,11 @@ class StoreOptions(object):
         backend_errors = defaultdict(set)
         for backend in loaded_backends:
             cls.start_recording_errors()
-            options = OptionTree(items=Store.options(backend).data.items(),
-                                 groups=Store.options(backend).groups)
-            cls.apply_customizations(spec, options)
+            with options_policy(skip_invalid=True, warn_on_skip=False):
+                options = OptionTree(items=Store.options(backend).data.items(),
+                                     groups=Store.options(backend).groups)
+                cls.apply_customizations(spec, options)
+
             for error in cls.stop_recording_errors():
                 error_key = (error.invalid_keyword,
                              error.allowed_keywords.target,
