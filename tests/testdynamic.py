@@ -183,26 +183,29 @@ class DynamicMapMethods(ComparisonTestCase):
             reindexed = dmap.reindex(['x'])
 
 
-class DynamicMapBounded(ComparisonTestCase):
+class DynamicMapUnboundedProperty(ComparisonTestCase):
 
     def test_callable_bounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
+        self.assertEqual(dmap.unbounded, [])
 
     def test_callable_bounded_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=[Dimension('dim', range=(0,10))])
         self.assertEqual(dmap, dmap.clone())
+        self.assertEqual(dmap.unbounded, [])
 
-    def test_sampled_bounded_init(self):
+    def test_sampled_unbounded_init(self):
         fn = lambda i: Image(sine_array(0,i))
-        dmap=DynamicMap(fn)
+        dmap=DynamicMap(fn, kdims=['i'])
+        self.assertEqual(dmap.unbounded, ['i'])
 
     def test_sampled_bounded_resample(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
         self.assertEqual(dmap[{0, 1, 2}].keys(), [0, 1, 2])
-
+        self.assertEqual(dmap.unbounded, ['i'])
 
 
 class DynamicTransferStreams(ComparisonTestCase):
