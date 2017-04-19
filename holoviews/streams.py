@@ -240,7 +240,7 @@ class Stream(param.Parameterized):
         """
         self.update(trigger=True, **kwargs)
 
-    def update(self, trigger=True, **kwargs):
+    def update(self, trigger=False, **kwargs):
         """
         The update method updates the stream parameters (without any
         renaming applied) in response to some event. If the stream has a
@@ -493,7 +493,7 @@ class ParamValues(Stream):
         return remapped
 
 
-    def update(self, trigger=True, **kwargs):
+    def update(self, trigger=False, **kwargs):
         """
         The update method updates the parameters of the specified object.
 
