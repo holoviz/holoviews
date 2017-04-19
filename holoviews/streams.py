@@ -269,6 +269,14 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
+class Next(Stream):
+    """
+    Example of an empty stream that can be used to trigger generators or
+    callbacks that take no arguments.
+    """
+    pass
+
+
 class Counter(Stream):
     """
     Simple stream that automatically increments an integer counter

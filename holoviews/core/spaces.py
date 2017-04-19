@@ -4,6 +4,7 @@ from numbers import Number
 from itertools import groupby
 from functools import partial
 from contextlib import contextmanager
+from inspect import ArgSpec
 
 import numpy as np
 import param
@@ -478,6 +479,8 @@ class Callable(param.Parameterized):
 
 
     def __call__(self, *args, **kwargs):
+        # Nothing to do for callbacks that accept no arguments
+        if not args and not kwargs: return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
@@ -511,6 +514,24 @@ class Callable(param.Parameterized):
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
+
+
+
+class Generator(Callable):
+    """
+    Generators are considered a special case of Callable that accept no
+    arguments and never memoize.
+    """
+
+    callable = param.Parameter(default=None, constant=True, doc="""
+         The generator function being wrapped.""")
+
+    @property
+    def argspec(self):
+        return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+
+    def __call__(self):
+        return next(self.callable)
 
 
 def get_nested_streams(dmap):
@@ -580,7 +601,10 @@ class DynamicMap(HoloMap):
        the cache is full.""")
 
     def __init__(self, callback, initial_items=None, **params):
-        if not isinstance(callback, Callable):
+
+        if isinstance(callback, types.GeneratorType):
+            callback = Generator(callback)
+        elif not isinstance(callback, Callable):
             callback = Callable(callback)
 
         if 'sampled' in params:
@@ -594,6 +618,14 @@ class DynamicMap(HoloMap):
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+
+        if isinstance(self.callback, Generator):
+            if self.kdims:
+                raise Exception('Generators can only be used without key dimensions')
+            if self.streams == []:
+                self.warning('Empty streams required to trigger generator')
+            if util.stream_parameters(self.streams):
+                raise Exception('Generators can only be used with empty streams')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
@@ -654,6 +686,7 @@ class DynamicMap(HoloMap):
         Make sure the supplied key values are within the bounds
         specified by the corresponding dimension range and soft_range.
         """
+        if key == () and len(self.kdims) == 0: return ()
         key = util.wrap_tuple(key)
         assert len(key) == len(self.kdims)
         for ind, val in enumerate(key):
@@ -856,7 +889,8 @@ class DynamicMap(HoloMap):
         try:
             dimensionless = util.dimensionless_contents(get_nested_streams(self),
                                                         self.kdims, no_duplicates=False)
-            if dimensionless:
+            empty = util.stream_parameters(self.streams) == [] and self.kdims==[]
+            if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
         except KeyError as e:
