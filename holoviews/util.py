@@ -2,7 +2,7 @@ import inspect
 
 import param
 
-from .core import DynamicMap, ViewableElement
+from .core import DynamicMap, HoloMap, ViewableElement
 from .core.operation import ElementOperation
 from .core.util import Aliases
 from .core.operation import OperationCallable
@@ -99,7 +99,8 @@ class Dynamic(param.ParameterizedFunction):
         if not isinstance(map_obj, DynamicMap):
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
-                return self._process(map_obj[key], key)
+                obj = map_obj[key] if isinstance(map_obj, HoloMap) else map_obj
+                return self._process(obj, key)
         else:
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
@@ -120,7 +121,7 @@ class Dynamic(param.ParameterizedFunction):
         an equivalent DynamicMap from the HoloMap.
         """
         if isinstance(hmap, ViewableElement):
-            return DynamicMap(dynamic_fn, kdims=[])
+            return DynamicMap(dynamic_fn, streams=streams)
         dim_values = zip(*hmap.data.keys())
         params = util.get_param_values(hmap)
         kdims = [d(values=list(set(values))) for d, values in

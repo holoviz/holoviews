@@ -267,6 +267,14 @@ class DynamicTestOperation(ComparisonTestCase):
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
+    def test_dynamic_operation_on_element(self):
+        img = Image(sine_array(0,5))
+        posxy = PointerXY(x=2, y=1)
+        dmap_with_fn = Dynamic(img, operation=lambda obj, x, y: obj.clone(obj.data*x+y),
+                               streams=[posxy])
+        element = dmap_with_fn[()]
+        self.assertEqual(element, Image(sine_array(0,5)*2+1))
+        self.assertEqual(dmap_with_fn.streams, [posxy])
 
     def test_dynamic_operation_with_kwargs(self):
         fn = lambda i: Image(sine_array(0,i))
