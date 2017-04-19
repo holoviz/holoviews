@@ -199,7 +199,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         if isinstance(self, OverlayPlot) and not self.batched:
             sources = []
-        if not self.static or isinstance(self.hmap, DynamicMap):
+        elif not self.static or isinstance(self.hmap, DynamicMap):
             sources = [(i, o) for i, inputs in self.stream_sources.items()
                        for o in inputs if i in zorders]
         else:
