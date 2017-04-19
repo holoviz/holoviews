@@ -388,7 +388,7 @@ class dynspread(ElementOperation):
 
     max_px = param.Integer(default=3, doc="""
         Maximum number of pixels to spread on all sides.""")
-    
+
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
@@ -412,27 +412,27 @@ class dynspread(ElementOperation):
         rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
         return rgb
 
+
     def _apply_dynspread(self, array):
         img = tf.Image(array)
         return tf.dynspread(img, max_px=self.p.max_px,
                             threshold=self.p.threshold,
                             how=self.p.how, shape=self.p.shape).data
 
-    def _process(self, element, key=None):
-        if not isinstance(element, Image):
-            raise ValueError('dynspread can only be applied to Image Elements.')
 
-        if isinstance(element, Image):
-            new_data = {kd.name: element.dimension_values(kd, expanded=False)
-                        for kd in element.kdims}
-            for vd in element.vdims:
-                array = element.dimension_values(vd, flat=False)
-                new_data[vd.name] = self._apply_dynspread(array)
-            return element.clone(element.data)
-        else:
-            img = np.flipud(element.data)
-            isrgb = isinstance(element, RGB)
-            data = self.uint8_to_uint32(img) if isrgb else img
-            array = self._apply_dynspread(data)
-            img = datashade.uint32_to_uint8(array) if isrgb else np.flipud(array)
-            return element.clone(img)
+    def _process(self, element, key=None):
+        if not isinstance(element, RGB):
+            raise ValueError('dynspread can only be applied to RGB Elements.')
+        rgb = element.rgb
+        new_data = {kd.name: rgb.dimension_values(kd, expanded=False)
+                    for kd in rgb.kdims}
+        rgbarray = np.dstack([element.dimension_values(vd, flat=False)
+                              for vd in element.vdims])
+        data = self.uint8_to_uint32(rgbarray)
+        array = self._apply_dynspread(data)
+        img = datashade.uint32_to_uint8(array)
+        for i, vd in enumerate(element.vdims):
+            if i < img.shape[-1]:
+                new_data[vd.name] = img[..., i]
+        return element.clone(new_data)
+
