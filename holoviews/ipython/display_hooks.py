@@ -188,7 +188,7 @@ def map_display(vmap, max_frames):
         sys.stderr.write(msg.format(dims=dims))
         return None
 
-    if len(vmap) == 0:
+    if len(vmap) == 0 and not isinstance(vmap, DynamicMap):
         return None
 
     elif len(vmap) > max_frames:
