@@ -234,6 +234,11 @@ class Stream(param.Parameterized):
         with util.disable_constant(self) as constant:
             self.set_param(**kwargs)
 
+    def event(self, **kwargs):
+        """
+        Update the stream parameters and trigger an event.
+        """
+        self.update(trigger=True, **kwargs)
 
     def update(self, trigger=True, **kwargs):
         """
