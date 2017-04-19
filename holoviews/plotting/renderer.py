@@ -150,6 +150,9 @@ class Renderer(Exporter):
     # Any additional JS and CSS dependencies required by a specific backend
     backend_dependencies = {}
 
+    # Whether in a notebook context, set when running Renderer.load_nb
+    notebook_context = False
+
     def __init__(self, **params):
         self.last_plot = None
         super(Renderer, self).__init__(**params)
@@ -516,3 +519,6 @@ class Renderer(Exporter):
         Loads any resources required for display of plots
         in the Jupyter notebook
         """
+        with param.logging_level('ERROR'):
+            cls.notebook_context = True
+

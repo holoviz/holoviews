@@ -152,6 +152,7 @@ class notebook_extension(param.ParameterizedFunction):
             if p in self._backends:
                 imports.append((p, self._backends[p]))
         if not imports:
+            args = ['matplotlib']
             imports = [('matplotlib', 'mpl')]
 
         args = list(args)
@@ -220,6 +221,7 @@ class notebook_extension(param.ParameterizedFunction):
         resources = list(resources)
         if len(resources) == 0: return
 
+        Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
 
