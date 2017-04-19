@@ -684,8 +684,7 @@ class DynamicMap(HoloMap):
             applicable_kws = {k:v for k,v in kwargs.items()
                               if k in set(stream.contents.keys())}
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
-            stream.update(**dict(rkwargs, trigger=False))
-
+            stream.update(**rkwargs)
 
         Stream.trigger(self.streams)
 

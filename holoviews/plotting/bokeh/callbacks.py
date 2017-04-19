@@ -85,7 +85,7 @@ class MessageCallback(object):
             processed_msg = self._process_msg(filtered_msg)
             if not processed_msg:
                 continue
-            stream.update(trigger=False, **processed_msg)
+            stream.update(**processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
         Stream.trigger(self.streams)

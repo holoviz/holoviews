@@ -101,7 +101,7 @@ class TestSubscribers(ComparisonTestCase):
         subscriber = TestSubscriber()
         position = PointerXY(subscribers=[subscriber])
         kwargs = dict(x=3, y=4)
-        position.update(trigger=False, **kwargs)
+        position.update(**kwargs)
         self.assertEqual(subscriber.kwargs, None)
 
 
@@ -120,8 +120,8 @@ class TestSubscribers(ComparisonTestCase):
         positionX = PointerX(subscribers=[subscriber])
         positionY = PointerY(subscribers=[subscriber])
 
-        positionX.update(trigger=False, x=5)
-        positionY.update(trigger=False, y=10)
+        positionX.update(x=5)
+        positionY.update(y=10)
 
         Stream.trigger([positionX, positionY])
         self.assertEqual(subscriber.kwargs, dict(x=5, y=10))
@@ -134,8 +134,8 @@ class TestSubscribers(ComparisonTestCase):
         positionX = PointerX(subscribers=[subscriber1, subscriber2])
         positionY = PointerY(subscribers=[subscriber1, subscriber2])
 
-        positionX.update(trigger=False, x=50)
-        positionY.update(trigger=False, y=100)
+        positionX.update(x=50)
+        positionY.update(y=100)
 
         Stream.trigger([positionX, positionY])
 

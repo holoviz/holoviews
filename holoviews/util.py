@@ -74,7 +74,7 @@ class Dynamic(param.ParameterizedFunction):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in self.p.operation.p}
                 if updates:
-                    stream.update(trigger=False, **updates)
+                    stream.update(**updates)
             streams.append(stream)
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)

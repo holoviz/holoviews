@@ -165,8 +165,8 @@ class Stream(param.Parameterized):
     def add_subscriber(self, subscriber):
         """
         Register a callable subscriber to this stream which will be
-        invoked either when update is called with trigger=True or when
-        this stream is passed to the trigger classmethod.
+        invoked either when event is called or when this stream is
+        passed to the trigger classmethod.
         """
         if not callable(subscriber):
             raise TypeError('Subscriber must be a callable.')
@@ -238,25 +238,22 @@ class Stream(param.Parameterized):
         """
         Update the stream parameters and trigger an event.
         """
-        self.update(trigger=True, **kwargs)
+        self.update(**kwargs)
+        self.trigger([self])
 
-    def update(self, trigger=False, **kwargs):
+    def update(self, **kwargs):
         """
         The update method updates the stream parameters (without any
         renaming applied) in response to some event. If the stream has a
         custom transform method, this is applied to transform the
         parameter values accordingly.
 
-        If trigger is enabled, the trigger classmethod is invoked on
-        this particular Stream instance.
+        To update and trigger, use the event method.
         """
         self._set_stream_parameters(**kwargs)
         transformed = self.transform()
         if transformed:
             self._set_stream_parameters(**transformed)
-        if trigger:
-            self.trigger([self])
-
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -493,7 +490,7 @@ class ParamValues(Stream):
         return remapped
 
 
-    def update(self, trigger=False, **kwargs):
+    def update(self, **kwargs):
         """
         The update method updates the parameters of the specified object.
 
@@ -506,10 +503,6 @@ class ParamValues(Stream):
                     setattr(self._obj, name, kwargs[name])
         else:
             self._obj.set_param(**kwargs)
-
-        if trigger:
-            self.trigger([self])
-
 
     def __repr__(self):
         cls_name = self.__class__.__name__
