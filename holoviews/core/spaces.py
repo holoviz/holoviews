@@ -668,7 +668,7 @@ class DynamicMap(HoloMap):
                     raise StopIteration("Key value %s above upper bound %s"
                                         % (val, high))
 
-    def event(self, trigger=True, **kwargs):
+    def event(self, **kwargs):
         """
         This method allows any of the available stream parameters
         (renamed as appropriate) to be updated in an event.
@@ -684,10 +684,9 @@ class DynamicMap(HoloMap):
             applicable_kws = {k:v for k,v in kwargs.items()
                               if k in set(stream.contents.keys())}
             rkwargs = util.rename_stream_kwargs(stream, applicable_kws, reverse=True)
-            stream.update(**dict(rkwargs, trigger=False))
+            stream.update(**rkwargs)
 
-        if trigger:
-            Stream.trigger(self.streams)
+        Stream.trigger(self.streams)
 
 
     def _style(self, retval):
