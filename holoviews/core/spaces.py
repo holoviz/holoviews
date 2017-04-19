@@ -739,7 +739,8 @@ class DynamicMap(HoloMap):
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
-            clone.callback = clone.callback.clone(inputs=[self])
+            clone.callback = clone.callback.clone(inputs=[self],
+                                                  link_inputs=True)
         return clone
 
 

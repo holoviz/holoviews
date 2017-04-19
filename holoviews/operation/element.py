@@ -558,6 +558,11 @@ class decimate(ElementOperation):
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
 
+    link_inputs = param.Boolean(default=True, doc="""
+         By default, the link_inputs parameter is set to True so that
+         when applying shade, backends that support linked streams
+         update RangeXY streams on the inputs of the shade operation.""")
+
     max_samples = param.Integer(default=5000, doc="""
         Maximum number of samples to display at the same time.""")
 
@@ -580,7 +585,7 @@ class decimate(ElementOperation):
         if not isinstance(element, Dataset):
             raise ValueError("Cannot downsample non-Dataset types.")
         if element.interface not in column_interfaces:
-            element = element.current_frame.clone(datatype=['dataframe', 'dictionary'])
+            element = element.clone(tuple(element.columns().values()))
 
         xstart, xend = self.p.x_range if self.p.x_range else element.range(0)
         ystart, yend = self.p.y_range if self.p.y_range else element.range(1)
