@@ -620,15 +620,14 @@ class DynamicMap(HoloMap):
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
-        if isinstance(self.callback, Generator):
+
+        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        if self.callback.argspec == noargs:
+            prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
-                raise Exception('DynamicMaps using generators can only be declared '
-                                'without key dimensions')
+                raise Exception(prefix + ' must be declared without key dimensions')
             if not (len(self.streams) == 1 and isinstance(self.streams[0], Next)):
-                raise Exception('DynamicMaps using Generators must be declared '
-                                'with a single Next() stream')
-            if util.stream_parameters(self.streams):
-                raise Exception('Generators can only be used with empty streams')
+                raise Exception(prefix +' must be declared using streams=[Next()]')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
