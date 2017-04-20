@@ -57,7 +57,6 @@ class PathPlot(ElementPlot):
             for k, v in sdata.items():
                 data[k].extend(list(v))
 
-        filter_batched_data(data, elmapping)
         return data, elmapping
 
 
