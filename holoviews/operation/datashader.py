@@ -23,7 +23,7 @@ from ..core import (ElementOperation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
 from ..element import Image, Path, Curve, Contours, RGB
-from ..streams import RangeXY
+from ..streams import RangeXY, PlotSize
 
 
 @dispatch(Element)
@@ -81,9 +81,14 @@ class aggregate(ElementOperation):
 
     The bins of the aggregate are defined by the width and height and
     the x_range and y_range. If x_sampling or y_sampling are supplied
-    the operation will ensure that a bin is no smaller than theminimum
+    the operation will ensure that a bin is no smaller than the minimum
     sampling distance by reducing the width and height when the zoomed
     in beyond the minimum sampling distance.
+
+    By default, the PlotSize operator is applied when this operation
+    is used dynamically, which means that the height and width
+    will automatically be set to match the inner dimensions of 
+    the plot in which this is used.
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
@@ -112,7 +117,7 @@ class aggregate(ElementOperation):
     y_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y-axis.""")
 
-    streams = param.List(default=[RangeXY], doc="""
+    streams = param.List(default=[PlotSize, RangeXY], doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
