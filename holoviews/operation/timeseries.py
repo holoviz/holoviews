@@ -109,7 +109,8 @@ class rolling_outlier_std(ElementOperation):
         std = pd.Series(residual).rolling(window, center=True).std()
 
         # Get indices of outliers
-        outliers = (np.abs(residual) > std * sigma).values
+        with np.errstate(invalid='ignore'):
+            outliers = (np.abs(residual) > std * sigma).values
         return element[outliers].clone(new_type=Scatter)
 
     def _process(self, element, key=None):
