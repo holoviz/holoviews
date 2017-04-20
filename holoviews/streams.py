@@ -271,8 +271,8 @@ class Stream(param.Parameterized):
 
 class Next(Stream):
     """
-    Example of an empty stream that can be used to trigger generators or
-    callbacks that take no arguments.
+    Next is a special stream used to trigger generators. It may also be
+    used to trigger DynamicMaps using callables with no arguments.
     """
     pass
 
