@@ -29,8 +29,6 @@ def _rc_context(rcparams):
     plt.rcParams.update(rcparams)
     try:
         yield
-    except:
-        pass
     finally:
         plt.rcParams = old_rcparams
 
