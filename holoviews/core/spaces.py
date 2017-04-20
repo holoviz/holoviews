@@ -523,8 +523,9 @@ class Generator(Callable):
     arguments and never memoize.
     """
 
-    callable = param.Parameter(default=None, constant=True, doc="""
-         The generator function being wrapped.""")
+    callable = param.ClassSelector(default=None, class_ = types.GeneratorType,
+                                   constant=True, doc="""
+         The generator that is wrapped by this Generator.""")
 
     @property
     def argspec(self):
