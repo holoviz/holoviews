@@ -124,7 +124,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
                     data[sanitized].append([k]*nvals)
 
         data = {k: np.concatenate(v) for k, v in data.items()}
-        filter_batched_data(data, elmapping)
         return data, elmapping
 
 
@@ -278,7 +277,6 @@ class CurvePlot(ElementPlot):
                 if not any(v is None for v in vals)}
         mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v
                    for k, v in elmapping.items()}
-        filter_batched_data(data, mapping)
         return data, mapping
 
 
