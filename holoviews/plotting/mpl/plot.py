@@ -15,8 +15,9 @@ from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
 from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
-from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
-from ..util import get_dynamic_mode
+from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
+                    GenericElementPlot)
+from ..util import get_dynamic_mode, attach_streams
 from .util import compute_ratios, fix_aspect
 
 
@@ -332,11 +333,11 @@ class GridPlot(CompositePlot):
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._create_subplots(layout, axis,
                                                                              ranges, create_axes)
-        top_level = keys is None
-        if top_level:
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-
+            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+                          [GenericElementPlot])
 
     def _get_size(self):
         max_dim = max(self.layout.shape)
@@ -753,10 +754,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         super(LayoutPlot, self).__init__(layout=layout, keys=keys, **params)
         with mpl.rc_context(rc=self.fig_rcparams):
             self.subplots, self.subaxes, self.layout = self._compute_gridspec(layout)
-        top_level = keys is None
-        if top_level:
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+                          [GenericElementPlot])
 
 
     def _compute_gridspec(self, layout):
