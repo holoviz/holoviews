@@ -582,7 +582,7 @@ class DynamicMap(HoloMap):
         The key dimensions of a DynamicMap map to the arguments of the
         callback. This mapping can be by position or by name.""")
 
-    callback = param.ClassSelector(class_=Callable, doc="""
+    callback = param.ClassSelector(class_=Callable, constant=True, doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
         as any number of stream parameters defined on the input streams.
@@ -590,7 +590,7 @@ class DynamicMap(HoloMap):
         If the callable is an instance of Callable it will be used
         directly, otherwise it will be automatically wrapped in one.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.List(default=[], constant=True, doc="""
        List of Stream instances to associate with the DynamicMap. The
        set of parameter values across these streams will be supplied as
        keyword arguments to the callback when the events are received,
