@@ -40,7 +40,7 @@ def set_style(key):
         raise KeyError('%r not in available styles.')
     else:
         path = os.path.join(os.path.dirname(__file__), styles[key])
-        new_style = rc_params_from_file(path)
+        new_style = rc_params_from_file(path, use_default_template=False)
         styles['backup'] = dict(plt.rcParams)
 
         plt.rcParams.update(new_style)
