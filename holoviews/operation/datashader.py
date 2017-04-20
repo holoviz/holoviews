@@ -438,6 +438,6 @@ class dynspread(ElementOperation):
         img = datashade.uint32_to_uint8(array)
         for i, vd in enumerate(element.vdims):
             if i < img.shape[-1]:
-                new_data[vd.name] = img[..., i]
+                new_data[vd.name] = np.flipud(img[..., i])
         return element.clone(new_data)
 
