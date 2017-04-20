@@ -85,10 +85,10 @@ class aggregate(ElementOperation):
     sampling distance by reducing the width and height when the zoomed
     in beyond the minimum sampling distance.
 
-    By default, the PlotSize operator is applied when this operation
+    By default, the PlotSize stream is applied when this operation
     is used dynamically, which means that the height and width
     will automatically be set to match the inner dimensions of 
-    the plot in which this is used.
+    the linked plot.
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
