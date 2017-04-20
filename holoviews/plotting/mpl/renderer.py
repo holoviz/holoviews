@@ -317,4 +317,6 @@ class MPLRenderer(Renderer):
         Initialize matplotlib backend
         """
         import matplotlib.pyplot as plt
-        plt.switch_backend('agg')
+        backend = plt.get_backend()
+        if backend not in ['agg', 'module://ipykernel.pylab.backend_inline']:
+            plt.switch_backend('agg')
