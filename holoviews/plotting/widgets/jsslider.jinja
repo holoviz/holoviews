@@ -24,6 +24,7 @@
         </div>
       </div>
 	  <script>
+	    function init_slider() {
         // Slider JS Block START
         function loadcssfile(filename){
             var fileref=document.createElement("link")
@@ -95,7 +96,7 @@
 				text.css('font-size', size);
 			}
             var slider = $('#_anim_widget{{ id }}_{{ widget_data['dim'] }}');
-            slider.slider({
+			slider.slider({
                 animate: "fast",
                 min: min,
                 max: max,
@@ -162,6 +163,8 @@
 			textInput.val(labels[0]);
 			adjustFontSize(textInput);
         });
+		}
+        $(document).ready(init_slider)
         // Slider JS Block END
         </script>
         {% elif widget_data['type']=='dropdown' %}
@@ -173,6 +176,7 @@
         <script>
         var vals = {{ widget_data['vals'] }};
         var labels = {{ widget_data['labels'] }};
+        function init_dropdown() {
         var widget = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
         widget.data('values', vals)
         for (var i=0; i<vals.length; i++){
@@ -204,6 +208,8 @@
             }
 
         });
+        }
+        $(document).ready(init_dropdown)
         </script>
         {% endif %}
         {% endfor %}
