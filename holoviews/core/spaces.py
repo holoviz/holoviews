@@ -631,8 +631,10 @@ class DynamicMap(HoloMap):
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
                 raise Exception(prefix + ' must be declared without key dimensions')
-            if not (len(self.streams) == 1 and isinstance(self.streams[0], Next)):
-                raise Exception(prefix +' must be declared using streams=[Next()]')
+            if len(self.streams)> 1:
+                raise Exception(prefix + ' must have either streams=[] or streams=[Next()]')
+            if len(self.streams) == 1 and not isinstance(self.streams[0], Next):
+                raise Exception(prefix + ' can only accept a single Next() stream')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
@@ -713,7 +715,14 @@ class DynamicMap(HoloMap):
         This method allows any of the available stream parameters
         (renamed as appropriate) to be updated in an event.
         """
-        if self.streams == []: return
+        if self.callback.noargs and self.streams == []:
+            self.warning('No streams declared. To update a DynamicMaps using '
+                         'generators (or callables without arguments) use streams=[Next()]')
+            return
+        if self.streams == []:
+            self.warning('No streams on DynamicMap, calling event will have no effect')
+            return
+
         stream_params = set(util.stream_parameters(self.streams))
         invalid = [k for k in kwargs.keys() if k not in stream_params]
         if invalid:
