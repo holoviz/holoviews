@@ -1292,27 +1292,6 @@ def arglexsort(arrays):
     return recarray.argsort()
 
 
-def get_dynamic_item(map_obj, dimensions, key):
-    """
-    Looks up an item in a DynamicMap given a list of dimensions
-    and a corresponding key. The dimensions must be a subset
-    of the map_obj key dimensions.
-    """
-    dmaps = map_obj.traverse(lambda x: x, ['DynamicMap'])
-    dmap = dmaps[0] if dmaps else map_obj
-    if key == () and (not dimensions or not dmap.kdims):
-        map_obj.traverse(lambda x: x[()], ['DynamicMap'])
-        return key, map_obj.map(lambda x: x.last, ['DynamicMap'])
-    elif isinstance(key, tuple):
-        dims = {d.name: k for d, k in zip(dimensions, key)
-                if d in map_obj.kdims}
-        key = tuple(dims.get(d.name) for d in map_obj.kdims)
-        el = map_obj.select(['DynamicMap', 'HoloMap'], **dims)
-    else:
-        el = None
-    return key, el
-
-
 def dimensioned_streams(dmap):
     """
     Given a DynamicMap return all streams that have any dimensioned

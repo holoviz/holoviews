@@ -60,7 +60,22 @@ def unique_dimkeys(obj, default_dim='Frame'):
         dims = merge_dimensions(dim_groups)
         all_dims = sorted(dims, key=lambda x: dim_groups[0].index(x))
     else:
-        all_dims = [default_dim]
+        # Handle condition when HoloMap/DynamicMap dimensions do not overlap
+        hmaps = obj.traverse(lambda x: x, ['HoloMap'])
+        if hmaps:
+            raise ValueError('When combining HoloMaps into a composite plot '
+                             'their dimensions must be subsets of each other.')
+        dimensions = merge_dimensions(dim_groups)
+        dim_keys = {}
+        for dims, keys in key_dims:
+            for key in keys:
+                for d, k in zip(dims, key):
+                    dim_keys[d.name] = k
+        if dim_keys:
+            keys = [tuple(dim_keys[dim.name] for dim in dimensions)]
+        else:
+            keys = []
+        return merge_dimensions(dim_groups), keys
 
     ndims = len(all_dims)
     unique_keys = []
@@ -76,10 +91,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
     sorted_keys = NdMapping({key: None for key in unique_keys},
                             kdims=all_dims).data.keys()
-    if subset:
-        return all_dims, list(sorted_keys)
-    else:
-        return all_dims, [(i,) for i in range(len(unique_keys))]
+    return all_dims, list(sorted_keys)
 
 
 def bijective(keys):

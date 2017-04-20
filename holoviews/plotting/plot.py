@@ -22,7 +22,7 @@ from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders)
+                   compute_overlayable_zorders, get_plot_frame)
 
 
 class Plot(param.Parameterized):
@@ -201,7 +201,7 @@ class DimensionedPlot(Plot):
         self.ranges = {}
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self.comm = None
-        self._force = True
+        self._force = False
 
         params = {k: v for k, v in params.items()
                   if k in self.params()}
@@ -637,45 +637,19 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(self.hmap, DynamicMap) and self.overlaid and self.current_frame:
             self.current_key = key
             return self.current_frame
-        elif self.dynamic:
-            key, frame = util.get_dynamic_item(self.hmap, self.dimensions, key)
-            traverse_setter(self, '_force', False)
-            if not isinstance(key, tuple): key = (key,)
-            key_map = dict(zip([d.name for d in self.hmap.kdims], key))
-            key = tuple(key_map.get(d.name, None) for d in self.dimensions)
-            if not key in self.keys:
-                self.keys.append(key)
-            self.current_frame = frame
-            self.current_key = key
-            return frame
+        elif key == self.current_key and not self._force:
+            return self.current_frame
 
-        if isinstance(key, int):
-            key = list(self.hmap.data.keys())[min([key, len(self.hmap)-1])]
+        cached = self.current_key is None
+        key_map = dict(zip([d.name for d in self.dimensions], key))
+        frame = get_plot_frame(self.hmap, key_map, cached)
+        traverse_setter(self, '_force', False)
 
+        if not key in self.keys:
+            self.keys.append(key)
+        self.current_frame = frame
         self.current_key = key
-
-        if self.uniform:
-            if not isinstance(key, tuple): key = (key,)
-            kdims = [d.name for d in self.hmap.kdims]
-            if self.dimensions is None:
-                dimensions = kdims
-            else:
-                dimensions = [d.name for d in self.dimensions]
-            if kdims == ['Frame'] and kdims != dimensions:
-                select = dict(Frame=0)
-            else:
-                select = {d: key[dimensions.index(d)]
-                          for d in kdims}
-        else:
-            select = dict(zip(self.hmap.dimensions('key', label=True), key))
-        try:
-            selection = self.hmap.select((HoloMap, DynamicMap), **select)
-        except KeyError:
-            selection = None
-        selection = selection.last if isinstance(selection, HoloMap) else selection
-        self.current_frame = selection
-
-        return selection
+        return frame
 
 
     def get_extents(self, view, ranges):
@@ -984,34 +958,19 @@ class GenericCompositePlot(DimensionedPlot):
         Creates a clone of the Layout with the nth-frame for each
         Element.
         """
+        cached = self.current_key is None
         layout_frame = self.layout.clone(shared_data=False)
-        keyisint = isinstance(key, int)
-        if not isinstance(key, tuple): key = (key,)
-        nthkey_fn = lambda x: zip(tuple(x.name for x in x.kdims),
-                                  list(x.data.keys())[min([key[0], len(x)-1])])
         if key == self.current_key and not self._force:
             return self.current_frame
         else:
             self.current_key = key
 
+        key_map = dict(zip([d.name for d in self.dimensions], key))
         for path, item in self.layout.items():
-            if item.traverse(lambda x: x, [DynamicMap]):
-                key, frame = util.get_dynamic_item(item, self.dimensions, key)
+            frame = item.map(lambda x: get_plot_frame(x, key_map, cached=cached),
+                             ['DynamicMap', 'HoloMap'])
+            if frame is not None:
                 layout_frame[path] = frame
-                continue
-            elif self.uniform:
-                dim_keys = zip([d.name for d in self.dimensions
-                                if d in item.dimensions('key')], key)
-            else:
-                dim_keys = item.traverse(nthkey_fn, (HoloMap,))[0]
-            if dim_keys:
-                obj = item.select((HoloMap,), **dict(dim_keys))
-                if isinstance(obj, HoloMap) and len(obj) == 0:
-                    continue
-                else:
-                    layout_frame[path] = obj
-            else:
-                layout_frame[path] = item
         traverse_setter(self, '_force', False)
 
         self.current_frame = layout_frame
