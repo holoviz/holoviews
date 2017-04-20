@@ -14,7 +14,7 @@ from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot)
-from ..util import get_dynamic_mode
+from ..util import get_dynamic_mode, attach_streams
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
                    filter_toolboxes, make_axis, update_shared_sources)
@@ -292,10 +292,11 @@ class GridPlot(CompositePlot, GenericCompositePlot):
                                        ranges=ranges, keys=keys, **params)
         self.cols, self.rows = layout.shape
         self.subplots, self.layout = self._create_subplots(layout, ranges)
-        top_level = keys is None
-        if top_level:
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+                          [GenericElementPlot])
 
 
     def _create_subplots(self, layout, ranges):
@@ -485,11 +486,11 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
     def __init__(self, layout, keys=None, **params):
         super(LayoutPlot, self).__init__(layout, keys=keys, **params)
         self.layout, self.subplots, self.paths = self._init_layout(layout)
-        top_level = keys is None
-        if top_level:
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-
+            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+                          [GenericElementPlot])
 
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec

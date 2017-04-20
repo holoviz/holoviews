@@ -89,9 +89,14 @@ class Stream(param.Parameterized):
         if clashes:
             param.main.warning('Parameter name clashes for keys: %r' % clashes)
 
-        # Currently building a simple set of subscribers
-        groups = [stream.subscribers for stream in streams]
-        subscribers = util.unique_iterator([s for subscribers in groups
+        # Group subscribers by precedence while keeping the ordering
+        # within each group
+        subscriber_precedence = defaultdict(list)
+        for stream in streams:
+            for precedence, subscriber in stream._subscribers:
+                subscriber_precedence[precedence].append(subscriber)
+        sorted_subscribers = sorted(subscriber_precedence.items(), key=lambda x: x[0])
+        subscribers = util.unique_iterator([s for _, subscribers in sorted_subscribers
                                             for s in subscribers])
 
         with triggering_streams(streams):
@@ -142,7 +147,7 @@ class Stream(param.Parameterized):
     @property
     def subscribers(self):
         " Property returning the subscriber list"
-        return self._subscribers
+        return [s for p, s in sorted(self._subscribers)]
 
 
     def clear(self):
@@ -162,7 +167,7 @@ class Stream(param.Parameterized):
                     setattr(self, k, p.default)
 
 
-    def add_subscriber(self, subscriber):
+    def add_subscriber(self, subscriber, precedence=0):
         """
         Register a callable subscriber to this stream which will be
         invoked either when event is called or when this stream is
@@ -170,7 +175,7 @@ class Stream(param.Parameterized):
         """
         if not callable(subscriber):
             raise TypeError('Subscriber must be a callable.')
-        self._subscribers.append(subscriber)
+        self._subscribers.append((precedence, subscriber))
 
 
     def _validate_rename(self, mapping):

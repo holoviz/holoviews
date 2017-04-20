@@ -148,8 +148,9 @@ class BokehRenderer(Renderer):
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles)
+        plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles, [lambda x: x._updated])
                        for h in handles]
+        plot.traverse(lambda x: setattr(x, '_updated', False))
         patch = compute_static_patch(plot.document, plotobjects)
         processed = self._apply_post_render_hooks(patch, plot, 'json')
         return serialize_json(processed) if serialize else processed

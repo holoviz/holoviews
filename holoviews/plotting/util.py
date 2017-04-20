@@ -408,14 +408,14 @@ def dim_axis_label(dimensions, separator=', '):
     return separator.join([d.pprint_label for d in dimensions])
 
 
-def attach_streams(plot, obj):
+def attach_streams(plot, obj, precedence=0):
     """
     Attaches plot refresh to all streams on the object.
     """
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
             if plot.refresh not in stream._subscribers:
-                stream.add_subscriber(plot.refresh)
+                stream.add_subscriber(plot.refresh, precedence)
     return obj.traverse(append_refresh, [DynamicMap])
 
 

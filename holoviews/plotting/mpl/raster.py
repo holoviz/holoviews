@@ -294,7 +294,7 @@ class RasterGridPlot(GridPlot, OverlayPlot):
         self.zorder = 0
         self.layout_num = layout_num
         self.overlaid = False
-        self.hmap = {}
+        self.hmap = layout
         if layout.ndims > 1:
             xkeys, ykeys = zip(*layout.data.keys())
         else:

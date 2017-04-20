@@ -202,6 +202,7 @@ class DimensionedPlot(Plot):
         self.renderer = renderer if renderer else Store.renderers[self.backend].instance()
         self.comm = None
         self._force = False
+        self._updated = False # Whether the plot should be marked as updated
 
         params = {k: v for k, v in params.items()
                   if k in self.params()}
@@ -302,8 +303,6 @@ class DimensionedPlot(Plot):
             return {label:self.fontsize['ticks']}
         else:
             return {}
-
-
 
 
     def compute_ranges(self, obj, key, ranges):
@@ -479,7 +478,9 @@ class DimensionedPlot(Plot):
     def update(self, key):
         if len(self) == 1 and key == 0 and not self.drawn:
             return self.initialize_plot()
-        return self.__getitem__(key)
+        item = self.__getitem__(key)
+        self.traverse(lambda x: setattr(x, '_updated', True))
+        return item
 
 
     def refresh(self, **kwargs):
@@ -495,8 +496,12 @@ class DimensionedPlot(Plot):
         key = tuple(None if d in stream_params else k
                     for d, k in zip(self.dimensions, key))
         stream_key = util.wrap_tuple_streams(key, self.dimensions, self.streams)
-        self.update(stream_key)
-        if self.comm is not None:
+
+        # Update if not top-level, batched or an ElementPlot
+        if not self.top_level or isinstance(self, GenericElementPlot):
+            self.update(stream_key)
+
+        if self.comm is not None and self.top_level:
             self.push()
 
 
@@ -577,8 +582,8 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched and not isinstance(self, GenericOverlayPlot):
             plot_element = [el for el in plot_element if el][-1]
 
-        top_level = keys is None
-        if top_level:
+        self.top_level = keys is None
+        if self.top_level:
             dimensions = self.hmap.kdims
             keys = list(self.hmap.data.keys())
 
@@ -598,7 +603,7 @@ class GenericElementPlot(DimensionedPlot):
         if isinstance(self.hmap, DynamicMap):
             streams = get_nested_streams(self.hmap)
         self.streams = streams
-        if top_level:
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
 
@@ -783,10 +788,12 @@ class GenericOverlayPlot(GenericElementPlot):
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
-        top_level = keys is None
-        if top_level:
+        self.top_level = keys is None
+        if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
+            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+                          [GenericElementPlot])
 
 
     def _apply_compositor(self, holomap, ranges=None, keys=None, dimensions=None):
@@ -936,8 +943,8 @@ class GenericCompositePlot(DimensionedPlot):
         if 'uniform' not in params:
             params['uniform'] = traversal.uniform(layout)
 
-        top_level = keys is None
-        if top_level:
+        self.top_level = keys is None
+        if self.top_level:
             dimensions, keys = traversal.unique_dimkeys(layout)
 
         dynamic, unbounded = get_dynamic_mode(layout)
