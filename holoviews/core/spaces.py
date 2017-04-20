@@ -465,6 +465,12 @@ class Callable(param.Parameterized):
     def argspec(self):
         return util.argspec(self.callable)
 
+    @property
+    def noargs(self):
+        "Returns True if the callable takes no arguments"
+        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return self.argspec == noargs
+
 
     def clone(self, callable=None, **overrides):
         """
@@ -621,8 +627,7 @@ class DynamicMap(HoloMap):
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
 
-        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
-        if self.callback.argspec == noargs:
+        if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
                 raise Exception(prefix + ' must be declared without key dimensions')
