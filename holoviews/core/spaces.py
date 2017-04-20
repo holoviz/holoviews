@@ -15,7 +15,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, Next
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
@@ -622,9 +622,11 @@ class DynamicMap(HoloMap):
 
         if isinstance(self.callback, Generator):
             if self.kdims:
-                raise Exception('Generators can only be used without key dimensions')
-            if self.streams == []:
-                self.warning('Empty streams required to trigger generator')
+                raise Exception('DynamicMaps using generators can only be declared '
+                                'without key dimensions')
+            if not (len(self.streams) == 1 and isinstance(self.streams[0], Next)):
+                raise Exception('DynamicMaps using Generators must be declared '
+                                'with a single Next() stream')
             if util.stream_parameters(self.streams):
                 raise Exception('Generators can only be used with empty streams')
 
