@@ -175,6 +175,24 @@ def initialize_dynamic(obj):
             dmap[dmap._initial_key()]
 
 
+def get_plot_frame(map_obj, key_map, cached=False):
+    """
+    Returns an item in a HoloMap or DynamicMap given a mapping key
+    dimensons and their values.
+    """
+    if map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame':
+        # Special handling for static plots
+        return map_obj.last
+    key = tuple(key_map[kd.name] for kd in map_obj.kdims)
+    if key in map_obj.data and cached:
+        return map_obj.data[key]
+    else:
+        try:
+            return map_obj[key]
+        except KeyError:
+            return None
+
+
 def undisplayable_info(obj, html=False):
     "Generate helpful message regarding an undisplayable object"
 
