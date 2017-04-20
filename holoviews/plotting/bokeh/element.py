@@ -809,11 +809,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             current_id = id(element.data)
         self.handles['previous_id'] = current_id
         self.static_source = self.dynamic and (current_id == previous_id)
+        if self.batched:
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
         if not self.static_source:
-            if self.batched:
-                data, mapping = self.get_batched_data(element, ranges, empty)
-            else:
-                data, mapping = self.get_data(element, ranges, empty)
             self._update_datasource(source, data)
 
         if glyph:
