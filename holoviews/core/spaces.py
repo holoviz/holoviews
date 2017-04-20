@@ -4,6 +4,7 @@ from numbers import Number
 from itertools import groupby
 from functools import partial
 from contextlib import contextmanager
+from inspect import ArgSpec
 
 import numpy as np
 import param
@@ -14,7 +15,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, Next
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
@@ -464,6 +465,12 @@ class Callable(param.Parameterized):
     def argspec(self):
         return util.argspec(self.callable)
 
+    @property
+    def noargs(self):
+        "Returns True if the callable takes no arguments"
+        noargs = ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+        return self.argspec == noargs
+
 
     def clone(self, callable=None, **overrides):
         """
@@ -478,6 +485,8 @@ class Callable(param.Parameterized):
 
 
     def __call__(self, *args, **kwargs):
+        # Nothing to do for callbacks that accept no arguments
+        if not args and not kwargs: return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
@@ -511,6 +520,25 @@ class Callable(param.Parameterized):
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
+
+
+
+class Generator(Callable):
+    """
+    Generators are considered a special case of Callable that accept no
+    arguments and never memoize.
+    """
+
+    callable = param.ClassSelector(default=None, class_ = types.GeneratorType,
+                                   constant=True, doc="""
+         The generator that is wrapped by this Generator.""")
+
+    @property
+    def argspec(self):
+        return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
+
+    def __call__(self):
+        return next(self.callable)
 
 
 def get_nested_streams(dmap):
@@ -560,7 +588,7 @@ class DynamicMap(HoloMap):
         The key dimensions of a DynamicMap map to the arguments of the
         callback. This mapping can be by position or by name.""")
 
-    callback = param.ClassSelector(class_=Callable, doc="""
+    callback = param.ClassSelector(class_=Callable, constant=True, doc="""
         The callable used to generate the elements. The arguments to the
         callable includes any number of declared key dimensions as well
         as any number of stream parameters defined on the input streams.
@@ -568,7 +596,7 @@ class DynamicMap(HoloMap):
         If the callable is an instance of Callable it will be used
         directly, otherwise it will be automatically wrapped in one.""")
 
-    streams = param.List(default=[], doc="""
+    streams = param.List(default=[], constant=True, doc="""
        List of Stream instances to associate with the DynamicMap. The
        set of parameter values across these streams will be supplied as
        keyword arguments to the callback when the events are received,
@@ -580,7 +608,10 @@ class DynamicMap(HoloMap):
        the cache is full.""")
 
     def __init__(self, callback, initial_items=None, **params):
-        if not isinstance(callback, Callable):
+
+        if isinstance(callback, types.GeneratorType):
+            callback = Generator(callback)
+        elif not isinstance(callback, Callable):
             callback = Callable(callback)
 
         if 'sampled' in params:
@@ -594,6 +625,16 @@ class DynamicMap(HoloMap):
             msg = ('The supplied streams list contains objects that '
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
+
+
+        if self.callback.noargs:
+            prefix = 'DynamicMaps using generators (or callables without arguments)'
+            if self.kdims:
+                raise Exception(prefix + ' must be declared without key dimensions')
+            if len(self.streams)> 1:
+                raise Exception(prefix + ' must have either streams=[] or streams=[Next()]')
+            if len(self.streams) == 1 and not isinstance(self.streams[0], Next):
+                raise Exception(prefix + ' can only accept a single Next() stream')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
@@ -654,6 +695,7 @@ class DynamicMap(HoloMap):
         Make sure the supplied key values are within the bounds
         specified by the corresponding dimension range and soft_range.
         """
+        if key == () and len(self.kdims) == 0: return ()
         key = util.wrap_tuple(key)
         assert len(key) == len(self.kdims)
         for ind, val in enumerate(key):
@@ -673,7 +715,14 @@ class DynamicMap(HoloMap):
         This method allows any of the available stream parameters
         (renamed as appropriate) to be updated in an event.
         """
-        if self.streams == []: return
+        if self.callback.noargs and self.streams == []:
+            self.warning('No streams declared. To update a DynamicMaps using '
+                         'generators (or callables without arguments) use streams=[Next()]')
+            return
+        if self.streams == []:
+            self.warning('No streams on DynamicMap, calling event will have no effect')
+            return
+
         stream_params = set(util.stream_parameters(self.streams))
         invalid = [k for k in kwargs.keys() if k not in stream_params]
         if invalid:
@@ -739,8 +788,9 @@ class DynamicMap(HoloMap):
         # Ensure the clone references this object to ensure
         # stream sources are inherited
         if clone.callback is self.callback:
-            clone.callback = clone.callback.clone(inputs=[self],
-                                                  link_inputs=True)
+            with util.disable_constant(clone):
+                clone.callback = clone.callback.clone(inputs=[self],
+                                                      link_inputs=True)
         return clone
 
 
@@ -856,7 +906,8 @@ class DynamicMap(HoloMap):
         try:
             dimensionless = util.dimensionless_contents(get_nested_streams(self),
                                                         self.kdims, no_duplicates=False)
-            if dimensionless:
+            empty = util.stream_parameters(self.streams) == [] and self.kdims==[]
+            if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
         except KeyError as e:
@@ -1171,6 +1222,13 @@ class DynamicMap(HoloMap):
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
         raise NotImplementedError('Cannot add dimensions to a DynamicMap, '
                                   'cast to a HoloMap first.')
+
+    def next(self):
+        if self.callback.noargs:
+            return self[()]
+        else:
+            raise Exception('The next method can only be used for DynamicMaps using'
+                            'generators (or callables without arguments)')
 
     # For Python 2 and 3 compatibility
     __next__ = next

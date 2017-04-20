@@ -269,6 +269,14 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
+class Next(Stream):
+    """
+    Next is a special stream used to trigger generators. It may also be
+    used to trigger DynamicMaps using callables with no arguments.
+    """
+    pass
+
+
 class Counter(Stream):
     """
     Simple stream that automatically increments an integer counter
