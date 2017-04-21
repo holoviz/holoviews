@@ -779,7 +779,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if hasattr(glyph, 'visible'):
             glyph.visible = bool(element)
 
-        if not element or (not self.dynamic and self.static):
+        if element is None or (not self.dynamic and self.static):
             return
 
         if self.batched:
