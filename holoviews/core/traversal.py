@@ -46,7 +46,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
     Returns the list of dimensions followed by the list of unique
     keys.
     """
-    from .ndmapping import NdMapping
+    from .ndmapping import NdMapping, item_check
     from .spaces import HoloMap
     key_dims = obj.traverse(lambda x: (tuple(x.kdims),
                                        list(x.data.keys())), (HoloMap,))
@@ -89,8 +89,9 @@ def unique_dimkeys(obj, default_dim='Frame'):
             if not matches:
                 unique_keys.append(padded_key)
 
-    sorted_keys = NdMapping({key: None for key in unique_keys},
-                            kdims=all_dims).data.keys()
+    with item_check(False):
+        sorted_keys = NdMapping({key: None for key in unique_keys},
+                                kdims=all_dims_emptied).data.keys()
     return all_dims, list(sorted_keys)
 
 
