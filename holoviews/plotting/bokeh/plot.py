@@ -17,7 +17,8 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import get_dynamic_mode, attach_streams
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
-                   filter_toolboxes, make_axis, update_shared_sources)
+                   filter_toolboxes, make_axis, update_shared_sources,
+                   empty_plot)
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -528,8 +529,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             obj = layouts[(r, c)]
             empty = isinstance(obj.main, Empty)
             if empty:
-                obj = AdjointLayout([])
-            elif obj.main and not obj.main.traverse(lambda x: x, [Element]):
+                continue
+            elif view is None or not view.traverse(lambda x: x, [Element]):
                 self.warning('%s is empty, skipping subplot.' % obj.main)
                 continue
             else:
@@ -663,6 +664,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 if len(subplots) == 1 and c in insert_cols:
                     plots[r+offset].append(None)
                 passed_plots.append(subplots[0])
+            else:
+                plots[r+offset] += [empty_plot(0, 0)]
 
             if self.tabs:
                 if isinstance(self.layout, Layout):
@@ -674,8 +677,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
         # Replace None types with empty plots
         # to avoid bokeh bug
-        if adjoined:
-            plots = layout_padding(plots, self.renderer)
+        plots = layout_padding(plots, self.renderer)
 
         # Wrap in appropriate layout model
         if self.tabs:
