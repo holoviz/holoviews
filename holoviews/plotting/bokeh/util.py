@@ -279,6 +279,22 @@ def replace_models(obj):
         return obj
 
 
+def references_json(references):
+    """
+    Generate json for supplied models. Modeled after bokeh's private
+    Document._references_json but ensures specific attributes are
+    always synced.
+    """
+    references_json = []
+    for r in references:
+        ref = r.ref
+        ref['attributes'] = r._to_json_like(include_defaults=False)
+        if ref['type'] == 'GlyphRenderer':
+            ref['attributes']['visible'] = r.visible
+        references_json.append(ref)
+    return references_json
+
+
 def to_references(doc):
     """
     Convert the document to a dictionary of references. Avoids
@@ -290,7 +306,7 @@ def to_references(doc):
         root_ids.append(r._id)
 
     references = {}
-    for obj in doc._references_json(doc._all_models.values()):
+    for obj in references_json(doc._all_models.values()):
         obj = replace_models(obj)
         references[obj['id']] = obj
     return references
