@@ -7,7 +7,7 @@ from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
 from ...core import traversal
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator
@@ -529,6 +529,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             empty = isinstance(obj.main, Empty)
             if empty:
                 obj = AdjointLayout([])
+            elif not obj.main.traverse(lambda x: x, [Element]):
+                self.warning('%s is empty, skipping subplot.' % obj.main)
+                continue
             else:
                 layout_count += 1
             subplot_data = self._create_subplots(obj, positions,
@@ -560,7 +563,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)
-            if element is None:
+            if element is None or not element.traverse(lambda x: x, [Element]):
                 continue
 
             subplot_opts = dict(adjoined=main_plot)

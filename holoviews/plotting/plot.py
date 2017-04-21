@@ -880,6 +880,10 @@ class GenericOverlayPlot(GenericElementPlot):
 
             if issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
+                if not any(len(frame) for frame in vmap):
+                    self.warning('%s is empty and will be skipped during plotting'
+                                 % vmap.last)
+                    continue
             elif self.batched and 'batched' in plottype._plot_methods:
                 opts['batched'] = self.batched
                 opts['overlaid'] = self.overlaid
