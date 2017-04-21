@@ -23,16 +23,9 @@ class RollingBase(param.Parameterized):
     rolling_window = param.Integer(default=10, doc="""
         The window size over which to operate.""")
 
-    window_type = param.ObjectSelector(default=None,
-        objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
-                 'parzen', 'bohman', 'blackmanharris', 'nuttall',
-                 'barthann', 'kaiser', 'gaussian', 'general_gaussian',
-                 'slepian'], doc="The shape of the window to apply")
-
     def _roll_kwargs(self):
         return {'window': self.p.rolling_window,
                 'center': self.p.center,
-                'win_type': self.p.window_type,
                 'min_periods': self.p.min_periods}
 
 
@@ -41,13 +34,20 @@ class rolling(ElementOperation,RollingBase):
     Applies a function over a rolling window.
     """
 
+    window_type = param.ObjectSelector(default=None,
+        objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
+                 'parzen', 'bohman', 'blackmanharris', 'nuttall',
+                 'barthann', 'kaiser', 'gaussian', 'general_gaussian',
+                 'slepian'], doc="The shape of the window to apply")
+
     function = param.Callable(default=np.mean, doc="""
         The function to apply over the rolling window.""")
 
     def _process_layer(self, element, key=None):
         xdim = element.kdims[0].name
         df = PandasInterface.as_dframe(element)
-        df = df.set_index(xdim).rolling(**self._roll_kwargs())
+        df = df.set_index(xdim).rolling(win_type=self.p.window_type,
+                                        **self._roll_kwargs())
         if self.p.window_type is None:
             rolled = df.apply(self.p.function)
         else:
