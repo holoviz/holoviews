@@ -594,6 +594,8 @@ class LabelledData(param.Parameterized):
         # Assumes composite objects are iterables
         if self._deep_indexable:
             for el in self:
+                if el is None:
+                    continue
                 accumulator += el.traverse(fn, specs, full_breadth)
                 if not full_breadth: break
         return accumulator

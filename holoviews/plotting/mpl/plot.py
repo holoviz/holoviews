@@ -11,7 +11,7 @@ from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
-                     Collator, GridMatrix, Layout)
+                     Collator, GridMatrix, Layout, ViewableElement)
 from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ...core import traversal
@@ -923,6 +923,9 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             empty = isinstance(obj.main, Empty)
             if empty:
                 obj = AdjointLayout([])
+            elif view is None or not view.traverse(lambda x: x, [Element]):
+                self.warning('%s is empty, skipping subplot.' % obj.main)
+                continue
             elif self.transpose:
                 layout_count = (c*self.rows+(r+1))
             else:
@@ -1009,7 +1012,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # Pos will be one of 'main', 'top' or 'right' or None
             view = layout.get(pos, None)
             ax = axes.get(pos, None)
-            if view is None:
+            if view is None or not view.traverse(lambda x: x, [Element]):
                 projections.append(None)
                 continue
 

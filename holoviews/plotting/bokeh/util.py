@@ -139,16 +139,27 @@ def layout_padding(plots, renderer):
         expanded_plots.append([])
         for c, p in enumerate(row):
             if p is None:
-                x_range = Range1d(start=0, end=1)
-                y_range = Range1d(start=0, end=1)
-                p = Figure(plot_width=widths[c], plot_height=heights[r],
-                           x_range=x_range, y_range=y_range)
-                p.xaxis.visible = False
-                p.yaxis.visible = False
-                p.outline_line_alpha = 0
-                p.grid.grid_line_alpha = 0
+                p = empty_plot(widths[c], heights[r])
+            elif hasattr(p, 'plot_width') and p.plot_width == 0 and p.plot_height == 0:
+                p.plot_width = widths[c]
+                p.plot_height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def empty_plot(width, height):
+    """
+    Creates an empty and invisible plot of the specified size.
+    """
+    x_range = Range1d(start=0, end=1)
+    y_range = Range1d(start=0, end=1)
+    p = Figure(plot_width=width, plot_height=height,
+               x_range=x_range, y_range=y_range)
+    p.xaxis.visible = False
+    p.yaxis.visible = False
+    p.outline_line_alpha = 0
+    p.grid.grid_line_alpha = 0
+    return p
 
 
 def font_size_to_pixels(size):
@@ -268,6 +279,22 @@ def replace_models(obj):
         return obj
 
 
+def references_json(references):
+    """
+    Generate json for supplied models. Modeled after bokeh's private
+    Document._references_json but ensures specific attributes are
+    always synced.
+    """
+    references_json = []
+    for r in references:
+        ref = r.ref
+        ref['attributes'] = r._to_json_like(include_defaults=False)
+        if ref['type'] == 'GlyphRenderer':
+            ref['attributes']['visible'] = r.visible
+        references_json.append(ref)
+    return references_json
+
+
 def to_references(doc):
     """
     Convert the document to a dictionary of references. Avoids
@@ -279,7 +306,7 @@ def to_references(doc):
         root_ids.append(r._id)
 
     references = {}
-    for obj in doc._references_json(doc._all_models.values()):
+    for obj in references_json(doc._all_models.values()):
         obj = replace_models(obj)
         references[obj['id']] = obj
     return references

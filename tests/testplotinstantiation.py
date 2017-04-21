@@ -259,20 +259,30 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
         plot = mpl_renderer.get_plot(layout)
-        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
         for i, pos in enumerate(positions):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
                 self.assertEqual(adjoint.subplots['main'].layout_num, i+1)
 
+    def test_layout_empty_subplots(self):
+        layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
+        plot = mpl_renderer.get_plot(layout)
+        self.assertEqual(len(plot.subplots.values()), 2)
+
+    def test_overlay_empty_layers(self):
+        overlay = Curve(range(10)) * NdOverlay()
+        plot = mpl_renderer.get_plot(overlay)
+        self.assertEqual(len(plot.subplots), 1)
+
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
         plot = mpl_renderer.get_plot(layout(plot=dict(transpose=True)))
-        positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+        positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
-        nums = [1, 5, 2, 6, 3, 7, 4, 8]
+        nums = [1, 5, 2, 3, 4]
         for pos, num in zip(positions, nums):
             adjoint = plot.subplots[pos]
             if 'main' in adjoint.subplots:
@@ -334,6 +344,39 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         subplot1, subplot2 = plot.subplots.values()
         self.assertEqual(subplot1.handles['source'].data['y'], np.arange(12))
         self.assertEqual(subplot2.handles['source'].data['y'], np.arange(12)*2)
+
+    def test_overlay_update_visible(self):
+        hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
+        hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
+        plot = bokeh_renderer.get_plot(hmap*hmap2)
+        subplot1, subplot2 = plot.subplots.values()
+        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
+        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        plot.update((4,))
+        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
+        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+
+    def test_batched_empty_update_invisible(self):
+        hmap = HoloMap({i: NdOverlay({j: Curve(np.arange(i), label='A') for j in range(i%2)})
+                        for i in range(1, 4)})
+        opts = {'NdOverlay': {'legend_limit': 0}}
+        plot = list(bokeh_renderer.get_plot(hmap(plot=opts)).subplots.values())[0]
+        self.assertTrue(plot.handles['glyph_renderer'].visible)
+        plot.update((2,))
+        self.assertFalse(plot.handles['glyph_renderer'].visible)
+
+    def test_layout_update_visible(self):
+        hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
+        hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
+        plot = bokeh_renderer.get_plot(hmap+hmap2)
+        subplot1, subplot2 = [p for k, p in sorted(plot.subplots.items())]
+        subplot1 = subplot1.subplots['main']
+        subplot2 = subplot2.subplots['main']
+        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
+        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        plot.update((4,))
+        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
+        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
 
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
@@ -1103,6 +1146,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(sp4.state.xaxis[0].visible, False)
         self.assertEqual(sp4.state.yaxis[0].visible, False)
 
+    def test_layout_empty_subplots(self):
+        layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertEqual(len(plot.subplots.values()), 2)
+
+    def test_overlay_empty_layers(self):
+        overlay = Curve(range(10)) * NdOverlay()
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual(len(plot.subplots), 1)
+
     def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
                              for j in range(2,4)}) +
@@ -1153,20 +1206,20 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(len(row2.children), 2)
         fig, spacer = row2.children
         self.assertIsInstance(fig, Figure)
-        self.assertIsInstance(spacer, Spacer)
+        self.assertIsInstance(spacer, Figure)
 
     def test_layout_instantiate_subplots(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
         plot = bokeh_renderer.get_plot(layout)
-        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0), (1, 1), (1, 2), (1, 3)]
+        positions = [(0, 0), (0, 1), (0, 2), (0, 3), (1, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
     def test_layout_instantiate_subplots_transposed(self):
         layout = (Curve(range(10)) + Curve(range(10)) + Image(np.random.rand(10,10)) +
                   Curve(range(10)) + Curve(range(10)))
         plot = bokeh_renderer.get_plot(layout(plot=dict(transpose=True)))
-        positions = [(0, 0), (0, 1), (1, 0), (1, 1), (2, 0), (2, 1), (3, 0), (3, 1)]
+        positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
     def test_element_show_frame_disabled(self):

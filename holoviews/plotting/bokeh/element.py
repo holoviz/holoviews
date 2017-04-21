@@ -170,7 +170,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # The plot objects to be updated on each frame
     # Any entries should be existing keys in the handles
     # instance attribute.
-    _update_handles = ['source', 'glyph']
+    _update_handles = ['source', 'glyph', 'glyph_renderer']
     _categorical = False
 
     def __init__(self, element, plot=None, **params):
@@ -768,7 +768,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
-        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
         if not reused and element is None:
             element = self._get_frame(key)
         else:
@@ -776,10 +776,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_frame = element
 
         glyph = self.handles.get('glyph', None)
-        if hasattr(glyph, 'visible'):
-            glyph.visible = bool(element)
+        renderer = self.handles.get('glyph_renderer', None)
+        if hasattr(renderer, 'visible'):
+            renderer.visible = bool(element)
 
-        if not element or (not self.dynamic and self.static):
+        if (self.batched and not element) or element is None or (not self.dynamic and self.static):
             return
 
         if self.batched:

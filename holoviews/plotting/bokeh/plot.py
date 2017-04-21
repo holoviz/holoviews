@@ -7,7 +7,7 @@ from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap)
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
 from ...core import traversal
 from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator
@@ -17,7 +17,8 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
 from ..util import get_dynamic_mode, attach_streams
 from .renderer import BokehRenderer
 from .util import (bokeh_version, layout_padding, pad_plots,
-                   filter_toolboxes, make_axis, update_shared_sources)
+                   filter_toolboxes, make_axis, update_shared_sources,
+                   empty_plot)
 
 if bokeh_version >= '0.12':
     from bokeh.layouts import gridplot
@@ -528,7 +529,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             obj = layouts[(r, c)]
             empty = isinstance(obj.main, Empty)
             if empty:
-                obj = AdjointLayout([])
+                continue
+            elif view is None or not view.traverse(lambda x: x, [Element]):
+                self.warning('%s is empty, skipping subplot.' % obj.main)
+                continue
             else:
                 layout_count += 1
             subplot_data = self._create_subplots(obj, positions,
@@ -560,7 +564,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)
-            if element is None:
+            if element is None or not element.traverse(lambda x: x, [Element]):
                 continue
 
             subplot_opts = dict(adjoined=main_plot)
@@ -660,6 +664,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 if len(subplots) == 1 and c in insert_cols:
                     plots[r+offset].append(None)
                 passed_plots.append(subplots[0])
+            else:
+                plots[r+offset] += [empty_plot(0, 0)]
 
             if self.tabs:
                 if isinstance(self.layout, Layout):
@@ -671,8 +677,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
         # Replace None types with empty plots
         # to avoid bokeh bug
-        if adjoined:
-            plots = layout_padding(plots, self.renderer)
+        plots = layout_padding(plots, self.renderer)
 
         # Wrap in appropriate layout model
         if self.tabs:
