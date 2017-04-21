@@ -345,6 +345,39 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(subplot1.handles['source'].data['y'], np.arange(12))
         self.assertEqual(subplot2.handles['source'].data['y'], np.arange(12)*2)
 
+    def test_overlay_update_visible(self):
+        hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
+        hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
+        plot = bokeh_renderer.get_plot(hmap*hmap2)
+        subplot1, subplot2 = plot.subplots.values()
+        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
+        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        plot.update((4,))
+        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
+        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+
+    def test_batched_empty_update_invisible(self):
+        hmap = HoloMap({i: NdOverlay({j: Curve(np.arange(i), label='A') for j in range(i%2)})
+                        for i in range(1, 4)})
+        opts = {'NdOverlay': {'legend_limit': 0}}
+        plot = list(bokeh_renderer.get_plot(hmap(plot=opts)).subplots.values())[0]
+        self.assertTrue(plot.handles['glyph_renderer'].visible)
+        plot.update((2,))
+        self.assertFalse(plot.handles['glyph_renderer'].visible)
+
+    def test_layout_update_visible(self):
+        hmap = HoloMap({i: Curve(np.arange(i), label='A') for i in range(1, 3)})
+        hmap2 = HoloMap({i: Curve(np.arange(i), label='B') for i in range(3, 5)})
+        plot = bokeh_renderer.get_plot(hmap+hmap2)
+        subplot1, subplot2 = [p for k, p in sorted(plot.subplots.items())]
+        subplot1 = subplot1.subplots['main']
+        subplot2 = subplot2.subplots['main']
+        self.assertTrue(subplot1.handles['glyph_renderer'].visible)
+        self.assertFalse(subplot2.handles['glyph_renderer'].visible)
+        plot.update((4,))
+        self.assertFalse(subplot1.handles['glyph_renderer'].visible)
+        self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
         plot = bokeh_renderer.get_plot(overlay)
