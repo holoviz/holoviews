@@ -167,7 +167,7 @@ class SurfacePlot(Plot3D):
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride',
-                  'norm']
+                  'norm', 'edgecolors']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
