@@ -529,7 +529,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             empty = isinstance(obj.main, Empty)
             if empty:
                 obj = AdjointLayout([])
-            elif not obj.main.traverse(lambda x: x, [Element]):
+            elif obj.main and not obj.main.traverse(lambda x: x, [Element]):
                 self.warning('%s is empty, skipping subplot.' % obj.main)
                 continue
             else:
