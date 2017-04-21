@@ -7,40 +7,48 @@ from ..core.data import PandasInterface
 from ..element import Scatter
 
 
-class rolling(ElementOperation):
+class RollingBase(param.Parameterized):
     """
-    Applies a function over a rolling window.
+    Parameters shared between `rolling` and `rolling_outlier_std`.
     """
 
     center = param.Boolean(default=True, doc="""
         Whether to set the x-coordinate at the center or right edge
         of the window.""")
 
-    function = param.Callable(default=np.mean, doc="""
-        The function to apply over the rolling window.""")
-
     min_periods = param.Integer(default=None, doc="""
        Minimum number of observations in window required to have a
-       value (otherwise result is NA).""")
+       value (otherwise result is NaN).""")
 
     rolling_window = param.Integer(default=10, doc="""
-        The window size over which to apply the function.""")
+        The window size over which to operate.""")
 
     window_type = param.ObjectSelector(default=None,
         objects=['boxcar', 'triang', 'blackman', 'hamming', 'bartlett',
                  'parzen', 'bohman', 'blackmanharris', 'nuttall',
                  'barthann', 'kaiser', 'gaussian', 'general_gaussian',
-                 'slepian'], doc="The type of the window to apply")
+                 'slepian'], doc="The shape of the window to apply")
+
+    def _roll_kwargs(self):
+        return {'window': self.p.rolling_window,
+                'center': self.p.center,
+                'win_type': self.p.window_type,
+                'min_periods': self.p.min_periods}
+
+
+class rolling(ElementOperation,RollingBase):
+    """
+    Applies a function over a rolling window.
+    """
+
+    function = param.Callable(default=np.mean, doc="""
+        The function to apply over the rolling window.""")
 
     def _process_layer(self, element, key=None):
         xdim = element.kdims[0].name
         df = PandasInterface.as_dframe(element)
-        roll_kwargs = {'window': self.p.rolling_window,
-                       'center': self.p.center,
-                       'win_type': self.p.window_type,
-                       'min_periods': self.p.min_periods}
-        df = df.set_index(xdim).rolling(**roll_kwargs)
-        if roll_kwargs['window'] is None:
+        df = df.set_index(xdim).rolling(**self._roll_kwargs())
+        if self.p.window_type is None:
             rolled = df.apply(self.p.function)
         else:
             if self.p.function is np.mean:
@@ -58,14 +66,14 @@ class rolling(ElementOperation):
 
 class resample(ElementOperation):
     """
-    Resamples a timeseries of dates with a frequency and function
+    Resamples a timeseries of dates with a frequency and function.
     """
 
     closed = param.ObjectSelector(default=None, objects=['left', 'right'],
         doc="Which side of bin interval is closed")
 
     function = param.Callable(default=np.mean, doc="""
-        The function to apply over the rolling window.""")
+        Function for computing new values out of existing ones.""")
 
     label = param.ObjectSelector(default='right', doc="""
         The bin edge to label the bin with.""")
@@ -85,16 +93,17 @@ class resample(ElementOperation):
         return element.map(self._process_layer, Element)
 
 
-class rolling_outlier_std(ElementOperation):
+class rolling_outlier_std(ElementOperation,RollingBase):
     """
     Detect outliers using the standard deviation within a rolling window.
 
     Outliers are the array elements outside `sigma` standard deviations from
     the smoothed trend line, as calculated from the trend line residuals.
-    """
 
-    rolling_window = param.Integer(default=10, doc="""
-        The window size of which within the rolling std is computed.""")
+    The rolling window is controlled by parameters shared with the 
+    `rolling` operation via the base class RollingBase, to make it
+    simpler to use the same settings for both.
+    """
 
     sigma = param.Number(default=2.0, doc="""
         Minimum sigma before a value is considered an outlier.""")
@@ -104,9 +113,9 @@ class rolling_outlier_std(ElementOperation):
         ys = element.dimension_values(1)
 
         # Calculate the variation in the distribution of the residual
-        avg = pd.Series(ys).rolling(window, center=True).mean()
+        avg = pd.Series(ys).rolling(**self._roll_kwargs()).mean()
         residual = ys - avg
-        std = pd.Series(residual).rolling(window, center=True).std()
+        std = pd.Series(residual).rolling(**self._roll_kwargs()).std()
 
         # Get indices of outliers
         with np.errstate(invalid='ignore'):
