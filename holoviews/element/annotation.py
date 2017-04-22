@@ -186,8 +186,6 @@ class Arrow(Annotation):
             self.data = (x, y, text, direction, points, arrowstyle)
 
 
-        return self.__class__(*args, **settings)
-
     def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
