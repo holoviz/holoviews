@@ -180,6 +180,11 @@ class OperationCallable(Callable):
     operation = param.ClassSelector(class_=ElementOperation, doc="""
         The ElementOperation being wrapped.""")
 
+    def __init__(self, callable, **kwargs):
+        if 'operation' not in kwargs:
+            raise ValueError('An OperationCallable must have an operation specified')
+        super(OperationCallable, self).__init__(callable, **kwargs)
+
 
 class MapOperation(param.ParameterizedFunction):
     """
