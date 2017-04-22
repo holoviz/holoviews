@@ -199,6 +199,35 @@ def validate_dynamic_argspec(argspec, kdims, streams):
                                                        kdims=kdims))
 
 
+def callable_name(callable_obj):
+    """
+    Attempts to return a meaningful name identifying a callable
+    """
+    try:
+        if (isinstance(callable_obj, type)
+            and issubclass(callable_obj, param.ParameterizedFunction)):
+            return callable_obj.__name__
+        elif (isinstance(callable_obj, param.Parameterized)
+              and 'operation' in callable_obj.params()):
+            return callable_obj.operation.__name__
+        elif isinstance(callable_obj, partial):
+            return str(callable_obj)
+        elif inspect.isfunction(callable_obj):  # functions and staticmethods
+            return callable_obj.__name__
+        elif inspect.ismethod(callable_obj):    # instance and class methods
+            meth = callable_obj
+            if sys.version_info < (3,0):
+                owner =  meth.im_class if meth.im_self is None else meth.im_self
+            else:
+                owner =  meth.__self__
+            if meth.__name__ == '__call__':
+                return type(owner).__name__
+            return '.'.join([type(owner).__name__, meth.__name__])
+        else:
+            return callable_obj.__name__
+    except:
+        return str(callable_obj)
+
 
 def process_ellipses(obj, key, vdim_selection=False):
     """
