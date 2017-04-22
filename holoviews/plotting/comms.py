@@ -140,7 +140,7 @@ class JupyterComm(Comm):
         {msg_handler}
       }}
 
-      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
+      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
         comm_manager = Jupyter.notebook.kernel.comm_manager;
         comm_manager.register_target("{comm_id}", function(comm) {{ comm.on_msg(msg_handler);}});
       }}
@@ -191,7 +191,7 @@ class JupyterCommJS(JupyterComm):
         {msg_handler}
       }}
 
-      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {{
+      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
         var comm_manager = Jupyter.notebook.kernel.comm_manager;
         comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}}, "{comm_id}");
         comm.on_msg(msg_handler);
