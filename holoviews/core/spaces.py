@@ -129,12 +129,12 @@ class HoloMap(UniformNdMapping, Overlayable):
             key_map = {d.name: k for d, k in zip(dimensions, key)}
             layers = []
             try:
-                self_el = self.select(**key_map) if self.kdims else self[()]
+                self_el = self.select(HoloMap, **key_map) if self.kdims else self[()]
                 layers.append(self_el)
             except KeyError:
                 pass
             try:
-                other_el = other.select(**key_map) if other.kdims else other[()]
+                other_el = other.select(HoloMap, **key_map) if other.kdims else other[()]
                 layers.append(other_el)
             except KeyError:
                 pass

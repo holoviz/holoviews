@@ -316,7 +316,10 @@ class Dataset(Element):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
-        if selection_specs and not any(self.matches(sp) for sp in selection_specs):
+        selection = {dim: sel for dim, sel in selection.items()
+                     if dim in self.dimensions()+['selection_mask']}
+        if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
+            or not selection):
             return self
 
         data = self.interface.select(self, **selection)
