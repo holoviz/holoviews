@@ -78,18 +78,20 @@ class MessageCallback(object):
 
 
     def on_msg(self, msg):
+        streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
             ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
-            if not processed_msg:
+            if not processed_msg and not stream.transient:
                 continue
             stream.update(**processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
-        Stream.trigger(self.streams)
-        for stream in self.streams:
+            streams.append(stream)
+        Stream.trigger(streams)
+        for stream in streams:
             stream._metadata = {}
 
 
@@ -636,6 +638,13 @@ class PlotSizeCallback(Callback):
     attributes = {'width': 'cb_obj.inner_width',
                   'height': 'cb_obj.inner_height'}
     on_changes = ['inner_width', 'inner_height']
+
+    def _process_msg(self, msg):
+        if msg.get('width') and msg.get('height'):
+            return {}
+        else:
+            return {}
+
 
 
 class BoundsCallback(Callback):
