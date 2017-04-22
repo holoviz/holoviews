@@ -194,16 +194,13 @@ class CustomJSCallback(MessageCallback):
         // Initialize Comm
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comms = HoloViewsWidget.comms["{comm_id}"];
-          if (comms && ("{comm_id}" in comms)) {{
-            comm = comms["{comm_id}"];
-          }} else {{
+          var comm = HoloViewsWidget.comms["{comm_id}"];
+          if (comm == null) {{
             comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
             comm.on_msg(on_msg);
             comm_manager["{comm_id}"] = comm;
             HoloViewsWidget.comms["{comm_id}"] = comm;
           }}
-          comm_manager["{comm_id}"] = comm;
         }} else {{
           return
         }}
@@ -219,7 +216,7 @@ class CustomJSCallback(MessageCallback):
         event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
         timeout = comm_state.time + {timeout};
-        if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel != null)) {{
+        if ((window.Jupyter == null) | (Jupyter.notebook.kernel == null)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.event_buffer.unshift([event_name, data]);
         }} else {{
