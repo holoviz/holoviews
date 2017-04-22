@@ -78,18 +78,20 @@ class MessageCallback(object):
 
 
     def on_msg(self, msg):
+        streams = []
         for stream in self.streams:
             handle_ids = self.handle_ids[stream]
             ids = list(handle_ids.values())
             filtered_msg = self._filter_msg(msg, ids)
             processed_msg = self._process_msg(filtered_msg)
-            if not processed_msg:
+            if not processed_msg and not stream.transient:
                 continue
             stream.update(**processed_msg)
             stream._metadata = {h: {'id': hid, 'events': self.on_events}
                                 for h, hid in handle_ids.items()}
-        Stream.trigger(self.streams)
-        for stream in self.streams:
+            streams.append(stream)
+        Stream.trigger(streams)
+        for stream in streams:
             stream._metadata = {}
 
 
@@ -194,16 +196,13 @@ class CustomJSCallback(MessageCallback):
         // Initialize Comm
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comms = HoloViewsWidget.comms["{comm_id}"];
-          if (comms && ("{comm_id}" in comms)) {{
-            comm = comms["{comm_id}"];
-          }} else {{
+          var comm = HoloViewsWidget.comms["{comm_id}"];
+          if (comm == null) {{
             comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
             comm.on_msg(on_msg);
             comm_manager["{comm_id}"] = comm;
             HoloViewsWidget.comms["{comm_id}"] = comm;
           }}
-          comm_manager["{comm_id}"] = comm;
         }} else {{
           return
         }}
@@ -219,7 +218,7 @@ class CustomJSCallback(MessageCallback):
         event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
         timeout = comm_state.time + {timeout};
-        if ((window.Jupyter == undefined) | (Jupyter.notebook.kernel != null)) {{
+        if ((window.Jupyter == null) | (Jupyter.notebook.kernel == null)) {{
         }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.event_buffer.unshift([event_name, data]);
         }} else {{
@@ -639,6 +638,13 @@ class PlotSizeCallback(Callback):
     attributes = {'width': 'cb_obj.inner_width',
                   'height': 'cb_obj.inner_height'}
     on_changes = ['inner_width', 'inner_height']
+
+    def _process_msg(self, msg):
+        if msg.get('width') and msg.get('height'):
+            return {}
+        else:
+            return {}
+
 
 
 class BoundsCallback(Callback):
