@@ -257,4 +257,3 @@ class TreeOperation(Operation):
         elements to be merged with the output Layout.
         """
         raise NotImplementedError
-
