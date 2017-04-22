@@ -143,6 +143,21 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
 
+    def test_dynamic_kdims_only_by_position(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['A-dim','B-dim'])
+        self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
+
+    def test_dynamic_kdims_swapped_by_name(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['B','A'])
+        self.assertEqual(dmap[1,'Test'], Scatter([(1, 2)], label='Test'))
+
+
     def test_dynamic_kdims_only_invalid(self):
         def fn(A,B):
             return Scatter([(A,2)], label=A)
