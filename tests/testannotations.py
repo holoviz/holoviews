@@ -9,6 +9,11 @@ class AnnotationTests(ComparisonTestCase):
     the basic Element types.
     """
 
+    def test_hline_invalid_constructor(self):
+        regexp = "Parameter 'y' only takes numeric values"
+        with self.assertRaisesRegexp(ValueError, regexp):
+            hline = HLine(None)
+
     def test_hline_dimension_values(self):
         hline = HLine(0)
         self.assertEqual(hline.range(0), (None, None))
