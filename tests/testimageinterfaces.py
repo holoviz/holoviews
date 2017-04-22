@@ -1,7 +1,7 @@
 from unittest import SkipTest
 
 import numpy as np
-from holoviews import Dimension, Image, Curve, RGB, Dataset
+from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset
 from holoviews.element.comparison import ComparisonTestCase
 
 from .testdataset import DatatypeContext
@@ -352,5 +352,47 @@ class RGBGridInterfaceTest(RGBInterfaceTest):
 
 
 class RGBXArrayInterfaceTest(RGBGridInterfaceTest):
+
+    datatype = 'xarray'
+
+
+
+class HSVArrayInterfaceTest(ComparisonTestCase):
+
+    datatype = 'image'
+
+    def setUp(self):
+        self.eltype = HSV
+        self.restore_datatype = self.eltype.datatype
+        self.eltype.datatype = [self.datatype]
+        self.xs = np.linspace(-9, 9, 3)
+        self.ys = np.linspace(0.5, 9.5, 3)
+        self.hsv_array = np.zeros((3, 3, 3))
+        self.hsv_array[0, 0] = 1
+        self.init_data()
+
+    def init_data(self):
+        self.hsv = HSV(self.hsv_array[::-1], bounds=(-10, 0, 10, 10))
+
+    def tearDown(self):
+        self.eltype.datatype = self.restore_datatype
+
+    def test_hsv_rgb_interface(self):
+        self.assertEqual(np.flipud(self.hsv.rgb.data)[0, 0, 0], 1)
+        self.assertEqual(np.flipud(self.hsv.rgb.data)[0, 0, 1], 0)
+        self.assertEqual(np.flipud(self.hsv.rgb.data)[0, 0, 2], 0)
+
+
+
+class HSVGridInterfaceTest(HSVArrayInterfaceTest):
+
+    datatype = 'grid'
+
+    def init_data(self):
+        self.hsv = HSV((self.xs, self.ys, self.hsv_array[:, :, 0],
+                        self.hsv_array[:, :, 1], self.hsv_array[:, :, 2]))
+
+
+class HSVXArrayInterfaceTest(HSVGridInterfaceTest):
 
     datatype = 'xarray'

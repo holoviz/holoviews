@@ -536,8 +536,11 @@ class HSV(RGB):
         if len(self.vdims) == 4:
             hsv += (data[3],)
 
-        return RGB(np.dstack(hsv), bounds=self.bounds,
-                   group=self.group, label=self.label)
+        params = util.get_param_values(self)
+        del params['vdims']
+        return RGB(np.dstack(hsv)[::-1], bounds=self.bounds,
+                   xdensity=self.xdensity, ydensity=self.ydensity,
+                   **params)
 
 
 class QuadMesh(Raster):
