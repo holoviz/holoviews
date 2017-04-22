@@ -56,14 +56,29 @@ class Annotation(Element2D):
         else:
             return super(Annotation, self).dimension_values(dimension)
 
+    # Note: This version of clone is identical in path.BaseShape
+    # Consider implementing a mix-in class if it is needed again.
+    def clone(self, *args, **overrides):
+        if len(args) == 1 and isinstance(args[0], tuple):
+            args = args[0]
+        # Apply name mangling for __ attribute
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
+        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
+                    if k not in pos_args[:len(args)]}
+        return self.__class__(*args, **settings)
+
 
 class VLine(Annotation):
     "Vertical line annotation at the given position"
 
     group = param.String(default='VLine', constant=True)
 
+    x = param.Number(default=0, doc="The x-position of the VLine.")
+
+    __pos_params = ['x']
+
     def __init__(self, x, **params):
-        super(VLine, self).__init__(x, **params)
+        super(VLine, self).__init__(x, x=x, **params)
 
 
 
@@ -72,8 +87,12 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
+    y = param.Number(default=0, doc="The y-position of the HLine.")
+
+    __pos_params = ['y']
+
     def __init__(self, y, **params):
-        super(HLine, self).__init__(y, **params)
+        super(HLine, self).__init__(y, y=y, **params)
 
     def dimension_values(self, dimension):
         index = self.get_dimension_index(dimension)
@@ -145,6 +164,8 @@ class Arrow(Annotation):
 
     group = param.String(default='Arrow', constant=True)
 
+    __pos_params = ['x', 'y', 'text', 'direction', 'points', 'arrowstyle']
+
     def __init__(self, x, y, text='', direction='<',
                  points=40, arrowstyle='->', **params):
 
@@ -165,14 +186,6 @@ class Arrow(Annotation):
             self.data = (x, y, text, direction, points, arrowstyle)
 
 
-    # Note: This version of clone is identical in Text and path.BaseShape
-    # Consider implementing a mix-in class if it is needed again.
-    def clone(self, *args, **overrides):
-        if len(args) == 1 and isinstance(args[0], tuple):
-            args = args[0]
-        arg_names = ['x', 'y', 'text', 'direction', 'points', 'arrowstyle']
-        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
-                    if k not in arg_names[:len(args)]}
         return self.__class__(*args, **settings)
 
     def dimension_values(self, dimension, expanded=True, flat=True):
@@ -214,17 +227,11 @@ class Text(Annotation):
 
     group = param.String(default='Text', constant=True)
 
+    __pos_params = ['x', 'y', 'text', 'fontsize', 'halign', 'valign', 'rotation']
+
     def __init__(self, x,y, text, fontsize=12,
                  halign='center', valign='center', rotation=0, **params):
         info = (x,y, text, fontsize, halign, valign, rotation)
         super(Text, self).__init__(info, x=x, y=y, text=text,
                                    fontsize=fontsize, rotation=rotation,
                                    halign=halign, valign=valign, **params)
-
-    def clone(self, *args, **overrides):
-        if len(args) == 1 and isinstance(args[0], tuple):
-            args = args[0]
-        arg_names = ['x', 'y', 'text', 'fontsize', 'halign', 'valign', 'rotation']
-        settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
-                    if k not in arg_names[:len(args)]}
-        return self.__class__(*args, **settings)
