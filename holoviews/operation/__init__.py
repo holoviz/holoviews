@@ -3,6 +3,7 @@ from ..core.options import Compositor
 
 from .element import *      # noqa (API import)
 from ..core import Overlay  # noqa (API import)
+from .datashader import datashade
 
 def public(obj):
     if not isinstance(obj, type): return False
