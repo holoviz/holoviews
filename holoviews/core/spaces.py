@@ -557,7 +557,7 @@ class Generator(Callable):
             raise
         except Exception:
             msg = 'Generator {name} raised the following exception:'
-            self.warning(msg.format(name=self.name)
+            self.warning(msg.format(name=self.name))
             raise
 
 
