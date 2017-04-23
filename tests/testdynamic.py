@@ -444,6 +444,45 @@ class DynamicCallableMemoize(ComparisonTestCase):
         self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
 
 
+class StreamSubscribersAddandClear(ComparisonTestCase):
+
+    def setUp(self):
+        self.fn1 = lambda x: x
+        self.fn2 = lambda x: x**2
+        self.fn3 = lambda x: x**3
+        self.fn4 = lambda x: x**4
+
+    def test_subscriber_clear_all(self):
+        pointerx = PointerX(x=2)
+        pointerx.add_subscriber(self.fn1, precedence=0)
+        pointerx.add_subscriber(self.fn2, precedence=1)
+        pointerx.add_subscriber(self.fn3, precedence=1.5)
+        pointerx.add_subscriber(self.fn4, precedence=10)
+        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        pointerx.clear('all')
+        self.assertEqual(pointerx.subscribers,  [])
+
+    def test_subscriber_clear_user(self):
+        pointerx = PointerX(x=2)
+        pointerx.add_subscriber(self.fn1, precedence=0)
+        pointerx.add_subscriber(self.fn2, precedence=1)
+        pointerx.add_subscriber(self.fn3, precedence=1.5)
+        pointerx.add_subscriber(self.fn4, precedence=10)
+        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        pointerx.clear('user')
+        self.assertEqual(pointerx.subscribers,  [self.fn3,self.fn4])
+
+
+    def test_subscriber_clear_internal(self):
+        pointerx = PointerX(x=2)
+        pointerx.add_subscriber(self.fn1, precedence=0)
+        pointerx.add_subscriber(self.fn2, precedence=1)
+        pointerx.add_subscriber(self.fn3, precedence=1.5)
+        pointerx.add_subscriber(self.fn4, precedence=10)
+        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2,self.fn3,self.fn4])
+        pointerx.clear('internal')
+        self.assertEqual(pointerx.subscribers,  [self.fn1,self.fn2])
+
 
 class DynamicStreamReset(ComparisonTestCase):
 

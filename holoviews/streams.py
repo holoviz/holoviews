@@ -166,9 +166,9 @@ class Stream(param.Parameterized):
         if policy == 'all':
             remaining = []
         elif policy == 'user':
-            remaining = [s for (p,s) in self._subscribers if p <= 1]
+            remaining = [(p,s) for (p,s) in self._subscribers if p > 1]
         else:
-            remaining = [s for (p,s) in self._subscribers if p > 1]
+            remaining = [(p,s) for (p,s) in self._subscribers if p <= 1]
         self._subscribers = remaining
 
 
