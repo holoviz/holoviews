@@ -47,7 +47,9 @@ class TestCallableName(ComparisonTestCase):
         self.assertEqual(Callable(lambda x: x).name, '<lambda>')
 
     def test_partial_name(self):
-        match = '<functools.partial object'
+        py2match = '<functools.partial object'
+        py3match = 'functools.partial('
+        match = py2match if sys.version_info < (3,0) else py3match
         cb = Callable(partial(lambda x,y: x, y=4))
         self.assertEqual(cb.name.startswith(match), True)
 
