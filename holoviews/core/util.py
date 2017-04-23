@@ -1,4 +1,5 @@
 import os, sys, warnings, operator
+import types
 import numbers
 import inspect
 import itertools
@@ -201,7 +202,7 @@ def validate_dynamic_argspec(argspec, kdims, streams):
 
 def callable_name(callable_obj):
     """
-    Attempts to return a meaningful name identifying a callable
+    Attempt to return a meaningful name identifying a callable or generator
     """
     try:
         if (isinstance(callable_obj, type)
@@ -222,9 +223,11 @@ def callable_name(callable_obj):
                 owner =  meth.__self__
             if meth.__name__ == '__call__':
                 return type(owner).__name__
-            return '.'.join([type(owner).__name__, meth.__name__])
-        else:
+            return '.'.join([owner.__name__, meth.__name__])
+        elif isinstance(callable_obj, types.GeneratorType):
             return callable_obj.__name__
+        else:
+            return type(callable_obj).__name__
     except:
         return str(callable_obj)
 
