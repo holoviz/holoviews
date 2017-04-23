@@ -456,7 +456,8 @@ class Callable(param.Parameterized):
          the Callable, e.g. when it returns a Layout.""")
 
     def __init__(self, callable, **params):
-        super(Callable, self).__init__(callable=callable, **params)
+        super(Callable, self).__init__(callable=callable,
+                                       **dict(params, name=util.callable_name(callable)))
         self._memoized = {}
         self._is_overlay = False
 
@@ -524,7 +525,7 @@ class Callable(param.Parameterized):
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
             message = ("Exception raised in callable '{name}' of type '{ctype}'.\n"
                        "Invoked as {name}({argstr})")
-            self.warning(message.format(name=util.callable_name(self.callable),
+            self.warning(message.format(name=self.name,
                                         ctype = type(self.callable).__name__,
                                         argstr=argstr))
             raise
