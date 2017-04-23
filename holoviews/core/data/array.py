@@ -45,6 +45,8 @@ class ArrayInterface(Interface):
                 data = np.column_stack(data)
             else:
                 raise ValueError('ArrayInterface expects data to be of uniform shape.')
+        elif isinstance(data, list) and data == []:
+            data = np.empty((0,len(dimensions)))
         elif not isinstance(data, np.ndarray):
             data = np.array([], ndmin=2).T if data is None else list(data)
             try:

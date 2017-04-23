@@ -54,6 +54,8 @@ class DictInterface(Interface):
                 else:
                     data = np.atleast_2d(data).T
             data = {k: data[:,i] for i,k in enumerate(dimensions)}
+        elif isinstance(data, list) and data == []:
+            data = OrderedDict([(d, []) for d in dimensions])
         elif isinstance(data, list) and np.isscalar(data[0]):
             data = {dimensions[0]: np.arange(len(data)), dimensions[1]: data}
         elif (isinstance(data, list) and isinstance(data[0], tuple) and len(data[0]) == 2

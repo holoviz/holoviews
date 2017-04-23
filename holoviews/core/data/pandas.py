@@ -67,6 +67,8 @@ class PandasInterface(Interface):
                         data = np.atleast_2d(data).T
                 else:
                     data = tuple(data[:, i] for i in range(data.shape[1]))
+            elif isinstance(data, list) and data == []:
+                data = None
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]

@@ -178,7 +178,7 @@ class DaskInterface(PandasInterface):
         inbuilts = {'amin': 'min', 'amax': 'max', 'mean': 'mean',
                     'std': 'std', 'sum': 'sum', 'var': 'var'}
         if len(dimensions):
-            groups = reindexed.groupby(cols, sort=False)
+            groups = reindexed.groupby(cols)
             if (function.__name__ in inbuilts):
                 agg = getattr(groups, inbuilts[function.__name__])()
             else:

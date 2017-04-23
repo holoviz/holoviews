@@ -50,10 +50,14 @@ class GridInterface(DictInterface):
             raise ValueError('GridInterface interface requires at least '
                              'one value dimension.')
 
+        ndims = len(kdims)
         dimensions = [d.name if isinstance(d, Dimension) else
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
+        elif isinstance(data, list) and data == []:
+            data = {d: np.array([]) for d in dimensions[:ndims]}
+            data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
         elif not isinstance(data, dict):
             raise TypeError('GridInterface must be instantiated as a '
                             'dictionary or tuple')

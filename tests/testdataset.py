@@ -101,6 +101,11 @@ class HomogeneousColumnTypes(object):
                           kdims=[('x', 'X-label')], vdims=[('x2', 'X2-label')])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
+    def test_dataset_empty_list_init(self):
+        dataset = Dataset([], kdims=['x'], vdims=['y'])
+        for d in 'xy':
+            self.assertEqual(dataset.dimension_values(d), np.array([]))
+
     # Properties and information
 
     def test_dataset_shape(self):
@@ -612,6 +617,12 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
 
     # Literal formats that have been previously been supported but
     # currently are only supported via NdElement.
+
+    def test_dataset_empty_list_init(self):
+        """
+        Will soon be deprecated, new features not supported
+        """
+        raise SkipTest("Not supported")
 
     def test_dataset_double_zip_init(self):
         dataset = Dataset(zip(zip(self.gender, self.age),
