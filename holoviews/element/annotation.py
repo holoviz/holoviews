@@ -1,7 +1,8 @@
+from numbers import Number
 import numpy as np
-
 import param
 
+from ..core.util import datetime_types
 from ..core import Dimension, Element2D
 
 
@@ -73,7 +74,8 @@ class VLine(Annotation):
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.Number(default=0, doc="The x-position of the VLine.")
+    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
 
@@ -87,7 +89,8 @@ class HLine(Annotation):
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.Number(default=0, doc="The y-position of the HLine.")
+    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The y-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
 
@@ -143,9 +146,11 @@ class Arrow(Annotation):
     specified as well as the arrow head style.
     """
 
-    x = param.Number(default=0, doc="The x-position of the arrow.")
+    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.Number(default=0, doc="The y-position of the arrow.")
+    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="Text associated with the arrow.")
 
@@ -202,10 +207,11 @@ class Text(Annotation):
     Draw a text annotation at the specified position with custom
     fontsize, alignment and rotation.
     """
+    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The x-position of the arrow which make be numeric or a timestamp.""")
 
-    x = param.Parameter(default=0, doc="The x-position of the text.")
-
-    y = param.Parameter(default=0, doc="The y-position of text.")
+    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+       The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")
 
