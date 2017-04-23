@@ -416,9 +416,9 @@ class PlotSize(LinkedStream):
     Returns the dimensions of a plot once it has been displayed.
     """
 
-    width = param.Integer(300, constant=True, doc="The width of the plot in pixels")
+    width = param.Integer(None, constant=True, doc="The width of the plot in pixels")
 
-    height = param.Integer(300, constant=True, doc="The height of the plot in pixels")
+    height = param.Integer(None, constant=True, doc="The height of the plot in pixels")
 
     scale = param.Number(default=1.0, constant=True, doc="""
        Scale factor to scale width and height values reported by the stream""")
