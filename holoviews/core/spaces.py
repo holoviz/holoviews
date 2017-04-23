@@ -551,7 +551,14 @@ class Generator(Callable):
         return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
-        return next(self.callable)
+        try:
+            return next(self.callable)
+        except StopIteration:
+            raise
+        except Exception:
+            msg = 'Generator {name} raised the following exception:'
+            self.warning(msg.format(name=self.name)
+            raise
 
 
 def get_nested_streams(dmap):
