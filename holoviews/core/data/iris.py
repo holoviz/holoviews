@@ -87,7 +87,14 @@ class CubeInterface(GridInterface):
             if isinstance(data, tuple):
                 value_array = data[-1]
                 data = {d: vals for d, vals in zip(kdim_names + [vdim.name], data)}
-            elif isinstance(data, dict):
+            elif isinstance(data, list) and data == []:
+                ndims = len(kdims)
+                dimensions = [d.name if isinstance(d, Dimension) else
+                              d for d in kdims + vdims]
+                data = {d: np.array([]) for d in dimensions[:ndims]}
+                data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
+
+            if isinstance(data, dict):
                 value_array = data[vdim.name]
             coords = [(iris.coords.DimCoord(data[kd.name], long_name=kd.name,
                                             units=kd.unit), ndims-n-1)

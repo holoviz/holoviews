@@ -58,6 +58,12 @@ class XArrayInterface(GridInterface):
                      for vd in vdims]
             if isinstance(data, tuple):
                 data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
+            elif isinstance(data, list) and data == []:
+                ndims = len(kdims)
+                dimensions = [d.name if isinstance(d, Dimension) else
+                              d for d in kdims + vdims]
+                data = {d: np.array([]) for d in dimensions[:ndims]}
+                data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
                 raise TypeError('XArrayInterface could not interpret data type')
             coords = [(kd.name, data[kd.name]) for kd in kdims][::-1]
