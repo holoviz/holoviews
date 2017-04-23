@@ -334,7 +334,7 @@ class GridPlot(CompositePlot):
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
     def _get_size(self):
@@ -755,7 +755,7 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
 

@@ -296,7 +296,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
 
@@ -490,7 +490,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
-            self.traverse(lambda x: attach_streams(self, x.hmap, 1),
+            self.traverse(lambda x: attach_streams(self, x.hmap, 2),
                           [GenericElementPlot])
 
     def _init_layout(self, layout):

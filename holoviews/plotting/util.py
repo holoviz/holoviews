@@ -408,7 +408,7 @@ def dim_axis_label(dimensions, separator=', '):
     return separator.join([d.pprint_label for d in dimensions])
 
 
-def attach_streams(plot, obj, precedence=0):
+def attach_streams(plot, obj, precedence=1.1):
     """
     Attaches plot refresh to all streams on the object.
     """
