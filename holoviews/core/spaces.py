@@ -456,7 +456,8 @@ class Callable(param.Parameterized):
          the Callable, e.g. when it returns a Layout.""")
 
     def __init__(self, callable, **params):
-        super(Callable, self).__init__(callable=callable, **params)
+        super(Callable, self).__init__(callable=callable,
+                                       **dict(params, name=util.callable_name(callable)))
         self._memoized = {}
         self._is_overlay = False
 
@@ -486,6 +487,7 @@ class Callable(param.Parameterized):
 
     def __call__(self, *args, **kwargs):
         # Nothing to do for callbacks that accept no arguments
+        (inargs, inkwargs) = (args, kwargs)
         if not args and not kwargs: return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -515,8 +517,19 @@ class Callable(param.Parameterized):
                              % list(clashes))
             args, kwargs = (), dict(pos_kwargs, **kwargs)
 
+        try:
+            ret = self.callable(*args, **kwargs)
+        except:
+            posstr = ', '.join(['%r' % el for el in inargs]) if inargs else ''
+            kwstr = ', '.join('%s=%r' % (k,v) for k,v in inkwargs.items())
+            argstr = ', '.join([el for el in [posstr, kwstr] if el])
+            message = ("Exception raised in callable '{name}' of type '{ctype}'.\n"
+                       "Invoked as {name}({argstr})")
+            self.warning(message.format(name=self.name,
+                                        ctype = type(self.callable).__name__,
+                                        argstr=argstr))
+            raise
 
-        ret = self.callable(*args, **kwargs)
         if hashed_key is not None:
             self._memoized = {hashed_key : ret}
         return ret
@@ -538,7 +551,14 @@ class Generator(Callable):
         return ArgSpec(args=[], varargs=None, keywords=None, defaults=None)
 
     def __call__(self):
-        return next(self.callable)
+        try:
+            return next(self.callable)
+        except StopIteration:
+            raise
+        except Exception:
+            msg = 'Generator {name} raised the following exception:'
+            self.warning(msg.format(name=self.name))
+            raise
 
 
 def get_nested_streams(dmap):

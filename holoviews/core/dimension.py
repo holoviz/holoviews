@@ -87,6 +87,18 @@ class redim(object):
         return replaced
 
 
+    def _filter_cache(self, dmap, kdims):
+        """
+        Returns a filtered version of the DynamicMap cache leaving only
+        keys consistently with the newly specified values
+        """
+        filtered = []
+        for key, value in dmap.data.items():
+            if not any(kd.values and v not in kd.values for kd, v in zip(kdims, key)):
+                filtered.append((key, value))
+        return filtered
+
+
     def __call__(self, specs=None, **dimensions):
         """
         Replace dimensions on the dataset and allows renaming
@@ -120,10 +132,11 @@ class redim(object):
                 data = parent.interface.redim(parent, renames)
             return parent.clone(data, kdims=kdims, vdims=vdims)
 
-        redimmed = redimmed.clone(kdims=kdims, vdims=vdims)
         if self.mode != 'dynamic':
-            return redimmed
+            return redimmed.clone(kdims=kdims, vdims=vdims)
 
+        redimmed = redimmed.clone(kdims=kdims, vdims=vdims,
+                                  data= self._filter_cache(redimmed, kdims))
         from ..util import Dynamic
         def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)

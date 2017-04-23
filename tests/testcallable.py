@@ -4,15 +4,24 @@ Unit tests of the Callable object that wraps user callbacks. Also test
 how DynamicMap validates and invokes Callable based on its signature.
 """
 import param
+import sys
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Scatter
 from holoviews import streams
-from holoviews.core.spaces import Callable, DynamicMap
+from holoviews.core.spaces import Callable, Generator, DynamicMap
+from holoviews.core.operation import OperationCallable
+from holoviews.operation import contours
 from functools import partial
 
 from . import LoggingComparisonTestCase
 
 class CallableClass(object):
+
+    @staticmethod
+    def somestaticmethod(): pass
+
+    @classmethod
+    def someclsmethod(cls): pass
 
     def __call__(self, *testargs):
         return sum(testargs)
@@ -26,6 +35,65 @@ class ParamFunc(param.ParameterizedFunction):
     def __call__(self, a, **params):
         p = param.ParamOverrides(self, params)
         return a * p.b
+
+
+class TestCallableName(ComparisonTestCase):
+
+    def test_simple_function_name(self):
+        def foo(x,y): pass
+        self.assertEqual(Callable(foo).name, 'foo')
+
+    def test_simple_lambda_name(self):
+        self.assertEqual(Callable(lambda x: x).name, '<lambda>')
+
+    def test_partial_name(self):
+        py2match = '<functools.partial object'
+        py3match = 'functools.partial('
+        match = py2match if sys.version_info < (3,0) else py3match
+        cb = Callable(partial(lambda x,y: x, y=4))
+        self.assertEqual(cb.name.startswith(match), True)
+
+    def test_generator_expression_name(self):
+        if sys.version_info < (3,0):
+            cb = Generator((i for i in xrange(10)))
+        else:
+            cb = Generator((i for i in range(10)))
+        self.assertEqual(cb.name, '<genexpr>')
+
+    def test_generator_name(self):
+        def innergen(): yield
+        cb = Generator(innergen())
+        self.assertEqual(cb.name, 'innergen')
+
+    def test_callable_class_name(self):
+        self.assertEqual(Callable(CallableClass()).name, 'CallableClass')
+
+    def test_callable_class_call_method(self):
+        self.assertEqual(Callable(CallableClass().__call__).name, 'CallableClass')
+
+    def test_classmethod_name(self):
+        self.assertEqual(Callable(CallableClass().someclsmethod).name,
+                         'CallableClass.someclsmethod')
+
+    def test_staticmethod_name(self):
+        self.assertEqual(Callable(CallableClass().somestaticmethod).name,
+                         'somestaticmethod')
+
+    def test_parameterized_fn_name(self):
+        self.assertEqual(Callable(ParamFunc).name, 'ParamFunc')
+
+    def test_parameterized_fn_instance_name(self):
+        self.assertEqual(Callable(ParamFunc.instance()).name, 'ParamFunc')
+
+    def test_operation_name(self):
+        self.assertEqual(Callable(contours).name, 'contours')
+
+    def test_operation_instance_name(self):
+        self.assertEqual(Callable(contours.instance()).name, 'contours')
+
+    def test_operation_callable_name(self):
+        opcallable = OperationCallable(lambda x: x, operation=contours.instance())
+        self.assertEqual(Callable(opcallable).name, 'contours')
 
 
 class TestSimpleCallableInvocation(LoggingComparisonTestCase):
@@ -142,6 +210,21 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
         dmap = DynamicMap(fn, kdims=['A','B'])
         self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
+
+    def test_dynamic_kdims_only_by_position(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['A-dim','B-dim'])
+        self.assertEqual(dmap['Test', 1], Scatter([(1, 2)], label='Test'))
+
+    def test_dynamic_kdims_swapped_by_name(self):
+        def fn(A,B):
+            return Scatter([(A,2)], label=A)
+
+        dmap = DynamicMap(fn, kdims=['B','A'])
+        self.assertEqual(dmap[1,'Test'], Scatter([(1, 2)], label='Test'))
+
 
     def test_dynamic_kdims_only_invalid(self):
         def fn(A,B):
