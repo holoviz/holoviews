@@ -2,7 +2,7 @@ from numbers import Number
 import numpy as np
 import param
 
-from ..core.util import datetime_types
+from ..core.util import datetime_types, basestring
 from ..core import Dimension, Element2D
 
 
@@ -207,10 +207,10 @@ class Text(Annotation):
     Draw a text annotation at the specified position with custom
     fontsize, alignment and rotation.
     """
-    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_= (Number, basestring) + datetime_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_= (Number, basestring) + datetime_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")

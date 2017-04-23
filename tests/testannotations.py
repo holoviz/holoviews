@@ -2,6 +2,7 @@ import numpy as np
 
 from holoviews import Image, HLine, VLine, Text, Arrow, Annotation
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element import Points
 
 class AnnotationTests(ComparisonTestCase):
     """
@@ -20,6 +21,11 @@ class AnnotationTests(ComparisonTestCase):
     #     regexp = "Parameter 'y' only takes numeric values"
     #     with self.assertRaisesRegexp(ValueError, regexp):
     #         hline = HLine(None)
+
+    def test_text_string_position(self):
+        text = Text('A', 1, 'A')
+        Points([('A', 1)]) * text
+        self.assertEqual(text.x, 'A')
 
     def test_hline_dimension_values(self):
         hline = HLine(0)
