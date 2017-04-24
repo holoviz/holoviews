@@ -806,7 +806,14 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         fig = plot.state
-        assert len(fig.legend[0].items) == 0
+        self.assertEqual(len(fig.legend[0].items), 0)
+
+    def test_points_no_single_item_legend(self):
+        points = Points([('A', 1), ('B', 2)], label='A')
+        plot = bokeh_renderer.get_plot(points)
+        plot.initialize_plot()
+        fig = plot.state
+        self.assertEqual(len(fig.legend[0].items), 0)
 
     def test_image_boolean_array(self):
         img = Image(np.array([[True, False], [False, True]]))

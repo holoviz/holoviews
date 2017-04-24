@@ -1097,7 +1097,7 @@ class LegendPlot(ElementPlot):
         if not plot.legend:
             return
         legend = plot.legend[0]
-        if not self.show_legend:
+        if (not self.overlaid and len(legend.items) == 1) or not self.show_legend:
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
