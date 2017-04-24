@@ -15,7 +15,6 @@ from ..core.util import find_file, unicode, unbound_dimensions
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
-from .. import DynamicMap
 from . import Plot
 from .comms import JupyterComm
 from .util import displayable, collate, initialize_dynamic

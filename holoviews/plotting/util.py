@@ -6,11 +6,10 @@ import numpy as np
 import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
-                    Overlay, GridSpace, NdLayout, Store, Dataset)
-from ..core.spaces import get_nested_streams, Callable
-from ..core.options import SkipRendering
+                    Overlay, GridSpace, NdLayout, Store)
+from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
-                         get_overlay_spec, unique_iterator, unique_iterator)
+                         get_overlay_spec, unique_iterator)
 from ..streams import LinkedStream
 
 def displayable(obj):
