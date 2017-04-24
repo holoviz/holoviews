@@ -14,8 +14,6 @@ try:
 except:
     DFrame = None
 
-from ..plot import PlotSelector
-
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot

@@ -1,4 +1,3 @@
-from io import BytesIO
 from itertools import groupby
 import warnings
 
@@ -7,8 +6,8 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.models import Range, HoverTool, Renderer, Range1d, FactorRange
-from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker
+from bokeh.models import  HoverTool, Renderer, Range1d, FactorRange
+from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
 try:
@@ -16,22 +15,19 @@ try:
     from bokeh.models.mappers import LogColorMapper, CategoricalColorMapper
 except ImportError:
     LogColorMapper, ColorBar = None, None
-from bokeh.models import LogTicker, BasicTicker
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 
-from ...core import (Store, HoloMap, Overlay, DynamicMap,
+from ...core import (Store, DynamicMap,
                      CompositeOverlay, Element, Dimension)
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...element import RGB
-from ...streams import Stream, RangeXY, RangeX, RangeY
+from ...streams import Stream
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, attach_streams
+from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
-from .util import (mpl_to_bokeh, convert_datetime, update_plot, get_tab_title,
-                   bokeh_version, mplcmap_to_palette, py2js_tickformatter,
-                   rgba_tuple)
+from .util import (mpl_to_bokeh, get_tab_title, bokeh_version,
+                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -525,7 +521,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_ranges(self, element, ranges):
-        plot = self.handles['plot']
         x_range = self.handles['x_range']
         y_range = self.handles['y_range']
 

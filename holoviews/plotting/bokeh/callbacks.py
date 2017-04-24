@@ -1,7 +1,4 @@
 from collections import defaultdict
-
-import param
-import numpy as np
 from bokeh.models import CustomJS
 
 from ...core import OrderedDict

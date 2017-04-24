@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 from bokeh.models import Span
 
-from ...element import HLine, VLine
+from ...element import HLine
 from .element import ElementPlot, text_properties, line_properties
 
 
