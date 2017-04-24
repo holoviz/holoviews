@@ -226,10 +226,6 @@ class notebook_extension(param.ParameterizedFunction):
             Store.renderers[r].load_nb(inline=p.inline)
 
         # Create a message for the logo (if shown)
-        js_names = {'holoviews':'HoloViewsJS'} # resource : displayed name
-        loaded = ', '.join(js_names[r] if r in js_names else r.capitalize()+'JS'
-                           for r in resources)
-
         load_hvjs(logo=p.logo, JS=('holoviews' in resources), message='')
 
 

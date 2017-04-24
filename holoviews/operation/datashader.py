@@ -16,10 +16,9 @@ from datashader.pandas import pandas_pipeline
 from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
-import datashader.transfer_functions as tf
 
 from ..core import (ElementOperation, Element, Dimension, NdOverlay,
-                    Overlay, CompositeOverlay, Dataset)
+                    CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
 from ..element import Image, Path, Curve, Contours, RGB
@@ -46,14 +45,6 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
     x0, x1 = canvas.x_range
     y0, y1 = canvas.y_range
     kdims = [dataset.get_dimension(d) for d in (glyph.x, glyph.y)]
-
-    column = summary.column
-    if column and isinstance(summary, ds.count_cat):
-        name = '%s Count' % summary.column
-    else:
-        name = column
-    vdims = [dataset.get_dimension(column)(name) if column
-             else Dimension('Count')]
 
     if dataset.interface is PandasInterface:
         agg = pandas_pipeline(dataset.data, schema, canvas,
@@ -173,12 +164,11 @@ class aggregate(ElementOperation):
                     path = path.compute()
                 empty = path.copy()
                 empty.iloc[0, :] = (np.NaN,) * empty.shape[1]
-                paths = [elem for path in paths for elem in (path, empty)][:-1]
+                paths = [elem for p in paths for elem in (p, empty)][:-1]
             if all(isinstance(path, dd.DataFrame) for path in paths):
                 df = dd.concat(paths)
             else:
-                paths = [path.compute() if isinstance(path, dd.DataFrame) else path
-                         for path in paths]
+                paths = [p.compute() if isinstance(p, dd.DataFrame) else p for p in paths]
                 df = pd.concat(paths)
         else:
             df = paths[0]
