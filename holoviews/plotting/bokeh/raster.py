@@ -2,12 +2,6 @@ import numpy as np
 import param
 
 from bokeh.models import HoverTool
-from bokeh.models.mappers import LinearColorMapper
-try:
-    from bokeh.models.mappers import LogColorMapper
-except ImportError:
-    LogColorMapper = None
-
 from ...core.util import cartesian_product, is_nan
 from ...element import Image, Raster
 from ..renderer import SkipRendering
