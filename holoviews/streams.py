@@ -76,12 +76,16 @@ class Stream(param.Parameterized):
     @classmethod
     def define(cls, name, **kwargs):
         """
-        Utility to quickly and easily declare Stream classes.
+        Utility to quickly and easily declare Stream classes. Designed
+        for interactive use such as notebooks and shouldn't replace
+        parameterized class definitions in source code that is imported.
 
         Takes a stream class name and a set of keywords where each
         keyword becomes a parameter. If the value is already a
         parameter, it is simply used otherwise the appropriate parameter
         type is inferred and declared, using the value as the default.
+
+        Supported types: bool, int, float, str, dict, tuple and list
         """
         params = {'name':param.String(default=name)}
         for k,v in kwargs.items():
