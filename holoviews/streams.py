@@ -301,7 +301,7 @@ class Stream(param.Parameterized):
         Sets the stream parameters which are expected to be declared
         constant.
         """
-        with util.disable_constant(self) as constant:
+        with util.disable_constant(self):
             self.set_param(**kwargs)
 
     def event(self, **kwargs):
