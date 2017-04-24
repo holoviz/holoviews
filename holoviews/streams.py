@@ -89,26 +89,27 @@ class Stream(param.Parameterized):
         """
         params = {'name':param.String(default=name)}
         for k,v in kwargs.items():
+            kws = dict(default=v, constant=True)
             if isinstance(v, param.Parameter):
                 params[k] = v
             elif isinstance(v, bool):
-                params[k] = param.Boolean(default=v)
+                params[k] = param.Boolean(**kws)
             elif isinstance(v, int):
-                params[k] = param.Integer(default=v)
+                params[k] = param.Integer(**kws)
             elif isinstance(v, float):
-                params[k] = param.Number(default=v)
+                params[k] = param.Number(**kws)
             elif isinstance(v,str):
-                params[k] = param.String(default=v)
+                params[k] = param.String(**kws)
             elif isinstance(v,dict):
-                params[k] = param.Dict(default=v)
+                params[k] = param.Dict(**kws)
             elif isinstance(v, tuple):
-                params[k] = param.Tuple(default=v)
+                params[k] = param.Tuple(**kws)
             elif isinstance(v,list):
-                params[k] = param.List(default=v)
+                params[k] = param.List(**kws)
             elif isinstance(v,np.ndarray):
-                params[k] = param.Array(default=v)
+                params[k] = param.Array(**kws)
             else:
-                params[k] = param.Parameter(default=v)
+                params[k] = param.Parameter(**kws)
 
         # Dynamic class creation using type
         return type(name, (Stream,), params)
