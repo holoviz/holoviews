@@ -15,6 +15,86 @@ def test_all_stream_parameters_constant():
                 raise TypeError('Parameter %s of stream %s not declared constant'
                                 % (name, stream_cls.__name__))
 
+
+class TestStreamsDefine(ComparisonTestCase):
+
+    def setUp(self):
+        self.XY = Stream.define('XY', x=0.0, y=5.0)
+        self.TypesTest = Stream.define('TypesTest',
+                                       t=True,
+                                       u=0,
+                                       v=1.2,
+                                       w= (1,'a'),
+                                       x='string',
+                                       y= [],
+                                       z = np.array([1,2,3]))
+
+        test_param = param.Integer(default=42, doc='Test docstring')
+        self.ExplicitTest = Stream.define('ExplicitTest',
+                                          test=test_param)
+
+    def test_XY_types(self):
+        self.assertEqual(isinstance(self.XY.params('x'), param.Number),True)
+        self.assertEqual(isinstance(self.XY.params('y'), param.Number),True)
+
+    def test_XY_defaults(self):
+        self.assertEqual(self.XY.params('x').default,0.0)
+        self.assertEqual(self.XY.params('y').default, 5.0)
+
+    def test_XY_instance(self):
+        xy = self.XY(x=1,y=2)
+        self.assertEqual(xy.x, 1)
+        self.assertEqual(xy.y, 2)
+
+    def test_XY_set_invalid_class_x(self):
+        regexp = "Parameter 'x' only takes numeric values"
+        with self.assertRaisesRegexp(ValueError, regexp):
+            self.XY.x = 'string'
+
+    def test_XY_set_invalid_class_y(self):
+        regexp = "Parameter 'y' only takes numeric values"
+        with self.assertRaisesRegexp(ValueError, regexp):
+            self.XY.y = 'string'
+
+    def test_XY_set_invalid_instance_x(self):
+        xy = self.XY(x=1,y=2)
+        regexp = "Parameter 'x' only takes numeric values"
+        with self.assertRaisesRegexp(ValueError, regexp):
+            xy.x = 'string'
+
+    def test_XY_set_invalid_instance_y(self):
+        xy = self.XY(x=1,y=2)
+        regexp = "Parameter 'y' only takes numeric values"
+        with self.assertRaisesRegexp(ValueError, regexp):
+            xy.y = 'string'
+
+    def test_XY_subscriber_triggered(self):
+
+        class Inner(object):
+            def __init__(self): self.state=None
+            def __call__(self, x,y): self.state=(x,y)
+
+        inner = Inner()
+        xy = self.XY(x=1,y=2)
+        xy.add_subscriber(inner)
+        xy.event(x=42,y=420)
+        self.assertEqual(inner.state, (42,420))
+
+    def test_custom_types(self):
+        self.assertEqual(isinstance(self.TypesTest.params('t'), param.Boolean),True)
+        self.assertEqual(isinstance(self.TypesTest.params('u'), param.Integer),True)
+        self.assertEqual(isinstance(self.TypesTest.params('v'), param.Number),True)
+        self.assertEqual(isinstance(self.TypesTest.params('w'), param.Tuple),True)
+        self.assertEqual(isinstance(self.TypesTest.params('x'), param.String),True)
+        self.assertEqual(isinstance(self.TypesTest.params('y'), param.List),True)
+        self.assertEqual(isinstance(self.TypesTest.params('z'), param.Array),True)
+
+    def test_explicit_parameter(self):
+        self.assertEqual(isinstance(self.ExplicitTest.params('test'), param.Integer),True)
+        self.assertEqual(self.ExplicitTest.params('test').default,42)
+        self.assertEqual(self.ExplicitTest.params('test').doc, 'Test docstring')
+
+
 class TestSubscriber(object):
 
     def __init__(self):

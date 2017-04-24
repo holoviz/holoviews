@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
+import numpy as np
 from numbers import Number
 from collections import defaultdict
 from .core import util
@@ -70,6 +71,49 @@ class Stream(param.Parameterized):
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
+
+
+    @classmethod
+    def define(cls, name, **kwargs):
+        """
+        Utility to quickly and easily declare Stream classes. Designed
+        for interactive use such as notebooks and shouldn't replace
+        parameterized class definitions in source code that is imported.
+
+        Takes a stream class name and a set of keywords where each
+        keyword becomes a parameter. If the value is already a
+        parameter, it is simply used otherwise the appropriate parameter
+        type is inferred and declared, using the value as the default.
+
+        Supported types: bool, int, float, str, dict, tuple and list
+        """
+        params = {'name':param.String(default=name)}
+        for k,v in kwargs.items():
+            kws = dict(default=v, constant=True)
+            if isinstance(v, param.Parameter):
+                params[k] = v
+            elif isinstance(v, bool):
+                params[k] = param.Boolean(**kws)
+            elif isinstance(v, int):
+                params[k] = param.Integer(**kws)
+            elif isinstance(v, float):
+                params[k] = param.Number(**kws)
+            elif isinstance(v,str):
+                params[k] = param.String(**kws)
+            elif isinstance(v,dict):
+                params[k] = param.Dict(**kws)
+            elif isinstance(v, tuple):
+                params[k] = param.Tuple(**kws)
+            elif isinstance(v,list):
+                params[k] = param.List(**kws)
+            elif isinstance(v,np.ndarray):
+                params[k] = param.Array(**kws)
+            else:
+                params[k] = param.Parameter(**kws)
+
+        # Dynamic class creation using type
+        return type(name, (Stream,), params)
+
 
     @classmethod
     def trigger(cls, streams):
@@ -295,14 +339,6 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
-class Next(Stream):
-    """
-    Next is a special stream used to trigger generators. It may also be
-    used to trigger DynamicMaps using callables with no arguments.
-    """
-    pass
-
-
 class Counter(Stream):
     """
     Simple stream that automatically increments an integer counter
@@ -313,36 +349,6 @@ class Counter(Stream):
 
     def transform(self):
         return {'counter': self.counter + 1}
-
-
-class X(Stream):
-    """
-    Simple numeric stream representing a position along the x-axis.
-    """
-
-    x = param.Number(default=0, constant=True, doc="""
-       Numeric position along the x-axis.""")
-
-
-class Y(Stream):
-    """
-    Simple numeric stream representing a position along the y-axis.
-    """
-
-    y = param.Number(default=0, constant=True, doc="""
-       Numeric position along the y-axis.""")
-
-
-class XY(Stream):
-    """
-    Simple numeric stream representing a position along the x- and y-axes.
-    """
-
-    x = param.Number(default=0, constant=True, doc="""
-       Numeric position along the x-axis.""")
-
-    y = param.Number(default=0, constant=True, doc="""
-       Numeric position along the y-axis.""")
 
 
 class LinkedStream(Stream):
