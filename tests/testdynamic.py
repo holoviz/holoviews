@@ -4,9 +4,12 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
-from holoviews.streams import XY, PointerXY, PointerX, PointerY
+from holoviews.streams import Stream, PointerXY, PointerX, PointerY
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
+
+
+XY = Stream.define('XY', x=0,y=0)
 
 frequencies =  np.linspace(0.5,2.0,5)
 phases = np.linspace(0, np.pi*2, 5)
