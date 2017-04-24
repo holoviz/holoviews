@@ -12,6 +12,7 @@ from bokeh.models.tools import BoxSelectTool
 
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
+from ...core.spaces import DynamicMap
 from ...operation import interpolate_curve
 from ..util import compute_sizes,  match_spec, get_min_distance
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
@@ -613,19 +614,18 @@ class ChartPlot(LegendPlot):
         Updates an existing plot with data corresponding
         to the key.
         """
-        element = self._get_frame(key)
-        if not element:
-            if self.dynamic and self.overlaid:
-                self.current_key = key
-                element = self.current_frame
-            else:
-                element = self._get_frame(key)
-        else:
+        reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
+        if not reused and element is None:
+            element = self._get_frame(key)
+        elif element is not None:
             self.current_key = key
             self.current_frame = element
 
+        if element is None or (not self.dynamic and self.static):
+            return
+
         max_cycles = len(self.style._options)
-        self.style = self.lookup_options(style_element, 'style').max_cycles(max_cycles)
+        self.style = self.lookup_options(element, 'style').max_cycles(max_cycles)
 
         self.set_param(**self.lookup_options(element, 'plot').options)
         ranges = self.compute_ranges(self.hmap, key, ranges)
