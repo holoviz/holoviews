@@ -15,7 +15,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream, Next
+from ..streams import Stream
 
 class HoloMap(UniformNdMapping, Overlayable):
     """
@@ -652,9 +652,10 @@ class DynamicMap(HoloMap):
             if self.kdims:
                 raise Exception(prefix + ' must be declared without key dimensions')
             if len(self.streams)> 1:
-                raise Exception(prefix + ' must have either streams=[] or streams=[Next()]')
-            if len(self.streams) == 1 and not isinstance(self.streams[0], Next):
-                raise Exception(prefix + ' can only accept a single Next() stream')
+                raise Exception(prefix + ' must have either streams=[] or a single, '
+                                + 'stream instance without any stream parameters')
+            if util.stream_parameters(self.streams) != []:
+                raise Exception(prefix + ' cannot accept any stream parameters')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
                                                           self.kdims,
