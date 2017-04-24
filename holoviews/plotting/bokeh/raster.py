@@ -8,12 +8,10 @@ try:
 except ImportError:
     LogColorMapper = None
 
-from ...core.util import cartesian_product, is_nan, unique_array
-from ...element import Image, Raster, RGB
+from ...core.util import cartesian_product, is_nan
+from ...element import Image, Raster
 from ..renderer import SkipRendering
-from ..util import map_colors
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import mplcmap_to_palette, get_cmap, hsv_to_rgb, mpl_to_bokeh
 
 
 class RasterPlot(ColorbarPlot):

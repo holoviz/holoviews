@@ -17,7 +17,6 @@ from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.document import Document
-from bokeh.models.plots import Plot
 from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
                           ToolbarBox, FactorRange, Range1d)
 from bokeh.models.widgets import DataTable, Tabs
