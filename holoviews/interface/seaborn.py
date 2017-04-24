@@ -10,8 +10,8 @@ import numpy as np
 
 import param
 
-from ..core import Dimension, NdMapping, Element2D, HoloMap
-from ..element import Chart, Scatter, Curve
+from ..core import Dimension, NdMapping, Element2D
+from ..element import Chart, Scatter
 from .pandas import DFrame as PandasDFrame
 
 
