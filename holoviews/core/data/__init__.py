@@ -1,5 +1,4 @@
 from __future__ import absolute_import
-from collections import OrderedDict
 
 try:
     import itertools.izip as zip
@@ -14,7 +13,7 @@ from .interface import Interface
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
-from .image import ImageInterface
+from .image import ImageInterface             # noqa (API import)
 from .ndelement import NdElementInterface
 
 datatypes = ['array', 'dictionary', 'grid', 'ndelement']
@@ -48,7 +47,7 @@ except ImportError:
     pass
 
 try:
-    from .dask import DaskInterface
+    from .dask import DaskInterface   # noqa (Conditional API import)
     datatypes.append('dask')
 except ImportError:
     pass
@@ -224,7 +223,6 @@ class Dataset(Element):
                                       "implemented for 1D Elements")
 
         if kwargs:
-            dim = self.get_dimension(list(kwargs.keys())[0], strict=True)
             if len(kwargs) > 1:
                 raise NotImplementedError("Closest method currently only "
                                           "supports 1D indexes")
@@ -498,8 +496,8 @@ class Dataset(Element):
             return aggregated
         else:
             try:
-                return self.clone(aggregated, kdims=kdims, vdims=vdims,
-                                  new_type=new_type)
+                # Should be checking the dimensions declared on the element are compatible
+                return self.clone(aggregated, kdims=kdims, vdims=vdims)
             except:
                 datatype = self.params('datatype').default
                 return self.clone(aggregated, kdims=kdims, vdims=vdims,

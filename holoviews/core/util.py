@@ -6,7 +6,7 @@ import itertools
 import string, fnmatch
 import unicodedata
 import datetime as dt
-from collections import defaultdict, Counter
+from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
 
@@ -91,7 +91,6 @@ def deephash(obj):
 
 
 # Python3 compatibility
-import types
 if sys.version_info.major == 3:
     basestring = str
     unicode = str
@@ -1029,15 +1028,15 @@ def disable_constant(parameterized):
     """
     params = parameterized.params().values()
     constants = [p.constant for p in params]
-    for param in params:
-        param.constant = False
+    for p in params:
+        p.constant = False
     try:
         yield
     except:
         raise
     finally:
-        for (param, const) in zip(params, constants):
-            param.constant = const
+        for (p, const) in zip(params, constants):
+            p.constant = const
 
 
 def get_ndmapping_label(ndmapping, attr):

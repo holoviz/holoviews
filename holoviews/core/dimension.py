@@ -1053,9 +1053,9 @@ class Dimensioned(LabelledData):
                 drange = max_range(ranges)
             soft_range = [r for r in dimension.soft_range if r is not None]
             if soft_range:
-                drange = util.max_range([drange, soft_range])
+                drange = max_range([drange, soft_range])
         else:
-            drange = dim.soft_range
+            drange = dimension.soft_range
         if dimension.range[0] is not None:
             return (dimension.range[0], drange[1])
         elif dimension.range[1] is not None:

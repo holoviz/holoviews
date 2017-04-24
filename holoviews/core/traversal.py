@@ -7,7 +7,7 @@ or mutate the matching elements.
 from collections import defaultdict
 from operator import itemgetter
 
-from .dimension import Dimension, OrderedDict
+from .dimension import Dimension
 from .util import merge_dimensions
 
 try:

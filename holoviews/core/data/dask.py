@@ -9,7 +9,6 @@ import numpy as np
 import pandas as pd
 import dask.dataframe as dd
 from dask.dataframe import DataFrame
-from dask.dataframe.core import Scalar
 
 from .. import util
 from ..element import Element
