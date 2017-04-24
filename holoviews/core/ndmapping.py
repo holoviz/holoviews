@@ -504,7 +504,7 @@ class MultiDimensionalMapping(Dimensioned):
             if key is None:
                 return None
             return self[key]
-        except:
+        except KeyError:
             return default
 
 
