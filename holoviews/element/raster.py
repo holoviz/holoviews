@@ -1,26 +1,17 @@
-import warnings
 from operator import itemgetter
-from itertools import product
 import numpy as np
 import colorsys
 import param
 
 from ..core import util
-from ..core.data import (ArrayInterface, NdElementInterface, DictInterface,
-                         ImageInterface)
-from ..core import (Dimension, NdMapping, Element2D, HoloMap,
-                    Overlay, Element, Dataset, NdElement)
+from ..core.data import ImageInterface
+from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem
-from ..core.util import pd, max_range
+from ..core.util import max_range
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
-
-try:
-    from ..core.data import PandasInterface
-except ImportError:
-    PandasInterface = None
 
 
 class Raster(Element2D):
@@ -478,7 +469,6 @@ class RGB(Image):
 
 
     def __init__(self, data, **params):
-        sliced = None
         if isinstance(data, Overlay):
             images = data.values()
             if not all(isinstance(im, Image) for im in images):
