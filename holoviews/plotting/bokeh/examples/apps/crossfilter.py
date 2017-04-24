@@ -4,15 +4,12 @@ on the Auto MPG dataset. Demonstrates how to dynamically generate
 bokeh plots using the HoloViews API and replacing the bokeh plot
 based on the current widget selections.
 """
-
-import numpy as np
-import pandas as pd
 import holoviews as hv
-import holoviews.plotting.bokeh
+import holoviews.plotting.bokeh # noqa (Activate backend)
 
 from bokeh.layouts import row, widgetbox
 from bokeh.models import Select
-from bokeh.plotting import curdoc, figure
+from bokeh.plotting import curdoc
 from bokeh.sampledata.autompg import autompg
 
 df = autompg.copy()

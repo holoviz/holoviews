@@ -9,7 +9,7 @@ from bokeh.io import curdoc
 from bokeh.layouts import layout
 from bokeh.models import Slider, Button
 import holoviews as hv
-import holoviews.plotting.bokeh
+import holoviews.plotting.bokeh # noqa (Activate backend)
 
 renderer = hv.Store.renderers['bokeh']
 
