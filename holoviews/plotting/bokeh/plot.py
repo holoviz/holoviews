@@ -3,19 +3,17 @@ import numpy as np
 
 import param
 
-from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Div)
+from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
                      AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
-from ...core import traversal
-from ...core.options import Compositor, SkipRendering
+from ...core.options import Compositor
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot)
-from ..util import get_dynamic_mode, attach_streams
-from .renderer import BokehRenderer
+from ..util import attach_streams
 from .util import (bokeh_version, layout_padding, pad_plots,
                    filter_toolboxes, make_axis, update_shared_sources,
                    empty_plot)
@@ -395,7 +393,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot = BokehGridPlot(children=plots[::-1])
         else:
             plot = gridplot(plots[::-1])
-        
+
         plot = self._make_axes(plot)
 
         title = self._get_title(self.keys[-1])

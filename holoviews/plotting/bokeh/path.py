@@ -1,14 +1,11 @@
 from collections import defaultdict
-
-import numpy as np
 import param
 
 from bokeh.models import HoverTool
 
 from ...core import util
-from ..util import map_colors, rgb2hex
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import get_cmap, expand_batched_style, filter_batched_data
+from .util import expand_batched_style
 
 
 class PathPlot(ElementPlot):

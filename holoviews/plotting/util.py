@@ -191,7 +191,7 @@ def get_plot_frame(map_obj, key_map, cached=False):
             return map_obj[key]
         except KeyError:
             return None
-        except Exception as e:
+        except Exception:
             print(traceback.format_exc())
             return None
 
