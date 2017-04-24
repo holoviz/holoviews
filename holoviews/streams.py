@@ -334,14 +334,6 @@ class Stream(param.Parameterized):
         return repr(self)
 
 
-class Next(Stream):
-    """
-    Next is a special stream used to trigger generators. It may also be
-    used to trigger DynamicMaps using callables with no arguments.
-    """
-    pass
-
-
 class Counter(Stream):
     """
     Simple stream that automatically increments an integer counter
@@ -352,36 +344,6 @@ class Counter(Stream):
 
     def transform(self):
         return {'counter': self.counter + 1}
-
-
-class X(Stream):
-    """
-    Simple numeric stream representing a position along the x-axis.
-    """
-
-    x = param.Number(default=0, constant=True, doc="""
-       Numeric position along the x-axis.""")
-
-
-class Y(Stream):
-    """
-    Simple numeric stream representing a position along the y-axis.
-    """
-
-    y = param.Number(default=0, constant=True, doc="""
-       Numeric position along the y-axis.""")
-
-
-class XY(Stream):
-    """
-    Simple numeric stream representing a position along the x- and y-axes.
-    """
-
-    x = param.Number(default=0, constant=True, doc="""
-       Numeric position along the x-axis.""")
-
-    y = param.Number(default=0, constant=True, doc="""
-       Numeric position along the y-axis.""")
 
 
 class LinkedStream(Stream):
