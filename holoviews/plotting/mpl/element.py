@@ -437,7 +437,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         reused = isinstance(self.hmap, DynamicMap) and self.overlaid
         if not reused and element is None:
             element = self._get_frame(key)
-        else:
+        elif element is not None:
             self.current_key = key
             self.current_frame = element
 
@@ -842,23 +842,25 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     @mpl_rc_context
     def update_frame(self, key, ranges=None, element=None):
         axis = self.handles['axis']
-        if element is None:
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if element is None and not reused:
             element = self._get_frame(key)
-        else:
+        elif element is not None:
             self.current_frame = element
             self.current_key = key
+        empty = element is None
 
         if isinstance(self.hmap, DynamicMap):
             range_obj = element
-            items = element.items()
         else:
             range_obj = self.hmap
-            items = element.items()
-        ranges = self.compute_ranges(range_obj, key, ranges)
+        items = [] if element is None else element.items()
 
+        if not empty:
+            ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
-            el = element.get(k, None)
-            if isinstance(self.hmap, DynamicMap):
+            el = None if empty else element.get(k, None)
+            if isinstance(self.hmap, DynamicMap) and not empty:
                 idx = dynamic_update(self, subplot, k, element, items)
                 if idx is not None:
                     _, el = items.pop(idx)
@@ -869,7 +871,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                             "were not initialized correctly and could not be "
                             "rendered.")
 
-        if self.show_legend:
+        if self.show_legend and not empty:
             self._adjust_legend(element, axis)
 
         self._finalize_axis(key, element=element, ranges=ranges)
