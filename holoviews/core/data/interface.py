@@ -86,7 +86,7 @@ class Interface(param.Parameterized):
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
-            except Exception as e:
+            except Exception:
                 pass
         else:
             raise ValueError("None of the available storage backends "

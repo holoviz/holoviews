@@ -10,8 +10,7 @@ from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
 from .spaces import HoloMap, GridSpace
 from .tree import AttrTree
-from .util import (dimension_sort, get_param_values, dimension_sanitizer,
-                   unique_array, wrap_tuple)
+from .util import dimension_sort, get_param_values, unique_array
 
 
 class Element(ViewableElement, Composable, Overlayable):

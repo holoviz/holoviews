@@ -6,21 +6,18 @@ try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-from bokeh.models import (Circle, GlyphRenderer, ColumnDataSource,
-                          Range1d, CustomJS, FactorRange, HoverTool)
+from bokeh.models import ( GlyphRenderer, ColumnDataSource,
+                          Range1d, CustomJS, HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
-from ...element import Raster, Points, Polygons, Spikes
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...operation import interpolate_curve
-from ..util import (compute_sizes, get_sideplot_ranges, match_spec,
-                    map_colors, get_min_distance, rgb2hex)
+from ..util import compute_sizes,  match_spec, get_min_distance
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import (get_cmap, mpl_to_bokeh, update_plot, bokeh_version,
-                   expand_batched_style, filter_batched_data)
+from .util import update_plot, bokeh_version, expand_batched_style
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -174,7 +171,6 @@ class VectorFieldPlot(ColorbarPlot):
 
         # Get x, y, angle, magnitude and color data
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
-        angle_dim = element.get_dimension(2).name
         rads = element.dimension_values(2)
         lens = self._get_lengths(element, ranges)
         cdim = element.get_dimension(self.color_index)

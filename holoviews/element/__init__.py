@@ -1,4 +1,4 @@
-from ..core import ViewableElement, HoloMap
+from ..core import HoloMap
 from ..core.data import Dataset, DataConversion
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)

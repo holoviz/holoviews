@@ -6,10 +6,8 @@ from functools import partial
 
 import param
 import numpy as np
-from bokeh.io import _CommsHandle
-from bokeh.util.notebook import get_comms
 from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput, Div
-from bokeh.layouts import layout, gridplot, widgetbox, row, column
+from bokeh.layouts import widgetbox, row, column
 
 from ...core import Store, NdMapping, OrderedDict
 from ...core.util import (drop_streams, unique_array, isnumeric,

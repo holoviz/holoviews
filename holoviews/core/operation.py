@@ -16,7 +16,6 @@ from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .spaces import DynamicMap, Callable
 from .traversal import unique_dimkeys
-from . import util
 
 
 class Operation(param.ParameterizedFunction):

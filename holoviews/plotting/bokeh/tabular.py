@@ -2,11 +2,11 @@ from bokeh.models.widgets import DataTable, TableColumn
 
 import param
 
+import numpy as np
 from ...core import Dataset
 from ...element import ItemTable
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
-from .util import bokeh_version
 
 class TablePlot(BokehPlot, GenericElementPlot):
 

@@ -22,8 +22,6 @@ import param
 
 from ..core import ViewableElement, NdMapping, Dataset, NdOverlay,\
     NdLayout, GridSpace, HoloMap
-from ..element import (Chart, Table, Curve, Scatter, Bars, Points,
-                       VectorField, HeatMap, Scatter3D, Surface)
 
 
 class DataFrameView(Dataset):

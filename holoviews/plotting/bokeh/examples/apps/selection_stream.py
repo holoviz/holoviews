@@ -6,7 +6,7 @@ to compute the mean y-value of the current selection.
 
 import numpy as np
 import holoviews as hv
-import holoviews.plotting.bokeh
+import holoviews.plotting.bokeh    # noqa (Activate backend)
 from holoviews.streams import Selection1D
 
 renderer = hv.Store.renderers['bokeh']

@@ -100,7 +100,7 @@ class rolling_outlier_std(ElementOperation,RollingBase):
     Outliers are the array elements outside `sigma` standard deviations from
     the smoothed trend line, as calculated from the trend line residuals.
 
-    The rolling window is controlled by parameters shared with the 
+    The rolling window is controlled by parameters shared with the
     `rolling` operation via the base class RollingBase, to make it
     simpler to use the same settings for both.
     """
@@ -109,7 +109,6 @@ class rolling_outlier_std(ElementOperation,RollingBase):
         Minimum sigma before a value is considered an outlier.""")
 
     def _process_layer(self, element, key=None):
-        sigma, window = self.p.sigma, self.p.rolling_window
         ys = element.dimension_values(1)
 
         # Calculate the variation in the distribution of the residual
@@ -119,7 +118,7 @@ class rolling_outlier_std(ElementOperation,RollingBase):
 
         # Get indices of outliers
         with np.errstate(invalid='ignore'):
-            outliers = (np.abs(residual) > std * sigma).values
+            outliers = (np.abs(residual) > std * self.p.sigma).values
         return element[outliers].clone(new_type=Scatter)
 
     def _process(self, element, key=None):

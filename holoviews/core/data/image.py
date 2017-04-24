@@ -1,10 +1,10 @@
 import numpy as np
 
-from ..boundingregion import BoundingRegion, BoundingBox
+from ..boundingregion import BoundingBox
 from ..dimension import Dimension
 from ..element import Element
-from ..ndmapping import OrderedDict, NdMapping, item_check
-from ..sheetcoords import SheetCoordinateSystem, Slice
+from ..ndmapping import  NdMapping, item_check
+from ..sheetcoords import Slice
 from .. import util
 from .grid import GridInterface
 from .interface import Interface
@@ -108,7 +108,7 @@ class ImageInterface(GridInterface):
             drange = (None, None)
         return drange
 
-    
+
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         """
@@ -183,11 +183,6 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
-    def length(cls, dataset):
-        return np.product(dataset.data.shape)
-
-
-    @classmethod
     def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
         # Get dimensions information
         dimensions = [dataset.get_dimension(d) for d in dim_names]
@@ -219,7 +214,7 @@ class ImageInterface(GridInterface):
             with item_check(False):
                 return container_type(groups, kdims=dimensions)
         else:
-            return container_type(grouped_data)
+            return container_type(groups)
 
 
     @classmethod

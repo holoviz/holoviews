@@ -1,5 +1,3 @@
-import uuid
-
 import numpy as np
 import param
 from param.parameterized import bothmethod

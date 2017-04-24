@@ -931,7 +931,7 @@ class DynamicMap(HoloMap):
             if dimensionless or empty:
                 raise KeyError('Using dimensionless streams disables DynamicMap cache')
             cache = super(DynamicMap,self).__getitem__(key)
-        except KeyError as e:
+        except KeyError:
             cache = None
 
         # If the key expresses a cross product, compute the elements and return
