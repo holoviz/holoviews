@@ -771,7 +771,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         reused = isinstance(self.hmap, DynamicMap) and (self.overlaid or self.batched)
         if not reused and element is None:
             element = self._get_frame(key)
-        else:
+        elif element is not None:
             self.current_key = key
             self.current_frame = element
 
@@ -1287,20 +1287,22 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         key tuple (where integers represent frames). Returns this
         state.
         """
-        if element is None:
+        reused = isinstance(self.hmap, DynamicMap) and self.overlaid
+        if not reused and element is None:
             element = self._get_frame(key)
-        else:
+        elif element is not None:
             self.current_frame = element
             self.current_key = key
-
         items = element.items() if element else []
+
         if isinstance(self.hmap, DynamicMap):
             range_obj = element
         else:
             range_obj = self.hmap
 
         all_empty = empty
-        ranges = self.compute_ranges(range_obj, key, ranges)
+        if element is not None:
+            ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
             empty, el = False, None
             # If in Dynamic mode propagate elements to subplots
@@ -1310,7 +1312,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                     empty = False
                 # If not batched get the Element matching the subplot
-                else:
+                elif element is not None:
                     idx = dynamic_update(self, subplot, k, element, items)
                     empty = idx is None
                     if not empty:
