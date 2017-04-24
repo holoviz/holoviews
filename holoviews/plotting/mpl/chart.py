@@ -9,19 +9,17 @@ from matplotlib import cm
 from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path as MPLPath
-from matplotlib.dates import date2num, DateFormatter
+from matplotlib.dates import DateFormatter
 
 mpl_version = LooseVersion(mpl.__version__)
 
 import param
 
 from ...core import OrderedDict, Dimension
-from ...core.util import (match_spec, unique_iterator, bytes_to_unicode,
-                          basestring, max_range, unicode)
+from ...core.util import match_spec, unique_iterator, basestring, max_range
 from ...element import Points, Raster, Polygons, HeatMap
 from ...operation import interpolate_curve
-from ..util import (compute_sizes, get_sideplot_ranges, map_colors,
-                    get_min_distance)
+from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
 from .plot import AdjoinedPlot, mpl_rc_context

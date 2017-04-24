@@ -1,9 +1,6 @@
-import copy
 from itertools import product
 
 import numpy as np
-from matplotlib import pyplot as plt
-
 import param
 
 from ...core import CompositeOverlay, Element
