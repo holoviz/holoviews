@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import param
+import numpy as np
 from numbers import Number
 from collections import defaultdict
 from .core import util
@@ -70,6 +71,44 @@ class Stream(param.Parameterized):
     # Mapping to define callbacks by backend and Stream type.
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
+
+
+    @classmethod
+    def define(cls, name, **kwargs):
+        """
+        Utility to quickly and easily declare Stream classes.
+
+        Takes a stream class name and a set of keywords where each
+        keyword becomes a parameter. If the value is already a
+        parameter, it is simply used otherwise the appropriate parameter
+        type is inferred and declared, using the value as the default.
+        """
+        params = {'name':param.String(default=name)}
+        for k,v in kwargs.items():
+            if isinstance(v, param.Parameter):
+                params[k] = v
+            elif isinstance(v, bool):
+                params[k] = param.Boolean(default=v)
+            elif isinstance(v, int):
+                params[k] = param.Integer(default=v)
+            elif isinstance(v, float):
+                params[k] = param.Number(default=v)
+            elif isinstance(v,str):
+                params[k] = param.String(default=v)
+            elif isinstance(v,dict):
+                params[k] = param.Dict(default=v)
+            elif isinstance(v, tuple):
+                params[k] = param.Tuple(default=v)
+            elif isinstance(v,list):
+                params[k] = param.List(default=v)
+            elif isinstance(v,np.ndarray):
+                params[k] = param.Array(default=v)
+            else:
+                params[k] = param.Parameter(default=v)
+
+        # Dynamic class creation using type
+        return type(name, (Stream,), params)
+
 
     @classmethod
     def trigger(cls, streams):
