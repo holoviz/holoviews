@@ -1,10 +1,7 @@
 """
 Test cases for Collator
 """
-
 import itertools
-import unittest
-
 import numpy as np
 
 from holoviews.core import Collator, HoloMap, NdOverlay, Overlay, GridSpace

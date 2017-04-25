@@ -1,16 +1,10 @@
-from collections import defaultdict
 from unittest import SkipTest
-
-import numpy as np
-
 from holoviews.core import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import Curve, Points, Path
 
 try:
     from holoviews.plotting.bokeh.util import (
-        bokeh_version, expand_batched_style, filter_batched_data
-    )
+        expand_batched_style, filter_batched_data )
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None

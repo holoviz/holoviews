@@ -7,7 +7,7 @@ import logging
 import datetime as dt
 from collections import deque
 from unittest import SkipTest
-from io import BytesIO, StringIO
+from io import StringIO
 
 import param
 import numpy as np
@@ -47,7 +47,7 @@ try:
     from holoviews.plotting.bokeh.callbacks import Callback
     from bokeh.models import (
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
-        ToolbarBox, Spacer, FixedTicker, FuncTickFormatter
+        ToolbarBox, FixedTicker, FuncTickFormatter
     )
     from bokeh.models.mappers import (LinearColorMapper, LogColorMapper,
                                       CategoricalColorMapper)
@@ -57,7 +57,7 @@ except:
     bokeh_renderer = None
 
 try:
-    import holoviews.plotting.plotly
+    import holoviews.plotting.plotly # noqa (Activate backend)
     plotly_renderer = Store.renderers['plotly']
 except:
     plotly_renderer = None
@@ -113,7 +113,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
             raise SkipTest("Seaborn required to test Regression plot")
         reg = Regression(np.random.rand(20,2))
         plot = mpl_renderer.get_plot(reg)
-        axis = plot.handles['axis']
+        plot.handles['axis']
         plot.initialize_plot()
 
     def test_dynamic_nonoverlap(self):
@@ -183,7 +183,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def test_curve_pandas_timestamps(self):
         if not pd:
-            raise SkipError("Pandas not available")
+            raise SkipTest("Pandas not available")
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
         plot = mpl_renderer.get_plot(curve)
@@ -205,7 +205,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
         if not pd:
-            raise SkipError("Pandas not available")
+            raise SkipTest("Pandas not available")
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
@@ -291,7 +291,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
     def test_points_rcparams_do_not_persist(self):
         opts = dict(fig_rcparams={'text.usetex': True})
         points = Points(([0, 1], [0, 3]))(plot=opts)
-        plot = mpl_renderer.get_plot(points)
+        mpl_renderer.get_plot(points)
         self.assertFalse(pyplot.rcParams['text.usetex'])
 
     def test_points_rcparams_used(self):
@@ -600,7 +600,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
-        fig = plot.state
         cmapper = plot.handles['color_mapper']
         low, high = element.range(dim)
         self.assertEqual(cmapper.low, low)
@@ -657,7 +656,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          vdims=['a', 'b'])(plot=dict(color_index='b'))
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
-        fig = plot.state
         cmapper = plot.handles['color_mapper']
         self.assertIsInstance(cmapper, CategoricalColorMapper)
         self.assertEqual(cmapper.factors, list(points['b']))
@@ -1029,7 +1027,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, Range1d)
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
-    
+
     def test_box_whisker_datetime(self):
         times = np.arange(dt.datetime(2017,1,1), dt.datetime(2017,2,1),
                           dt.timedelta(days=1))
@@ -1050,7 +1048,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_curve_pandas_timestamps(self):
         if not pd:
-            raise SkipError("Pandas not available")
+            raise SkipTest("Pandas not available")
         dates = pd.date_range('2016-01-01', '2016-01-10', freq='D')
         curve = Curve((dates, np.random.rand(10)))
         plot = bokeh_renderer.get_plot(curve)
@@ -1075,7 +1073,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_curve_heterogeneous_datetime_types_with_pd_overlay(self):
         if not pd:
-            raise SkipError("Pandas not available")
+            raise SkipTest("Pandas not available")
         dates_pd = pd.date_range('2016-01-04', '2016-01-13', freq='D')
         dates64 = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
         dates = [dt.datetime(2016,1,i) for i in range(2, 12)]
@@ -1238,16 +1236,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(show_frame=False))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.outline_line_alpha, 0)
-
-    def test_element_no_xaxis(self):
-        curve = Curve(range(10))(plot=dict(xaxis=None))
-        plot = bokeh_renderer.get_plot(curve).state
-        self.assertFalse(plot.xaxis[0].visible)
-
-    def test_element_no_yaxis(self):
-        curve = Curve(range(10))(plot=dict(yaxis=None))
-        plot = bokeh_renderer.get_plot(curve).state
-        self.assertFalse(plot.yaxis[0].visible)
 
     def test_element_no_xaxis(self):
         curve = Curve(range(10))(plot=dict(xaxis=None))

@@ -39,10 +39,6 @@ class ImageInterfaceTest(ComparisonTestCase):
         self.assertEqual(self.image.dimension_values(1, expanded=False),
                          np.linspace(0.5, 9.5, 10))
 
-    def test_dimension_values_ys(self):
-        self.assertEqual(self.image.dimension_values(1, expanded=False),
-                         np.linspace(0.5, 9.5, 10))
-
     def test_dimension_values_vdim(self):
         self.assertEqual(self.image.dimension_values(2, flat=False),
                          self.array)
@@ -231,10 +227,6 @@ class RGBInterfaceTest(ComparisonTestCase):
     def test_dimension_values_xs(self):
         self.assertEqual(self.rgb.dimension_values(0, expanded=False),
                          np.linspace(-9, 9, 10))
-
-    def test_dimension_values_ys(self):
-        self.assertEqual(self.rgb.dimension_values(1, expanded=False),
-                         np.linspace(0.5, 9.5, 10))
 
     def test_dimension_values_ys(self):
         self.assertEqual(self.rgb.dimension_values(1, expanded=False),

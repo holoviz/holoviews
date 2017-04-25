@@ -41,11 +41,9 @@ class MockLoggingHandler(logging.Handler):
 
     def reset(self):
         self.acquire()
-        try:
-            for message_list in self.messages.values():
-                message_list = []
-        finally:
-            self.release()
+        self.messages = {'DEBUG': [], 'INFO': [], 'WARNING': [],
+                         'ERROR': [], 'CRITICAL': [], 'VERBOSE':[]}
+        self.release()
 
     def tail(self, level, n=1):
         "Returns the last n lines captured at the given level"

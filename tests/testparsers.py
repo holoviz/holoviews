@@ -153,7 +153,6 @@ class OptsSpecStyleOptionsTests(ComparisonTestCase):
         values = np.array([[ 0.37454012,  0.95071431,  0.73199394],
                            [ 0.59865848,  0.15601864,  0.15599452],
                            [ 0.05808361,  0.86617615,  0.60111501]])
-        expected = {'Curve': {'style': Options(color=Cycle(values=list(values)))}}
         self.assertEqual(np.array(options['Curve']['style'].kwargs['color'].values),
                          values)
 

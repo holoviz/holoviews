@@ -46,18 +46,18 @@ class TestDeepHash(ComparisonTestCase):
     def test_deephash_set_inequality(self):
         self.assertNotEqual(deephash(set([1,2,3])), deephash(set([1,3,4])))
 
-    def test_deephash_dict_equality(self):
+    def test_deephash_dict_equality_v1(self):
         self.assertEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'a'}))
 
-    def test_deephash_dict_equality(self):
+    def test_deephash_dict_equality_v2(self):
         self.assertNotEqual(deephash({1:'a',2:'b'}), deephash({2:'b', 1:'c'}))
 
-    def test_deephash_odict_equality(self):
+    def test_deephash_odict_equality_v1(self):
         odict1 = OrderedDict([(1,'a'), (2,'b')])
         odict2 = OrderedDict([(1,'a'), (2,'b')])
         self.assertEqual(deephash(odict1), deephash(odict2))
 
-    def test_deephash_odict_equality(self):
+    def test_deephash_odict_equality_v2(self):
         odict1 = OrderedDict([(1,'a'), (2,'b')])
         odict2 = OrderedDict([(1,'a'), (2,'c')])
         self.assertNotEqual(deephash(odict1), deephash(odict2))

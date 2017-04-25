@@ -210,7 +210,7 @@ class DynamicMapMethods(ComparisonTestCase):
         exception = ("DynamicMap does not allow dropping dimensions, "
                      "reindex may only be used to reorder dimensions.")
         with self.assertRaisesRegexp(ValueError, exception):
-            reindexed = dmap.reindex(['x'])
+            dmap.reindex(['x'])
 
 
 class DynamicMapUnboundedProperty(ComparisonTestCase):
@@ -285,7 +285,7 @@ class DynamicTransferStreams(ComparisonTestCase):
         exception = ("The supplied stream objects PointerX\(x=None\) and "
                      "PointerX\(x=0\) clash on the following parameters: \['x'\]")
         with self.assertRaisesRegexp(Exception, exception):
-            hist = Dynamic(self.dmap, streams=[PointerX])
+            Dynamic(self.dmap, streams=[PointerX])
 
 
 
@@ -563,7 +563,7 @@ class DynamicCollate(ComparisonTestCase):
         cb_callable = Callable(callback)
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The following streams are set to be automatically linked'):
-            layout = dmap.collate()
+            dmap.collate()
 
     def test_dynamic_collate_layout_raise_ambiguous_remapping_error(self):
         def callback(x, y):
@@ -572,7 +572,7 @@ class DynamicCollate(ComparisonTestCase):
         cb_callable = Callable(callback, stream_mapping={'Image': [stream]})
         dmap = DynamicMap(cb_callable, kdims=[], streams=[stream])
         with self.assertRaisesRegexp(ValueError, 'The stream_mapping supplied on the Callable is ambiguous'):
-            layout = dmap.collate()
+            dmap.collate()
 
     def test_dynamic_collate_layout_with_integer_stream_mapping(self):
         def callback(x, y):

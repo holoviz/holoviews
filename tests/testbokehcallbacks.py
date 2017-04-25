@@ -1,6 +1,7 @@
 from unittest import SkipTest
 
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.core.options import Store
 
 try:
     from holoviews.plotting.bokeh.callbacks import Callback

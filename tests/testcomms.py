@@ -1,6 +1,4 @@
 import json
-from nose.tools import *
-
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting.comms import Comm, JupyterComm
 
