@@ -48,7 +48,8 @@ Jupyter Notebook::
 
   jupyter notebook
 
-Now you can download the `tutorial notebooks`_.  unzip them somewhere
+Now you can download the `tutorial notebooks
+<http://assets.holoviews.org/notebooks-1.7.zip>`_.  unzip them somewhere
 Jupyter Notebook can find them, and then open the Homepage.ipynb
 tutorial or any of the others in the Notebook.  Enjoy exploring your
 data!
