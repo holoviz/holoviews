@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 
-import sys, os
+import sys, os, glob
+from shutil import copyfile
 try:
     from setuptools import setup
 except ImportError:
@@ -28,6 +29,7 @@ extras_require['all'] = (extras_require['recommended']
 setup_args.update(dict(
     name='holoviews',
     version="1.8dev4",
+    include_package_data=True,
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -88,29 +90,43 @@ def check_pseudo_package(path):
             raise Exception("Please make sure pseudo-package %s is populated." % path)
 
 
-def pypi_version(pypi=False):
-    if not pypi: return
-    # Make sure to create these directories and populate them before upload
-    setup_args['packages'] += ["holoviews.assets", 'holoviews.notebooks']
+def package_assets():
+    """
+    Generates pseudo-packages for all assets including notebooks,
+    image and data files and for tests.
+    """
+    if not os.path.isdir('holoviews/assets'):
+        os.mkdir('holoviews/assets')
+    for asset in [g for ext in ('png', 'svg', 'rst') for g in glob.glob('./doc/*/*.%s' % ext)]:
+        copyfile(asset, os.path.join('./holoviews/assets', os.path.basename(asset)))
 
-    # Add unit tests
-    setup_args['packages'].append('holoviews.tests')
+    if not os.path.isdir('holoviews/notebooks'):
+        os.mkdir('holoviews/notebooks')
+    for nb in [g for ext in ('ipynb', 'npy') for g in glob.glob('./doc/*/*.%s' % ext)]:
+        copyfile(nb, os.path.join('holoviews/notebooks/', os.path.basename(nb)))
 
-    setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
+    if not os.path.isdir('holoviews/tests'):
+        os.mkdir('holoviews/tests')
+    for nb in glob.glob('./tests/*.py'):
+        copyfile(nb, os.path.join('holoviews/tests/', os.path.basename(nb)))
+
+    setup_args['packages'] += ['holoviews.assets', 'holoviews.notebooks', 'holoviews.tests']
     setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
+    setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
 
-    if ('upload' in sys.argv) or ('sdist' in sys.argv):
-        check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
-        check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
-        check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
-
-        import holoviews
-        holoviews.__version__.verify(setup_args['version'])
+    check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
+    check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
+    check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
 
 
 if __name__=="__main__":
 
-    pypi_version(False) # Should only be true when building sdist and uploading to PYPI
+    if not 'develop' in sys.argv:
+        package_assets()
+
+    if ('upload' in sys.argv) or ('sdist' in sys.argv):
+        import holoviews
+        holoviews.__version__.verify(setup_args['version'])
 
     if 'install' in sys.argv:
         header = "HOLOVIEWS INSTALLATION INFORMATION"
@@ -127,6 +143,5 @@ if __name__=="__main__":
         print("only the minimal set of dependencies are fetched.\n\n")
         print("For more information please visit http://holoviews.org/install.html\n")
         print(bars+'\n')
-
 
     setup(**setup_args)
