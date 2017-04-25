@@ -18,7 +18,7 @@ It is currently recommended that you install a HoloViews development
 snapshot to ensure compatibility with recent bokeh and matplotlib
 releases:
 
-   conda install -c ioam/label/dev holoviews
+   conda install -c ioam holoviews
 
 Or clone holoviews directly from GitHub with::
 
