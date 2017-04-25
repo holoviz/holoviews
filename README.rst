@@ -14,9 +14,8 @@ together with `Matplotlib <http://matplotlib.org/>`_ or
 `Bokeh <http://bokeh.pydata.org>`_, making use of the 
 `Jupyter/IPython Notebook <http://jupyter.org>`_.  
 
-It is currently recommended that you install a HoloViews development
-snapshot to ensure compatibility with recent bokeh and matplotlib
-releases:
+You can get the latest version of HoloViews from the ioam conda
+channel:
 
    conda install -c ioam holoviews
 
@@ -32,7 +31,6 @@ notebooks may be found in the `holoviews-contrib
 <https://github.com/ioam/holoviews-contrib>`_ repository
 including examples that may be run live on `mybinder.org
 <http://mybinder.org/repo/ioam/holoviews-contrib>`_.
-
 
 For general discussion, we have a `gitter channel
 <https://gitter.im/ioam/holoviews>`_.  In addition we have
@@ -50,8 +48,11 @@ Features
 * Lets you build data structures that both contain and visualize your data.
 * Includes a rich `library of composable elements <http://www.holoviews.org/Tutorials/Elements.html>`_ that can be overlaid, nested and positioned with ease.
 * Supports `rapid data exploration <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <http://www.holoviews.org/Tutorials/Exporting.html>`_.
-* You can create complex animated or interactive visualizations with minimal code.
+* Create interactive visualizations that can be controlled via widgets or via custom events in Python using the 'streams' system. When using the bokeh backend, you can use streams to directly interact with your plots.
 * Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <http://www.holoviews.org/Tutorials/Sampling_Data.html>`_.
+* Plotting output using the `Matplotlib <http://www.holoviews.org/Tutorials/Elements.html>`_,
+`Bokeh <http://www.holoviews.org/Tutorials/Bokeh_Elements.html>`_, and `plotly <http://plot.ly/>`_ backends.
+* A variety of data interfaces to work with tabular and N-dimensional array data using `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_, `dask <http://dask.pydata.org/en/latest/>`_, `iris <http://scitools.org.uk/iris/>`_ and `xarray <http://xarray.pydata.org/en/stable/>`_.
 * Every parameter of every object includes easy-to-access documentation.
 * All features `available in vanilla Python 2 or 3 <http://www.holoviews.org/Tutorials/Options.html>`_, with minimal dependencies.
 
@@ -80,18 +81,19 @@ Features
 * Build `complex animations or interactive visualizations in seconds  <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ instead of hours or days.
 * Refine the visualization of your data interactively and incrementally.
 * Separation of concerns: all visualization settings are kept separate from your data objects.
-* Support for interactive tooltips/panning/zooming, via the optional mpld3 backend.
+* Support for fully interactive plots using the `Bokeh backend <http://www.holoviews.org/Tutorials/Bokeh_Backend.html>`_.
 
-**IPython Notebook support**
+**Jupyter Notebook support**
 
-* Support for both IPython 2 and 3.
+* Support for all recent releases of IPython and Jupyter Notebooks.
 * Automatic tab-completion everywhere.
 * Exportable sliders and scrubber widgets.
+* Custom interactivity using streams and notebook comms to dynamically updating plots.
 * Automatic display of animated formats in the notebook or for export, including gif, webm, and mp4.
 * Useful IPython magics for configuring global display options and for customizing objects.
 * `Automatic archival and export of notebooks <http://www.holoviews.org/Tutorials/Exporting.html>`_, including extracting figures as SVG, generating a static HTML copy of your results for reference, and storing your optional metadata like version control information.
 
-**Integration with third-party libraries**  
+**Integration with third-party libraries**
 
 * Flexible interface to both the `pandas and Seaborn libraries <http://www.holoviews.org/Tutorials/Pandas_Seaborn.html>`_
 * Immediately visualize pandas data as any HoloViews object.

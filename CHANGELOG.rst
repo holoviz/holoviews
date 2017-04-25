@@ -4,8 +4,8 @@ Version 1.7.0
 This version is a major new release incorporating seven months of work
 involving several hundred PRs and over 1700 commits.  Highlights
 include extensive new support for easily building highly interactive
-[Bokeh](http://bokeh.pydata.org) plots, support for using
-[datashader](https://github.com/bokeh/datashader)-based plots for
+`Bokeh <http://bokeh.pydata.org>`_ plots, support for using
+`datashader <https://github.com/bokeh/datashader>`_-based plots for
 working with large datasets, support for rendering images
 interactively but outside of the notebook, better error handling, and
 support for Matplotlib 2.0 and Bokeh 0.12.5.  The PRs linked below
@@ -365,6 +365,9 @@ Changes affecting backwards compatibility:
   <https://github.com/ioam/holoviews/pull/1305>`_)
 - Layout.display method is now deprecated (`#1026
   <https://github.com/ioam/holoviews/pull/1026>`_)
+- Layout fix for matplotlib figures with non-square aspects introduced
+  in 1.6.2 (PR `#826 <https://github.com/ioam/holoviews/pull/826>`_),
+  now enabled by default.
 
 
 Version 1.6.2
