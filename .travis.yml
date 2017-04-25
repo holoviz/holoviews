@@ -35,7 +35,7 @@ install:
       conda install python=3.4.3;
     fi
   - rm -r $SITE_PACKAGES/numpy*
-  - python setup.py install
+  - python setup.py develop
   - pip install git+git://github.com/ioam/param.git
   - pip install path.py
   - pip install coveralls awscli deepdiff
