@@ -5,7 +5,6 @@ with param.logging_level('CRITICAL'):
     from plotly.offline.offline import utils, get_plotlyjs
 
 from ..renderer import Renderer, MIME_TYPES
-from ..widgets import NdWidget
 from ...core.options import Store
 from ...core import HoloMap
 from ..comms import JupyterComm

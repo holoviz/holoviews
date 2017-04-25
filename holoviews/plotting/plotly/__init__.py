@@ -1,15 +1,16 @@
 from ...core.options import Store, Cycle, Options
 from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
                      GridMatrix)
-from ...interface.seaborn import *
-from ...element import * 
+from ...interface.seaborn import *    # noqa (Element import for registration)
+from ...element import *              # noqa (Element import for registration)
 from .renderer import PlotlyRenderer
-from .element import *
-from .chart import *
-from .chart3d import *
-from .raster import *
-from .plot import *
-from .tabular import *
+
+from .element import *                # noqa (API import)
+from .chart import *                 # noqa (API import)
+from .chart3d import *               # noqa (API import)
+from .raster import *                # noqa (API import)
+from .plot import *                  # noqa (API import)
+from .tabular import *               # noqa (API import)
 
 Store.renderers['plotly'] = PlotlyRenderer.instance()
 

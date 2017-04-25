@@ -12,7 +12,6 @@ except ImportError:
 
 import param
 
-from ...core.spaces import DynamicMap
 from ...core.options import SkipRendering
 from .element import ElementPlot, ColorbarPlot
 from .chart import ScatterPlot
