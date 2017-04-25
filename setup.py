@@ -8,7 +8,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.3.2', 'numpy>=1.0']
+install_requires = ['param>=1.5,<2.0', 'numpy>=1.0']
 extras_require={}
 
 # Notebook dependencies of IPython 3
