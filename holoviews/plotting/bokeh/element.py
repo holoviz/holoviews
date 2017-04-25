@@ -17,9 +17,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-
-from ...core import (Store, DynamicMap,
-                     CompositeOverlay, Element, Dimension)
+from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Stream
@@ -1191,7 +1189,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         tool_type = type(tool)
                     if isinstance(tool, HoverTool):
                         if tuple(tool.tooltips) in hover_tools:
-                            continue
+                            hover_tools[tuple(tool.tooltips)].renderers += tool.renderers
                         else:
                             hover_tools[tuple(tool.tooltips)] = tool
                     elif tool_type in tool_types:
