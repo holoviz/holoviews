@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, glob
-from shutil import copyfile
+from shutil import copyfile, rmtree
 try:
     from setuptools import setup
 except ImportError:
@@ -90,12 +90,12 @@ def check_pseudo_package(path):
             raise Exception("Please make sure pseudo-package %s is populated." % path)
 
 
-def package_assets():
+def package_assets(example_path):
     """
     Generates pseudo-packages for example files.
     """
     import holoviews
-    holoviews.examples('holoviews/examples', force=True)
+    holoviews.examples(example_path, force=True)
 
     setup_args['packages'] += ['holoviews.examples', 'holoviews.examples.assets', 'holoviews.examples.notebooks']
     setup_args['package_data']['holoviews.examples.notebooks'] = ['*.ipynb', '*.npy']
@@ -106,8 +106,10 @@ def package_assets():
 
 
 if __name__=="__main__":
+    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'holoviews/examples')
     if not 'develop' in sys.argv:
-        package_assets()
+        package_assets(example_path)
 
     if ('upload' in sys.argv) or ('sdist' in sys.argv):
         import holoviews
@@ -130,3 +132,6 @@ if __name__=="__main__":
         print(bars+'\n')
 
     setup(**setup_args)
+
+    if os.path.isdir(example_path):
+        rmtree(example_path)
