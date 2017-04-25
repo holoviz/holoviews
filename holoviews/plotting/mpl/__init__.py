@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 
-from ...core import Layout, NdOverlay, Collator, GridMatrix
+from ...core import Layout, Collator, GridMatrix
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
 from ...element import * # noqa (API import)

@@ -10,7 +10,6 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews import HoloMap, Image, ItemTable, Store, GridSpace, Table
-from holoviews.core.util import unicode
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 

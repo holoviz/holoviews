@@ -1,6 +1,4 @@
-import numpy as np
-
-from holoviews import Image, HLine, VLine, Text, Arrow, Annotation
+from holoviews import HLine, VLine, Text, Arrow, Annotation
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Points
 
@@ -12,7 +10,7 @@ class AnnotationTests(ComparisonTestCase):
 
     def test_hline_invalid_constructor(self):
         with self.assertRaises(Exception):
-            hline = HLine(None)
+            HLine(None)
 
     # NOTE: This is the correct version of the test above but it will
     # not work until the fix in param PR #149 is available.

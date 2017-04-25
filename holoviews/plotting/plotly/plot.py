@@ -1,14 +1,12 @@
 import param
-
-import plotly.graph_objs as go
 from plotly import tools
 
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
                      HoloMap, GridSpace, CompositeOverlay, GridMatrix)
+from ...element import Histogram
 from ...core.options import Store, Compositor
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
-from .renderer import PlotlyRenderer
 from .util import add_figure
 
 class PlotlyPlot(DimensionedPlot):
@@ -54,7 +52,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def _init_layout(self, layout):
         # Situate all the Layouts in the grid and compute the gridspec
         # indices for all the axes required by each LayoutPlot.
-        gidx = 0
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
@@ -63,7 +60,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}
-        inserts_cols = []
         for r, c in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             key, view = layout_items.get((c, r) if self.transpose else (r, c), (None, None))
@@ -116,10 +112,9 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
         empty axes as necessary.
         """
         subplots = {}
-        projections = []
         adjoint_clone = layout.clone(shared_data=False, id=layout.id)
         subplot_opts = dict(adjoined=layout)
-        main, main_plot = None, None
+        main_plot = None
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)
@@ -164,7 +159,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
             else:
                 adjoint_clone[pos] = subplots[pos].hmap
             if pos == 'main':
-                main = element
                 main_plot = subplot
 
         return subplots, adjoint_clone
@@ -173,10 +167,7 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
     def generate_plot(self, key, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
         plots = [[] for i in range(self.rows)]
-        passed_plots = []
-        tab_titles = {}
         insert_rows, insert_cols = [], []
-        adjoined = False
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
@@ -186,7 +177,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
-                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     if r not in insert_rows:
@@ -201,7 +191,6 @@ class LayoutPlot(PlotlyPlot, GenericLayoutPlot):
                     # Add top marginal
                     plots[r+offset-1] += [subplots.pop(-1), None]
                 elif len(subplots) > 1:
-                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     # Pad previous rows
@@ -310,9 +299,6 @@ class GridPlot(PlotlyPlot, GenericCompositePlot):
                                     for key in self.keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
-            r = i % self.cols
-            c = i // self.cols
-
             if not isinstance(coord, tuple): coord = (coord,)
             view = layout.data.get(coord, None)
             # Create subplot

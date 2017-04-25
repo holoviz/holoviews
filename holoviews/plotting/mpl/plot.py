@@ -11,13 +11,12 @@ from matplotlib import gridspec, animation
 import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
-                     Collator, GridMatrix, Layout, ViewableElement)
+                     Collator, GridMatrix, Layout)
 from ...core.options import Store, Compositor, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
-from ...core import traversal
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot)
-from ..util import get_dynamic_mode, attach_streams
+from ..util import attach_streams
 from .util import compute_ratios, fix_aspect
 
 
@@ -130,7 +129,6 @@ class MPLPlot(DimensionedPlot):
                                for i in self.fig_inches]
         else:
             self.fig_inches *= self.fig_scale
-        rc_params = self.fig_rcparams
         if self.fig_latex:
             self.fig_rcparams['text.usetex'] = True
 
@@ -1084,10 +1082,10 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
             extra_artists = list(chain(*[artists for artists in self.traverse(traverse_fn)
                                          if artists is not None]))
-            aspect = fix_aspect(fig, self.rows, self.cols,
-                                title_obj, extra_artists,
-                                vspace=self.vspace*self.fig_scale,
-                                hspace=self.hspace*self.fig_scale)
+            fix_aspect(fig, self.rows, self.cols,
+                       title_obj, extra_artists,
+                       vspace=self.vspace*self.fig_scale,
+                       hspace=self.hspace*self.fig_scale)
             colorbars = self.traverse(specs=[lambda x: hasattr(x, 'colorbar')])
             for cbar_plot in colorbars:
                 if cbar_plot.colorbar:

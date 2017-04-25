@@ -232,7 +232,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
 
         regexp="Callable accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegexp(KeyError, regexp):
-            dmap = DynamicMap(fn, kdims=['A'])
+            DynamicMap(fn, kdims=['A'])
 
 
     def test_dynamic_kdims_args_only(self):

@@ -9,7 +9,7 @@ def add_figure(fig, subfig, r, c, idx):
     """
     ref = fig._grid_ref[r][c][0][1:]
     layout = replace_refs(subfig['layout'], ref)
-    
+
     fig['layout']['xaxis%s'%ref].update(layout.get('xaxis', {}))
     fig['layout']['yaxis%s'%ref].update(layout.get('yaxis', {}))
     fig['layout']['annotations'].extend(layout.get('annotations', []))
@@ -27,7 +27,7 @@ def replace_refs(obj, ind):
         new_obj = {}
         for k, v in obj.items():
             if k in ['xref', 'yref']:
-                v = '{ax}{ind}'.format(ax=k[0], ref=ref)
+                v = '{ax}{ind}'.format(ax=k[0], ind=ind)
             new_obj[k] = replace_refs(v, ind)
         return new_obj
     else:

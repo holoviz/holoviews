@@ -252,14 +252,14 @@ class TestParameterRenaming(ComparisonTestCase):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)is not a stream parameter'
         with self.assertRaisesRegexp(KeyError, regexp):
-            renamed = xy.rename(x='xtest', z='ytest')
+            xy.rename(x='xtest', z='ytest')
 
 
     def test_clashing_rename_method(self):
         xy = PointerXY(x=0, y=4)
         regexp = '(.+?)parameter of the same name'
         with self.assertRaisesRegexp(KeyError, regexp):
-            renamed = xy.rename(x='xtest', y='x')
+            xy.rename(x='xtest', y='x')
 
     def test_update_rename_valid(self):
         xy = PointerXY(x=0, y=4)

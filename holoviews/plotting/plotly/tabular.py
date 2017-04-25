@@ -1,8 +1,5 @@
 import param
-import plotly.graph_objs as go
 from plotly.tools import FigureFactory as FF
-
-from ..plot import GenericElementPlot 
 from .element import ElementPlot
 
 
@@ -17,7 +14,7 @@ class TablePlot(ElementPlot):
         data = list(zip(*((d.pprint_value(v) for v in element.dimension_values(d))
                         for d in element.dimensions())))
         return (headings+data,), {}
-    
+
     def init_graph(self, plot_args, plot_kwargs):
         return FF.create_table(*plot_args, **plot_kwargs)
 
@@ -27,7 +24,7 @@ class TablePlot(ElementPlot):
         properties = self.style[self.cyclic_index]
         return properties
 
-    
+
     def init_layout(self, key, element, ranges):
         return dict(width=self.width, height=self.height,
                     title=self._format_title(key, separator=' '),

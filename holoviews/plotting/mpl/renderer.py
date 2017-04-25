@@ -1,5 +1,4 @@
 import sys
-
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
@@ -7,12 +6,9 @@ from itertools import chain
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
-
-from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
-
-import param
 from param.parameterized import bothmethod
 
+import param
 from ...core import HoloMap
 from ...core.options import Store
 
@@ -133,7 +129,7 @@ class MPLRenderer(Renderer):
         try:
             plots = []
             objects = obj if isinstance(obj, list) else [obj]
-            for o in obj:
+            for o in objects:
                 plots.append(self.get_plot(o))
             plt.show()
         except:

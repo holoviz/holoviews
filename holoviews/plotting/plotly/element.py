@@ -1,8 +1,6 @@
 import plotly.graph_objs as go
-from plotly.tools import FigureFactory as FF
 import param
 
-from ...core.options import Store
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .. import util
@@ -237,7 +235,6 @@ class OverlayPlot(GenericOverlayPlot, ElementPlot):
         element = self._get_frame(key)
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        graphs = []
         figure = None
         for okey, subplot in self.subplots.items():
             fig = subplot.generate_plot(key, ranges)

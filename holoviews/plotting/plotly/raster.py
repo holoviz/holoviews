@@ -3,7 +3,7 @@ import plotly.graph_objs as go
 
 from ...core.options import SkipRendering
 from ...core.util import unique_array
-from ...element import Image, Raster
+from ...element import Image
 from .element import ColorbarPlot
 
 

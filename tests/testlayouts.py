@@ -1,4 +1,3 @@
-import unittest
 from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -57,16 +56,16 @@ class AdjointLayoutTest(CompositeTest):
         self.assertEqual(layout.main, self.view3 * self.view1)
         self.assertEqual(layout.right, self.view2)
 
-    def test_adjointlayout_overlay_main_and_right(self):
+    def test_adjointlayout_overlay_main_and_right_v1(self):
         layout = (self.view1 << self.view2) * (self.view1 << self.view3)
         self.assertEqual(layout.main, self.view1 * self.view1)
         self.assertEqual(layout.right, self.view2 * self.view3)
 
-    def test_adjointlayout_overlay_main_and_right(self):
+    def test_adjointlayout_overlay_main_and_right_v2(self):
         layout = (self.view1 << self.view3) * (self.view1 << self.view2)
         self.assertEqual(layout.main, self.view1 * self.view1)
         self.assertEqual(layout.right, self.view3 * self.view2)
-        
+
     def test_adjointlayout_overlay_holomap(self):
         layout = self.hmap * (self.view1 << self.view3)
         self.assertEqual(layout.main, self.hmap * self.view1)
@@ -107,7 +106,7 @@ class AdjointLayoutTest(CompositeTest):
             (self.view1 << self.view2 << self.view3) * (self.hmap << dim_view)
 
 
-        
+
 class NdLayoutTest(CompositeTest):
 
     def test_ndlayout_init(self):

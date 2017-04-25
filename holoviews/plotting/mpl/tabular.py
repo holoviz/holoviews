@@ -3,7 +3,6 @@ from matplotlib.font_manager import FontProperties
 from matplotlib.table import Table as mpl_Table
 import param
 
-from ...core.util import bytes_to_unicode, unicode
 from .element import ElementPlot
 from .plot import mpl_rc_context
 
@@ -81,7 +80,6 @@ class TablePlot(ElementPlot):
     def _cell_value(self, element, row, col):
         summarize = element.rows > self.max_rows
         half_rows = self.max_rows//2
-        rows = min([self.max_rows, element.rows])
         if summarize and row == half_rows:
             cell_text = "..."
         else:

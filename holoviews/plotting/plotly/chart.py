@@ -1,6 +1,5 @@
 import param
 import plotly.graph_objs as go
-from plotly.tools import FigureFactory as FF
 
 from ...core import util
 from ...operation import interpolate_curve
@@ -36,7 +35,6 @@ class PointPlot(ScatterPlot):
     def get_data(self, element, ranges):
         data = dict(x=element.dimension_values(0),
                     y=element.dimension_values(1))
-        cdim = element.get_dimension(self.color_index)
         return (), data
 
 
@@ -142,7 +140,6 @@ class BarPlot(ElementPlot):
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
-        opts = self.graph_options(element, ranges)
 
         cat_dim = element.get_dimension(self.category_index)
         stack_dim = element.get_dimension(self.stack_index)
@@ -198,7 +195,6 @@ class BoxWhiskerPlot(ElementPlot):
         element = self._get_frame(key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         ranges = util.match_spec(element, ranges)
-        opts = self.graph_options(element, ranges)
 
         style = self.style[self.cyclic_index]
         orientation = 'h' if self.invert_axes else 'v'
