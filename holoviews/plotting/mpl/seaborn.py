@@ -270,7 +270,7 @@ class SNSFramePlot(DFrameViewPlot):
         if self.show_legend:
             style['label'] = element.label
 
-        axis_kwargs = self.update_handles(key, axis, element, key, ranges, style)
+        axis_kwargs = self.update_handles(key, axis, element, ranges, style)
         if axis:
             self._finalize_axis(key, element=element, **(axis_kwargs if axis_kwargs else {}))
 
