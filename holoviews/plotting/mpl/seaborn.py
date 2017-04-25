@@ -276,6 +276,7 @@ class SNSFramePlot(DFrameViewPlot):
 
 
     def _update_plot(self, axis, view, style):
+        style.pop('zorder', None)
         if self.plot_type == 'factorplot':
             opts = dict(style, **({'hue': view.x2} if view.x2 else {}))
             sns.factorplot(x=view.x, y=view.y, data=view.data, **opts)
