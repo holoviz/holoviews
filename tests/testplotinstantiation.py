@@ -530,10 +530,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
         fig = plot.state
+        renderers = [r for r in plot.traverse(lambda x: x.handles.get('glyph_renderer'))
+                     if r is not None]
         hover = fig.select(dict(type=HoverTool))
         self.assertTrue(len(hover))
         self.assertEqual(hover[0].tooltips, tooltips)
         self.assertEqual(hover[0].line_policy, line_policy)
+
+        # Ensure all the glyph renderers have a hover tool
+        for renderer in renderers:
+            self.assertTrue(any(renderer in h.renderers for h in hover))
 
     def test_points_overlay_datetime_hover(self):
         obj = NdOverlay({i: Points((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
