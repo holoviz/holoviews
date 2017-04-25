@@ -1,3 +1,4 @@
+
 from __future__ import print_function, absolute_import
 import os, sys, pydoc
 
@@ -85,3 +86,23 @@ def help(obj, visualization=True, ansi=True, backend=None,
         print((msg if visualization is False else '') + info)
     else:
         pydoc.help(obj)
+
+
+def examples(path='holoviews-examples', verbose=False):
+    """
+    Copies the notebooks to the supplied path.
+    """
+    import os, glob
+    from shutil import copytree, ignore_patterns
+
+    candidates = [os.path.join(__path__[0], '../doc/Tutorials/'),   # local doc available
+                  os.path.join(__path__[0],                         # conda
+                               '../../../../share/holoviews-examples'),
+                  os.path.join(__path__[0], './notebooks')]         # pypi
+
+    for source in candidates:
+        if os.path.exists(source):
+            copytree(source, path, ignore=ignore_patterns('.ipynb_checkpoints','*.pyc','*~'))
+            if verbose:
+                print("%s copied to %s" % (source, path))
+            break
