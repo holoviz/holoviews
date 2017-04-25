@@ -40,6 +40,37 @@ describing current work-in-progress and experimental features. If
 you find any bugs or have any feature suggestions please file a
 GitHub Issue or submit a pull request.
 
+Usage
+-----
+
+Once you've installed HoloViews, you can get started by launching
+Jupyter Notebook::
+
+  jupyter notebook
+
+Now you can download the `tutorial notebooks`_.  unzip them somewhere
+Jupyter Notebook can find them, and then open the Homepage.ipynb
+tutorial or any of the others in the Notebook.  Enjoy exploring your
+data!
+
+Note: When running HoloViews in Jupyter Notebook 5.0 a data rate limit
+was introduced which severely limits the output that HoloViews can
+display.  This limit will be removed again in the upcoming 5.1
+release, in the meantime you can raise the limit manually by
+overriding the default ``iopub_data_rate_limit``::
+
+   jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
+
+Alternatively you can set a higher default in the user configuration file
+in ``~/.jupyter/jupyter_notebook_config.py``, by adding::
+
+   c.NotebookApp.iopub_data_rate_limit=100000000
+
+If the configuration file does not exist generate one first using::
+
+   jupyter notebook --generate-config
+
+
 Features
 --------
 

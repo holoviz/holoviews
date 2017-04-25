@@ -57,11 +57,18 @@ Python distributions::
 
 See our `installation page <install.html>`_ if you need other options,
 including `pip <https://pip.pypa.io/en/stable/installing>`_
-installations, additional packages, development
-versions, and minimal installations.  Minimal installations include only
-`Param <http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_ 
-as dependencies, neither of which has any required dependencies,
-making it simple to generate HoloViews objects from within your own code.
+installations, additional packages, development versions, and minimal
+installations.  Minimal installations include only `Param
+<http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_ as
+dependencies, neither of which has any required dependencies, making
+it simple to generate HoloViews objects from within your own code.
+
+
+|PyPI|_ |Conda|_ |License|_  |Coveralls|_
+
+
+Usage
+-----
 
 Once you've installed HoloViews, you can get started by launching
 Jupyter Notebook::
@@ -73,7 +80,23 @@ Jupyter Notebook can find them, and then open the Homepage.ipynb
 tutorial or any of the others in the Notebook.  Enjoy exploring your
 data!
 
-|PyPI|_ |License|_  |Coveralls|_
+Note: When running HoloViews in Jupyter Notebook 5.0 a data rate limit
+was introduced which severely limits the output that HoloViews can
+display.  This limit will be removed again in the upcoming 5.1
+release, in the meantime you can raise the limit manually by
+overriding the default ``iopub_data_rate_limit``::
+
+   jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
+
+Alternatively you can set a higher default in the user configuration file
+in ``~/.jupyter/jupyter_notebook_config.py``, by adding::
+
+   c.NotebookApp.iopub_data_rate_limit=100000000
+
+If the configuration file does not exist generate one first using::
+
+   jupyter notebook --generate-config
+
 
 ------------
 
@@ -100,6 +123,9 @@ showing how to fix the bug or implement the feature!
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
+
+.. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
+.. _Conda: https://anaconda.org/ioam/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
