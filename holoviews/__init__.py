@@ -88,21 +88,32 @@ def help(obj, visualization=True, ansi=True, backend=None,
         pydoc.help(obj)
 
 
-def examples(path='holoviews-examples', verbose=False):
+def examples(path='holoviews-examples', verbose=False, force=False):
     """
     Copies the notebooks to the supplied path.
     """
-    import os, glob
-    from shutil import copytree, ignore_patterns
+    import glob
+    from shutil import copytree, ignore_patterns, copyfile
 
-    candidates = [os.path.join(__path__[0], '../doc/Tutorials/'),   # local doc available
-                  os.path.join(__path__[0],                         # conda
-                               '../../../../share/holoviews-examples'),
-                  os.path.join(__path__[0], './notebooks')]         # pypi
+    # A dictionary defining the example files to collect structured
+    # into subfolders along with globs and file type extensions
+    example_files = {'notebooks': [('../doc/Tutorials/*.{ext}', ('ipynb',))],
+                     'assets':    [('../doc/assets/*.{ext}', ('png', 'svg', 'rst'))]}
 
-    for source in candidates:
-        if os.path.exists(source):
-            copytree(source, path, ignore=ignore_patterns('.ipynb_checkpoints','*.pyc','*~'))
-            if verbose:
-                print("%s copied to %s" % (source, path))
-            break
+    packaged_examples = os.path.join(__path__[0], './examples')
+    if os.path.exists(packaged_examples) and not force:
+        copytree(packaged_examples, path, ignore=ignore_patterns('.ipynb_checkpoints','*.pyc','*~'))
+        if verbose:
+            print("%s copied to %s" % (source, path))
+    else:
+        if not os.path.isdir(path): os.mkdir(path)
+        for subpath, files in example_files.items():
+            subfolder = os.path.join(path, subpath)
+            if not os.path.isdir(subfolder): os.mkdir(subfolder)
+            for gl, extensions in files:
+                file_glob = os.path.join(__path__[0], gl)
+                for p in [p for ext in extensions for p in glob.glob(file_glob.format(ext=ext))]:
+                    dest = os.path.join(subfolder, os.path.basename(p))
+                    copyfile(p, dest)
+                    if verbose:
+                        print("%s copied to %s" % (p, path))

@@ -92,35 +92,20 @@ def check_pseudo_package(path):
 
 def package_assets():
     """
-    Generates pseudo-packages for all assets including notebooks,
-    image and data files and for tests.
+    Generates pseudo-packages for example files.
     """
-    if not os.path.isdir('holoviews/assets'):
-        os.mkdir('holoviews/assets')
-    for asset in [g for ext in ('png', 'svg', 'rst') for g in glob.glob('./doc/*/*.%s' % ext)]:
-        copyfile(asset, os.path.join('./holoviews/assets', os.path.basename(asset)))
+    import holoviews
+    holoviews.examples('holoviews/examples', force=True)
 
-    if not os.path.isdir('holoviews/notebooks'):
-        os.mkdir('holoviews/notebooks')
-    for nb in [g for ext in ('ipynb', 'npy') for g in glob.glob('./doc/*/*.%s' % ext)]:
-        copyfile(nb, os.path.join('holoviews/notebooks/', os.path.basename(nb)))
+    setup_args['packages'] += ['holoviews.examples', 'holoviews.examples.assets', 'holoviews.examples.notebooks']
+    setup_args['package_data']['holoviews.examples.notebooks'] = ['*.ipynb', '*.npy']
+    setup_args['package_data']['holoviews.examples.assets'] = ['*.png', '*.svg', '*.rst']
 
-    if not os.path.isdir('holoviews/tests'):
-        os.mkdir('holoviews/tests')
-    for nb in glob.glob('./tests/*.py'):
-        copyfile(nb, os.path.join('holoviews/tests/', os.path.basename(nb)))
-
-    setup_args['packages'] += ['holoviews.assets', 'holoviews.notebooks', 'holoviews.tests']
-    setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
-    setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
-
-    check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
-    check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
-    check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
+    check_pseudo_package(os.path.join('.', 'holoviews', 'examples', 'assets'))
+    check_pseudo_package(os.path.join('.', 'holoviews', 'examples', 'notebooks'))
 
 
 if __name__=="__main__":
-
     if not 'develop' in sys.argv:
         package_assets()
 
