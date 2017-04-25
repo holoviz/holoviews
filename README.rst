@@ -92,12 +92,6 @@ Features
 * Automatic display of animated formats in the notebook or for export, including gif, webm, and mp4.
 * Useful IPython magics for configuring global display options and for customizing objects.
 * `Automatic archival and export of notebooks <http://www.holoviews.org/Tutorials/Exporting.html>`_, including extracting figures as SVG, generating a static HTML copy of your results for reference, and storing your optional metadata like version control information.
-
-**Integration with third-party libraries**
-
-* Flexible interface to both the `pandas and Seaborn libraries <http://www.holoviews.org/Tutorials/Pandas_Seaborn.html>`_
-* Immediately visualize pandas data as any HoloViews object.
-* Seamlessly combine and animate your Seaborn plots in HoloViews rich, compositional data-structures.
    
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
