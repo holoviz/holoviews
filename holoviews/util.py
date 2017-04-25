@@ -4,7 +4,7 @@ import param
 
 from .core import DynamicMap, HoloMap, ViewableElement
 from .core.operation import ElementOperation
-from .core.util import Aliases
+from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
 from .core.spaces import Callable
 from .core import util
