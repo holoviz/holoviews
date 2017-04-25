@@ -8,7 +8,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.3.2', 'numpy>=1.0']
+install_requires = ['param>=1.5,<2.0', 'numpy>=1.0']
 extras_require={}
 
 # Notebook dependencies of IPython 3
@@ -18,7 +18,7 @@ extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornad
 extras_require['recommended'] = (extras_require['notebook-dependencies']
                                  + ['matplotlib', 'lancet-ioam'])
 # Additional, useful third-party packages
-extras_require['extras'] = (['pandas', 'seaborn', 'mpld3', 'bokeh']
+extras_require['extras'] = (['pandas', 'seaborn', 'mpld3', 'bokeh==0.12.5']
                             + extras_require['recommended'])
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = (extras_require['recommended']
@@ -27,7 +27,7 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.7dev8",
+    version="1.7",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -85,23 +85,9 @@ def check_pseudo_package(path):
 
 if __name__=="__main__":
 
-    if 'HOLOVIEWS_RELEASE' in os.environ:
-        # Make sure to create these directories and populate them before upload
-        setup_args['packages'] += ["holoviews.assets", 'holoviews.notebooks']
-
-        # Add unit tests
-        setup_args['packages'].append('holoviews.tests')
-
-        setup_args['package_data']['holoviews.assets'] = ['*.png', '*.svg', '*.rst']
-        setup_args['package_data']['holoviews.notebooks'] = ['*.ipynb', '*.npy']
-
-        if ('upload' in sys.argv) or ('sdist' in sys.argv):
-            check_pseudo_package(os.path.join('.', 'holoviews', 'tests'))
-            check_pseudo_package(os.path.join('.', 'holoviews', 'assets'))
-            check_pseudo_package(os.path.join('.', 'holoviews', 'notebooks'))
-
-            import holoviews
-            holoviews.__version__.verify(setup_args['version'])
+    if ('upload' in sys.argv) or ('sdist' in sys.argv):
+        import holoviews
+        holoviews.__version__.verify(setup_args['version'])
 
 
     if 'install' in sys.argv:
