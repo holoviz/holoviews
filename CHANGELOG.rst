@@ -1,3 +1,372 @@
+Version 1.7.0
+-------------
+
+This version is a major new release incorporating seven months of work
+involving several hundred PRs and over 1700 commits.  Highlights
+include extensive new support for easily building highly interactive
+[Bokeh](http://bokeh.pydata.org) plots, support for using
+[datashader](https://github.com/bokeh/datashader)-based plots for
+working with large datasets, support for rendering images
+interactively but outside of the notebook, better error handling, and
+support for Matplotlib 2.0 and Bokeh 0.12.5.  The PRs linked below
+serve as initial documentation for these features, and full
+documentation will be added in the run-up to HoloViews 2.0.
+
+Major features and improvements:
+
+- Interactive Streams API (PR `#832
+  <https://github.com/ioam/holoviews/pull/832>`_, `#838
+  <https://github.com/ioam/holoviews/pull/838>`_, `#842
+  <https://github.com/ioam/holoviews/pull/842>`_, `#844
+  <https://github.com/ioam/holoviews/pull/844>`_, `#845
+  <https://github.com/ioam/holoviews/pull/845>`_, `#846
+  <https://github.com/ioam/holoviews/pull/846>`_, `#858
+  <https://github.com/ioam/holoviews/pull/858>`_, `#860
+  <https://github.com/ioam/holoviews/pull/860>`_, `#889
+  <https://github.com/ioam/holoviews/pull/889>`_, `#904
+  <https://github.com/ioam/holoviews/pull/904>`_, `#913
+  <https://github.com/ioam/holoviews/pull/913>`_, `#933
+  <https://github.com/ioam/holoviews/pull/933>`_, `#962
+  <https://github.com/ioam/holoviews/pull/962>`_, `#964
+  <https://github.com/ioam/holoviews/pull/964>`_, `#1094
+  <https://github.com/ioam/holoviews/pull/1094>`_, `#1256
+  <https://github.com/ioam/holoviews/pull/1256>`_, `#1274
+  <https://github.com/ioam/holoviews/pull/1274>`_, `#1297
+  <https://github.com/ioam/holoviews/pull/1297>`_, `#1301
+  <https://github.com/ioam/holoviews/pull/1301>`_, `#1303
+  <https://github.com/ioam/holoviews/pull/1303>`_).
+- Dynamic Callable API (PR `#951
+  <https://github.com/ioam/holoviews/pull/951>`_, `#1103
+  <https://github.com/ioam/holoviews/pull/1103>`_, `#1029
+  <https://github.com/ioam/holoviews/pull/1029>`_, `#968
+  <https://github.com/ioam/holoviews/pull/968>`_, `#935
+  <https://github.com/ioam/holoviews/pull/935>`_, `#1063
+  <https://github.com/ioam/holoviews/pull/1063>`_, `#1260
+  <https://github.com/ioam/holoviews/pull/1260>`_).
+- Simpler and more powerful DynamicMap (PR `#1238
+  <https://github.com/ioam/holoviews/pull/1238>`_, `#1240
+  <https://github.com/ioam/holoviews/pull/1240>`_, `#1243
+  <https://github.com/ioam/holoviews/pull/1243>`_, `#1257
+  <https://github.com/ioam/holoviews/pull/1257>`_, `#1267
+  <https://github.com/ioam/holoviews/pull/1267>`_, `#1302
+  <https://github.com/ioam/holoviews/pull/1302>`_, `#1304
+  <https://github.com/ioam/holoviews/pull/1304>`_, `#1305
+  <https://github.com/ioam/holoviews/pull/1305>`_).
+- Fully general support for Bokeh events (PR `#892
+  <https://github.com/ioam/holoviews/pull/892>`_, `#1148
+  <https://github.com/ioam/holoviews/pull/1148>`_, `#1235
+  <https://github.com/ioam/holoviews/pull/1235>`_).
+- Datashader operations (PR `#894
+  <https://github.com/ioam/holoviews/pull/894>`_, `#907
+  <https://github.com/ioam/holoviews/pull/907>`_, `#963
+  <https://github.com/ioam/holoviews/pull/963>`_, `#1125
+  <https://github.com/ioam/holoviews/pull/1125>`_, `#1281
+  <https://github.com/ioam/holoviews/pull/1281>`_, `#1306
+  <https://github.com/ioam/holoviews/pull/1306>`_).
+- Support for Bokeh apps and Bokeh Server (PR `#959
+  <https://github.com/ioam/holoviews/pull/959>`_, `#1283
+  <https://github.com/ioam/holoviews/pull/1283>`_).
+- Working with renderers interactively outside the notebook (PR `#1214
+  <https://github.com/ioam/holoviews/pull/1214>`_).
+- Support for Matplotlib 2.0 (PR `#867
+  <https://github.com/ioam/holoviews/pull/867>`_, `#868
+  <https://github.com/ioam/holoviews/pull/868>`_, `#1131
+  <https://github.com/ioam/holoviews/pull/1131>`_, `#1264
+  <https://github.com/ioam/holoviews/pull/1264>`_, `#1266
+  <https://github.com/ioam/holoviews/pull/1266>`_).
+- Support for Bokeh 0.12.2, 0.12.3, 0.12.4, and 0.12.5 (PR `#899
+  <https://github.com/ioam/holoviews/pull/899>`_, `#900
+  <https://github.com/ioam/holoviews/pull/900>`_, `#1007
+  <https://github.com/ioam/holoviews/pull/1007>`_, `#1036
+  <https://github.com/ioam/holoviews/pull/1036>`_, `#1116
+  <https://github.com/ioam/holoviews/pull/1116>`_).
+- Many new features for the Bokeh backend: widgets editable (PR `#1247
+  <https://github.com/ioam/holoviews/pull/1247>`_), selection colors
+  and interactive legends (PR `#1220
+  <https://github.com/ioam/holoviews/pull/1220>`_), GridSpace axes (PR
+  `#1150 <https://github.com/ioam/holoviews/pull/1150>`_), categorical
+  axes and colormapping (PR `#1089
+  <https://github.com/ioam/holoviews/pull/1089>`_, `#1137
+  <https://github.com/ioam/holoviews/pull/1137>`_), computing plot
+  size (PR `#1140 <https://github.com/ioam/holoviews/pull/1140>`_),
+  GridSpaces inside Layouts (PR `#1104
+  <https://github.com/ioam/holoviews/pull/1104>`_), Layout/Grid titles
+  (PR `#1017 <https://github.com/ioam/holoviews/pull/1017>`_),
+  histogram with live colormapping (PR `#928
+  <https://github.com/ioam/holoviews/pull/928>`_), colorbars (PR `#861
+  <https://github.com/ioam/holoviews/pull/861>`_), finalize_hooks (PR
+  `#1040 <https://github.com/ioam/holoviews/pull/1040>`_), labelled
+  and show_frame options (PR `#863
+  <https://github.com/ioam/holoviews/pull/863>`_, `#1013
+  <https://github.com/ioam/holoviews/pull/1013>`_), styling hover
+  glyphs (PR `#1286 <https://github.com/ioam/holoviews/pull/1286>`_),
+  hiding legends on BarPlot (PR `#837
+  <https://github.com/ioam/holoviews/pull/837>`_), VectorField plot
+  (PR `#1196 <https://github.com/ioam/holoviews/pull/1196>`_),
+  Histograms now have same color cycle as mpl (`#1008
+  <https://github.com/ioam/holoviews/pull/1008>`_).
+- Implemented convenience redim methods to easily set dimension
+  ranges, values etc. (PR `#1302
+  <https://github.com/ioam/holoviews/pull/1302>`_)
+- Made methods on and operations applied to DynamicMap lazy (`#422
+  <https://github.com/ioam/holoviews/pull/422>`_, `#588
+  <https://github.com/ioam/holoviews/pull/588>`_, `#1188
+  <https://github.com/ioam/holoviews/pull/1188>`_, `#1240
+  <https://github.com/ioam/holoviews/pull/1240>`_, `#1227
+  <https://github.com/ioam/holoviews/pull/1227>`_)
+- Improved documentation (PR `#936
+  <https://github.com/ioam/holoviews/pull/936>`_, `#1070
+  <https://github.com/ioam/holoviews/pull/1070>`_, `#1242
+  <https://github.com/ioam/holoviews/pull/1242>`_, `#1273
+  <https://github.com/ioam/holoviews/pull/1273>`_, `#1280
+  <https://github.com/ioam/holoviews/pull/1280>`_).
+- Improved error handling (PR `#906
+  <https://github.com/ioam/holoviews/pull/906>`_, `#932
+  <https://github.com/ioam/holoviews/pull/932>`_, `#939
+  <https://github.com/ioam/holoviews/pull/939>`_, `#949
+  <https://github.com/ioam/holoviews/pull/949>`_, `#1011
+  <https://github.com/ioam/holoviews/pull/1011>`_, `#1290
+  <https://github.com/ioam/holoviews/pull/1290>`_, `#1262
+  <https://github.com/ioam/holoviews/pull/1262>`_, `#1295
+  <https://github.com/ioam/holoviews/pull/1295>`_), including
+  re-enabling option system keyword validation (PR `#1277
+  <https://github.com/ioam/holoviews/pull/1277>`_).
+- Improved testing (PR `#834
+  <https://github.com/ioam/holoviews/pull/834>`_, `#871
+  <https://github.com/ioam/holoviews/pull/871>`_, `#881
+  <https://github.com/ioam/holoviews/pull/881>`_, `#941
+  <https://github.com/ioam/holoviews/pull/941>`_, `#1117
+  <https://github.com/ioam/holoviews/pull/1117>`_, `#1153
+  <https://github.com/ioam/holoviews/pull/1153>`_, `#1171
+  <https://github.com/ioam/holoviews/pull/1171>`_, `#1207
+  <https://github.com/ioam/holoviews/pull/1207>`_, `#1246
+  <https://github.com/ioam/holoviews/pull/1246>`_, `#1259
+  <https://github.com/ioam/holoviews/pull/1259>`_, `#1287
+  <https://github.com/ioam/holoviews/pull/1287>`_).
+
+
+Other new features and improvements:
+
+- Operations for timeseries (PR `#1172
+  <https://github.com/ioam/holoviews/pull/1172>`_), downsample_columns
+  (PR `#903 <https://github.com/ioam/holoviews/pull/903>`_),
+  interpolate_curve (PR `#1097
+  <https://github.com/ioam/holoviews/pull/1097>`_), and stacked area
+  (PR `#1193 <https://github.com/ioam/holoviews/pull/1193>`_).
+- Dataset types can be declared as empty by passing an empty list (PR
+  `#1355 <https://github.com/ioam/holoviews/pull/1355>`_)
+- Plot or style options for Curve interpolation (PR `#1097
+  <https://github.com/ioam/holoviews/pull/1097>`_), transposing
+  layouts (PR `#1100 <https://github.com/ioam/holoviews/pull/1100>`_),
+  multiple paths (PR `#997
+  <https://github.com/ioam/holoviews/pull/997>`_), and norm for
+  ColorbarPlot (PR `#957
+  <https://github.com/ioam/holoviews/pull/957>`_).
+- Improved options inheritance for more intuitive behavior (PR `#1275
+  <https://github.com/ioam/holoviews/pull/1275>`_).
+- Image interface providing similar functionality for Image and
+  non-Image types (making GridImage obsolete) (PR `#994
+  <https://github.com/ioam/holoviews/pull/994>`_).
+- dask data interface (PR `#974
+  <https://github.com/ioam/holoviews/pull/974>`_, `#991
+  <https://github.com/ioam/holoviews/pull/991>`_).
+- xarray aggregate/reduce (PR `#1192
+  <https://github.com/ioam/holoviews/pull/1192>`_).
+- Indicate color clipping and control clipping colors (PR `#686
+  <https://github.com/ioam/holoviews/pull/686>`_).
+- Better datetime handling (PR `#1098
+  <https://github.com/ioam/holoviews/pull/1098>`_).
+- Gridmatrix diagonal types (PR `#1194
+  <https://github.com/ioam/holoviews/pull/1194>`_, `#1027
+  <https://github.com/ioam/holoviews/pull/1027>`_).
+- log option for histogram operation (PR `#929
+  <https://github.com/ioam/holoviews/pull/929>`_).
+- Perceptually uniform fire colormap (PR `#943
+  <https://github.com/ioam/holoviews/pull/943>`_).
+- Support for adjoining overlays (PR `#1213
+  <https://github.com/ioam/holoviews/pull/1213>`_).
+- coloring weighted average in SideHistogram (PR `#1087
+  <https://github.com/ioam/holoviews/pull/1087>`_).
+- HeatMap allows displaying multiple values on hover (PR `#849
+  <https://github.com/ioam/holoviews/pull/849>`_).
+- Allow casting Image to QuadMesh (PR `#1282
+  <https://github.com/ioam/holoviews/pull/1282>`_).
+- Unused columns are now preserved in gridded groupby (PR `#1154
+  <https://github.com/ioam/holoviews/pull/1154>`_).
+- Optimizations and fixes for constructing Layout/Overlay types (PR
+  `#952 <https://github.com/ioam/holoviews/pull/952>`_).
+- DynamicMap fixes (PR `#848
+  <https://github.com/ioam/holoviews/pull/848>`_, `#883
+  <https://github.com/ioam/holoviews/pull/883>`_, `#911
+  <https://github.com/ioam/holoviews/pull/911>`_, `#922
+  <https://github.com/ioam/holoviews/pull/922>`_, `#923
+  <https://github.com/ioam/holoviews/pull/923>`_, `#927
+  <https://github.com/ioam/holoviews/pull/927>`_, `#944
+  <https://github.com/ioam/holoviews/pull/944>`_, `#1170
+  <https://github.com/ioam/holoviews/pull/1170>`_, `#1227
+  <https://github.com/ioam/holoviews/pull/1227>`_, `#1270
+  <https://github.com/ioam/holoviews/pull/1270>`_).
+- Bokeh-backend fixes including handling of empty frames (`#835
+  <https://github.com/ioam/holoviews/pull/835>`_), faster updates
+  (`#905 <https://github.com/ioam/holoviews/pull/905>`_), hover tool
+  fixes (`#1004 <https://github.com/ioam/holoviews/pull/1004>`_,
+  `#1178 <https://github.com/ioam/holoviews/pull/1178>`_, `#1092
+  <https://github.com/ioam/holoviews/pull/1092>`_, `#1250
+  <https://github.com/ioam/holoviews/pull/1250>`_) and many more (PR
+  `#537 <https://github.com/ioam/holoviews/pull/537>`_, `#851
+  <https://github.com/ioam/holoviews/pull/851>`_, `#852
+  <https://github.com/ioam/holoviews/pull/852>`_, `#854
+  <https://github.com/ioam/holoviews/pull/854>`_, `#880
+  <https://github.com/ioam/holoviews/pull/880>`_, `#896
+  <https://github.com/ioam/holoviews/pull/896>`_, `#898
+  <https://github.com/ioam/holoviews/pull/898>`_, `#921
+  <https://github.com/ioam/holoviews/pull/921>`_, `#934
+  <https://github.com/ioam/holoviews/pull/934>`_, `#1004
+  <https://github.com/ioam/holoviews/pull/1004>`_, `#1010
+  <https://github.com/ioam/holoviews/pull/1010>`_, `#1014
+  <https://github.com/ioam/holoviews/pull/1014>`_, `#1030
+  <https://github.com/ioam/holoviews/pull/1030>`_, `#1069
+  <https://github.com/ioam/holoviews/pull/1069>`_, `#1072
+  <https://github.com/ioam/holoviews/pull/1072>`_, `#1085
+  <https://github.com/ioam/holoviews/pull/1085>`_, `#1157
+  <https://github.com/ioam/holoviews/pull/1157>`_, `#1086
+  <https://github.com/ioam/holoviews/pull/1086>`_, `#1169
+  <https://github.com/ioam/holoviews/pull/1169>`_, `#1195
+  <https://github.com/ioam/holoviews/pull/1195>`_, `#1263
+  <https://github.com/ioam/holoviews/pull/1263>`_).
+- Matplotlib-backend fixes and improvements (PR `#864
+  <https://github.com/ioam/holoviews/pull/864>`_, `#873
+  <https://github.com/ioam/holoviews/pull/873>`_, `#954
+  <https://github.com/ioam/holoviews/pull/954>`_, `#1037
+  <https://github.com/ioam/holoviews/pull/1037>`_, `#1068
+  <https://github.com/ioam/holoviews/pull/1068>`_, `#1128
+  <https://github.com/ioam/holoviews/pull/1128>`_, `#1132
+  <https://github.com/ioam/holoviews/pull/1132>`_, `#1143
+  <https://github.com/ioam/holoviews/pull/1143>`_, `#1163
+  <https://github.com/ioam/holoviews/pull/1163>`_, `#1209
+  <https://github.com/ioam/holoviews/pull/1209>`_, `#1211
+  <https://github.com/ioam/holoviews/pull/1211>`_, `#1225
+  <https://github.com/ioam/holoviews/pull/1225>`_, `#1269
+  <https://github.com/ioam/holoviews/pull/1269>`_, `#1300
+  <https://github.com/ioam/holoviews/pull/1300>`_).
+- Many other small improvements and fixes (PR `#830
+  <https://github.com/ioam/holoviews/pull/830>`_, `#840
+  <https://github.com/ioam/holoviews/pull/840>`_, `#841
+  <https://github.com/ioam/holoviews/pull/841>`_, `#850
+  <https://github.com/ioam/holoviews/pull/850>`_, `#855
+  <https://github.com/ioam/holoviews/pull/855>`_, `#856
+  <https://github.com/ioam/holoviews/pull/856>`_, `#859
+  <https://github.com/ioam/holoviews/pull/859>`_, `#865
+  <https://github.com/ioam/holoviews/pull/865>`_, `#893
+  <https://github.com/ioam/holoviews/pull/893>`_, `#897
+  <https://github.com/ioam/holoviews/pull/897>`_, `#902
+  <https://github.com/ioam/holoviews/pull/902>`_, `#912
+  <https://github.com/ioam/holoviews/pull/912>`_, `#916
+  <https://github.com/ioam/holoviews/pull/916>`_, `#925
+  <https://github.com/ioam/holoviews/pull/925>`_, `#938
+  <https://github.com/ioam/holoviews/pull/938>`_, `#940
+  <https://github.com/ioam/holoviews/pull/940>`_, `#948
+  <https://github.com/ioam/holoviews/pull/948>`_, `#950
+  <https://github.com/ioam/holoviews/pull/950>`_, `#955
+  <https://github.com/ioam/holoviews/pull/955>`_, `#956
+  <https://github.com/ioam/holoviews/pull/956>`_, `#967
+  <https://github.com/ioam/holoviews/pull/967>`_, `#970
+  <https://github.com/ioam/holoviews/pull/970>`_, `#972
+  <https://github.com/ioam/holoviews/pull/972>`_, `#973
+  <https://github.com/ioam/holoviews/pull/973>`_, `#981
+  <https://github.com/ioam/holoviews/pull/981>`_, `#992
+  <https://github.com/ioam/holoviews/pull/992>`_, `#998
+  <https://github.com/ioam/holoviews/pull/998>`_, `#1009
+  <https://github.com/ioam/holoviews/pull/1009>`_, `#1012
+  <https://github.com/ioam/holoviews/pull/1012>`_, `#1016
+  <https://github.com/ioam/holoviews/pull/1016>`_, `#1023
+  <https://github.com/ioam/holoviews/pull/1023>`_, `#1034
+  <https://github.com/ioam/holoviews/pull/1034>`_, `#1043
+  <https://github.com/ioam/holoviews/pull/1043>`_, `#1045
+  <https://github.com/ioam/holoviews/pull/1045>`_, `#1046
+  <https://github.com/ioam/holoviews/pull/1046>`_, `#1048
+  <https://github.com/ioam/holoviews/pull/1048>`_, `#1050
+  <https://github.com/ioam/holoviews/pull/1050>`_, `#1051
+  <https://github.com/ioam/holoviews/pull/1051>`_, `#1054
+  <https://github.com/ioam/holoviews/pull/1054>`_, `#1060
+  <https://github.com/ioam/holoviews/pull/1060>`_, `#1062
+  <https://github.com/ioam/holoviews/pull/1062>`_, `#1074
+  <https://github.com/ioam/holoviews/pull/1074>`_, `#1082
+  <https://github.com/ioam/holoviews/pull/1082>`_, `#1084
+  <https://github.com/ioam/holoviews/pull/1084>`_, `#1088
+  <https://github.com/ioam/holoviews/pull/1088>`_, `#1093
+  <https://github.com/ioam/holoviews/pull/1093>`_, `#1099
+  <https://github.com/ioam/holoviews/pull/1099>`_, `#1115
+  <https://github.com/ioam/holoviews/pull/1115>`_, `#1119
+  <https://github.com/ioam/holoviews/pull/1119>`_, `#1121
+  <https://github.com/ioam/holoviews/pull/1121>`_, `#1130
+  <https://github.com/ioam/holoviews/pull/1130>`_, `#1133
+  <https://github.com/ioam/holoviews/pull/1133>`_, `#1151
+  <https://github.com/ioam/holoviews/pull/1151>`_, `#1152
+  <https://github.com/ioam/holoviews/pull/1152>`_, `#1155
+  <https://github.com/ioam/holoviews/pull/1155>`_, `#1156
+  <https://github.com/ioam/holoviews/pull/1156>`_, `#1158
+  <https://github.com/ioam/holoviews/pull/1158>`_, `#1162
+  <https://github.com/ioam/holoviews/pull/1162>`_, `#1164
+  <https://github.com/ioam/holoviews/pull/1164>`_, `#1174
+  <https://github.com/ioam/holoviews/pull/1174>`_, `#1175
+  <https://github.com/ioam/holoviews/pull/1175>`_, `#1180
+  <https://github.com/ioam/holoviews/pull/1180>`_, `#1187
+  <https://github.com/ioam/holoviews/pull/1187>`_, `#1197
+  <https://github.com/ioam/holoviews/pull/1197>`_, `#1202
+  <https://github.com/ioam/holoviews/pull/1202>`_, `#1205
+  <https://github.com/ioam/holoviews/pull/1205>`_, `#1206
+  <https://github.com/ioam/holoviews/pull/1206>`_, `#1210
+  <https://github.com/ioam/holoviews/pull/1210>`_, `#1217
+  <https://github.com/ioam/holoviews/pull/1217>`_, `#1219
+  <https://github.com/ioam/holoviews/pull/1219>`_, `#1228
+  <https://github.com/ioam/holoviews/pull/1228>`_, `#1232
+  <https://github.com/ioam/holoviews/pull/1232>`_, `#1241
+  <https://github.com/ioam/holoviews/pull/1241>`_, `#1244
+  <https://github.com/ioam/holoviews/pull/1244>`_, `#1245
+  <https://github.com/ioam/holoviews/pull/1245>`_, `#1249
+  <https://github.com/ioam/holoviews/pull/1249>`_, `#1254
+  <https://github.com/ioam/holoviews/pull/1254>`_, `#1255
+  <https://github.com/ioam/holoviews/pull/1255>`_, `#1271
+  <https://github.com/ioam/holoviews/pull/1271>`_, `#1276
+  <https://github.com/ioam/holoviews/pull/1276>`_, `#1278
+  <https://github.com/ioam/holoviews/pull/1278>`_, `#1285
+  <https://github.com/ioam/holoviews/pull/1285>`_, `#1288
+  <https://github.com/ioam/holoviews/pull/1288>`_, `#1289
+  <https://github.com/ioam/holoviews/pull/1289>`_).
+
+Changes affecting backwards compatibility:
+
+- Automatic coloring and sizing on Points now disabled (PR `#748
+  <https://github.com/ioam/holoviews/pull/748>`_).
+- Deprecated max_branches output magic option (PR `#1293
+  <https://github.com/ioam/holoviews/pull/1293>`_).
+- Deprecated GridImage (PR `#1292
+  <https://github.com/ioam/holoviews/pull/1292>`_, `#1223
+  <https://github.com/ioam/holoviews/pull/1223>`_).
+- Deprecated NdElement (PR `#1191
+  <https://github.com/ioam/holoviews/pull/1191>`_).
+- Deprecated DFrame conversion methods (PR `#1065
+  <https://github.com/ioam/holoviews/pull/1065>`_).
+- Banner text removed from `notebook_extension()` (PR `#1231
+  <https://github.com/ioam/holoviews/pull/1231>`_, `#1291
+  <https://github.com/ioam/holoviews/pull/1291>`_).
+- Bokeh's matplotlib compatibility module removed (PR `#1239
+  <https://github.com/ioam/holoviews/pull/1239>`_).
+- `ls` as matplotlib `linestyle` alias dropped (PR `#1203
+  <https://github.com/ioam/holoviews/pull/1203>`_).
+- `mdims` argument of conversion interface renamed to `groupby` (PR
+  `#1066 <https://github.com/ioam/holoviews/pull/1066>`_).
+- Replaced global alias state with Dimension.label (`#1083
+  <https://github.com/ioam/holoviews/pull/1083>`_).
+- DynamicMap only update ranges when set to framewise
+- Deprecated DynamicMap sampled, bounded, open and generator modes
+  (`#969 <https://github.com/ioam/holoviews/pull/969>`_, `#1305
+  <https://github.com/ioam/holoviews/pull/1305>`_)
+- Layout.display method is now deprecated (`#1026
+  <https://github.com/ioam/holoviews/pull/1026>`_)
+
+
 Version 1.6.2
 -------------
 
