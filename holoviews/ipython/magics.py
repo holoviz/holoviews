@@ -665,7 +665,7 @@ class OptsMagic(Magics):
                                                             loaded_backends[-1])
 
         suggestion = ("If you believe this keyword is correct, please make sure "
-                      "the backend hasbeen imported or loaded with the "
+                      "the backend has been imported or loaded with the "
                       "notebook_extension.")
 
         group = '{0} option'.format(err.group_name) if err.group_name else 'keyword'
