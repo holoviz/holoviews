@@ -16,6 +16,7 @@ class ExtensionTestCase(IPTestCase):
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
 
     def tearDown(self):
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         self.ip.run_line_magic("unload_ext", "holoviews.ipython")
         del self.ip
         super(ExtensionTestCase, self).tearDown()
