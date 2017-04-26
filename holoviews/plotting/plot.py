@@ -70,6 +70,7 @@ class Plot(param.Parameterized):
 
     @classmethod
     def lookup_options(cls, obj, group):
+        plot_class = None
         try:
             plot_class = Store.renderers[cls.backend].plotting_class(obj)
             style_opts = plot_class.style_opts
@@ -79,7 +80,7 @@ class Plot(param.Parameterized):
         node = Store.lookup_options(cls.backend, obj, group)
         if group == 'style' and style_opts:
             return node.filtered(style_opts)
-        elif group == 'plot':
+        elif group == 'plot' and plot_class:
             return node.filtered(list(plot_class.params().keys()))
         else:
             return node
