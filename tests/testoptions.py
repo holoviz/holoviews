@@ -206,6 +206,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestStoreInheritanceDynamic, self).tearDown()
 
     def initialize_option_tree(self):
@@ -417,6 +418,7 @@ class TestStoreInheritance(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.store_copy)
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestStoreInheritance, self).tearDown()
 
     def test_original_style_options(self):
