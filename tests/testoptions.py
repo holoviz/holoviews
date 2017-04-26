@@ -487,7 +487,7 @@ class TestOptionTreeFind(ComparisonTestCase):
 
     def tearDown(self):
         Store.options(val=self.original_options)
-
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
 
     def test_optiontree_find1(self):
         self.assertEqual(self.options.find('MyType').options('group').options,
@@ -559,6 +559,7 @@ class TestCrossBackendOptions(ComparisonTestCase):
         Store.options(val=self.store_mpl, backend='matplotlib')
         Store.options(val=self.store_bokeh, backend='bokeh')
         Store.current_backend = 'matplotlib'
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestCrossBackendOptions, self).tearDown()
 
 
