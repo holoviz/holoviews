@@ -664,16 +664,21 @@ class OptsMagic(Magics):
             loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
                                                             loaded_backends[-1])
 
+        suggestion = ("If you believe this keyword is correct, please make sure "
+                      "the backend hasbeen imported or loaded with the "
+                      "notebook_extension.")
+
         group = '{0} option'.format(err.group_name) if err.group_name else 'keyword'
         msg=('Unexpected {group} {kw} {target}{loaded}.<br><br>'
              '{similarity} keywords in the currently active '
-             '{current_backend} backend are: {matches}')
+             '{current_backend} backend are: {matches}<br><br>{suggestion}')
         return msg.format(kw="'%s'" % err.invalid_keyword,
                           target=target,
                           group=group,
                           loaded=loaded, similarity=similarity,
                           current_backend=repr(Store.current_backend),
-                          matches=matches)
+                          matches=matches,
+                          suggestion=suggestion)
 
     @classmethod
     def register_custom_spec(cls, spec):
