@@ -1,4 +1,5 @@
 import time
+import sys
 from collections import defaultdict
 
 try:
@@ -617,6 +618,7 @@ class OptsMagic(Magics):
     """
     error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
+    strict = False
 
     @classmethod
     def process_element(cls, obj):
@@ -628,7 +630,10 @@ class OptsMagic(Magics):
         normal.
         """
         if cls.error_message:
-            return cls.error_message
+            if cls.strict:
+                return cls.error_message
+            else:
+                sys.stderr.write(cls.error_message.replace('<br>','\n'))
         if cls.opts_spec is not None:
             StoreOptions.set_options(obj, cls.opts_spec)
             cls.opts_spec = None
@@ -659,16 +664,21 @@ class OptsMagic(Magics):
             loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
                                                             loaded_backends[-1])
 
+        suggestion = ("If you believe this keyword is correct, please make sure "
+                      "the backend has been imported or loaded with the "
+                      "notebook_extension.")
+
         group = '{0} option'.format(err.group_name) if err.group_name else 'keyword'
         msg=('Unexpected {group} {kw} {target}{loaded}.<br><br>'
              '{similarity} keywords in the currently active '
-             '{current_backend} backend are: {matches}')
+             '{current_backend} backend are: {matches}<br><br>{suggestion}')
         return msg.format(kw="'%s'" % err.invalid_keyword,
                           target=target,
                           group=group,
                           loaded=loaded, similarity=similarity,
                           current_backend=repr(Store.current_backend),
-                          matches=matches)
+                          matches=matches,
+                          suggestion=suggestion)
 
     @classmethod
     def register_custom_spec(cls, spec):
@@ -677,7 +687,6 @@ class OptsMagic(Magics):
             StoreOptions.validate_spec(spec)
         except OptionError as e:
             cls.error_message = cls._format_options_error(e)
-            return None
 
         cls.opts_spec = spec
 
@@ -753,7 +762,9 @@ class OptsMagic(Magics):
             except OptionError as e:
                 OptsMagic.error_message = None
                 display(HTML(self._format_options_error(e)))
-                return
+                if self.strict:
+                    display(HTML('Options specification will not be applied.'))
+                    return
 
             with options_policy(skip_invalid=True, warn_on_skip=False):
                 StoreOptions.apply_customizations(spec, Store.options())

@@ -160,7 +160,7 @@ class MPLRenderer(Renderer):
         fig_size = options.get('fig_size', MPLPlot.fig_size)*factor
 
         return dict({'fig_size':fig_size},
-                    **Store.lookup_options(cls.backend, obj, 'plot').options)
+                    **MPLPlot.lookup_options(obj, 'plot').options)
 
 
     @bothmethod

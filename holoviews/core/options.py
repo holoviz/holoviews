@@ -353,7 +353,6 @@ class Options(param.Parameterized):
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
                 if self.skip_invalid:
-                    kwargs.pop(kwarg)
                     invalid_kws.append(kwarg)
                 else:
                     raise OptionError(kwarg, allowed_keywords)
