@@ -96,3 +96,14 @@ HoloViews for easier visualization and analysis:
   <http://homepages.inf.ed.ac.uk/jbednar/papers/gee.ms14.pdf>`_ with
   `associated notebook
   <http://ioam.github.io/topographica/Tutorials/gcal_all.html>`_)
+
+* `Topology in Condensed Matter course <https://topocondmat.org/>`_:
+  Tying Quantum Knots. This course also runs on `EdX <http://tiny.cc/topocm>`_.
+  See for example the lecture on the `Haldane model 
+  <https://topocondmat.org/w4_haldane/haldane_model.html>`_ (view as `notebook 
+  <https://nbviewer.jupyter.org/url/topocondmat.org/notebooks/w4_haldane/haldane_model.ipynb>`_) or on 
+  `Floquet topological insulators 
+  <https://topocondmat.org/w11_extensions2/floquet.html>`_ (view as `notebook 
+  <https://nbviewer.jupyter.org/url/topocondmat.org/notebooks/w11_extensions2/floquet.ipynb>`_). The 
+  source is availible on `GitHub 
+  <https://github.com/topocm/topocm_content>`_.
