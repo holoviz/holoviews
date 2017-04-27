@@ -633,7 +633,7 @@ class OptsMagic(Magics):
             if cls.strict:
                 return cls.error_message
             else:
-                sys.stderr.write(cls.error_message.replace('<br>','\n'))
+                sys.stderr.write(cls.error_message)
         if cls.opts_spec is not None:
             StoreOptions.set_options(obj, cls.opts_spec)
             cls.opts_spec = None
@@ -669,9 +669,9 @@ class OptsMagic(Magics):
                       "notebook_extension.")
 
         group = '{0} option'.format(err.group_name) if err.group_name else 'keyword'
-        msg=('Unexpected {group} {kw} {target}{loaded}.<br><br>'
+        msg=('Unexpected {group} {kw} {target}{loaded}.\n\n'
              '{similarity} keywords in the currently active '
-             '{current_backend} backend are: {matches}<br><br>{suggestion}')
+             '{current_backend} backend are: {matches}\n\n{suggestion}')
         return msg.format(kw="'%s'" % err.invalid_keyword,
                           target=target,
                           group=group,
@@ -761,7 +761,7 @@ class OptsMagic(Magics):
                 StoreOptions.validate_spec(spec)
             except OptionError as e:
                 OptsMagic.error_message = None
-                display(HTML(self._format_options_error(e)))
+                sys.stderr.write(self._format_options_error(e))
                 if self.strict:
                     display(HTML('Options specification will not be applied.'))
                     return
