@@ -82,8 +82,7 @@ Features
 * Supports `rapid data exploration <http://www.holoviews.org/Tutorials/Exploring_Data.html>`_ that naturally develops into a `fully reproducible workflow <http://www.holoviews.org/Tutorials/Exporting.html>`_.
 * Create interactive visualizations that can be controlled via widgets or via custom events in Python using the 'streams' system. When using the bokeh backend, you can use streams to directly interact with your plots.
 * Rich semantics for `indexing and slicing of data in arbitrarily high-dimensional spaces <http://www.holoviews.org/Tutorials/Sampling_Data.html>`_.
-* Plotting output using the `Matplotlib <http://www.holoviews.org/Tutorials/Elements.html>`_,
-`Bokeh <http://www.holoviews.org/Tutorials/Bokeh_Elements.html>`_, and `plotly <http://plot.ly/>`_ backends.
+* Plotting output using the `Matplotlib <http://www.holoviews.org/Tutorials/Elements.html>`_, `Bokeh <http://www.holoviews.org/Tutorials/Bokeh_Elements.html>`_, and `plotly <http://plot.ly/>`_ backends.
 * A variety of data interfaces to work with tabular and N-dimensional array data using `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_, `dask <http://dask.pydata.org/en/latest/>`_, `iris <http://scitools.org.uk/iris/>`_ and `xarray <http://xarray.pydata.org/en/stable/>`_.
 * Every parameter of every object includes easy-to-access documentation.
 * All features `available in vanilla Python 2 or 3 <http://www.holoviews.org/Tutorials/Options.html>`_, with minimal dependencies.
