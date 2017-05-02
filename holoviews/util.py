@@ -74,7 +74,8 @@ class Dynamic(param.ParameterizedFunction):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in self.p.operation.p}
                 if updates:
-                    stream.update(**updates)
+                    reverse = {v: k for k, v in stream._rename.items()}
+                    stream.update(**{reverse.get(k, k): v for k, v in updates.items()})
             streams.append(stream)
         if isinstance(map_obj, DynamicMap):
             dim_streams = util.dimensioned_streams(map_obj)

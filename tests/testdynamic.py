@@ -4,7 +4,8 @@ import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
-from holoviews.streams import Stream, PointerXY, PointerX, PointerY
+from holoviews.operation import histogram
+from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -319,6 +320,19 @@ class DynamicTestOperation(ComparisonTestCase):
             return x.clone(x.data*multiplier)
         dmap_with_fn = Dynamic(dmap, operation=fn, kwargs=dict(multiplier=3))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*3))
+
+    def test_dynamic_operation_init_renamed_stream_params(self):
+        img = Image(sine_array(0,5))
+        stream = RangeX(rename={'x_range': 'bin_range'})
+        dmap_with_fn = histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
+        self.assertEqual(stream.x_range, (0, 1))
+
+    def test_dynamic_operation_init_stream_params(self):
+        img = Image(sine_array(0,5))
+        stream = Stream.define('TestStream', bin_range=None)()
+        dmap_with_fn = histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
+        self.assertEqual(stream.bin_range, (0, 1))
+
 
 
 
