@@ -32,7 +32,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         data = {d: np.array([]) if empty else element.dimension_values(d)
                  for d in dims}
         mapping = {d.name: d.name for d in dims}
-        data = {d.name: values if values.dtype.kind in "if" else map(d.pprint_value, values)
+        data = {d.name: values if values.dtype.kind in "if" else list(map(d.pprint_value, values))
                 for d, values in data.items()}
         return data, mapping
 
