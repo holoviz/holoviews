@@ -102,9 +102,10 @@ class ArrayInterface(Interface):
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
         else:
-            dtypes = (dataset.data.dtype,)*dataset.data.shape[1]
-            sort_fields = tuple('f%s' % dataset.get_dimension_index(d) for d in by)
-            sorting = dataset.data.T.view(dtypes).argsort(order=sort_fields)
+            dtypes = [(d.name, dataset.data.dtype) for d in dataset.dimensions()]
+            sort_fields = tuple(dataset.get_dimension(d).name for d in by)
+            sorting = dataset.data.view(dtypes, np.recarray).T
+            sorting = sorting.argsort(order=sort_fields)[0]
         return data[sorting]
 
 

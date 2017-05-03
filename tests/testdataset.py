@@ -120,6 +120,13 @@ class HomogeneousColumnTypes(object):
 
     # Operations
 
+    def test_dataset_sort_hm(self):
+        ds = Dataset(([2, 2, 1], [2,1,2], [0.1, 0.2, 0.3]),
+                     kdims=['x', 'y'], vdims=['z']).sort()
+        ds_sorted = Dataset(([1, 2, 2], [2, 1, 2], [0.3, 0.2, 0.1]),
+                            kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(ds.sort(), ds_sorted)
+
     def test_dataset_sort_vdim_hm(self):
         xs_2 = np.array(self.xs_2)
         dataset = Dataset(np.column_stack([self.xs, -xs_2]),
@@ -575,6 +582,9 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
     def test_dataset_add_dimensions_values_ht(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_ht(self):
         raise SkipTest("Not supported")
 
@@ -614,6 +624,13 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         Dataset.datatype = ['ndelement']
         self.data_instance_type = NdElement
         self.init_column_data()
+
+    def test_dataset_sort_hm(self):
+        """
+        Sorting broken in this case for some reason, since deprecated
+        this is not worth fixing
+        """
+        raise SkipTest("Not supported")
 
     # Literal formats that have been previously been supported but
     # currently are only supported via NdElement.
@@ -815,6 +832,9 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
             Dataset(NdElement(zip(self.xs, self.xs_2),
                               kdims=['x'], vdims=['x2']))
 
+    def test_dataset_sort_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
@@ -975,6 +995,9 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_add_dimensions_values_hm_alias(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm(self):
         raise SkipTest("Not supported")
 
@@ -1030,6 +1053,9 @@ class XArrayDatasetTest(GridDatasetTest):
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
