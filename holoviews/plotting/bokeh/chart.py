@@ -10,6 +10,7 @@ from bokeh.models import ( GlyphRenderer, ColumnDataSource,
                           Range1d, CustomJS, HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
+from ...core.dimension import Dimension
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...core.spaces import DynamicMap
@@ -694,11 +695,11 @@ class BarPlot(ChartPlot):
     mapped onto separate groups, categories and stacks.
     """
 
-    group_index = param.Integer(default=0, doc="""
+    group_index = param.Integer(default=None, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
-    stack_index = param.Integer(default=2, doc="""
+    stack_index = param.Integer(default=None, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
@@ -709,11 +710,21 @@ class BarPlot(ChartPlot):
         vdim = element.dimensions('value', True)[0]
 
         kwargs = self.style[self.cyclic_index]
-        if self.group_index < element.ndims:
-            kwargs['label'] = kdims[self.group_index]
-        if self.stack_index < element.ndims:
+        kwargs['label'] = kdims[0]
+        if self.stack_index and self.stack_index < element.ndims:
             kwargs['stack'] = kdims[self.stack_index]
+        elif self.group_index and self.group_index < element.ndims:
+            kwargs['group'] = kdims[self.group_index]
         crange = Range1d(*ranges.get(vdim))
+
+        tooltips = None
+        if any(t == 'hover' or isinstance(t, HoverTool)
+               for t in self.tools+self.default_tools):
+            tooltips, hover_opts = self._hover_opts(element)
+            tooltips = [(ttp.pprint_label, '@{%s}' % dimension_sanitizer(ttp.name))
+                        if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+            tooltips[-1] = (tooltips[-1][0], '@{height}')
+
         plot = Bar(element.dframe(), values=vdim,
-                   continuous_range=crange, **kwargs)
+                   continuous_range=crange, tooltips=tooltips, **kwargs)
         return plot
