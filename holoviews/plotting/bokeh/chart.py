@@ -603,7 +603,11 @@ class ChartPlot(LegendPlot):
         self.handles['plot'] = plot
         self.handles['glyph_renderers'] = [r for r in plot.renderers
                                            if isinstance(r, GlyphRenderer)]
-        self._update_chart(key, element, ranges)
+        if self.dynamic and not self.static:
+            self._update_chart(key, element, ranges)
+        else:
+            properties = self._plot_properties(key, plot, element)
+            plot.update(**properties)
 
         # Update plot, source and glyph
         self.drawn = True
