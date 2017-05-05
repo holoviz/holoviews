@@ -71,7 +71,7 @@ Cycle.default_cycles.update({'default_colors': get_color_cycle()})
 
 # Filter spectral colormaps to avoid warning in mpl 2.0
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
-                          if cm not in ['spectral', 'spectral_r']})
+                          if 'spectral' not in cm and 'Vega' not in cm})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],
