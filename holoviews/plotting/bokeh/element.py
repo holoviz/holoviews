@@ -1215,7 +1215,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         for name, spec in hover.tooltips]
             tool = self.handles['hover_tools'].get(tuple(tooltips))
             if tool:
-                tool.renderers += hover.renderers
+                renderers = tool.renderers+hover.renderers
+                tool.renderers = list(util.unique_iterator(renderers))
 
     def _get_factors(self, overlay):
         xfactors, yfactors = [], []
