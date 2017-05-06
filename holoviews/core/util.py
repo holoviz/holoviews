@@ -24,7 +24,7 @@ datetime_types = (np.datetime64, dt.datetime)
 
 try:
     import pandas as pd # noqa (optional import)
-    datetime_types = datetime_types + (pd.tslib.Timestamp,)
+    datetime_types = datetime_types + (pd.Timestamp,)
 except ImportError:
     pd = None
 

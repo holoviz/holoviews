@@ -27,7 +27,7 @@ Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
 
 try:
     import pandas as pd
-    Dimension.type_formatters[pd.tslib.Timestamp] = "%Y-%m-%d %H:%M:%S"
+    Dimension.type_formatters[pd.Timestamp] = "%Y-%m-%d %H:%M:%S"
 except:
     pass
 
