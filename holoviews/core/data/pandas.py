@@ -188,7 +188,7 @@ class PandasInterface(Interface):
         if selection_mask is None:
             selection_mask = cls.select_mask(columns, selection)
         indexed = cls.indexed(columns, selection)
-        df = df.ix[selection_mask]
+        df = df.iloc[selection_mask]
         if indexed and len(df) == 1 and len(columns.vdims) == 1:
             return df[columns.vdims[0].name].iloc[0]
         return df
