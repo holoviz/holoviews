@@ -33,14 +33,14 @@ from ..util import dim_axis_label, rgb2hex
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
            'd': {'marker': 'diamond'},
-           '^': {'marker': 'triangle', 'orientation': 0},
-           '>': {'marker': 'triangle', 'orientation': np.pi/2},
-           'v': {'marker': 'triangle', 'orientation': np.pi},
-           '<': {'marker': 'triangle', 'orientation': -np.pi/2},
-           '1': {'marker': 'triangle', 'orientation': 0},
-           '2': {'marker': 'triangle', 'orientation': np.pi/2},
-           '3': {'marker': 'triangle', 'orientation': np.pi},
-           '4': {'marker': 'triangle', 'orientation': -np.pi/2}}
+           '^': {'marker': 'triangle', 'angle': 0},
+           '>': {'marker': 'triangle', 'angle': -np.pi/2},
+           'v': {'marker': 'triangle', 'angle': np.pi},
+           '<': {'marker': 'triangle', 'angle': np.pi/2},
+           '1': {'marker': 'triangle', 'angle': 0},
+           '2': {'marker': 'triangle', 'angle': -np.pi/2},
+           '3': {'marker': 'triangle', 'angle': np.pi},
+           '4': {'marker': 'triangle', 'angle': np.pi/2}}
 
 # List of models that do not update correctly and must be ignored
 # Should only include models that have no direct effect on the display
