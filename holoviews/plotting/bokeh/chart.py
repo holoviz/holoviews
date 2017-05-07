@@ -787,7 +787,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
             tops.append(top)
         return bottoms, tops
 
-
     def _glyph_properties(self, *args):
         props = super(BarPlot, self)._glyph_properties(*args)
         del props['width']
@@ -824,7 +823,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             grouped = {0: element}
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
-                                  container_type=OrderedDict)
+                                      container_type=OrderedDict)
 
         # Map attributes to data
         if grouping == 'stacked':
@@ -835,9 +834,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
                        'width': width / float(len(grouped))}
         else:
             mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': 0, 'width': width}
-
-        data = defaultdict(list)
-        baselines = defaultdict(float)
 
         # Get colors
         cdim = color_dim or group_dim
@@ -854,7 +850,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
         else:
             factors, colors = None, None
 
-        # Iterate over stacks and groups and accumulate
+        # Iterate over stacks and groups and accumulate data
+        data = defaultdict(list)
+        baselines = defaultdict(float)
         for i, (k, ds) in enumerate(grouped.items()):
             xs = ds.dimension_values(xdim)
             ys = ds.dimension_values(ydim)
@@ -896,7 +894,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             # Merge data and mappings
             mapping.update(cmapping)
             for k, cd in cdata.items():
-                # If y-value data has already been added skip
+                # If values have already been added, skip
                 if not len(data[k]) == i+1:
                     data[k].append(cd)
 
@@ -908,7 +906,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         for col, vals in data.items():
             if len(vals) == 1:
                 data[col] = vals[0]
-            if vals:
+            elif vals:
                 data[col] = np.concatenate(vals)
             else:
                 del data[col]
@@ -916,6 +914,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Ensure x-values are categorical
         data[xdim.name] = [xdim.pprint_value(x).replace(':', ';') for x in data[xdim.name]]
 
+        # If axes inverted change mapping to match hbar signature
         if self.invert_axes:
             mapping.update({'y': mapping.pop('x'), 'left': mapping.pop('bottom'),
                             'right': mapping.pop('top'), 'height': mapping.pop('width')})
