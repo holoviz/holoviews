@@ -1189,7 +1189,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                         tool_type = type(tool)
                     if isinstance(tool, HoverTool):
                         if tuple(tool.tooltips) in hover_tools:
-                            hover_tools[tuple(tool.tooltips)].renderers += tool.renderers
+                            continue
                         else:
                             hover_tools[tuple(tool.tooltips)] = tool
                     elif tool_type in tool_types:
@@ -1205,14 +1205,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         """
         Merges tools on the overlay with those on the subplots.
         """
-        if 'hover' in subplot.handles and 'hover_tools' in self.handles:
-            hover = subplot.handles['hover']
-            tool = self.handles['hover_tools'].get(tuple(hover.tooltips))
-            if tool:
-                tool.renderers += hover.renderers
-        elif self.batched and 'hover' in subplot.handles:
+        if self.batched and 'hover' in subplot.handles:
             self.handles['hover'] = subplot.handles['hover']
-
+        elif 'hover' in subplot.handles and 'hover_tools' in self.handles:
+            hover = subplot.handles['hover']
+            # Datetime formatter may have been applied, remove _dt_strings
+            # to match on the hover tooltips, then merge tool renderers
+            tooltips = [(name, spec.replace('_dt_strings', ''))
+                        for name, spec in hover.tooltips]
+            tool = self.handles['hover_tools'].get(tuple(tooltips))
+            if tool:
+                renderers = tool.renderers+hover.renderers
+                tool.renderers = list(util.unique_iterator(renderers))
 
     def _get_factors(self, overlay):
         xfactors, yfactors = [], []
