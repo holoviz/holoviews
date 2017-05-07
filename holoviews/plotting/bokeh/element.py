@@ -610,6 +610,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+        if isinstance(plot_method, tuple):
+            # Handle alternative plot method for flipped axes
+            plot_method = plot_method[int(self.invert_axes)]
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
