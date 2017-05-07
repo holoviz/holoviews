@@ -985,7 +985,7 @@ class ColorbarPlot(ElementPlot):
         self.handles['colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style, factors=None):
+    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None):
         # The initial colormapper instance is cached the first time
         # and then only updated
         if dim is None:
@@ -1003,9 +1003,12 @@ class ColorbarPlot(ElementPlot):
 
         ncolors = None if factors is None else len(factors)
         low, high = ranges.get(dim.name, element.range(dim.name))
-        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
-        colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        colormapper, opts = self._get_cmapper_opts(low, high, factors, colors)
+        if colors:
+            palette = colors
+        else:
+            palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
+        nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
@@ -1018,16 +1021,15 @@ class ColorbarPlot(ElementPlot):
         return cmapper
 
 
-    def _get_color_data(self, element, ranges, style, name='color'):
+    def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         if cdim:
             cdata = element.dimension_values(cdim)
-            factors = None
-            if isinstance(cdata, list) or cdata.dtype.kind in 'OSU':
+            if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in 'OSU'):
                 factors = list(np.unique(cdata))
             mapper = self._get_colormapper(cdim, element, ranges, style,
-                                           factors)
+                                           factors, colors)
             data[cdim.name] = cdata
             if factors is not None:
                 mapping['legend'] = {'field': cdim.name}
@@ -1093,7 +1095,12 @@ class LegendPlot(ElementPlot):
         if not plot.legend:
             return
         legend = plot.legend[0]
-        if (not self.overlaid and len(legend.items) == 1) or not self.show_legend:
+        cmapper = self.handles.get('color_mapper')
+        if cmapper:
+            categorical = isinstance(cmapper, CategoricalColorMapper)
+        else:
+            categorical = False
+        if (not categorical and  not self.overlaid and len(legend.items) == 1) or not self.show_legend:
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
