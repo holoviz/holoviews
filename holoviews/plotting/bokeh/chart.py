@@ -3,9 +3,9 @@ from collections import defaultdict
 import numpy as np
 import param
 try:
-    from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
+    from bokeh.charts import BoxPlot as BokehBoxPlot
 except:
-    Bar, BokehBoxPlot = None, None
+    BokehBoxPlot = None, None
 from bokeh.models import (GlyphRenderer, ColumnDataSource, Range1d,
                           CategoricalColorMapper, CustomJS, HoverTool)
 from bokeh.models.tools import BoxSelectTool
@@ -15,6 +15,7 @@ from ...core.dimension import Dimension
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...core.spaces import DynamicMap
+from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes,  match_spec, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
@@ -716,7 +717,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     style_opts = line_properties + fill_properties + ['width', 'cmap']
 
-    _plot_methods = dict(single=('vbar', 'hbar'))
+    _plot_methods = dict(single=('vbar', 'hbar'), batched=('vbar', 'hbar'))
 
     def get_extents(self, element, ranges):
         """
@@ -724,6 +725,13 @@ class BarPlot(ColorbarPlot, LegendPlot):
         stacked bar heights, adjusting the bar baseline
         and forcing the x-axis to be categorical.
         """
+        if self.batched:
+            overlay = self.current_frame
+            element = hv.Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
+                              vdims=element.vdims)
+            for kd in overlay.kdims:
+                ranges[kd.name] = overlay.range(kd)
+
         stacked = element.get_dimension(self.stack_index)
         extents = super(BarPlot, self).get_extents(element, ranges)
         xdim = element.kdims[0]
@@ -753,6 +761,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         dimension as the x-axis and y-axis labels.
         """
         element = self.current_frame
+        if self.batched:
+            element = element.last
         return (dim_axis_label(element.kdims[0]),
                 dim_axis_label(element.vdims[0]), None)
 
@@ -920,3 +930,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
                             'right': mapping.pop('top'), 'height': mapping.pop('width')})
 
         return data, mapping
+
+    def get_batched_data(self, element, ranges, empty):
+        el = element.last
+        collapsed = Bars(element.table(), kdims=el.kdims+element.kdims,
+                            vdims=el.vdims)
+        return self.get_data(collapsed, ranges, empty)
