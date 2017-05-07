@@ -585,8 +585,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals],
-                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y) for y in yvals])
+        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x).replace(':', ';') for x in xvals],
+                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y).replace(':', ';') for y in yvals])
         if self.invert_axes: coords = coords[::-1]
         return coords
 
