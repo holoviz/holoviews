@@ -6,16 +6,17 @@ try:
     from bokeh.charts import Bar, BoxPlot as BokehBoxPlot
 except:
     Bar, BokehBoxPlot = None, None
-from bokeh.models import ( GlyphRenderer, ColumnDataSource,
-                          Range1d, CustomJS, HoverTool)
+from bokeh.models import (GlyphRenderer, ColumnDataSource, Range1d,
+                          CategoricalColorMapper, CustomJS, HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
+from ...core import Dataset, OrderedDict
 from ...core.dimension import Dimension
 from ...core.util import max_range, basestring, dimension_sanitizer
 from ...core.options import abbreviated_exception
 from ...core.spaces import DynamicMap
 from ...operation import interpolate_curve
-from ..util import compute_sizes,  match_spec, get_min_distance
+from ..util import compute_sizes,  match_spec, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
@@ -692,43 +693,231 @@ class BoxPlot(ChartPlot):
 
 
 
-class BarPlot(ChartPlot):
+class BarPlot(ColorbarPlot, LegendPlot):
     """
     BarPlot allows generating single- or multi-category
     bar Charts, by selecting which key dimensions are
     mapped onto separate groups, categories and stacks.
     """
 
-    group_index = param.Integer(default=None, doc="""
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+       Index of the dimension from which the color will the drawn""")
+
+    group_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
 
-    stack_index = param.Integer(default=None, doc="""
+    stack_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
-    style_opts = ['bar_width', 'max_height', 'color', 'fill_alpha']
+    style_opts = line_properties + fill_properties + ['width', 'cmap']
 
-    def _init_chart(self, element, ranges):
-        kdims = element.dimensions('key', True)
-        vdim = element.dimensions('value', True)[0]
+    _plot_methods = dict(single=('vbar', 'hbar'))
 
-        kwargs = self.style[self.cyclic_index]
-        kwargs['label'] = kdims[0]
-        if self.stack_index and self.stack_index < element.ndims:
-            kwargs['stack'] = kdims[self.stack_index]
-        elif self.group_index and self.group_index < element.ndims:
-            kwargs['group'] = kdims[self.group_index]
-        crange = Range1d(*ranges.get(vdim))
+    def get_extents(self, element, ranges):
+        """
+        Make adjustments to plot extents by computing
+        stacked bar heights, adjusting the bar baseline
+        and forcing the x-axis to be categorical.
+        """
+        stacked = element.get_dimension(self.stack_index)
+        extents = super(BarPlot, self).get_extents(element, ranges)
+        xdim = element.kdims[0]
+        ydim = element.vdims[0]
 
-        tooltips = None
-        if any(t == 'hover' or isinstance(t, HoverTool)
-               for t in self.tools+self.default_tools):
-            tooltips, hover_opts = self._hover_opts(element)
-            tooltips = [(ttp.pprint_label, '@{%s}' % dimension_sanitizer(ttp.name))
-                        if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
-            tooltips[-1] = (tooltips[-1][0], '@{height}')
+        # Compute stack heights
+        if stacked:
+            ds = Dataset(element)
+            y0, y1 = ds.aggregate(xdim, function=np.sum).range(ydim)
+        else:
+            y0, y1 = ranges[ydim.name]
 
-        plot = Bar(element.dframe(), values=vdim,
-                   continuous_range=crange, tooltips=tooltips, **kwargs)
-        return plot
+        # Set y-baseline
+        if y0 < 0:
+            y1 = max([y1, 0])
+        else:
+            y0 = 0
+
+        # Ensure x-axis is picked up as categorical
+        x0 = xdim.pprint_value(extents[0])
+        x1 = xdim.pprint_value(extents[2])
+        return (x0, y0, x1, y1)
+
+    def _get_axis_labels(self, *args, **kwargs):
+        """
+        Override axis mapping by setting the first key and value
+        dimension as the x-axis and y-axis labels.
+        """
+        element = self.current_frame
+        return (dim_axis_label(element.kdims[0]),
+                dim_axis_label(element.vdims[0]), None)
+
+    def get_group(self, xvals, nshift, ngroups, width, xdim):
+        """
+        Adjust x-value positions on categorical axes to stop
+        x-axis overlapping. Currently bokeh uses a suffix
+        of the format ':%f' with a floating value to set up
+        offsets within a single category.
+        """
+        adjusted_xvals = []
+        gwidth = float(width)/ngroups
+        offset = (1.-width)/2. + gwidth/2.
+        for x in xvals:
+            adjustment = (offset+nshift/float(ngroups)*width)
+            xcat = xdim.pprint_value(x).replace(':',';')
+            adjusted_xvals.append(xcat+':%.4f' % adjustment)
+        return adjusted_xvals
+
+    def get_stack(self, xvals, yvals, baselines):
+        """
+        Iterates over a x- and y-values in a stack layer
+        and appropriately offsets the layer on top of the
+        previous layer.
+        """
+        bottoms, tops = [], []
+        for x, y in zip(xvals, yvals):
+            bottom = baselines[x]
+            top = bottom+y
+            baselines[x] = top
+            bottoms.append(bottom)
+            tops.append(top)
+        return bottoms, tops
+
+
+    def _glyph_properties(self, *args):
+        props = super(BarPlot, self)._glyph_properties(*args)
+        del props['width']
+        return props
+
+    def get_data(self, element, ranges, empty):
+        # Get x, y, group, stack and color dimensions
+        group_dim = element.get_dimension(self.group_index)
+        stack_dim = element.get_dimension(self.stack_index)
+        if stack_dim:
+            group_dim = stack_dim
+            grouping = 'stacked'
+        elif group_dim:
+            grouping = 'grouped'
+            group_dim = group_dim
+        else:
+            grouping, group_dim = None, None
+        xdim = element.get_dimension(0)
+        ydim = element.get_dimension(element.vdims[0])
+        color_index = group_dim if self.color_index is None else self.color_index
+        color_dim = element.get_dimension(color_index)
+        if color_dim:
+            self.color_index = color_dim.name
+
+        # Define style information
+        style = self.style[self.cyclic_index]
+        width = style.get('width', 1)
+        cmap = style.get('cmap')
+        hover = any(t == 'hover' or isinstance(t, HoverTool)
+                    for t in self.tools+self.default_tools)
+
+        # Group by stack or group dim if necessary
+        if group_dim is None:
+            grouped = {0: element}
+        else:
+            grouped = element.groupby(group_dim, group_type=Dataset,
+                                  container_type=OrderedDict)
+
+        # Map attributes to data
+        if grouping == 'stacked':
+            mapping = {'x': xdim.name, 'top': 'top',
+                       'bottom': 'bottom', 'width': width}
+        elif grouping == 'grouped':
+            mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': 0,
+                       'width': width / float(len(grouped))}
+        else:
+            mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': 0, 'width': width}
+
+        data = defaultdict(list)
+        baselines = defaultdict(float)
+
+        # Get colors
+        cdim = color_dim or group_dim
+        cvals = element.dimension_values(cdim) if cdim else None
+        if cvals is not None and (cvals.dtype.kind not in 'if'):
+            factors = list(np.unique(cvals))
+            if cdim is xdim:
+                factors = [xdim.pprint_value(f).replace(':', ';') for f in factors]
+            if cmap is None:
+                styles = self.style.max_cycles(len(factors))
+                colors = [styles[i]['color'] for i in range(len(factors))]
+            else:
+                colors = None
+        else:
+            factors, colors = None, None
+
+        # Iterate over stacks and groups and accumulate
+        for i, (k, ds) in enumerate(grouped.items()):
+            xs = ds.dimension_values(xdim)
+            ys = ds.dimension_values(ydim)
+
+            # Apply stacking or grouping
+            if grouping == 'stacked':
+                bs, ts = self.get_stack(xs, ys, baselines)
+                data['bottom'].append(bs)
+                data['top'].append(ts)
+                data[xdim.name].append(xs)
+                if hover: data[ydim.name].append(ys)
+            elif grouping == 'grouped':
+                xoffsets = self.get_group(xs, i, len(grouped), width, xdim)
+                data['xoffsets'].append(xoffsets)
+                data[ydim.name].append(ys)
+                if hover: data[xdim.name].append(xs)
+            else:
+                data[xdim.name].append(xs)
+                data[ydim.name].append(ys)
+
+            # Add group dimension to data
+            if group_dim and group_dim not in ds.dimensions():
+                ds = ds.add_dimension(group_dim.name, len(ds.dimensions()), k)
+
+            # Get colormapper
+            cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
+                                                   factors=factors, colors=colors)
+
+            # Skip if no colormapper applied
+            if 'color' not in cmapping:
+                continue
+
+            # Enable legend if colormapper is categorical
+            cmapper = cmapping['color']['transform']
+            if ('color' in cmapping and self.show_legend and
+                isinstance(cmapper, CategoricalColorMapper)):
+                mapping['legend'] = cdim.name
+
+            # Merge data and mappings
+            mapping.update(cmapping)
+            for k, cd in cdata.items():
+                # If y-value data has already been added skip
+                if not len(data[k]) == i+1:
+                    data[k].append(cd)
+
+            # Fill in missing hover data if dimension other than group_dim is colormapped
+            if hover and group_dim and cdim != group_dim:
+                data[group_dim.name].append(ds.dimension_values(group_dim))
+
+        # Concatenate the stacks or groups
+        for col, vals in data.items():
+            if len(vals) == 1:
+                data[col] = vals[0]
+            if vals:
+                data[col] = np.concatenate(vals)
+            else:
+                del data[col]
+
+        # Ensure x-values are categorical
+        data[xdim.name] = [xdim.pprint_value(x).replace(':', ';') for x in data[xdim.name]]
+
+        if self.invert_axes:
+            mapping.update({'y': mapping.pop('x'), 'left': mapping.pop('bottom'),
+                            'right': mapping.pop('top'), 'height': mapping.pop('width')})
+
+        return data, mapping
