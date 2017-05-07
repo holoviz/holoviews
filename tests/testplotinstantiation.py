@@ -810,7 +810,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         fig = plot.state
-        self.assertEqual(len(fig.legend[0].items), 0)
+        self.assertEqual(len(fig.legend), 0)
 
     def test_points_no_single_item_legend(self):
         points = Points([('A', 1), ('B', 2)], label='A')
