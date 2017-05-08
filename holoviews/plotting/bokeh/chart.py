@@ -748,7 +748,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if y0 < 0:
             y1 = max([y1, 0])
         else:
-            y0 = 0
+            y0 = None if self.logy else 0
 
         # Ensure x-axis is picked up as categorical
         x0 = xdim.pprint_value(extents[0])
