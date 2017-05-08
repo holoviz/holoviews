@@ -17,7 +17,7 @@ from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
 
-from ..core import (ElementOperation, Element, Dimension, NdOverlay,
+from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
@@ -58,7 +58,7 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
     return agg
 
 
-class aggregate(ElementOperation):
+class aggregate(Operation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
@@ -234,7 +234,7 @@ class aggregate(ElementOperation):
 
 
 
-class shade(ElementOperation):
+class shade(Operation):
     """
     shade applies a normalization function followed by colormapping to
     an Image or NdOverlay of Images, returning an RGB Element.
@@ -362,7 +362,7 @@ class datashade(aggregate, shade):
 
 
 
-class dynspread(ElementOperation):
+class dynspread(Operation):
     """
     Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging

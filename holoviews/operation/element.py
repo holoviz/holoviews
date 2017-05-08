@@ -1,5 +1,5 @@
 """
-Collection of either extremely generic or simple ElementOperation
+Collection of either extremely generic or simple Operation
 examples.
 """
 
@@ -8,7 +8,7 @@ import numpy as np
 import param
 from param import _is_number
 
-from ..core import (ElementOperation, NdOverlay, Overlay, GridMatrix,
+from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator)
 from ..core.data import ArrayInterface, DictInterface
 from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd
@@ -26,10 +26,10 @@ if pd:
 
 def identity(x,k): return x
 
-class operation(ElementOperation):
+class operation(Operation):
     """
     The most generic operation that wraps any callable into an
-    ElementOperation. The callable needs to accept an HoloViews
+    Operation. The callable needs to accept an HoloViews
     component and a key (that may be ignored) and must return a new
     HoloViews component.
 
@@ -68,7 +68,7 @@ class operation(ElementOperation):
         return retval.relabel(group=self.p.group)
 
 
-class factory(ElementOperation):
+class factory(Operation):
     """
     Simple operation that constructs any element that accepts some
     other element as input. For instance, RGB and HSV elements can be
@@ -85,11 +85,11 @@ class factory(ElementOperation):
         return self.p.output_type(view)
 
 
-class chain(ElementOperation):
+class chain(Operation):
     """
-    Defining an ElementOperation chain is an easy way to define a new
-    ElementOperation from a series of existing ones. The argument is a
-    list of ElementOperation (or ElementOperation instances) that are
+    Defining an Operation chain is an easy way to define a new
+    Operation from a series of existing ones. The argument is a
+    list of Operation (or Operation instances) that are
     called in sequence to generate the returned element.
 
     chain(operations=[gradient, threshold.instance(level=2)])
@@ -111,8 +111,8 @@ class chain(ElementOperation):
         The group assigned to the result after having applied the chain.""")
 
 
-    operations = param.List(default=[], class_=ElementOperation, doc="""
-       A list of ElementOperations (or ElementOperation instances)
+    operations = param.List(default=[], class_=Operation, doc="""
+       A list of Operations (or Operation instances)
        that are applied on the input from left to right..""")
 
     def _process(self, view, key=None):
@@ -124,9 +124,9 @@ class chain(ElementOperation):
         return processed.clone(group=self.p.group)
 
 
-class transform(ElementOperation):
+class transform(Operation):
     """
-    Generic ElementOperation to transform an input Image or RGBA
+    Generic Operation to transform an input Image or RGBA
     element into an output Image. The transformation is defined by
     the supplied callable that accepts the data of the input Image
     (typically a numpy array) and returns the transformed data of the
@@ -161,7 +161,7 @@ class transform(ElementOperation):
 
 
 
-class image_overlay(ElementOperation):
+class image_overlay(Operation):
     """
     Operation to build a overlay of images to a specification from a
     subset of the required elements.
@@ -264,7 +264,7 @@ class image_overlay(ElementOperation):
 
 
 
-class threshold(ElementOperation):
+class threshold(Operation):
     """
     Threshold a given Image whereby all values higher than a given
     level map to the specified high value and all values lower than
@@ -301,7 +301,7 @@ class threshold(ElementOperation):
 
 
 
-class gradient(ElementOperation):
+class gradient(Operation):
     """
     Compute the gradient plot of the supplied Image.
 
@@ -351,7 +351,7 @@ class gradient(ElementOperation):
 
 
 
-class convolve(ElementOperation):
+class convolve(Operation):
     """
     Apply a convolution to an overlay using the top layer as the
     kernel for convolving the bottom layer. Both Image elements in
@@ -395,7 +395,7 @@ class convolve(ElementOperation):
 
 
 
-class contours(ElementOperation):
+class contours(Operation):
     """
     Given a Image with a single channel, annotate it with contour
     lines for a given set of contour levels.
@@ -458,7 +458,7 @@ class contours(ElementOperation):
         return contours
 
 
-class histogram(ElementOperation):
+class histogram(Operation):
     """
     Returns a Histogram of the input element data, binned into
     num_bins over the bin_range (if specified) along the specified
@@ -547,7 +547,7 @@ class histogram(ElementOperation):
 
 
 
-class decimate(ElementOperation):
+class decimate(Operation):
     """
     Decimates any column based Element to a specified number of random
     rows if the current view defined by the x_range and y_range
@@ -614,7 +614,7 @@ class decimate(ElementOperation):
         return element.map(self._process_layer, Element)
 
 
-class interpolate_curve(ElementOperation):
+class interpolate_curve(Operation):
     """
     Resamples a Curve using the defined interpolation method, e.g.
     to represent changes in y-values as steps.
@@ -668,7 +668,7 @@ class interpolate_curve(ElementOperation):
         return element.map(self._process_layer, Element)
 
 
-class stack_area(ElementOperation):
+class stack_area(Operation):
     """
     Stacks an (Nd)Overlay of Area Elements by offsetting their baseline.
     """
@@ -682,13 +682,13 @@ class stack_area(ElementOperation):
 #==================#
 
 
-class collapse(ElementOperation):
+class collapse(Operation):
     """
     Given an overlay of Element types, collapse into single Element
     object using supplied function. Collapsing aggregates over the
     key dimensions of each object applying the supplied fn to each group.
 
-    This is an example of an ElementOperation that does not involve
+    This is an example of an Operation that does not involve
     any Raster types.
     """
 

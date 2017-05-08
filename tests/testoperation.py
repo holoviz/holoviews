@@ -7,7 +7,7 @@ from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
                                          interpolate_curve, stack_area)
 
-class ElementOperationTests(ComparisonTestCase):
+class OperationTests(ComparisonTestCase):
     """
     Tests allowable data formats when constructing
     the basic Element types.

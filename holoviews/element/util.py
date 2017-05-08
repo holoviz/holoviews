@@ -5,7 +5,7 @@ import numpy as np
 
 from ..core import Dataset, OrderedDict
 from ..core.boundingregion import BoundingBox
-from ..core.operation import ElementOperation
+from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (is_nan, sort_topologically, one_to_one,
                          cartesian_product, is_cyclic)
@@ -102,7 +102,7 @@ def reduce_fn(x):
     return np.NaN
 
 
-class categorical_aggregate2d(ElementOperation):
+class categorical_aggregate2d(Operation):
     """
     Generates a gridded Dataset of 2D aggregate arrays indexed by the
     first two dimensions of the passed Element, turning all remaining

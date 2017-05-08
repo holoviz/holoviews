@@ -348,8 +348,8 @@ class Collect(object):
 class Analyze(Collect):
     """
     An Analyze is a type of Collect that updates an Attrtree with
-    the results of a ElementOperation. Analyze takes a ViewRef object as
-    input which is resolved to generate input for the ElementOperation.
+    the results of a Operation. Analyze takes a ViewRef object as
+    input which is resolved to generate input for the Operation.
     """
 
     def __init__(self, reference, analysis, *args, **kwargs):
@@ -406,7 +406,7 @@ class Collector(AttrTree):
 
     The analysis method takes a reference to data on the attrtree (a
     ViewRef) and passes the resolved output to the given analysisfn
-    ElementOperation.
+    Operation.
 
     >>> Collector.for_type(str, lambda x: ViewableElement(x, name=x))
     >>> Collector.interval_hook = param.Dynamic.time_fn.advance
@@ -505,7 +505,7 @@ class Collector(AttrTree):
 
     def analyze(self, reference, analysisfn,  *args, **kwargs):
         """
-        Given a ViewRef and the ElementOperation analysisfn, process the
+        Given a ViewRef and the Operation analysisfn, process the
         data resolved by the reference with analysisfn at each step.
         """
         task = Analyze(reference, analysisfn, *args, **kwargs)

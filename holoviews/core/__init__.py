@@ -33,7 +33,7 @@ except:
 
 def public(obj):
     if not isinstance(obj, type): return False
-    baseclasses = [Dimension, Dimensioned, ElementOperation, BoundingBox,
+    baseclasses = [Dimension, Dimensioned, Operation, BoundingBox,
                    SheetCoordinateSystem, AttrTree]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
