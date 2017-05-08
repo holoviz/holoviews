@@ -167,6 +167,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _update_handles = ['source', 'glyph', 'glyph_renderer']
     _categorical = False
 
+    # Declares the default types for continuous x- and y-axes
+    _x_range_type = Range1d
+    _y_range_type = Range1d
+
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
@@ -341,13 +345,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
         elif 'x_range' not in plot_ranges:
-            plot_ranges['x_range'] = DataRange1d()
+            plot_ranges['x_range'] = self._x_range_type()
 
         if categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = DataRange1d()
+            plot_ranges['y_range'] = self._y_range_type()
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
@@ -523,7 +527,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         y_range = self.handles['y_range']
 
         l, b, r, t = None, None, None, None
-        if any(isinstance(r, DataRange1d) for r in [x_range, y_range]):
+        if any(isinstance(r, (Range1d, DataRange1d)) for r in [x_range, y_range]):
             l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
@@ -539,7 +543,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared):
-        if isinstance(axis_range, DataRange1d) and self.apply_ranges:
+        if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None and
                 not isinstance(high, util.datetime_types)):
                 offset = abs(low*0.1 if low else 0.5)

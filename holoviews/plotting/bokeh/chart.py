@@ -7,7 +7,8 @@ try:
 except:
     BokehBoxPlot = None, None
 from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
-                          CategoricalColorMapper, CustomJS, HoverTool)
+                          Range1d, CategoricalColorMapper, CustomJS,
+                          HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
@@ -653,7 +654,7 @@ class ChartPlot(LegendPlot):
 
     @property
     def current_handles(self):
-        return self.state.select(type=(ColumnDataSource, DataRange1d))
+        return self.state.select(type=(ColumnDataSource, DataRange1d, Range1d))
 
 
 class BoxPlot(ChartPlot):
@@ -718,6 +719,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
     style_opts = line_properties + fill_properties + ['width', 'cmap']
 
     _plot_methods = dict(single=('vbar', 'hbar'), batched=('vbar', 'hbar'))
+
+    # Declare that y-range should auto-range if not bounded
+    _y_range_type = DataRange1d
 
     def get_extents(self, element, ranges):
         """
