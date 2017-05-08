@@ -22,7 +22,7 @@ from ..util import compute_sizes,  match_spec, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import update_plot, bokeh_version, expand_batched_style
+from .util import update_plot, bokeh_version, expand_batched_style, categorize_array
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -731,8 +731,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         if self.batched:
             overlay = self.current_frame
-            element = hv.Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
-                              vdims=element.vdims)
+            element = Bars(overlay.table(), kdims=element.kdims+overlay.kdims,
+                           vdims=element.vdims)
             for kd in overlay.kdims:
                 ranges[kd.name] = overlay.range(kd)
 
@@ -820,7 +820,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             grouping, group_dim = None, None
         xdim = element.get_dimension(0)
         ydim = element.get_dimension(element.vdims[0])
-        color_index = group_dim if self.color_index is None else self.color_index
+        no_cidx = self.color_index is None
+        color_index = group_dim if no_cidx else self.color_index
         color_dim = element.get_dimension(color_index)
         if color_dim:
             self.color_index = color_dim.name
@@ -837,7 +838,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             grouped = {0: element}
         else:
             grouped = element.groupby(group_dim, group_type=Dataset,
-                                      container_type=OrderedDict)
+                                      container_type=OrderedDict,
+                                      datatype=['dataframe', 'dictionary'])
 
         # Map attributes to data
         if grouping == 'stacked':
@@ -852,11 +854,13 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Get colors
         cdim = color_dim or group_dim
         cvals = element.dimension_values(cdim) if cdim else None
-        if cvals is not None and (cvals.dtype.kind not in 'if'):
-            factors = list(np.unique(cvals))
-            if cdim is xdim:
-                factors = [xdim.pprint_value(f).replace(':', ';') for f in factors]
-            if cmap is None:
+        if cvals is not None:
+            if cvals.dtype.kind in 'if' and no_cidx:
+                cvals = categorize_array(cvals, group_dim)
+            factors = None if cvals.dtype.kind in 'if' else list(np.unique(cvals))
+            if cdim is xdim and factors:
+                factors = list(categorize_array(factors, xdim))
+            if cmap is None and factors:
                 styles = self.style.max_cycles(len(factors))
                 colors = [styles[i]['color'] for i in range(len(factors))]
             else:
@@ -889,7 +893,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
             # Add group dimension to data
             if group_dim and group_dim not in ds.dimensions():
-                ds = ds.add_dimension(group_dim.name, len(ds.dimensions()), k)
+                k = k[0] if isinstance(k, tuple) else k
+                gval = group_dim.pprint_value(k).replace(':', ';')
+                ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
 
             # Get colormapper
             cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
@@ -909,6 +915,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             mapping.update(cmapping)
             for k, cd in cdata.items():
                 # If values have already been added, skip
+                if no_cidx and cd.dtype.kind in 'if':
+                    cd = categorize_array(cd, group_dim)
                 if not len(data[k]) == i+1:
                     data[k].append(cd)
 
@@ -926,7 +934,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 del data[col]
 
         # Ensure x-values are categorical
-        data[xdim.name] = [xdim.pprint_value(x).replace(':', ';') for x in data[xdim.name]]
+        if xdim.name in data:
+            data[xdim.name] = categorize_array(data[xdim.name], xdim)
 
         # If axes inverted change mapping to match hbar signature
         if self.invert_axes:

@@ -655,3 +655,12 @@ def update_shared_sources(f):
             source.data.update(patch)
         return ret
     return wrapper
+
+
+def categorize_array(array, dim):
+    """
+    Uses a Dimension instance to convert an array of values to categorical
+    (i.e. string) values and applies escaping for colons, which bokeh
+    treats as a categorical suffix.
+    """
+    return np.array([dim.pprint_value(x).replace(':', ';') for x in array])
