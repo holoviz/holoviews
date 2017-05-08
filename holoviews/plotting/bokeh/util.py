@@ -55,7 +55,7 @@ IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatte
 IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y', 'factors']
 
 # Model priority order to ensure some types are updated before others
-MODEL_PRIORITY = ['Range1d', 'Title', 'Image', 'LinearColorMapper',
+MODEL_PRIORITY = ['DataRange1d', 'Title', 'Image', 'LinearColorMapper',
                   'Plot', 'Range1d', 'FactorRange', 'CategoricalAxis',
                   'LinearAxis', 'ColumnDataSource']
 

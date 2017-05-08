@@ -6,7 +6,7 @@ try:
     from bokeh.charts import BoxPlot as BokehBoxPlot
 except:
     BokehBoxPlot = None, None
-from bokeh.models import (GlyphRenderer, ColumnDataSource, Range1d,
+from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
                           CategoricalColorMapper, CustomJS, HoverTool)
 from bokeh.models.tools import BoxSelectTool
 
@@ -653,7 +653,7 @@ class ChartPlot(LegendPlot):
 
     @property
     def current_handles(self):
-        return self.state.select(type=(ColumnDataSource, Range1d))
+        return self.state.select(type=(ColumnDataSource, DataRange1d))
 
 
 class BoxPlot(ChartPlot):

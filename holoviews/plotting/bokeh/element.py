@@ -6,7 +6,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.models import  HoverTool, Renderer, Range1d, FactorRange
+from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -341,13 +341,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
         elif 'x_range' not in plot_ranges:
-            plot_ranges['x_range'] = Range1d()
+            plot_ranges['x_range'] = DataRange1d()
 
         if categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = Range1d()
+            plot_ranges['y_range'] = DataRange1d()
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
@@ -523,7 +523,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         y_range = self.handles['y_range']
 
         l, b, r, t = None, None, None, None
-        if any(isinstance(r, Range1d) for r in [x_range, y_range]):
+        if any(isinstance(r, DataRange1d) for r in [x_range, y_range]):
             l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
@@ -539,7 +539,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared):
-        if isinstance(axis_range, Range1d):
+        if isinstance(axis_range, DataRange1d) and self.apply_ranges:
             if (low == high and low is not None and
                 not isinstance(high, util.datetime_types)):
                 offset = abs(low*0.1 if low else 0.5)
