@@ -1,4 +1,4 @@
-from ..core.operation import ElementOperation, MapOperation, TreeOperation # noqa (API import)
+from ..core.operation import ElementOperation, TreeOperation # noqa (API import)
 from ..core.options import Compositor
 
 from .element import *      # noqa (API import)
@@ -6,7 +6,7 @@ from ..core import Overlay  # noqa (API import)
 
 def public(obj):
     if not isinstance(obj, type): return False
-    baseclasses = [ElementOperation, MapOperation, TreeOperation]
+    baseclasses = [ElementOperation, TreeOperation]
     return any([issubclass(obj, bc) for bc in baseclasses])
 
 

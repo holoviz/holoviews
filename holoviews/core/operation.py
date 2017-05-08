@@ -185,36 +185,6 @@ class OperationCallable(Callable):
         super(OperationCallable, self).__init__(callable, **kwargs)
 
 
-class MapOperation(param.ParameterizedFunction):
-    """
-    A MapOperation takes a HoloMap containing elements or overlays and
-    processes them at the HoloMap level, returning arbitrary new
-    HoloMap objects as output. Unlike ElementOperation, MapOperations
-    can compute over all the keys and dimensions of the input map.
-    """
-
-    group = param.String(default='MapOperation', doc="""
-        The group string to identify the output of the MapOperation.
-        By default this will match the MapOperation name.""")
-
-    def __call__(self, vmap, **params):
-        self.p = param.ParamOverrides(self, params)
-
-        if not isinstance(vmap, HoloMap):
-            raise Exception('MapOperation can only process Maps.')
-
-        return self._process(vmap)
-
-
-    def _process(self, view):
-        """
-        Process a single input HoloMap, returning a new HoloMap
-        instance.
-        """
-        raise NotImplementedError
-
-
-
 class TreeOperation(Operation):
     """
     A TreeOperation is the most general Operation type; it accepts any
