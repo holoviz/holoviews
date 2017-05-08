@@ -3,7 +3,7 @@ import inspect
 import param
 
 from .core import DynamicMap, HoloMap, ViewableElement
-from .core.operation import ElementOperation
+from .core.operation import Operation
 from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
 from .core.spaces import Callable
@@ -70,7 +70,7 @@ class Dynamic(param.ParameterizedFunction):
                 stream = stream()
             elif not isinstance(stream, Stream):
                 raise ValueError('Streams must be Stream classes or instances')
-            if isinstance(self.p.operation, ElementOperation):
+            if isinstance(self.p.operation, Operation):
                 updates = {k: self.p.operation.p.get(k) for k, v in stream.contents.items()
                            if v is None and k in self.p.operation.p}
                 if updates:
@@ -84,7 +84,7 @@ class Dynamic(param.ParameterizedFunction):
 
 
     def _process(self, element, key=None):
-        if isinstance(self.p.operation, ElementOperation):
+        if isinstance(self.p.operation, Operation):
             kwargs = {k: v for k, v in self.p.kwargs.items()
                       if k in self.p.operation.params()}
             return self.p.operation.process_element(element, key, **kwargs)
@@ -106,7 +106,7 @@ class Dynamic(param.ParameterizedFunction):
             def dynamic_operation(*key, **kwargs):
                 self.p.kwargs.update(kwargs)
                 return self._process(map_obj[key], key)
-        if isinstance(self.p.operation, ElementOperation):
+        if isinstance(self.p.operation, Operation):
             return OperationCallable(dynamic_operation, inputs=[map_obj],
                                      link_inputs=self.p.link_inputs,
                                      operation=self.p.operation)

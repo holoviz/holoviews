@@ -705,8 +705,8 @@ class Compositor(param.Parameterized):
     A Compositor is a way of specifying an operation to be automatically
     applied to Overlays that match a specified pattern upon display.
 
-    Any ElementOperation that takes an Overlay as input may be used to
-    define a compositor.
+    Any Operation that takes an Overlay as input may be used to define a
+    compositor.
 
     For instance, a compositor may be defined to automatically display
     three overlaid monochrome matrices as an RGB image as long as the
@@ -719,7 +719,7 @@ class Compositor(param.Parameterized):
       'display'.""")
 
     operation = param.Parameter(doc="""
-       The ElementOperation to apply when collapsing overlays.""")
+       The Operation to apply when collapsing overlays.""")
 
     pattern = param.String(doc="""
        The overlay pattern to be processed. An overlay pattern is a

@@ -2,7 +2,7 @@ import param
 import numpy as np
 import pandas as pd
 
-from ..core import ElementOperation, Element
+from ..core import Operation, Element
 from ..core.data import PandasInterface
 from ..element import Scatter
 
@@ -29,7 +29,7 @@ class RollingBase(param.Parameterized):
                 'min_periods': self.p.min_periods}
 
 
-class rolling(ElementOperation,RollingBase):
+class rolling(Operation,RollingBase):
     """
     Applies a function over a rolling window.
     """
@@ -64,7 +64,7 @@ class rolling(ElementOperation,RollingBase):
         return element.map(self._process_layer, Element)
 
 
-class resample(ElementOperation):
+class resample(Operation):
     """
     Resamples a timeseries of dates with a frequency and function.
     """
@@ -93,7 +93,7 @@ class resample(ElementOperation):
         return element.map(self._process_layer, Element)
 
 
-class rolling_outlier_std(ElementOperation,RollingBase):
+class rolling_outlier_std(Operation, RollingBase):
     """
     Detect outliers using the standard deviation within a rolling window.
 

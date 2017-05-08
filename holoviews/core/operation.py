@@ -20,17 +20,17 @@ from .traversal import unique_dimkeys
 
 class Operation(param.ParameterizedFunction):
     """
-    An ElementOperation process an Element or HoloMap at the level of
-    individual elements or overlays. If a holomap is passed in as
-    input, a processed holomap is returned as output where the
-    individual elements have been transformed accordingly. An
-    ElementOperation may turn overlays in new elements or vice versa.
+    An Operation process an Element or HoloMap at the level of
+    individual elements or overlays. If a holomap is passed in as input,
+    a processed holomap is returned as output where the individual
+    elements have been transformed accordingly. An Operation may turn
+    overlays in new elements or vice versa.
 
-    An ElementOperation can be set to be dynamic, which will return a
+    An Operation can be set to be dynamic, which will return a
     DynamicMap with a callback that will apply the operation
-    dynamically. An ElementOperation may also supply a list of Stream
-    classes on a streams parameter, which can allow dynamic control
-    over the parameters on the operation.
+    dynamically. An Operation may also supply a list of Stream classes
+    on a streams parameter, which can allow dynamic control over the
+    parameters on the operation.
     """
 
     group = param.String(default='Operation', doc="""
@@ -112,9 +112,9 @@ class Operation(param.ParameterizedFunction):
 
     def _process(self, view, key=None):
         """
-        Process a single input element and outputs new single element
-        or overlay. If a HoloMap is passed into a ElementOperation,
-        the individual components are processed sequentially with the
+        Process a single input element and outputs new single element or
+        overlay. If a HoloMap is passed into an Operation, the
+        individual components are processed sequentially with the
         corresponding key passed as the optional key argument.
         """
         raise NotImplementedError
@@ -172,13 +172,13 @@ class ElementOperation(Operation):
 
 class OperationCallable(Callable):
     """
-    OperationCallable allows wrapping an ElementOperation and the
-    objects it is processing to allow traversing the operations
-    applied on a DynamicMap.
+    OperationCallable allows wrapping an Operation and the objects it is
+    processing to allow traversing the operations applied on a
+    DynamicMap.
     """
 
-    operation = param.ClassSelector(class_=ElementOperation, doc="""
-        The ElementOperation being wrapped.""")
+    operation = param.ClassSelector(class_=Operation, doc="""
+        The Operation being wrapped into an OperationCallable.""")
 
     def __init__(self, callable, **kwargs):
         if 'operation' not in kwargs:
