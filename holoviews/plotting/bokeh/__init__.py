@@ -110,6 +110,7 @@ options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
+options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8)
 
 options.Spikes = Options('style', color='black')
 options.Area = Options('style', color=Cycle(), line_color='black')

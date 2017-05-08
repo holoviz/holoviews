@@ -6,7 +6,7 @@ import numpy as np
 import bokeh
 import bokeh.plotting
 from bokeh.core.properties import value
-from bokeh.models import  HoverTool, Renderer, Range1d, FactorRange
+from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -166,6 +166,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     # instance attribute.
     _update_handles = ['source', 'glyph', 'glyph_renderer']
     _categorical = False
+
+    # Declares the default types for continuous x- and y-axes
+    _x_range_type = Range1d
+    _y_range_type = Range1d
 
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
@@ -341,13 +345,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
         elif 'x_range' not in plot_ranges:
-            plot_ranges['x_range'] = Range1d()
+            plot_ranges['x_range'] = self._x_range_type()
 
         if categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = Range1d()
+            plot_ranges['y_range'] = self._y_range_type()
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
@@ -523,7 +527,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         y_range = self.handles['y_range']
 
         l, b, r, t = None, None, None, None
-        if any(isinstance(r, Range1d) for r in [x_range, y_range]):
+        if any(isinstance(r, (Range1d, DataRange1d)) for r in [x_range, y_range]):
             l, b, r, t = self.get_extents(element, ranges)
             if self.invert_axes:
                 l, b, r, t = b, l, t, r
@@ -539,7 +543,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared):
-        if isinstance(axis_range, Range1d):
+        if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None and
                 not isinstance(high, util.datetime_types)):
                 offset = abs(low*0.1 if low else 0.5)
@@ -585,8 +589,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals],
-                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y) for y in yvals])
+        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x).replace(':', ';') for x in xvals],
+                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y).replace(':', ';') for y in yvals])
         if self.invert_axes: coords = coords[::-1]
         return coords
 
@@ -610,6 +614,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         properties = mpl_to_bokeh(properties)
         plot_method = self._plot_methods.get('batched' if self.batched else 'single')
+        if isinstance(plot_method, tuple):
+            # Handle alternative plot method for flipped axes
+            plot_method = plot_method[int(self.invert_axes)]
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 
@@ -982,7 +989,7 @@ class ColorbarPlot(ElementPlot):
         self.handles['colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style, factors=None):
+    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None):
         # The initial colormapper instance is cached the first time
         # and then only updated
         if dim is None:
@@ -1000,9 +1007,12 @@ class ColorbarPlot(ElementPlot):
 
         ncolors = None if factors is None else len(factors)
         low, high = ranges.get(dim.name, element.range(dim.name))
-        palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
-        colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
-        colormapper, opts = self._get_cmapper_opts(low, high, factors, colors)
+        if colors:
+            palette = colors
+        else:
+            palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
+        nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
@@ -1015,16 +1025,15 @@ class ColorbarPlot(ElementPlot):
         return cmapper
 
 
-    def _get_color_data(self, element, ranges, style, name='color'):
+    def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         if cdim:
             cdata = element.dimension_values(cdim)
-            factors = None
-            if isinstance(cdata, list) or cdata.dtype.kind in 'OSU':
+            if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in 'OSU'):
                 factors = list(np.unique(cdata))
             mapper = self._get_colormapper(cdim, element, ranges, style,
-                                           factors)
+                                           factors, colors)
             data[cdim.name] = cdata
             if factors is not None:
                 mapping['legend'] = {'field': cdim.name}
@@ -1090,7 +1099,12 @@ class LegendPlot(ElementPlot):
         if not plot.legend:
             return
         legend = plot.legend[0]
-        if (not self.overlaid and len(legend.items) == 1) or not self.show_legend:
+        cmapper = self.handles.get('color_mapper')
+        if cmapper:
+            categorical = isinstance(cmapper, CategoricalColorMapper)
+        else:
+            categorical = False
+        if (not categorical and  not self.overlaid and len(legend.items) == 1) or not self.show_legend:
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
