@@ -760,7 +760,8 @@ class DynamicMap(HoloMap):
     def periodic_events(self, period, count, param_fn=None):
         """
         Run a non-blocking loop that updates the stream parameters using
-        the event method. Runs count times with the specified period.
+        the event method. Runs count times with the specified period. If
+        count is None, runs indefinitely.
 
         If param_fn is not specified, the event method is called without
         arguments. If it is specified, it must be a callable accepting a
@@ -768,7 +769,7 @@ class DynamicMap(HoloMap):
         of the new stream values to be passed to the event method.
 
         The returned object allows the loop to be stopped at any time
-        using the stop() method.
+        by calling its stop() method.
         """
         def inner(i):
             kwargs = {} if param_fn is None else param_fn(i)

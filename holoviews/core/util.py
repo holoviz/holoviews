@@ -85,6 +85,12 @@ class periodic(Thread):
     """
 
     def __init__(self, callback, period, count):
+
+        if isinstance(count, int):
+            if count < 0: raise ValueError('Count value must be positive')
+        elif not type(count) is type(None):
+            raise ValueError('Count value must be a positive integer or None')
+
         super(periodic, self).__init__()
         self.period = period
         self.callback = callback
