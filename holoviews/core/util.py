@@ -10,6 +10,7 @@ from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
 
+from threading import Thread, Event
 import numpy as np
 import param
 
@@ -76,6 +77,40 @@ class HashableJSON(json.JSONEncoder):
             return hash(obj)
         except:
             return id(obj)
+
+
+class periodic(Thread):
+    """
+    Run a callback count times with a given period without blocking.
+    """
+
+    def __init__(self, callback, period, count):
+        super(periodic, self).__init__()
+        self.period = period
+        self.callback = callback
+        self.count = count
+        self.counter = 0
+        self.completed = Event()
+        self.start()
+
+    def stop(self):
+        self.completed.set()
+
+    def __repr__(self):
+        return 'periodic(%s, %s, %d)' % (self.period,
+                                         callable_name(self.callback),
+                                         self.count)
+    def __str__(self):
+        return repr(self)
+
+    def run(self):
+        while not self.completed.is_set():
+            self.completed.wait(self.period)
+            self.callback(self.counter)
+            self.counter += 1
+
+            if self.counter == self.count:
+                self.completed.set()
 
 
 
