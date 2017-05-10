@@ -600,6 +600,8 @@ class DynamicMap(HoloMap):
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
 
+    _periodic_util = util.periodic # Utility used by periodic_events method
+
     kdims = param.List(default=[], constant=True, doc="""
         The key dimensions of a DynamicMap map to the arguments of the
         callback. This mapping can be by position or by name.""")
@@ -754,6 +756,25 @@ class DynamicMap(HoloMap):
 
         Stream.trigger(self.streams)
 
+
+    def periodic_events(self, period, count, param_fn=None):
+        """
+        Run a non-blocking loop that updates the stream parameters using
+        the event method. Runs count times with the specified period.
+
+        If param_fn is not specified, the event method is called without
+        arguments. If it is specified, it must be a callable accepting a
+        single argument (the iteration count) that returns a dictionary
+        of the new stream values to be passed to the event method.
+
+        The returned object allows the loop to be stopped at any time
+        using the stop() method.
+        """
+        def inner(i):
+            kwargs = {} if param_fn is None else param_fn(i)
+            self.event(**kwargs)
+
+        return self._periodic_util(inner, period, count)
 
     def _style(self, retval):
         """
