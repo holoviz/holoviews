@@ -190,16 +190,30 @@ class aggregate(Operation):
         Element in an NdOverlay individually avoiding having to concatenate
         items in the NdOverlay. Works by summing sum and count aggregates and
         applying appropriate masking for NaN values. Mean aggregation
-        is also supported by dividing sum and count aggregates.
+        is also supported by dividing sum and count aggregates. count_cat
+        aggregates are grouped by the categorical dimension and a separate
+        aggregate for each category is generated.
         """
         # Compute overall bounds
         x, y = element.last.dimensions()[0:2]
         xstart, xend = self.p.x_range if self.p.x_range else element.range(x)
         ystart, yend = self.p.y_range if self.p.y_range else element.range(y)
+        agg_params = dict(self.p.items(), x_range=(xstart, xend), y_range=(ystart, yend))
+
+        # Optimize categorical counts by aggregating them individually
+        if isinstance(agg_fn, ds.count_cat):
+            if element.ndims == 1:
+                agg_fn = aggregate.instance(**dict(agg_params, aggregator=ds.count()))
+                return element.clone({k: agg_fn.process_element(v, None)
+                                      for k, v in element.items()})
+            grouped = element.groupby(agg_fn.column, container_type=NdOverlay)
+            cat_overlay = grouped.clone(shared_data=False)
+            for k, group in grouped.items():
+                cat_overlay[k] = self._aggregate_ndoverlay(group, ds.count())
+            return cat_overlay
 
         # Create aggregate instance for sum, count operations, breaking mean
         # into two aggregates
-        agg_params = dict(self.p.items(), x_range=(xstart, xend), y_range=(ystart, yend))
         column = agg_fn.column or 'Count'
         if isinstance(agg_fn, ds.mean):
             agg_fn1 = aggregate.instance(**dict(agg_params, aggregator=ds.sum(column)))
@@ -245,8 +259,9 @@ class aggregate(Operation):
         agg_fn = self.p.aggregator
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
-        if (isinstance(element, NdOverlay) and isinstance(agg_fn, (ds.count, ds.sum, ds.mean))
-            and agg_fn.column not in element.kdims):
+        if (isinstance(element, NdOverlay) and
+            ((isinstance(agg_fn, (ds.count, ds.sum, ds.mean)) and agg_fn.column not in element.kdims) or
+             (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims))):
             return self._aggregate_ndoverlay(element, agg_fn)
 
         x, y, data, glyph = self.get_agg_data(element, category)
@@ -335,7 +350,7 @@ class shade(Operation):
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
         xarr = xr.concat([v.data.T for v in overlay.values()],
-                         dim=overlay.kdims[0].name)
+                         pd.Index(overlay.keys(), name=overlay.kdims[0].name))
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
