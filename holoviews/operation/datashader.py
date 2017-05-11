@@ -202,15 +202,14 @@ class aggregate(Operation):
 
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
+            agg_params.update(dict(dynamic=False, aggregator=ds.count()))
+            agg_fn1 = aggregate.instance(**agg_params)
             if element.ndims == 1:
-                agg_fn = aggregate.instance(**dict(agg_params, aggregator=ds.count()))
-                return element.clone({k: agg_fn.process_element(v, None)
-                                      for k, v in element.items()})
-            grouped = element.groupby(agg_fn.column, container_type=NdOverlay)
-            cat_overlay = grouped.clone(shared_data=False)
-            for k, group in grouped.items():
-                cat_overlay[k] = self._aggregate_ndoverlay(group, ds.count())
-            return cat_overlay
+                grouped = element
+            else:
+                grouped = element.groupby([agg_fn.column], container_type=NdOverlay,
+                                          group_type=NdOverlay)
+            return grouped.clone({k: agg_fn1(v) for k, v in grouped.items()})
 
         # Create aggregate instance for sum, count operations, breaking mean
         # into two aggregates
@@ -251,7 +250,8 @@ class aggregate(Operation):
                 agg.data /= agg2.data
 
         # Fill masked with with NaNs
-        agg.data[column].values[mask] = np.NaN
+        if is_sum:
+            agg.data[column].values[mask] = np.NaN
         return agg
 
 
