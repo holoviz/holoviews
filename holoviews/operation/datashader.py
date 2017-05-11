@@ -184,9 +184,70 @@ class aggregate(Operation):
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
+    def _aggregate_ndoverlay(self, element, agg_fn):
+        """
+        Optimized aggregation for NdOverlay objects by aggregating each
+        Element in an NdOverlay individually avoiding having to concatenate
+        items in the NdOverlay. Works by summing sum and count aggregates and
+        applying appropriate masking for NaN values. Mean aggregation
+        is also supported by dividing sum and count aggregates.
+        """
+        # Compute overall bounds
+        x, y = element.last.dimensions()[0:2]
+        xstart, xend = self.p.x_range if self.p.x_range else element.range(x)
+        ystart, yend = self.p.y_range if self.p.y_range else element.range(y)
+
+        # Create aggregate instance for sum, count operations, breaking mean
+        # into two aggregates
+        agg_params = dict(self.p.items(), x_range=(xstart, xend), y_range=(ystart, yend))
+        column = agg_fn.column or 'Count'
+        if isinstance(agg_fn, ds.mean):
+            agg_fn1 = aggregate.instance(**dict(agg_params, aggregator=ds.sum(column)))
+            agg_fn2 = aggregate.instance(**dict(agg_params, aggregator=ds.count()))
+        else:
+            agg_fn1 = aggregate.instance(**agg_params)
+            agg_fn2 = None
+        is_sum = isinstance(agg_fn1.aggregator, ds.sum)
+
+        # Accumulate into two aggregates and mask
+        agg, agg2, mask = None, None, None
+        mask = None
+        for v in element:
+            # Compute aggregates and mask
+            new_agg = agg_fn1.process_element(v, None)
+            if is_sum:
+                new_mask = np.isnan(new_agg.data[column].values)
+                new_agg.data = new_agg.data.fillna(0)
+            if agg_fn2:
+                new_agg2 = agg_fn2.process_element(v, None)
+
+            # Accumulate into aggregates and mask
+            if agg is None:
+                agg = new_agg
+                if is_sum: mask = new_mask
+            else:
+                agg.data += new_agg.data
+                if is_sum: mask &= new_mask
+                if agg_fn2: agg2.data += new_agg2.data
+
+        # Divide sum by count to compute mean
+        if agg2 is not None:
+            agg2.data.rename({'Count': agg_fn.column}, inplace=True)
+            agg.data /= agg2.data
+
+        # Fill masked with with NaNs
+        agg.data[column].values[mask] = np.NaN
+        return agg
+
+
     def _process(self, element, key=None):
         agg_fn = self.p.aggregator
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
+
+        if (isinstance(element, NdOverlay) and isinstance(agg_fn, (ds.count, ds.sum, ds.mean))
+            and agg_fn.column not in element.kdims):
+            return self._aggregate_ndoverlay(element, agg_fn)
+
         x, y, data, glyph = self.get_agg_data(element, category)
 
         if x is None or y is None:
