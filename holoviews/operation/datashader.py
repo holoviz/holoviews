@@ -221,10 +221,10 @@ class aggregate(Operation):
             if agg_fn2:
                 new_agg2 = agg_fn2.process_element(v, None)
 
-            # Accumulate into aggregates and mask
             if agg is None:
                 agg = new_agg
                 if is_sum: mask = new_mask
+                if agg_fn2: agg2 = new_agg2
             else:
                 agg.data += new_agg.data
                 if is_sum: mask &= new_mask
@@ -233,7 +233,8 @@ class aggregate(Operation):
         # Divide sum by count to compute mean
         if agg2 is not None:
             agg2.data.rename({'Count': agg_fn.column}, inplace=True)
-            agg.data /= agg2.data
+            with np.errstate(divide='ignore', invalid='ignore'):
+                agg.data /= agg2.data
 
         # Fill masked with with NaNs
         agg.data[column].values[mask] = np.NaN
