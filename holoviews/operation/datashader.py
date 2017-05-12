@@ -198,7 +198,8 @@ class aggregate(Operation):
         x, y = element.last.dimensions()[0:2]
         xstart, xend = self.p.x_range if self.p.x_range else element.range(x)
         ystart, yend = self.p.y_range if self.p.y_range else element.range(y)
-        agg_params = dict(self.p.items(), x_range=(xstart, xend), y_range=(ystart, yend))
+        agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
+                          x_range=(xstart, xend), y_range=(ystart, yend))
 
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
