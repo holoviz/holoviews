@@ -252,4 +252,25 @@ class PandasInterface(Interface):
             return columns.data.copy()
 
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        columns = list(dataset.data.columns)
+        if isinstance(cols, slice):
+            cols = [d.name for d in dataset.dimensions()][cols]
+        elif np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols).name]
+        else:
+            cols = [dataset.get_dimension(d).name for d in index[1]]
+        cols = [columns.index(c) for c in cols]
+        if np.isscalar(rows):
+            rows = [rows]
+
+        if scalar:
+            return dataset.data.iloc[rows[0], cols[0]]
+        return dataset.data.iloc[rows, cols]
+
+
 Interface.register(PandasInterface)

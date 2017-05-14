@@ -261,4 +261,29 @@ class DictInterface(Interface):
         return aggregated
 
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        if np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols, strict=True)]
+        elif isinstance(cols, slice):
+            cols = dataset.dimensions()[cols]
+        else:
+            cols = [dataset.get_dimension(d, strict=True) for d in cols]
+
+        if np.isscalar(rows):
+            rows = [rows]
+
+        new_data = OrderedDict()
+        for d, values in dataset.data.items():
+            if d in cols:
+                new_data[d] = values[rows]
+
+        if scalar:
+            return new_data[cols[0].name][0]
+        return new_data
+
+
 Interface.register(DictInterface)

@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from .interface import Interface
+from .interface import Interface, TabularIndex
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
@@ -623,6 +623,14 @@ class Dataset(Element):
         """
         return self._conversion_interface(self)
 
+
+    @property
+    def iloc(self):
+        """
+        Returns a TabularIndex, providing a convenient interface to
+        slice and index into the Dataset using row and column indices.
+        """
+        return TabularIndex(self)
 
 
 # Aliases for pickle backward compatibility

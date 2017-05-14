@@ -59,10 +59,10 @@ class HomogeneousColumnTypes(object):
         self.data_instance_type = None
 
     def init_column_data(self):
-        self.xs = range(11)
-        self.xs_2 = [el**2 for el in self.xs]
+        self.xs = np.array(range(11))
+        self.xs_2 = self.xs**2
 
-        self.y_ints = [i*2 for i in range(11)]
+        self.y_ints = self.xs*2
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset((self.xs, self.y_ints),
@@ -248,6 +248,89 @@ class HomogeneousColumnTypes(object):
         self.assertEqual(self.dataset_hm.array(),
                          np.column_stack([self.xs, self.y_ints]))
 
+    # Tabular indexing
+
+    def test_dataset_iloc_slice_rows(self):
+        sliced = self.dataset_hm.iloc[1:4]
+        table = Dataset({'x': self.xs[1:4], 'y': self.y_ints[1:4]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_slice_cols(self):
+        sliced = self.dataset_hm.iloc[1:4, 1:]
+        table = Dataset({'y': self.y_ints[1:4]}, kdims=[], vdims=['y'],
+                        datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_list_cols(self):
+        sliced = self.dataset_hm.iloc[1:4, [0, 1]]
+        table = Dataset({'x': self.xs[1:4], 'y': self.y_ints[1:4]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_index_cols(self):
+        sliced = self.dataset_hm.iloc[1:4, 1]
+        table = Dataset({'y': self.y_ints[1:4]}, kdims=[], vdims=['y'],
+                        datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows(self):
+        sliced = self.dataset_hm.iloc[[0, 2]]
+        table = Dataset({'x': self.xs[[0, 2]], 'y': self.y_ints[[0, 2]]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_list_cols(self):
+        sliced = self.dataset_hm.iloc[[0, 2], [0, 1]]
+        table = Dataset({'x': self.xs[[0, 2]], 'y': self.y_ints[[0, 2]]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_list_cols_by_name(self):
+        sliced = self.dataset_hm.iloc[[0, 2], ['x', 'y']]
+        table = Dataset({'x': self.xs[[0, 2]], 'y': self.y_ints[[0, 2]]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_slice_cols(self):
+        sliced = self.dataset_hm.iloc[[0, 2], slice(0, 2)]
+        table = Dataset({'x': self.xs[[0, 2]], 'y': self.y_ints[[0, 2]]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_index_rows_index_cols(self):
+        indexed = self.dataset_hm.iloc[1, 1]
+        self.assertEqual(indexed, self.y_ints[1])
+
+    def test_dataset_iloc_index_rows_slice_cols(self):
+        indexed = self.dataset_hm.iloc[1, :2]
+        table = Dataset({'x':self.xs[[1]],  'y':self.y_ints[[1]]},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(indexed, table)
+
+    def test_dataset_iloc_list_cols(self):
+        sliced = self.dataset_hm.iloc[:, [0, 1]]
+        table = Dataset({'x':self.xs,  'y':self.y_ints},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_cols_by_name(self):
+        sliced = self.dataset_hm.iloc[:, ['x', 'y']]
+        table = Dataset({'x':self.xs,  'y':self.y_ints},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_ellipsis_list_cols(self):
+        sliced = self.dataset_hm.iloc[..., [0, 1]]
+        table = Dataset({'x':self.xs,  'y':self.y_ints},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_ellipsis_list_cols_by_name(self):
+        sliced = self.dataset_hm.iloc[..., ['x', 'y']]
+        table = Dataset({'x':self.xs,  'y':self.y_ints},
+                        kdims=['x'], vdims=['y'], datatype=['dictionary'])
+        self.assertEqual(sliced, table)
 
 
 class HeterogeneousColumnTypes(HomogeneousColumnTypes):
@@ -258,8 +341,8 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     def init_column_data(self):
         self.kdims = ['Gender', 'Age']
         self.vdims = ['Weight', 'Height']
-        self.gender, self.age = ['M','M','F'], [10,16,12]
-        self.weight, self.height = [15,18,10], [0.8,0.6,0.8]
+        self.gender, self.age = np.array(['M','M','F']), np.array([10,16,12])
+        self.weight, self.height = np.array([15,18,10]), np.array([0.8,0.6,0.8])
         self.table = Dataset({'Gender':self.gender, 'Age':self.age,
                               'Weight':self.weight, 'Height':self.height},
                              kdims=self.kdims, vdims=self.vdims)
@@ -551,6 +634,91 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         row = self.table['M', 10, 'Weight']
         self.assertEquals(row, 15)
 
+    # Tabular indexing
+
+    def test_dataset_iloc_slice_rows(self):
+        sliced = self.table.iloc[1:2]
+        table = Dataset({'Gender':self.gender[1:2], 'Age':self.age[1:2],
+                         'Weight':self.weight[1:2], 'Height':self.height[1:2]},
+                        kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_slice_cols(self):
+        sliced = self.table.iloc[1:2, 1:3]
+        table = Dataset({'Age':self.age[1:2], 'Weight':self.weight[1:2]},
+                        kdims=self.kdims[1:], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_list_cols(self):
+        sliced = self.table.iloc[1:2, [1, 3]]
+        table = Dataset({'Age':self.age[1:2], 'Height':self.height[1:2]},
+                        kdims=self.kdims[1:], vdims=self.vdims[1:])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_slice_rows_index_cols(self):
+        sliced = self.table.iloc[1:2, 2]
+        table = Dataset({'Weight':self.weight[1:2]}, kdims=[], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows(self):
+        sliced = self.table.iloc[[0, 2]]
+        table = Dataset({'Gender':self.gender[[0, 2]], 'Age':self.age[[0, 2]],
+                         'Weight':self.weight[[0, 2]], 'Height':self.height[[0, 2]]},
+                        kdims=self.kdims, vdims=self.vdims)
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_list_cols(self):
+        sliced = self.table.iloc[[0, 2], [0, 2]]
+        table = Dataset({'Gender':self.gender[[0, 2]],  'Weight':self.weight[[0, 2]]},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_list_cols_by_name(self):
+        sliced = self.table.iloc[[0, 2], ['Gender', 'Weight']]
+        table = Dataset({'Gender':self.gender[[0, 2]],  'Weight':self.weight[[0, 2]]},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_rows_slice_cols(self):
+        sliced = self.table.iloc[[0, 2], slice(1, 3)]
+        table = Dataset({'Age':self.age[[0, 2]],  'Weight':self.weight[[0, 2]]},
+                        kdims=self.kdims[1:], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_index_rows_index_cols(self):
+        indexed = self.table.iloc[1, 1]
+        self.assertEqual(indexed, self.age[1])
+
+    def test_dataset_iloc_index_rows_slice_cols(self):
+        indexed = self.table.iloc[1, 1:3]
+        table = Dataset({'Age':self.age[[1]],  'Weight':self.weight[[1]]},
+                        kdims=self.kdims[1:], vdims=self.vdims[:1])
+        self.assertEqual(indexed, table)
+
+    def test_dataset_iloc_list_cols(self):
+        sliced = self.table.iloc[:, [0, 2]]
+        table = Dataset({'Gender':self.gender,  'Weight':self.weight},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_list_cols_by_name(self):
+        sliced = self.table.iloc[:, ['Gender', 'Weight']]
+        table = Dataset({'Gender':self.gender,  'Weight':self.weight},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_ellipsis_list_cols(self):
+        sliced = self.table.iloc[..., [0, 2]]
+        table = Dataset({'Gender':self.gender,  'Weight':self.weight},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
+    def test_dataset_iloc_ellipsis_list_cols_by_name(self):
+        sliced = self.table.iloc[..., ['Gender', 'Weight']]
+        table = Dataset({'Gender':self.gender,  'Weight':self.weight},
+                        kdims=self.kdims[:1], vdims=self.vdims[:1])
+        self.assertEqual(sliced, table)
+
     # Casting
 
     def test_dataset_array_ht(self):
@@ -562,6 +730,9 @@ class ArrayDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the ArrayDataset interface.
     """
+
+    datatype = 'array'
+
     def setUp(self):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['array']
@@ -573,6 +744,8 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the pandas DFDataset interface.
     """
+
+    datatype = 'dataframe'
 
     def setUp(self):
         if pd is None:
@@ -587,6 +760,8 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the pandas DaskDataset interface.
     """
+
+    datatype = 'dask'
 
     def setUp(self):
         if dd is None:
@@ -629,6 +804,8 @@ class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the generic dictionary interface.
     """
+
+    datatype = 'dictionary'
 
     def setUp(self):
         self.restore_datatype = Dataset.datatype
@@ -698,10 +875,9 @@ class GridTests(object):
         self.init_data()
 
     def init_column_data(self):
-        self.xs = range(11)
-        self.xs_2 = [el**2 for el in self.xs]
-
-        self.y_ints = [i*2 for i in range(11)]
+        self.xs = np.arange(11)
+        self.xs_2 = self.xs**2
+        self.y_ints = self.xs*2
         self.dataset_hm = Dataset((self.xs, self.y_ints),
                                   kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset((self.xs, self.y_ints),

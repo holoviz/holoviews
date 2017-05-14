@@ -391,5 +391,28 @@ class GridInterface(DictInterface):
             raise Exception('Compressed format cannot be sorted, either instantiate '
                             'in the desired order or use the expanded format.')
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        if np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols, strict=True)]
+        elif isinstance(cols, slice):
+            cols = dataset.dimensions()[cols]
+        else:
+            cols = [dataset.get_dimension(d, strict=True) for d in cols]
+
+        if np.isscalar(rows):
+            rows = [rows]
+
+        new_data = []
+        for d in cols:
+            new_data.append(dataset.dimension_values(d)[rows])
+
+        if scalar:
+            return new_data[0][0]
+        return tuple(new_data)
+
 
 Interface.register(GridInterface)

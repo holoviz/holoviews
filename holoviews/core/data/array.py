@@ -233,4 +233,23 @@ class ArrayInterface(Interface):
         return np.atleast_2d(rows)
 
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        if np.isscalar(cols):
+            if isinstance(cols, util.basestring):
+                cols = dataset.get_dimension_index(cols)
+            if np.isscalar(rows):
+                return dataset.data[rows, cols]
+            cols = [dataset.get_dimension_index(cols)]
+        elif not isinstance(cols, slice):
+            cols = [dataset.get_dimension_index(d) for d in cols]
+
+        if np.isscalar(rows):
+            rows = [rows]
+        data = dataset.data[rows, :][:, cols]
+        if data.ndim == 1:
+            return np.atleast_2d(data).T
+        return data
+
 Interface.register(ArrayInterface)
