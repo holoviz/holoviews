@@ -97,7 +97,6 @@ class periodic(Thread):
         self.count = count
         self.counter = 0
         self.completed = Event()
-        self.start()
 
     def stop(self):
         self.completed.set()

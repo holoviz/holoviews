@@ -17,6 +17,8 @@ from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
 from ..streams import Stream
 
+
+
 class HoloMap(UniformNdMapping, Overlayable):
     """
     A HoloMap can hold any number of DataLayers indexed by a list of
@@ -589,6 +591,50 @@ def dynamicmap_memoization(callable_obj, streams):
         callable_obj.memoize = memoization_state
 
 
+
+class periodic(object):
+    """
+    Implements the utility of the same name on DynamicMap.
+
+    Used to defined periodic event updates that can be started and
+    stopped.
+    """
+    _periodic_util = util.periodic
+
+    def __init__(self, dmap):
+        self.dmap = dmap
+        self.instances = []
+
+    def __call__(self, period, count, param_fn=None):
+        """
+        Run a non-blocking loop that updates the stream parameters using
+        the event method. Runs count times with the specified period. If
+        count is None, runs indefinitely.
+
+        If param_fn is not specified, the event method is called without
+        arguments. If it is specified, it must be a callable accepting a
+        single argument (the iteration count) that returns a dictionary
+        of the new stream values to be passed to the event method.
+        """
+        def inner(i):
+            kwargs = {} if param_fn is None else param_fn(i)
+            self.dmap.event(**kwargs)
+
+        instance = self._periodic_util(inner, period, count)
+        instance.start()
+        self.instances.append(instance)
+
+    def stop(self):
+        "Stop and clear all periodic instances on the DynamicMap."
+        for instance in self.instances:
+            instance.stop()
+        self.instances = []
+
+    def __str__(self):
+        return "<holoviews.core.spaces.periodic method>"
+
+
+
 class DynamicMap(HoloMap):
     """
     A DynamicMap is a type of HoloMap where the elements are dynamically
@@ -599,8 +645,6 @@ class DynamicMap(HoloMap):
 
     # Declare that callback is a positional parameter (used in clone)
     __pos_params = ['callback']
-
-    _periodic_util = util.periodic # Utility used by periodic_events method
 
     kdims = param.List(default=[], constant=True, doc="""
         The key dimensions of a DynamicMap map to the arguments of the
@@ -663,6 +707,7 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
         self.redim = redim(self, mode='dynamic')
+        self.periodic = periodic(self)
 
     @property
     def unbounded(self):
@@ -755,27 +800,6 @@ class DynamicMap(HoloMap):
             stream.update(**rkwargs)
 
         Stream.trigger(self.streams)
-
-
-    def periodic_events(self, period, count, param_fn=None):
-        """
-        Run a non-blocking loop that updates the stream parameters using
-        the event method. Runs count times with the specified period. If
-        count is None, runs indefinitely.
-
-        If param_fn is not specified, the event method is called without
-        arguments. If it is specified, it must be a callable accepting a
-        single argument (the iteration count) that returns a dictionary
-        of the new stream values to be passed to the event method.
-
-        The returned object allows the loop to be stopped at any time
-        by calling its stop() method.
-        """
-        def inner(i):
-            kwargs = {} if param_fn is None else param_fn(i)
-            self.event(**kwargs)
-
-        return self._periodic_util(inner, period, count)
 
     def _style(self, retval):
         """
