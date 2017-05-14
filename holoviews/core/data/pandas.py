@@ -61,8 +61,8 @@ class PandasInterface(Interface):
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    if eltype._auto_indexable_1d:
-                        data = (range(len(data)), data)
+                    if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                        data = (np.arange(len(data)), data)
                     else:
                         data = np.atleast_2d(data).T
                 else:

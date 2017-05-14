@@ -54,18 +54,19 @@ class ArrayInterface(Interface):
             except:
                 data = None
 
-        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
-            raise ValueError("ArrayInterface interface could not handle input type.")
-        elif data.ndim == 1:
-            if eltype._auto_indexable_1d:
-                data = np.column_stack([np.arange(len(data)), data])
-            else:
-                data = np.atleast_2d(data).T
-
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
             vdims = eltype.vdims
+
+        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
+            raise ValueError("ArrayInterface interface could not handle input type.")
+        elif data.ndim == 1:
+            if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                data = np.column_stack([np.arange(len(data)), data])
+            else:
+                data = np.atleast_2d(data).T
+
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
     @classmethod
