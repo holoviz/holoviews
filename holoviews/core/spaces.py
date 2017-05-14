@@ -603,7 +603,7 @@ class periodic(object):
 
     def __init__(self, dmap):
         self.dmap = dmap
-        self.instances = []
+        self.instance = None
 
     def __call__(self, period, count, param_fn=None):
         """
@@ -616,19 +616,22 @@ class periodic(object):
         single argument (the iteration count) that returns a dictionary
         of the new stream values to be passed to the event method.
         """
+
+        if self.instance is not None and not self.instance.completed.is_set():
+            raise RuntimeError('Periodic process already running. '
+                               'Wait until it completes or call '
+                               'stop() before running a new periodic process')
         def inner(i):
             kwargs = {} if param_fn is None else param_fn(i)
             self.dmap.event(**kwargs)
 
         instance = self._periodic_util(inner, period, count)
         instance.start()
-        self.instances.append(instance)
+        self.instance= instance
 
     def stop(self):
-        "Stop and clear all periodic instances on the DynamicMap."
-        for instance in self.instances:
-            instance.stop()
-        self.instances = []
+        "Stop and the periodic process."
+        self.instance.stop()
 
     def __str__(self):
         return "<holoviews.core.spaces.periodic method>"
