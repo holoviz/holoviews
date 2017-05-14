@@ -412,6 +412,12 @@ class PointerXY(LinkedStream):
            Pointer position along the y-axis in data coordinates""")
 
 
+class SingleTap(PointerXY):
+    """
+    The x/y-position of a single tap or click in data coordinates.
+    """
+
+
 class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.

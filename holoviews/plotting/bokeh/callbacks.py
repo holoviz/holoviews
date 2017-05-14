@@ -3,7 +3,7 @@ from bokeh.models import CustomJS
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, Bounds, Tap,
+                        RangeY, PointerX, PointerY, Bounds, Tap, SingleTap,
                         DoubleTap, MouseEnter, MouseLeave, PlotSize)
 from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
@@ -541,6 +541,17 @@ class PointerYCallback(PointerXYCallback):
 class TapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
+
+    Note: As of bokeh 0.12.5, there is no way to distinguish the
+    individual tap events within a doubletap event.
+    """
+
+    on_events = ['tap', 'doubletap']
+
+
+class SingleTapCallback(PointerXYCallback):
+    """
+    Returns the mouse x/y-position on tap event.
     """
 
     on_events = ['tap']
@@ -680,10 +691,11 @@ class Selection1DCallback(Callback):
 
 callbacks = Stream._callbacks['bokeh']
 
-callbacks[PointerXY]  = PointerXYCallback
-callbacks[PointerX]   = PointerXCallback
-callbacks[PointerY]   = PointerYCallback
+callbacks[PointerXY]   = PointerXYCallback
+callbacks[PointerX]    = PointerXCallback
+callbacks[PointerY]    = PointerYCallback
 callbacks[Tap]         = TapCallback
+callbacks[SingleTap]   = SingleTapCallback
 callbacks[DoubleTap]   = DoubleTapCallback
 callbacks[MouseEnter]  = MouseEnterCallback
 callbacks[MouseLeave]  = MouseLeaveCallback
