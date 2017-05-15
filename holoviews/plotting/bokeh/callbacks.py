@@ -3,8 +3,8 @@ from bokeh.models import CustomJS
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, Bounds, Tap,
-                        DoubleTap, MouseEnter, MouseLeave, PlotSize)
+                        RangeY, PointerX, PointerY, Bounds, Tap, SingleTap,
+                        DoubleTap, MouseEnter, MouseLeave, PlotSize, Draw)
 from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
@@ -519,7 +519,22 @@ class PointerXYCallback(Callback):
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot']
+    extra_models= ['x_range', 'y_range']
+
     on_events = ['mousemove']
+    # Clip x and y values to available axis range
+    code = """
+           if (x_range.type.endsWith('Range1d')) {
+             if (cb_obj.x < x_range.start) {
+               data['x'] = x_range.start }
+             else if (cb_obj.x > x_range.end) {
+               data['x'] = x_range.end }}
+           if (y_range.type.endsWith('Range1d')) {
+             if (cb_obj.y < y_range.start) {
+               data['y'] = y_range.start }
+             else if (cb_obj.y > y_range.end) {
+               data['y'] = y_range.end }}
+           """
 
 
 class PointerXCallback(PointerXYCallback):
@@ -538,7 +553,36 @@ class PointerYCallback(PointerXYCallback):
     attributes = {'y': 'cb_obj.y'}
 
 
+class DrawCallback(PointerXYCallback):
+    on_events = ['pan', 'panstart', 'panend']
+    models = ['plot']
+    extra_models=['pan', 'box_zoom', 'x_range', 'y_range']
+    skip = ['pan && pan.attributes.active', 'box_zoom && box_zoom.attributes.active']
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
+
+    def __init__(self, *args, **kwargs):
+        self.stroke_count = 0
+        super(DrawCallback, self).__init__(*args, **kwargs)
+
+    def _process_msg(self, msg):
+        event = msg.pop('event')
+        if event == 'panend':
+            self.stroke_count += 1
+        return dict(msg, stroke_count=self.stroke_count)
+
+
 class TapCallback(PointerXYCallback):
+    """
+    Returns the mouse x/y-position on tap event.
+
+    Note: As of bokeh 0.12.5, there is no way to distinguish the
+    individual tap events within a doubletap event.
+    """
+
+    on_events = ['tap', 'doubletap']
+
+
+class SingleTapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
     """
@@ -680,10 +724,11 @@ class Selection1DCallback(Callback):
 
 callbacks = Stream._callbacks['bokeh']
 
-callbacks[PointerXY]  = PointerXYCallback
-callbacks[PointerX]   = PointerXCallback
-callbacks[PointerY]   = PointerYCallback
+callbacks[PointerXY]   = PointerXYCallback
+callbacks[PointerX]    = PointerXCallback
+callbacks[PointerY]    = PointerYCallback
 callbacks[Tap]         = TapCallback
+callbacks[SingleTap]   = SingleTapCallback
 callbacks[DoubleTap]   = DoubleTapCallback
 callbacks[MouseEnter]  = MouseEnterCallback
 callbacks[MouseLeave]  = MouseLeaveCallback
@@ -693,6 +738,7 @@ callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+callbacks[Draw] = DrawCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback

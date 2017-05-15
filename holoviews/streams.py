@@ -412,6 +412,22 @@ class PointerXY(LinkedStream):
            Pointer position along the y-axis in data coordinates""")
 
 
+class Draw(PointerXY):
+    """
+    A series of updating x/y-positions when drawing, together with the
+    current stroke count
+    """
+
+    stroke_count = param.Integer(default=0, constant=True, doc="""
+       The current drawing stroke count. Increments every time a new
+       stroke is started.""")
+
+class SingleTap(PointerXY):
+    """
+    The x/y-position of a single tap or click in data coordinates.
+    """
+
+
 class Tap(PointerXY):
     """
     The x/y-position of a tap or click in data coordinates.
