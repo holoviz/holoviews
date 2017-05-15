@@ -78,7 +78,7 @@ class Plot(param.Parameterized):
             style_opts = None
 
         node = Store.lookup_options(cls.backend, obj, group)
-        if group == 'style' and style_opts:
+        if group == 'style' and style_opts is not None:
             return node.filtered(style_opts)
         elif group == 'plot' and plot_class:
             return node.filtered(list(plot_class.params().keys()))
