@@ -520,8 +520,19 @@ class PointerXYCallback(Callback):
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
     models = ['plot', 'x_range', 'y_range']
     on_events = ['mousemove']
-    code = ("if (x_range.type.endsWith('Range1d')) { if (cb_obj.x < x_range.start) { data['x'] = x_range.start } else if (cb_obj.x > x_range.end) { data['x'] = x_range.end }}; "
-            + "if (y_range.type.endsWith('Range1d')) { if (cb_obj.y < y_range.start) { data['y'] = y_range.start } else if (cb_obj.y > y_range.end) { data['y'] = y_range.end }}")
+    # Clip x and y values to available axis range
+    code = """
+           if (x_range.type.endsWith('Range1d')) {
+             if (cb_obj.x < x_range.start) {
+               data['x'] = x_range.start }
+             else if (cb_obj.x > x_range.end) {
+               data['x'] = x_range.end }}
+           if (y_range.type.endsWith('Range1d')) {
+             if (cb_obj.y < y_range.start) {
+               data['y'] = y_range.start }
+             else if (cb_obj.y > y_range.end) {
+               data['y'] = y_range.end }}
+           """
 
 
 class PointerXCallback(PointerXYCallback):
