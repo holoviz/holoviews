@@ -1,4 +1,4 @@
-import itertools, inspect, re
+import itertools, inspect, re, time
 from distutils.version import LooseVersion
 from collections import defaultdict
 
@@ -679,18 +679,21 @@ class periodic(object):
         self.period = None
         self.count = None
         self.counter = None
+        self._start_time = None
+        self.timeout = None
 
     @property
     def completed(self):
         return self.counter is None
 
     def start(self):
+        self._start_time = time.time()
         if self.document is None:
             raise RuntimeError('periodic was registered to be run on bokeh'
                                'server but no document was found.')
         self.document.add_periodic_callback(self._periodic_callback, self.period)
 
-    def __call__(self, period, count, callback):
+    def __call__(self, period, count, callback, timeout=None, block=False):
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
         elif not type(count) is type(None):
@@ -698,6 +701,7 @@ class periodic(object):
 
         self.callback = callback
         self.period = period*1000.
+        self.timeout = timeout
         self.count = count
         self.counter = 0
         return self
@@ -706,11 +710,16 @@ class periodic(object):
         self.callback(self.counter)
         self.counter += 1
 
+        if self.timeout is not None:
+            dt = (time.time() - self._start_time)
+            if dt > self.timeout:
+                self.stop()
         if self.counter == self.count:
             self.stop()
 
     def stop(self):
         self.counter = None
+        self.timeout = None
         try:
             self.document.remove_periodic_callback(self._periodic_callback)
         except ValueError: # Already stopped
