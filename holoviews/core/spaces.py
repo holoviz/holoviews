@@ -630,7 +630,7 @@ class periodic(object):
             kwargs = {} if param_fn is None else param_fn(i)
             self.dmap.event(**kwargs)
 
-        instance = self._periodic_util(inner, period, count)
+        instance = self._periodic_util(period, count, inner)
         instance.start()
         self.instance= instance
 

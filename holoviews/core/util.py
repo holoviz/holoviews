@@ -84,7 +84,7 @@ class periodic(Thread):
     Run a callback count times with a given period without blocking.
     """
 
-    def __init__(self, callback, period, count):
+    def __init__(self, period, count, callback):
 
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
@@ -107,8 +107,8 @@ class periodic(Thread):
 
     def __repr__(self):
         return 'periodic(%s, %s, %s)' % (self.period,
-                                         callable_name(self.callback),
-                                         self.count)
+                                         self.count,
+                                         callable_name(self.callback))
     def __str__(self):
         return repr(self)
 
