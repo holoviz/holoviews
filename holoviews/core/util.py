@@ -1,4 +1,5 @@
 import os, sys, warnings, operator
+import time
 import types
 import numbers
 import inspect
@@ -84,7 +85,7 @@ class periodic(Thread):
     Run a callback count times with a given period without blocking.
     """
 
-    def __init__(self, period, count, callback):
+    def __init__(self, period, count, callback, timeout=None, block=False):
 
         if isinstance(count, int):
             if count < 0: raise ValueError('Count value must be positive')
@@ -96,13 +97,24 @@ class periodic(Thread):
         self.callback = callback
         self.count = count
         self.counter = 0
+        self.block = block
+        self.timeout = timeout
         self._completed = Event()
+        self._start_time = None
 
     @property
     def completed(self):
         return self._completed.is_set()
 
+    def start(self):
+        self._start_time = time.time()
+        if self.block is False:
+            super(periodic,self).start()
+        else:
+            self.run()
+
     def stop(self):
+        self.timeout = None
         self._completed.set()
 
     def __repr__(self):
@@ -114,12 +126,17 @@ class periodic(Thread):
 
     def run(self):
         while not self.completed:
-            self._completed.wait(self.period)
+            if not self.block:
+                self._completed.wait(self.period)
             self.callback(self.counter)
             self.counter += 1
 
+            if self.timeout is not None:
+                dt = (time.time() - self._start_time)
+                if dt > self.timeout:
+                    self.stop()
             if self.counter == self.count:
-                self._completed.set()
+                self.stop()
 
 
 
