@@ -4,7 +4,7 @@ from bokeh.models import CustomJS
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, Bounds, Tap, SingleTap,
-                        DoubleTap, MouseEnter, MouseLeave, PlotSize)
+                        DoubleTap, MouseEnter, MouseLeave, PlotSize, Draw)
 from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
@@ -538,6 +538,23 @@ class PointerYCallback(PointerXYCallback):
     attributes = {'y': 'cb_obj.y'}
 
 
+class DrawCallback(PointerXYCallback):
+    on_events = ['pan', 'panstart', 'panend']
+    models = ['plot', 'pan', 'box_zoom']
+    skip = ['pan.attributes.active', 'box_zoom.attributes.active']
+    attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
+
+    def __init__(self, *args, **kwargs):
+        self.stroke_count = 0
+        super(DrawCallback, self).__init__(*args, **kwargs)
+
+    def _process_msg(self, msg):
+        event = msg.pop('event')
+        if event == 'panend':
+            self.stroke_count += 1
+        return dict(msg, stroke_count=self.stroke_count)
+
+
 class TapCallback(PointerXYCallback):
     """
     Returns the mouse x/y-position on tap event.
@@ -705,6 +722,7 @@ callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
+callbacks[Draw] = DrawCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback
