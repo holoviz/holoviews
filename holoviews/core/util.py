@@ -102,7 +102,7 @@ class periodic(Thread):
         self.completed.set()
 
     def __repr__(self):
-        return 'periodic(%s, %s, %d)' % (self.period,
+        return 'periodic(%s, %s, %s)' % (self.period,
                                          callable_name(self.callback),
                                          self.count)
     def __str__(self):
