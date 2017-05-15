@@ -635,7 +635,7 @@ class periodic(object):
         self.instance= instance
 
     def stop(self):
-        "Stop and the periodic process."
+        "Stop the periodic process."
         self.instance.stop()
 
     def __str__(self):
