@@ -27,6 +27,7 @@ if bokeh_version >= '0.12':
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array
+from ...core.spaces import get_nested_dmaps, DynamicMap
 
 from ..util import dim_axis_label, rgb2hex
 
@@ -664,3 +665,58 @@ def categorize_array(array, dim):
     treats as a categorical suffix.
     """
     return np.array([dim.pprint_value(x).replace(':', ';') for x in array])
+
+
+class periodic(object):
+    """
+    Mocks the API of periodic Thread in hv.core.util, allowing a smooth
+    API transition on bokeh server.
+    """
+
+    def __init__(self, document):
+        self.document = document
+        self.inner = None
+        self.count = 0
+
+    def start(self):
+        if self.document is None:
+            raise RuntimeError('periodic was registered to be run on bokeh'
+                               'server but no document was found.')
+        self.document.add_periodic_callback(self.callback, self.period)
+
+    def __call__(self, function, period, count):
+        self.inner = function
+        self.period = period*1000.
+        self.count = count
+        return self
+
+    def callback(self):
+        if self.count is None:
+            self.inner(self.count)
+        if self.count:
+            self.inner(self.count)
+            self.count -= 1
+        else:
+            self.stop()
+
+    def stop(self):
+        self.count = 0
+        self.document.remove_periodic_callback(self.callback)
+
+    @property
+    def completed(self):
+        class completed(object):
+            @classmethod
+            def is_set(cls):
+                return self.count == 0
+        return completed
+
+
+def attach_periodic(plot):
+    """
+    Attaches plot refresh to all streams on the object.
+    """
+    def append_refresh(dmap):
+        for dmap in get_nested_dmaps(dmap):
+            dmap.periodic._periodic_util = periodic(plot.document)
+    return plot.hmap.traverse(append_refresh, [DynamicMap])

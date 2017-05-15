@@ -559,18 +559,23 @@ class Generator(Callable):
             raise
 
 
+def get_nested_dmaps(dmap):
+    """
+    Get all DynamicMaps referenced by the supplied DynamicMap's callback.
+    """
+    dmaps = [dmap]
+    for o in dmap.callback.inputs:
+        if isinstance(o, DynamicMap):
+            dmaps.extend(get_nested_streams(o))
+    return list(set(dmaps))
+
+
 def get_nested_streams(dmap):
     """
     Get all (potentially nested) streams from DynamicMap with Callable
     callback.
     """
-    layer_streams = list(dmap.streams)
-    if not isinstance(dmap.callback, Callable):
-        return list(set(layer_streams))
-    for o in dmap.callback.inputs:
-        if isinstance(o, DynamicMap):
-            layer_streams += get_nested_streams(o)
-    return list(set(layer_streams))
+    return list({s for dmap in get_nested_dmaps(dmap) for s in dmap.streams})
 
 
 @contextmanager
