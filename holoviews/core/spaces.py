@@ -622,7 +622,7 @@ class periodic(object):
         of the new stream values to be passed to the event method.
         """
 
-        if self.instance is not None and not self.instance.completed.is_set():
+        if self.instance is not None and not self.instance.completed:
             raise RuntimeError('Periodic process already running. '
                                'Wait until it completes or call '
                                'stop() before running a new periodic process')

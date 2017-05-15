@@ -96,10 +96,14 @@ class periodic(Thread):
         self.callback = callback
         self.count = count
         self.counter = 0
-        self.completed = Event()
+        self._completed = Event()
+
+    @property
+    def completed(self):
+        return self._completed.is_set()
 
     def stop(self):
-        self.completed.set()
+        self._completed.set()
 
     def __repr__(self):
         return 'periodic(%s, %s, %s)' % (self.period,
@@ -109,13 +113,13 @@ class periodic(Thread):
         return repr(self)
 
     def run(self):
-        while not self.completed.is_set():
-            self.completed.wait(self.period)
+        while not self.completed:
+            self._completed.wait(self.period)
             self.callback(self.counter)
             self.counter += 1
 
             if self.counter == self.count:
-                self.completed.set()
+                self._completed.set()
 
 
 
