@@ -518,7 +518,9 @@ class PointerXYCallback(Callback):
     """
 
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y'}
-    models = ['plot', 'x_range', 'y_range']
+    models = ['plot']
+    extra_models= ['x_range', 'y_range']
+
     on_events = ['mousemove']
     # Clip x and y values to available axis range
     code = """
@@ -553,7 +555,8 @@ class PointerYCallback(PointerXYCallback):
 
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
-    models = ['plot', 'pan', 'box_zoom']
+    models = ['plot']
+    extra_models=['pan', 'box_zoom', 'x_range', 'y_range']
     skip = ['pan && pan.attributes.active', 'box_zoom && box_zoom.attributes.active']
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
 
