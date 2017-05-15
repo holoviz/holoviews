@@ -541,7 +541,7 @@ class PointerYCallback(PointerXYCallback):
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
     models = ['plot', 'pan', 'box_zoom']
-    skip = ['pan.attributes.active', 'box_zoom.attributes.active']
+    skip = ['pan && pan.attributes.active', 'box_zoom && box_zoom.attributes.active']
     attributes = {'x': 'cb_obj.x', 'y': 'cb_obj.y', 'event': 'cb_obj.event_name'}
 
     def __init__(self, *args, **kwargs):
