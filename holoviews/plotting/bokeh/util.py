@@ -675,41 +675,55 @@ class periodic(object):
 
     def __init__(self, document):
         self.document = document
-        self.inner = None
-        self.count = 0
+        self.callback = None
+        self.period = None
+        self.count = None
+        self.counter = None
+
+    @property
+    def completed(self):
+        return self.counter is None
 
     def start(self):
         if self.document is None:
             raise RuntimeError('periodic was registered to be run on bokeh'
                                'server but no document was found.')
-        self.document.add_periodic_callback(self.callback, self.period)
+        self.document.add_periodic_callback(self._periodic_callback, self.period)
 
-    def __call__(self, function, period, count):
-        self.inner = function
+    def __call__(self, period, count, callback):
+        if isinstance(count, int):
+            if count < 0: raise ValueError('Count value must be positive')
+        elif not type(count) is type(None):
+            raise ValueError('Count value must be a positive integer or None')
+
+        self.callback = callback
         self.period = period*1000.
         self.count = count
+        self.counter = 0
         return self
 
-    def callback(self):
-        if self.count is None:
-            self.inner(self.count)
-        if self.count:
-            self.inner(self.count)
-            self.count -= 1
-        else:
+    def _periodic_callback(self):
+        self.callback(self.counter)
+        self.counter += 1
+
+        if self.counter == self.count:
             self.stop()
 
     def stop(self):
-        self.count = 0
-        self.document.remove_periodic_callback(self.callback)
+        self.counter = None
+        try:
+            self.document.remove_periodic_callback(self._periodic_callback)
+        except ValueError: # Already stopped
+            pass
 
-    @property
-    def completed(self):
-        class completed(object):
-            @classmethod
-            def is_set(cls):
-                return self.count == 0
-        return completed
+    def __repr__(self):
+        return 'periodic(%s, %s, %s)' % (self.period,
+                                         self.count,
+                                         callable_name(self.callback))
+    def __str__(self):
+        return repr(self)
+
+
 
 
 def attach_periodic(plot):
