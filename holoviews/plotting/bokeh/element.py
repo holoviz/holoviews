@@ -750,9 +750,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self._update_plot(key, plot, style_element)
             self._update_ranges(style_element, ranges)
 
-        if not self.batched:
-            for cb in self.callbacks:
-                cb.initialize()
+        for cb in self.callbacks:
+            cb.initialize()
 
         if not self.overlaid:
             self._process_legend()

@@ -44,7 +44,7 @@ except:
 try:
     from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
-    from holoviews.plotting.bokeh.callbacks import Callback
+    from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
     from bokeh.models import (
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
         ToolbarBox, FixedTicker, FuncTickFormatter
@@ -97,7 +97,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         self.default_comm = mpl_renderer.comms['default']
         mpl_renderer.comms['default'] = (comms.Comm, '')
 
-    def teardown(self):
+    def tearDown(self):
         mpl_renderer.comms['default'] = self.default_comm
         Store.current_backend = self.previous_backend
 
@@ -324,10 +324,11 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.default_comm = bokeh_renderer.comms['default']
         bokeh_renderer.comms['default'] = (comms.Comm, '')
 
-    def teardown(self):
+    def tearDown(self):
         Store.current_backend = self.previous_backend
         Callback._comm_type = comms.JupyterCommJS
         mpl_renderer.comms['default'] = self.default_comm
+        Callback._callbacks = {}
 
     def test_overlay_legend(self):
         overlay = Curve(range(10), label='A') * Curve(range(10), label='B')
@@ -403,6 +404,20 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay)
         self.assertIn(plot.refresh, posx.subscribers)
         self.assertNotIn(list(plot.subplots.values())[0].refresh, posx.subscribers)
+
+    def test_batched_curve_subscribers_correctly_linked(self):
+        # Checks if a stream callback is created to link batched plot
+        # to the stream
+        posx = PointerX()
+        opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
+                'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
+        overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
+                                                  for i in range(2)})(opts), kdims=[],
+                             streams=[posx])
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual(len(Callback._callbacks), 1)
+        key = list(Callback._callbacks.keys())[0]
+        self.assertEqual(key, (id(plot.handles['plot']), id(PointerXCallback)))
 
     def test_batched_points_size_and_color(self):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
@@ -1425,7 +1440,7 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
         plotly_renderer.comms['default'] = (comms.Comm, '')
 
 
-    def teardown(self):
+    def tearDown(self):
         Store.current_backend = self.previous_backend
         plotly_renderer.comms['default'] = self.default_comm
 
