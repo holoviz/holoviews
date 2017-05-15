@@ -566,7 +566,7 @@ def get_nested_dmaps(dmap):
     dmaps = [dmap]
     for o in dmap.callback.inputs:
         if isinstance(o, DynamicMap):
-            dmaps.extend(get_nested_streams(o))
+            dmaps.extend(get_nested_dmaps(o))
     return list(set(dmaps))
 
 
