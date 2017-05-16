@@ -1065,11 +1065,7 @@ class Dimensioned(LabelledData):
 
 
     def __repr__(self):
-        reprval = PrettyPrinter.pprint(self)
-        if isinstance(reprval, unicode):
-            return str(reprval.encode("utf8"))
-        else:
-            return str(reprval)
+        return PrettyPrinter.pprint(self)
 
     def __str__(self):
         return repr(self)

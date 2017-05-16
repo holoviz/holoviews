@@ -13,7 +13,7 @@ your data.
 In addition, there are several different ways of
 """
 
-import re
+import sys, re
 import param
 # IPython not required to import ParamPager
 from param.ipython import ParamPager
@@ -267,7 +267,12 @@ class PrettyPrinter(object):
 
     @classmethod
     def pprint(cls, node):
-        return  cls.serialize(cls.recurse(node))
+        reprval = cls.serialize(cls.recurse(node))
+        if sys.version_info.major == 2:
+            return str(reprval.encode("utf8"))
+        else:
+            return str(reprval)
+
 
     @classmethod
     def serialize(cls, lines):
