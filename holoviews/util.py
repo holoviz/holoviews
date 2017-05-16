@@ -130,19 +130,30 @@ class Dynamic(param.ParameterizedFunction):
 
 class Aliases(object):
     """
-    Helper class useful for defining a set of alias tuples on a single object.
+    Helper class useful for defining a collection of dimensions or
+    sanitized group/labels.
 
-    For instance, when defining a group or label with an alias, instead
-    of setting tuples in the constructor, you could use
-    ``aliases.water`` if you first define:
+    To define a dimension alias, you could do something like:
 
-    >>> aliases = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
-    >>> aliases.water
-    ('water', 'H_2O')
+    >>> al = Aliases(male_weight='Body weight of male participants',
+                     male_height='Height of male participants')
+    >>> hv.Curve(data, kdims=[al.male_weight], vdims=[al.male_height])
 
-    This may be used to conveniently define aliases for groups, labels
-    or dimension names.
+    You can also use this to define a sanitized group or labels. Instead
+    of setting tuples in the constructor, you can use:
+
+    >>> al = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
+    >>> hv.Curve(data, label=al.glucose)
+
+    For defining richer dimension objects, you can also pass in a list
+    of dimension instances, which are then addressed by name:
+
+    >>> al = Aliases([hv.Dimension('male_weight', unit='kg', range=(0,None))])
+    >>> hv.Curve(data, kdims=[al.male_weight])
     """
-    def __init__(self, **kwargs):
+    def __init__(self, dims=[], **kwargs):
         for k,v in kwargs.items():
             setattr(self, k, (k,v))
+
+        for dim in dims:
+            setattr(self, dim.name, dim)
