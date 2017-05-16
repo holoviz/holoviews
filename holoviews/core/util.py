@@ -126,7 +126,9 @@ class periodic(Thread):
 
     def run(self):
         while not self.completed:
-            if not self.block:
+            if self.block:
+                time.sleep(self.period)
+            else:
                 self._completed.wait(self.period)
             self.callback(self.counter)
             self.counter += 1
