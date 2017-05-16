@@ -458,8 +458,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             return
 
         ranges = self.compute_ranges(self.hmap, key, ranges)
-        if not self.adjoined:
-            ranges = util.match_spec(element, ranges)
+        ranges = util.match_spec(element, ranges)
 
         label = element.label if self.show_legend else ''
         style = dict(label=label, zorder=self.zorder, **self.style[self.cyclic_index])
