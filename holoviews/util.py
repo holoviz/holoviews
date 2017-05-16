@@ -4,7 +4,6 @@ import param
 
 from .core import DynamicMap, HoloMap, ViewableElement
 from .core.operation import Operation
-from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
 from .core.spaces import Callable
 from .core import util
@@ -127,3 +126,23 @@ class Dynamic(param.ParameterizedFunction):
         kdims = [d(values=list(set(values))) for d, values in
                  zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
+
+
+class Aliases(object):
+    """
+    Helper class useful for defining a set of alias tuples on a single object.
+
+    For instance, when defining a group or label with an alias, instead
+    of setting tuples in the constructor, you could use
+    ``aliases.water`` if you first define:
+
+    >>> aliases = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
+    >>> aliases.water
+    ('water', 'H_2O')
+
+    This may be used to conveniently define aliases for groups, labels
+    or dimension names.
+    """
+    def __init__(self, **kwargs):
+        for k,v in kwargs.items():
+            setattr(self, k, (k,v))
