@@ -19,7 +19,7 @@ from ..comms import JupyterComm, Comm
 from ..plot import GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import compute_static_patch, serialize_json, attach_periodic
+from .util import compute_static_patch, serialize_json, attach_periodic, bokeh_version
 
 
 
@@ -217,4 +217,5 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
+        kwargs = {'notebook_type': 'jupyter'} if bokeh_version > '0.12.5' else {}
+        load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
