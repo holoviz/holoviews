@@ -4,7 +4,7 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 from __future__ import unicode_literals
-import sys, re
+import re
 import datetime as dt
 from operator import itemgetter
 
@@ -1065,11 +1065,7 @@ class Dimensioned(LabelledData):
 
 
     def __repr__(self):
-        reprval = PrettyPrinter.pprint(self)
-        if sys.version_info.major == 2:
-            return str(reprval.encode("utf8"))
-        else:
-            return str(reprval)
+        return PrettyPrinter.pprint(self)
 
     def __str__(self):
         return repr(self)
