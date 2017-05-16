@@ -90,6 +90,7 @@ class ErrorBars(Chart):
     def range(self, dim, data_range=True):
         drange = super(ErrorBars, self).range(dim, data_range)
         didx = self.get_dimension_index(dim)
+        dim = self.get_dimension(dim)
         if didx == 1 and data_range:
             mean = self.dimension_values(1)
             neg_error = self.dimension_values(2)
@@ -97,7 +98,11 @@ class ErrorBars(Chart):
             pos_error = self.dimension_values(pos_idx)
             lower = np.nanmin(mean-neg_error)
             upper = np.nanmax(mean+pos_error)
-            return util.max_range([(lower, upper), drange])
+            lower, upper = util.max_range([(lower, upper), drange])
+            dmin, dmax = dim.range
+            lower = lower if dmin is None or not np.isfinite(dmin) else dmin
+            upper = upper if dmax is None or not np.isfinite(dmax) else dmax
+            return lower, upper
         else:
             return drange
 
@@ -163,13 +168,10 @@ class Histogram(Element2D):
 
     vdims = param.List(default=[Dimension('Frequency')], bounds=(1,1))
 
-    def __init__(self, values, edges=None, extents=None, **params):
+    def __init__(self, values, edges=None, **params):
         self.values, self.edges, settings = self._process_data(values, edges)
         settings.update(params)
         super(Histogram, self).__init__((self.values, self.edges), **settings)
-        self._width = None
-        self._extents = (None, None, None, None) if extents is None else extents
-
 
     def __getitem__(self, key):
         """
@@ -242,17 +244,17 @@ class Histogram(Element2D):
         return values, edges, settings
 
 
-    @property
-    def extents(self):
-        if any(lim is not None for lim in self._extents):
-            return self._extents
+    def range(self, dimension, data_range=True):
+        if self.get_dimension_index(dimension) == 0 and data_range:
+            dim = self.get_dimension(dimension)
+            lower, upper = np.min(self.edges), np.max(self.edges)
+            lower, upper = util.max_range([(lower, upper), dim.soft_range])
+            dmin, dmax = dim.range
+            lower = lower if dmin is None or not np.isfinite(dmin) else dmin
+            upper = upper if dmax is None or not np.isfinite(dmax) else dmax
+            return lower, upper
         else:
-            return (np.min(self.edges), None, np.max(self.edges), None)
-
-
-    @extents.setter
-    def extents(self, extents):
-        self._extents = extents
+            return super(Histogram, self).range(dimension, data_range)
 
 
     def dimension_values(self, dim):
