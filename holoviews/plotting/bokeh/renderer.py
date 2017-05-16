@@ -7,12 +7,13 @@ from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.charts import Chart
 from bokeh.document import Document
-from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, curdoc, show
+from bokeh.embed import notebook_div, autoload_server
+from bokeh.io import load_notebook, curdoc, show as bkshow
 from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
                           WidgetBox, Div, DataTable, Tabs)
 from bokeh.plotting import Figure
 from bokeh.resources import CDN, INLINE
+from bokeh.server.server import Server
 
 from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
@@ -109,25 +110,49 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def app(self_or_cls, plot, notebook=False):
+    def app(self_or_cls, plot, show=False, new_window=False):
         """
         Creates a bokeh app from a HoloViews object or plot. By
         default simply uses attaches plot to bokeh's curdoc and
-        returns the Document, if notebook option is supplied creates
-        an Application instance, displays it and returns it.
+        returns the Document, if show option is supplied creates
+        an Application instance and displays it either in a browser
+        window or inline if notebook extension has been loaded.
+        Using the new_window option the app may be displayed in a
+        new browser tab once the notebook extension has been loaded.
         """
         renderer = self_or_cls.instance(mode='server')
-        if not notebook:
+        # If show=False and not in noteboook context return document
+        if not show and not self_or_cls.notebook_context:
             doc, _ = renderer(plot)
             return doc
 
         def modify_doc(doc):
             renderer(plot, doc=doc)
-
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
-        show(app)
-        return app
+
+        if not show:
+            # If not showing and in notebook context return app
+            return app
+        elif self_or_cls.notebook_context and not new_window:
+            # If in notebook, show=True and no new window requested
+            # display app inline
+            return bkshow(app)
+
+        # If app shown outside notebook or new_window requested
+        # start server and open in new browser tab
+        from tornado.ioloop import IOLoop
+        loop = IOLoop.current()
+        server = Server({'/': app}, port=0, loop=loop)
+        def show_callback():
+            server.show('/')
+        server.io_loop.add_callback(show_callback)
+        server.start()
+        try:
+            loop.start()
+        except RuntimeError:
+            pass
+        return server
 
 
     def server_doc(self, plot, doc=None):
@@ -169,6 +194,7 @@ class BokehRenderer(Renderer):
         patch = compute_static_patch(plot.document, plotobjects)
         processed = self._apply_post_render_hooks(patch, plot, 'json')
         return serialize_json(processed) if serialize else processed
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):
