@@ -441,12 +441,6 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         return bars
 
 
-    def get_extents(self, element, ranges):
-        x0, _, x1, _ = element.extents
-        _, y1 = element.range(1)
-        return (x0, 0, x1, y1)
-
-
     def _colorize_bars(self, cmap, bars, element, main_range, dim):
         """
         Use the given cmap to color the bars, applying the correct
