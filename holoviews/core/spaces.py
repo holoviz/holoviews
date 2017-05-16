@@ -618,8 +618,9 @@ class periodic(object):
 
         If param_fn is not specified, the event method is called without
         arguments. If it is specified, it must be a callable accepting a
-        single argument (the iteration count) that returns a dictionary
-        of the new stream values to be passed to the event method.
+        single argument (the iteration count, starting at 1) that
+        returns a dictionary of the new stream values to be passed to
+        the event method.
         """
 
         if self.instance is not None and not self.instance.completed:

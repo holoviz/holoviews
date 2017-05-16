@@ -586,7 +586,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         # Add stream subscriber mocking plot
         xval.add_subscriber(lambda **kwargs: dmap[()])
         dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
-        self.assertEqual(xval.x, 99)
+        self.assertEqual(xval.x, 100)
 
     def test_periodic_param_fn_non_blocking(self):
         def callback(x): return Curve([1,2,3])
@@ -602,7 +602,7 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
             if dmap.periodic.instance.completed:
                 break
         dmap.periodic.stop()
-        self.assertEqual(xval.x, 999)
+        self.assertEqual(xval.x, 1000)
 
     def test_periodic_param_fn_blocking_period(self):
         def callback(x):
@@ -614,7 +614,6 @@ class TestPeriodicStreamUpdate(ComparisonTestCase):
         start = time.time()
         dmap.periodic(0.5, 10, param_fn=lambda i: {'x':i}, block=True)
         end = time.time()
-        print end-start
         self.assertEqual((end - start) > 5, True)
 
 

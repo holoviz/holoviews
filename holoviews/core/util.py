@@ -130,8 +130,8 @@ class periodic(Thread):
                 time.sleep(self.period)
             else:
                 self._completed.wait(self.period)
-            self.callback(self.counter)
             self.counter += 1
+            self.callback(self.counter)
 
             if self.timeout is not None:
                 dt = (time.time() - self._start_time)
