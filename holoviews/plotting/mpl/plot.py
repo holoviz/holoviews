@@ -919,9 +919,11 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
             # axis objects, handling any Empty objects.
             obj = layouts[(r, c)]
             empty = isinstance(obj.main, Empty)
-            if empty:
+            if view.main is None:
+                continue
+            elif empty:
                 obj = AdjointLayout([])
-            elif view is None or not view.traverse(lambda x: x, [Element]):
+            elif not view.traverse(lambda x: x, [Element]):
                 self.warning('%s is empty, skipping subplot.' % obj.main)
                 continue
             elif self.transpose:

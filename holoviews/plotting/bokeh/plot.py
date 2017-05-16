@@ -524,16 +524,15 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
             # Generate the axes and create the subplots with the appropriate
             # axis objects, handling any Empty objects.
-            obj = layouts[(r, c)]
-            empty = isinstance(obj.main, Empty)
-            if empty:
+            empty = isinstance(view.main, Empty)
+            if empty or view.main is None:
                 continue
-            elif view is None or not view.traverse(lambda x: x, [Element]):
-                self.warning('%s is empty, skipping subplot.' % obj.main)
+            elif not view.traverse(lambda x: x, [Element]):
+                self.warning('%s is empty, skipping subplot.' % view.main)
                 continue
             else:
                 layout_count += 1
-            subplot_data = self._create_subplots(obj, positions,
+            subplot_data = self._create_subplots(view, positions,
                                                  layout_dimensions, frame_ranges,
                                                  num=0 if empty else layout_count)
             subplots, adjoint_layout = subplot_data
