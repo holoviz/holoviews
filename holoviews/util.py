@@ -135,16 +135,16 @@ class Dims(object):
 
     To define a dimension alias, you can use the following:
 
-    >>> d = Dims(male_weight='Body weight of male participants',
-                 male_height='Height of male participants')
-    >>> hv.Curve(data, kdims=[d.male_weight], vdims=[d.male_height])
+    d = Dims(male_weight='Body weight of male participants',
+             male_height='Height of male participants')
+    Curve(data, kdims=[d.male_weight], vdims=[d.male_height])
 
 
     For defining richer dimension objects, you can also pass in a list
     of dimension instances, which are then addressed by name:
 
-    >>> d = Dims([hv.Dimension('male_weight', unit='kg', range=(0,None))])
-    >>> hv.Curve(data, kdims=[d.male_weight])
+    d = Dims([hv.Dimension('male_weight', unit='kg', range=(0,None))])
+    Curve(data, kdims=[d.male_weight])
     """
     def __init__(self, dims=[], **kwargs):
         for k,v in kwargs.items():
