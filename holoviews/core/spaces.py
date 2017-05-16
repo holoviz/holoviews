@@ -17,6 +17,8 @@ from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
 from ..streams import Stream
 
+
+
 class HoloMap(UniformNdMapping, Overlayable):
     """
     A HoloMap can hold any number of DataLayers indexed by a list of
@@ -557,18 +559,23 @@ class Generator(Callable):
             raise
 
 
+def get_nested_dmaps(dmap):
+    """
+    Get all DynamicMaps referenced by the supplied DynamicMap's callback.
+    """
+    dmaps = [dmap]
+    for o in dmap.callback.inputs:
+        if isinstance(o, DynamicMap):
+            dmaps.extend(get_nested_dmaps(o))
+    return list(set(dmaps))
+
+
 def get_nested_streams(dmap):
     """
     Get all (potentially nested) streams from DynamicMap with Callable
     callback.
     """
-    layer_streams = list(dmap.streams)
-    if not isinstance(dmap.callback, Callable):
-        return list(set(layer_streams))
-    for o in dmap.callback.inputs:
-        if isinstance(o, DynamicMap):
-            layer_streams += get_nested_streams(o)
-    return list(set(layer_streams))
+    return list({s for dmap in get_nested_dmaps(dmap) for s in dmap.streams})
 
 
 @contextmanager
@@ -587,6 +594,55 @@ def dynamicmap_memoization(callable_obj, streams):
         raise
     finally:
         callable_obj.memoize = memoization_state
+
+
+
+class periodic(object):
+    """
+    Implements the utility of the same name on DynamicMap.
+
+    Used to defined periodic event updates that can be started and
+    stopped.
+    """
+    _periodic_util = util.periodic
+
+    def __init__(self, dmap):
+        self.dmap = dmap
+        self.instance = None
+
+    def __call__(self, period, count, param_fn=None, timeout=None, block=True):
+        """
+        Run a non-blocking loop that updates the stream parameters using
+        the event method. Runs count times with the specified period. If
+        count is None, runs indefinitely.
+
+        If param_fn is not specified, the event method is called without
+        arguments. If it is specified, it must be a callable accepting a
+        single argument (the iteration count, starting at 1) that
+        returns a dictionary of the new stream values to be passed to
+        the event method.
+        """
+
+        if self.instance is not None and not self.instance.completed:
+            raise RuntimeError('Periodic process already running. '
+                               'Wait until it completes or call '
+                               'stop() before running a new periodic process')
+        def inner(i):
+            kwargs = {} if param_fn is None else param_fn(i)
+            self.dmap.event(**kwargs)
+
+        instance = self._periodic_util(period, count, inner,
+                                       timeout=timeout, block=block)
+        instance.start()
+        self.instance= instance
+
+    def stop(self):
+        "Stop the periodic process."
+        self.instance.stop()
+
+    def __str__(self):
+        return "<holoviews.core.spaces.periodic method>"
+
 
 
 class DynamicMap(HoloMap):
@@ -661,6 +717,7 @@ class DynamicMap(HoloMap):
             if stream.source is None:
                 stream.source = self
         self.redim = redim(self, mode='dynamic')
+        self.periodic = periodic(self)
 
     @property
     def unbounded(self):
@@ -753,7 +810,6 @@ class DynamicMap(HoloMap):
             stream.update(**rkwargs)
 
         Stream.trigger(self.streams)
-
 
     def _style(self, retval):
         """

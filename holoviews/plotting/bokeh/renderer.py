@@ -16,9 +16,10 @@ from bokeh.resources import CDN, INLINE
 
 from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
+from ..plot import GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import compute_static_patch, serialize_json
+from .util import compute_static_patch, serialize_json, attach_periodic
 
 
 
@@ -122,9 +123,11 @@ class BokehRenderer(Renderer):
         if doc is None:
             doc = curdoc()
         if isinstance(plot, BokehServerWidgets):
-            plot.plot.document = doc
-        else:
-            plot.document = doc
+            plot = plot.plot
+        plot.document = doc
+        plot.traverse(lambda x: attach_periodic(plot),
+                      [GenericElementPlot])
+
         doc.add_root(plot.state)
         return doc
 

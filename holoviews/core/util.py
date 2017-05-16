@@ -1,4 +1,5 @@
 import os, sys, warnings, operator
+import time
 import types
 import numbers
 import inspect
@@ -10,6 +11,7 @@ from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
 
+from threading import Thread, Event
 import numpy as np
 import param
 
@@ -76,6 +78,67 @@ class HashableJSON(json.JSONEncoder):
             return hash(obj)
         except:
             return id(obj)
+
+
+class periodic(Thread):
+    """
+    Run a callback count times with a given period without blocking.
+    """
+
+    def __init__(self, period, count, callback, timeout=None, block=False):
+
+        if isinstance(count, int):
+            if count < 0: raise ValueError('Count value must be positive')
+        elif not type(count) is type(None):
+            raise ValueError('Count value must be a positive integer or None')
+
+        super(periodic, self).__init__()
+        self.period = period
+        self.callback = callback
+        self.count = count
+        self.counter = 0
+        self.block = block
+        self.timeout = timeout
+        self._completed = Event()
+        self._start_time = None
+
+    @property
+    def completed(self):
+        return self._completed.is_set()
+
+    def start(self):
+        self._start_time = time.time()
+        if self.block is False:
+            super(periodic,self).start()
+        else:
+            self.run()
+
+    def stop(self):
+        self.timeout = None
+        self._completed.set()
+
+    def __repr__(self):
+        return 'periodic(%s, %s, %s)' % (self.period,
+                                         self.count,
+                                         callable_name(self.callback))
+    def __str__(self):
+        return repr(self)
+
+    def run(self):
+        while not self.completed:
+            if self.block:
+                time.sleep(self.period)
+            else:
+                self._completed.wait(self.period)
+            self.counter += 1
+            self.callback(self.counter)
+
+            if self.timeout is not None:
+                dt = (time.time() - self._start_time)
+                if dt > self.timeout:
+                    self.stop()
+            if self.counter == self.count:
+                self.stop()
 
 
 

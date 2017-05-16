@@ -1,4 +1,4 @@
-import itertools, inspect, re
+import itertools, inspect, re, time
 from distutils.version import LooseVersion
 from collections import defaultdict
 
@@ -27,6 +27,7 @@ if bokeh_version >= '0.12':
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array
+from ...core.spaces import get_nested_dmaps, DynamicMap
 
 from ..util import dim_axis_label, rgb2hex
 
@@ -664,3 +665,81 @@ def categorize_array(array, dim):
     treats as a categorical suffix.
     """
     return np.array([dim.pprint_value(x).replace(':', ';') for x in array])
+
+
+class periodic(object):
+    """
+    Mocks the API of periodic Thread in hv.core.util, allowing a smooth
+    API transition on bokeh server.
+    """
+
+    def __init__(self, document):
+        self.document = document
+        self.callback = None
+        self.period = None
+        self.count = None
+        self.counter = None
+        self._start_time = None
+        self.timeout = None
+
+    @property
+    def completed(self):
+        return self.counter is None
+
+    def start(self):
+        self._start_time = time.time()
+        if self.document is None:
+            raise RuntimeError('periodic was registered to be run on bokeh'
+                               'server but no document was found.')
+        self.document.add_periodic_callback(self._periodic_callback, self.period)
+
+    def __call__(self, period, count, callback, timeout=None, block=False):
+        if isinstance(count, int):
+            if count < 0: raise ValueError('Count value must be positive')
+        elif not type(count) is type(None):
+            raise ValueError('Count value must be a positive integer or None')
+
+        self.callback = callback
+        self.period = period*1000.
+        self.timeout = timeout
+        self.count = count
+        self.counter = 0
+        return self
+
+    def _periodic_callback(self):
+        self.callback(self.counter)
+        self.counter += 1
+
+        if self.timeout is not None:
+            dt = (time.time() - self._start_time)
+            if dt > self.timeout:
+                self.stop()
+        if self.counter == self.count:
+            self.stop()
+
+    def stop(self):
+        self.counter = None
+        self.timeout = None
+        try:
+            self.document.remove_periodic_callback(self._periodic_callback)
+        except ValueError: # Already stopped
+            pass
+
+    def __repr__(self):
+        return 'periodic(%s, %s, %s)' % (self.period,
+                                         self.count,
+                                         callable_name(self.callback))
+    def __str__(self):
+        return repr(self)
+
+
+
+
+def attach_periodic(plot):
+    """
+    Attaches plot refresh to all streams on the object.
+    """
+    def append_refresh(dmap):
+        for dmap in get_nested_dmaps(dmap):
+            dmap.periodic._periodic_util = periodic(plot.document)
+    return plot.hmap.traverse(append_refresh, [DynamicMap])
