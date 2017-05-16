@@ -2,7 +2,7 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, ViewableElement
+from .core import Dimension, DynamicMap, HoloMap, ViewableElement
 from .core.operation import Operation
 from .core.operation import OperationCallable
 from .core.spaces import Callable
@@ -128,32 +128,26 @@ class Dynamic(param.ParameterizedFunction):
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
 
 
-class Aliases(object):
+class Dims(object):
     """
     Helper class useful for defining a collection of dimensions or
     sanitized group/labels.
 
-    To define a dimension alias, you could do something like:
+    To define a dimension alias, you can use the following:
 
-    >>> al = Aliases(male_weight='Body weight of male participants',
-                     male_height='Height of male participants')
-    >>> hv.Curve(data, kdims=[al.male_weight], vdims=[al.male_height])
+    >>> d = Dims(male_weight='Body weight of male participants',
+                 male_height='Height of male participants')
+    >>> hv.Curve(data, kdims=[d.male_weight], vdims=[d.male_height])
 
-    You can also use this to define a sanitized group or labels. Instead
-    of setting tuples in the constructor, you can use:
-
-    >>> al = Aliases(water='H_2O', glucose='C_6H_{12}O_6')
-    >>> hv.Curve(data, label=al.glucose)
 
     For defining richer dimension objects, you can also pass in a list
     of dimension instances, which are then addressed by name:
 
-    >>> al = Aliases([hv.Dimension('male_weight', unit='kg', range=(0,None))])
-    >>> hv.Curve(data, kdims=[al.male_weight])
+    >>> d = Dims([hv.Dimension('male_weight', unit='kg', range=(0,None))])
+    >>> hv.Curve(data, kdims=[d.male_weight])
     """
     def __init__(self, dims=[], **kwargs):
         for k,v in kwargs.items():
-            setattr(self, k, (k,v))
-
+            setattr(self, k, Dimension(k,label=v))
         for dim in dims:
             setattr(self, dim.name, dim)
