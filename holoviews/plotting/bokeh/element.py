@@ -382,7 +382,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if self.toolbar:
             tools = self._init_tools(element)
             properties['tools'] = tools
-            properties['toolbar_location'] = self.toolbar
+        properties['toolbar_location'] = self.toolbar
 
         properties['webgl'] = Store.renderers[self.renderer.backend].webgl
         with warnings.catch_warnings():
@@ -1129,7 +1129,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
-                          'show_grid', 'logx', 'logy', 'xticks',
+                          'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis']
 
