@@ -1,4 +1,5 @@
 from collections import deque
+import time
 
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
@@ -558,6 +559,76 @@ class DynamicStreamReset(ComparisonTestCase):
 
         self.assertEqual(xresets, 2)
         self.assertEqual(yresets, 2)
+
+
+class TestPeriodicStreamUpdate(ComparisonTestCase):
+
+    def test_periodic_counter_blocking(self):
+        class Counter(object):
+            def __init__(self):
+                self.count = 0
+            def __call__(self):
+                self.count += 1
+                return Curve([1,2,3])
+
+        next_stream = Stream.define('Next')()
+        counter = Counter()
+        dmap = DynamicMap(counter, streams=[next_stream])
+        # Add stream subscriber mocking plot
+        next_stream.add_subscriber(lambda **kwargs: dmap[()])
+        dmap.periodic(0.01, 100)
+        self.assertEqual(counter.count, 100)
+
+    def test_periodic_param_fn_blocking(self):
+        def callback(x): return Curve([1,2,3])
+        xval = Stream.define('x',x=0)()
+        dmap = DynamicMap(callback, streams=[xval])
+        # Add stream subscriber mocking plot
+        xval.add_subscriber(lambda **kwargs: dmap[()])
+        dmap.periodic(0.01, 100, param_fn=lambda i: {'x':i})
+        self.assertEqual(xval.x, 99)
+
+    def test_periodic_param_fn_non_blocking(self):
+        def callback(x): return Curve([1,2,3])
+        xval = Stream.define('x',x=0)()
+        dmap = DynamicMap(callback, streams=[xval])
+        # Add stream subscriber mocking plot
+        xval.add_subscriber(lambda **kwargs: dmap[()])
+
+        dmap.periodic(0.0001, 1000, param_fn=lambda i: {'x':i}, block=False)
+        self.assertNotEqual(xval.x, 1000)
+        for i in range(1000):
+            time.sleep(0.01)
+            if dmap.periodic.instance.completed:
+                break
+        dmap.periodic.stop()
+        self.assertEqual(xval.x, 999)
+
+    def test_periodic_param_fn_blocking_period(self):
+        def callback(x):
+            return Curve([1,2,3])
+        xval = Stream.define('x',x=0)()
+        dmap = DynamicMap(callback, streams=[xval])
+        # Add stream subscriber mocking plot
+        xval.add_subscriber(lambda **kwargs: dmap[()])
+        start = time.time()
+        dmap.periodic(0.5, 10, param_fn=lambda i: {'x':i}, block=True)
+        end = time.time()
+        print end-start
+        self.assertEqual((end - start) > 5, True)
+
+
+    def test_periodic_param_fn_blocking_timeout(self):
+        def callback(x):
+            return Curve([1,2,3])
+        xval = Stream.define('x',x=0)()
+        dmap = DynamicMap(callback, streams=[xval])
+        # Add stream subscriber mocking plot
+        xval.add_subscriber(lambda **kwargs: dmap[()])
+        start = time.time()
+        dmap.periodic(0.5, 100, param_fn=lambda i: {'x':i}, timeout=3)
+        end = time.time()
+        self.assertEqual((end - start) < 5, True)
 
 
 class DynamicCollate(ComparisonTestCase):
