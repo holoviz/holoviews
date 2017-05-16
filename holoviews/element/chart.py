@@ -245,18 +245,16 @@ class Histogram(Element2D):
 
 
     def range(self, dimension, data_range=True):
-        drange = super(Histogram, self).range(dimension, data_range)
-        dimidx = self.get_dimension_index(dimension)
-        dim    = self.get_dimension(dimension)
-        if dimidx == 0 and data_range:
+        if self.get_dimension_index(dimension) == 0 and data_range:
+            dim = self.get_dimension(dimension)
             lower, upper = np.min(self.edges), np.max(self.edges)
-            lower, upper = util.max_range([(lower, upper), drange])
+            lower, upper = util.max_range([(lower, upper), dim.soft_range])
             dmin, dmax = dim.range
             lower = lower if dmin is None or not np.isfinite(dmin) else dmin
             upper = upper if dmax is None or not np.isfinite(dmax) else dmax
             return lower, upper
         else:
-            return drange
+            return super(Histogram, self).range(dimension, data_range)
 
 
     def dimension_values(self, dim):
