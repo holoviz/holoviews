@@ -357,8 +357,9 @@ class HistogramPlot(ElementPlot):
 
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
-        y0 = np.nanmin([0, y0])
-        y1 = np.nanmax([0, y1])
+        ylow, yhigh = element.get_dimension(1).range
+        y0 = np.nanmin([0, y0]) if ylow is None or not np.isfinite(ylow) else ylow
+        y1 = np.nanmax([0, y1]) if yhigh is None or not np.isfinite(yhigh) else yhigh
         return (x0, y0, x1, y1)
 
 

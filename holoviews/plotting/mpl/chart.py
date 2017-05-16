@@ -233,14 +233,7 @@ class SpreadPlot(AreaPlot):
         return (xs, mean-neg_error, mean+pos_error), style, {}
 
     def get_extents(self, element, ranges):
-        vdims = element.vdims
-        vdim = vdims[0].name
-        neg_dim = vdims[1].name
-        pos_dim = vdims[2].name if len(vdims) > 2 else vdims[1].name
-        neg = np.max(np.abs(ranges[neg_dim]))
-        pos = np.max(np.abs(ranges[pos_dim]))
-        ranges[vdim] = (ranges[vdim][0]-neg, ranges[vdim][1]+pos)
-        return super(AreaPlot, self).get_extents(element, ranges)
+        return ChartPlot.get_extents(self, element, ranges)
 
 
 
@@ -286,6 +279,7 @@ class HistogramPlot(ChartPlot):
         # Get plot ranges and values
         edges, hvals, widths, lims = self._process_hist(hist)
 
+        style = self.style[self.cyclic_index]
         if self.invert_axes:
             self.offset_linefn = self.handles['axis'].axvline
             self.plotfn = self.handles['axis'].barh
@@ -294,9 +288,8 @@ class HistogramPlot(ChartPlot):
             self.plotfn = self.handles['axis'].bar
 
         # Plot bars and make any adjustments
-        style = self.style[self.cyclic_index]
         legend = hist.label if self.show_legend else ''
-        bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, label=legend, **style)
+        bars = self.plotfn(edges, hvals, widths, zorder=self.zorder, label=legend, align='edge', **style)
         self.handles['artist'] = self._update_plot(self.keys[-1], hist, bars, lims, ranges) # Indexing top
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
@@ -312,7 +305,7 @@ class HistogramPlot(ChartPlot):
         self.cyclic = hist.get_dimension(0).cyclic
         edges = hist.edges[:-1]
         hist_vals = np.array(hist.values)
-        widths = [hist._width] * len(hist) if getattr(hist, '_width', None) else np.diff(hist.edges)
+        widths = np.diff(hist.edges)
         lims = hist.range(0) + hist.range(1)
         return edges, hist_vals, widths, lims
 
@@ -339,7 +332,9 @@ class HistogramPlot(ChartPlot):
 
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
-        y0 = np.nanmin([0, y0])
+        ylow, yhigh = element.get_dimension(1).range
+        y0 = np.nanmin([0, y0]) if ylow is None or not np.isfinite(ylow) else ylow
+        y1 = np.nanmax([0, y1]) if yhigh is None or not np.isfinite(yhigh) else yhigh
         return (x0, y0, x1, y1)
 
 
