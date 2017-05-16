@@ -84,10 +84,24 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             return self.diff(plot), info
 
+
     @bothmethod
-    def get_widget(self_or_cls, plot, widget_type, **kwargs):
+    def get_plot(self_or_cls, obj, doc=None, renderer=None):
+        """
+        Given a HoloViews Viewable return a corresponding plot instance.
+        Allows supplying a document attach the plot to, useful when
+        combining the bokeh model with another plot.
+        """
+        plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
+        if doc is not None:
+            plot.document = doc
+        return plot
+
+
+    @bothmethod
+    def get_widget(self_or_cls, plot, widget_type, doc=None, **kwargs):
         if not isinstance(plot, Plot):
-            plot = self_or_cls.get_plot(plot)
+            plot = self_or_cls.get_plot(plot, doc)
         if self_or_cls.mode == 'server':
             return BokehServerWidgets(plot, renderer=self_or_cls.instance(), **kwargs)
         else:
