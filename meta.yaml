@@ -13,7 +13,7 @@ requirements:
     - setuptools
   run:
     - python
-    - param >=1.5,<2.0
+    - param >=1.5.1,<2.0
     - numpy
     - matplotlib
     - bokeh ==0.12.5
