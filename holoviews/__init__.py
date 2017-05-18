@@ -24,7 +24,7 @@ from .core.spaces import (HoloMap, Callable, DynamicMap, # noqa (API import)
                           GridSpace, GridMatrix)
 
 from .interface import *                                 # noqa (API import)
-from .operation import Operation,  TreeOperation         # noqa (API import)
+from .operation import Operation                         # noqa (API import)
 from .operation import ElementOperation                  # noqa (Deprecated API import)
 from .element import *                                   # noqa (API import)
 from .element import __all__ as elements_list
