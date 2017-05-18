@@ -43,8 +43,6 @@ except ImportError as e:
     class notebook_extension(param.ParameterizedFunction):
         def __call__(self, *args, **opts):
             raise Exception("IPython notebook not available")
-    if str(e) != 'No module named IPython':
-        raise e
 
 
 # A single holoviews.rc file may be executed if found.
