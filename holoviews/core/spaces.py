@@ -458,7 +458,8 @@ class Callable(param.Parameterized):
                                        **dict(params, name=util.callable_name(callable)))
         self._memoized = {}
         self._is_overlay = False
-
+        self.args = None
+        self.kwargs = None
 
     @property
     def argspec(self):
@@ -485,7 +486,7 @@ class Callable(param.Parameterized):
 
     def __call__(self, *args, **kwargs):
         # Nothing to do for callbacks that accept no arguments
-        (inargs, inkwargs) = (args, kwargs)
+        (self.args, self.kwargs) = (args, kwargs)
         if not args and not kwargs: return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
         streams = []
@@ -518,8 +519,8 @@ class Callable(param.Parameterized):
         try:
             ret = self.callable(*args, **kwargs)
         except:
-            posstr = ', '.join(['%r' % el for el in inargs]) if inargs else ''
-            kwstr = ', '.join('%s=%r' % (k,v) for k,v in inkwargs.items())
+            posstr = ', '.join(['%r' % el for el in self.args]) if self.args else ''
+            kwstr = ', '.join('%s=%r' % (k,v) for k,v in self.kwargs.items())
             argstr = ', '.join([el for el in [posstr, kwstr] if el])
             message = ("Exception raised in callable '{name}' of type '{ctype}'.\n"
                        "Invoked as {name}({argstr})")
