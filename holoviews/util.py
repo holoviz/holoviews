@@ -141,6 +141,9 @@ class ParamDimList(param.ParameterizedFunction):
     label = param.Boolean(default=True, doc="""
         Whether to use the parameter documentation as the dimension label""")
 
+    precedence_threshold = param.Number(default=0, doc="""
+        The threshold below which parameters are ignored.""")
+
     def __call__(self, parameterized, **kwargs):
 
         types = {param.String:str, param.Integer:int}
@@ -149,7 +152,9 @@ class ParamDimList(param.ParameterizedFunction):
         params = parameterized.params()
         for name, param_obj in params.items():
             if name in p.exclude:  continue
-            elif param_obj.precedence  and param_obj.precedence < 0: continue
+            elif param_obj.precedence:
+                if param_obj.precedence < p.precedence_threshold:
+                    continue
             dim_kws = {}
             if param_obj.doc and p.label:
                 dim_kws['label'] = param_obj.doc
