@@ -198,6 +198,27 @@ class TestMixedCallableInvocation(ComparisonTestCase):
         self.assertEqual(Callable(mixed_example)(3,5,5), 33)
 
 
+class TestLastArgsKwargs(ComparisonTestCase):
+
+    def test_args_none_before_invocation(self):
+        c = Callable(lambda x,y: x+y)
+        self.assertEqual(c.args, None)
+
+    def test_kwargs_none_before_invocation(self):
+        c = Callable(lambda x,y: x+y)
+        self.assertEqual(c.kwargs, None)
+
+    def test_args_invocation(self):
+        c = Callable(lambda x,y: x+y)
+        c(1,2)
+        self.assertEqual(c.args, (1,2))
+
+    def test_kwargs_invocation(self):
+        c = Callable(lambda x,y: x+y)
+        c(x=1,y=4)
+        self.assertEqual(c.kwargs, dict(x=1,y=4))
+
+
 class TestDynamicMapInvocation(ComparisonTestCase):
     """
     Test that DynamicMap passes kdims and stream parameters correctly to
