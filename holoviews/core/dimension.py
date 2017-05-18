@@ -314,7 +314,7 @@ class Dimension(param.Parameterized):
             self.warning("The 'initial' string for dimension values is no longer supported.")
             values = []
 
-        all_params['values'] = sorted(list(unique_array(values)))
+        all_params['values'] = list(unique_array(values))
         super(Dimension, self).__init__(**all_params)
 
 
