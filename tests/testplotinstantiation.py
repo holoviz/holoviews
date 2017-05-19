@@ -117,6 +117,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot.handles['axis']
         plot.initialize_plot()
 
+    @attr(optional=1) # Requires jinja2
     def test_dynamic_nonoverlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', range=(0.01, 1)),
@@ -126,6 +127,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
+    @attr(optional=1) # Requires jinja2
     def test_dynamic_values_partial_overlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', values=['x', 'y', 'z']),
