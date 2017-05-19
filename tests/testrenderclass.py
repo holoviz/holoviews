@@ -12,8 +12,6 @@ from holoviews import HoloMap, Image, ItemTable, Store, GridSpace, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 
-from .testwidgets import normalize
-
 try:
     # Standardize backend due to random inconsistencies
     from matplotlib import pyplot
@@ -65,35 +63,35 @@ class MPLRendererTest(ComparisonTestCase):
     def test_get_size_single_plot(self):
         plot = self.renderer.get_plot(self.image1)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (400, 400))
+        self.assertEqual((w, h), (288, 288))
 
     def test_get_size_row_plot(self):
         plot = self.renderer.get_plot(self.image1+self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (800, 355))
+        self.assertEqual((w, h), (576, 258))
 
     def test_get_size_column_plot(self):
         plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (400, 702))
+        self.assertEqual((w, h), (288, 510))
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
         plot = self.renderer.get_plot(grid)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (480, 480))
+        self.assertEqual((w, h), (345, 345))
 
     def test_get_size_table(self):
         table = Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (400, 400))
+        self.assertEqual((w, h), (288, 288))
 
     def test_get_size_tables_in_layout(self):
         table = Table(range(10), kdims=['x'])
         plot = self.renderer.get_plot(table+table)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (800, 320))
+        self.assertEqual((w, h), (576, 231))
 
 class BokehRendererTest(ComparisonTestCase):
 
