@@ -6,6 +6,7 @@ from holoviews.core.options import OptionError, Cycle, Options, OptionTree
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 Options.skip_invalid = False
 
@@ -155,6 +156,9 @@ class TestOptionTree(ComparisonTestCase):
         self.assertEqual(options.MyType['group2'].options, {'kw2':'value2'})
 
     def test_optiontree_inheritance(self):
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
         options = OptionTree(groups=['group1', 'group2'])
 
         opts1 = Options(kw1='value1')
@@ -175,6 +179,9 @@ class TestOptionTree(ComparisonTestCase):
         """
         Tests for ordering problems manifested in issue #93
         """
+        if 'matplotlib' not in Store.renderers:
+            raise SkipTest("General to specific option test requires matplotlib")
+
         options = OptionTree(groups=['group1', 'group2'])
 
         opts3 = Options(kw3='value3')
@@ -192,6 +199,7 @@ class TestOptionTree(ComparisonTestCase):
                          {'kw2':'value2', 'kw4':'value4'})
 
 
+@attr(optional=1) # Requires matplotlib
 class TestStoreInheritanceDynamic(ComparisonTestCase):
     """
     Tests to prevent regression after fix in PR #646
@@ -385,7 +393,7 @@ class TestStoreInheritanceDynamic(ComparisonTestCase):
         self.assertEqual(custom_obj_lookup.kwargs, expected_custom_obj)
 
 
-
+@attr(optional=1) # Requires matplotlib
 class TestStoreInheritance(ComparisonTestCase):
     """
     Tests to prevent regression after fix in 71c1f3a that resolves
@@ -462,6 +470,7 @@ class TestStoreInheritance(ComparisonTestCase):
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
 
+@attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):
 
     def setUp(self):

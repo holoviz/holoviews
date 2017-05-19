@@ -7,6 +7,8 @@ from holoviews import Overlay, Curve, Image
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
+from nose.plugins.attrib import attr
+
 
 class TestStoreOptionsMerge(ComparisonTestCase):
 
@@ -34,7 +36,7 @@ class TestStoreOptionsMerge(ComparisonTestCase):
         self.assertEqual(out, self.expected)
 
 
-
+@attr(optional=1) # Requires matplotlib
 class TestStoreOptionsCall(ComparisonTestCase):
     """
     The __call__ method makes use of most of the functionality in
@@ -43,7 +45,6 @@ class TestStoreOptionsCall(ComparisonTestCase):
 
     def setUp(self):
         Store.current_backend = 'matplotlib'
-
 
     def test_overlay_options_partitioned(self):
         """
