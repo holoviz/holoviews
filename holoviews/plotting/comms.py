@@ -2,14 +2,20 @@ import json
 import uuid
 import sys
 import traceback
+
+from unittest import SkipTest
+
 try:
     from StringIO import StringIO
 except:
     from io import StringIO
 
-from ipykernel.comm import Comm as IPyComm
-from IPython import get_ipython
 
+try:
+    from ipykernel.comm import Comm as IPyComm
+    from IPython import get_ipython
+except:
+    raise SkipTest('ipykernel or IPython not available')
 
 class StandardOutput(list):
     """

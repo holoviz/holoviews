@@ -1,4 +1,10 @@
-import pandas as pd
+from unittest import SkipTest
+from nose.plugins.attrib import attr
+try:
+    import pandas as pd
+except:
+    raise SkipTest('Pandas not available')
+
 import numpy as np
 
 from holoviews import Curve, Scatter
@@ -31,11 +37,13 @@ class TimeseriesOperationTests(ComparisonTestCase):
         rolled_vals = [np.NaN, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5]
         self.assertEqual(rolled, Curve(rolled_vals))
 
+    @attr(optional=1) # Requires scipy
     def test_roll_date_with_window_type(self):
         rolled = rolling(self.date_curve, rolling_window=3, window_type='triang')
         rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
         self.assertEqual(rolled, Curve((self.dates, rolled_vals)))
-        
+
+    @attr(optional=1) # Requires scipy
     def test_roll_ints_with_window_type(self):
         rolled = rolling(self.int_curve, rolling_window=3, window_type='triang')
         rolled_vals = [np.NaN, 2, 3, 4, 5, 6, np.NaN]
@@ -43,13 +51,13 @@ class TimeseriesOperationTests(ComparisonTestCase):
 
     def test_resample_weekly(self):
         resampled = resample(self.date_curve, rule='W')
-        dates = list(map(pd.Timestamp, ["2016-01-03", "2016-01-10"]))		
+        dates = list(map(pd.Timestamp, ["2016-01-03", "2016-01-10"]))
         vals = [2, 5.5]
         self.assertEqual(resampled, Curve((dates, vals)))
 
     def test_resample_weekly_closed_left(self):
         resampled = resample(self.date_curve, rule='W', closed='left')
-        dates = list(map(pd.Timestamp, ["2016-01-03", "2016-01-10"]))		
+        dates = list(map(pd.Timestamp, ["2016-01-03", "2016-01-10"]))
         vals = [1.5, 5]
         self.assertEqual(resampled, Curve((dates, vals)))
 

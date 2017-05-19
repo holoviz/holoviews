@@ -1,4 +1,5 @@
 import numpy as np
+from nose.plugins.attrib import attr
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area)
@@ -52,6 +53,7 @@ class OperationTests(ComparisonTestCase):
         op_img = gradient(img)
         self.assertEqual(op_img, img.clone(np.array([[3.162278, 3.162278], [3.162278, 3.162278]]), group='Gradient'))
 
+    @attr(optional=1) # Requires matplotlib
     def test_image_contours(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img)
@@ -60,6 +62,7 @@ class OperationTests(ComparisonTestCase):
                                   group='Level', level=0.5, vdims=img.vdims)
         self.assertEqual(op_contours, img*ndoverlay)
 
+    @attr(optional=1) # Requires matplotlib
     def test_image_contours_filled(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, filled=True, levels=[2, 2.5])

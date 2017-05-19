@@ -7,6 +7,7 @@ import logging
 import datetime as dt
 from collections import deque
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 from io import StringIO
 
 import param
@@ -1322,6 +1323,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
+    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_xaxis(self):
         def formatter(x):
             return '%s' % x
@@ -1329,6 +1331,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
 
+    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_yaxis(self):
         def formatter(x):
             return '%s' % x
@@ -1429,6 +1432,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
 
 
+@attr(optional=1)
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):

@@ -1,4 +1,5 @@
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset
@@ -77,7 +78,7 @@ class ImageInterfaceTest(ComparisonTestCase):
         self.assertEqual(sliced.ydensity, 1)
         self.assertEqual(sliced.dimension_values(2, flat=False),
                          self.array[5:6, 5:8])
-    
+
     def test_index_x_slice_y(self):
         sliced = self.image[3.2, 1.2:5.2]
         self.assertEqual(sliced.bounds.lbrt(), (2.0, 1.0, 4.0, 5.0))
@@ -106,14 +107,14 @@ class ImageInterfaceTest(ComparisonTestCase):
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
         zs = [0, 7, 14, 21, 28, 35, 42, 49, 56, 63]
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             self.assertEqual(self.image.sample(x=5),
                              Curve((ys, zs), kdims=['y'], vdims=['z']))
 
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
         zs = [0, 4, 8, 12, 16, 20, 24, 28, 32, 36]
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             self.assertEqual(self.image.sample(y=5),
                              Curve((xs, zs), kdims=['x'], vdims=['z']))
 
@@ -124,14 +125,14 @@ class ImageInterfaceTest(ComparisonTestCase):
     def test_reduce_x_dimension(self):
         ys = np.linspace(0.5, 9.5, 10)
         zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], Image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Image):
             self.assertEqual(self.image.reduce(x=np.mean),
                              Curve((ys, zs), kdims=['y'], vdims=['z']))
 
     def test_reduce_y_dimension(self):
         xs = np.linspace(-9, 9, 10)
         zs = [0., 4.5, 9., 13.5, 18., 22.5, 27., 31.5, 36., 40.5]
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], Image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Image):
             self.assertEqual(self.image.reduce(y=np.mean),
                              Curve((xs, zs), kdims=['x'], vdims=['z']))
 
@@ -150,7 +151,7 @@ class ImageInterfaceTest(ComparisonTestCase):
         self.assertEqual(reindexed, data)
 
     def test_aggregate_with_spreadfn(self):
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.image):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             agg = self.image.aggregate('x', np.mean, np.std)
         xs = self.image.dimension_values('x', expanded=False)
         mean = self.array.mean(axis=0)
@@ -170,12 +171,13 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.image = Image((self.xs, self.ys, self.array))
 
 
-
+@attr(optional=1)
 class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
 
     datatype = 'xarray'
 
 
+@attr(optional=1)
 class ImageIrisInterfaceTest(ImageGridInterfaceTest):
 
     datatype = 'cube'
@@ -286,14 +288,14 @@ class RGBInterfaceTest(ComparisonTestCase):
                                vdims=[Dimension('R', range=(0, 1))]))
 
     def test_select_single_coordinate(self):
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.rgb):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb[5.2, 3.1],
                              self.rgb.clone([tuple(self.rgb_array[3, 7])],
                                             kdims=[], new_type=Dataset))
 
 
     def test_reduce_to_single_values(self):
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.rgb):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb.reduce(['x', 'y'], function=np.mean),
                              self.rgb.clone([tuple(np.mean(self.rgb_array, axis=(0, 1)))],
                                             kdims=[], new_type=Dataset))
@@ -301,7 +303,7 @@ class RGBInterfaceTest(ComparisonTestCase):
     def test_sample_xcoord(self):
         ys = np.linspace(0.5, 9.5, 10)
         data = (ys,) + tuple(self.rgb_array[:, 7, i] for i in range(3))
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.rgb):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb.sample(x=5),
                              self.rgb.clone(data, kdims=['y'],
                                             new_type=Curve))
@@ -309,7 +311,7 @@ class RGBInterfaceTest(ComparisonTestCase):
     def test_sample_ycoord(self):
         xs = np.linspace(-9, 9, 10)
         data = (xs,) + tuple(self.rgb_array[4, :, i] for i in range(3))
-        with DatatypeContext([self.datatype, 'columns', 'dataframe'], self.rgb):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.rgb):
             self.assertEqual(self.rgb.sample(y=5),
                              self.rgb.clone(data, kdims=['x'],
                                             new_type=Curve))
@@ -342,7 +344,7 @@ class RGBGridInterfaceTest(RGBInterfaceTest):
                         self.rgb_array[:, :, 1], self.rgb_array[:, :, 2]))
 
 
-
+@attr(optional=1)
 class RGBXArrayInterfaceTest(RGBGridInterfaceTest):
 
     datatype = 'xarray'
@@ -385,6 +387,7 @@ class HSVGridInterfaceTest(HSVArrayInterfaceTest):
                         self.hsv_array[:, :, 1], self.hsv_array[:, :, 2]))
 
 
+@attr(optional=1)
 class HSVXArrayInterfaceTest(HSVGridInterfaceTest):
 
     datatype = 'xarray'

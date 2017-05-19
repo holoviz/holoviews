@@ -1,6 +1,12 @@
 import uuid, json
 
 import param
+from unittest import SkipTest
+try:
+    import plotly
+except:
+    raise SkipTest('Plotly not available.')
+
 with param.logging_level('CRITICAL'):
     from plotly.offline.offline import utils, get_plotlyjs
 
