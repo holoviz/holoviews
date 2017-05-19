@@ -2,13 +2,11 @@ import json
 import uuid
 import sys
 import traceback
+
 try:
     from StringIO import StringIO
 except:
     from io import StringIO
-
-from ipykernel.comm import Comm as IPyComm
-from IPython import get_ipython
 
 
 class StandardOutput(list):
@@ -151,6 +149,7 @@ class JupyterComm(Comm):
     """
 
     def init(self):
+        from ipykernel.comm import Comm as IPyComm
         if self._comm:
             return
         self._comm = IPyComm(target_name=self.id, data={})
@@ -206,6 +205,7 @@ class JupyterCommJS(JupyterComm):
         """
         Initializes a Comms object
         """
+        from IPython import get_ipython
         super(JupyterCommJS, self).__init__(plot, id, on_msg)
         self.manager = get_ipython().kernel.comm_manager
         self.manager.register_target(self.id, self._handle_open)

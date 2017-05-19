@@ -7,6 +7,7 @@ import logging
 import datetime as dt
 from collections import deque
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 from io import StringIO
 
 import param
@@ -116,6 +117,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         plot.handles['axis']
         plot.initialize_plot()
 
+    @attr(optional=1) # Requires jinja2
     def test_dynamic_nonoverlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', range=(0.01, 1)),
@@ -125,6 +127,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
                            kdims=kdims[:1])
         mpl_renderer.get_widget(dmap1 + dmap2, 'selection')
 
+    @attr(optional=1) # Requires jinja2
     def test_dynamic_values_partial_overlap(self):
         kdims = [Dimension('File', range=(0.01, 1)),
                  Dimension('SliceDimension', values=['x', 'y', 'z']),
@@ -1322,6 +1325,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
+    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_xaxis(self):
         def formatter(x):
             return '%s' % x
@@ -1329,6 +1333,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].formatter, FuncTickFormatter)
 
+    @attr(optional=1)  # Requires Flexx
     def test_element_formatter_yaxis(self):
         def formatter(x):
             return '%s' % x
@@ -1429,6 +1434,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
 
 
+@attr(optional=1)
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
 
     def setUp(self):

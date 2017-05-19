@@ -1,7 +1,9 @@
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.options import Store
+
 
 try:
     from holoviews.plotting.bokeh.callbacks import Callback
@@ -13,7 +15,7 @@ try:
 except:
     bokeh_renderer = None
 
-
+@attr(optional=1)
 class TestBokehCustomJSCallbacks(ComparisonTestCase):
 
     def setUp(self):
@@ -50,7 +52,7 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
                 'data["y1"] = cb_data["geometry"]["y1"];\n')
         self.assertEqual(js_code, code)
 
-
+@attr(optional=1)
 class TestBokehServerJSCallbacks(ComparisonTestCase):
 
     def setUp(self):

@@ -1,4 +1,5 @@
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 from holoviews import NdOverlay, Overlay
 from holoviews.core.spaces import DynamicMap
@@ -298,6 +299,8 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(curve, sources[2])
 
 
+
+@attr(optional=1)  # Flexx is optional
 class TestBokehUtils(ComparisonTestCase):
 
     def setUp(self):
@@ -320,7 +323,7 @@ class TestBokehUtils(ComparisonTestCase):
                    '    return "" + x + "$";\n};\n\nreturn formatter();\n')
         self.assertEqual(jsfunc, js_func)
 
-    
+
     def test_py2js_funcformatter_arg_and_kwarg(self):
         def test(x, pos=None):  return '%s$' % x
         jsfunc = util.py2js_tickformatter(test)

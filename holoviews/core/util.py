@@ -766,6 +766,7 @@ def unique_array(arr):
     elif pd:
         return pd.unique(arr)
     else:
+        arr = np.asarray(arr)
         _, uniq_inds = np.unique(arr, return_index=True)
         return arr[np.sort(uniq_inds)]
 

@@ -5,6 +5,7 @@ Unit tests of the helper functions in core.utils
 import sys, math
 import unittest
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 import datetime
 import numpy as np
@@ -112,6 +113,7 @@ class TestDeepHash(ComparisonTestCase):
         self.assertNotEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_equality(self):
+        if pd is None: raise SkipTest
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '1':True},
@@ -123,6 +125,7 @@ class TestDeepHash(ComparisonTestCase):
         self.assertEqual(deephash(obj1), deephash(obj2))
 
     def test_deephash_nested_mixed_inequality(self):
+        if pd is None: raise SkipTest
         obj1 = [datetime.datetime(1,2,3), set([1,2,3]),
                 pd.DataFrame({'a':[1,2],'b':[3,4]}),
                 np.array([1,2,3]), {'a':'b', '2':True},
