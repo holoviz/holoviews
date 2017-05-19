@@ -28,16 +28,20 @@ class TestOptions(ComparisonTestCase):
         Options('test')
 
     def test_options_valid_keywords1(self):
-        Options('test', allowed_keywords=['kw1'], kw1='value')
+        opts = Options('test', allowed_keywords=['kw1'], kw1='value')
+        self.assertEquals(opts.kwargs, {'kw1':'value'})
 
     def test_options_valid_keywords2(self):
-        Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value')
+        opts = Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value')
+        self.assertEquals(opts.kwargs, {'kw1':'value'})
 
     def test_options_valid_keywords3(self):
-        Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value', kw2='value')
+        opts = Options('test', allowed_keywords=['kw1', 'kw2'], kw1='value1', kw2='value2')
+        self.assertEquals(opts.kwargs, {'kw1':'value1', 'kw2':'value2'})
 
     def test_options_any_keywords3(self):
-        Options('test', kw1='value', kw2='value')
+        opts = Options('test', kw1='value1', kw2='value3')
+        self.assertEquals(opts.kwargs, {'kw1':'value1', 'kw2':'value3'})
 
     def test_options_invalid_keywords1(self):
         try:
