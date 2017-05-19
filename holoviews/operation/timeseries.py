@@ -1,7 +1,7 @@
 import param
 import numpy as np
-
 import pandas as pd
+
 from ..core import Operation, Element
 from ..core.data import PandasInterface
 from ..element import Scatter

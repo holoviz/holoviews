@@ -1,7 +1,6 @@
 import uuid, json
 
 import param
-import plotly
 with param.logging_level('CRITICAL'):
     from plotly.offline.offline import utils, get_plotlyjs
 
