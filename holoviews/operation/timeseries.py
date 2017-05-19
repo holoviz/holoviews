@@ -1,13 +1,7 @@
 import param
 import numpy as np
-from unittest import SkipTest
 
-try:
-    import pandas as pd
-except:
-    raise SkipTest('Pandas not available.')
-
-
+import pandas as pd
 from ..core import Operation, Element
 from ..core.data import PandasInterface
 from ..element import Scatter
