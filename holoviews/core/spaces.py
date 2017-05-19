@@ -847,7 +847,8 @@ class DynamicMap(HoloMap):
         return self._style(retval)
 
 
-    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+    def clone(self, data=None, shared_data=True, new_type=None, link_inputs=True,
+              *args, **overrides):
         """
         Clone method to adapt the slightly different signature of
         DynamicMap that also overrides Dimensioned clone to avoid
@@ -864,7 +865,7 @@ class DynamicMap(HoloMap):
         if clone.callback is self.callback:
             with util.disable_constant(clone):
                 clone.callback = clone.callback.clone(inputs=[self],
-                                                      link_inputs=True)
+                                                      link_inputs=link_inputs)
         return clone
 
 
