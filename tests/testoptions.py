@@ -2,7 +2,7 @@ import os
 import pickle
 import numpy as np
 from holoviews import Store, StoreOptions, Histogram, Image
-from holoviews.core.options import OptionError, Cycle, Options, OptionTree
+from holoviews.core.options import OptionError, Cycle, Options, OptionTree, options_policy
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
 from unittest import SkipTest
@@ -54,6 +54,26 @@ class TestOptions(ComparisonTestCase):
             Options('test', allowed_keywords=['kw2'], kw2='value', kw3='value')
         except OptionError as e:
             self.assertEqual(str(e), "Invalid option 'kw3', valid options are: ['kw2']")
+
+    def test_options_invalid_keywords_skip1(self):
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            opts = Options('test', allowed_keywords=['kw1'], kw='value')
+        self.assertEqual(opts.kwargs, {})
+
+    def test_options_invalid_keywords_skip2(self):
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            opts = Options('test', allowed_keywords=['kw1'], kw1='value', kw2='val')
+        self.assertEqual(opts.kwargs, {'kw1':'value'})
+
+
+    def test_options_record_invalid(self):
+        StoreOptions.start_recording_skipped()
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            opts = Options('test', allowed_keywords=['kw1'], kw1='value', kw2='val')
+        errors = StoreOptions.stop_recording_skipped()
+        self.assertEqual(len(errors),1)
+        self.assertEqual(errors[0].invalid_keyword,'kw2')
+
 
     def test_options_get_options(self):
         opts = Options('test', allowed_keywords=['kw2', 'kw3'],
