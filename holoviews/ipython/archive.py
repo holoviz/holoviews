@@ -163,11 +163,10 @@ class NotebookArchive(FileArchive):
             return
 
         self.export_success = None
-        self._notebook_data = io.StringIO()
         name = self.get_namespace()
         # Unfortunate javascript hacks to get at notebook data
-        capture_cmd = ((r"var capture = '%s._notebook_data.write(r\"\"\"'" % name)
-                       + r"+json_string+'\"\"\".decode(\'utf-8\'))'; ")
+        capture_cmd = ((r"var capture = '%s._notebook_data=r\"\"\"'" % name)
+                       + r"+json_string+'\"\"\"'; ")
         cmd = (r'var kernel = IPython.notebook.kernel; '
                + r'var json_data = IPython.notebook.toJSON(); '
                + r'var json_string = JSON.stringify(json_data); '
@@ -278,14 +277,11 @@ class NotebookArchive(FileArchive):
 
     def _get_notebook_node(self):                   # pragma: no cover
         "Load captured notebook node"
-        self._notebook_data.seek(0, os.SEEK_END)
-        size = self._notebook_data.tell()
+        size = len(self._notebook_data)
         if size == 0:
             raise Exception("Captured buffer size for notebook node is zero.")
-        self._notebook_data.seek(0)
-        node = reader.reads(self._notebook_data.read())
+        node = reader.reads(self._notebook_data)
         self.nbversion = reader.get_version(node)
-        self._notebook_data.close()
         return node
 
 

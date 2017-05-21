@@ -25,7 +25,7 @@ from param.parameterized import bothmethod
 
 from .dimension import LabelledData
 from .element import Collator, Element
-from .layout import Layout
+from .overlay import Overlay, Layout
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .options import Store
 from .util import unique_iterator, group_sanitizer, label_sanitizer
@@ -340,7 +340,7 @@ class Pickler(Exporter):
         filename = self_or_cls._filename(filename) if isinstance(filename, str) else filename
         with zipfile.ZipFile(filename, 'w', compression=compression) as f:
 
-            if isinstance(obj, Layout):
+            if isinstance(obj, Layout) and not isinstance(obj, Overlay):
                 entries = ['.'.join(k) for k in obj.data.keys()]
                 components = list(obj.data.values())
                 entries = entries if len(entries) > 1 else [entries[0]+'(L)']
