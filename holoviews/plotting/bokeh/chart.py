@@ -926,24 +926,28 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 data[group_dim.name].append(ds.dimension_values(group_dim))
 
         # Concatenate the stacks or groups
+        sanitized_data = {}
         for col, vals in data.items():
             if len(vals) == 1:
-                data[col] = vals[0]
+                sanitized_data[dimension_sanitizer(col)] = vals[0]
             elif vals:
-                data[col] = np.concatenate(vals)
-            else:
-                del data[col]
+                sanitized_data[dimension_sanitizer(col)] = np.concatenate(vals)
+
+        for name, val in mapping.items():
+            if isinstance(val, basestring):
+                mapping[name] = dimension_sanitizer(mapping[name])
 
         # Ensure x-values are categorical
-        if xdim.name in data:
-            data[xdim.name] = categorize_array(data[xdim.name], xdim)
+        xname = dimension_sanitizer(xdim.name)
+        if xname in sanitized_data:
+            sanitized_data[xname] = categorize_array(sanitized_data[xname], xdim)
 
         # If axes inverted change mapping to match hbar signature
         if self.invert_axes:
             mapping.update({'y': mapping.pop('x'), 'left': mapping.pop('bottom'),
                             'right': mapping.pop('top'), 'height': mapping.pop('width')})
 
-        return data, mapping
+        return sanitized_data, mapping
 
     def get_batched_data(self, element, ranges, empty):
         el = element.last

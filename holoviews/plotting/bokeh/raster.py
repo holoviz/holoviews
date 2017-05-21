@@ -2,7 +2,7 @@ import numpy as np
 import param
 
 from bokeh.models import HoverTool
-from ...core.util import cartesian_product, is_nan
+from ...core.util import cartesian_product, is_nan, dimension_sanitizer
 from ...element import Image, Raster
 from ..renderer import SkipRendering
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
@@ -123,7 +123,7 @@ class HeatmapPlot(ColorbarPlot):
         return super(HeatmapPlot, self)._get_factors(element.gridded)
 
     def get_data(self, element, ranges=None, empty=False):
-        x, y, z = element.dimensions(label=True)[:3]
+        x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
         aggregate = element.gridded
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
@@ -140,7 +140,8 @@ class HeatmapPlot(ColorbarPlot):
 
         if any(isinstance(t, HoverTool) for t in self.state.tools):
             for vdim in element.vdims:
-                data[vdim.name] = ['-' if is_nan(v) else vdim.pprint_value(v)
+                sanitized = dimension_sanitizer(vdim.name)
+                data[sanitized] = ['-' if is_nan(v) else vdim.pprint_value(v)
                                    for v in aggregate.dimension_values(vdim)]
         return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
                        'height': 1, 'width': 1})
