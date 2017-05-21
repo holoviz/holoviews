@@ -607,7 +607,10 @@ class QuadMesh(Raster):
         slices = util.process_ellipses(self,slices)
         if not self._grid:
             raise KeyError("Indexing of non-grid based QuadMesh"
-                             "currently not supported")
+                           "currently not supported")
+        slices = util.wrap_tuple(slices)
+        if len(slices) == 1:
+            slices = slices+(slice(None),)
         if len(slices) > (2 + self.depth):
             raise KeyError("Can only slice %d dimensions" % (2 + self.depth))
         elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
@@ -618,17 +621,18 @@ class QuadMesh(Raster):
         if not any(slc_types):
             indices = []
             for idx, data in zip(slices, self.data[:self.ndims]):
-                indices.append(np.digitize([idx], data)-1)
-            return self.data[2][tuple(indices[::-1])]
+                dig = np.digitize([idx], data)
+                indices.append(dig-1 if dig else dig)
+            return self.data[2][tuple(indices[::-1])][0]
         else:
             sliced_data, indices = [], []
             for slc, data in zip(slices, self.data[:self.ndims]):
                 if isinstance(slc, slice):
                     low, high = slc.start, slc.stop
-                    lidx = ([None] if low is None else
-                            max((np.digitize([low], data)-1, 0)))[0]
-                    hidx = ([None] if high is None else
-                            np.digitize([high], data))[0]
+                    lidx = (None if low is None else
+                            max((np.digitize([low], data)-1, 0))[0])
+                    hidx = (None if high is None else
+                            np.digitize([high], data)[0])
                     sliced_data.append(data[lidx:hidx])
                     indices.append(slice(lidx, (hidx if hidx is None else hidx-1)))
                 else:
