@@ -14,7 +14,7 @@ import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store, Dataset,
                        NdOverlay, GridSpace, HoloMap, Layout, Cycle,
-                       Palette)
+                       Palette, Element)
 from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
@@ -555,9 +555,38 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(hover[0].tooltips, tooltips)
         self.assertEqual(hover[0].line_policy, line_policy)
 
+        if isinstance(element, Element):
+            cds = fig.select_one(dict(type=ColumnDataSource))
+            for label, lookup in hover[0].tooltips:
+                if label in element.dimensions():
+                    self.assertIn(lookup[2:-1], cds.data)
+
         # Ensure all the glyph renderers have a hover tool
         for renderer in renderers:
             self.assertTrue(any(renderer in h.renderers for h in hover))
+
+    def test_bars_hover_ensure_kdims_sanitized(self):
+        obj = Bars(np.random.rand(10,2), kdims=['Dim with spaces'])
+        obj = obj(plot={'tools': ['hover']})
+        self._test_hover_info(obj, [('Dim with spaces', '@{Dim_with_spaces}'), ('y', '@{y}')])
+
+    def test_bars_hover_ensure_vdims_sanitized(self):
+        obj = Bars(np.random.rand(10,2), vdims=['Dim with spaces'])
+        obj = obj(plot={'tools': ['hover']})
+        self._test_hover_info(obj, [('x', '@{x}'), ('Dim with spaces', '@{Dim_with_spaces}')])
+
+    def test_heatmap_hover_ensure_kdims_sanitized(self):
+        hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
+        hm = hm(plot={'tools': ['hover']})
+        self._test_hover_info(hm, [('x with space', '@{x_with_space}'),
+                                   ('y with $pecial symbol', '@{y_with_pecial_symbol}'),
+                                   ('z', '@{z}')])
+
+    def test_heatmap_hover_ensure_vdims_sanitized(self):
+        hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace'])
+        hm = hm(plot={'tools': ['hover']})
+        self._test_hover_info(hm, [('x', '@{x}'), ('y', '@{y}'),
+                                   ('z with $pace', '@{z_with_pace}')])
 
     def test_points_overlay_datetime_hover(self):
         obj = NdOverlay({i: Points((list(pd.date_range('2016-01-01', '2016-01-31')), range(31))) for i in range(5)},
