@@ -161,13 +161,13 @@ class BokehRenderer(Renderer):
         """
         if doc is None:
             doc = curdoc()
+        root = plot.state
         if isinstance(plot, BokehServerWidgets):
             plot = plot.plot
         plot.document = doc
         plot.traverse(lambda x: attach_periodic(plot),
                       [GenericElementPlot])
-
-        doc.add_root(plot.state)
+        doc.add_root(root)
         return doc
 
 
