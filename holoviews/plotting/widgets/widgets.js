@@ -65,10 +65,12 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 		}
 	}
 	this.current = current;
-	var kernel = IPython.notebook.kernel;
-	callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
-	var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-	kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+	if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
+		var kernel = Jupyter.notebook.kernel;
+		callbacks = {iopub: {output: $.proxy(callback, this, this.initialized)}};
+		var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
+		kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+	}
 }
 
 HoloViewsWidget.prototype.update_cache = function(force){
