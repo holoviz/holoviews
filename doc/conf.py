@@ -13,7 +13,7 @@ from ..setup import setup_args
 # Declare information specific to this project.
 project = u'HoloViews'
 authors = u'IOAM: Jean-Luc R. Stevens, Philipp Rudiger, and James A. Bednar'
-copyright = u'2015 ' + authors
+copyright = u'2017 ' + authors
 ioam_module = 'holoviews'
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
@@ -33,9 +33,61 @@ rst_epilog = """
 """.format(url=ASSETS_URL, version=version)
 
 # Override IOAM theme
-import sphinx_rtd_theme
-html_theme = "sphinx_rtd_theme"
-html_theme_path = [sphinx_rtd_theme.get_html_theme_path()]
+html_theme = 'holoviews_theme'
+html_theme_path = ['.']
+MAIN_SITE = '//holoviews.org'
+
+html_context = {
+    'SITEMAP_BASE_URL': 'http://holoviews.org/', # Trailing slash is needed
+    'SITE_URL': '/',
+    'DESCRIPTION': 'HoloViews library, documentation site.',
+    'AUTHOR': 'HoloViews contributors',
+    'VERSION': version,
+    # Nav
+    'NAV': (
+        ('About', MAIN_SITE + '/about.html'),
+        ('Gallery', '/Gallery/index.html'),
+        ('Docs', '//holoviews.org/'),
+        ('Github', '//github.com/ioam/holoviews'),
+    ),
+    # Links
+    'LINKS': (
+        ('Getting started', 'Getting_Started/index.html'),
+        ('User Guides', 'User_Guide/index.html'),
+        ('Tutorials', 'Tutorials/index.html'),
+        ('Gallery', 'Gallery/index.html'),
+        ('Reference', 'Reference_Manual/index.html'),
+        ('FAQ', 'FAQ.html'),
+        ('About', 'about.html')
+    ),
+    # About Links
+    'ABOUT': (
+        ('About', MAIN_SITE + '/about.html')
+    ),
+    # Social links
+    'SOCIAL': (
+        ('Mailing list', '//gitter.im/ioam/holoviews'),
+        ('Github', '//github.com/ioam/holoviews')
+    ),
+    # Links for the docs sub navigation
+    'NAV_DOCS': (
+        ('Getting started', 'Getting_Started/index'),
+        ('User Guides', 'User_Guide/index'),
+        ('Tutorials', 'Tutorials/index'),
+        ('Gallery', 'Gallery/index'),
+        ('Reference', 'Reference_Manual/index'),
+        ('FAQ', 'FAQ'),
+        ('About', 'about')
+    ),
+    'css_server': os.environ.get('HOLOVIEWS_DOCS_CSS_SERVER', 'assets.holoviews.org'),
+    'js_includes': ['custom.js', 'require.js']
+}
+
+# (Optional) Logo. Should be small enough to fit the navbar (ideally 24x24).
+# Path should be relative to the ``_static`` files directory.
+html_logo = "my_logo.png"
+
+
 html_logo = '_static/holoviews_logo.png'
 html_favicon = '_static/favicon.ico'
 
@@ -90,17 +142,12 @@ intersphinx_mapping = {'http://docs.python.org/': None,
                        'http://ipython.org/ipython-doc/2/': None,
                        'http://ioam.github.io/param/': None}
 
-js_includes = ['require.js', 'bootstrap.js', 'custom.js', 'js/theme.js']
-
 from builder.paramdoc import param_formatter
 from nbpublisher import nbbuild
 
 
 def setup(app):
     app.connect('autodoc-process-docstring', param_formatter)
-    for js in js_includes:
-        app.add_javascript(js)
-
     try:
         import runipy # noqa (Warning import)
         nbbuild.setup(app)
