@@ -19,7 +19,7 @@ from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars, Text,
-                               BoxWhisker)
+                               BoxWhisker, HLine)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerXY, PointerX
 from holoviews.operation import gridmatrix
@@ -971,6 +971,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         x_range = plot.handles['x_range']
         self.assertIsInstance(x_range, FactorRange)
         self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
+
     def test_points_categorical_xaxis_invert_axes(self):
         points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(points)
@@ -1080,6 +1081,34 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(x_range, Range1d)
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
+
+    def test_hline_invert_axes(self):
+        hline = HLine(1.1)(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(hline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.dimension, 'height')
+        self.assertEqual(span.location, 1.1)
+
+    def test_hline_plot(self):
+        hline = HLine(1.1)
+        plot = bokeh_renderer.get_plot(hline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.dimension, 'width')
+        self.assertEqual(span.location, 1.1)
+
+    def test_vline_invert_axes(self):
+        vline = VLine(1.1)(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(vline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.dimension, 'width')
+        self.assertEqual(span.location, 1.1)
+
+    def test_vline_plot(self):
+        vline = VLine(1.1)
+        plot = bokeh_renderer.get_plot(vline)
+        span = plot.handles['glyph']
+        self.assertEqual(span.dimension, 'height')
+        self.assertEqual(span.location, 1.1)
 
     def test_box_whisker_datetime(self):
         times = np.arange(dt.datetime(2017,1,1), dt.datetime(2017,2,1),
