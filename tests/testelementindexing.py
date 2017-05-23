@@ -2,7 +2,7 @@
 Test cases for both indexing and slicing of elements
 """
 import numpy as np
-from holoviews import Histogram
+from holoviews import Histogram, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -91,3 +91,46 @@ class HistogramIndexingTest(ComparisonTestCase):
         except Exception as e:
             if not str(e).startswith("'Key value 10 is out of the histogram bounds"):
                 raise AssertionError("Out of bound exception not generated")
+
+
+class QuadMeshIndexingTest(ComparisonTestCase):
+
+
+    def setUp(self):
+        n = 4
+        self.xs = np.logspace(1, 3, n)
+        self.ys = np.linspace(1, 10, n)
+        self.zs = np.arange((n-1)**2).reshape(n-1, n-1)
+        self.qmesh = QuadMesh((self.xs, self.ys, self.zs))
+
+    def test_qmesh_index_lower_left(self):
+        self.assertEqual(self.qmesh[0, 0], 0)
+
+    def test_qmesh_index_lower_right(self):
+        self.assertEqual(self.qmesh[800, 3.9], 2)
+
+    def test_qmesh_index_top_left(self):
+        self.assertEqual(self.qmesh[10, 9.9], 6)
+
+    def test_qmesh_index_top_right(self):
+        self.assertEqual(self.qmesh[216, 7], 8)
+
+    def test_qmesh_index_xcoords(self):
+        sliced = QuadMesh((self.xs[2:4], self.ys, self.zs[:, 2:3]))
+        self.assertEqual(self.qmesh[300, :], sliced)
+
+    def test_qmesh_index_ycoords(self):
+        sliced = QuadMesh((self.xs, self.ys[-2:], self.zs[-1:, :]))
+        self.assertEqual(self.qmesh[:, 7], sliced)
+
+    def test_qmesh_slice_xcoords(self):
+        sliced = QuadMesh((self.xs[1:], self.ys, self.zs[:, 1:]))
+        self.assertEqual(self.qmesh[100:1000, :], sliced)
+
+    def test_qmesh_slice_ycoords(self):
+        sliced = QuadMesh((self.xs, self.ys[:-1], self.zs[:-1, :]))
+        self.assertEqual(self.qmesh[:, 2:7], sliced)
+
+    def test_qmesh_slice_xcoords_ycoords(self):
+        sliced = QuadMesh((self.xs[1:], self.ys[:-1], self.zs[:-1, 1:]))
+        self.assertEqual(self.qmesh[100:1000, 2:7], sliced)
