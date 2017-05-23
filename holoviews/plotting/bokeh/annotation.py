@@ -57,7 +57,10 @@ class LineAnnotationPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         data, mapping = {}, {}
-        mapping['dimension'] = 'width' if isinstance(element, HLine) else 'height'
+        dim = 'width' if isinstance(element, HLine) else 'height'
+        if self.invert_axes:
+            dim = 'width' if dim == 'height' else 'height'
+        mapping['dimension'] = dim
         mapping['location'] = element.data
         return (data, mapping)
 
