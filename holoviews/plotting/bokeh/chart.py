@@ -726,11 +726,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Get colors
         cdim = color_dim or group_dim
-        cvals = element.dimension_values(cdim) if cdim else None
+        cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
             if cvals.dtype.kind in 'if' and no_cidx:
                 cvals = categorize_array(cvals, group_dim)
-            factors = None if cvals.dtype.kind in 'if' else list(np.unique(cvals))
+            factors = None if cvals.dtype.kind in 'if' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:
