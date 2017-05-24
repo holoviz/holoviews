@@ -1013,7 +1013,9 @@ class ColorbarPlot(ElementPlot):
         if colors:
             palette = colors
         else:
-            palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
+            palette = style.pop('cmap', 'viridis')
+            if not isinstance(palette, list):
+                palette = mplcmap_to_palette(palette, ncolors)
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
