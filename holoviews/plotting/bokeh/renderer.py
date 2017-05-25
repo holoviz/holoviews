@@ -120,7 +120,7 @@ class BokehRenderer(Renderer):
     def app(self_or_cls, plot, show=False, new_window=False):
         """
         Creates a bokeh app from a HoloViews object or plot. By
-        default simply uses attaches plot to bokeh's curdoc and
+        default simply attaches the plot to bokeh's curdoc and
         returns the Document, if show option is supplied creates
         an Application instance and displays it either in a browser
         window or inline if notebook extension has been loaded.
@@ -162,18 +162,25 @@ class BokehRenderer(Renderer):
         return server
 
 
-    def server_doc(self, plot, doc=None):
+    @bothmethod
+    def server_doc(self_or_cls, obj, doc=None):
         """
-        Get server document.
+        Get a bokeh Document with the plot attached. May supply
+        an existing doc, otherwise bokeh.io.curdoc() is used to
+        attach the plot to the global document instance.
         """
         if doc is None:
             doc = curdoc()
+        if not isinstance(obj, (Plot, BokehServerWidgets)):
+            renderer = self_or_cls.instance(mode='server')
+            plot, _ =  renderer._validate(obj, 'auto')
+        else:
+            plot = obj
         root = plot.state
         if isinstance(plot, BokehServerWidgets):
             plot = plot.plot
         plot.document = doc
-        plot.traverse(lambda x: attach_periodic(plot),
-                      [GenericElementPlot])
+        plot.traverse(lambda x: attach_periodic(x), [GenericElementPlot])
         doc.add_root(root)
         return doc
 
