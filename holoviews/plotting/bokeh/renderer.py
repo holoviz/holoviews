@@ -5,7 +5,6 @@ from param.parameterized import bothmethod
 
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
-from bokeh.charts import Chart
 from bokeh.document import Document
 from bokeh.embed import notebook_div, autoload_server
 from bokeh.io import load_notebook, curdoc, show as bkshow
@@ -22,6 +21,13 @@ from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import compute_static_patch, serialize_json, attach_periodic, bokeh_version
 
+try:
+    if bokeh_version > '0.12.5':
+        from bkcharts import Chart
+    else:
+        from bokeh.charts import Chart
+except:
+    Chart = None
 
 
 class BokehRenderer(Renderer):
@@ -259,3 +265,5 @@ class BokehRenderer(Renderer):
         """
         kwargs = {'notebook_type': 'jupyter'} if bokeh_version > '0.12.5' else {}
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
+        from bokeh.io import _state
+        _state.output_notebook()

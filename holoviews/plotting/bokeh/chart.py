@@ -2,10 +2,6 @@ from collections import defaultdict
 
 import numpy as np
 import param
-try:
-    from bokeh.charts import BoxPlot as BokehBoxPlot
-except:
-    BokehBoxPlot = None, None
 from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
                           Range1d, CategoricalColorMapper, CustomJS,
                           HoverTool)
@@ -23,6 +19,14 @@ from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import update_plot, bokeh_version, expand_batched_style, categorize_array
+
+try:
+    if bokeh_version > '0.12.5':
+        from bkcharts import BoxPlot as BokehBoxPlot
+    else:
+        from bokeh.charts import BoxPlot as BokehBoxPlot
+except:
+    BokehBoxPlot = None, None
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
