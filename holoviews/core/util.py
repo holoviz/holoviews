@@ -656,7 +656,7 @@ def max_range(ranges):
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'All-NaN (slice|axis) encountered')
             values = [r for r in ranges for v in r if v is not None]
-            if pd and all(isinstance(v, pd.tslib.Timestamp) for r in values for v in r):
+            if pd and all(isinstance(v, pd.Timestamp) for r in values for v in r):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
             if arr.dtype.kind in 'OSU':
