@@ -12,7 +12,7 @@ __version__ = param.Version(release=(1,7,0), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core import archive                                # noqa (API import)
-from .core.dimension import OrderedDict, Dimension       # noqa (API import)
+from .core.dimension import OrderedDict, Dimension, Dimensioned       # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
 from .core.options import (Options, Store, Cycle,        # noqa (API import)
                            Palette, StoreOptions)
@@ -61,6 +61,13 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
     except IOError:
         pass
 
+
+def opts(obj, options):
+    from holoviews.ipython.parser import OptsSpec
+    if not isinstance(obj, Dimensioned):
+        return obj
+    else:
+        return StoreOptions.set_options(obj, OptsSpec.parse(options))
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):

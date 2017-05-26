@@ -1077,8 +1077,11 @@ class Dimensioned(LabelledData):
         return unicode(PrettyPrinter.pprint(self))
 
 
-
     def __call__(self, options=None, **kwargs):
+        self.warning('Use opts method instead')
+        return self.opts(options, **kwargs)
+
+    def opts(self, options=None, **kwargs):
         """
         Apply the supplied options to a clone of the object which is
         then returned. Note that if no options are supplied at all,
@@ -1113,6 +1116,7 @@ class Dimensioned(LabelledData):
             deep_clone = self.map(lambda x: x.clone(id=None))
         else:
             deep_clone = self.map(lambda x: x.clone(id=x.id))
+        print(options)
         StoreOptions.set_options(deep_clone, options, **kwargs)
         return deep_clone
 
