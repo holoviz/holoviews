@@ -185,12 +185,20 @@ class notebook_extension(param.ParameterizedFunction):
                 OutputMagic.allowed['fig'] = list_formats('fig', backend)
                 OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
 
+        if selected_backend is None:
+            raise ImportError('None of the backends could be imported')
+
+        # Abort if IPython not found
+        try:
+            ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
+        except:
+            Store.current_backend = selected_backend
+            return
+
+        p = param.ParamOverrides(self, params)
         resources = self._get_resources(args, params)
 
-        ip = params.pop('ip', None)
-        p = param.ParamOverrides(self, params)
         Store.display_formats = p.display_formats
-
         if 'html' not in p.display_formats and len(p.display_formats) > 1:
             msg = ('Output magic unable to control displayed format '
                    'as IPython notebook uses fixed precedence '
@@ -198,17 +206,12 @@ class notebook_extension(param.ParameterizedFunction):
             display(HTML('<b>Warning</b>: %s' % msg))
 
         if notebook_extension._loaded == False:
-            ip = get_ipython() if ip is None else ip # noqa (get_ipython)
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             OutputMagic.initialize([backend for backend, _ in imports])
             set_display_hooks(ip)
             notebook_extension._loaded = True
-
-        if selected_backend is None:
-            raise ImportError('None of the backends could be imported')
-        else:
-            Store.current_backend = selected_backend
+        Store.current_backend = selected_backend
 
         css = ''
         if p.width is not None:
