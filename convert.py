@@ -31,7 +31,7 @@ class Styler(Preprocessor):
             if node.body != []:
                 last_expr = node.body[-1]
                 if not isinstance(last_expr, ast.Expr): pass # Not an expression
-                elif isinstance(last_expr.value, cell_output_types):
+                elif isinstance(last_expr.value, cell_output_types) and queued_opts:
                     # CAREFUL WITH UTF8!
                     expr_start_line = filtered[last_expr.lineno-1]
                     modified = (expr_start_line[:last_expr.col_offset]
