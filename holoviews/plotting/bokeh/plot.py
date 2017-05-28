@@ -147,7 +147,7 @@ class BokehPlot(DimensionedPlot):
         from the same object.
         """
         get_sources = lambda x: (id(x.current_frame.data), x)
-        filter_fn = lambda x: (x.shared_datasource and x.current_frame and
+        filter_fn = lambda x: (x.shared_datasource and x.current_frame is not None and
                                not isinstance(x.current_frame.data, np.ndarray)
                                and 'source' in x.handles)
         data_sources = self.traverse(get_sources, [filter_fn])

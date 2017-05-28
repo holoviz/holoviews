@@ -727,11 +727,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get data and initialize data source
         empty = False
         if self.batched:
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
             data, mapping = self.get_batched_data(element, ranges, empty)
         else:
             data, mapping = self.get_data(element, ranges, empty)
+            current_id = element._plot_id
         if source is None:
             source = self._init_datasource(data)
+        self.handles['previous_id'] = current_id
         self.handles['source'] = source
 
         properties = self._glyph_properties(plot, style_element, source, ranges)
@@ -804,15 +807,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
         if self.batched:
-            current_id = sum(element.traverse(lambda x: id(x.data), [Element]))
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
         else:
-            current_id = id(element.data)
+            current_id = element._plot_id
         self.handles['previous_id'] = current_id
-        self.static_source = self.dynamic and (current_id == previous_id)
+        self.static_source = (self.dynamic and (current_id == previous_id))
         if self.batched:
             data, mapping = self.get_batched_data(element, ranges, empty)
         else:
             data, mapping = self.get_data(element, ranges, empty)
+
         if not self.static_source:
             self._update_datasource(source, data)
 

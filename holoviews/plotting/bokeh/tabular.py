@@ -73,11 +73,12 @@ class TablePlot(BokehPlot, GenericElementPlot):
         if self.static and not self.dynamic:
             return handles
 
+
+        element = self.current_frame
         previous_id = self.handles.get('previous_id', None)
-        current_id = id(self.current_frame.data) if self.current_frame else None
+        current_id = None if self.current_frame is None else element._plot_id
         for handle in self._update_handles:
-            if (handle == 'source' and self.dynamic and
-                current_id == previous_id):
+            if (handle == 'source' and self.dynamic and current_id == previous_id):
                 continue
             if handle in self.handles:
                 handles.append(self.handles[handle])

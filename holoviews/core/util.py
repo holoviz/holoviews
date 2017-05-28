@@ -22,6 +22,11 @@ try:
 except:
     from collections import OrderedDict
 
+try:
+   import __builtin__ as builtins
+except:
+   import builtins as builtins
+
 datetime_types = (np.datetime64, dt.datetime)
 
 try:

@@ -363,7 +363,7 @@ class Layout(AttrTree, Dimensioned):
         self.__dict__['_max_cols'] = 4
         if items and all(isinstance(item, Dimensioned) for item in items):
             items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id'] if p in kwargs}
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
 
