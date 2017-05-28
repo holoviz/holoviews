@@ -3,6 +3,7 @@ import inspect
 import param
 
 from .core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from .core.options import options_policy
 from .core.operation import Operation
 from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
@@ -11,9 +12,13 @@ from .core import util
 from .streams import Stream
 
 
+# Needs same validation behavior!
 def opts(options, obj=None):
     from holoviews.ipython.parser import OptsSpec
-    if not isinstance(obj, Dimensioned):
+    if obj is None:
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            StoreOptions.apply_customizations(OptsSpec.parse(options), Store.options())
+    elif not isinstance(obj, Dimensioned):
         return obj
     else:
         return StoreOptions.set_options(obj, OptsSpec.parse(options))
