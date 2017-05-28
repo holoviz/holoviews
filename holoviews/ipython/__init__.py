@@ -179,6 +179,8 @@ class notebook_extension(param.ParameterizedFunction):
                                                                               fig='svg')
                         holoviews.archive.exporters = [svg_exporter] +\
                                                       holoviews.archive.exporters
+
+                Store.output_control = OutputControl()
                 OutputControl.allowed['backend'] = list_backends()
                 OutputControl.allowed['fig'] = list_formats('fig', backend)
                 OutputControl.allowed['holomap'] = list_formats('holomap', backend)
@@ -194,7 +196,6 @@ class notebook_extension(param.ParameterizedFunction):
             Store.current_backend = selected_backend
             return
 
-        Store.output_contol = OutputControl()
         p = param.ParamOverrides(self, params)
         resources = self._get_resources(args, params)
 

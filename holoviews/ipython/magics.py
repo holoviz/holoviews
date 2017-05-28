@@ -479,7 +479,7 @@ class OutputControl(OptionsControl):
 class OutputMagic(Magics):
     @line_cell_magic
     def output(self, line, cell=None):
-        Store.output_contol.output(line, cell)
+        Store.output_control.output(line, cell)
 
 
 @magics_class

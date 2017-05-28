@@ -19,7 +19,7 @@ def opts(obj, options):
         return StoreOptions.set_options(obj, OptsSpec.parse(options))
 
 def output(options):
-    Store.output_contol.output(options)
+    Store.output_control.output(options)
 
 class Dynamic(param.ParameterizedFunction):
     """
