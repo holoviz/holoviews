@@ -21,7 +21,7 @@ from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                Scatter3D, Path, Polygons, Bars, Text,
                                BoxWhisker, HLine)
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import PointerXY, PointerX
+from holoviews.streams import Stream, PointerXY, PointerX
 from holoviews.operation import gridmatrix
 from holoviews.plotting import comms
 from holoviews.plotting.util import rgb2hex
@@ -46,6 +46,7 @@ try:
     from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
     from holoviews.plotting.bokeh.callbacks import Callback, PointerXCallback
+    from bokeh.document import Document
     from bokeh.models import (
         Div, ColumnDataSource, FactorRange, Range1d, Row, Column,
         ToolbarBox, FixedTicker, FuncTickFormatter
@@ -381,6 +382,41 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot.update((4,))
         self.assertFalse(subplot1.handles['glyph_renderer'].visible)
         self.assertTrue(subplot2.handles['glyph_renderer'].visible)
+
+    def test_static_source_optimization_not_skipping_new_element(self):
+        global data
+        data = np.ones((5, 5))
+        def get_img(test):
+            global data
+            data *= test
+            return Image(data)
+        stream = Stream.define(str('Test'), test=1)()
+        dmap = DynamicMap(get_img, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap, doc=Document())
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0].mean(), 1)
+        stream.event(test=2)
+        self.assertFalse(plot.static_source)
+        self.assertEqual(source.data['image'][0].mean(), 2)
+        self.assertIn(source, plot.current_handles)
+
+    def test_static_source_optimization(self):
+        global data
+        data = np.ones((5, 5))
+        img = Image(data)
+        def get_img(test):
+            global data
+            data *= test
+            return img
+        stream = Stream.define(str('Test'), test=1)()
+        dmap = DynamicMap(get_img, streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap, doc=Document())
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0].mean(), 1)
+        stream.event(test=2)
+        self.assertTrue(plot.static_source)
+        self.assertEqual(source.data['image'][0].mean(), 2)
+        self.assertNotIn(source, plot.current_handles)
 
     def test_batched_plot(self):
         overlay = NdOverlay({i: Points(np.arange(i)) for i in range(1, 100)})
