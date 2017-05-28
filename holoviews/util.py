@@ -23,8 +23,14 @@ def opts(options, obj=None):
     else:
         return StoreOptions.set_options(obj, OptsSpec.parse(options))
 
-def output(options):
-    Store.output_control.output(options)
+def output(options, obj=None):
+    """
+    Cell magic version acts as a no-op.
+    """
+    if obj is not None:
+        return obj
+    else:
+        Store.output_control.output(options)
 
 class Dynamic(param.ParameterizedFunction):
     """
