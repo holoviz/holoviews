@@ -856,6 +856,7 @@ class DynamicMap(HoloMap):
         """
         if data is None and shared_data:
             data = self.data
+            overrides['plot_id'] = self._plot_id
         clone = super(UniformNdMapping, self).clone(overrides.pop('callback', self.callback),
                                                     shared_data, new_type,
                                                     *(data,) + args, **overrides)

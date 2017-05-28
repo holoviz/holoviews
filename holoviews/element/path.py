@@ -146,6 +146,8 @@ class BaseShape(Path):
         containing the specified args and kwargs.
         """
         settings = dict(self.get_param_values(), **overrides)
+        if not args:
+            settings['plot_id'] = self._plot_id
         return self.__class__(*args, **settings)
 
 

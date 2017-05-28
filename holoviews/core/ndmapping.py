@@ -766,6 +766,7 @@ class UniformNdMapping(NdMapping):
 
         if data is None and shared_data:
             data = self.data
+            settings['plot_id'] = self._plot_id
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         with item_check(not shared_data and self._check_items):

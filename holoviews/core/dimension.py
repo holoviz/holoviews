@@ -18,6 +18,7 @@ from ..core.util import (basestring, sanitize_identifier,
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
+obj_id = id
 # Alias parameter support for pickle loading
 
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
@@ -479,7 +480,7 @@ class LabelledData(param.Parameterized):
 
     _deep_indexable = False
 
-    def __init__(self, data, id=None, **params):
+    def __init__(self, data, id=None, plot_id=None, **params):
         """
         All LabelledData subclasses must supply data to the
         constructor, which will be held on the .data attribute.
@@ -488,6 +489,7 @@ class LabelledData(param.Parameterized):
         """
         self.data = data
         self.id = id
+        self._plot_id = plot_id or obj_id(self)
         if isinstance(params.get('label',None), tuple):
             (alias, long_name) = params['label']
             label_sanitizer.add_aliases(**{alias:long_name})
@@ -531,6 +533,7 @@ class LabelledData(param.Parameterized):
 
         if data is None and shared_data:
             data = self.data
+            settings['plot_id'] = self._plot_id
         # Apply name mangling for __ attribute
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         return clone_type(data, *args, **{k:v for k,v in settings.items()
