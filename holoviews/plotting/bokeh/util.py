@@ -17,12 +17,19 @@ from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.document import Document
-from bokeh.models import (GlyphRenderer, Model, HasProps, Column, Row,
-                          ToolbarBox, FactorRange, Range1d)
-from bokeh.models.widgets import DataTable, Tabs
+from bokeh.layouts import WidgetBox, Row, Column
+from bokeh.models import (GlyphRenderer, Model, HasProps, ToolbarBox,
+                          FactorRange, Range1d, Plot)
+from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
-if bokeh_version >= '0.12':
-    from bokeh.layouts import WidgetBox
+
+try:
+    if bokeh_version > '0.12.5':
+        from bkcharts import Chart
+    else:
+        from bokeh.charts import Chart
+except:
+    Chart = type(None) # Create stub for isinstance check
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
@@ -144,6 +151,31 @@ def layout_padding(plots, renderer):
                 p.plot_height = heights[r]
             expanded_plots[r].append(p)
     return expanded_plots
+
+
+def compute_plot_size(plot):
+    """
+    Computes the size of bokeh models that make up a layout such as
+    figures, rows, columns, widgetboxes and Plot.
+    """
+    if isinstance(plot, Div):
+        # Cannot compute size for Div
+        return 0, 0
+    elif isinstance(plot, (Row, Column, ToolbarBox, WidgetBox, Tabs)):
+        if not plot.children: return 0, 0
+        if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
+            w_agg, h_agg = (np.sum, np.max)
+        elif isinstance(plot, Tabs):
+            w_agg, h_agg = (np.max, np.max)
+        else:
+            w_agg, h_agg = (np.max, np.sum)
+        widths, heights = zip(*[compute_plot_size(child) for child in plot.children])
+        width, height = w_agg(widths), h_agg(heights)
+    elif isinstance(plot, (Figure, Chart)):
+        width, height = plot.plot_width, plot.plot_height
+    elif isinstance(plot, (Plot, DataTable)):
+        width, height = plot.width, plot.height
+    return width, height
 
 
 def empty_plot(width, height):
