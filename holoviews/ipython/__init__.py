@@ -135,8 +135,6 @@ class notebook_extension(param.ParameterizedFunction):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert. """)
 
-    ip = param.Parameter(default=None, doc="IPython kernel instance")
-
     _loaded = False
 
     # Mapping between backend name and module name
@@ -192,6 +190,7 @@ class notebook_extension(param.ParameterizedFunction):
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
+            # Set current backend (usually has to wait until OutputMagic loaded)
             Store.current_backend = selected_backend
             return
 
