@@ -804,7 +804,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
         if self.batched:
-            current_id = sum(element.traverse(lambda x: x._plot_id, [Element]))
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
         else:
             current_id = element._plot_id
         self.handles['previous_id'] = current_id

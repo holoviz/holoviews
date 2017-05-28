@@ -14,11 +14,11 @@ import param
 from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
-                         bytes_to_unicode, unicode, dt64_to_dt, unique_array)
+                         bytes_to_unicode, unicode, dt64_to_dt, unique_array,
+                         builtins)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
-obj_id = id
 # Alias parameter support for pickle loading
 
 ALIASES = {'key_dimensions': 'kdims', 'value_dimensions': 'vdims',
@@ -489,7 +489,7 @@ class LabelledData(param.Parameterized):
         """
         self.data = data
         self.id = id
-        self._plot_id = plot_id or obj_id(self)
+        self._plot_id = plot_id or builtins.id(self)
         if isinstance(params.get('label',None), tuple):
             (alias, long_name) = params['label']
             label_sanitizer.add_aliases(**{alias:long_name})
