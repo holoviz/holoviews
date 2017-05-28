@@ -62,13 +62,6 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
         pass
 
 
-def opts(obj, options):
-    from holoviews.ipython.parser import OptsSpec
-    if not isinstance(obj, Dimensioned):
-        return obj
-    else:
-        return StoreOptions.set_options(obj, OptsSpec.parse(options))
-
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
     """

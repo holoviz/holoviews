@@ -2,13 +2,22 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, ViewableElement
+from .core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions
 from .core.operation import Operation
 from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
 from .core.spaces import Callable
 from .core import util
 from .streams import Stream
+
+
+def opts(obj, options):
+    from holoviews.ipython.parser import OptsSpec
+    if not isinstance(obj, Dimensioned):
+        return obj
+    else:
+        return StoreOptions.set_options(obj, OptsSpec.parse(options))
+
 
 class Dynamic(param.ParameterizedFunction):
     """

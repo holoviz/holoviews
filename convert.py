@@ -35,7 +35,7 @@ class Styler(Preprocessor):
                     # CAREFUL WITH UTF8!
                     expr_start_line = filtered[last_expr.lineno-1]
                     modified = (expr_start_line[:last_expr.col_offset]
-                                + 'hv.opts(' + expr_start_line[last_expr.col_offset:])
+                                + 'hv.util.opts(' + expr_start_line[last_expr.col_offset:])
                     filtered[last_expr.lineno-1] = modified
 
                     opt_str = ' '.join(el.replace('%%opts','') for el in queued_opts)
