@@ -108,7 +108,7 @@ class OptsMagicProcessor(Preprocessor):
         if cell['cell_type'] == 'code':
             source, opts_lines = filter_magic(cell['source'], '%%opts')
             if opts_lines:
-                template = 'hv.util.opts({{expr}}, {options!r})'.format(
+                template = 'hv.util.opts({options!r}, {{expr}})'.format(
                     options=' '.join(opts_lines))
                 source = wrap_cell_expression(source, template)
             cell['source'] = source

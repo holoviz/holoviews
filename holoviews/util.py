@@ -11,7 +11,7 @@ from .core import util
 from .streams import Stream
 
 
-def opts(obj, options):
+def opts(options, obj=None):
     from holoviews.ipython.parser import OptsSpec
     if not isinstance(obj, Dimensioned):
         return obj
