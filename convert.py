@@ -106,7 +106,9 @@ class OptsMagicProcessor(Preprocessor):
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
-            source, opts_lines = filter_magic(cell['source'], '%%opts')
+            source = replace_line_magic(cell['source'], '%opts',
+                                        template='hv.util.opts({line!r})')
+            source, opts_lines = filter_magic(source, '%%opts')
             if opts_lines:
                 template = 'hv.util.opts({options!r}, {{expr}})'.format(
                     options=' '.join(opts_lines))
@@ -121,7 +123,6 @@ class OutputMagicProcessor(Preprocessor):
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
-            print(cell['source'],"??")
             source = replace_line_magic(cell['source'], '%output',
                                         template='hv.util.output({line!r})')
             source, output_lines = filter_magic(source, '%%output')
