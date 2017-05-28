@@ -205,7 +205,7 @@ def list_formats(format_type, backend=None):
 
 
 
-class OutputControl(OptionsControl):
+class OutputOptions(OptionsControl):
     """
     Magic for easy customising of display options.
     Consult %%output? for more information.
@@ -244,7 +244,7 @@ class OutputControl(OptionsControl):
                             ('info'        , False),
                             ('css'         , None)])
 
-    # Defines the options the OutputControl remembers. All other options
+    # Defines the options the OutputOptions remembers. All other options
     # are held by the backend specific Renderer.
     remembered = ['max_frames', 'charwidth', 'info', 'filename']
 
@@ -268,7 +268,7 @@ class OutputControl(OptionsControl):
         raise Exception("Format %r does not appear to be supported." % value)
 
     def missing_backend_exception(value, keyword, allowed):
-        if value in OutputControl.backend_list:
+        if value in OutputOptions.backend_list:
             raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
         else:
             raise ValueError("Backend %r does not exist" % value)
@@ -280,7 +280,7 @@ class OutputControl(OptionsControl):
     nbagg_counter = 0
 
     def __init__(self, *args, **kwargs):
-        super(OutputControl, self).__init__(*args, **kwargs)
+        super(OutputOptions, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
 
 
@@ -348,7 +348,7 @@ class OutputControl(OptionsControl):
         prev_backend_spec = prev_backend+':'+prev_renderer.mode
         prev_params = {k: v for k, v in prev_renderer.get_param_values()
                        if k in self.render_params}
-        prev_restore = dict(OutputControl.options)
+        prev_restore = dict(OutputOptions.options)
         try:
             # Process magic
             new_options = self.get_options(line, {}, cell is None)
@@ -365,11 +365,11 @@ class OutputControl(OptionsControl):
                              if k in self.render_params}
 
             # Set options on selected renderer and set display hook options
-            OutputControl.options = new_options
+            OutputOptions.options = new_options
             self._set_render_options(new_options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
-            OutputControl.options = prev_restore
+            OutputOptions.options = prev_restore
             self.set_backend(prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
@@ -379,7 +379,7 @@ class OutputControl(OptionsControl):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             # After cell magic restore previous options and restore
             # temporarily selected renderer
-            OutputControl.options = prev_restore
+            OutputOptions.options = prev_restore
             self._set_render_options(render_params, backend_spec)
             if backend_spec.split(':')[0] != prev_backend:
                 self.set_backend(prev_backend)
@@ -479,7 +479,7 @@ class OutputControl(OptionsControl):
 class OutputMagic(Magics):
     @line_cell_magic
     def output(self, line, cell=None):
-        Store.output_control.output(line, cell)
+        Store.output_options.output(line, cell)
 
 
 @magics_class
@@ -846,8 +846,8 @@ def load_magics(ip):
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
-    ip.set_hook('complete_command', OutputControl.option_completer, str_key = '%output')
-    ip.set_hook('complete_command', OutputControl.option_completer, str_key = '%%output')
+    ip.set_hook('complete_command', OutputOptions.option_completer, str_key = '%output')
+    ip.set_hook('complete_command', OutputOptions.option_completer, str_key = '%%output')
 
     OptsCompleter.setup_completer()
     ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')

@@ -30,7 +30,7 @@ def output(options, obj=None):
     if obj is not None:
         return obj
     else:
-        Store.output_control.output(options)
+        Store.output_options.output(options)
 
 class Dynamic(param.ParameterizedFunction):
     """
