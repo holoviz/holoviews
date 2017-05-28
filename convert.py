@@ -10,6 +10,21 @@ import ast
 filename = sys.argv[1]
 
 
+
+def comment_out_magics(source):
+    """
+    Utility used to make sure AST parser does not choke on unrecognized
+    magics.
+    """
+    filtered = []
+    for line in source.splitlines():
+        if line.strip().startswith('%'):
+            filtered.append('# ' +  line)
+        else:
+            filtered.append(line)
+    return '\n'.join(filtered)
+
+
 def wrap_cell_expression(source, template='{expr}'):
     """
     If a cell ends in an expression that could be displaying a HoloViews
@@ -21,7 +36,7 @@ def wrap_cell_expression(source, template='{expr}'):
     cell_output_types = (ast.IfExp, ast.BoolOp, ast.BinOp, ast.Call,
                          ast.Name, ast.Attribute)
     try:
-        node = ast.parse(source)
+        node = ast.parse(comment_out_magics(source))
     except SyntaxError:
         return source
     filtered = source.splitlines()
@@ -87,14 +102,11 @@ def replace_line_magic(source, magic, template='{line}'):
 
 
 
-class MagicConversion(Preprocessor):
+class OptsMagicProcessor(Preprocessor):
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
             source, opts_lines = filter_magic(cell['source'], '%%opts')
-            source = replace_line_magic(source, '%output',
-                                        template='hv.util.output({line!r})')
-            source = strip_magics(source)
             if opts_lines:
                 template = 'hv.util.opts({{expr}}, {options!r})'.format(
                     options=' '.join(opts_lines))
@@ -102,15 +114,45 @@ class MagicConversion(Preprocessor):
             cell['source'] = source
         return cell, resources
 
-    def __call__(self, nb, resources): # Temporary hack around 'enabled' flag
-        return self.preprocess(nb,resources)
+    def __call__(self, nb, resources): return self.preprocess(nb,resources)
 
+
+class OutputMagicProcessor(Preprocessor):
+
+    def preprocess_cell(self, cell, resources, index):
+        if cell['cell_type'] == 'code':
+            print(cell['source'],"??")
+            source = replace_line_magic(cell['source'], '%output',
+                                        template='hv.util.output({line!r})')
+            source, output_lines = filter_magic(source, '%%output')
+            if output_lines:
+                template = 'hv.util.output({{expr}}, {options!r})'.format(
+                    options=output_lines[-1])
+                source = wrap_cell_expression(source, template)
+
+            cell['source'] = source
+        return cell, resources
+
+    def __call__(self, nb, resources): return self.preprocess(nb,resources)
+
+
+class StripMagicsProcessor(Preprocessor):
+
+    def preprocess_cell(self, cell, resources, index):
+        if cell['cell_type'] == 'code':
+            cell['source'] = strip_magics(cell['source'])
+        return cell, resources
+
+    def __call__(self, nb, resources): return self.preprocess(nb,resources)
 
 
 with open(filename) as f:
     nb = nbformat.read(f, nbformat.NO_CONVERT)
     exporter = nbconvert.PythonExporter()
-
-    exporter.register_preprocessor(MagicConversion())
+    preprocessors = [OptsMagicProcessor(),
+                     OutputMagicProcessor(),
+                     StripMagicsProcessor()]
+    for preprocessor in preprocessors:
+        exporter.register_preprocessor(preprocessor)
     source, meta = exporter.from_notebook_node(nb)
     print(source)
