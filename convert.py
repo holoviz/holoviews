@@ -10,7 +10,7 @@ import ast
 filename = sys.argv[1]
 
 
-def wrap_cell_expression(source, prefix, suffix):
+def wrap_cell_expression(source, template='{expr}'):
     """
     If a cell ends in an expression that could be displaying a HoloViews
     object (as determined using the AST), wrap it with a given prefix
@@ -31,12 +31,13 @@ def wrap_cell_expression(source, prefix, suffix):
             pass # Not an expression
         elif isinstance(last_expr.value, cell_output_types):
             # CAREFUL WITH UTF8!
-            expr_start_line = filtered[last_expr.lineno-1]
-            modified = (expr_start_line[:last_expr.col_offset]
-                        + prefix + expr_start_line[last_expr.col_offset:])
-            filtered[last_expr.lineno-1] = modified
-            filtered[-1] = filtered[-1]+',{suffix}'.format(suffix=repr(suffix))
-            return '\n'.join(filtered)
+            expr_end_slice = filtered[last_expr.lineno-1][:last_expr.col_offset]
+            expr_start_slice = filtered[last_expr.lineno-1][last_expr.col_offset:]
+            start = '\n'.join(filtered[:last_expr.lineno-1]
+                              + ([expr_end_slice] if expr_end_slice else []))
+            ending = '\n'.join(([expr_start_slice] if expr_start_slice else [])
+                            + filtered[last_expr.lineno:])
+            return start + template.format(expr=ending)
     return source
 
 
@@ -95,9 +96,9 @@ class MagicConversion(Preprocessor):
                                         template='hv.util.output({line!r})')
             source = strip_magics(source)
             if opts_lines:
-                source = wrap_cell_expression(source,
-                                              'hv.util.opts(',
-                                              repr(' '.join(opts_lines))+')')
+                template = 'hv.util.opts({{expr}}, {options!r})'.format(
+                    options=' '.join(opts_lines))
+                source = wrap_cell_expression(source, template)
             cell['source'] = source
         return cell, resources
 
