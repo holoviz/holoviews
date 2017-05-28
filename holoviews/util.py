@@ -2,7 +2,7 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions
+from .core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from .core.operation import Operation
 from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
@@ -18,6 +18,8 @@ def opts(obj, options):
     else:
         return StoreOptions.set_options(obj, OptsSpec.parse(options))
 
+def output(options):
+    Store.output_contol.output(options)
 
 class Dynamic(param.ParameterizedFunction):
     """
