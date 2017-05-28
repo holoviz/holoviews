@@ -37,7 +37,7 @@ STORE_HISTORY = False
 from IPython.core import page
 InfoPrinter.store = Store
 
-class OptionsMagic(Magics):
+class OptionsControl(object):
     """
     Base class for magics that are used to specified collections of
     keyword options.
@@ -103,7 +103,7 @@ class OptionsMagic(Magics):
     @classmethod
     def _validate(cls, options, items, linemagic):
         "Allows subclasses to check options are valid."
-        raise NotImplementedError("OptionsMagic is an abstract base class.")
+        raise NotImplementedError("OptionsControl is an abstract base class.")
 
     @classmethod
     def option_completer(cls, k,v):
@@ -204,8 +204,8 @@ def list_formats(format_type, backend=None):
         return []
 
 
-@magics_class
-class OutputMagic(OptionsMagic):
+
+class OutputControl(OptionsControl):
     """
     Magic for easy customising of display options.
     Consult %%output? for more information.
@@ -244,7 +244,7 @@ class OutputMagic(OptionsMagic):
                             ('info'        , False),
                             ('css'         , None)])
 
-    # Defines the options the OutputMagic remembers. All other options
+    # Defines the options the OutputControl remembers. All other options
     # are held by the backend specific Renderer.
     remembered = ['max_frames', 'charwidth', 'info', 'filename']
 
@@ -268,7 +268,7 @@ class OutputMagic(OptionsMagic):
         raise Exception("Format %r does not appear to be supported." % value)
 
     def missing_backend_exception(value, keyword, allowed):
-        if value in OutputMagic.backend_list:
+        if value in OutputControl.backend_list:
             raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
         else:
             raise ValueError("Backend %r does not exist" % value)
@@ -280,7 +280,7 @@ class OutputMagic(OptionsMagic):
     nbagg_counter = 0
 
     def __init__(self, *args, **kwargs):
-        super(OutputMagic, self).__init__(*args, **kwargs)
+        super(OutputControl, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
 
 
@@ -334,7 +334,7 @@ class OutputMagic(OptionsMagic):
         return Store.renderers[backend].validate(options)
 
 
-    @line_cell_magic
+
     def output(self, line, cell=None):
         line = line.split('#')[0].strip()
         if line == '':
@@ -348,7 +348,7 @@ class OutputMagic(OptionsMagic):
         prev_backend_spec = prev_backend+':'+prev_renderer.mode
         prev_params = {k: v for k, v in prev_renderer.get_param_values()
                        if k in self.render_params}
-        prev_restore = dict(OutputMagic.options)
+        prev_restore = dict(OutputControl.options)
         try:
             # Process magic
             new_options = self.get_options(line, {}, cell is None)
@@ -365,11 +365,11 @@ class OutputMagic(OptionsMagic):
                              if k in self.render_params}
 
             # Set options on selected renderer and set display hook options
-            OutputMagic.options = new_options
+            OutputControl.options = new_options
             self._set_render_options(new_options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
-            OutputMagic.options = prev_restore
+            OutputControl.options = prev_restore
             self.set_backend(prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
@@ -379,7 +379,7 @@ class OutputMagic(OptionsMagic):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
             # After cell magic restore previous options and restore
             # temporarily selected renderer
-            OutputMagic.options = prev_restore
+            OutputControl.options = prev_restore
             self._set_render_options(render_params, backend_spec)
             if backend_spec.split(':')[0] != prev_backend:
                 self.set_backend(prev_backend)
@@ -473,6 +473,13 @@ class OutputMagic(OptionsMagic):
         renderer = Store.renderers[backend]
         render_options = {k: options[k] for k in cls.render_params if k in options}
         renderer.set_param(**render_options)
+
+
+@magics_class
+class OutputMagic(Magics):
+    @line_cell_magic
+    def output(self, line, cell=None):
+        Store.output_contol.output(line, cell)
 
 
 @magics_class
@@ -839,8 +846,8 @@ def load_magics(ip):
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
-    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
-    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
+    ip.set_hook('complete_command', OutputControl.option_completer, str_key = '%output')
+    ip.set_hook('complete_command', OutputControl.option_completer, str_key = '%%output')
 
     OptsCompleter.setup_completer()
     ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')

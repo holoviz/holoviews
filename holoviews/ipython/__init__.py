@@ -13,9 +13,9 @@ from ..core.options import Store, Cycle, Palette
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
-from .magics import load_magics, list_formats, list_backends
+from .magics import load_magics, list_formats, list_backends, OutputControl
 from .display_hooks import display  # noqa (API import)
-from .display_hooks import set_display_hooks, OutputMagic
+from .display_hooks import set_display_hooks
 from .widgets import RunProgress
 
 try:
@@ -179,9 +179,9 @@ class notebook_extension(param.ParameterizedFunction):
                                                                               fig='svg')
                         holoviews.archive.exporters = [svg_exporter] +\
                                                       holoviews.archive.exporters
-                OutputMagic.allowed['backend'] = list_backends()
-                OutputMagic.allowed['fig'] = list_formats('fig', backend)
-                OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
+                OutputControl.allowed['backend'] = list_backends()
+                OutputControl.allowed['fig'] = list_formats('fig', backend)
+                OutputControl.allowed['holomap'] = list_formats('holomap', backend)
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
@@ -190,10 +190,11 @@ class notebook_extension(param.ParameterizedFunction):
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
-            # Set current backend (usually has to wait until OutputMagic loaded)
+            # Set current backend (usually has to wait until OutputControl loaded)
             Store.current_backend = selected_backend
             return
 
+        Store.output_contol = OutputControl()
         p = param.ParamOverrides(self, params)
         resources = self._get_resources(args, params)
 
@@ -207,7 +208,7 @@ class notebook_extension(param.ParameterizedFunction):
         if notebook_extension._loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputMagic.initialize([backend for backend, _ in imports])
+            OutputControl.initialize([backend for backend, _ in imports])
             set_display_hooks(ip)
             notebook_extension._loaded = True
         Store.current_backend = selected_backend
