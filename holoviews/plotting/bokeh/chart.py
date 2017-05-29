@@ -153,7 +153,7 @@ class VectorFieldPlot(ColorbarPlot):
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    style_opts = line_properties
+    style_opts = line_properties + ['scale']
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
@@ -168,17 +168,26 @@ class VectorFieldPlot(ColorbarPlot):
             if self.rescale_lengths:
                 magnitudes *= base_dist
         else:
-            magnitudes = np.ones(len(element))*base_dist
+            magnitudes = np.ones(len(element))
+            if self.rescale_lengths:
+                magnitudes *= base_dist
+
         return magnitudes
+
+    def _glyph_properties(self, *args):
+        properties = super(VectorFieldPlot, self)._glyph_properties(*args)
+        properties.pop('scale', None)
+        return properties
 
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
+        input_scale = style.pop('scale', 1.0)
 
         # Get x, y, angle, magnitude and color data
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         rads = element.dimension_values(2)
-        lens = self._get_lengths(element, ranges)
+        lens = self._get_lengths(element, ranges)/input_scale
         cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
                                                name='line_color')
