@@ -8,26 +8,17 @@ from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.embed import notebook_div, autoload_server
 from bokeh.io import load_notebook, curdoc, show as bkshow
-from bokeh.models import (Row, Column, Plot, Model, ToolbarBox,
-                          WidgetBox, Div, DataTable, Tabs)
-from bokeh.plotting import Figure
+from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
 
 from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
-from ..plot import GenericElementPlot
+from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import compute_static_patch, serialize_json, attach_periodic, bokeh_version
-
-try:
-    if bokeh_version > '0.12.5':
-        from bkcharts import Chart
-    else:
-        from bokeh.charts import Chart
-except:
-    Chart = None
+from .util import (compute_static_patch, serialize_json, attach_periodic,
+                   bokeh_version, compute_plot_size)
 
 
 class BokehRenderer(Renderer):
@@ -237,26 +228,13 @@ class BokehRenderer(Renderer):
 
         Returns a tuple of (width, height) in pixels.
         """
-        if not isinstance(plot, Model):
+        if isinstance(plot, Plot):
             plot = plot.state
-        if isinstance(plot, Div):
-            # Cannot compute size for Div
-            return 0, 0
-        elif isinstance(plot, (Row, Column, ToolbarBox, WidgetBox, Tabs)):
-            if not plot.children: return 0, 0
-            if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
-                w_agg, h_agg = (np.sum, np.max)
-            elif isinstance(plot, Tabs):
-                w_agg, h_agg = (np.max, np.max)
-            else:
-                w_agg, h_agg = (np.max, np.sum)
-            widths, heights = zip(*[self_or_cls.get_size(child) for child in plot.children])
-            width, height = w_agg(widths), h_agg(heights)
-        elif isinstance(plot, (Chart, Figure)):
-            width, height = plot.plot_width, plot.plot_height
-        elif isinstance(plot, (Plot, DataTable)):
-            width, height = plot.width, plot.height
-        return width, height
+        elif not isinstance(plot, Model):
+            raise ValueError('Can only compute sizes for HoloViews '
+                             'and bokeh plot objects.')
+        return compute_plot_size(plot)
+
 
     @classmethod
     def load_nb(cls, inline=True):

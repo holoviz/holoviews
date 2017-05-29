@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
@@ -15,11 +17,12 @@ except:
     DFrame = None
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
+from .bkcharts import BoxPlot
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
-                    SideHistogramPlot, BoxPlot, BarPlot, SpikesPlot,
-                    SideSpikesPlot, AreaPlot, VectorFieldPlot)
+                    SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
+                    AreaPlot, VectorFieldPlot)
 from .path import PathPlot, PolygonPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import (RasterPlot, RGBPlot, HeatmapPlot,
