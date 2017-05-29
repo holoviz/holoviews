@@ -144,11 +144,16 @@ class VectorFieldPlot(ColorbarPlot):
        it will be assumed that the lengths have already been correctly
        normalized.""")
 
+    pivot = param.ObjectSelector(default='mid', objects=['mid', 'tip', 'tail'],
+                                 doc="""
+       The point around which the arrows should pivot valid options
+       include 'mid', 'tip' and 'tail'.""")
+
     rescale_lengths = param.Boolean(default=True, doc="""
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    style_opts = line_properties
+    style_opts = line_properties + ['scale']
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
@@ -163,17 +168,26 @@ class VectorFieldPlot(ColorbarPlot):
             if self.rescale_lengths:
                 magnitudes *= base_dist
         else:
-            magnitudes = np.ones(len(element))*base_dist
+            magnitudes = np.ones(len(element))
+            if self.rescale_lengths:
+                magnitudes *= base_dist
+
         return magnitudes
+
+    def _glyph_properties(self, *args):
+        properties = super(VectorFieldPlot, self)._glyph_properties(*args)
+        properties.pop('scale', None)
+        return properties
 
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
+        input_scale = style.pop('scale', 1.0)
 
         # Get x, y, angle, magnitude and color data
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         rads = element.dimension_values(2)
-        lens = self._get_lengths(element, ranges)
+        lens = self._get_lengths(element, ranges)/input_scale
         cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
                                                name='line_color')
@@ -181,10 +195,21 @@ class VectorFieldPlot(ColorbarPlot):
         # Compute segments and arrowheads
         xs = element.dimension_values(xidx)
         ys = element.dimension_values(yidx)
+
+        # Compute offset depending on pivot option
         xoffsets = np.cos(rads)*lens/2.
         yoffsets = np.sin(rads)*lens/2.
-        x0s, x1s = (xs + xoffsets, xs - xoffsets)
-        y0s, y1s = (ys + yoffsets, ys - yoffsets)
+        if self.pivot == 'mid':
+            nxoff, pxoff = xoffsets, xoffsets
+            nyoff, pyoff = yoffsets, yoffsets
+        elif self.pivot == 'tip':
+            nxoff, pxoff = 0, xoffsets*2
+            nyoff, pyoff = 0, yoffsets*2
+        elif self.pivot == 'tail':
+            nxoff, pxoff = xoffsets*2, 0
+            nyoff, pyoff = yoffsets*2, 0
+        x0s, x1s = (xs + nxoff, xs - pxoff)
+        y0s, y1s = (ys + nyoff, ys - pyoff)
 
         if self.arrow_heads:
             arrow_len = (lens/4.)
