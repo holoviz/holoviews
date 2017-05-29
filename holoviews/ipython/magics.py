@@ -280,6 +280,7 @@ class OutputOptions(OptionsControl):
     nbagg_counter = 0
 
     def __init__(self, *args, **kwargs):
+        self.shell = kwargs.pop('shell', None)
         super(OutputOptions, self).__init__(*args, **kwargs)
         self.output.__func__.__doc__ = self._generate_docstring()
 
@@ -376,7 +377,8 @@ class OutputOptions(OptionsControl):
             return
 
         if cell is not None:
-            self.shell.run_cell(cell, store_history=STORE_HISTORY)
+            if self.shell:
+                self.shell.run_cell(cell, store_history=STORE_HISTORY)
             # After cell magic restore previous options and restore
             # temporarily selected renderer
             OutputOptions.options = prev_restore

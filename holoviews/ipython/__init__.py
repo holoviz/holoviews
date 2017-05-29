@@ -191,6 +191,7 @@ class notebook_extension(param.ParameterizedFunction):
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
+            Store.output_options.shell = ip
         except:
             # Set current backend (usually has to wait until OutputOptions loaded)
             Store.current_backend = selected_backend
