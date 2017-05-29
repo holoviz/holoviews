@@ -37,7 +37,7 @@ STORE_HISTORY = False
 from IPython.core import page
 InfoPrinter.store = Store
 
-class OptionsControl(object):
+class KeywordOptions(object):
     """
     Base class for magics that are used to specified collections of
     keyword options.
@@ -103,7 +103,7 @@ class OptionsControl(object):
     @classmethod
     def _validate(cls, options, items, linemagic):
         "Allows subclasses to check options are valid."
-        raise NotImplementedError("OptionsControl is an abstract base class.")
+        raise NotImplementedError("KeywordOptions is an abstract base class.")
 
     @classmethod
     def option_completer(cls, k,v):
@@ -205,7 +205,7 @@ def list_formats(format_type, backend=None):
 
 
 
-class OutputOptions(OptionsControl):
+class OutputOptions(KeywordOptions):
     """
     Magic for easy customising of display options.
     Consult %%output? for more information.
