@@ -8,6 +8,7 @@ import io
 
 from IPython import version_info
 from IPython.display import Javascript, display
+from .preprocessors import Substitute
 
 # Import appropriate nbconvert machinery
 if version_info[0] >= 4:
@@ -283,56 +284,6 @@ class NotebookArchive(FileArchive):
         node = reader.reads(self._notebook_data)
         self.nbversion = reader.get_version(node)
         return node
-
-
-
-class Substitute(Preprocessor):
-    """
-    An nbconvert preprocessor that substitutes one set of HTML data
-    output for another, adding annotation to the output as required.
-
-    The constructor accepts the notebook format version and a
-    substitutions dictionary:
-
-    {source_html:(target_html, annotation)}
-
-    Where the annotation may be None (i.e. no annotation).
-    """
-    annotation = '<center><b>%s</b></center>'
-
-    def __init__(self, version, substitutions, **kw):
-        self.nbversion = version
-        self.substitutions = substitutions
-        super(Preprocessor, self).__init__(**kw)
-
-    def __call__(self, nb, resources): # Temporary hack around 'enabled' flag
-        return self.preprocess(nb,resources)
-
-
-    def replace(self, src):
-        "Given some source html substitute and annotated as applicable"
-        for html in self.substitutions.keys():
-            if src == html:
-                annotation = self.annotation % self.substitutions[src][1]
-                return annotation + self.substitutions[src][0]
-        return src
-
-
-    def preprocess_cell(self, cell, resources, index):
-        v4 = (self.nbversion[0] == 4)
-        if cell['cell_type'] == 'code':
-            for outputs in cell['outputs']:
-                output_key = ('execute_result' if v4 else 'pyout')
-                if outputs['output_type'] == output_key:
-                    # V1-3
-                    if not v4 and 'html' in outputs:
-                        outputs['html'] = self.replace(outputs['html'])
-                    # V4
-                    for data in outputs.get('data',[]):
-                        if v4 and data == 'text/html':
-                            substitution = self.replace(outputs['data']['text/html'])
-                            outputs['data']['text/html'] = substitution
-        return cell, resources
 
 
 notebook_archive = NotebookArchive()
