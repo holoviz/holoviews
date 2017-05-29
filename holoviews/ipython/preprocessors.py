@@ -3,10 +3,8 @@ Prototype demo:
 
 python holoviews/ipython/convert.py Conversion_Example.ipynb | python
 """
-import nbconvert, nbformat
+import ast
 from nbconvert.preprocessors import Preprocessor
-import os, sys, ast
-
 
 
 def comment_out_magics(source):
@@ -193,18 +191,3 @@ class Substitute(Preprocessor):
                             substitution = self.replace(outputs['data']['text/html'])
                             outputs['data']['text/html'] = substitution
         return cell, resources
-
-
-if __name__ == '__main__':
-    filename = sys.argv[1]
-    basename = os.path.splitext(os.path.basename(filename))[0]
-    with open(filename) as f:
-        nb = nbformat.read(f, nbformat.NO_CONVERT)
-        exporter = nbconvert.PythonExporter()
-        preprocessors = [OptsMagicProcessor(),
-                         OutputMagicProcessor(),
-                         StripMagicsProcessor()]
-        for preprocessor in preprocessors:
-            exporter.register_preprocessor(preprocessor)
-        source, meta = exporter.from_notebook_node(nb)
-        print(source)

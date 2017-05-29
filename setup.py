@@ -39,6 +39,10 @@ setup_args.update(dict(
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://ioam.github.com/holoviews/',
+    entry_points={
+          'console_scripts': [
+              'holoviews = holoviews.util.command:main'
+          ]},
     packages = ["holoviews",
                 "holoviews.core",
                 "holoviews.core.data",
