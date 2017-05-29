@@ -299,6 +299,12 @@ class DynamicTestOperation(ComparisonTestCase):
         dmap_with_fn = Dynamic(dmap, operation=lambda x: x.clone(x.data*2))
         self.assertEqual(dmap_with_fn[5], Image(sine_array(0,5)*2))
 
+    def test_dynamic_operation_on_hmap(self):
+        hmap = HoloMap({i: Image(sine_array(0,i)) for i in range(10)})
+        dmap = Dynamic(hmap, operation=lambda x: x)
+        self.assertEqual(dmap.kdims[0].name, hmap.kdims[0].name)
+        self.assertEqual(dmap.kdims[0].values, hmap.keys())
+
     def test_dynamic_operation_link_inputs_not_transferred_on_clone(self):
         fn = lambda i: Image(sine_array(0,i))
         dmap=DynamicMap(fn, kdims=['i'])
