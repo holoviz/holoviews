@@ -16,7 +16,8 @@ from ..core import (ViewableElement, UniformNdMapping,
                     CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
-from .magics import OutputOptions, OptsMagic
+from ..util.outputoptions import OutputOptions
+from .magics import OptsMagic
 
 # To assist with debugging of display hooks
 FULL_TRACEBACK = None

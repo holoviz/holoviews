@@ -11,8 +11,9 @@ from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
+from ..util.outputoptions import  OutputOptions, list_formats, list_backends
 from ..plotting.renderer import Renderer
-from .magics import load_magics, list_formats, list_backends, OutputOptions
+from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks
 from .widgets import RunProgress
