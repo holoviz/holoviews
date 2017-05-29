@@ -2,14 +2,14 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from .core.options import options_policy
-from .core.operation import Operation
-from .core.util import Aliases  # noqa (API import)
-from .core.operation import OperationCallable
-from .core.spaces import Callable
-from .core import util
-from .streams import Stream
+from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from ..core.options import options_policy
+from ..core.operation import Operation
+from ..core.util import Aliases  # noqa (API import)
+from ..core.operation import OperationCallable
+from ..core.spaces import Callable
+from ..core import util
+from ..streams import Stream
 
 
 # Needs same validation behavior!
