@@ -106,25 +106,6 @@ class KeywordOptions(object):
         raise NotImplementedError("KeywordOptions is an abstract base class.")
 
     @classmethod
-    def option_completer(cls, k,v):
-        raw_line = v.text_until_cursor
-        line = raw_line.replace(cls.magic_name,'')
-
-        # Find the last element class mentioned
-        completion_key = None
-        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-
-        for token in tokens:
-            if token.strip() in cls.allowed:
-                completion_key = token.strip()
-                break
-
-        values = [val for val in cls.allowed.get(completion_key, [])
-                  if val not in cls.hidden.get(completion_key, [])]
-        vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
-        return vreprs + [el+'=' for el in cls.allowed.keys()]
-
-    @classmethod
     def pprint(cls):
         """
         Pretty print the current element options with a maximum width of
@@ -479,9 +460,29 @@ class OutputOptions(KeywordOptions):
 
 @magics_class
 class OutputMagic(Magics):
+
     @line_cell_magic
     def output(self, line, cell=None):
         Store.output_options.output(line, cell)
+
+    @classmethod
+    def option_completer(cls, k,v):
+        raw_line = v.text_until_cursor
+        line = raw_line.replace(Store.output_options.magic_name,'')
+
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
+
+        for token in tokens:
+            if token.strip() in Store.output_options.allowed:
+                completion_key = token.strip()
+                break
+
+        values = [val for val in Store.output_options.allowed.get(completion_key, [])
+                  if val not in Store.output_options.hidden.get(completion_key, [])]
+        vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
+        return vreprs + [el+'=' for el in Store.output_options.allowed.keys()]
 
 
 @magics_class
@@ -848,8 +849,8 @@ def load_magics(ip):
     ip.set_hook('complete_command', TimerMagic.option_completer, str_key = '%timer')
     ip.set_hook('complete_command', CompositorMagic.option_completer, str_key = '%compositor')
 
-    ip.set_hook('complete_command', OutputOptions.option_completer, str_key = '%output')
-    ip.set_hook('complete_command', OutputOptions.option_completer, str_key = '%%output')
+    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%output')
+    ip.set_hook('complete_command', OutputMagic.option_completer, str_key = '%%output')
 
     OptsCompleter.setup_completer()
     ip.set_hook('complete_command', OptsCompleter.option_completer, str_key = '%%opts')
