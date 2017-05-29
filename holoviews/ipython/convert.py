@@ -7,7 +7,6 @@ import nbconvert, nbformat
 from nbconvert.preprocessors import Preprocessor
 import sys
 import ast
-filename = sys.argv[1]
 
 
 
@@ -147,13 +146,14 @@ class StripMagicsProcessor(Preprocessor):
     def __call__(self, nb, resources): return self.preprocess(nb,resources)
 
 
-with open(filename) as f:
-    nb = nbformat.read(f, nbformat.NO_CONVERT)
-    exporter = nbconvert.PythonExporter()
-    preprocessors = [OptsMagicProcessor(),
-                     OutputMagicProcessor(),
-                     StripMagicsProcessor()]
-    for preprocessor in preprocessors:
-        exporter.register_preprocessor(preprocessor)
-    source, meta = exporter.from_notebook_node(nb)
-    print(source)
+if __name__ == '__main__':
+    with open(sys.argv[1]) as f:
+        nb = nbformat.read(f, nbformat.NO_CONVERT)
+        exporter = nbconvert.PythonExporter()
+        preprocessors = [OptsMagicProcessor(),
+                         OutputMagicProcessor(),
+                         StripMagicsProcessor()]
+        for preprocessor in preprocessors:
+            exporter.register_preprocessor(preprocessor)
+        source, meta = exporter.from_notebook_node(nb)
+        print(source)
