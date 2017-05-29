@@ -1,3 +1,5 @@
+from io import BytesIO
+
 import numpy as np
 import param
 from param.parameterized import bothmethod
@@ -25,7 +27,7 @@ class BokehRenderer(Renderer):
 
     backend = param.String(default='bokeh', doc="The backend name.")
 
-    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto'], doc="""
+    fig = param.ObjectSelector(default='auto', objects=['html', 'json', 'auto', 'png'], doc="""
         Output render format for static figures. If None, no figure
         rendering will occur. """)
 
@@ -42,7 +44,7 @@ class BokehRenderer(Renderer):
         bokeh server app. By default renders all output is rendered to HTML.""")
 
     # Defines the valid output formats for each mode.
-    mode_formats = {'fig': {'default': ['html', 'json', 'auto'],
+    mode_formats = {'fig': {'default': ['html', 'json', 'auto', 'png'],
                             'server': ['html', 'json', 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
                                 'server': ['server', 'auto', None]}}
@@ -75,6 +77,14 @@ class BokehRenderer(Renderer):
             return self.server_doc(plot, doc), info
         elif isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
+        elif fmt == 'png':
+            if bokeh_version < '0.12.6':
+                raise RuntimeError('Bokeh png export only supported by versions >=0.12.6.')
+            from bokeh.io import _get_screenshot_as_png
+            img = _get_screenshot_as_png(plot.state)
+            imgByteArr = BytesIO()
+            img.save(imgByteArr, format='PNG')
+            return imgByteArr.getvalue(), info
         elif fmt == 'html':
             html = self.figure_data(plot, doc=doc)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
