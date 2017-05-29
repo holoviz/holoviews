@@ -17,7 +17,7 @@ from ..core import (ViewableElement, UniformNdMapping,
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
 from ..util.outputoptions import OutputOptions
-from .magics import OptsMagic
+from .magics import OptsMagic, OutputMagic
 
 # To assist with debugging of display hooks
 FULL_TRACEBACK = None
@@ -38,7 +38,7 @@ def process_object(obj):
     "Hook to process the object currently being displayed."
     invalid_options = OptsMagic.process_element(obj)
     if invalid_options: return invalid_options
-    OutputOptions.info(obj)
+    OutputMagic.info(obj)
 
 
 def render(obj, **kwargs):

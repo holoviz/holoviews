@@ -228,12 +228,6 @@ class OutputOptions(KeywordOptions):
     nbagg_counter = 0
 
     @classmethod
-    def info(cls, obj):
-        if cls.options['info'] and not cls._disable_info_output:
-            page.page(InfoPrinter.info(obj, ansi=True))
-
-
-    @classmethod
     def _generate_docstring(cls):
         renderer = Store.renderers[Store.current_backend]
         intro = ["Magic for setting HoloViews display options.",

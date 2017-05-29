@@ -40,6 +40,12 @@ InfoPrinter.store = Store
 @magics_class
 class OutputMagic(Magics):
 
+    @classmethod
+    def info(cls, obj):
+        disabled = Store.output_options._disable_info_output
+        if Store.output_options.options['info'] and not disabled:
+            page.page(InfoPrinter.info(obj, ansi=True))
+
     @line_cell_magic
     def output(self, line, cell=None):
         def cell_runner(cell):
