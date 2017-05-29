@@ -4,10 +4,6 @@ from ..core import OrderedDict
 from ..core import Store
 from ..core.util import basestring
 
-
-# Set to True to automatically run notebooks.
-STORE_HISTORY = False
-
 class KeywordOptions(object):
     """
     Base class for magics that are used to specified collections of
@@ -230,8 +226,6 @@ class OutputOptions(KeywordOptions):
 
     # Counter for nbagg figures
     nbagg_counter = 0
-    shell = None
-
 
     @classmethod
     def info(cls, obj):
@@ -284,7 +278,7 @@ class OutputOptions(KeywordOptions):
 
 
     @classmethod
-    def output(cls, line, cell=None):
+    def output(cls, line, cell=None, cell_runner=None):
         line = line.split('#')[0].strip()
         if line == '':
             cls.pprint()
@@ -325,8 +319,7 @@ class OutputOptions(KeywordOptions):
             return
 
         if cell is not None:
-            if cls.shell:
-                cls.shell.run_cell(cell, store_history=STORE_HISTORY)
+            if cell_runner: cell_runner(cell)
             # After cell magic restore previous options and restore
             # temporarily selected renderer
             OutputOptions.options = prev_restore

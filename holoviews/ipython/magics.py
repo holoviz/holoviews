@@ -42,7 +42,9 @@ class OutputMagic(Magics):
 
     @line_cell_magic
     def output(self, line, cell=None):
-        Store.output_options.output(line, cell)
+        def cell_runner(cell):
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
+        Store.output_options.output(line, cell, cell_runner=cell_runner)
 
     @classmethod
     def option_completer(cls, k,v):
