@@ -9,7 +9,7 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 import numpy as np
 
-from holoviews import HoloMap, Image, ItemTable, Store, GridSpace, Table
+from holoviews import HoloMap, Image, ItemTable, Store, GridSpace, Table, Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import Renderer
 
@@ -23,6 +23,7 @@ except:
 
 try:
     from holoviews.plotting.bokeh import BokehRenderer
+    from holoviews.plotting.bokeh.util import bokeh_version
 except:
     pass
 
@@ -146,3 +147,12 @@ class BokehRendererTest(ComparisonTestCase):
         plot = self.renderer.get_plot(table+table)
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (680, 300))
+
+    def test_render_to_png(self):
+        if bokeh_version < str('0.12.6'):
+            raise SkipTest('Bokeh static png rendering requires bokeh>=0.12.6')
+        curve = Curve([])
+        renderer = BokehRenderer.instance(fig='png')
+        png, info = renderer(curve)
+        self.assertIsInstance(png, bytes)
+        self.assertEqual(info['file-ext'], 'png')
