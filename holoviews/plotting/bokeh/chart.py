@@ -808,6 +808,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         for name, val in mapping.items():
             if isinstance(val, basestring):
                 mapping[name] = dimension_sanitizer(mapping[name])
+            elif isinstance(val, dict) and 'field' in val:
+                val['field'] = dimension_sanitizer(val['field'])
 
         # Ensure x-values are categorical
         xname = dimension_sanitizer(xdim.name)
