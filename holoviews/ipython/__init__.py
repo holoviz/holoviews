@@ -180,7 +180,7 @@ class notebook_extension(param.ParameterizedFunction):
                         holoviews.archive.exporters = [svg_exporter] +\
                                                       holoviews.archive.exporters
 
-                Store.output_options = OutputOptions()
+                Store.output_options = OutputOptions
                 OutputOptions.allowed['backend'] = list_backends()
                 OutputOptions.allowed['fig'] = list_formats('fig', backend)
                 OutputOptions.allowed['holomap'] = list_formats('holomap', backend)

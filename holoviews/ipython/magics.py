@@ -259,11 +259,7 @@ class OutputOptions(KeywordOptions):
 
     # Counter for nbagg figures
     nbagg_counter = 0
-
-    def __init__(self, *args, **kwargs):
-        self.shell = kwargs.pop('shell', None)
-        super(OutputOptions, self).__init__(*args, **kwargs)
-        self.output.__func__.__doc__ = self._generate_docstring()
+    shell = None
 
 
     @classmethod
@@ -316,11 +312,11 @@ class OutputOptions(KeywordOptions):
         return Store.renderers[backend].validate(options)
 
 
-
-    def output(self, line, cell=None):
+    @classmethod
+    def output(cls, line, cell=None):
         line = line.split('#')[0].strip()
         if line == '':
-            self.pprint()
+            cls.pprint()
             print("\nFor help with the %output magic, call %output?")
             return
 
@@ -329,11 +325,11 @@ class OutputOptions(KeywordOptions):
         prev_renderer = Store.renderers[prev_backend]
         prev_backend_spec = prev_backend+':'+prev_renderer.mode
         prev_params = {k: v for k, v in prev_renderer.get_param_values()
-                       if k in self.render_params}
+                       if k in cls.render_params}
         prev_restore = dict(OutputOptions.options)
         try:
             # Process magic
-            new_options = self.get_options(line, {}, cell is None)
+            new_options = cls.get_options(line, {}, cell is None)
 
             # Make backup of options on selected renderer
             if 'backend' in new_options:
@@ -344,29 +340,29 @@ class OutputOptions(KeywordOptions):
                 backend_spec = prev_backend_spec
             renderer = Store.renderers[backend_spec.split(':')[0]]
             render_params = {k: v for k, v in renderer.get_param_values()
-                             if k in self.render_params}
+                             if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
             OutputOptions.options = new_options
-            self._set_render_options(new_options, backend_spec)
+            cls._set_render_options(new_options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
             OutputOptions.options = prev_restore
-            self.set_backend(prev_backend)
+            cls.set_backend(prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
             return
 
         if cell is not None:
-            if self.shell:
-                self.shell.run_cell(cell, store_history=STORE_HISTORY)
+            if cls.shell:
+                cls.shell.run_cell(cell, store_history=STORE_HISTORY)
             # After cell magic restore previous options and restore
             # temporarily selected renderer
             OutputOptions.options = prev_restore
-            self._set_render_options(render_params, backend_spec)
+            cls._set_render_options(render_params, backend_spec)
             if backend_spec.split(':')[0] != prev_backend:
-                self.set_backend(prev_backend)
-                self._set_render_options(prev_params, prev_backend_spec)
+                cls.set_backend(prev_backend)
+                cls._set_render_options(prev_params, prev_backend_spec)
 
 
     @classmethod
