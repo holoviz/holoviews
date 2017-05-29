@@ -12,18 +12,21 @@ from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
 from ..ipython.preprocessors import StripMagicsProcessor
 
 
-def main(preprocessors=[OptsMagicProcessor(),
-                                  OutputMagicProcessor(),
-                                  StripMagicsProcessor()]):
-    with open(sys.argv[1]) as f:
+def main(filename=None,
+         preprocessors=[OptsMagicProcessor(),
+                        OutputMagicProcessor(),
+                        StripMagicsProcessor()]):
+
+    filename = filename if filename else sys.argv[1]
+    with open(filename) as f:
         nb = nbformat.read(f, nbformat.NO_CONVERT)
         exporter = nbconvert.PythonExporter()
         for preprocessor in preprocessors:
             exporter.register_preprocessor(preprocessor)
         source, meta = exporter.from_notebook_node(nb)
-        print(source)
+        return source
 
 
 if __name__ == '__main__':
-    main()
+    print(main())
 
