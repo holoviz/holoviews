@@ -27,8 +27,8 @@ try:
 except ImportError:
     pyparsing = None
 else:
-    from holoviews.ipython.parser import CompositorSpec
-    from holoviews.ipython.parser import OptsSpec
+    from holoviews.util.parser import CompositorSpec
+    from holoviews.util.parser import OptsSpec
 
 
 # Set to True to automatically run notebooks.
@@ -737,7 +737,7 @@ class OptsMagic(Magics):
         separating space.
 
         More information may be found in the class docstring of
-        ipython.parser.OptsSpec.
+        util.parser.OptsSpec.
         """
         line, cell = self._partition_lines(line, cell)
         try:

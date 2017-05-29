@@ -14,7 +14,7 @@ from ..streams import Stream
 
 # Needs same validation behavior!
 def opts(options, obj=None):
-    from holoviews.ipython.parser import OptsSpec
+    from .parser import OptsSpec
     if obj is None:
         with options_policy(skip_invalid=True, warn_on_skip=False):
             StoreOptions.apply_customizations(OptsSpec.parse(options), Store.options())

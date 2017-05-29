@@ -1505,7 +1505,7 @@ class StoreOptions(object):
         syntax as the IPython cell magic to achieve the same customization
         as shown above:
 
-        from holoviews.ipython.parser import OptsSpec
+        from holoviews.util.parser import OptsSpec
         set_options(my_image, OptsSpec.parse("Image (cmap='jet')"))
 
         Then setting both plot and style options:

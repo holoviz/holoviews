@@ -6,7 +6,7 @@ from unittest import SkipTest
 
 try:
     import pyparsing     # noqa (import test)
-    from holoviews.ipython.parser import OptsSpec
+    from holoviews.util.parser import OptsSpec
 except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing parsers")
 

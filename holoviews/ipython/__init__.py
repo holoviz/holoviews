@@ -3,13 +3,12 @@ from unittest import SkipTest
 
 import param
 from IPython import version_info
-import numpy as np
 import holoviews
 from param import ipython as param_ext
 from IPython.display import HTML
 
 from ..core.tree import AttrTree
-from ..core.options import Store, Cycle, Palette
+from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
 from ..plotting.renderer import Renderer
@@ -27,14 +26,6 @@ try:
     holoviews.archive = notebook_archive
 except ImportError:
     pass
-
-try:
-    import pyparsing
-    from .parser import Parser
-    Parser.namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
-except ImportError:
-    pyparsing = None
-
 
 Collector.interval_hook = RunProgress
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
