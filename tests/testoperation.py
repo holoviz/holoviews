@@ -6,7 +6,7 @@ from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve, stack_area)
+                                         interpolate_curve)
 
 class OperationTests(ComparisonTestCase):
     """
@@ -95,7 +95,7 @@ class OperationTests(ComparisonTestCase):
         op_hist = histogram(points, num_bins=3, weight_dimension='y')
         hist = Histogram(([0.022222, 0.088889, 0.222222], [0, 3, 6, 9]), vdims=['y'])
         self.assertEqual(op_hist, hist)
-    
+
     def test_points_histogram_mean_weighted(self):
         points = Points([float(i) for i in range(10)])
         op_hist = histogram(points, num_bins=3, weight_dimension='y', mean_weighted=True)
@@ -119,15 +119,14 @@ class OperationTests(ComparisonTestCase):
 
     def test_stack_area_overlay(self):
         areas = Area([1, 2, 3]) * Area([1, 2, 3])
-        stacked = stack_area(areas)
+        stacked = Area.stack(areas)
         area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
         area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
         self.assertEqual(stacked, area1 * area2)
 
     def test_stack_area_ndoverlay(self):
         areas = NdOverlay([(0, Area([1, 2, 3])), (1, Area([1, 2, 3]))])
-        stacked = stack_area(areas)
+        stacked = Area.stack(areas)
         area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
         area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
         self.assertEqual(stacked, NdOverlay([(0, area1), (1, area2)]))
-

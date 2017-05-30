@@ -668,15 +668,6 @@ class interpolate_curve(Operation):
         return element.map(self._process_layer, Element)
 
 
-class stack_area(Operation):
-    """
-    Stacks an (Nd)Overlay of Area Elements by offsetting their baseline.
-    """
-
-    def _process(self, areas, key=None):
-        return Area.stack(areas)
-
-
 #==================#
 # Other operations #
 #==================#
