@@ -46,7 +46,7 @@ html_context = {
     # Nav
     'NAV': (
         ('About', MAIN_SITE + '/about.html'),
-        ('Gallery', '/Gallery/index.html'),
+        ('Gallery', '/gallery/index.html'),
         ('Docs', '//holoviews.org/'),
         ('Github', '//github.com/ioam/holoviews'),
     ),
@@ -74,7 +74,7 @@ html_context = {
         ('Getting started', 'Getting_Started/index'),
         ('User Guides', 'User_Guide/index'),
         ('Tutorials', 'Tutorials/index'),
-        ('Gallery', 'Gallery/index'),
+        ('Gallery', 'gallery/index'),
         ('Reference', 'Reference_Manual/index'),
         ('FAQ', 'FAQ'),
         ('About', 'about')
