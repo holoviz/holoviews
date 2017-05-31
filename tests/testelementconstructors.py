@@ -36,14 +36,24 @@ class ElementConstructorTest(ComparisonTestCase):
     def test_path_ziplist_construct(self):
         self.assertEqual(Path([list(zip(self.xs, self.sin)), list(zip(self.xs, self.cos))]), self.path)
 
-    def test_chart_zip_construct(self):
+    def test_hist_zip_construct(self):
         self.assertEqual(Histogram(list(zip(self.hxs, self.sin))), self.histogram)
 
-    def test_chart_array_construct(self):
+    def test_hist_array_construct(self):
         self.assertEqual(Histogram(np.column_stack((self.hxs, self.sin))), self.histogram)
 
-    def test_chart_yvalues_construct(self):
+    def test_hist_yvalues_construct(self):
         self.assertEqual(Histogram(self.sin), self.histogram)
+
+    def test_hist_curve_construct(self):
+        hist = Histogram(Curve(([0.1, 0.3, 0.5], [2.1, 2.2, 3.3])))
+        self.assertEqual(hist.data[0], np.array([2.1, 2.2, 3.3]))
+        self.assertEqual(hist.data[1], np.array([0, 0.2, 0.4, 0.6]))
+
+    def test_hist_curve_int_edges_construct(self):
+        hist = Histogram(Curve(range(3)))
+        self.assertEqual(hist.data[0], np.arange(3))
+        self.assertEqual(hist.data[1], np.array([-.5, .5, 1.5, 2.5]))
 
     def test_heatmap_construct(self):
         hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])

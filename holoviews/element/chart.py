@@ -123,7 +123,7 @@ class Spread(ErrorBars):
 
 
 
-class Bars(Dataset, Element2D):
+class Bars(Chart):
     """
     Bars is an Element type, representing a number of stacked and
     grouped bars, depending the dimensionality of the key and value
@@ -223,10 +223,10 @@ class Histogram(Element2D):
         """
         settings = {}
         (values, edges) = values if isinstance(values, tuple) else (values, edges)
-        if isinstance(values, Element2D):
+        if isinstance(values, Chart):
             settings = dict(values.get_param_values(onlychanged=True))
-            edges = values.data[:, 0].copy()
-            values = values.data[:, 1].copy()
+            edges = values.dimension_values(0)
+            values = values.dimension_values(1)
         elif isinstance(values, np.ndarray) and len(values.shape) == 2:
             edges = values[:, 0]
             values = values[:, 1]
