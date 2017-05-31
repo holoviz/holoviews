@@ -34,6 +34,8 @@ def compute_edges(edges):
     throwing an exception if the edges are not
     evenly spaced.
     """
+    if edges.dtype.kind == 'i':
+        edges = edges.astype('f')
     widths = np.diff(edges)
     if np.allclose(widths, widths[0]):
         width = widths[0]
