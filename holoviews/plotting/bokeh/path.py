@@ -67,7 +67,7 @@ class ContourPlot(ColorbarPlot, PathPlot):
         data, mapping = super(ContourPlot, self).get_data(element, ranges, empty)
         ncontours = len(list(data.values())[0])
         style = self.style[self.cyclic_index]
-        if element.vdims and element.level is not None:
+        if element.vdims and element.level is not None and 'cmap' in style:
             cdim = element.vdims[0]
             dim_name = util.dimension_sanitizer(cdim.name)
             cmapper = self._get_colormapper(cdim, element, ranges, style)
