@@ -1,5 +1,7 @@
 from collections import defaultdict
+
 import param
+import numpy as np
 
 from bokeh.models import HoverTool
 
@@ -55,6 +57,24 @@ class PathPlot(ElementPlot):
                 data[k].extend(list(v))
 
         return data, elmapping
+
+
+class ContourPlot(ColorbarPlot, PathPlot):
+
+    style_opts = line_properties + ['cmap']
+
+    def get_data(self, element, ranges=None, empty=False):
+        data, mapping = super(ContourPlot, self).get_data(element, ranges, empty)
+        ncontours = len(list(data.values())[0])
+        style = self.style[self.cyclic_index]
+        if element.vdims and element.level is not None and 'cmap' in style:
+            cdim = element.vdims[0]
+            dim_name = util.dimension_sanitizer(cdim.name)
+            cmapper = self._get_colormapper(cdim, element, ranges, style)
+            data[dim_name] = [] if empty else np.full(ncontours, float(element.level))
+            mapping['line_color'] = {'field': dim_name,
+                                     'transform': cmapper}
+        return data, mapping
 
 
 class PolygonPlot(ColorbarPlot, PathPlot):

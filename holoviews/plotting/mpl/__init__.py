@@ -147,7 +147,7 @@ Store.register({Curve: CurvePlot,
                 Text: TextPlot,
 
                 # Path plots
-                Contours: PathPlot,
+                Contours: ContourPlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,

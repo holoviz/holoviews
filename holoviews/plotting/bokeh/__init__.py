@@ -23,7 +23,7 @@ from .element import OverlayPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
-from .path import PathPlot, PolygonPlot
+from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import (RasterPlot, RGBPlot, HeatmapPlot,
                      HSVPlot, QuadMeshPlot)
@@ -66,7 +66,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Paths
                 Path: PathPlot,
-                Contours: PathPlot,
+                Contours: ContourPlot,
                 Path:     PathPlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,

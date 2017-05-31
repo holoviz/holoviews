@@ -33,6 +33,29 @@ class PathPlot(ElementPlot):
         return axis_kwargs
 
 
+class ContourPlot(PathPlot, ColorbarPlot):
+
+    style_opts = PathPlot.style_opts + ['cmap']
+
+    def get_data(self, element, ranges, style):
+        args, style, axis_kwargs = super(ContourPlot, self).get_data(element, ranges, style)
+        value = element.level
+        if element.vdims and value is not None and np.isfinite(value) and 'cmap' in style:
+            self._norm_kwargs(element, ranges, style, element.vdims[0])
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
+            style['array'] = np.array([value]*len(args[0]))
+        return args, style, axis_kwargs
+
+
+    def update_handles(self, key, axis, element, ranges, style):
+        artist = self.handles['artist']
+        axis_kwargs = super(ContourPlot, self).update_handles(key, axis, element, ranges, style)
+        if 'array' in style:
+            artist.set_array(style['array'])
+            artist.set_clim(style['clim'])
+        return axis_kwargs
+
+
 class PolygonPlot(ColorbarPlot):
     """
     PolygonPlot draws the polygon paths in the supplied Polygons
