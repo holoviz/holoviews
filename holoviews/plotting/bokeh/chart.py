@@ -422,7 +422,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         color_dims = self.adjoined.traverse(lambda x: x.handles.get('color_dim'))
         dim = color_dims[0] if color_dims else None
         cmapper = self._get_colormapper(dim, element, {}, {})
-        if cmapper:
+        if cmapper and dim in element.dimensions():
             data[dim.name] = [] if empty else element.dimension_values(dim)
             mapping['fill_color'] = {'field': dim.name,
                                      'transform': cmapper}
