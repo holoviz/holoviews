@@ -153,7 +153,7 @@ class VectorFieldPlot(ColorbarPlot):
        Whether the lengths will be rescaled to take into account the
        smallest non-zero distance between two vectors.""")
 
-    style_opts = line_properties + ['scale']
+    style_opts = line_properties + ['scale', 'cmap']
     _plot_methods = dict(single='segment')
 
     def _get_lengths(self, element, ranges):
