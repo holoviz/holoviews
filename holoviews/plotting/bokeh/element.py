@@ -481,7 +481,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 axis_props['ticker'] = BasicTicker(desired_num_ticks=ticker)
             elif isinstance(ticker, (tuple, list)):
                 if all(isinstance(t, tuple) for t in ticker):
-                    pass
+                    ticks, labels = zip(*ticker)
+                    axis_props['ticker'] = FixedTicker(ticks=ticks)
+                    if bokeh_version > '0.12.5':
+                        axis_props['major_label_overrides'] = dict(ticker)
+                    else:
+                        self.warning('Explicit tick labels not supported until'
+                                     'bokeh 0.12.6, please upgrade')
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
