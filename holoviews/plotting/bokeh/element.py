@@ -5,6 +5,7 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
+from bokeh import palettes
 from bokeh.core.properties import value
 from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
@@ -1013,7 +1014,21 @@ class ColorbarPlot(ElementPlot):
         if colors:
             palette = colors
         else:
-            palette = mplcmap_to_palette(style.pop('cmap', 'viridis'), ncolors)
+            cmap = style.pop('cmap', 'viridis')
+            if isinstance(cmap, list):
+                palette = cmap
+            else:
+                try:
+                    # Process as matplotlib colormap
+                    palette = mplcmap_to_palette(cmap, ncolors)
+                except ValueError:
+                    # Process as bokeh palette
+                    palette = getattr(palettes, cmap, None)
+                    if isinstance(palette, dict):
+                        if ncolors in palette:
+                            palette = palette[ncolors]
+                        else:
+                            palette = sorted(palette.items())[-1][1]
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
