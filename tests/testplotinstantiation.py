@@ -1401,11 +1401,29 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
+    def test_element_xticks_list_of_tuples(self):
+        if bokeh_version < str('0.12.6'):
+            raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
+        ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
+        curve = Curve(range(10))(plot=dict(xticks=ticks))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.xaxis[0].major_label_overrides, dict(ticks))
+
     def test_element_yticks_list(self):
         curve = Curve(range(10))(plot=dict(yticks=[0, 5, 10]))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
+
+    def test_element_xticks_list_of_tuples(self):
+        if bokeh_version < str('0.12.6'):
+            raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
+        ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
+        curve = Curve(range(10))(plot=dict(yticks=ticks))
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
+        self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
 
     def test_overlay_xticks_list(self):
         overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xticks=[0, 5, 10]))
