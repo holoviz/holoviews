@@ -208,7 +208,8 @@ class Ellipse(BaseShape):
     width = param.Number(default=1, doc="The width of the ellipse.")
 
     aspect= param.Number(default=1.0, doc="""
-       Final multiplier applied to the width.""")
+       Optional multiplier applied to the height to compute the width
+       in cases where only the height value is set.""")
 
     orientation = param.Number(default=0, doc="""
        Orientation in the Cartesian coordinate system, the
@@ -222,6 +223,9 @@ class Ellipse(BaseShape):
     def __init__(self, x, y, spec, **params):
 
         if isinstance(spec, tuple):
+            if 'aspect' in params:
+                raise ValueError('Aspect parameter not supported when supplying '
+                                 '(width, height) specification.')
             (height, width) = spec
         else:
             width, height = spec, spec
