@@ -10,7 +10,10 @@ from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
 from ..streams import Stream
+from .settings import OutputSettings
 
+
+Store.output_settings = OutputSettings
 
 # Needs same validation behavior!
 def opts(options, obj=None):

@@ -11,7 +11,7 @@ from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
-from ..util.settings import  OutputSettings, list_formats, list_backends
+from ..util.settings import list_formats, list_backends
 from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
@@ -172,10 +172,9 @@ class notebook_extension(param.ParameterizedFunction):
                         holoviews.archive.exporters = [svg_exporter] +\
                                                       holoviews.archive.exporters
 
-                Store.output_settings = OutputSettings
-                OutputSettings.allowed['backend'] = list_backends()
-                OutputSettings.allowed['fig'] = list_formats('fig', backend)
-                OutputSettings.allowed['holomap'] = list_formats('holomap', backend)
+                Store.output_settings.allowed['backend'] = list_backends()
+                Store.output_settings.allowed['fig'] = list_formats('fig', backend)
+                Store.output_settings.allowed['holomap'] = list_formats('holomap', backend)
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
@@ -201,7 +200,7 @@ class notebook_extension(param.ParameterizedFunction):
         if notebook_extension._loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputSettings.initialize([backend for backend, _ in imports])
+            Store.output_settings.initialize([backend for backend, _ in imports])
             set_display_hooks(ip)
             notebook_extension._loaded = True
         Store.current_backend = selected_backend

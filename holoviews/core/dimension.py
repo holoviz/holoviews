@@ -1096,7 +1096,7 @@ class Dimensioned(LabelledData):
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
 
-                groups = set(Store.options().groups.keys())
+        groups = set(Store.options().groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
