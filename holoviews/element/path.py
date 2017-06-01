@@ -208,7 +208,7 @@ class Ellipse(BaseShape):
     width = param.Number(default=1, doc="The width of the ellipse.")
 
     aspect= param.Number(default=1.0, doc="""
-       Final divisor only applied to the final height.""")
+       Final multiplier applied to the width.""")
 
     orientation = param.Number(default=0, doc="""
        Orientation in the Cartesian coordinate system, the
