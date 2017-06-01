@@ -180,8 +180,20 @@ class Box(BaseShape):
 class Ellipse(BaseShape):
     """
     Draw an axis-aligned ellipse at the specified x,y position with
-    the given width, aspect ratio and orientation. By default 
-    draws a circle (aspect=1).
+    the given orientation.
+
+    The simplest (default) Ellipse is a circle, specified using:
+
+    Ellipse(x,y, radius)
+
+    A circle is a degenerate ellipse where the major axis and minor axis
+    lengths are equal. To specify these explicitly, you can use:
+
+    Ellipse(x,y, (major-axis-length, minor-axis-length))
+
+    There is also an apect parameter allowing you to generate an ellipse
+    by specifying a multiplicating factor that will be applied to the
+    major axis length only.
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
@@ -191,24 +203,52 @@ class Ellipse(BaseShape):
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
 
-    height = param.Number(default=1, doc="The height of the ellipse.")
+    height = param.Number(default=1, doc="""
+       The height of the ellipse. Will be deprecated in HoloViews 2.0:
+       use the major_axis_length parameter instead.""")
 
-    aspect= param.Number(default=1.0, doc="The aspect ratio of the ellipse.")
+    major_axis_length = param.Number(default=1, doc="The length of the ellipse major axis")
 
-    orientation = param.Number(default=0, doc="Orientation in the Cartesian coordinate system, the counterclockwise angle in radian between the first axis and the horizontal.")
+    minor_axis_length = param.Number(default=1, doc="The length of the ellipse minor axis")
+
+    aspect= param.Number(default=1.0, doc="""
+       Final multipler only applied to the minor axis length. Allows
+       ellipses to be specified without the (major axis length, minor
+       axis length) tuple format.""")
+
+    orientation = param.Number(default=0, doc="""
+       Orientation in the Cartesian coordinate system, the
+       counterclockwise angle in radian between the first axis and the
+       horizontal.""")
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
     group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
 
-    def __init__(self, x, y, height, **params):
-        super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
+    def __init__(self, x, y, spec, **params):
+
+        if 'height' in params:
+            spec = params['height']
+
+        if isinstance(spec, tuple):
+            (major, minor) = spec
+            if major < minor:
+                raise ValueError('Minor axis length must be less than major axis length')
+            params['height'] = major
+        else:
+            major, minor = spec, spec
+
+        params['major_axis_length']= major
+        params['minor_axis_length']= minor
+        super(Ellipse, self).__init__([], x=x, y=y, **params)
+
         angles = np.linspace(0, 2*np.pi, self.samples)
-        radius = height / 2.0
+        half_major = self.major_axis_length / 2.0
+        half_minor = (self.minor_axis_length * self.aspect)/ 2.0
         #create points
         ellipse = np.array(
-            list(zip(radius*self.aspect*np.sin(angles),
-            radius*np.cos(angles))))
+            list(zip(half_minor*np.sin(angles),
+                     half_major*np.cos(angles))))
         #rotate ellipse and add offset
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                [np.sin(self.orientation), np.cos(self.orientation)]])
