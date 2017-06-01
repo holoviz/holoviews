@@ -16,7 +16,7 @@ from ..core import (ViewableElement, UniformNdMapping,
                     CompositeOverlay, DynamicMap)
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
-from ..util.outputoptions import OutputOptions
+from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
 # To assist with debugging of display hooks
@@ -31,7 +31,7 @@ ABBREVIATE_TRACEBACKS = True
 def max_frame_warning(max_frames):
     sys.stderr.write("Skipping regular visual display to avoid "
                      "lengthy animation render times\n"
-                     "[Total item frames exceeds max_frames on OutputOptions (%d)]"
+                     "[Total item frames exceeds max_frames on OutputSettings (%d)]"
                      % max_frames)
 
 def process_object(obj):
@@ -127,14 +127,14 @@ def display_hook(fn):
 
         try:
             html = fn(element,
-                      max_frames=OutputOptions.options['max_frames'])
+                      max_frames=OutputSettings.options['max_frames'])
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
                 if type(holoviews.archive) is not FileArchive:
                     holoviews.archive.add(element, html=html)
-            filename = OutputOptions.options['filename']
+            filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
 

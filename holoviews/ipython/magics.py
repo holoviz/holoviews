@@ -42,8 +42,8 @@ class OutputMagic(Magics):
 
     @classmethod
     def info(cls, obj):
-        disabled = Store.output_options._disable_info_output
-        if Store.output_options.options['info'] and not disabled:
+        disabled = Store.output_settings._disable_info_output
+        if Store.output_settings.options['info'] and not disabled:
             page.page(InfoPrinter.info(obj, ansi=True))
 
     @line_cell_magic
@@ -54,26 +54,26 @@ class OutputMagic(Magics):
         def warnfn(msg):
             display(HTML("<b>Warning:</b> %s" % msg))
 
-        Store.output_options.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
+        Store.output_settings.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
 
     @classmethod
     def option_completer(cls, k,v):
         raw_line = v.text_until_cursor
-        line = raw_line.replace(Store.output_options.magic_name,'')
+        line = raw_line.replace(Store.output_settings.magic_name,'')
 
         # Find the last element class mentioned
         completion_key = None
         tokens = [t for els in reversed(line.split('=')) for t in els.split()]
 
         for token in tokens:
-            if token.strip() in Store.output_options.allowed:
+            if token.strip() in Store.output_settings.allowed:
                 completion_key = token.strip()
                 break
 
-        values = [val for val in Store.output_options.allowed.get(completion_key, [])
-                  if val not in Store.output_options.hidden.get(completion_key, [])]
+        values = [val for val in Store.output_settings.allowed.get(completion_key, [])
+                  if val not in Store.output_settings.hidden.get(completion_key, [])]
         vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
-        return vreprs + [el+'=' for el in Store.output_options.allowed.keys()]
+        return vreprs + [el+'=' for el in Store.output_settings.allowed.keys()]
 
 
 @magics_class

@@ -4,9 +4,9 @@ from ..core import OrderedDict
 from ..core import Store
 from ..core.util import basestring
 
-class KeywordOptions(object):
+class KeywordSettings(object):
     """
-    Base class for magics that are used to specified collections of
+    Base class for options settings used to specified collections of
     keyword options.
     """
     # Dictionary from keywords to allowed bounds/values
@@ -70,7 +70,7 @@ class KeywordOptions(object):
     @classmethod
     def _validate(cls, options, items, linemagic, warnfn):
         "Allows subclasses to check options are valid."
-        raise NotImplementedError("KeywordOptions is an abstract base class.")
+        raise NotImplementedError("KeywordSettings is an abstract base class.")
 
     @classmethod
     def pprint(cls):
@@ -153,7 +153,7 @@ def list_formats(format_type, backend=None):
 
 
 
-class OutputOptions(KeywordOptions):
+class OutputSettings(KeywordSettings):
     """
     Magic for easy customising of display options.
     Consult %%output? for more information.
@@ -192,7 +192,7 @@ class OutputOptions(KeywordOptions):
                             ('info'        , False),
                             ('css'         , None)])
 
-    # Defines the options the OutputOptions remembers. All other options
+    # Defines the options the OutputSettings remembers. All other options
     # are held by the backend specific Renderer.
     remembered = ['max_frames', 'charwidth', 'info', 'filename']
 
@@ -216,7 +216,7 @@ class OutputOptions(KeywordOptions):
         raise Exception("Format %r does not appear to be supported." % value)
 
     def missing_backend_exception(value, keyword, allowed):
-        if value in OutputOptions.backend_list:
+        if value in OutputSettings.backend_list:
             raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
         else:
             raise ValueError("Backend %r does not exist" % value)
@@ -288,7 +288,7 @@ class OutputOptions(KeywordOptions):
         prev_backend_spec = prev_backend+':'+prev_renderer.mode
         prev_params = {k: v for k, v in prev_renderer.get_param_values()
                        if k in cls.render_params}
-        prev_restore = dict(OutputOptions.options)
+        prev_restore = dict(OutputSettings.options)
         try:
             # Process magic
             new_options = cls.get_options(line, {}, cell is None, warnfn)
@@ -305,11 +305,11 @@ class OutputOptions(KeywordOptions):
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
-            OutputOptions.options = new_options
+            OutputSettings.options = new_options
             cls._set_render_options(new_options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
-            OutputOptions.options = prev_restore
+            OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
             print('Error: %s' % str(e))
             print("For help with the %output magic, call %output?\n")
@@ -317,9 +317,9 @@ class OutputOptions(KeywordOptions):
 
         if cell is not None:
             if cell_runner: cell_runner(cell)
-            # After cell magic restore previous options and restore
+            # After cell restore previous options and restore
             # temporarily selected renderer
-            OutputOptions.options = prev_restore
+            OutputSettings.options = prev_restore
             cls._set_render_options(render_params, backend_spec)
             if backend_spec.split(':')[0] != prev_backend:
                 cls.set_backend(prev_backend)
