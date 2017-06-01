@@ -72,24 +72,6 @@ class KeywordSettings(object):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("KeywordSettings is an abstract base class.")
 
-    @classmethod
-    def pprint(cls):
-        """
-        Pretty print the current element options with a maximum width of
-        cls.pprint_width.
-        """
-        current, count = '', 0
-        for k,v in cls.options.items():
-            keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > cls.options['charwidth']:
-                print((cls.magic_name if count==0 else '      ')  + current)
-                count += 1
-                current = keyword
-            else:
-                current += ' '+ keyword
-        else:
-            print((cls.magic_name if count==0 else '      ')  + current)
-
 
     @classmethod
     def _extract_keywords(cls, line, items):
@@ -158,8 +140,6 @@ class OutputSettings(KeywordSettings):
     Magic for easy customising of display options.
     Consult %%output? for more information.
     """
-
-    magic_name = '%output'
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
     allowed = {'backend'     : list_backends(),
@@ -277,10 +257,6 @@ class OutputSettings(KeywordSettings):
     @classmethod
     def output(cls, line, cell=None, cell_runner=None, warnfn=None):
         line = line.split('#')[0].strip()
-        if line == '':
-            cls.pprint()
-            print("\nFor help with the %output magic, call %output?")
-            return
 
         # Make backup of previous options
         prev_backend = Store.current_backend
@@ -290,7 +266,7 @@ class OutputSettings(KeywordSettings):
                        if k in cls.render_params}
         prev_restore = dict(OutputSettings.options)
         try:
-            # Process magic
+            # Parse line
             new_options = cls.get_options(line, {}, cell is None, warnfn)
 
             # Make backup of options on selected renderer

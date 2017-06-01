@@ -46,15 +46,23 @@ class OutputMagic(Magics):
         if Store.output_settings.options['info'] and not disabled:
             page.page(InfoPrinter.info(obj, ansi=True))
 
-    @line_cell_magic
-    def output(self, line, cell=None):
-        def cell_runner(cell):
-            self.shell.run_cell(cell, store_history=STORE_HISTORY)
-
-        def warnfn(msg):
-            display(HTML("<b>Warning:</b> %s" % msg))
-
-        Store.output_settings.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
+    @classmethod
+    def pprint(cls):
+        """
+        Pretty print the current element options with a maximum width of
+        cls.pprint_width.
+        """
+        current, count = '', 0
+        for k,v in Store.output_settings.options.items():
+            keyword = '%s=%r' % (k,v)
+            if len(current) + len(keyword) > Store.output_settings.options['charwidth']:
+                print(('%output' if count==0 else '      ')  + current)
+                count += 1
+                current = keyword
+            else:
+                current += ' '+ keyword
+        else:
+            print(('%output' if count==0 else '      ')  + current)
 
     @classmethod
     def option_completer(cls, k,v):
@@ -74,6 +82,22 @@ class OutputMagic(Magics):
                   if val not in Store.output_settings.hidden.get(completion_key, [])]
         vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
         return vreprs + [el+'=' for el in Store.output_settings.allowed.keys()]
+
+    @line_cell_magic
+    def output(self, line, cell=None):
+
+        if line == '':
+            self.pprint()
+            print("\nFor help with the %output magic, call %output?")
+            return
+
+        def cell_runner(cell):
+            self.shell.run_cell(cell, store_history=STORE_HISTORY)
+
+        def warnfn(msg):
+            display(HTML("<b>Warning:</b> %s" % msg))
+
+        Store.output_settings.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
 
 
 @magics_class
