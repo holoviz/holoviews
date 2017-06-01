@@ -385,7 +385,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             properties['tools'] = tools
         properties['toolbar_location'] = self.toolbar
 
-        properties['webgl'] = Store.renderers[self.renderer.backend].webgl
+        if bokeh_version < '0.12.6':
+            properties['webgl'] = self.renderer.webgl
+        elif self.renderer.webgl:
+            properties['output_backend'] =  'webgl'
+
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
             # are not really an issue
