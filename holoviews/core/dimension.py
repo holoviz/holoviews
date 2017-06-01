@@ -1087,7 +1087,16 @@ class Dimensioned(LabelledData):
         then returned. Note that if no options are supplied at all,
         all ids are reset.
         """
-        groups = set(Store.options().groups.keys())
+        from ..util.parser import OptsSpec
+        if isinstance(options, basestring):
+            try:
+                options = OptsSpec.parse(options)
+            except:
+                options = OptsSpec.parse(
+                    '{clsname} {options}'.format(clsname=self.__class__.__name__,
+                                                 options=options))
+
+                groups = set(Store.options().groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
