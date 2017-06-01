@@ -50,7 +50,11 @@ class OutputMagic(Magics):
     def output(self, line, cell=None):
         def cell_runner(cell):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-        Store.output_options.output(line, cell, cell_runner=cell_runner)
+
+        def warnfn(msg):
+            display(HTML("<b>Warning:</b> %s" % msg))
+
+        Store.output_options.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
 
     @classmethod
     def option_completer(cls, k,v):

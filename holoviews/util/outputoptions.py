@@ -30,7 +30,7 @@ class KeywordOptions(object):
         pass
 
     @classmethod
-    def get_options(cls, line, options, linemagic):
+    def get_options(cls, line, options, linemagic, warnfn):
         "Given a keyword specification line, validated and compute options"
         items = cls._extract_keywords(line, OrderedDict())
         options = cls.update_options(options, items)
@@ -65,10 +65,10 @@ class KeywordOptions(object):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-        return cls._validate(options, items, linemagic)
+        return cls._validate(options, items, linemagic, warnfn)
 
     @classmethod
-    def _validate(cls, options, items, linemagic):
+    def _validate(cls, options, items, linemagic, warnfn):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("KeywordOptions is an abstract base class.")
 
@@ -257,7 +257,7 @@ class OutputOptions(KeywordOptions):
 
 
     @classmethod
-    def _validate(cls, options, items, linemagic):
+    def _validate(cls, options, items, linemagic, warnfn):
         "Validation of edge cases and incompatible options"
 
         if 'html' in Store.display_formats:
@@ -265,14 +265,17 @@ class OutputOptions(KeywordOptions):
         elif 'fig' in items and items['fig'] not in Store.display_formats:
             msg = ("Output magic requesting figure format %r " % items['fig']
                    + "not in display formats %r" % Store.display_formats)
-            display(HTML("<b>Warning:</b> %s" % msg))
+            if warnfn is None:
+                print('Warning: {msg}'.format(msg=msg))
+            else:
+                warnfn(msg)
 
         backend = Store.current_backend
         return Store.renderers[backend].validate(options)
 
 
     @classmethod
-    def output(cls, line, cell=None, cell_runner=None):
+    def output(cls, line, cell=None, cell_runner=None, warnfn=None):
         line = line.split('#')[0].strip()
         if line == '':
             cls.pprint()
@@ -288,7 +291,7 @@ class OutputOptions(KeywordOptions):
         prev_restore = dict(OutputOptions.options)
         try:
             # Process magic
-            new_options = cls.get_options(line, {}, cell is None)
+            new_options = cls.get_options(line, {}, cell is None, warnfn)
 
             # Make backup of options on selected renderer
             if 'backend' in new_options:
