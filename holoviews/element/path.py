@@ -218,7 +218,7 @@ class Ellipse(BaseShape):
 
     orientation = param.Number(default=0, doc="""
        Orientation in the Cartesian coordinate system, the
-       counterclockwise angle in radian between the first axis and the
+       counterclockwise angle in radians between the first axis and the
        horizontal.""")
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
