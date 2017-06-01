@@ -184,16 +184,16 @@ class Ellipse(BaseShape):
 
     The simplest (default) Ellipse is a circle, specified using:
 
-    Ellipse(x,y, radius)
+    Ellipse(x,y, diameter)
 
-    A circle is a degenerate ellipse where the major axis and minor axis
-    lengths are equal. To specify these explicitly, you can use:
+    A circle is a degenerate ellipse where the width and height are
+    equal. To specify these explicitly, you can use:
 
-    Ellipse(x,y, (major-axis-length, minor-axis-length))
+    Ellipse(x,y, (height, width))
 
     There is also an apect parameter allowing you to generate an ellipse
     by specifying a multiplicating factor that will be applied to the
-    major axis length only.
+    height only.
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
@@ -203,18 +203,12 @@ class Ellipse(BaseShape):
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
 
-    height = param.Number(default=1, doc="""
-       The height of the ellipse. Will be deprecated in HoloViews 2.0:
-       use the major_axis_length parameter instead.""")
+    height = param.Number(default=1, doc="The height of the ellipse.")
 
-    major_axis_length = param.Number(default=1, doc="The length of the ellipse major axis")
-
-    minor_axis_length = param.Number(default=1, doc="The length of the ellipse minor axis")
+    width = param.Number(default=1, doc="The width of the ellipse.")
 
     aspect= param.Number(default=1.0, doc="""
-       Final multipler only applied to the minor axis length. Allows
-       ellipses to be specified without the (major axis length, minor
-       axis length) tuple format.""")
+       Final divisor only applied to the final height.""")
 
     orientation = param.Number(default=0, doc="""
        Orientation in the Cartesian coordinate system, the
@@ -227,28 +221,20 @@ class Ellipse(BaseShape):
 
     def __init__(self, x, y, spec, **params):
 
-        if 'height' in params:
-            spec = params['height']
-
         if isinstance(spec, tuple):
-            (major, minor) = spec
-            if major < minor:
-                raise ValueError('Minor axis length must be less than major axis length')
-            params['height'] = major
+            (height, width) = spec
         else:
-            major, minor = spec, spec
+            width, height = spec, spec
 
-        params['major_axis_length']= major
-        params['minor_axis_length']= minor
-        super(Ellipse, self).__init__([], x=x, y=y, **params)
+        super(Ellipse, self).__init__([], x=x, y=y, height=height, width=width, **params)
 
         angles = np.linspace(0, 2*np.pi, self.samples)
-        half_major = self.major_axis_length / 2.0
-        half_minor = (self.minor_axis_length * self.aspect)/ 2.0
+        half_height = self.height / 2.0
+        half_width = (self.width * self.aspect)/ 2.0
         #create points
         ellipse = np.array(
-            list(zip(half_minor*np.sin(angles),
-                     half_major*np.cos(angles))))
+            list(zip(half_width*np.sin(angles),
+                     half_height*np.cos(angles))))
         #rotate ellipse and add offset
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                [np.sin(self.orientation), np.cos(self.orientation)]])
