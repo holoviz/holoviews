@@ -26,14 +26,16 @@ def opts(options, obj=None):
     else:
         return StoreOptions.set_options(obj, OptsSpec.parse(options))
 
-def output(options, obj=None):
+
+def output(line=None, obj=None, **options):
     """
     Cell magic version acts as a no-op.
     """
     if obj is not None:
         return obj
     else:
-        Store.output_settings.output(options)
+        help_prompt = 'For help with hv.util.output call help(hv.util.output)'
+        Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
 class Dynamic(param.ParameterizedFunction):
     """

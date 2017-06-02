@@ -97,7 +97,14 @@ class OutputMagic(Magics):
         def warnfn(msg):
             display(HTML("<b>Warning:</b> %s" % msg))
 
-        Store.output_settings.output(line, cell, cell_runner=cell_runner, warnfn=warnfn)
+
+        if line:
+            help_prompt = "For help with the %output magic, call %output?\n"
+        else:
+            help_prompt = "For help with the %%output magic, call %%output?\n"
+
+        Store.output_settings.output(line, cell, cell_runner=cell_runner,
+                                     help_prompt=help_prompt, warnfn=warnfn)
 
 
 @magics_class

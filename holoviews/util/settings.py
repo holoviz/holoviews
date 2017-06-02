@@ -30,9 +30,8 @@ class KeywordSettings(object):
         pass
 
     @classmethod
-    def get_options(cls, line, options, linemagic, warnfn):
-        "Given a keyword specification line, validated and compute options"
-        items = cls._extract_keywords(line, OrderedDict())
+    def get_options(cls, items, options, warnfn):
+        "Given a keyword specification, validate and compute options"
         options = cls.update_options(options, items)
         for keyword in cls.defaults:
             if keyword in items:
@@ -65,10 +64,10 @@ class KeywordSettings(object):
                         info = (keyword,value)+allowed
                         raise ValueError("Value %r for key %r not between %s and %s" % info)
                 options[keyword] = value
-        return cls._validate(options, items, linemagic, warnfn)
+        return cls._validate(options, items, warnfn)
 
     @classmethod
-    def _validate(cls, options, items, linemagic, warnfn):
+    def _validate(cls, options, items, warnfn):
         "Allows subclasses to check options are valid."
         raise NotImplementedError("KeywordSettings is an abstract base class.")
 
@@ -137,8 +136,7 @@ def list_formats(format_type, backend=None):
 
 class OutputSettings(KeywordSettings):
     """
-    Magic for easy customising of display options.
-    Consult %%output? for more information.
+    Class for controlling display and output settings.
     """
 
     # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
@@ -210,7 +208,7 @@ class OutputSettings(KeywordSettings):
     @classmethod
     def _generate_docstring(cls):
         renderer = Store.renderers[Store.current_backend]
-        intro = ["Magic for setting HoloViews display options.",
+        intro = ["Helper used to set HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
         backend = "backend      : The backend used by HoloViews %r"  % cls.allowed['backend']
         fig =     "fig          : The static figure format %r" % cls.allowed['fig']
@@ -224,7 +222,7 @@ class OutputSettings(KeywordSettings):
                   % renderer.size)
         dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
                   % renderer.dpi)
-        chars =  ("charwidth    : The max character width for displaying the output magic (default %r)"
+        chars =  ("charwidth    : The max character width for displaying helper (default %r)"
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
                   % cls.defaults['filename'])
@@ -237,13 +235,13 @@ class OutputSettings(KeywordSettings):
 
 
     @classmethod
-    def _validate(cls, options, items, linemagic, warnfn):
+    def _validate(cls, options, items, warnfn):
         "Validation of edge cases and incompatible options"
 
         if 'html' in Store.display_formats:
             pass
         elif 'fig' in items and items['fig'] not in Store.display_formats:
-            msg = ("Output magic requesting figure format %r " % items['fig']
+            msg = ("Requesting output figure format %r " % items['fig']
                    + "not in display formats %r" % Store.display_formats)
             if warnfn is None:
                 print('Warning: {msg}'.format(msg=msg))
@@ -255,8 +253,12 @@ class OutputSettings(KeywordSettings):
 
 
     @classmethod
-    def output(cls, line, cell=None, cell_runner=None, warnfn=None):
-        line = line.split('#')[0].strip()
+    def output(cls, line=None, cell=None, cell_runner=None,
+               help_prompt=None, warnfn=None, **kwargs):
+
+        if line and kwargs:
+            raise ValueError('Please either specify a string to '
+                             'parse or keyword arguments')
 
         # Make backup of previous options
         prev_backend = Store.current_backend
@@ -266,12 +268,16 @@ class OutputSettings(KeywordSettings):
                        if k in cls.render_params}
         prev_restore = dict(OutputSettings.options)
         try:
-            # Parse line
-            new_options = cls.get_options(line, {}, cell is None, warnfn)
+            if line is not None:
+                # Parse line
+                line = line.split('#')[0].strip()
+                kwargs = cls._extract_keywords(line, OrderedDict())
+
+            options = cls.get_options(kwargs, {}, warnfn)
 
             # Make backup of options on selected renderer
-            if 'backend' in new_options:
-                backend_spec = new_options['backend']
+            if 'backend' in options:
+                backend_spec = options['backend']
                 if ':' not in backend_spec:
                     backend_spec += ':default'
             else:
@@ -281,14 +287,15 @@ class OutputSettings(KeywordSettings):
                              if k in cls.render_params}
 
             # Set options on selected renderer and set display hook options
-            OutputSettings.options = new_options
-            cls._set_render_options(new_options, backend_spec)
+            OutputSettings.options = options
+            cls._set_render_options(options, backend_spec)
         except Exception as e:
             # If setting options failed ensure they are reset
             OutputSettings.options = prev_restore
             cls.set_backend(prev_backend)
             print('Error: %s' % str(e))
-            print("For help with the %output magic, call %output?\n")
+            if help_prompt:
+                print(help_prompt)
             return
 
         if cell is not None:
