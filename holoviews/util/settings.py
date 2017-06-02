@@ -207,21 +207,17 @@ class OutputSettings(KeywordSettings):
 
     @classmethod
     def _generate_docstring(cls):
-        renderer = Store.renderers[Store.current_backend]
         intro = ["Helper used to set HoloViews display options.",
                  "Arguments are supplied as a series of keywords in any order:", '']
-        backend = "backend      : The backend used by HoloViews %r"  % cls.allowed['backend']
-        fig =     "fig          : The static figure format %r" % cls.allowed['fig']
-        holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
-        widgets = "widgets      : The widget mode for widgets %r" % renderer.widget_mode
-        fps =    ("fps          : The frames per second for animations (default %r)"
-                  % renderer.fps)
+        backend = "backend      : The backend used by HoloViews"
+        fig =     "fig          : The static figure format"
+        holomap = "holomap      : The display type for holomaps"
+        widgets = "widgets      : The widget mode for widgets"
+        fps =    "fps          : The frames per second used for animations"
         frames=  ("max_frames   : The max number of frames rendered (default %r)"
                   % cls.defaults['max_frames'])
-        size =   ("size         : The percentage size of displayed output (default %r)"
-                  % renderer.size)
-        dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
-                  % renderer.dpi)
+        size =   "size         : The percentage size of displayed output"
+        dpi =    "dpi          : The rendered dpi of the figure"
         chars =  ("charwidth    : The max character width for displaying helper (default %r)"
                   % cls.defaults['charwidth'])
         fname =  ("filename    : The filename of the saved output, if any (default %r)"
@@ -312,8 +308,8 @@ class OutputSettings(KeywordSettings):
     @classmethod
     def update_options(cls, options, items):
         """
-        Switch default options and backend if new backend
-        is supplied in items.
+        Switch default options and backend if new backend is supplied in
+        items.
         """
         # Get new backend
         backend_spec = items.get('backend', Store.current_backend)

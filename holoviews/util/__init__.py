@@ -37,6 +37,8 @@ def output(line=None, obj=None, **options):
         help_prompt = 'For help with hv.util.output call help(hv.util.output)'
         Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
+output.__doc__ = Store.output_settings._generate_docstring()
+
 class Dynamic(param.ParameterizedFunction):
     """
     Dynamically applies a callable to the Elements in any HoloViews
