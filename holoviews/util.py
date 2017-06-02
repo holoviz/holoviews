@@ -2,7 +2,7 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, ViewableElement
+from .core import Dimension, DynamicMap, HoloMap, ViewableElement
 from .core.operation import Operation
 from .core.util import Aliases  # noqa (API import)
 from .core.operation import OperationCallable
@@ -127,3 +127,47 @@ class Dynamic(param.ParameterizedFunction):
         kdims = [d(values=list(util.unique_iterator(values))) for d, values in
                  zip(hmap.kdims, dim_values)]
         return DynamicMap(dynamic_fn, streams=streams, **dict(params, kdims=kdims))
+
+
+class ParamDimList(param.ParameterizedFunction):
+    """
+    Simple utility that accepts a parameterized object and returns a
+    corresponding list of dimension objects.
+    """
+
+    exclude = param.List(default=['name'], doc="""
+        Parameters to exclude by name from the dimension list.""")
+
+    label = param.Boolean(default=True, doc="""
+        Whether to use the parameter documentation as the dimension label""")
+
+    precedence_threshold = param.Number(default=0, doc="""
+        The threshold below which parameters are ignored.""")
+
+    def __call__(self, parameterized, **kwargs):
+
+        types = {param.String:str, param.Integer:int}
+        p = param.ParamOverrides(self, kwargs)
+        dim_list = []
+        params = parameterized.params()
+        for name, param_obj in params.items():
+            if name in p.exclude:  continue
+            elif param_obj.precedence:
+                if param_obj.precedence < p.precedence_threshold:
+                    continue
+            dim_kws = {}
+            if param_obj.doc and p.label:
+                dim_kws['label'] = param_obj.doc
+            if isinstance(param_obj, param.Number):
+                if param_obj.bounds != None:
+                    dim_kws['range'] = param_obj.bounds
+                if param_obj.softbounds != None:
+                    dim_kws['soft_range'] = param_obj.softbounds
+            elif isinstance(param_obj, param.List):
+                dim_kws['values'] = param_obj.default
+
+            if isinstance(param_obj, (param.String, param.Integer)):
+                dim_kws['type'] = types[type(param_obj)]
+
+            dim_list.append(Dimension(name, **dim_kws))
+        return dim_list

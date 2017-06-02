@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """
-Unit tests of the helper functions in core.utils
+Unit tests of the helper functions in core.util and util
 """
 import sys, math
 import unittest
@@ -15,6 +15,8 @@ try:
 except:
     pd = None
 
+import param
+from holoviews import util
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique
@@ -527,3 +529,63 @@ class TestTreePathUtils(unittest.TestCase):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, False)
         self.assertEqual(new_path, path[:-1]+('I',))
+
+
+class TestParams(param.Parameterized):
+    a = param.Number()
+    b = param.Number(doc='Number doc')
+    c = param.Number(precedence=-1)
+    d = param.Number(bounds=(-10,10))
+    e = param.Number(softbounds=(-11,11))
+    f = param.Integer(default=1)
+    g = param.String()
+    h = param.List(default=[1,2,3])
+
+
+class TestParamDimList(unittest.TestCase):
+
+    @classmethod
+    def find(cls, dims, name):
+        names = [d.name for d in dims]
+        return dims[names.index(name)]
+
+    def test_param_excludes(self):
+        dims = util.ParamDimList(TestParams(),
+                                 exclude=['name', 'a','b','c','d','e','f','g','h'])
+        self.assertEqual(dims, [])
+
+    def test_param_a_name(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'a').name, 'a')
+
+    def test_param_b_label_enabled(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'b').label, 'Number doc')
+
+    def test_param_b_label_disabled(self):
+        dims = util.ParamDimList(TestParams(), label=False)
+        self.assertEqual(self.find(dims,'b').label, 'b')
+
+    def test_param_c_precedence_disabled(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(all(d.name!='c' for d in dims), True)
+
+    def test_param_d_range(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'d').range, (-10,10))
+
+    def test_param_e_softrange(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'e').soft_range, (-11,11))
+
+    def test_param_f_type_int(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'f').type, int)
+
+    def test_param_g_type_str(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'g').type, str)
+
+    def test_param_h_type_values(self):
+        dims = util.ParamDimList(TestParams())
+        self.assertEqual(self.find(dims,'h').values, [1,2,3])
