@@ -5,6 +5,11 @@ import types
 import numpy as np
 import xarray as xr
 
+try:
+    import dask
+except ImportError:
+    dask = None
+
 from .. import util
 from ..dimension import Dimension
 from ..ndmapping import NdMapping, item_check, sorted_context
@@ -156,6 +161,8 @@ class XArrayInterface(GridInterface):
         data = dataset.data[dim.name].data
         if dim in dataset.vdims:
             coord_dims = dataset.data[dim.name].dims
+            if dask and isinstance(data, dask.array.Array):
+                data = data.compute()
             data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
