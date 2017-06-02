@@ -109,6 +109,11 @@ class aggregate(Operation):
     y_sampling = param.Number(default=None, doc="""
         Specifies the smallest allowed sampling interval along the y-axis.""")
 
+    target = param.ClassSelector(class_=Image, doc="""
+        A target Image which defines the desired x_range, y_range,
+        width and height.
+    """)
+
     streams = param.List(default=[PlotSize, RangeXY], doc="""
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
@@ -277,11 +282,20 @@ class aggregate(Operation):
                                   dims=['y', 'x'], coords={'x': xc, 'y': yc})
             return self.p.element_type(xarray)
 
-        xstart, xend = self.p.x_range if self.p.x_range else data.range(x)
-        ystart, yend = self.p.y_range if self.p.y_range else data.range(y)
+        if self.p.target:
+            target = self.p.target
+            xs, ys = (target.dimension_values(i, expanded=False)
+                      for i in range(2))
+            x_range, y_range = ((xs.min(), xs.max()+(1/target.xdensity)),
+                                (ys.min(), ys.max()+(1/target.ydensity)))
+            height, width = target.dimension_values(2, flat=False).shape
+        else:
+            x_range = self.p.x_range or element.range(0)
+            y_range = self.p.y_range or element.range(1)
+            width, height = self.p.width, self.p.height
+        (xstart, xend), (ystart, yend) = x_range, y_range
 
         # Compute highest allowed sampling density
-        width, height = self.p.width, self.p.height
         if self.p.x_sampling:
             x_range = xend - xstart
             width = int(min([(x_range/self.p.x_sampling), width]))
@@ -304,12 +318,16 @@ class aggregate(Operation):
 
         agg = getattr(cvs, glyph)(data, x, y, self.p.aggregator)
         if agg.ndim == 2:
-            return self.p.element_type(agg, **params)
+            # Replacing x and y coordinates to avoid numerical precision issues
+            data = (xs, ys, agg.data) if self.p.target else agg
+            return self.p.element_type(data, **params)
         else:
-            return NdOverlay({c: self.p.element_type(agg.sel(**{column: c}),
-                                                     **params)
-                              for c in agg.coords[column].data},
-                             kdims=[data.get_dimension(column)])
+            layers = {}
+            for c in agg.coords[column].data:
+                cagg = agg.sel(**{column: c})
+                data = (xs, ys, cagg.data) if self.p.target else cagg
+                layers[c] = self.p.element_type(data, **params)
+            return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
 
