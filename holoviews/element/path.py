@@ -177,7 +177,7 @@ class Box(BaseShape):
        horizontal.""")
 
     aspect= param.Number(default=1.0, doc="""
-       Optional multiplier applied to the box length to compute the
+       Optional multiplier applied to the box size to compute the
        width in cases where only the length value is set.""")
 
     group = param.String(default='Box', constant=True, doc="The assigned group name.")
@@ -220,7 +220,7 @@ class Ellipse(BaseShape):
     A circle is a degenerate ellipse where the width and height are
     equal. To specify these explicitly, you can use:
 
-    Ellipse(x,y, (height, width))
+    Ellipse(x,y, (width, height))
 
     There is also an apect parameter allowing you to generate an ellipse
     by specifying a multiplicating factor that will be applied to the
