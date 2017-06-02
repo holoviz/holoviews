@@ -210,18 +210,18 @@ class Ellipse(BaseShape):
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
 
-    height = param.Number(default=1, doc="The height of the ellipse.")
-
     width = param.Number(default=1, doc="The width of the ellipse.")
 
-    aspect= param.Number(default=1.0, doc="""
-       Optional multiplier applied to the height to compute the width
-       in cases where only the height value is set.""")
+    height = param.Number(default=1, doc="The height of the ellipse.")
 
     orientation = param.Number(default=0, doc="""
        Orientation in the Cartesian coordinate system, the
        counterclockwise angle in radians between the first axis and the
        horizontal.""")
+
+    aspect= param.Number(default=1.0, doc="""
+       Optional multiplier applied to the diameter to compute the width
+       in cases where only the diameter value is set.""")
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
@@ -235,7 +235,7 @@ class Ellipse(BaseShape):
             if 'aspect' in params:
                 raise ValueError('Aspect parameter not supported when supplying '
                                  '(width, height) specification.')
-            (height, width) = spec
+            (width, height) = spec
         else:
             width, height = params.get('width', spec), spec
 
