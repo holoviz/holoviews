@@ -140,6 +140,7 @@ class BaseShape(Path):
 
     __abstract = True
 
+
     def clone(self, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
@@ -148,7 +149,11 @@ class BaseShape(Path):
         settings = dict(self.get_param_values(), **overrides)
         if not args:
             settings['plot_id'] = self._plot_id
-        return self.__class__(*args, **settings)
+
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
+        return self.__class__(*(settings[n] for n in pos_args),
+                              **{k:v for k,v in settings.items()
+                                 if k not in pos_args})
 
 
 
@@ -169,6 +174,8 @@ class Box(BaseShape):
         of 1.0 is used.""")
 
     group = param.String(default='Box', constant=True, doc="The assigned group name.")
+
+    __pos_params = ['x','y', 'height']
 
     def __init__(self, x, y, height, **params):
         super(Box, self).__init__([], x=x,y =y, height=height, **params)
@@ -220,6 +227,8 @@ class Ellipse(BaseShape):
 
     group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
 
+    __pos_params = ['x','y', 'height']
+
     def __init__(self, x, y, spec, **params):
 
         if isinstance(spec, tuple):
@@ -228,9 +237,10 @@ class Ellipse(BaseShape):
                                  '(width, height) specification.')
             (height, width) = spec
         else:
-            width, height = spec, spec
+            width, height = params.get('width', spec), spec
 
-        super(Ellipse, self).__init__([], x=x, y=y, height=height, width=width, **params)
+        params['width']=params.get('width',width)
+        super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
 
         angles = np.linspace(0, 2*np.pi, self.samples)
         half_height = self.height / 2.0
@@ -260,6 +270,8 @@ class Bounds(BaseShape):
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
 
+
+    __pos_params = ['lbrt']
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
