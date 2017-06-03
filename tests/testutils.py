@@ -26,6 +26,11 @@ class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
         Store.current_backend = 'matplotlib'
+        Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
+        if bokeh:
+            Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
+        OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+
         super(TestOutputUtil, self).setUp()
 
     def tearDown(self):
