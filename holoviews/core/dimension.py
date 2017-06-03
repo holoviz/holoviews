@@ -1078,7 +1078,6 @@ class Dimensioned(LabelledData):
 
 
     def __call__(self, options=None, **kwargs):
-        self.warning('Use opts method instead')
         return self.opts(options, **kwargs)
 
     def opts(self, options=None, **kwargs):
