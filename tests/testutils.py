@@ -3,11 +3,13 @@
 Unit tests of the helper functions in utils
 """
 from unittest import SkipTest
+import numpy as np
 
+import holoviews as hv
 from holoviews import notebook_extension
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import Store
-from holoviews.util import output, OutputSettings
+from holoviews.util import output, opts, OutputSettings
 from holoviews.core import OrderedDict
 
 from holoviews.plotting import mpl
@@ -56,3 +58,58 @@ class TestOutputUtil(ComparisonTestCase):
         self.assertEqual(OutputSettings.options.get('backend', None), None)
         output(backend='bokeh')
         self.assertEqual(OutputSettings.options.get('backend', None), 'bokeh')
+
+    def test_output_util_object_noop(self):
+        self.assertEqual(output("fig='svg'",3), 3)
+
+
+class TestOptsUtil(ComparisonTestCase):
+    """
+    Mirrors the magic tests in TestOptsMagic
+    """
+
+    def setUp(self):
+        super(TestOptsUtil, self).setUp()
+
+    def tearDown(self):
+        Store.custom_options(val = {})
+        Store._custom_options = {k:{} for k in Store._custom_options.keys()}
+        super(TestOptsUtil, self).tearDown()
+
+
+    def test_cell_opts_util_style(self):
+        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
+        self.assertEqual(mat1.id, None)
+        opts("Image (cmap='hot')", mat1)
+        self.assertEqual(mat1.id, 0)
+
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
+        self.assertEqual(
+             Store.lookup_options('matplotlib',
+                                  mat1, 'style').options.get('cmap',None),'hot')
+
+
+    def test_cell_opts_util_plot(self):
+
+        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
+
+        self.assertEqual(mat1.id, None)
+        opts("Image [show_title=False]", mat1)
+        self.assertEqual(mat1.id, 0)
+
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
+        self.assertEqual(
+            Store.lookup_options('matplotlib',
+                                 mat1, 'plot').options.get('show_title',True),False)
+
+
+    def test_cell_opts_norm(self):
+        mat1 = hv.Image(np.random.rand(5,5), name='mat1')
+        self.assertEqual(mat1.id, None)
+        opts("Image {+axiswise}", mat1)
+        self.assertEqual(mat1.id, 0)
+
+        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
+        self.assertEqual(
+            Store.lookup_options('matplotlib',
+                                 mat1, 'norm').options.get('axiswise',True), True)
