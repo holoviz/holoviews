@@ -460,7 +460,11 @@ def load_magics(ip):
     ip.register_magics(TimerMagic)
     ip.register_magics(OutputMagic)
 
-    OutputMagic.output.__func__.__doc__ = Store.output_settings._generate_docstring()
+    docstring = Store.output_settings._generate_docstring()
+    if sys.version_info.major==2:
+        OutputMagic.output.__func__.__doc__ = docstring
+    else:
+        OutputMagic.output.__doc__ = docstring
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)
