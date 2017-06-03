@@ -25,21 +25,15 @@ class MultiInterface(Interface):
         pass
 
     @classmethod
-    def get_interface(cls, data):
-        for st in cls.subtypes:
-            intfc = Interface.interfaces.get(st, None)
-            if intfc and isinstance(data, intfc.types):
-                return intfc
-
-    @classmethod
     def dimension_type(cls, dataset, dim):
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes, vdims=[])
         return ds.interface.dimension_type(ds, dim)
 
     @classmethod
     def range(cls, dataset, dim):
         ranges = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                           vdims=[])
         for d in dataset.data:
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
@@ -60,7 +54,8 @@ class MultiInterface(Interface):
     @classmethod
     def shape(cls, dataset):
         rows, cols = 0, 0
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                           vdims=[])
         for d in dataset.data:
             ds.data = d
             r, cols = ds.interface.shape(ds)
@@ -70,7 +65,8 @@ class MultiInterface(Interface):
     @classmethod
     def length(cls, dataset):
         length = 0
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                           vdims=[])
         for d in dataset.data:
             ds.data = d
             length += ds.interface.length(ds)
@@ -83,7 +79,8 @@ class MultiInterface(Interface):
     @classmethod
     def redim(cls, dataset, dimensions):
         new_data = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                           vdims=[])
         for d in dataset.data:
             ds.data = d
             new_data.append(ds.interface.redim(ds, dimensions))
@@ -92,7 +89,8 @@ class MultiInterface(Interface):
     @classmethod
     def values(cls, dataset, dimension, expanded, flat):
         values = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes)
+        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                           vdims=[])
         for d in dataset.data:
             ds.data = d
             values.append(ds.interface.values(ds, dimension))
@@ -103,7 +101,7 @@ class MultiInterface(Interface):
     def split(cls, dataset, start, end):
         objs = []
         for d in dataset.data[start: end]:
-            objs.append(dataset.clone(d, datatype=cls.subtypes))
+            objs.append(dataset.clone(d, datatype=cls.subtypes, vdims=[]))
         return objs
 
 
