@@ -26,11 +26,20 @@ class MultiInterface(Interface):
     def validate(cls, dataset):
         pass
 
+
+    @classmethod
+    def template(cls, dataset):
+        from . import Dataset
+        vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
+        return dataset.clone(dataset.data[0], datatype=cls.subtypes,
+                             vdims=vdims, new_type=Dataset)
+
+
     @classmethod
     def dimension_type(cls, dataset, dim):
         if not dataset.data:
             return float
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes, vdims=[])
+        ds = cls.template(dataset)
         return ds.interface.dimension_type(ds, dim)
 
     @classmethod
@@ -38,8 +47,14 @@ class MultiInterface(Interface):
         if not dataset.data:
             return (None, None)
         ranges = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                           vdims=[])
+        ds = cls.template(dataset)
+
+        # Backward compatibility for level
+        level = getattr(dataset, 'level', None)
+        dim = dataset.get_dimension(dim)
+        if level is not None and dim is dataset.vdims[0]:
+            return (level, level)
+
         for d in dataset.data:
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
@@ -63,8 +78,7 @@ class MultiInterface(Interface):
             return (0, len(dataset.dimensions()))
 
         rows, cols = 0, 0
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                           vdims=[])
+        ds = cls.template(dataset)
         for d in dataset.data:
             ds.data = d
             r, cols = ds.interface.shape(ds)
@@ -76,8 +90,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return 0
         length = 0
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                           vdims=[])
+        ds = cls.template(dataset)
         for d in dataset.data:
             ds.data = d
             length += ds.interface.length(ds)
@@ -92,8 +105,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         new_data = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                           vdims=[])
+        ds = cls.template(dataset)
         for d in dataset.data:
             ds.data = d
             new_data.append(ds.interface.redim(ds, dimensions))
@@ -104,19 +116,19 @@ class MultiInterface(Interface):
         if not dataset.data:
             return np.array([])
         values = []
-        ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                           vdims=[])
+        ds = cls.template(dataset)
         for d in dataset.data:
             ds.data = d
-            values.append(ds.interface.values(ds, dimension))
-            values.append([np.NaN])
-        return np.concatenate(values[:-1]) if values else []
+            values.append(ds.interface.values(ds, dimension, expanded, flat))
+            if expanded:
+                values.append([np.NaN])
+        return np.concatenate(values[:-1] if expanded else values) if values else []
 
     @classmethod
     def split(cls, dataset, start, end):
         objs = []
         for d in dataset.data[start: end]:
-            objs.append(dataset.clone(d, datatype=cls.subtypes, vdims=[]))
+            objs.append(dataset.clone(d, datatype=cls.subtypes))
         return objs
 
 

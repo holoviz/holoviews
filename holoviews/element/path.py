@@ -102,19 +102,25 @@ class Contours(Path):
     level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
-    vdims = param.List(default=[Dimension('Level')], doc="""
+    vdims = param.List(default=[], doc="""
         Contours optionally accept a value dimension, corresponding
-        to the supplied values.""", bounds=(0,1))
+        to the supplied values.""")
 
     group = param.String(default='Contours', constant=True)
 
     def __init__(self, data, **params):
         data = [] if data is None else data
+        if 'level' in params:
+            vdims = params.get('vdims', [Dimension('Level')])
+            params['vdims'] = []
         super(Contours, self).__init__(data, **params)
+        if 'level' in params:
+            self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
+                          for d in vdims]
 
     def dimension_values(self, dim):
         dimension = self.get_dimension(dim, strict=True)
-        if dimension in self.vdims:
+        if dimension in self.vdims and self.level is not None:
             return np.array([self.level])
         return super(Contours, self).dimension_values(dim)
 
@@ -130,7 +136,7 @@ class Polygons(Contours):
 
     vdims = param.List(default=[Dimension('Value')], doc="""
         Polygons optionally accept a value dimension, corresponding
-        to the supplied value.""", bounds=(0,1))
+        to the supplied value.""")
 
 
 
