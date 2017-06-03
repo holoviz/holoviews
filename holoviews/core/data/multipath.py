@@ -14,6 +14,8 @@ class MultiInterface(Interface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         new_data = []
+        dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
+        extra_kws = {}
         for d in data:
             d, interface, dims, extra_kws = Interface.initialize(eltype, d, kdims, vdims,
                                                                  datatype=cls.subtypes)
@@ -26,11 +28,15 @@ class MultiInterface(Interface):
 
     @classmethod
     def dimension_type(cls, dataset, dim):
+        if not dataset.data:
+            return float
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes, vdims=[])
         return ds.interface.dimension_type(ds, dim)
 
     @classmethod
     def range(cls, dataset, dim):
+        if not dataset.data:
+            return (None, None)
         ranges = []
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
                            vdims=[])
@@ -53,6 +59,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def shape(cls, dataset):
+        if not dataset.data:
+            return (0, len(dataset.dimensions()))
+
         rows, cols = 0, 0
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
                            vdims=[])
@@ -64,6 +73,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
+        if not dataset.data:
+            return 0
         length = 0
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
                            vdims=[])
@@ -78,6 +89,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def redim(cls, dataset, dimensions):
+        if not dataset.data:
+            return dataset.data
         new_data = []
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
                            vdims=[])
@@ -88,6 +101,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def values(cls, dataset, dimension, expanded, flat):
+        if not dataset.data:
+            return np.array([])
         values = []
         ds = dataset.clone(dataset.data[0], datatype=cls.subtypes,
                            vdims=[])
