@@ -14,10 +14,11 @@ each collection of paths.
 import numpy as np
 
 import param
-from ..core import Dimension, Element2D
+from ..core import Dimension, Element2D, Dataset
+from ..core.data import MultiInterface
 
 
-class Path(Element2D):
+class Path(Dataset, Element2D):
     """
     The Path Element contains a list of Paths stored as Nx2 numpy
     arrays. The data may be supplied in one of the following ways:
@@ -36,6 +37,8 @@ class Path(Element2D):
 
     group = param.String(default="Path", constant=True)
 
+    datatype = param.ObjectSelector(default=['multi'])
+
     def __init__(self, data, **params):
         if isinstance(data, tuple):
             x, y = map(np.asarray, data)
@@ -46,9 +49,20 @@ class Path(Element2D):
             data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
             data = [np.column_stack(path) for path in data]
-        elif len(data) >= 1:
-            data = [np.array(p) if not isinstance(p, np.ndarray) else p for p in data]
         super(Path, self).__init__(data, **params)
+
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style unpickled Path types without an interface
+        use the MultiInterface.
+
+        Note: Deprecate as part of 2.0
+        """
+        self.__dict__ = state
+        if 'interface' not in state:
+            self.interface = MultiInterface
+        super(Dataset, self).__setstate__(state)
 
 
     def __getitem__(self, key):
@@ -73,20 +87,10 @@ class Path(Element2D):
             raise Exception("Path types are not uniformly sampled and"
                             "therefore cannot be collapsed with a function.")
 
-
-    def __len__(self):
-        return len(self.data)
-
-
-    def dimension_values(self, dimension):
-        dim_idx = self.get_dimension_index(dimension)
-        if dim_idx >= len(self.dimensions()):
-            return super(Path, self).dimension_values(dimension)
-        values = []
-        for contour in self.data:
-            values.append(contour[:, dim_idx])
-        return np.concatenate(values) if values else []
-
+    def split(self, start=None, end=None):
+        if self.interface is not MultiInterface:
+            return [self]
+        return self.interface.split(self, start, end)
 
 
 class Contours(Path):

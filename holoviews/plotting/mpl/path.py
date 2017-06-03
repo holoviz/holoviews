@@ -15,7 +15,7 @@ class PathPlot(ElementPlot):
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible']
 
     def get_data(self, element, ranges, style):
-        paths = element.data
+        paths = [p.array(p.kdims[:2]) for p in element.split()]
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return (paths,), style, {}
@@ -76,7 +76,8 @@ class PolygonPlot(ColorbarPlot):
         value = element.level
         vdim = element.vdims[0]
         polys = []
-        for segments in element.data:
+        paths = [p.array(p.kdims[:2]) for p in element.split()]
+        for segments in paths:
             if segments.shape[0]:
                 if self.invert_axes:
                     segments = segments[:, ::-1]
@@ -100,8 +101,9 @@ class PolygonPlot(ColorbarPlot):
         value = element.level
         vdim = element.vdims[0]
         collection = self.handles['artist']
+        paths = [p.array(p.kdims[:2]) for p in element.split()]
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
-               zip(element.data, self.handles['polys'])):
+               zip(paths, self.handles['polys'])):
             return super(PolygonPlot, self).update_handles(key, axis, element, ranges, style)
         elif value is not None and np.isfinite(value):
             self._norm_kwargs(element, ranges, style, vdim)

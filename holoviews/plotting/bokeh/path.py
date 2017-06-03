@@ -29,8 +29,9 @@ class PathPlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
-        xs = [] if empty else [path[:, xidx] for path in element.data]
-        ys = [] if empty else [path[:, yidx] for path in element.data]
+        paths = [p.array(p.kdims[:2]) for p in element.split()]
+        xs = [] if empty else [path[:, xidx] for path in paths]
+        ys = [] if empty else [path[:, yidx] for path in paths]
         return dict(xs=xs, ys=ys), dict(self._mapping)
 
 
@@ -112,8 +113,9 @@ class PolygonPlot(ColorbarPlot, PathPlot):
         return dims, {}
 
     def get_data(self, element, ranges=None, empty=False):
-        xs = [] if empty else [path[:, 0] for path in element.data]
-        ys = [] if empty else [path[:, 1] for path in element.data]
+        paths = [p.array(p.kdims[:2]) for p in element.split()]
+        xs = [] if empty else [path[:, 0] for path in paths]
+        ys = [] if empty else [path[:, 1] for path in paths]
         data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
 
         style = self.style[self.cyclic_index]
