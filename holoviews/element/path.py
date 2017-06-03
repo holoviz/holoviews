@@ -88,7 +88,7 @@ class Path(Dataset, Element2D):
                             "therefore cannot be collapsed with a function.")
 
     def split(self, start=None, end=None):
-        if self.interface is not MultiInterface:
+        if not issubclass(self.interface, MultiInterface):
             return [self]
         return self.interface.split(self, start, end)
 
@@ -104,7 +104,7 @@ class Contours(Path):
 
     vdims = param.List(default=[Dimension('Level')], doc="""
         Contours optionally accept a value dimension, corresponding
-        to the supplied values.""", bounds=(1,1))
+        to the supplied values.""", bounds=(0,1))
 
     group = param.String(default='Contours', constant=True)
 
@@ -130,7 +130,7 @@ class Polygons(Contours):
 
     vdims = param.List(default=[Dimension('Value')], doc="""
         Polygons optionally accept a value dimension, corresponding
-        to the supplied value.""", bounds=(1,1))
+        to the supplied value.""", bounds=(0,1))
 
 
 
