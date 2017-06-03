@@ -451,10 +451,12 @@ class Comparison(ComparisonInterface):
     def compare_paths(cls, el1, el2, msg='Path'):
         cls.compare_dimensioned(el1, el2)
 
-        if len(el1.data) != len(el2.data):
+        paths1 = el1.split()
+        paths2 = el2.split()
+        if len(paths1) != len(paths2):
             raise cls.failureException("%s objects do not have a matching number of paths." % msg)
-        for arr1, arr2 in zip(el1.data, el2.data):
-            cls.compare_arrays(arr1, arr2, '%s data' % msg)
+        for p1, p2 in zip(paths1, paths2):
+            cls.compare_dataset(p1, p2, '%s data' % msg)
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):
