@@ -86,9 +86,8 @@ class TestOptsUtil(ComparisonTestCase):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
         self.assertEqual(mat1.id, None)
         opts("Image (cmap='hot')", mat1)
-        self.assertEqual(mat1.id, 0)
+        self.assertNotEqual(mat1.id, None)
 
-        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
         self.assertEqual(
              Store.lookup_options('matplotlib',
                                   mat1, 'style').options.get('cmap',None),'hot')
@@ -100,21 +99,18 @@ class TestOptsUtil(ComparisonTestCase):
 
         self.assertEqual(mat1.id, None)
         opts("Image [show_title=False]", mat1)
-        self.assertEqual(mat1.id, 0)
-
-        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
+        self.assertNotEqual(mat1.id, None)
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'plot').options.get('show_title',True),False)
 
 
-    def test_cell_opts_norm(self):
+    def test_cell_opts_util_norm(self):
         mat1 = hv.Image(np.random.rand(5,5), name='mat1')
         self.assertEqual(mat1.id, None)
         opts("Image {+axiswise}", mat1)
-        self.assertEqual(mat1.id, 0)
+        self.assertNotEqual(mat1.id, None)
 
-        assert 0 in Store.custom_options(), "Custom OptionTree creation failed"
         self.assertEqual(
             Store.lookup_options('matplotlib',
                                  mat1, 'norm').options.get('axiswise',True), True)
