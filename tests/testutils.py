@@ -12,6 +12,8 @@ from holoviews import Store
 from holoviews.util import output, opts, OutputSettings
 from holoviews.core import OrderedDict
 
+from holoviews.core.options import OptionTree
+
 from holoviews.plotting import mpl
 try:
     from holoviews.plotting import bokeh
@@ -74,10 +76,14 @@ class TestOptsUtil(ComparisonTestCase):
     """
 
     def setUp(self):
+        self.store_copy = OptionTree(sorted(Store.options().items()),
+                                     groups=['style', 'plot', 'norm'])
+        self.backend = 'matplotlib'
+
         super(TestOptsUtil, self).setUp()
 
     def tearDown(self):
-        Store.custom_options(val = {})
+        Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestOptsUtil, self).tearDown()
 
