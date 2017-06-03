@@ -124,7 +124,7 @@ class OutputMagicProcessor(Preprocessor):
                                         template='hv.util.output({line!r})')
             source, output_lines = filter_magic(source, '%%output')
             if output_lines:
-                template = 'hv.util.output({{expr}}, {options!r})'.format(
+                template = 'hv.util.output({options!r}, {{expr}})'.format(
                     options=output_lines[-1])
                 source = wrap_cell_expression(source, template)
 
