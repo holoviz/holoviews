@@ -27,9 +27,10 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy=0.18.1 numpy freetype nose bokeh=0.12.5 pandas=0.19.2 jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray datashader dask=0.13
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy=0.18.1 numpy freetype nose bokeh=0.12.5 pandas=0.19.2 jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray
   - source activate test-environment
   - conda install -c conda-forge  iris sip=4.18 plotly flexx
+  - conda install -c bokeh datashader dask=0.13
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
