@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 from collections import Callable, Iterable
+from distutils.version import LooseVersion
 import warnings
 
 import param
@@ -337,6 +338,11 @@ class shade(Operation):
         and any valid transfer function that accepts data, mask, nbins
         arguments.""")
 
+    clims = param.NumericTuple(default=None, length=2, doc="""
+        Min and max data values to use for colormap interpolation, when
+        wishing to override autoranging.
+        """)
+
     link_inputs = param.Boolean(default=True, doc="""
          By default, the link_inputs parameter is set to True so that
          when applying shade, backends that support linked streams
@@ -383,7 +389,8 @@ class shade(Operation):
         else:
             bounds = element.bounds
 
-        array = element.data[element.vdims[0].name]
+        vdim = element.vdims[0].name
+        array = element.data[vdim]
         kdims = element.kdims
 
         # Compute shading options depending on whether
@@ -409,6 +416,11 @@ class shade(Operation):
             shade_opts['cmap'] = map(self.rgb2hex, colors)
         else:
             shade_opts['cmap'] = self.p.cmap
+
+        if self.p.clims:
+            shade_opts['span'] = self.p.clims
+        elif LooseVersion(ds.__version__) > '0.5.0' and self.p.normalization != 'eq_hist':
+            shade_opts['span'] = element.range(vdim)
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
