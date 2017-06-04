@@ -190,6 +190,34 @@ class aggregate(Operation):
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
+    def _get_sampling(self, element, x, y):
+        target = self.p.target
+        if target:
+            x_range, y_range = target.range(x), target.range(y)
+            height, width = target.dimension_values(2, flat=False).shape
+        else:
+            if x is None or y is None:
+                x_range = self.p.x_range or (-0.5, 0.5)
+                y_range = self.p.y_range or (-0.5, 0.5)
+            else:
+                x_range = self.p.x_range or element.range(x)
+                y_range = self.p.y_range or element.range(y)
+            width, height = self.p.width, self.p.height
+        (xstart, xend), (ystart, yend) = x_range, y_range
+
+        # Compute highest allowed sampling density
+        xspan = xend - xstart
+        yspan = yend - ystart
+        if self.p.x_sampling:
+            width = int(min([(xspan/self.p.x_sampling), width]))
+        if self.p.y_sampling:
+            height = int(min([(yspan/self.p.y_sampling), height]))
+        xunit, yunit = float(xspan)/width, float(yspan)/height
+        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
+                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
+        return (x_range, y_range), (xs, ys), (width, height)
+
+
     def _aggregate_ndoverlay(self, element, agg_fn):
         """
         Optimized aggregation for NdOverlay objects by aggregating each
@@ -202,10 +230,9 @@ class aggregate(Operation):
         """
         # Compute overall bounds
         x, y = element.last.dimensions()[0:2]
-        xstart, xend = self.p.x_range if self.p.x_range else element.range(x)
-        ystart, yend = self.p.y_range if self.p.y_range else element.range(y)
+        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
         agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
-                          x_range=(xstart, xend), y_range=(ystart, yend))
+                          x_range=x_range, y_range=y_range)
 
         # Optimize categorical counts by aggregating them individually
         if isinstance(agg_fn, ds.count_cat):
@@ -272,39 +299,15 @@ class aggregate(Operation):
             return self._aggregate_ndoverlay(element, agg_fn)
 
         x, y, data, glyph = self.get_agg_data(element, category)
+        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
 
         if x is None or y is None:
-            x0, x1 = self.p.x_range or (-0.5, 0.5)
-            y0, y1 = self.p.y_range or (-0.5, 0.5)
-            xc = np.linspace(x0, x1, self.p.width)
-            yc = np.linspace(y0, y1, self.p.height)
-            xarray = xr.DataArray(np.full((self.p.height, self.p.width), np.NaN, dtype=np.float32),
-                                  dims=['y', 'x'], coords={'x': xc, 'y': yc})
+            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+                                  dims=['y', 'x'], coords={'x': xs, 'y': ys})
             return self.p.element_type(xarray)
 
-        if self.p.target:
-            target = self.p.target
-            xs, ys = (target.dimension_values(i, expanded=False)
-                      for i in range(2))
-            x_range, y_range = ((xs.min(), xs.max()+(1/target.xdensity)),
-                                (ys.min(), ys.max()+(1/target.ydensity)))
-            height, width = target.dimension_values(2, flat=False).shape
-        else:
-            x_range = self.p.x_range or element.range(0)
-            y_range = self.p.y_range or element.range(1)
-            width, height = self.p.width, self.p.height
-        (xstart, xend), (ystart, yend) = x_range, y_range
-
-        # Compute highest allowed sampling density
-        if self.p.x_sampling:
-            x_range = xend - xstart
-            width = int(min([(x_range/self.p.x_sampling), width]))
-        if self.p.y_sampling:
-            y_range = yend - ystart
-            height = int(min([(y_range/self.p.y_sampling), height]))
-
         cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=(xstart, xend), y_range=(ystart, yend))
+                        x_range=x_range, y_range=y_range)
 
         column = agg_fn.column
         if column and isinstance(agg_fn, ds.count_cat):
@@ -319,14 +322,12 @@ class aggregate(Operation):
         agg = getattr(cvs, glyph)(data, x, y, self.p.aggregator)
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            data = (xs, ys, agg.data) if self.p.target else agg
-            return self.p.element_type(data, **params)
+            return self.p.element_type((xs, ys, agg.data), **params)
         else:
             layers = {}
             for c in agg.coords[column].data:
                 cagg = agg.sel(**{column: c})
-                data = (xs, ys, cagg.data) if self.p.target else cagg
-                layers[c] = self.p.element_type(data, **params)
+                layers[c] = self.p.element_type((xs, ys, cagg.data), **params)
             return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
