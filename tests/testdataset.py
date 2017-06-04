@@ -663,7 +663,7 @@ class GridTests(object):
         self.data_instance_type = dict
         self.init_data()
 
-    def init_data(self):
+    def init_column_data(self):
         self.xs = range(11)
         self.xs_2 = [el**2 for el in self.xs]
 
@@ -1083,7 +1083,7 @@ class XArrayDaskArrayDatasetTest(XArrayDatasetTest):
 
     datatype = 'xarray'
 
-    def init_data(self):
+    def init_column_data(self):
         import dask.array
         self.xs = range(11)
         self.xs_2 = [el**2 for el in self.xs]

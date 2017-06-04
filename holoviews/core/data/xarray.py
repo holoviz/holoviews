@@ -97,6 +97,8 @@ class XArrayInterface(GridInterface):
         if dim in dataset.data:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
+            if dask and isinstance(dmin, dask.array.Array):
+                dmin, dmax = dmin.compute(), dmax.compute()
             dmin = dmin if np.isscalar(dmin) else dmin.item()
             dmax = dmax if np.isscalar(dmax) else dmax.item()
             return dmin, dmax
@@ -248,9 +250,18 @@ class XArrayInterface(GridInterface):
 
         if (indexed and len(data.data_vars) == 1 and
             len(data[dataset.vdims[0].name].shape) == 0):
-            return data[dataset.vdims[0].name].item()
+            value = data[dataset.vdims[0].name]
+            if dask and isinstance(value.data, dask.array.Array):
+                value = value.compute()
+            return value.item()
         elif indexed:
-            return np.array([data[vd.name].item() for vd in dataset.vdims])
+            values = []
+            for vd in dataset.vdims:
+                value = data[vd.name]
+                if dask and isinstance(value.data, dask.array.Array):
+                    value = value.compute()
+                values.append(value.item())
+            return np.array(values)
         return data
 
     @classmethod
