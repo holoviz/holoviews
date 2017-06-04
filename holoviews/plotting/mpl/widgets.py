@@ -6,13 +6,10 @@ from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 class MPLWidget(NdWidget):
 
-    CDN = param.Dict(default=dict(NdWidget.CDN, mpld3='https://mpld3.github.io/js/mpld3.v0.3git.js',
-                                  d3='https://cdnjs.cloudflare.com/ajax/libs/d3/3.4.13/d3.js'))
+    CDN = param.Dict(default=dict(NdWidget.CDN))
 
     extensionjs = param.String(default='mplwidgets.js', doc="""
         Optional javascript extension file for a particular backend.""")
-
-    template = param.String(default='mplwidgets.jinja')
 
     def __init__(self, plot, renderer=None, **params):
         super(MPLWidget, self).__init__(plot, renderer, **params)
@@ -23,9 +20,7 @@ class MPLWidget(NdWidget):
     def _plot_figure(self, idx):
         with self.renderer.state():
             self.plot.update(idx)
-            if self.renderer.mode == 'mpld3':
-                figure_format = 'json'
-            elif self.renderer.fig == 'auto':
+            if self.renderer.fig == 'auto':
                 figure_format = self.renderer.params('fig').objects[0]
             else:
                 figure_format = self.renderer.fig
@@ -50,11 +45,6 @@ class MPLWidget(NdWidget):
             return {}
         elif not isinstance(frames, dict):
             pass
-        elif self.renderer.mode == 'mpld3':
-            import mpld3
-            encoder = dict(cls=mpld3._display.NumpyEncoder)
-            frames = dict(frames)
-            return json.dumps(frames, **encoder)
         else:
             frames = dict(frames)
             return json.dumps(frames)

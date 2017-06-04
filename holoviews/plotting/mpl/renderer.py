@@ -14,7 +14,7 @@ from ...core.options import Store
 
 from ..renderer import Renderer, MIME_TYPES
 from .comms import (JupyterComm, NbAggJupyterComm,
-                    mpl_msg_handler, mpld3_msg_handler)
+                    mpl_msg_handler)
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
@@ -57,7 +57,7 @@ class MPLRenderer(Renderer):
         plotting with explicitly calling show.""")
 
     mode = param.ObjectSelector(default='default',
-                                objects=['default', 'mpld3', 'nbagg'], doc="""
+                                objects=['default', 'nbagg'], doc="""
          The 'mpld3' mode uses the mpld3 library whereas the 'nbagg' uses
          matplotlib's the experimental nbagg backend. """)
 
@@ -72,11 +72,10 @@ class MPLRenderer(Renderer):
     }
 
     mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', 'html', None, 'auto'],
-                           'mpld3': ['html', 'json', None, 'auto'],
                            'nbagg': ['html', None, 'auto']},
                     'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif',
                                    'html', None, 'auto']
-                                for m in ['default', 'mpld3', 'nbagg']}}
+                                for m in ['default', 'nbagg']}}
 
     counter = 0
 
@@ -86,8 +85,7 @@ class MPLRenderer(Renderer):
 
     # Define comm targets by mode
     comms = {'default': (JupyterComm, mpl_msg_handler),
-             'nbagg':   (NbAggJupyterComm, None),
-             'mpld3':   (JupyterComm, mpld3_msg_handler)}
+             'nbagg':   (NbAggJupyterComm, None)}
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -176,9 +174,7 @@ class MPLRenderer(Renderer):
         """
         data = None
         if self.mode != 'nbagg':
-            if self.mode == 'mpld3':
-                figure_format = 'json'
-            elif self.fig == 'auto':
+            if self.fig == 'auto':
                 figure_format = self.params('fig').objects[0]
             else:
                 figure_format = self.fig
@@ -200,23 +196,6 @@ class MPLRenderer(Renderer):
             self.counter += 1
             manager.show()
             return ''
-        elif self.mode == 'mpld3':
-            import mpld3
-            fig.dpi = self.dpi
-            mpld3.plugins.connect(fig, mpld3.plugins.MousePosition(fontsize=14))
-            if fmt == 'json':
-                return mpld3.fig_to_dict(fig)
-            else:
-                figid = "fig_el"+plot.comm.id if plot.comm else None
-                html = mpld3.fig_to_html(fig, figid=figid)
-                html = "<center>" + html + "<center/>"
-                if plot.comm:
-                    comm, msg_handler = self.comms[self.mode]
-                    msg_handler = msg_handler.format(comm_id=plot.comm.id)
-                    return comm.template.format(init_frame=html,
-                                                msg_handler=msg_handler,
-                                                comm_id=plot.comm.id)
-                return html
 
         traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
         extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
