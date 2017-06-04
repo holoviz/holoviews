@@ -1075,6 +1075,43 @@ class XArrayDatasetTest(GridDatasetTest):
         raise SkipTest("Not supported")
 
 
+@attr(optional=1)
+class XArrayDaskArrayDatasetTest(XArrayDatasetTest):
+    """
+    Tests for Iris interface
+    """
+
+    datatype = 'xarray'
+
+    def init_data(self):
+        import dask.array
+        self.xs = range(11)
+        self.xs_2 = [el**2 for el in self.xs]
+
+        self.y_ints = [i*2 for i in range(11)]
+        dask_y = dask.array.from_array(np.array(self.y_ints), 2)
+        self.dataset_hm = Dataset((self.xs, dask_y),
+                                  kdims=['x'], vdims=['y'])
+        self.dataset_hm_alias = Dataset((self.xs, dask_y),
+                                        kdims=[('x', 'X')], vdims=[('y', 'Y')])
+
+    def init_grid_data(self):
+        import dask.array
+        self.grid_xs = [0, 1]
+        self.grid_ys = [0.1, 0.2, 0.3]
+        self.grid_zs = [[0, 1], [2, 3], [4, 5]]
+        dask_zs = dask.array.from_array(np.array(self.grid_zs), 2)
+        self.dataset_grid = self.eltype((self.grid_xs, self.grid_ys,
+                                         dask_zs), kdims=['x', 'y'],
+                                        vdims=['z'])
+        self.dataset_grid_alias = self.eltype((self.grid_xs, self.grid_ys,
+                                               dask_zs), kdims=[('x', 'X'), ('y', 'Y')],
+                                              vdims=[('z', 'Z')])
+        self.dataset_grid_inv = self.eltype((self.grid_xs[::-1], self.grid_ys[::-1],
+                                             dask_zs), kdims=['x', 'y'],
+                                            vdims=['z'])
+
+
 class RasterDatasetTest(GridTests, ComparisonTestCase):
     """
     Tests for Iris interface
