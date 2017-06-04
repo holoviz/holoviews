@@ -140,6 +140,7 @@ class BaseShape(Path):
 
     __abstract = True
 
+
     def clone(self, *args, **overrides):
         """
         Returns a clone of the object with matching parameter values
@@ -148,7 +149,11 @@ class BaseShape(Path):
         settings = dict(self.get_param_values(), **overrides)
         if not args:
             settings['plot_id'] = self._plot_id
-        return self.__class__(*args, **settings)
+
+        pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
+        return self.__class__(*(settings[n] for n in pos_args),
+                              **{k:v for k,v in settings.items()
+                                 if k not in pos_args})
 
 
 
@@ -162,26 +167,64 @@ class Box(BaseShape):
 
     y = param.Number(default=0, doc="The y-position of the box center.")
 
+    width = param.Number(default=1, doc="The width of the box.")
+
     height = param.Number(default=1, doc="The height of the box.")
 
-    aspect= param.Number(default=1, doc=""""
-        The aspect ratio of the box if supplied, otherwise an aspect
-        of 1.0 is used.""")
+    orientation = param.Number(default=0, doc="""
+       Orientation in the Cartesian coordinate system, the
+       counterclockwise angle in radians between the first axis and the
+       horizontal.""")
+
+    aspect= param.Number(default=1.0, doc="""
+       Optional multiplier applied to the box size to compute the
+       width in cases where only the length value is set.""")
 
     group = param.String(default='Box', constant=True, doc="The assigned group name.")
 
-    def __init__(self, x, y, height, **params):
-        super(Box, self).__init__([], x=x,y =y, height=height, **params)
-        width = height * self.aspect
-        (l,b,r,t) = (x-width/2.0, y-height/2, x+width/2.0, y+height/2)
-        self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
+    __pos_params = ['x','y', 'height']
+
+    def __init__(self, x, y, spec, **params):
+
+        if isinstance(spec, tuple):
+            if 'aspect' in params:
+                raise ValueError('Aspect parameter not supported when supplying '
+                                 '(width, height) specification.')
+            (height, width) = spec
+        else:
+            width, height = params.get('width', spec), spec
+
+        params['width']=params.get('width',width)
+        super(Box, self).__init__([], x=x, y=y, height=height, **params)
+
+        half_width = (self.width * self.aspect)/ 2.0
+        half_height = self.height / 2.0
+        (l,b,r,t) = (x-half_width, y-half_height, x+half_width, y+half_height)
+
+        box = np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])
+        rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
+                        [np.sin(self.orientation), np.cos(self.orientation)]])
+
+        self.data = [np.tensordot(rot, box.T, axes=[1,0]).T]
 
 
 class Ellipse(BaseShape):
     """
     Draw an axis-aligned ellipse at the specified x,y position with
-    the given width, aspect ratio and orientation. By default 
-    draws a circle (aspect=1).
+    the given orientation.
+
+    The simplest (default) Ellipse is a circle, specified using:
+
+    Ellipse(x,y, diameter)
+
+    A circle is a degenerate ellipse where the width and height are
+    equal. To specify these explicitly, you can use:
+
+    Ellipse(x,y, (width, height))
+
+    There is also an apect parameter allowing you to generate an ellipse
+    by specifying a multiplicating factor that will be applied to the
+    height only.
 
     Note that as a subclass of Path, internally an Ellipse is a
     sequency of (x,y) sample positions. Ellipse could also be
@@ -191,24 +234,45 @@ class Ellipse(BaseShape):
 
     y = param.Number(default=0, doc="The y-position of the ellipse center.")
 
+    width = param.Number(default=1, doc="The width of the ellipse.")
+
     height = param.Number(default=1, doc="The height of the ellipse.")
 
-    aspect= param.Number(default=1.0, doc="The aspect ratio of the ellipse.")
+    orientation = param.Number(default=0, doc="""
+       Orientation in the Cartesian coordinate system, the
+       counterclockwise angle in radians between the first axis and the
+       horizontal.""")
 
-    orientation = param.Number(default=0, doc="Orientation in the Cartesian coordinate system, the counterclockwise angle in radian between the first axis and the horizontal.")
+    aspect= param.Number(default=1.0, doc="""
+       Optional multiplier applied to the diameter to compute the width
+       in cases where only the diameter value is set.""")
 
     samples = param.Number(default=100, doc="The sample count used to draw the ellipse.")
 
     group = param.String(default='Ellipse', constant=True, doc="The assigned group name.")
 
-    def __init__(self, x, y, height, **params):
+    __pos_params = ['x','y', 'height']
+
+    def __init__(self, x, y, spec, **params):
+
+        if isinstance(spec, tuple):
+            if 'aspect' in params:
+                raise ValueError('Aspect parameter not supported when supplying '
+                                 '(width, height) specification.')
+            (width, height) = spec
+        else:
+            width, height = params.get('width', spec), spec
+
+        params['width']=params.get('width',width)
         super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
+
         angles = np.linspace(0, 2*np.pi, self.samples)
-        radius = height / 2.0
+        half_width = (self.width * self.aspect)/ 2.0
+        half_height = self.height / 2.0
         #create points
         ellipse = np.array(
-            list(zip(radius*self.aspect*np.sin(angles),
-            radius*np.cos(angles))))
+            list(zip(half_width*np.sin(angles),
+                     half_height*np.cos(angles))))
         #rotate ellipse and add offset
         rot = np.array([[np.cos(self.orientation), -np.sin(self.orientation)],
                [np.sin(self.orientation), np.cos(self.orientation)]])
@@ -230,6 +294,8 @@ class Bounds(BaseShape):
 
     group = param.String(default='Bounds', constant=True, doc="The assigned group name.")
 
+
+    __pos_params = ['lbrt']
     def __init__(self, lbrt, **params):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
