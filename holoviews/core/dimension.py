@@ -1090,7 +1090,7 @@ class Dimensioned(LabelledData):
         if isinstance(options, basestring):
             try:
                 options = OptsSpec.parse(options)
-            except:
+            except SyntaxError:
                 options = OptsSpec.parse(
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
