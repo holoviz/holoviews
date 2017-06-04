@@ -100,6 +100,10 @@ def replace_line_magic(source, magic, template='{line}'):
 
 
 class OptsMagicProcessor(Preprocessor):
+    """
+    Preprocessor to convert notebooks to Python source to convert use of
+    opts magic to use the util.opts utility instead.
+    """
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
@@ -117,6 +121,10 @@ class OptsMagicProcessor(Preprocessor):
 
 
 class OutputMagicProcessor(Preprocessor):
+    """
+    Preprocessor to convert notebooks to Python source to convert use of
+    output magic to use the util.output utility instead.
+    """
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
@@ -135,6 +143,11 @@ class OutputMagicProcessor(Preprocessor):
 
 
 class StripMagicsProcessor(Preprocessor):
+    """
+    Preprocessor to convert notebooks to Python source to strips out all
+    magics. To be applied after the preprocessors that can handle
+    holoviews magics appropriately.
+    """
 
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
