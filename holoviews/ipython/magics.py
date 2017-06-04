@@ -1,6 +1,5 @@
 import time
 import sys
-from collections import defaultdict
 
 try:
     from IPython.core.magic import Magics, magics_class, line_magic, line_cell_magic
@@ -8,7 +7,7 @@ except:
     from unittest import SkipTest
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
-from ..core import OrderedDict
+
 from ..core import util
 from ..core.options import Options, OptionError, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
@@ -27,8 +26,8 @@ try:
 except ImportError:
     pyparsing = None
 else:
-    from holoviews.ipython.parser import CompositorSpec
-    from holoviews.ipython.parser import OptsSpec
+    from holoviews.util.parser import CompositorSpec
+    from holoviews.util.parser import OptsSpec
 
 
 # Set to True to automatically run notebooks.
@@ -37,92 +36,15 @@ STORE_HISTORY = False
 from IPython.core import page
 InfoPrinter.store = Store
 
-class OptionsMagic(Magics):
-    """
-    Base class for magics that are used to specified collections of
-    keyword options.
-    """
-    # Dictionary from keywords to allowed bounds/values
-    allowed = {'charwidth'   : (0, float('inf'))}
-    defaults = OrderedDict([('charwidth'   , 80)])  # Default keyword values.
-    options =  OrderedDict(defaults.items()) # Current options
 
-    # Callables accepting (value, keyword, allowed) for custom exceptions
-    custom_exceptions = {}
-
-    # Hidden. Options that won't tab complete (for backward compatibility)
-    hidden = {}
-
+@magics_class
+class OutputMagic(Magics):
 
     @classmethod
-    def update_options(cls, options, items):
-        """
-        Allows updating options depending on class attributes
-        and unvalidated options.
-        """
-        pass
-
-    @classmethod
-    def get_options(cls, line, options, linemagic):
-        "Given a keyword specification line, validated and compute options"
-        items = cls._extract_keywords(line, OrderedDict())
-        options = cls.update_options(options, items)
-        for keyword in cls.defaults:
-            if keyword in items:
-                value = items[keyword]
-                allowed = cls.allowed[keyword]
-                if isinstance(allowed, set):  pass
-                elif isinstance(allowed, dict):
-                    if not isinstance(value, dict):
-                        raise ValueError("Value %r not a dict type" % value)
-                    disallowed = set(value.keys()) - set(allowed.keys())
-                    if disallowed:
-                        raise ValueError("Keywords %r for %r option not one of %s"
-                                         % (disallowed, keyword, allowed))
-                    wrong_type = {k: v for k, v in value.items()
-                                  if not isinstance(v, allowed[k])}
-                    if wrong_type:
-                        errors = []
-                        for k,v in wrong_type.items():
-                            errors.append("Value %r for %r option's %r attribute not of type %r" %
-                                          (v, keyword, k, allowed[k]))
-                        raise ValueError('\n'.join(errors))
-                elif isinstance(allowed, list) and value not in allowed:
-                    if keyword in cls.custom_exceptions:
-                        cls.custom_exceptions[keyword](value, keyword, allowed)
-                    else:
-                        raise ValueError("Value %r for key %r not one of %s"
-                                         % (value, keyword, allowed))
-                elif isinstance(allowed, tuple):
-                    if not (allowed[0] <= value <= allowed[1]):
-                        info = (keyword,value)+allowed
-                        raise ValueError("Value %r for key %r not between %s and %s" % info)
-                options[keyword] = value
-        return cls._validate(options, items, linemagic)
-
-    @classmethod
-    def _validate(cls, options, items, linemagic):
-        "Allows subclasses to check options are valid."
-        raise NotImplementedError("OptionsMagic is an abstract base class.")
-
-    @classmethod
-    def option_completer(cls, k,v):
-        raw_line = v.text_until_cursor
-        line = raw_line.replace(cls.magic_name,'')
-
-        # Find the last element class mentioned
-        completion_key = None
-        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
-
-        for token in tokens:
-            if token.strip() in cls.allowed:
-                completion_key = token.strip()
-                break
-
-        values = [val for val in cls.allowed.get(completion_key, [])
-                  if val not in cls.hidden.get(completion_key, [])]
-        vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
-        return vreprs + [el+'=' for el in cls.allowed.keys()]
+    def info(cls, obj):
+        disabled = Store.output_settings._disable_info_output
+        if Store.output_settings.options['info'] and not disabled:
+            page.page(InfoPrinter.info(obj, ansi=True))
 
     @classmethod
     def pprint(cls):
@@ -131,348 +53,58 @@ class OptionsMagic(Magics):
         cls.pprint_width.
         """
         current, count = '', 0
-        for k,v in cls.options.items():
+        for k,v in Store.output_settings.options.items():
             keyword = '%s=%r' % (k,v)
-            if len(current) + len(keyword) > cls.options['charwidth']:
-                print((cls.magic_name if count==0 else '      ')  + current)
+            if len(current) + len(keyword) > Store.output_settings.options['charwidth']:
+                print(('%output' if count==0 else '      ')  + current)
                 count += 1
                 current = keyword
             else:
                 current += ' '+ keyword
         else:
-            print((cls.magic_name if count==0 else '      ')  + current)
-
-
-    @classmethod
-    def _extract_keywords(cls, line, items):
-        """
-        Given the keyword string, parse a dictionary of options.
-        """
-        unprocessed = list(reversed(line.split('=')))
-        while unprocessed:
-            chunk = unprocessed.pop()
-            key = None
-            if chunk.strip() in cls.allowed:
-                key = chunk.strip()
-            else:
-                raise SyntaxError("Invalid keyword: %s" % chunk.strip())
-            # The next chunk may end in a subsequent keyword
-            value = unprocessed.pop().strip()
-            if len(unprocessed) != 0:
-                # Check if a new keyword has begun
-                for option in cls.allowed:
-                    if value.endswith(option):
-                        value = value[:-len(option)].strip()
-                        unprocessed.append(option)
-                        break
-                else:
-                    raise SyntaxError("Invalid keyword: %s" % value.split()[-1])
-            keyword = '%s=%s' % (key, value)
-            try:
-                items.update(eval('dict(%s)' % keyword))
-            except:
-                raise SyntaxError("Could not evaluate keyword: %s" % keyword)
-        return items
-
-
-
-def list_backends():
-    backends = []
-    for backend in Store.renderers:
-        backends.append(backend)
-        renderer = Store.renderers[backend]
-        modes = [mode for mode in renderer.params('mode').objects if mode  != 'default']
-        backends += ['%s:%s' % (backend, mode) for mode in modes]
-    return backends
-
-
-def list_formats(format_type, backend=None):
-    """
-    Returns list of supported formats for a particular
-    backend.
-    """
-    if backend is None:
-        backend = Store.current_backend
-        mode = Store.renderers[backend].mode if backend in Store.renderers else None
-    else:
-        split = backend.split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
-
-    if backend in Store.renderers:
-        return Store.renderers[backend].mode_formats[format_type][mode]
-    else:
-        return []
-
-
-@magics_class
-class OutputMagic(OptionsMagic):
-    """
-    Magic for easy customising of display options.
-    Consult %%output? for more information.
-    """
-
-    magic_name = '%output'
-
-    # Lists: strict options, Set: suggested options, Tuple: numeric bounds.
-    allowed = {'backend'     : list_backends(),
-               'fig'         : list_formats('fig'),
-               'holomap'     : list_formats('holomap'),
-               'widgets'     : ['embed', 'live'],
-               'fps'         : (0, float('inf')),
-               'max_frames'  : (0, float('inf')),
-               'max_branches': {None},            # Deprecated
-               'size'        : (0, float('inf')),
-               'dpi'         : (1, float('inf')),
-               'charwidth'   : (0, float('inf')),
-               'filename'    : {None},
-               'info'        : [True, False],
-               'css'         : {k: util.basestring
-                                for k in ['width', 'height', 'padding', 'margin',
-                                          'max-width', 'min-width', 'max-height',
-                                          'min-height', 'outline', 'float']}}
-
-    defaults = OrderedDict([('backend'     , None),
-                            ('fig'         , None),
-                            ('holomap'     , None),
-                            ('widgets'     , None),
-                            ('fps'         , None),
-                            ('max_frames'  , 500),
-                            ('size'        , None),
-                            ('dpi'         , None),
-                            ('charwidth'   , 80),
-                            ('filename'    , None),
-                            ('info'        , False),
-                            ('css'         , None)])
-
-    # Defines the options the OutputMagic remembers. All other options
-    # are held by the backend specific Renderer.
-    remembered = ['max_frames', 'charwidth', 'info', 'filename']
-
-    # Remaining backend specific options renderer options
-    render_params = ['fig', 'holomap', 'size', 'fps', 'dpi', 'css', 'widget_mode', 'mode']
-
-    options = OrderedDict()
-    _backend_options = defaultdict(dict)
-
-    # Used to disable info output in testing
-    _disable_info_output = False
-
-    #==========================#
-    # Backend state management #
-    #==========================#
-
-    last_backend = None
-    backend_list = [] # List of possible backends
-
-    def missing_dependency_exception(value, keyword, allowed):
-        raise Exception("Format %r does not appear to be supported." % value)
-
-    def missing_backend_exception(value, keyword, allowed):
-        if value in OutputMagic.backend_list:
-            raise ValueError("Backend %r not available. Has it been loaded with the notebook_extension?" % value)
-        else:
-            raise ValueError("Backend %r does not exist" % value)
-
-    custom_exceptions = {'holomap':missing_dependency_exception,
-                         'backend': missing_backend_exception}
-
-    # Counter for nbagg figures
-    nbagg_counter = 0
-
-    def __init__(self, *args, **kwargs):
-        super(OutputMagic, self).__init__(*args, **kwargs)
-        self.output.__func__.__doc__ = self._generate_docstring()
-
+            print(('%output' if count==0 else '      ')  + current)
 
     @classmethod
-    def info(cls, obj):
-        if cls.options['info'] and not cls._disable_info_output:
-            page.page(InfoPrinter.info(obj, ansi=True))
+    def option_completer(cls, k,v):
+        raw_line = v.text_until_cursor
+        line = raw_line.replace(Store.output_settings.magic_name,'')
 
+        # Find the last element class mentioned
+        completion_key = None
+        tokens = [t for els in reversed(line.split('=')) for t in els.split()]
 
-    @classmethod
-    def _generate_docstring(cls):
-        renderer = Store.renderers[Store.current_backend]
-        intro = ["Magic for setting HoloViews display options.",
-                 "Arguments are supplied as a series of keywords in any order:", '']
-        backend = "backend      : The backend used by HoloViews %r"  % cls.allowed['backend']
-        fig =     "fig          : The static figure format %r" % cls.allowed['fig']
-        holomap = "holomap      : The display type for holomaps %r" % cls.allowed['holomap']
-        widgets = "widgets      : The widget mode for widgets %r" % renderer.widget_mode
-        fps =    ("fps          : The frames per second for animations (default %r)"
-                  % renderer.fps)
-        frames=  ("max_frames   : The max number of frames rendered (default %r)"
-                  % cls.defaults['max_frames'])
-        size =   ("size         : The percentage size of displayed output (default %r)"
-                  % renderer.size)
-        dpi =    ("dpi          : The rendered dpi of the figure (default %r)"
-                  % renderer.dpi)
-        chars =  ("charwidth    : The max character width for displaying the output magic (default %r)"
-                  % cls.defaults['charwidth'])
-        fname =  ("filename    : The filename of the saved output, if any (default %r)"
-                  % cls.defaults['filename'])
-        page =  ("info    : The information to page about the displayed objects (default %r)"
-                  % cls.defaults['info'])
-        css =   ("css     : Optional css style attributes to apply to the figure image tag")
+        for token in tokens:
+            if token.strip() in Store.output_settings.allowed:
+                completion_key = token.strip()
+                break
 
-        descriptions = [backend, fig, holomap, widgets, fps, frames, size, dpi, chars, fname, page, css]
-        return '\n'.join(intro + descriptions)
-
-
-    @classmethod
-    def _validate(cls, options, items, linemagic):
-        "Validation of edge cases and incompatible options"
-
-        if 'html' in Store.display_formats:
-            pass
-        elif 'fig' in items and items['fig'] not in Store.display_formats:
-            msg = ("Output magic requesting figure format %r " % items['fig']
-                   + "not in display formats %r" % Store.display_formats)
-            display(HTML("<b>Warning:</b> %s" % msg))
-
-        backend = Store.current_backend
-        return Store.renderers[backend].validate(options)
-
+        values = [val for val in Store.output_settings.allowed.get(completion_key, [])
+                  if val not in Store.output_settings.hidden.get(completion_key, [])]
+        vreprs = [repr(el) for el in values if not isinstance(el, tuple)]
+        return vreprs + [el+'=' for el in Store.output_settings.allowed.keys()]
 
     @line_cell_magic
     def output(self, line, cell=None):
-        line = line.split('#')[0].strip()
+
         if line == '':
             self.pprint()
             print("\nFor help with the %output magic, call %output?")
             return
 
-        # Make backup of previous options
-        prev_backend = Store.current_backend
-        prev_renderer = Store.renderers[prev_backend]
-        prev_backend_spec = prev_backend+':'+prev_renderer.mode
-        prev_params = {k: v for k, v in prev_renderer.get_param_values()
-                       if k in self.render_params}
-        prev_restore = dict(OutputMagic.options)
-        try:
-            # Process magic
-            new_options = self.get_options(line, {}, cell is None)
-
-            # Make backup of options on selected renderer
-            if 'backend' in new_options:
-                backend_spec = new_options['backend']
-                if ':' not in backend_spec:
-                    backend_spec += ':default'
-            else:
-                backend_spec = prev_backend_spec
-            renderer = Store.renderers[backend_spec.split(':')[0]]
-            render_params = {k: v for k, v in renderer.get_param_values()
-                             if k in self.render_params}
-
-            # Set options on selected renderer and set display hook options
-            OutputMagic.options = new_options
-            self._set_render_options(new_options, backend_spec)
-        except Exception as e:
-            # If setting options failed ensure they are reset
-            OutputMagic.options = prev_restore
-            self.set_backend(prev_backend)
-            print('Error: %s' % str(e))
-            print("For help with the %output magic, call %output?\n")
-            return
-
-        if cell is not None:
+        def cell_runner(cell):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
-            # After cell magic restore previous options and restore
-            # temporarily selected renderer
-            OutputMagic.options = prev_restore
-            self._set_render_options(render_params, backend_spec)
-            if backend_spec.split(':')[0] != prev_backend:
-                self.set_backend(prev_backend)
-                self._set_render_options(prev_params, prev_backend_spec)
+
+        def warnfn(msg):
+            display(HTML("<b>Warning:</b> %s" % msg))
 
 
-    @classmethod
-    def update_options(cls, options, items):
-        """
-        Switch default options and backend if new backend
-        is supplied in items.
-        """
-        # Get new backend
-        backend_spec = items.get('backend', Store.current_backend)
-        split = backend_spec.split(':')
-        backend, mode = split if len(split)==2 else (split[0], 'default')
-        if ':' not in backend_spec:
-            backend_spec += ':default'
-
-        if 'max_branches' in items:
-            print('Warning: The max_branches option is now deprecated. Ignoring.')
-            del items['max_branches']
-
-        # Get previous backend
-        prev_backend = Store.current_backend
-        renderer = Store.renderers[prev_backend]
-        prev_backend_spec = prev_backend+':'+renderer.mode
-
-        # Update allowed formats
-        for p in ['fig', 'holomap']:
-            cls.allowed[p] = list_formats(p, backend_spec)
-
-        # Return if backend invalid and let validation error
-        if backend not in Store.renderers:
-            options['backend'] = backend_spec
-            return options
-
-        # Get backend specific options
-        backend_options = dict(cls._backend_options[backend_spec])
-        cls._backend_options[prev_backend_spec] = {k: v for k, v in cls.options.items()
-                                                   if k in cls.remembered}
-
-        # Fill in remembered options with defaults
-        for opt in cls.remembered:
-            if opt not in backend_options:
-                backend_options[opt] = cls.defaults[opt]
-
-        # Switch format if mode does not allow it
-        for p in ['fig', 'holomap']:
-            if backend_options.get(p) not in cls.allowed[p]:
-                backend_options[p] = cls.allowed[p][0]
-
-        # Ensure backend and mode are set
-        backend_options['backend'] = backend_spec
-        backend_options['mode'] = mode
-
-        return backend_options
-
-
-    @classmethod
-    def initialize(cls, backend_list):
-        cls.backend_list = backend_list
-        backend = cls.options.get('backend', Store.current_backend)
-        if backend in Store.renderers:
-            cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
-            cls.set_backend(backend)
+        if line:
+            help_prompt = "For help with the %output magic, call %output?\n"
         else:
-            cls.options['backend'] = None
-            cls.set_backend(None)
+            help_prompt = "For help with the %%output magic, call %%output?\n"
 
-
-    @classmethod
-    def set_backend(cls, backend):
-        cls.last_backend = Store.current_backend
-        Store.current_backend = backend
-
-
-    @classmethod
-    def _set_render_options(cls, options, backend=None):
-        """
-        Set options on current Renderer.
-        """
-        if backend:
-            backend = backend.split(':')[0]
-        else:
-            backend = Store.current_backend
-
-        cls.set_backend(backend)
-        if 'widgets' in options:
-            options['widget_mode'] = options['widgets']
-        renderer = Store.renderers[backend]
-        render_options = {k: options[k] for k in cls.render_params if k in options}
-        renderer.set_param(**render_options)
+        Store.output_settings.output(line, cell, cell_runner=cell_runner,
+                                     help_prompt=help_prompt, warnfn=warnfn)
 
 
 @magics_class
@@ -731,7 +363,7 @@ class OptsMagic(Magics):
         separating space.
 
         More information may be found in the class docstring of
-        ipython.parser.OptsSpec.
+        util.parser.OptsSpec.
         """
         line, cell = self._partition_lines(line, cell)
         try:
@@ -827,6 +459,12 @@ class TimerMagic(Magics):
 def load_magics(ip):
     ip.register_magics(TimerMagic)
     ip.register_magics(OutputMagic)
+
+    docstring = Store.output_settings._generate_docstring()
+    if sys.version_info.major==2:
+        OutputMagic.output.__func__.__doc__ = docstring
+    else:
+        OutputMagic.output.__doc__ = docstring
 
     if pyparsing is None:  print("%opts magic unavailable (pyparsing cannot be imported)")
     else: ip.register_magics(OptsMagic)

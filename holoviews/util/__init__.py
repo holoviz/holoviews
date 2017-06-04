@@ -2,13 +2,42 @@ import inspect
 
 import param
 
-from .core import DynamicMap, HoloMap, ViewableElement
-from .core.operation import Operation
-from .core.util import Aliases  # noqa (API import)
-from .core.operation import OperationCallable
-from .core.spaces import Callable
-from .core import util
-from .streams import Stream
+from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
+from ..core.options import options_policy
+from ..core.operation import Operation
+from ..core.util import Aliases  # noqa (API import)
+from ..core.operation import OperationCallable
+from ..core.spaces import Callable
+from ..core import util
+from ..streams import Stream
+from .settings import OutputSettings
+
+
+Store.output_settings = OutputSettings
+
+# Needs same validation behavior!
+def opts(options, obj=None):
+    from .parser import OptsSpec
+    if obj is None:
+        with options_policy(skip_invalid=True, warn_on_skip=False):
+            StoreOptions.apply_customizations(OptsSpec.parse(options), Store.options())
+    elif not isinstance(obj, Dimensioned):
+        return obj
+    else:
+        return StoreOptions.set_options(obj, OptsSpec.parse(options))
+
+
+def output(line=None, obj=None, **options):
+    """
+    Cell magic version acts as a no-op.
+    """
+    if obj is not None:
+        return obj
+    else:
+        help_prompt = 'For help with hv.util.output call help(hv.util.output)'
+        Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
+
+output.__doc__ = Store.output_settings._generate_docstring()
 
 class Dynamic(param.ParameterizedFunction):
     """

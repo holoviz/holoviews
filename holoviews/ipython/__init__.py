@@ -3,19 +3,19 @@ from unittest import SkipTest
 
 import param
 from IPython import version_info
-import numpy as np
 import holoviews
 from param import ipython as param_ext
 from IPython.display import HTML
 
 from ..core.tree import AttrTree
-from ..core.options import Store, Cycle, Palette
+from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
+from ..util.settings import list_formats, list_backends
 from ..plotting.renderer import Renderer
-from .magics import load_magics, list_formats, list_backends
+from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
-from .display_hooks import set_display_hooks, OutputMagic
+from .display_hooks import set_display_hooks
 from .widgets import RunProgress
 
 try:
@@ -27,14 +27,6 @@ try:
     holoviews.archive = notebook_archive
 except ImportError:
     pass
-
-try:
-    import pyparsing
-    from .parser import Parser
-    Parser.namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
-except ImportError:
-    pyparsing = None
-
 
 Collector.interval_hook = RunProgress
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
@@ -179,9 +171,10 @@ class notebook_extension(param.ParameterizedFunction):
                                                                               fig='svg')
                         holoviews.archive.exporters = [svg_exporter] +\
                                                       holoviews.archive.exporters
-                OutputMagic.allowed['backend'] = list_backends()
-                OutputMagic.allowed['fig'] = list_formats('fig', backend)
-                OutputMagic.allowed['holomap'] = list_formats('holomap', backend)
+
+                Store.output_settings.allowed['backend'] = list_backends()
+                Store.output_settings.allowed['fig'] = list_formats('fig', backend)
+                Store.output_settings.allowed['holomap'] = list_formats('holomap', backend)
 
         if selected_backend is None:
             raise ImportError('None of the backends could be imported')
@@ -190,7 +183,7 @@ class notebook_extension(param.ParameterizedFunction):
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
-            # Set current backend (usually has to wait until OutputMagic loaded)
+            # Set current backend (usually has to wait until OutputSettings loaded)
             Store.current_backend = selected_backend
             return
 
@@ -207,7 +200,7 @@ class notebook_extension(param.ParameterizedFunction):
         if notebook_extension._loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            OutputMagic.initialize([backend for backend, _ in imports])
+            Store.output_settings.initialize([backend for backend, _ in imports])
             set_display_hooks(ip)
             notebook_extension._loaded = True
         Store.current_backend = selected_backend

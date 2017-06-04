@@ -11,9 +11,10 @@ HoloViews is being used in conjunction with matplotlib.
 from __future__ import division
 import param
 from itertools import groupby
+import numpy as np
 import pyparsing as pp
 
-from holoviews.core.options import Options
+from ..core.options import Options, Cycle, Palette
 from ..operation import Compositor
 
 ascii_uppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
@@ -33,7 +34,7 @@ class Parser(object):
     """
 
     # Static namespace set in __init__.py of the extension
-    namespace = {}
+    namespace = {'np': np, 'Cycle': Cycle, 'Palette': Palette}
     # If True, raise SyntaxError on eval error otherwise warn
     abort_on_eval_failure = False
 

@@ -1077,13 +1077,24 @@ class Dimensioned(LabelledData):
         return unicode(PrettyPrinter.pprint(self))
 
 
-
     def __call__(self, options=None, **kwargs):
+        return self.opts(options, **kwargs)
+
+    def opts(self, options=None, **kwargs):
         """
         Apply the supplied options to a clone of the object which is
         then returned. Note that if no options are supplied at all,
         all ids are reset.
         """
+        from ..util.parser import OptsSpec
+        if isinstance(options, basestring):
+            try:
+                options = OptsSpec.parse(options)
+            except SyntaxError:
+                options = OptsSpec.parse(
+                    '{clsname} {options}'.format(clsname=self.__class__.__name__,
+                                                 options=options))
+
         groups = set(Store.options().groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
