@@ -5,7 +5,7 @@ import param
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
 from ..core.options import options_policy
 from ..core.operation import Operation
-from ..core.util import Aliases  # noqa (API import)
+from ..core.util import Aliases, basestring  # noqa (API import)
 from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
@@ -15,37 +15,118 @@ from .settings import OutputSettings
 
 Store.output_settings = OutputSettings
 
-def opts(options, obj=None):
+class opts(param.ParameterizedFunction):
     """
     Utility function to set options either at the global level or on a
-    specific object. These two modes are equivalent to the %opts line
-    magic and the %%opts cell magic respectively.
+    specific object.
+
+    To set opts globally use:
+
+    opts(options)
+
+    Where options may be an options specification string (as accepted by
+    the %opts magic) or an options specifications dictionary.
+
+    For instance:
+
+    opts("Curve (color='k')") # Or equivalently
+    opts({'Curve': {'style': {'color':'k'}}})
+
+    To set opts on a specific object, just supply it as the second
+    argument:
+
+    opts(options, obj)
+
+    For instance:
+
+    curve = hv.Curve([1,2,3])
+    opts("Curve (color='k')", curve) # Or equivalently
+    opts({'Curve': {'style': {'color':'k'}}}, curve)
+
+    These two modes are equivalent to the %opts line magic and the
+    %%opts cell magic respectively.
     """
-    from .parser import OptsSpec
-    if obj is None:
-        with options_policy(skip_invalid=True, warn_on_skip=False):
-            StoreOptions.apply_customizations(OptsSpec.parse(options), Store.options())
-    elif not isinstance(obj, Dimensioned):
-        return obj
-    else:
-        return StoreOptions.set_options(obj, OptsSpec.parse(options))
+
+    def __call__(self, *args):
+        if len(args) not in [1,2]:
+            raise TypeError('The opts utility accepts one or two positional arguments.')
+        elif len(args) == 1:
+            options, obj = args[0], None
+        elif len(args) == 2:
+            (options, obj) = args
+
+        if isinstance(options, basestring):
+            from .parser import OptsSpec
+            options = OptsSpec.parse(options)
+
+        if obj is None:
+            with options_policy(skip_invalid=True, warn_on_skip=False):
+                StoreOptions.apply_customizations(options, Store.options())
+        elif not isinstance(obj, Dimensioned):
+            return obj
+        else:
+            return StoreOptions.set_options(obj, options)
 
 
-def output(line=None, obj=None, **options):
+class output(param.ParameterizedFunction):
     """
-    Cell magic version acts as a no-op.
+    Utility function to set output either at the global level or on a
+    specific object.
+
+    To set output globally use:
+
+    output(options)
+
+    Where options may be an options specification string (as accepted by
+    the %opts magic) or an options specifications dictionary.
+
+    For instance:
+
+    output("backend='bokeh'") # Or equivalently
+    output(backend='bokeh')
+
+    To set save output from a specific object do disk using the
+    'filename' argument, you can supply the object as the first
+    positional argument and supply the filename keyword:
+
+    curve = hv.Curve([1,2,3])
+    output(curve, filename='curve.png')
+
+    For compatibility with the output magic, you can supply the object
+    as the second argument after the string specification:
+
+    curve = hv.Curve([1,2,3])
+    output("filename='curve.png'", curve)
+
+    These two modes are equivalent to the %output line magic and the
+    %%output cell magic respectively. Note that only the filename
+    argument is supported when supplying an object and all other options
+    are ignored.
     """
-    help_prompt = 'For help with hv.util.output call help(hv.util.output)'
-    if isinstance(obj, Dimensioned):
-        if line:
-            options = Store.output_settings._extract_keywords(line, {})
-        if 'filename' in options:
-            Store.renderers[Store.current_backend].save(obj, options['filename'])
-        return obj
-    elif obj is not None:
-        return obj
-    else:
-        Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
+
+    def __call__(self, *args, **options):
+
+        help_prompt = 'For help with hv.util.output call help(hv.util.output)'
+        line, obj = None,None
+        if len(args) > 2:
+            raise TypeError('The opts utility accepts one or two positional arguments.')
+        if len(args) == 1 and options:
+            obj = args[0]
+        elif len(args) == 1:
+            line = args[0]
+        elif len(args) == 2:
+            (line, obj) = args
+
+        if isinstance(obj, Dimensioned):
+            if line:
+                options = Store.output_settings._extract_keywords(line, {})
+            if 'filename' in options:
+                Store.renderers[Store.current_backend].save(obj, options['filename'])
+            return obj
+        elif obj is not None:
+            return obj
+        else:
+            Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
 output.__doc__ = Store.output_settings._generate_docstring()
 
