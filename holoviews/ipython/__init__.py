@@ -73,25 +73,6 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
-def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
-    """
-    Displays javascript and CSS to initialize HoloViews widgets.
-    """
-    import jinja2
-    # Evaluate load_notebook.html template with widgetjs code
-    if JS:
-        widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
-    else:
-        widgetjs, widgetcss = '', ''
-    templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
-    jinjaEnv = jinja2.Environment(loader=templateLoader)
-    template = jinjaEnv.get_template('load_notebook.html')
-    display(HTML(template.render({'widgetjs': widgetjs,
-                                  'widgetcss': widgetcss,
-                                  'logo': logo,
-                                  'message':message})))
-
-
 class notebook_extension(renderer):
     """
     Notebook specific extension to hv.renderer that offers options for
@@ -177,7 +158,7 @@ class notebook_extension(renderer):
             Store.renderers[r].load_nb(inline=p.inline)
 
         # Create a message for the logo (if shown)
-        load_hvjs(logo=p.logo, JS=('holoviews' in resources), message='')
+        self.load_hvjs(logo=p.logo, JS=('holoviews' in resources), message='')
 
 
 
@@ -210,6 +191,24 @@ class notebook_extension(renderer):
             resources = ['holoviews'] + resources
         return resources
 
+    @classmethod
+    def load_hvjs(cls, logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
+        """
+        Displays javascript and CSS to initialize HoloViews widgets.
+        """
+        import jinja2
+        # Evaluate load_notebook.html template with widgetjs code
+        if JS:
+            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
+        else:
+            widgetjs, widgetcss = '', ''
+        templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
+        jinjaEnv = jinja2.Environment(loader=templateLoader)
+        template = jinjaEnv.get_template('load_notebook.html')
+        display(HTML(template.render({'widgetjs': widgetjs,
+                                      'widgetcss': widgetcss,
+                                      'logo': logo,
+                                      'message':message})))
 
     @param.parameterized.bothmethod
     def tab_completion_docstring(self_or_cls):
