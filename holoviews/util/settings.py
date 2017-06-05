@@ -361,7 +361,7 @@ class OutputSettings(KeywordSettings):
     @classmethod
     def initialize(cls, backend_list):
         cls.backend_list = backend_list
-        backend = cls.options.get('backend', Store.current_backend)
+        backend = Store.current_backend
         if backend in Store.renderers:
             cls.options = dict({k: cls.defaults[k] for k in cls.remembered})
             cls.set_backend(backend)
