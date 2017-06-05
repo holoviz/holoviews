@@ -15,7 +15,7 @@ import numpy as np
 
 import param
 from ..core import Dimension, Element2D, Dataset
-from ..core.data import MultiInterface
+from ..core.data import MultiInterface, ArrayInterface
 
 
 class Path(Dataset, Element2D):
@@ -150,6 +150,9 @@ class BaseShape(Path):
 
     __abstract = True
 
+    def __init__(self, **params):
+        super(BaseShape, self).__init__([], **params)
+        self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
         """
@@ -205,7 +208,7 @@ class Box(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Box, self).__init__([], x=x, y=y, height=height, **params)
+        super(Box, self).__init__(x=x, y=y, height=height, **params)
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -274,8 +277,7 @@ class Ellipse(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
-
+        super(Ellipse, self).__init__(x=x, y=y, height=height, **params)
         angles = np.linspace(0, 2*np.pi, self.samples)
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -310,6 +312,6 @@ class Bounds(BaseShape):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
-        super(Bounds, self).__init__([], lbrt=lbrt, **params)
+        super(Bounds, self).__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
         self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]

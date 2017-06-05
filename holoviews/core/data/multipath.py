@@ -31,8 +31,8 @@ class MultiInterface(Interface):
     def template(cls, dataset):
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
-        return dataset.clone(dataset.data[0], datatype=cls.subtypes,
-                             vdims=vdims, new_type=Dataset)
+        return Dataset(dataset.data[0], datatype=cls.subtypes,
+                       kdims=dataset.kdims, vdims=vdims)
 
 
     @classmethod
@@ -126,6 +126,9 @@ class MultiInterface(Interface):
 
     @classmethod
     def split(cls, dataset, start, end):
+        from ...element.path import BaseShape
+        if isinstance(dataset, BaseShape):
+            return [dataset]
         objs = []
         for d in dataset.data[start: end]:
             objs.append(dataset.clone(d, datatype=cls.subtypes))
