@@ -11,7 +11,7 @@ from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
-from ..util import renderer
+from ..util import extension
 from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
@@ -73,9 +73,9 @@ class IPTestCase(ComparisonTestCase):
         self.ip.run_line_magic(*args, **kwargs)
 
 
-class notebook_extension(renderer):
+class notebook_extension(extension):
     """
-    Notebook specific extension to hv.renderer that offers options for
+    Notebook specific extension to hv.extension that offers options for
     controlling the notebook environment.
     """
 

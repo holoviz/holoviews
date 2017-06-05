@@ -39,9 +39,11 @@ def output(line=None, obj=None, **options):
 output.__doc__ = Store.output_settings._generate_docstring()
 
 
-class renderer(param.ParameterizedFunction):
+class extension(param.ParameterizedFunction):
     """
-    Helper utility used to load rendering backends.
+    Helper utility used to load holoviews extensions. These can be
+    plotting extensions, element extensions or anything else that can be
+    registered to work with HoloViews.
     """
 
     # Mapping between backend name and module name
