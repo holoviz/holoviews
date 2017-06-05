@@ -15,8 +15,12 @@ from .settings import OutputSettings
 
 Store.output_settings = OutputSettings
 
-# Needs same validation behavior!
 def opts(options, obj=None):
+    """
+    Utility function to set options either at the global level or on a
+    specific object. These two modes are equivalent to the %opts line
+    magic and the %%opts cell magic respectively.
+    """
     from .parser import OptsSpec
     if obj is None:
         with options_policy(skip_invalid=True, warn_on_skip=False):
