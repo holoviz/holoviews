@@ -15,7 +15,7 @@ from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins)
+                         builtins, config)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -1087,6 +1087,9 @@ class Dimensioned(LabelledData):
 
 
     def __call__(self, options=None, **kwargs):
+        if config.warn_options_call:
+            self.warning('Use of __call__ to set options will be deprecated '
+                         'in future. Use the equivalent opts method instead.')
         return self.opts(options, **kwargs)
 
     def opts(self, options=None, **kwargs):

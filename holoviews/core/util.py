@@ -42,6 +42,28 @@ except ImportError:
 
 
 
+class Config(param.ParameterizedFunction):
+    """
+    Set of boolean configuration values to change HoloViews' global
+    behavior. Typically used to control warnings relating to
+    deprecations or set global parameter such as style 'themes'.
+    """
+
+    style_17 = param.Boolean(default=False, doc="""
+       Switch to the default style options used up to (and including)
+       the HoloViews 1.7 release.""")
+
+    warn_options_call = param.Boolean(default=False, doc="""
+       Whether to warn when the deprecated __call__ options syntax is
+       used (the opts method should now be used instead). It is
+       recommended that users switch this on to update any uses of
+       __call__ as it will be deprecated in future.""")
+
+    def __call__(self, **params):
+        self.set_param(**params)
+        return self
+
+config = Config()
 
 class HashableJSON(json.JSONEncoder):
     """
