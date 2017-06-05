@@ -1338,6 +1338,17 @@ class StoreOptions(object):
 
 
     @classmethod
+    def validation_error_message(cls, spec, backends=None):
+        """
+        Returns an options validation error message if there are any
+        invalid keywords. Otherwise returns None.
+        """
+        try:
+            cls.validate_spec(spec, backends=backends)
+        except OptionError as e:
+            return e.format_options_error()
+
+    @classmethod
     def expand_compositor_keys(cls, spec):
         """
         Expands compositor definition keys into {type}.{group}

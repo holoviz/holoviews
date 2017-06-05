@@ -273,11 +273,9 @@ class OptsMagic(Magics):
     @classmethod
     def register_custom_spec(cls, spec):
         spec, _ = StoreOptions.expand_compositor_keys(spec)
-        try:
-            StoreOptions.validate_spec(spec)
-        except OptionError as e:
-            cls.error_message = e.format_options_error()
-
+        errmsg = StoreOptions.validation_error_message(spec)
+        if errmsg:
+            cls.error_message = errmsg
         cls.opts_spec = spec
 
     @classmethod
@@ -347,11 +345,10 @@ class OptsMagic(Magics):
             # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            try:
-                StoreOptions.validate_spec(spec)
-            except OptionError as e:
+            errmsg = StoreOptions.validation_error_message(spec)
+            if errmsg:
                 OptsMagic.error_message = None
-                sys.stderr.write(e.format_options_error())
+                sys.stderr.write(errmsg)
                 if self.strict:
                     display(HTML('Options specification will not be applied.'))
                     return

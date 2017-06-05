@@ -1,4 +1,4 @@
-import inspect
+import sys, inspect
 
 import param
 
@@ -47,7 +47,13 @@ class opts(param.ParameterizedFunction):
     %%opts cell magic respectively.
     """
 
-    def __call__(self, *args):
+    strict = param.Boolean(default=False, doc="""
+       Whether to be strict about the options specification. If not set
+       to strict (default), any invalid keywords are simply skipped. If
+       strict, invalid keywords prevent the options being applied.""")
+
+    def __call__(self, *args, **params):
+        p = param.ParamOverrides(self, params)
         if len(args) not in [1,2]:
             raise TypeError('The opts utility accepts one or two positional arguments.')
         elif len(args) == 1:
@@ -58,6 +64,15 @@ class opts(param.ParameterizedFunction):
         if isinstance(options, basestring):
             from .parser import OptsSpec
             options = OptsSpec.parse(options)
+
+
+        errmsg = StoreOptions.validation_error_message(options)
+        if errmsg:
+            sys.stderr.write(errmsg)
+            if p.strict:
+                sys.stderr.write(' Options specification will not be applied.')
+                if obj: return obj
+                else:   return
 
         if obj is None:
             with options_policy(skip_invalid=True, warn_on_skip=False):
