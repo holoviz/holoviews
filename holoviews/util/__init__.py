@@ -10,8 +10,7 @@ from ..core.operation import OperationCallable
 from ..core.spaces import Callable
 from ..core import util
 from ..streams import Stream
-from .settings import OutputSettings
-
+from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
 
@@ -38,6 +37,57 @@ def output(line=None, obj=None, **options):
         Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
 output.__doc__ = Store.output_settings._generate_docstring()
+
+
+class renderer(param.ParameterizedFunction):
+    """
+    Helper utility used to load rendering backends.
+    """
+
+    # Mapping between backend name and module name
+    _backends = {'matplotlib': 'mpl',
+                 'bokeh': 'bokeh',
+                 'plotly': 'plotly'}
+
+    def __call__(self, *args, **params):
+        # Get requested backends
+        imports = [(arg, self._backends[arg]) for arg in args
+                   if arg in self._backends]
+        for p, val in sorted(params.items()):
+            if p in self._backends:
+                imports.append((p, self._backends[p]))
+        if not imports:
+            args = ['matplotlib']
+            imports = [('matplotlib', 'mpl')]
+
+        args = list(args)
+        selected_backend = None
+        for backend, imp in imports:
+            try:
+                __import__('holoviews.plotting.%s' % imp)
+                if selected_backend is None:
+                    selected_backend = backend
+            except Exception as e:
+                if backend in args:
+                    args.pop(args.index(backend))
+                if backend in params:
+                    params.pop(backend)
+                if isinstance(e, ImportError):
+                    self.warning("HoloViews %s backend could not be imported, "
+                                 "ensure %s is installed." % (backend, backend))
+                else:
+                    self.warning("Holoviews %s backend could not be imported, "
+                                 "it raised the following exception: %s('%s')" %
+                                 (backend, type(e).__name__, e))
+            finally:
+                Store.output_settings.allowed['backend'] = list_backends()
+                Store.output_settings.allowed['fig'] = list_formats('fig', backend)
+                Store.output_settings.allowed['holomap'] = list_formats('holomap', backend)
+
+        if selected_backend is None:
+            raise ImportError('None of the backends could be imported')
+        Store.current_backend = selected_backend
+
 
 class Dynamic(param.ParameterizedFunction):
     """

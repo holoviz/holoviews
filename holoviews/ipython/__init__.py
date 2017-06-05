@@ -11,7 +11,7 @@ from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..interface.collector import Collector
-from ..util.settings import list_formats, list_backends
+from ..util import renderer
 from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
@@ -101,10 +101,10 @@ def load_hvjs(logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
                                   'message':message})))
 
 
-class notebook_extension(param.ParameterizedFunction):
+class notebook_extension(renderer):
     """
-    Parameterized function to initialize notebook resources
-    and register magics.
+    Notebook specific extension to hv.renderer that offers options for
+    controlling the notebook environment.
     """
 
     css = param.String(default='', doc="Optional CSS rule set to apply to the notebook.")
@@ -129,62 +129,12 @@ class notebook_extension(param.ParameterizedFunction):
 
     _loaded = False
 
-    # Mapping between backend name and module name
-    _backends = {'matplotlib': 'mpl',
-                 'bokeh': 'bokeh',
-                 'plotly': 'plotly'}
-
     def __call__(self, *args, **params):
-        # Get requested backends
-        imports = [(arg, self._backends[arg]) for arg in args
-                   if arg in self._backends]
-        for p, val in sorted(params.items()):
-            if p in self._backends:
-                imports.append((p, self._backends[p]))
-        if not imports:
-            args = ['matplotlib']
-            imports = [('matplotlib', 'mpl')]
-
-        args = list(args)
-        selected_backend = None
-        for backend, imp in imports:
-            try:
-                __import__('holoviews.plotting.%s' % imp)
-                if selected_backend is None:
-                    selected_backend = backend
-            except Exception as e:
-                if backend in args:
-                    args.pop(args.index(backend))
-                if backend in params:
-                    params.pop(backend)
-                if isinstance(e, ImportError):
-                    self.warning("HoloViews %s backend could not be imported, "
-                                 "ensure %s is installed." % (backend, backend))
-                else:
-                    self.warning("Holoviews %s backend could not be imported, "
-                                 "it raised the following exception: %s('%s')" %
-                                 (backend, type(e).__name__, e))
-            finally:
-                if backend == 'matplotlib' and not notebook_extension._loaded:
-                    if 'matplotlib' in Store.renderers:
-                        svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,
-                                                                              fig='svg')
-                        holoviews.archive.exporters = [svg_exporter] +\
-                                                      holoviews.archive.exporters
-
-                Store.output_settings.allowed['backend'] = list_backends()
-                Store.output_settings.allowed['fig'] = list_formats('fig', backend)
-                Store.output_settings.allowed['holomap'] = list_formats('holomap', backend)
-
-        if selected_backend is None:
-            raise ImportError('None of the backends could be imported')
-
+        super(notebook_extension, self).__call__(*args, **params)
         # Abort if IPython not found
         try:
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
-            # Set current backend (usually has to wait until OutputSettings loaded)
-            Store.current_backend = selected_backend
             return
 
         p = param.ParamOverrides(self, params)
@@ -200,10 +150,9 @@ class notebook_extension(param.ParameterizedFunction):
         if notebook_extension._loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
-            Store.output_settings.initialize([backend for backend, _ in imports])
+            Store.output_settings.initialize(list(Store.renderers.keys()))
             set_display_hooks(ip)
             notebook_extension._loaded = True
-        Store.current_backend = selected_backend
 
         css = ''
         if p.width is not None:
