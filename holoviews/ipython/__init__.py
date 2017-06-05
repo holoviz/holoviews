@@ -18,15 +18,6 @@ from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks
 from .widgets import RunProgress
 
-try:
-    if version_info[0] >= 4:
-        import nbformat # noqa (ensures availability)
-    else:
-        from IPython import nbformat # noqa (ensures availability)
-    from .archive import notebook_archive
-    holoviews.archive = notebook_archive
-except ImportError:
-    pass
 
 Collector.interval_hook = RunProgress
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
@@ -136,6 +127,17 @@ class notebook_extension(renderer):
             ip = params.pop('ip', None) or get_ipython() # noqa (get_ipython)
         except:
             return
+
+        # Notebook archive relies on display hooks being set to work.
+        try:
+            if version_info[0] >= 4:
+                import nbformat # noqa (ensures availability)
+            else:
+                from IPython import nbformat # noqa (ensures availability)
+            from .archive import notebook_archive
+            holoviews.archive = notebook_archive
+        except ImportError:
+            pass
 
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
