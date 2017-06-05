@@ -39,6 +39,20 @@ def output(line=None, obj=None, **options):
 output.__doc__ = Store.output_settings._generate_docstring()
 
 
+def renderer(name):
+    """
+    Helper utility to access the active renderer for a given extension.
+    """
+    try:
+        return Store.renderers[name]
+    except KeyError:
+        msg = ('Could not find a {name!r} renderer in list of available '
+               'renderers: {available}. Please make sure the appropriate extension '
+               'has been loaded with hv.extension().')
+        raise KeyError(msg.format(name=name,
+                                  available=', '.join(repr(k) for k in Store.renderers)))
+
+
 class extension(param.ParameterizedFunction):
     """
     Helper utility used to load holoviews extensions. These can be
