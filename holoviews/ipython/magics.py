@@ -67,7 +67,8 @@ class OutputMagic(Magics):
     @classmethod
     def option_completer(cls, k,v):
         raw_line = v.text_until_cursor
-        line = raw_line.replace(Store.output_settings.magic_name,'')
+
+        line = raw_line.replace('%output','')
 
         # Find the last element class mentioned
         completion_key = None
