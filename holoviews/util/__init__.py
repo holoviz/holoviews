@@ -35,10 +35,16 @@ def output(line=None, obj=None, **options):
     """
     Cell magic version acts as a no-op.
     """
-    if obj is not None:
+    help_prompt = 'For help with hv.util.output call help(hv.util.output)'
+    if isinstance(obj, Dimensioned):
+        if line:
+            options = Store.output_settings._extract_keywords(line, {})
+        if 'filename' in options:
+            Store.renderers[Store.current_backend].save(obj, options['filename'])
+        return obj
+    elif obj is not None:
         return obj
     else:
-        help_prompt = 'For help with hv.util.output call help(hv.util.output)'
         Store.output_settings.output(line=line, help_prompt=help_prompt, **options)
 
 output.__doc__ = Store.output_settings._generate_docstring()
