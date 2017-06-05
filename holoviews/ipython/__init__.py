@@ -137,6 +137,11 @@ class notebook_extension(renderer):
         except:
             return
 
+        # Not quite right, should be set when switching backends
+        if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
+            svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
+            holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
+
         p = param.ParamOverrides(self, params)
         resources = self._get_resources(args, params)
 
