@@ -119,7 +119,7 @@ class output(param.ParameterizedFunction):
 
         if isinstance(obj, Dimensioned):
             if line:
-                options = Store.output_settings._extract_keywords(line, {})
+                options = Store.output_settings.extract_keywords(line, {})
             if 'filename' in options:
                 Store.renderers[Store.current_backend].save(obj, options['filename'])
             return obj

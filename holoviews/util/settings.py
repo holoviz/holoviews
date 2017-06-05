@@ -73,7 +73,7 @@ class KeywordSettings(object):
 
 
     @classmethod
-    def _extract_keywords(cls, line, items):
+    def extract_keywords(cls, line, items):
         """
         Given the keyword string, parse a dictionary of options.
         """
@@ -267,7 +267,7 @@ class OutputSettings(KeywordSettings):
             if line is not None:
                 # Parse line
                 line = line.split('#')[0].strip()
-                kwargs = cls._extract_keywords(line, OrderedDict())
+                kwargs = cls.extract_keywords(line, OrderedDict())
 
             options = cls.get_options(kwargs, {}, warnfn)
 
