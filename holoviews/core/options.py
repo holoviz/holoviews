@@ -83,6 +83,45 @@ class OptionError(Exception):
                     % (group_name, path)) + msg
         return msg
 
+    def format_options_error(self):
+        """
+        Return a fuzzy match message based on the OptionError
+        """
+        allowed_keywords = self.allowed_keywords
+        target = allowed_keywords.target
+        matches = allowed_keywords.fuzzy_match(self.invalid_keyword)
+        if not matches:
+            matches = allowed_keywords.values
+            similarity = 'Possible'
+        else:
+            similarity = 'Similar'
+
+        loaded_backends = Store.loaded_backends()
+        target = 'for {0}'.format(target) if target else ''
+
+        if len(loaded_backends) == 1:
+            loaded=' in loaded backend {0!r}'.format(loaded_backends[0])
+        else:
+            backend_list = ', '.join(['%r'% b for b in loaded_backends[:-1]])
+            loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
+                                                            loaded_backends[-1])
+
+        suggestion = ("If you believe this keyword is correct, please make sure "
+                      "the backend has been imported or loaded with the "
+                      "hv.extension.")
+
+        group = '{0} option'.format(self.group_name) if self.group_name else 'keyword'
+        msg=('Unexpected {group} {kw} {target}{loaded}.\n\n'
+             '{similarity} keywords in the currently active '
+             '{current_backend} renderer are: {matches}\n\n{suggestion}')
+        return msg.format(kw="'%s'" % self.invalid_keyword,
+                          target=target,
+                          group=group,
+                          loaded=loaded, similarity=similarity,
+                          current_backend=repr(Store.current_backend),
+                          matches=matches,
+                          suggestion=suggestion)
+
 
 class AbbreviatedException(Exception):
     """
@@ -1297,6 +1336,17 @@ class StoreOptions(object):
                                   group_name=group_name,
                                   allowed_keywords=error_info[key])
 
+
+    @classmethod
+    def validation_error_message(cls, spec, backends=None):
+        """
+        Returns an options validation error message if there are any
+        invalid keywords. Otherwise returns None.
+        """
+        try:
+            cls.validate_spec(spec, backends=backends)
+        except OptionError as e:
+            return e.format_options_error()
 
     @classmethod
     def expand_compositor_keys(cls, spec):

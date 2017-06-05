@@ -15,7 +15,6 @@ from ..core.pprint import InfoPrinter
 from IPython.display import display, HTML
 from ..operation import Compositor
 
-
 #========#
 # Magics #
 #========#
@@ -272,55 +271,12 @@ class OptsMagic(Magics):
             cls.opts_spec = None
         return None
 
-
-    @classmethod
-    def _format_options_error(cls, err):
-        """
-        Return a fuzzy match message string based on the supplied OptionError
-        """
-        allowed_keywords = err.allowed_keywords
-        target = allowed_keywords.target
-        matches = allowed_keywords.fuzzy_match(err.invalid_keyword)
-        if not matches:
-            matches = allowed_keywords.values
-            similarity = 'Possible'
-        else:
-            similarity = 'Similar'
-
-        loaded_backends = Store.loaded_backends()
-        target = 'for {0}'.format(target) if target else ''
-
-        if len(loaded_backends) == 1:
-            loaded=' in loaded backend {0!r}'.format(loaded_backends[0])
-        else:
-            backend_list = ', '.join(['%r'% b for b in loaded_backends[:-1]])
-            loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
-                                                            loaded_backends[-1])
-
-        suggestion = ("If you believe this keyword is correct, please make sure "
-                      "the backend has been imported or loaded with the "
-                      "notebook_extension.")
-
-        group = '{0} option'.format(err.group_name) if err.group_name else 'keyword'
-        msg=('Unexpected {group} {kw} {target}{loaded}.\n\n'
-             '{similarity} keywords in the currently active '
-             '{current_backend} backend are: {matches}\n\n{suggestion}')
-        return msg.format(kw="'%s'" % err.invalid_keyword,
-                          target=target,
-                          group=group,
-                          loaded=loaded, similarity=similarity,
-                          current_backend=repr(Store.current_backend),
-                          matches=matches,
-                          suggestion=suggestion)
-
     @classmethod
     def register_custom_spec(cls, spec):
         spec, _ = StoreOptions.expand_compositor_keys(spec)
-        try:
-            StoreOptions.validate_spec(spec)
-        except OptionError as e:
-            cls.error_message = cls._format_options_error(e)
-
+        errmsg = StoreOptions.validation_error_message(spec)
+        if errmsg:
+            cls.error_message = errmsg
         cls.opts_spec = spec
 
     @classmethod
@@ -390,11 +346,10 @@ class OptsMagic(Magics):
             # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            try:
-                StoreOptions.validate_spec(spec)
-            except OptionError as e:
+            errmsg = StoreOptions.validation_error_message(spec)
+            if errmsg:
                 OptsMagic.error_message = None
-                sys.stderr.write(self._format_options_error(e))
+                sys.stderr.write(errmsg)
                 if self.strict:
                     display(HTML('Options specification will not be applied.'))
                     return
