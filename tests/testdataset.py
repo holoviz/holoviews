@@ -1055,6 +1055,15 @@ class XArrayDatasetTest(GridDatasetTest):
         self.init_column_data()
         self.init_grid_data()
 
+    def test_xarray_dataset_with_scalar_dim_canonicalize(self):
+        import xarray as xr
+        xs = [0, 1]
+        ys = [0.1, 0.2, 0.3]
+        zs = np.array([[[0, 1], [2, 3], [4, 5]]])
+        xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
+        ds = Dataset(xrarr, kdims=['x', 'y'], vdims=['z'], datatype=['xarray'])
+        self.assertEqual(ds.dimension_values(2, flat=False).ndim, 2)
+
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
