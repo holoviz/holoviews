@@ -1012,6 +1012,9 @@ class GenericLayoutPlot(GenericCompositePlot):
     """
     A GenericLayoutPlot accepts either a Layout or a NdLayout and
     displays the elements in a cartesian grid in scanline order.
+
+    The positioning of the elements of the layout can be customized
+    with a layout template.
     """
 
     transpose = param.Boolean(default=False, doc="""
