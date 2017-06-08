@@ -142,10 +142,9 @@ class CubeInterface(GridInterface):
 
     @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False):
-        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
-            return util.expand_grid_coords(dataset, dim.name)
-        data = dataset.data.coords(dim.name)[0].points
+            return util.expand_grid_coords(dataset, dim)
+        data = dataset.data.coords(dim)[0].points
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data

@@ -162,7 +162,7 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         if dim in dataset.vdims:
-            coord_dims = list(dataset.data.dims.keys())[::-1]
+            coord_dims = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
             data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
