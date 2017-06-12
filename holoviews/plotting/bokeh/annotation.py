@@ -88,13 +88,26 @@ class SplinePlot(ElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         data_attrs = ['x0', 'y0', 'x1', 'y1',
-                      'cx0', 'cx1', 'cy0', 'cy1']
-        if empty:
-            data = {attr: [] for attr in data_attrs}
-        else:
-            verts = np.array(element.data[0])
-            xs, ys = verts[:, 0], verts[:, 1]
-            data = dict(x0=[xs[0]], y0=[ys[0]], x1=[xs[-1]], y1=[ys[-1]],
-                        cx0=[xs[1]], cy0=[ys[1]], cx1=[xs[2]], cy1=[ys[2]])
-
+                      'cx0', 'cy0', 'cx1', 'cy1']
+        verts = np.array(element.data[0])
+        inds = np.where(np.array(element.data[1])==1)[0]
+        data = {da: [] for da in data_attrs}
+        skipped = False
+        for vs in np.split(verts, inds[1:]):
+            if len(vs) != 4:
+                skipped = len(vs) > 1
+                continue
+            xs, ys = vs[:, 0], vs[:, 1]
+            data['x0'].append(xs[0])
+            data['y0'].append(ys[0])
+            data['x1'].append(xs[-1])
+            data['y1'].append(ys[-1])
+            data['cx0'].append(xs[1])
+            data['cy0'].append(ys[1])
+            data['cx1'].append(xs[2])
+            data['cy1'].append(ys[2])
+        if skipped:
+            self.warning('Bokeh SplitPlot only support cubic splines, '
+                         'unsupported splines were skipped during plotting.')
+        data = {da: data[da] for da in data_attrs}
         return (data, dict(zip(data_attrs, data_attrs)))
