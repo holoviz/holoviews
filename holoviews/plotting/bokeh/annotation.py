@@ -87,8 +87,7 @@ class SplinePlot(ElementPlot):
     _plot_methods = dict(single='bezier')
 
     def get_data(self, element, ranges=None, empty=False):
-        data_attrs = ['x0', 'y0', 'x1', 'y1',
-                      'cx0', 'cy0', 'cx1', 'cy1']
+        data_attrs = ['x0', 'y0', 'cx0', 'cy0', 'cx1', 'cy1', 'x1', 'y1',]
         verts = np.array(element.data[0])
         inds = np.where(np.array(element.data[1])==1)[0]
         data = {da: [] for da in data_attrs}
@@ -97,15 +96,9 @@ class SplinePlot(ElementPlot):
             if len(vs) != 4:
                 skipped = len(vs) > 1
                 continue
-            xs, ys = vs[:, 0], vs[:, 1]
-            data['x0'].append(xs[0])
-            data['y0'].append(ys[0])
-            data['x1'].append(xs[-1])
-            data['y1'].append(ys[-1])
-            data['cx0'].append(xs[1])
-            data['cy0'].append(ys[1])
-            data['cx1'].append(xs[2])
-            data['cy1'].append(ys[2])
+            for x, y, xl, yl in zip(vs[:, 0], vs[:, 1], data_attrs[::2], data_attrs[1::2]):
+                data[xl].append(x)
+                data[yl].append(y)
         if skipped:
             self.warning('Bokeh SplitPlot only support cubic splines, '
                          'unsupported splines were skipped during plotting.')
