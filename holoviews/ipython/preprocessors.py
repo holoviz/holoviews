@@ -111,8 +111,9 @@ class OptsMagicProcessor(Preprocessor):
                                         template='hv.util.opts({line!r})')
             source, opts_lines = filter_magic(source, '%%opts')
             if opts_lines:
+                # Escape braces e.g normalization options as they pass through format
                 template = 'hv.util.opts({options!r}, {{expr}})'.format(
-                    options=' '.join(opts_lines))
+                    options=' '.join(opts_lines).replace('{','{{').replace('}','}}'))
                 source = wrap_cell_expression(source, template)
             cell['source'] = source
         return cell, resources

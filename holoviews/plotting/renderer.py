@@ -459,7 +459,7 @@ class Renderer(Exporter):
         supplied format or to the appropriate default.
         """
         if info or key:
-            raise Exception('MPLRenderer does not support saving metadata to file.')
+            raise Exception('Renderer does not support saving metadata to file.')
 
         with StoreOptions.options(obj, options, **kwargs):
             plot = self_or_cls.get_plot(obj)
