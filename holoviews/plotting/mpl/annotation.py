@@ -106,6 +106,8 @@ class SplinePlot(AnnotationPlot):
 
     def draw_annotation(self, axis, data, opts):
         verts, codes = data
+        if not len(verts):
+            return []
         patch = patches.PathPatch(matplotlib.path.Path(verts, codes),
                                   facecolor='none', **opts)
         axis.add_patch(patch)
