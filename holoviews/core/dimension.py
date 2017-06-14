@@ -158,6 +158,13 @@ class redim(object):
     def range(self, specs=None, **values):
         return self._redim('range', specs, **values)
 
+    def label(self, specs=None, **values):
+        for k, v in values.items():
+            dim = self.parent.get_dimension(k)
+            if dim and dim.name != dim.label and dim.name != v:
+                raise ValueError('Cannot override an existing Dimension label')
+        return self._redim('label', specs, **values)
+
     def soft_range(self, specs=None, **values):
         return self._redim('soft_range', specs, **values)
 
