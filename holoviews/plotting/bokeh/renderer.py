@@ -1,10 +1,11 @@
 from io import BytesIO
+import logging
 
 import numpy as np
 import param
 from param.parameterized import bothmethod
 
-
+import bokeh.core
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
@@ -192,7 +193,16 @@ class BokehRenderer(Renderer):
             m._document = None
         doc.add_root(model)
         comm_id = plot.comm.id if plot.comm else None
-        div = notebook_div(model, comm_id)
+        # Bokeh raises warnings about duplicate tools and empty subplots
+        # but at the holoviews level these are not issues
+        logger = logging.getLogger(bokeh.core.validation.check.__file__)
+        logger.disabled = True
+        try:
+            div = notebook_div(model, comm_id)
+        except:
+            logger.disabled = False
+            raise
+        logger.disabled = False
         plot.document = doc
         return div
 
