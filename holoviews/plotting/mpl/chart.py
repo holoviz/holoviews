@@ -66,7 +66,7 @@ class CurvePlot(ChartPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker']
+    style_opts = ['alpha', 'color', 'visible', 'linewidth', 'linestyle', 'marker', 'ms']
 
     _plot_methods = dict(single='plot')
 
