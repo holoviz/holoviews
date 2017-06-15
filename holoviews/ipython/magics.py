@@ -91,7 +91,7 @@ class OutputMagic(Magics):
             print("\nFor help with the %output magic, call %output?")
             return
 
-        def cell_runner(cell):
+        def cell_runner(cell,renderer):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
 
         def warnfn(msg):
