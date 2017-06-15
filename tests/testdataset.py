@@ -1095,8 +1095,12 @@ class XArrayDatasetTest(GridDatasetTest):
         ys = [0.1, 0.2, 0.3]
         zs = np.array([[[0, 1], [2, 3], [4, 5]]])
         xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
-        ds = Dataset(xrarr, kdims=['x', 'y'], vdims=['z'], datatype=['xarray'])
-        self.assertEqual(ds.dimension_values(2, flat=False).ndim, 2)
+        xrds = xr.Dataset({'v': xrarr})
+        ds = Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
+        canonical = ds.dimension_values(2, flat=False)
+        self.assertEqual(canonical.ndim, 2)
+        expected = np.array([[0, 1], [2, 3], [4, 5]])
+        self.assertEqual(canonical, expected)
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
@@ -1137,6 +1141,20 @@ class XArrayDaskArrayDatasetTest(XArrayDatasetTest):
                                   kdims=['x'], vdims=['y'])
         self.dataset_hm_alias = Dataset((self.xs, dask_y),
                                         kdims=[('x', 'X')], vdims=[('y', 'Y')])
+
+    def test_xarray_dataset_with_scalar_dim_canonicalize(self):
+        import dask.array
+        import xarray as xr
+        xs = [0, 1]
+        ys = [0.1, 0.2, 0.3]
+        zs = dask.array.from_array(np.array([[[0, 1], [2, 3], [4, 5]]]), 2)
+        xrarr = xr.DataArray(zs, coords={'x': xs, 'y': ys, 't': [1]}, dims=['t', 'y', 'x'])
+        xrds = xr.Dataset({'v': xrarr})
+        ds = Dataset(xrds, kdims=['x', 'y'], vdims=['v'], datatype=['xarray'])
+        canonical = ds.dimension_values(2, flat=False)
+        self.assertEqual(canonical.ndim, 2)
+        expected = np.array([[0, 1], [2, 3], [4, 5]])
+        self.assertEqual(canonical, expected)
 
     def init_grid_data(self):
         import dask.array
