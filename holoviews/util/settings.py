@@ -295,7 +295,7 @@ class OutputSettings(KeywordSettings):
             return
 
         if cell is not None:
-            if cell_runner: cell_runner(cell)
+            if cell_runner: cell_runner(cell,renderer)
             # After cell restore previous options and restore
             # temporarily selected renderer
             OutputSettings.options = prev_restore

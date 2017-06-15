@@ -134,8 +134,13 @@ class output(param.ParameterizedFunction):
         if isinstance(obj, Dimensioned):
             if line:
                 options = Store.output_settings.extract_keywords(line, {})
+            for k in options.keys():
+                if k not in Store.output_settings.allowed:
+                    raise KeyError('Invalid keyword: %s' % k)
             if 'filename' in options:
-                Store.renderers[Store.current_backend].save(obj, options['filename'])
+                def save_fn(obj, renderer): renderer.save(obj, options['filename'])
+                Store.output_settings.output(line=line, cell=obj, cell_runner=save_fn,
+                                             help_prompt=help_prompt, **options)
             return obj
         elif obj is not None:
             return obj
