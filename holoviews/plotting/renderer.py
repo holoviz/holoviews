@@ -474,6 +474,9 @@ class Renderer(Exporter):
         if rendered is None: return
         (data, info) = rendered
         encoded = self_or_cls.encode(rendered)
+        prefix = self_or_cls._save_prefix(info['file-ext'])
+        if prefix:
+            encoded = prefix + encoded
         if isinstance(basename, BytesIO):
             basename.write(encoded)
             basename.seek(0)
@@ -481,6 +484,11 @@ class Renderer(Exporter):
             filename ='%s.%s' % (basename, info['file-ext'])
             with open(filename, 'wb') as f:
                 f.write(encoded)
+
+    @bothmethod
+    def _save_prefix(self_or_cls, ext):
+        "Hook to prefix content for instance JS when saving HTML"
+        return
 
 
     @bothmethod

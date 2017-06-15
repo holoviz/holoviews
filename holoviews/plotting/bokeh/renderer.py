@@ -93,6 +93,12 @@ class BokehRenderer(Renderer):
         elif fmt == 'json':
             return self.diff(plot), info
 
+    @bothmethod
+    def _save_prefix(self_or_cls, ext):
+        "Hook to prefix content for instance JS when saving HTML"
+        if ext == 'html':
+            return '\n'.join(self_or_cls.html_assets()).encode('utf8')
+        return
 
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None):
