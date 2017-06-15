@@ -158,7 +158,8 @@ class categorical_aggregate2d(Operation):
         if sort or one_to_one(orderings, ycoords):
             ycoords = np.sort(ycoords)
         elif not is_cyclic(orderings):
-            ycoords = list(itertools.chain(*sort_topologically(orderings)))
+            coords = list(itertools.chain(*sort_topologically(orderings)))
+            ycoords = coords if len(coords) == len(ycoords) else np.sort(ycoords)
         return xcoords, ycoords
 
 
