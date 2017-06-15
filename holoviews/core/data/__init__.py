@@ -472,6 +472,14 @@ class Dataset(Element):
         if dimensions is None: dimensions = self.kdims
         elif not isinstance(dimensions, list): dimensions = [dimensions]
         kdims = [self.get_dimension(d, strict=True) for d in dimensions]
+        if not len(self):
+            if spreadfn:
+                spread_name = spreadfn.__name__
+                vdims = [d for vd in self.vdims for d in [vd, vd('_'.join([vd.name, spread_name]))]]
+            else:
+                vdims = self.vdims
+            return self.clone([], kdims=kdims, vdims=vdims)
+
         aggregated = self.interface.aggregate(self, kdims, function, **kwargs)
         aggregated = self.interface.unpack_scalar(self, aggregated)
 
