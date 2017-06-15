@@ -162,18 +162,18 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           BoxWhisker: SideBoxPlot})
 
 options = Store.options(backend='matplotlib')
-
+dflt_cmap = 'hot' if config.style_17 else 'fire'
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
-options.Scatter = Options('style', color=Cycle(), marker='o', cmap='hot')
+options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.ErrorBars = Options('style', ecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
-options.Points = Options('style', color=Cycle(), marker='o', cmap='hot')
+options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
@@ -183,10 +183,10 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
 # Rasters
-options.Image = Options('style', cmap='hot', interpolation='nearest')
-options.GridImage = Options('style', cmap='hot', interpolation='nearest')
-options.Raster = Options('style', cmap='hot', interpolation='nearest')
-options.QuadMesh = Options('style', cmap='hot')
+options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.GridImage = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
 options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')
