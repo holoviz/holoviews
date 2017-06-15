@@ -161,7 +161,7 @@ class redim(object):
     def label(self, specs=None, **values):
         for k, v in values.items():
             dim = self.parent.get_dimension(k)
-            if dim and dim.name != dim.label and dim.name != v:
+            if dim and dim.name != dim.label and dim.label != v:
                 raise ValueError('Cannot override an existing Dimension label')
         return self._redim('label', specs, **values)
 
@@ -305,8 +305,9 @@ class Dimension(param.Parameterized):
             all_params['name'] = name
             all_params['label'] = label
             if 'label' in params and (label != params['label']):
-                self.warning('Using label as supplied by keyword ({!r}), ignoring '
-                             'tuple value {!r}'.format(params['label'], label))
+                if params['label'] != label:
+                    self.warning('Using label as supplied by keyword ({!r}), ignoring '
+                                 'tuple value {!r}'.format(params['label'], label))
                 all_params['label'] = params['label']
         elif isinstance(spec, basestring):
             all_params['name'] = spec
@@ -349,7 +350,8 @@ class Dimension(param.Parameterized):
         if 'label' in overrides and isinstance(spec, basestring) :
             spec = (spec, overrides['label'])
         elif 'label' in overrides and isinstance(spec, tuple) :
-            self.warning('Using label as supplied by keyword ({!r}), ignoring '
+            if overrides['label'] != spec[1]:
+                self.warning('Using label as supplied by keyword ({!r}), ignoring '
                              'tuple value {!r}'.format(overrides['label'], spec[1]))
             spec = (spec[0],  overrides['label'])
 
