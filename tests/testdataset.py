@@ -414,6 +414,16 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean), reduced)
 
+    def test_dataset_empty_aggregate(self):
+        dataset = Dataset([], kdims=self.kdims, vdims=self.vdims)
+        aggregated = Dataset([], kdims=self.kdims[:1], vdims=self.vdims)
+        self.compare_dataset(dataset.aggregate(['Gender'], np.mean), aggregated)
+
+    def test_dataset_empty_aggregate_with_spreadfn(self):
+        dataset = Dataset([], kdims=self.kdims, vdims=self.vdims)
+        aggregated = Dataset([], kdims=self.kdims[:1], vdims=[d for vd in self.vdims for d in [vd, vd+'_std']])
+        self.compare_dataset(dataset.aggregate(['Gender'], np.mean, np.std), aggregated)
+
     def test_dataset_groupby(self):
         group1 = {'Age':[10,16], 'Weight':[15,18], 'Height':[0.8,0.6]}
         group2 = {'Age':[12], 'Weight':[10], 'Height':[0.8]}
@@ -648,6 +658,18 @@ class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
                               zip(self.weight, self.height)),
                           kdims=self.kdims, vdims=self.vdims)
         self.assertTrue(isinstance(dataset.data, NdElement))
+
+    def test_dataset_empty_aggregate(self):
+        """
+        Will soon be deprecated, new features not supported
+        """
+        raise SkipTest("Not supported")
+
+    def test_dataset_empty_aggregate_with_spreadfn(self):
+        """
+        Will soon be deprecated, new features not supported
+        """
+        raise SkipTest("Not supported")
 
 
 class GridTests(object):
