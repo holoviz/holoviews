@@ -745,11 +745,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
                        'bottom': 'bottom', 'width': width}
         elif grouping == 'grouped':
             if len(grouped):
-                width = width / float(len(grouped))
+                gwidth = width / float(len(grouped))
             else:
-                width = width
+                gwidth = width
             mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': 0,
-                       'width': width}
+                       'width': gwidth}
         else:
             mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': 0, 'width': width}
 
