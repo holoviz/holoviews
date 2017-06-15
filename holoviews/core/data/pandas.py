@@ -139,11 +139,17 @@ class PandasInterface(Interface):
         cols = [d.name for d in columns.kdims if d in dimensions]
         vdims = columns.dimensions('value', label='name')
         reindexed = data[cols+vdims]
+        if function in [np.std, np.var]:
+            # Fix for consistency with other backend
+            # pandas uses ddof=1 for std and var
+            fn = lambda x: function(x, ddof=0)
+        else:
+            fn = function
         if len(dimensions):
             grouped = reindexed.groupby(cols, sort=False)
-            return grouped.aggregate(function, **kwargs).reset_index()
+            return grouped.aggregate(fn, **kwargs).reset_index()
         else:
-            agg = reindexed.apply(function, **kwargs)
+            agg = reindexed.apply(fn, **kwargs)
             return pd.DataFrame.from_items([(col, [v]) for col, v in
                                             zip(agg.index, agg.values)])
 

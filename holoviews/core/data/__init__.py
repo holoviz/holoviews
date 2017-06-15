@@ -488,7 +488,7 @@ class Dataset(Element):
             combined = self.clone(aggregated, kdims=kdims, new_type=Dataset)
             for i, d in enumerate(vdims):
                 dim = d('_'.join([d.name, spread_name]))
-                dvals = error.dimension_values(d, False, False)
+                dvals = error.dimension_values(d, flat=False)
                 combined = combined.add_dimension(dim, ndims+i, dvals, True)
             return combined.clone(new_type=Dataset if generic_type else type(self))
 

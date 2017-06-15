@@ -397,6 +397,15 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=['x'], vdims=['z'])
         self.assertEqual(dataset.reduce(['y'], np.mean), reduced)
 
+    def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
+        dataset = Dataset({'x': np.array([0, 0, 1, 1]), 'y': np.array([0, 1, 2, 3]),
+                           'z': np.array([1, 2, 3, 4])},
+                          kdims=['x', 'y'], vdims=['z'])
+        agg = dataset.aggregate('x', function=np.mean, spreadfn=np.var)
+        self.assertEqual(agg, Dataset({'x': np.array([0, 1]), 'z': np.array([1.5, 3.5]),
+                                       'z_var': np.array([0.25, 0.25])},
+                                      kdims=['x'], vdims=['z', 'z_var']))
+
     def test_dataset_aggregate_ht(self):
         aggregated = Dataset({'Gender':['M', 'F'], 'Weight':[16.5, 10], 'Height':[0.7, 0.8]},
                              kdims=self.kdims[:1], vdims=self.vdims)
@@ -582,6 +591,9 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         raise SkipTest("Not supported")
 
     def test_dataset_add_dimensions_values_ht(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_2D_aggregate_spread_fn_with_duplicates(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_hm(self):
