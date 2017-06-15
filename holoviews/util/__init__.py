@@ -118,8 +118,13 @@ class output(param.ParameterizedFunction):
     are ignored.
     """
 
-    def __call__(self, *args, **options):
+    filename_warning = param.Boolean(default=True, doc="""
+       Whether to warn if the output utility is called on an object and
+       a filename is not given (in which case the utility has no
+       effect)""" )
 
+    def __call__(self, *args, **options):
+        warn = options.pop('filename_warning', self.filename_warning)
         help_prompt = 'For help with hv.util.output call help(hv.util.output)'
         line, obj = None,None
         if len(args) > 2:
@@ -141,6 +146,9 @@ class output(param.ParameterizedFunction):
                 def save_fn(obj, renderer): renderer.save(obj, options['filename'])
                 Store.output_settings.output(line=line, cell=obj, cell_runner=save_fn,
                                              help_prompt=help_prompt, **options)
+            elif warn:
+                self.warning("hv.output not supplied a filename to export the "
+                             "given object. This call will have no effect." )
             return obj
         elif obj is not None:
             return obj
