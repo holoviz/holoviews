@@ -744,8 +744,12 @@ class BarPlot(ColorbarPlot, LegendPlot):
             mapping = {'x': xdim.name, 'top': 'top',
                        'bottom': 'bottom', 'width': width}
         elif grouping == 'grouped':
+            if len(grouped):
+                width = width / float(len(grouped))
+            else:
+                width = width
             mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': 0,
-                       'width': width / float(len(grouped))}
+                       'width': width}
         else:
             mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': 0, 'width': width}
 
@@ -831,10 +835,15 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 sanitized_data[dimension_sanitizer(col)] = np.concatenate(vals)
 
         for name, val in mapping.items():
+            sanitized = None
             if isinstance(val, basestring):
-                mapping[name] = dimension_sanitizer(mapping[name])
+                sanitized = dimension_sanitizer(mapping[name])
+                mapping[name] = sanitized
             elif isinstance(val, dict) and 'field' in val:
-                val['field'] = dimension_sanitizer(val['field'])
+                sanitized = dimension_sanitizer(val['field'])
+                val['field'] = sanitized
+            if sanitized is not None and sanitized not in sanitized_data:
+                sanitized_data[sanitized] = []
 
         # Ensure x-values are categorical
         xname = dimension_sanitizer(xdim.name)

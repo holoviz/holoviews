@@ -135,7 +135,7 @@ class Bars(Chart):
 
     kdims = param.List(default=[Dimension('x')], bounds=(1,3))
 
-    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+    vdims = param.List(default=[Dimension('y')], bounds=(1, None))
 
 
 
