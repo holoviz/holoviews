@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 
-from ...core import Layout, Collator, GridMatrix
+from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
 from ...element import * # noqa (API import)
@@ -49,10 +49,11 @@ def set_style(key):
 styles = {'default': './default.mplstyle',
           'default>1.5': './default1.5.mplstyle'}
 
-if mpl_ge_150:
-    set_style('default>1.5')
-else:
-    set_style('default')
+if config.style_17:
+    if mpl_ge_150:
+        set_style('default>1.5')
+    else:
+        set_style('default')
 
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
