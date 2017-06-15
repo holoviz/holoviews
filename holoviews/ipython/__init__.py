@@ -125,7 +125,7 @@ class notebook_extension(extension):
             svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
             holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
 
-        p = param.ParamOverrides(self, params)
+        p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         resources = self._get_resources(args, params)
 
         Store.display_formats = p.display_formats

@@ -186,6 +186,8 @@ class extension(param.ParameterizedFunction):
 
     def __call__(self, *args, **params):
         # Get requested backends
+        config = params.pop('config', {})
+        util.config.set_param(**config)
         imports = [(arg, self._backends[arg]) for arg in args
                    if arg in self._backends]
         for p, val in sorted(params.items()):
