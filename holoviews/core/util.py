@@ -88,6 +88,8 @@ class HashableJSON(json.JSONEncoder):
 class periodic(Thread):
     """
     Run a callback count times with a given period without blocking.
+
+    If count is None, will run till timeout (which may be forever if None).
     """
 
     def __init__(self, period, count, callback, timeout=None, block=False):
@@ -96,6 +98,10 @@ class periodic(Thread):
             if count < 0: raise ValueError('Count value must be positive')
         elif not type(count) is type(None):
             raise ValueError('Count value must be a positive integer or None')
+
+        if block is False and count is None and timeout is None:
+            raise ValueError('When using a non-blocking thread, please specify '
+                             'either a count or a timeout')
 
         super(periodic, self).__init__()
         self.period = period

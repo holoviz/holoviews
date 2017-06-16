@@ -611,7 +611,7 @@ class periodic(object):
         self.dmap = dmap
         self.instance = None
 
-    def __call__(self, period, count, param_fn=None, timeout=None, block=True):
+    def __call__(self, period, count=None, param_fn=None, timeout=None, block=True):
         """
         Run a non-blocking loop that updates the stream parameters using
         the event method. Runs count times with the specified period. If
