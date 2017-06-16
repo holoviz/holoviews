@@ -509,7 +509,29 @@ class Bounds(LinkedStream):
 
     bounds = param.NumericTuple(default=None, constant=True, length=4,
                                 allow_None=True, doc="""
-        Bounds defined as (left, bottom, top, right) tuple.""")
+        Bounds defined as (left, bottom, right, top) tuple.""")
+
+
+class BoundsX(LinkedStream):
+    """
+    A stream representing the bounds of a box selection as an
+    tuple of the left and right coordinates.
+    """
+
+    boundsx = param.NumericTuple(default=None, constant=True, length=2,
+                                 allow_None=True, doc="""
+        Bounds defined as (left, right) tuple.""")
+
+
+class BoundsY(LinkedStream):
+    """
+    A stream representing the bounds of a box selection as an
+    tuple of the bottom and top coordinates.
+    """
+
+    boundsy = param.NumericTuple(default=None, constant=True, length=2,
+                                 allow_None=True, doc="""
+        Bounds defined as (bottom, top) tuple.""")
 
 
 class Selection1D(LinkedStream):

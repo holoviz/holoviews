@@ -3,8 +3,9 @@ from bokeh.models import CustomJS
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, Bounds, Tap, SingleTap,
-                        DoubleTap, MouseEnter, MouseLeave, PlotSize, Draw)
+                        RangeY, PointerX, PointerY, Bounds, BoundsX, BoundsY,
+                        Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
+                        PlotSize, Draw)
 from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
@@ -687,12 +688,10 @@ class PlotSizeCallback(Callback):
             return {}
 
 
-
 class BoundsCallback(Callback):
     """
     Returns the bounds of a box_select tool.
     """
-
     attributes = {'x0': 'cb_data.geometry.x0',
                   'x1': 'cb_data.geometry.x1',
                   'y0': 'cb_data.geometry.y0',
@@ -702,6 +701,36 @@ class BoundsCallback(Callback):
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
             return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
+        else:
+            return {}
+
+
+class BoundsXCallback(Callback):
+    """
+    Returns the bounds of a xbox_select tool.
+    """
+
+    attributes = {'x0': 'cb_data.geometry.x0', 'x1': 'cb_data.geometry.x1'}
+    models = ['xbox_select']
+
+    def _process_msg(self, msg):
+        if all(c in msg for c in ['x0', 'x1']):
+            return {'boundsx': (msg['x0'], msg['x1'])}
+        else:
+            return {}
+
+
+class BoundsYCallback(Callback):
+    """
+    Returns the bounds of a ybox_select tool.
+    """
+
+    attributes = {'y0': 'cb_data.geometry.y0', 'y1': 'cb_data.geometry.y1'}
+    models = ['ybox_select']
+
+    def _process_msg(self, msg):
+        if all(c in msg for c in ['y0', 'y1']):
+            return {'boundsy': (msg['y0'], msg['y1'])}
         else:
             return {}
 
@@ -736,6 +765,8 @@ callbacks[RangeXY]     = RangeXYCallback
 callbacks[RangeX]      = RangeXCallback
 callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
+callbacks[BoundsX]     = BoundsXCallback
+callbacks[BoundsY]     = BoundsYCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
 callbacks[Draw] = DrawCallback
