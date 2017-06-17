@@ -31,7 +31,7 @@ class Composable(object):
 
 
     def __lshift__(self, other):
-        if isinstance(other, (ViewableElement, NdMapping)):
+        if isinstance(other, (ViewableElement, NdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data.values()+[self])
