@@ -7,7 +7,8 @@ from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element,
+                     Empty)
 from ...core.options import Compositor
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
@@ -61,7 +62,8 @@ class BokehPlot(DimensionedPlot):
         self._document = doc
         if self.subplots:
             for plot in self.subplots.values():
-                plot.document = doc
+                if plot is not None:
+                    plot.document = doc
 
 
     def __init__(self, *args, **params):
@@ -561,7 +563,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             element = layout.get(pos, None)
-            if element is None or not element.traverse(lambda x: x, [Element]):
+            if element is None or not element.traverse(lambda x: x, [Element, Empty]):
                 continue
 
             subplot_opts = dict(adjoined=main_plot)
@@ -573,14 +575,16 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             if pos != 'main':
                 plot_type = AdjointLayoutPlot.registry.get(vtype, plot_type)
                 if pos == 'right':
-                    yaxis = 'right-bare' if 'bare' in plot_type.yaxis else 'right'
+                    yaxis = 'right-bare' if plot_type and 'bare' in plot_type.yaxis else 'right'
+                    width = plot_type.width if plot_type else 0
                     side_opts = dict(height=main_plot.height, yaxis=yaxis,
-                                     width=plot_type.width, invert_axes=True,
+                                     width=width, invert_axes=True,
                                      labelled=['y'], xticks=1, xaxis=main_plot.xaxis)
                 else:
-                    xaxis = 'top-bare' if 'bare' in plot_type.xaxis else 'top'
+                    xaxis = 'top-bare' if plot_type and 'bare' in plot_type.xaxis else 'top'
+                    height = plot_type.height if plot_type else 0
                     side_opts = dict(width=main_plot.width, xaxis=xaxis,
-                                     height=plot_type.height, labelled=['x'],
+                                     height=height, labelled=['x'],
                                      yticks=1, yaxis=main_plot.yaxis)
 
             # Override the plotopts as required
@@ -588,7 +592,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             plotopts = dict(side_opts, **plotopts)
             plotopts.update(subplot_opts)
 
-            if plot_type is None:
+            if vtype is Empty:
+                subplots[pos] = None
+                continue
+            elif plot_type is None:
                 self.warning("Bokeh plotting class for %s type not found, object will "
                              "not be rendered." % vtype.__name__)
                 continue
@@ -756,13 +763,15 @@ class AdjointLayoutPlot(BokehPlot):
         """
         if plots is None: plots = []
         adjoined_plots = []
-        for pos in ['main', 'right', 'top']:
+        for pos in self.view_positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
             if subplot:
                 passed_plots = plots  + adjoined_plots
                 adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
+            else:
+                adjoined_plots.append(empty_plot(0, 0))
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots

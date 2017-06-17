@@ -14,7 +14,7 @@ import param
 import numpy as np
 from holoviews import (Dimension, Overlay, DynamicMap, Store, Dataset,
                        NdOverlay, GridSpace, HoloMap, Layout, Cycle,
-                       Palette, Element)
+                       Palette, Element, Empty)
 from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
@@ -1478,6 +1478,18 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
         self.assertEqual((x_range.start, x_range.end), (-.5, .5))
         self.assertEqual((y_range.start, y_range.end), (-.5, .5))
+
+    def test_empty_adjoint_plot(self):
+        adjoint = Curve([0,1,1,2,3]) << Empty() << Curve([0,1,1,0,1])
+        plot = bokeh_renderer.get_plot(adjoint)
+        adjoint_plot = plot.subplots[(0, 0)]
+        self.assertEqual(len(adjoint_plot.subplots), 3)
+        column = plot.state.children[1]
+        row1, row2 = column.children
+        self.assertEqual(row1.children[0].plot_height, row1.children[1].plot_height)
+        self.assertEqual(row1.children[1].plot_width, 0)
+        self.assertEqual(row2.children[1].plot_width, 0)
+        self.assertEqual(row2.children[0].plot_height, row2.children[1].plot_height)
 
     def test_layout_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)

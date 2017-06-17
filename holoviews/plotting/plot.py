@@ -262,6 +262,8 @@ class DimensionedPlot(Plot):
         # Assumes composite objects are iterables
         if hasattr(self, 'subplots') and self.subplots:
             for el in self.subplots.values():
+                if el is None:
+                    continue
                 accumulator += el.traverse(fn, specs, full_breadth)
                 if not full_breadth: break
         return accumulator
