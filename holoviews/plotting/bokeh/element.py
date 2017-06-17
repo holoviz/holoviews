@@ -250,9 +250,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
+        hover_tools = [t for t in tools if isinstance(t, HoverTool)]
         if 'hover' in tools:
             hover = HoverTool(tooltips=tooltips, **hover_opts)
             tools[tools.index('hover')] = hover
+        elif any(hover_tools):
+            hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
         return tools
