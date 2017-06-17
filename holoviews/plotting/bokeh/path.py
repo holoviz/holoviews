@@ -3,7 +3,7 @@ from collections import defaultdict
 import param
 import numpy as np
 
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, FactorRange
 
 from ...core import util
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
@@ -32,6 +32,25 @@ class PathPlot(ElementPlot):
         xs = [] if empty else [path[:, xidx] for path in element.data]
         ys = [] if empty else [path[:, yidx] for path in element.data]
         return dict(xs=xs, ys=ys), dict(self._mapping)
+
+
+    def _categorize_data(self, data, cols, dims):
+        """
+        Transforms non-string or integer types in datasource if the
+        axis to be plotted on is categorical. Accepts the column data
+        source data, the columns corresponding to the axes and the
+        dimensions for each axis, changing the data inplace.
+        """
+        if self.invert_axes:
+            cols = cols[::-1]
+            dims = dims[:2][::-1]
+        ranges = [self.handles['%s_range' % ax] for ax in 'xy']
+        for i, col in enumerate(cols):
+            column = data[col]
+            if (isinstance(ranges[i], FactorRange) and
+                (isinstance(column, list) or column.dtype.kind not in 'SU')):
+                data[col] = [[dims[i].pprint_value(v) for v in vals] for vals in column]
+
 
     def get_batched_data(self, element, ranges=None, empty=False):
         data = defaultdict(list)
