@@ -814,6 +814,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
         self._test_colormapping(spikes, 1)
 
+    def test_empty_spikes_plot(self):
+        spikes = Spikes([], vdims=['Intensity'])
+        plot = bokeh_renderer.get_plot(spikes)
+        source = plot.handles['source']
+        self.assertEqual(len(source.data['xs']), 0)
+        self.assertEqual(len(source.data['ys']), 0)
+
     def test_side_histogram_no_cmapper(self):
         points = Points(np.random.rand(100, 2))
         plot = bokeh_renderer.get_plot(points.hist())
