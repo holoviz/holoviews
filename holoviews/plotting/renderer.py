@@ -11,7 +11,7 @@ from contextlib import contextmanager
 import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering
-from ..core.util import find_file, unicode, unbound_dimensions
+from ..core.util import find_file, unicode, unbound_dimensions, basestring
 from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
@@ -466,7 +466,9 @@ class Renderer(Exporter):
 
         if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
             with StoreOptions.options(obj, options, **kwargs):
-                self_or_cls.export_widgets(plot, basename+'.html', fmt)
+                if isinstance(basename, basestring):
+                    basename = basename+'.html'
+                self_or_cls.export_widgets(plot, basename, fmt)
             return
 
         with StoreOptions.options(obj, options, **kwargs):
