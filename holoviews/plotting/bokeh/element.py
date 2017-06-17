@@ -1302,7 +1302,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if self.batched:
                 self.handles['plot'] = child
             if self.tabs:
-                title = get_tab_title(key, frame, self.hmap.last)
+                title = subplot._format_title(key, dimensions=False)
+                if not title:
+                    title = get_tab_title(key, frame, self.hmap.last)
                 panels.append(Panel(child=child, title=title))
             self._merge_tools(subplot)
 

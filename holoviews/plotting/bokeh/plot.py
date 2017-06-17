@@ -661,16 +661,14 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 if len(subplots) == 1 and c in insert_cols:
                     plots[r+offset].append(None)
                 passed_plots.append(subplots[0])
+                if self.tabs:
+                    title = subplot.subplots['main']._format_title(self.keys[-1],
+                                                                   dimensions=False)
+                    if not title:
+                        title = ' '.join(self.paths[r,c])
+                    tab_titles[r, c] = title
             else:
                 plots[r+offset] += [empty_plot(0, 0)]
-
-            if self.tabs:
-                if isinstance(self.layout, Layout):
-                    tab_titles[r, c] = ' '.join(self.paths[r,c])
-                else:
-                    dim_vals = zip(self.layout.kdims, self.paths[r, c])
-                    tab_titles[r, c] = ', '.join([d.pprint_value_string(k)
-                                                  for d, k in dim_vals])
 
         # Replace None types with empty plots
         # to avoid bokeh bug
