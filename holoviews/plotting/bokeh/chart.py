@@ -537,7 +537,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
 
         pos = self.position
         mapping = dict(xs='xs', ys='ys')
-        if empty:
+        if len(element) == 0:
             xs, ys = [], []
         elif len(dims) > 1:
             xs, ys = zip(*((np.array([x, x]), np.array([pos+y, pos]))
