@@ -58,8 +58,7 @@ class MPLRenderer(Renderer):
 
     mode = param.ObjectSelector(default='default',
                                 objects=['default', 'nbagg'], doc="""
-         The 'mpld3' mode uses the mpld3 library whereas the 'nbagg' uses
-         matplotlib's the experimental nbagg backend. """)
+         The 'nbagg' mode uses matplotlib's nbagg backend. """)
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
