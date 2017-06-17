@@ -26,11 +26,7 @@ var MPLMethods = {
 	},
 	populate_cache : function(idx){
 		var cache_id = "_anim_img"+this.id+"_"+idx;
-		if(this.mode == 'mpld3') {
-			mpld3.draw_figure(cache_id, this.frames[idx]);
-		} else {
-			this.cache[idx].html(this.frames[idx]);
-		}
+		this.cache[idx].html(this.frames[idx]);
 		if (this.embed) {
 			delete this.frames[idx];
 		}
