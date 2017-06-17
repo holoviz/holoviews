@@ -725,17 +725,21 @@ class GenericElementPlot(DimensionedPlot):
         return xlabel, ylabel, zlabel
 
 
-    def _format_title(self, key, separator='\n'):
+    def _format_title(self, key, dimensions=True, separator='\n'):
         frame = self._get_frame(key)
         if frame is None: return None
         type_name = type(frame).__name__
         group = frame.group if frame.group != type_name else ''
         label = frame.label
 
-        dim_title = self._frame_title(key, separator=separator)
         if self.layout_dimensions:
+            dim_title = self._frame_title(key, separator=separator)
             title = dim_title
         else:
+            if dimensions:
+                dim_title = self._frame_title(key, separator=separator)
+            else:
+                dim_title = ''
             title_format = util.bytes_to_unicode(self.title_format)
             title = title_format.format(label=util.bytes_to_unicode(label),
                                         group=util.bytes_to_unicode(group),
@@ -995,8 +999,8 @@ class GenericCompositePlot(DimensionedPlot):
         return len(self.keys)
 
 
-    def _format_title(self, key, separator='\n'):
-        dim_title = self._frame_title(key, 3, separator)
+    def _format_title(self, key, dimensions=True, separator='\n'):
+        dim_title = self._frame_title(key, 3, separator) if dimensions else ''
         layout = self.layout
         type_name = type(self.layout).__name__
         group = util.bytes_to_unicode(layout.group if layout.group != type_name else '')
