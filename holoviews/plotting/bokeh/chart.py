@@ -397,7 +397,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         Whether to display the plot title.""")
 
     default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
-                                        'box_zoom', 'reset', 'box_select'],
+                                        'box_zoom', 'reset', 'ybox_select'],
         doc="A list of plugin tools to use on the plot.")
 
     _callback = """
