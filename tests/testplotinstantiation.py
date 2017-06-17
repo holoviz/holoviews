@@ -1126,8 +1126,12 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
         self.assertIsInstance(x_range, FactorRange)
+        factors = ['A', 'B', 'C', 'D', 'E']
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D', 'E'])
         self.assertIsInstance(y_range, Range1d)
+        error_plot = plot.subplots[('ErrorBars', 'I')]
+        for xs, factor in zip(error_plot.handles['source'].data['xs'], factors):
+            self.assertEqual([factor, factor], xs)
 
     def test_points_errorbars_text_ndoverlay_categorical_xaxis_invert_axes(self):
         overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))
