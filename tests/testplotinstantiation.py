@@ -686,6 +686,15 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         obj = obj(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
+    def test_hover_tool_instance_renderer_association(self):
+        hover = HoverTool(tooltips=[("index", "$index")])
+        opts = dict(tools=[hover])
+        overlay = Curve(np.random.rand(10,2))(plot=opts) * Points(np.random.rand(10,2))
+        plot = bokeh_renderer.get_plot(overlay)
+        curve_plot = plot.subplots[('Curve', 'I')]
+        self.assertEqual(len(curve_plot.handles['hover'].renderers), 1)
+        self.assertIn(curve_plot.handles['glyph_renderer'], curve_plot.handles['hover'].renderers)
+
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)
         plot.initialize_plot()
