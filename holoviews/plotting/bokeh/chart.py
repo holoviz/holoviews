@@ -18,7 +18,7 @@ from ..util import compute_sizes, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
                       fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import bokeh_version, expand_batched_style, categorize_array
+from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -765,6 +765,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             if cmap is None and factors:
                 styles = self.style.max_cycles(len(factors))
                 colors = [styles[i]['color'] for i in range(len(factors))]
+                colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
             else:
                 colors = None
         else:
