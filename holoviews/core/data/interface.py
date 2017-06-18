@@ -66,12 +66,10 @@ class ndloc(object):
         selected = self.dataset.interface.ndloc(ds, indices)
         if np.isscalar(selected):
             return selected
-        datatype = [dt for dt in ds.datatype if dt in Interface.interfaces and
-                    Interface.interfaces[dt].gridded]
         params = {}
         if hasattr(ds, 'bounds'):
             params['bounds'] = None
-        return self.dataset.clone(selected, datatype=[ds.interface.datatype]+datatype, **params)
+        return self.dataset.clone(selected, datatype=[ds.interface.datatype]+ds.datatype, **params)
 
 
 class Interface(param.Parameterized):
