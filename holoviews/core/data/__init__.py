@@ -628,7 +628,9 @@ class Dataset(Element):
     def iloc(self):
         """
         Returns a TabularIndex, providing a convenient interface to
-        slice and index into the Dataset using row and column indices.
+        slice and index into the Dataset using row and column indices,
+        allow selection by integer index, slice and list of integer
+        indices and boolean arrays.
         """
         return TabularIndex(self)
 

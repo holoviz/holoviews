@@ -9,7 +9,7 @@ from .. import util
 class TabularIndex(object):
     """
     TabularIndex is small wrapper object that allows row, column
-    based indexing into a Dataset using the ``iloc`` property.
+    based indexing into a Dataset using the ``.iloc`` property.
     It supports the usual numpy and pandas iloc indexing semantics
     including integer indices, slices, lists and arrays of values.
     """
