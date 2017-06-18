@@ -335,6 +335,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         are continuously indexed and will always snap to the nearest
         coordinate.
         """
+        kwargs = {k: v for k, v in kwargs.items() if k != 'closest'}
         if kwargs and samples:
             raise Exception('Supply explicit list of samples or kwargs, not both.')
         elif kwargs:
