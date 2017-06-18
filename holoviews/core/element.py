@@ -228,8 +228,7 @@ class Tabular(Element):
             return self.kdims[col].pprint_label
         else:
             dim = self.get_dimension(col)
-            values = self[dim.name]
-            return dim.pprint_value(values[row-1])
+            return dim.pprint_value(self.iloc[row-1, col])
 
 
     def cell_type(self, row, col):
