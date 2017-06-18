@@ -369,7 +369,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             if len(s) > 1:
                 y, x = self.sheet2matrixidx(*s)
                 xs.append(x)
-                ys.append(shape[0]-y)
+                ys.append(shape[0]-y-1)
         data = self.interface.ndloc(self, (ys, xs))
         return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
 
