@@ -597,17 +597,7 @@ class decimate(Operation):
 
         if len(sliced) > self.p.max_samples:
             prng = np.random.RandomState(self.p.random_seed)
-            length = len(sliced)
-            if element.interface is PandasInterface:
-                data = sliced.data.sample(self.p.max_samples,
-                                          random_state=prng)
-            else:
-                inds = prng.choice(length, self.p.max_samples, False)
-                if isinstance(element.interface, DictInterface):
-                    data = {k: v[inds] for k, v in sliced.data.items()}
-                else:
-                    data = sliced.data[inds, :]
-            sliced = element.clone(data)
+            return element.iloc[prng.choice(len(sliced), self.p.max_samples, False)]
         return sliced
 
     def _process(self, element, key=None):
