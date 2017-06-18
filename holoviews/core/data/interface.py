@@ -53,6 +53,27 @@ class iloc(object):
                                   datatype=datatype)
 
 
+class ndloc(object):
+
+    def __init__(self, dataset):
+        self.dataset = dataset
+
+    def __getitem__(self, indices):
+        ds = self.dataset
+        indices = util.wrap_tuple(indices)
+        if not ds.interface.gridded:
+            raise IndexError('Cannot use ndloc on non nd-dimensional datastructure')
+        selected = self.dataset.interface.ndloc(ds, indices)
+        if np.isscalar(selected):
+            return selected
+        datatype = [dt for dt in ds.datatype if dt in Interface.interfaces and
+                    Interface.interfaces[dt].gridded]
+        params = {}
+        if hasattr(ds, 'bounds'):
+            params['bounds'] = None
+        return self.dataset.clone(selected, datatype=[ds.interface.datatype]+datatype, **params)
+
+
 class Interface(param.Parameterized):
 
     interfaces = {}

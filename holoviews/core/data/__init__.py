@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from .interface import Interface, iloc
+from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
@@ -633,6 +633,11 @@ class Dataset(Element):
         indices and boolean arrays.
         """
         return iloc(self)
+
+
+    @property
+    def ndloc(self):
+        return ndloc(self)
 
 
 # Aliases for pickle backward compatibility

@@ -1,4 +1,4 @@
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict, defaultdict, Iterable
 
 try:
     import itertools.izip as zip
@@ -165,6 +165,53 @@ class GridInterface(DictInterface):
         if len(dataset.kdims) < 2:
             data = data.flatten()
         return data
+
+
+    @classmethod
+    def invert_index(cls, index, length):
+        if np.isscalar(index):
+            return length - index
+        elif isinstance(index, slice):
+            start, stop = index.start, index.stop
+            new_start, new_stop = None, None
+            if start is not None:
+                new_stop = length - start
+            if stop is not None:
+                new_start = length - stop
+            return slice(new_start-1, new_stop-1)
+        elif isinstance(index, Iterable):
+            new_index = []
+            for ind in index:
+                new_index.append(length-ind)
+        return new_index
+
+
+    @classmethod
+    def ndloc(cls, dataset, indices):
+        selected = {}
+        adjusted_inds = []
+        all_scalar = True
+        for kd, ind in zip(dataset.kdims[::-1], indices):
+            coords = cls.coords(dataset, kd.name)
+            if np.all(coords[1:] < coords[:-1]):
+                ind = cls.invert_index(ind, len(coords))
+            if np.isscalar(ind):
+                ind = [ind]
+            else:
+                all_scalar = False
+            selected[kd.name] = coords[ind]
+            adjusted_inds.append(ind)
+        for kd in dataset.kdims:
+            if kd.name not in selected:
+                coords = cls.coords(dataset, kd.name)
+                selected[kd.name] = coords
+                all_scalar = False
+        for vd in dataset.vdims:
+            arr = dataset.dimension_values(vd, flat=False)
+            if all_scalar and len(dataset.vdims) == 1:
+                return arr[tuple(ind[0] for ind in adjusted_inds)]
+            selected[vd.name] = arr[tuple(adjusted_inds)]
+        return tuple(selected[d.name] for d in dataset.dimensions())
 
 
     @classmethod
