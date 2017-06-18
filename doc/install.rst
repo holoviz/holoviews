@@ -39,10 +39,9 @@ packages that provide additional functionality in HoloViews::
 
   pip install 'holoviews[extras]'
 
-This option installs all the required and recommended packages, plus
-the optional `mpld3 <http://mpld3.github.io/>`_, 
-`pandas <http://pandas.pydata.org/>`_ and 
-`Seaborn <http://stanford.edu/~mwaskom/software/seaborn/>`_ libraries.
+This option installs all the required and recommended packages,
+including the `pandas <http://pandas.pydata.org/>`_ and `Seaborn
+<http://stanford.edu/~mwaskom/software/seaborn/>`_ libraries.
 
 Lastly, to get *everything*, including `cyordereddict
 <https://pypi.python.org/pypi/cyordereddict>`_ to enable optional

@@ -241,8 +241,8 @@ class SelectionWidget(NdWidget):
     update the widget with a live IPython kernel.
 
     The widget supports all current HoloViews figure backends
-    including png, svg, mpld3 and nbagg output. To select nbagg
-    output, the SelectionWidget must not be set to embed.
+    including png, svg and nbagg output. To select nbagg output,
+    the SelectionWidget must not be set to embed.
 
     Just like the ScrubberWidget the data can be optionally saved
     to json and dynamically loaded from a server.

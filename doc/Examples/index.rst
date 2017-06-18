@@ -58,11 +58,6 @@ Extensions
 Examples of how the core functionality offered by HoloViews may be
 extended in new (and unexpected!) directions:
 
-* `Interactive plots with mpld3
-  <http://philippjfr.com/blog/interactive-plots-with-holoviews-and-mpld3/>`_:
-  Example usage of the mpld3 rendering backend allowing you to
-  generate D3.js-based plots with interactive widgets.
-
 * `Using HoloViews from Julia
   <http://philippjfr.com/blog/interfacing-holoviews-with-julia/>`_: 
   A prototype interface to allow HoloViews to be used from the Julia

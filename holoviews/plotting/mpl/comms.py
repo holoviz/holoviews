@@ -19,13 +19,6 @@ target.children().each(function () {{ $(this).remove() }})
 target.append(img)
 """
 
-mpld3_msg_handler = """
-/* Backend specific body of the msg_handler, updates displayed frame */
-target = $('#fig_el{comm_id}');
-target.children().each(function () {{ $(this).remove() }});
-mpld3.draw_figure("fig_el{comm_id}", msg);
-"""
-
 class NbAggCommSocket(CommSocket):
     """
     NbAggCommSocket subclasses the matplotlib CommSocket allowing
