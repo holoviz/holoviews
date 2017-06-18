@@ -11,7 +11,8 @@ class iloc(object):
     iloc is small wrapper object that allows row, column based
     indexing into a Dataset using the ``.iloc`` property.  It supports
     the usual numpy and pandas iloc indexing semantics including
-    integer indices, slices, lists and arrays of values.
+    integer indices, slices, lists and arrays of values. For more
+    information see the ``Dataset.iloc`` property docstring.
     """
 
     def __init__(self, dataset):
@@ -54,6 +55,13 @@ class iloc(object):
 
 
 class ndloc(object):
+    """
+    ndloc is a small wrapper object that allows ndarray-like indexing
+    for gridded Datasets using the ``.ndloc`` property. It supports
+    the standard NumPy ndarray indexing semantics including
+    integer indices, slices, lists and arrays of values. For more
+    information see the ``Dataset.ndloc`` property docstring.
+    """
 
     def __init__(self, dataset):
         self.dataset = dataset

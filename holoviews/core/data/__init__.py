@@ -629,16 +629,54 @@ class Dataset(Element):
     @property
     def iloc(self):
         """
-        Returns an iloc object, providing a convenient interface to
-        slice and index into the Dataset using row and column indices,
-        allow selection by integer index, slice and list of integer
-        indices and boolean arrays.
+        Returns an iloc object providing a convenient interface to
+        slice and index into the Dataset using row and column indices.
+        Allow selection by integer index, slice and list of integer
+        indices and boolean arrays, e.g.:
+
+        Examples:
+
+        * Index the first row and column:
+
+            dataset.iloc[0, 0]
+
+        * Select rows 1 and 2 with a slice:
+
+            dataset.iloc[1:3, :]
+
+        * Select with a list of integer coordinates:
+
+            dataset.iloc[[0, 2, 3]]
         """
         return iloc(self)
 
 
     @property
     def ndloc(self):
+        """
+        Returns an ndloc object providing nd-array like indexing for
+        gridded datasets. Follows NumPy array indexing conventions,
+        allowing for indexing, slicing and selecting a list of indices
+        on multi-dimensional arrays using integer indices. The order
+        of array indices is inverted Dataset key dimensions, e.g. an
+        Image with key dimensions 'x' and 'y' can be indexed with
+        ``image.ndloc[iy, ix]``, where ``iy`` and ``ix`` are integer
+        indices along the y and x dimensions.
+
+        Examples:
+
+        * Index value in 2D array:
+
+            dataset.ndloc[3, 1]
+
+        * Slice along y-axis of 2D array:
+
+            dataset.ndloc[2:5, :]
+
+        * Select with integer coordinates along x- and y-axes:
+
+            dataset.ndloc[[1, 2, 3], [0, 2, 3]]
+        """
         return ndloc(self)
 
 
