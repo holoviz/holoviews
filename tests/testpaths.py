@@ -62,7 +62,7 @@ class BoxTests(ComparisonTestCase):
 
 
     def test_box_tuple_constructor_rotated(self):
-        box = Box(0,0,(1,2), orientation=np.pi/8)
+        box = Box(0,0,(2,1), orientation=np.pi/8)
         self.assertEqual(np.allclose(box.data[0], self.rotated_rect), True)
 
     def test_box_aspect_constructor_rotated(self):
