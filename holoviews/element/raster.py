@@ -7,7 +7,7 @@ from ..core import util
 from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
-from ..core.sheetcoords import SheetCoordinateSystem
+from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import max_range
 from .chart import Curve
 from .tabular import Table
@@ -298,21 +298,29 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in self.kdims)
 
+        shape = self.interface.shape(self, gridded=True)
         if any([isinstance(el, slice) for el in coords]):
-            shape = self.interface.shape(self, gridded=True)
             bounds = compute_slice_bounds(coords, self, shape[:2])
 
             xdim, ydim = self.kdims
             l, b, r, t = bounds.lbrt()
-            selection = {xdim.name: slice(l, r), ydim.name: slice(b, t)}
-        else:
-            selection = {kd.name: c for kd, c in zip(self.kdims, self.closest(coords))}
 
-        data = self.interface.select(self, **selection)
-        if isinstance(data, np.ndarray) and data.ndim == 1:
-            return self.clone([tuple(data)], kdims=[], new_type=Dataset)
-        elif np.isscalar(data):
-            return data
+            # Situate resampled region into overall slice
+            y0, y1, x0, x1 = Slice(bounds, self)
+            y0, y1 = shape[0]-y1, shape[0]-y0
+            selection = (slice(y0, y1), slice(x0, x1))
+            sliced = True
+        else:
+            y, x = self.sheet2matrixidx(coords[0], coords[1])
+            y = shape[0]-y-1
+            selection = (y, x)
+            sliced = False
+
+        data = self.interface.ndloc(self, selection)
+        if not sliced:
+            if np.isscalar(data):
+                return data
+            return self.clone(data[self.ndims:], kdims=[], new_type=Dataset)
         else:
             return self.clone(data, xdensity=self.xdensity,
                               ydensity=self.ydensity, bounds=bounds)
