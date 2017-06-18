@@ -911,6 +911,44 @@ class GridTests(object):
         self.assertEqual(dataset.dimension_values('z', flat=False),
                          canonical)
 
+    def test_dataset_ndloc_index(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[0,0], arr[0, 0])
+
+    def test_dataset_ndloc_index2(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[4, 9], arr[4, 9])
+
+    def test_dataset_ndloc_slice(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        sliced = Dataset((xs[2:5], ys[1:], arr[1:, 2:5]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[1:, 2:5], sliced)
+
+    def test_dataset_ndloc_lists(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype, 'dictionary'])
+        sliced = Dataset((xs[[1, 2, 3]], ys[[0, 1, 2]], arr[[0, 1, 2], [1, 2, 3]]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=['dictionary'])
+        self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
+
+    def test_dataset_ndloc_slice_two_vdims(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        arr2 = (np.arange(10)*np.arange(5)[np.newaxis].T)[::-1]
+        ds = Dataset((xs, ys, arr, arr2), kdims=['x', 'y'], vdims=['z', 'z2'], datatype=[self.datatype, 'dictionary'])
+        sliced = Dataset((xs[[1, 2, 3]], ys[[0, 1, 2]], arr[[0, 1, 2], [1, 2, 3]],
+                          arr2[[0, 1, 2], [1, 2, 3]]), kdims=['x', 'y'], vdims=['z', 'z2'],
+                         datatype=['dictionary'])
+        self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
+
     def test_dataset_dim_vals_grid_kdims_xs(self):
         self.assertEqual(self.dataset_grid.dimension_values(0, expanded=False),
                          np.array([0, 1]))
@@ -1246,6 +1284,9 @@ class IrisDatasetTest(GridDatasetTest):
         raise SkipTest("Not supported")
 
     def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_ndloc_slice_two_vdims(self):
         raise SkipTest("Not supported")
 
 
