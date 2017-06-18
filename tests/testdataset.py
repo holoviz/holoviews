@@ -872,7 +872,8 @@ class GridTests(object):
         self.restore_datatype = Dataset.datatype
         Dataset.datatype = ['grid']
         self.data_instance_type = dict
-        self.init_data()
+        self.init_column_data()
+        self.init_grid_data()
 
     def init_column_data(self):
         self.xs = np.arange(11)
@@ -1308,10 +1309,10 @@ class XArrayDaskArrayDatasetTest(XArrayDatasetTest):
 
     def init_column_data(self):
         import dask.array
-        self.xs = range(11)
-        self.xs_2 = [el**2 for el in self.xs]
+        self.xs = np.array(range(11))
+        self.xs_2 = self.xs**2
 
-        self.y_ints = [i*2 for i in range(11)]
+        self.y_ints = self.xs*2
         dask_y = dask.array.from_array(np.array(self.y_ints), 2)
         self.dataset_hm = Dataset((self.xs, dask_y),
                                   kdims=['x'], vdims=['y'])
