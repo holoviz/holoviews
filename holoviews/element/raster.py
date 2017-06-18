@@ -364,13 +364,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             new_type = Dataset
             kdims = self.kdims
 
-        xs, ys = [], []
-        for s in samples:
-            if len(s) > 1:
-                y, x = self.sheet2matrixidx(*s)
-                xs.append(x)
-                ys.append(shape[0]-y-1)
-        data = self.interface.ndloc(self, (ys, xs))
+        xs, ys = zip(*samples)
+        yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
+        yidx = shape[0]-yidx-1
+        data = self.interface.ndloc(self, (yidx, xidx))
         return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
 
 
