@@ -433,7 +433,9 @@ class Dataset(Element):
             else:
                 selection = tuple(selection.columns(kdims+self.vdims).values())
 
-            return self.clone(selection, kdims=kdims, new_type=new_type)
+            datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
+            return self.clone(selection, kdims=kdims, new_type=new_type,
+                              datatype=datatype)
 
         lens = set(len(util.wrap_tuple(s)) for s in samples)
         if len(lens) > 1:
