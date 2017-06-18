@@ -2,7 +2,7 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset
+from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset, Table
 from holoviews.element.comparison import ComparisonTestCase
 
 from .testdataset import DatatypeContext
@@ -117,6 +117,18 @@ class ImageInterfaceTest(ComparisonTestCase):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.image):
             self.assertEqual(self.image.sample(y=5),
                              Curve((xs, zs), kdims=['x'], vdims=['z']))
+
+    def test_sample_coords(self):
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        xs = np.linspace(0.12, 0.81, 10)
+        ys = np.linspace(0.12, 0.391, 5)
+        img = Image((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        sampled = img.sample([(0.15, 0.15), (0.15, 0.4), (0.8, 0.4), (0.8, 0.15)])
+        self.assertIsInstance(sampled, Table)
+        yidx = [0, 4, 4, 0]
+        xidx = [0, 0, 9, 9]
+        table = Table((xs[xidx], ys[yidx], arr[yidx, xidx]), kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(sampled, table)
 
     def test_reduce_to_scalar(self):
         self.assertEqual(self.image.reduce(['x', 'y'], function=np.mean),
