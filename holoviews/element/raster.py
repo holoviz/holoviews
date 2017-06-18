@@ -345,6 +345,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             samples = [tuple(sample)]
 
         # If a 1D cross-section of 2D space return Curve
+        shape = self.interface.shape(self, gridded=True)
         if len(samples) == 1:
             dims = [kd for kd, v in zip(self.kdims, samples[0]) if not np.isscalar(v)]
             if len(dims) == 1:
@@ -368,9 +369,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             if len(s) > 1:
                 y, x = self.sheet2matrixidx(*s)
                 xs.append(x)
-                ys.append(y)
+                ys.append(shape[0]-y)
         data = self.interface.ndloc(self, (ys, xs))
-        return self.clone(data, new_type=Dataset, datatype=['dataframe', 'dict'])
+        return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
 
 
     def closest(self, coords=[], **kwargs):
