@@ -190,7 +190,7 @@ class Box(BaseShape):
             if 'aspect' in params:
                 raise ValueError('Aspect parameter not supported when supplying '
                                  '(width, height) specification.')
-            (height, width) = spec
+            (width, height ) = spec
         else:
             width, height = params.get('width', spec), spec
 
