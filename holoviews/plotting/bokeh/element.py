@@ -489,6 +489,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             elif isinstance(ticker, (tuple, list)):
                 if all(isinstance(t, tuple) for t in ticker):
                     ticks, labels = zip(*ticker)
+                    labels = [l if isinstance(l, util.basestring) else str(l)
+                              for l in labels]
                     axis_props['ticker'] = FixedTicker(ticks=ticks)
                     if bokeh_version > '0.12.5':
                         axis_props['major_label_overrides'] = dict(ticker)
@@ -583,7 +585,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Transforms non-string or integer types in datasource if the
         axis to be plotted on is categorical. Accepts the column data
-        sourcec data, the columns corresponding to the axes and the
+        source data, the columns corresponding to the axes and the
         dimensions for each axis, changing the data inplace.
         """
         if self.invert_axes:
