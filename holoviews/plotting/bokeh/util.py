@@ -477,7 +477,10 @@ def update_plot(old, new):
                 old_renderers.pop(old_renderers.index(old_r))
                 new_props = new_r.properties_with_values()
                 source = new_props.pop('data_source')
-                old_r.glyph.update(**new_r.glyph.properties_with_values())
+                value_props = new_r.glyph.properties_with_values()
+                value_props = {k: v for k, v in value_props.items()
+                               if not (isinstance(v, dict) and 'units' in v)}
+                old_r.glyph.update(**value_props)
                 old_r.update(**new_props)
                 old_r.data_source.data.update(source.data)
                 updated.append(old_r)

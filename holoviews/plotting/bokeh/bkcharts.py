@@ -1,7 +1,7 @@
 from __future__ import absolute_import
 
 import param
-from bokeh.models import GlyphRenderer
+from bokeh.models import GlyphRenderer, ColumnDataSource, DataRange1d, Range1d
 
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core.spaces import DynamicMap
