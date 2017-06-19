@@ -5,13 +5,13 @@ a simple HoloViews plot with custom widgets and combine them
 into a bokeh layout.
 """
 import numpy as np
+import holoviews as hv
+
 from bokeh.io import curdoc
 from bokeh.layouts import layout
 from bokeh.models import Slider, Button
-import holoviews as hv
-import holoviews.plotting.bokeh # noqa (Activate backend)
 
-renderer = hv.Store.renderers['bokeh']
+renderer = hv.renderer('bokeh')
 
 start = 0
 end = 10
