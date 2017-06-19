@@ -53,7 +53,7 @@ html_context = {
     # Links
     'LINKS': (
         ('Getting started', 'getting_started/index.html'),
-        ('User Guides', 'user_guide/index.html'),
+        ('User Guide', 'user_guide/index.html'),
         ('Tutorials', 'Tutorials/index.html'),
         ('Gallery', 'Gallery/index.html'),
         ('Reference', 'Reference_Manual/index.html'),
@@ -72,7 +72,7 @@ html_context = {
     # Links for the docs sub navigation
     'NAV_DOCS': (
         ('Getting started', 'getting_started/index'),
-        ('User Guides', 'user_guide/index'),
+        ('User Guide', 'user_guide/index'),
         ('Tutorials', 'Tutorials/index'),
         ('Gallery', 'gallery/index'),
         ('Reference', 'Reference_Manual/index'),
