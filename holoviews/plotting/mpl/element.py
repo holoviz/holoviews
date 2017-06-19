@@ -652,6 +652,12 @@ class ColorbarPlot(ElementPlot):
                 cs = np.array(cs)
             if len(cs) and cs.dtype.kind in 'if':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
+                if self.logz:
+                    # Lower clim must be >0 when logz=True
+                    # Choose the maximum between the lowest non-zero value
+                    # and the overall range
+                    vals = element.dimension_values(vdim)
+                    clim = (min([vals[vals!=0].min(), clim[0]]), clim[1])
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
             else:
@@ -659,7 +665,7 @@ class ColorbarPlot(ElementPlot):
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
-                                         linthresh=clim[1]/np.e)
+                                             linthresh=clim[1]/np.e)
             else:
                 norm = mpl_colors.LogNorm(vmin=clim[0], vmax=clim[1])
             opts['norm'] = norm
