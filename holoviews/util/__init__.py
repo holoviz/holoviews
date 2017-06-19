@@ -163,13 +163,13 @@ def renderer(name):
     Helper utility to access the active renderer for a given extension.
     """
     try:
+        if name not in Store.renderers:
+            extension(name)
         return Store.renderers[name]
-    except KeyError:
-        msg = ('Could not find a {name!r} renderer in list of available '
-               'renderers: {available}. Please make sure the appropriate extension '
-               'has been loaded with hv.extension().')
-        raise KeyError(msg.format(name=name,
-                                  available=', '.join(repr(k) for k in Store.renderers)))
+    except ImportError:
+        msg = ('Could not find a {name!r} renderer, available renderers are: {available}.')
+        available = ', '.join(repr(k) for k in Store.renderers)
+        raise ImportError(msg.format(name=name, available=available))
 
 
 class extension(param.ParameterizedFunction):
