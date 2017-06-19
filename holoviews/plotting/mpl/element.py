@@ -656,8 +656,9 @@ class ColorbarPlot(ElementPlot):
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value
                     # and the overall range
-                    vals = element.dimension_values(vdim)
-                    clim = (min([vals[vals!=0].min(), clim[0]]), clim[1])
+                    if clim[0] == 0:
+                        vals = element.dimension_values(vdim)
+                        clim = (vals[vals!=0].min(), clim[1])
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
             else:
