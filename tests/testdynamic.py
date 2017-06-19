@@ -28,13 +28,13 @@ class DynamicMapConstructor(ComparisonTestCase):
         DynamicMap(lambda x: x, kdims=['test'])
 
     def test_simple_constructor_invalid_no_kdims(self):
-        regexp = ('Callable accepts more positional arguments than there are '
-                  'kdims and stream parameters')
+        regexp = ("Callable '<lambda>' accepts more positional arguments than there are "
+                  "kdims and stream parameters")
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(lambda x: x)
 
     def test_simple_constructor_invalid(self):
-        regexp = ("Callback signature over \['x'\] does not accommodate "
+        regexp = ("Callback '<lambda>' signature over \['x'\] does not accommodate "
                   "required kdims \['x', 'y'\]")
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(lambda x: x, kdims=['x','y'])
@@ -55,7 +55,7 @@ class DynamicMapConstructor(ComparisonTestCase):
             DynamicMap(lambda x: x, streams=[3])
 
     def test_simple_constructor_streams_invalid_mismatch(self):
-        regexp = 'Callable missing keywords to accept y stream parameters'
+        regexp = "Callable '<lambda>' missing keywords to accept y stream parameters"
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
