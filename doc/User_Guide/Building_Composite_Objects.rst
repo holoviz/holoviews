@@ -1,0 +1,1 @@
+.. notebook:: holoviews ../../guides/user_guide/Building_Composite_Objects.ipynb

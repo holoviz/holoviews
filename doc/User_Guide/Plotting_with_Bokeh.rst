@@ -1,0 +1,1 @@
+.. notebook:: holoviews ../../guides/user_guide/Plotting_with_Bokeh.ipynb

@@ -1,0 +1,1 @@
+.. notebook:: holoviews ../../guides/user_guide/Gridded_Datasets.ipynb

@@ -1,0 +1,1 @@
+.. notebook:: holoviews ../../guides/user_guide/Continuous_Coordinates.ipynb
