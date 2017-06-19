@@ -59,6 +59,12 @@ class DynamicMapConstructor(ComparisonTestCase):
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(lambda x: x, streams=[PointerXY()])
 
+    def test_simple_constructor_streams_invalid_mismatch_named(self):
+
+        def foo(x): return x
+        regexp = "Callable 'foo' missing keywords to accept y stream parameters"
+        with self.assertRaisesRegexp(KeyError, regexp):
+            DynamicMap(foo, streams=[PointerXY()])
 
 
 class DynamicMapMethods(ComparisonTestCase):
