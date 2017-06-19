@@ -710,7 +710,7 @@ class DynamicMap(HoloMap):
             if util.stream_parameters(self.streams) != []:
                 raise Exception(prefix + ' cannot accept any stream parameters')
 
-        self._posarg_keys = util.validate_dynamic_argspec(self.callback.argspec,
+        self._posarg_keys = util.validate_dynamic_argspec(self.callback,
                                                           self.kdims,
                                                           self.streams)
         # Set source to self if not already specified

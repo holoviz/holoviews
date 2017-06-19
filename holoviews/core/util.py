@@ -210,7 +210,7 @@ def argspec(callable_obj):
 
 
 
-def validate_dynamic_argspec(argspec, kdims, streams):
+def validate_dynamic_argspec(callback, kdims, streams):
     """
     Utility used by DynamicMap to ensure the supplied callback has an
     appropriate signature.
@@ -228,7 +228,8 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     If the callback doesn't use **kwargs, the accepted keywords are
     validated against the stream parameter names.
     """
-
+    argspec = callback.argspec
+    name = callback.name
     kdims = [kdim.name for kdim in kdims]
     stream_params = stream_parameters(streams)
     defaults = argspec.defaults if argspec.defaults else []
@@ -240,36 +241,40 @@ def validate_dynamic_argspec(argspec, kdims, streams):
     if argspec.keywords is None:
         unassigned_streams = set(stream_params) - set(argspec.args)
         if unassigned_streams:
-            raise KeyError('Callable missing keywords to accept %s stream parameters'
-                           % ', '.join(unassigned_streams))
+            unassigned = ''.join(unassigned_streams)
+            raise KeyError('Callable {name!r} missing keywords to '
+                           'accept {unassigned} stream parameters'.format(name=name,
+                                                                    unassigned=unassigned))
 
 
     if len(posargs) > len(kdims) + len(stream_params):
-        raise KeyError('Callable accepts more positional arguments than '
-                       'there are kdims and stream parameters')
+        raise KeyError('Callable {name!r} accepts more positional arguments than '
+                       'there are kdims and stream parameters'.format(name=name))
     if kdims == []:                  # Can be no posargs, stream kwargs already validated
         return []
     if set(kdims) == set(posargs):   # Posargs match exactly, can all be passed as kwargs
         return kdims
     elif len(posargs) == len(kdims): # Posargs match kdims length, supplying names
         if argspec.args[:len(kdims)] != posargs:
-            raise KeyError('Unmatched positional kdim arguments only '
-                           'allowed at the start of the signature')
+            raise KeyError('Unmatched positional kdim arguments only allowed at '
+                           'the start of the signature of {name!r}'.format(name=name))
 
         return posargs
     elif argspec.varargs:            # Posargs missing, passed to Callable directly
         return None
     elif set(posargs) - set(kdims):
-        raise KeyError('Callable accepts more positional arguments {posargs} '
-                       'than there are key dimensions {kdims}'.format(posargs=posargs,
+        raise KeyError('Callable {name!r} accepts more positional arguments {posargs} '
+                       'than there are key dimensions {kdims}'.format(name=name,
+                                                                      posargs=posargs,
                                                                       kdims=kdims))
     elif set(kdims).issubset(set(kwargs)): # Key dims can be supplied by keyword
         return kdims
     elif set(kdims).issubset(set(posargs+kwargs)):
         return kdims
     else:
-        raise KeyError('Callback signature over {names} does not accommodate '
-                       'required kdims {kdims}'.format(names=list(set(posargs+kwargs)),
+        raise KeyError('Callback {name!r} signature over {names} does not accommodate '
+                       'required kdims {kdims}'.format(name=name,
+                                                       names=list(set(posargs+kwargs)),
                                                        kdims=kdims))
 
 
