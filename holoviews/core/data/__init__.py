@@ -632,7 +632,7 @@ class Dataset(Element):
         Returns an iloc object providing a convenient interface to
         slice and index into the Dataset using row and column indices.
         Allow selection by integer index, slice and list of integer
-        indices and boolean arrays, e.g.:
+        indices and boolean arrays.
 
         Examples:
 
@@ -658,10 +658,10 @@ class Dataset(Element):
         gridded datasets. Follows NumPy array indexing conventions,
         allowing for indexing, slicing and selecting a list of indices
         on multi-dimensional arrays using integer indices. The order
-        of array indices is inverted Dataset key dimensions, e.g. an
-        Image with key dimensions 'x' and 'y' can be indexed with
-        ``image.ndloc[iy, ix]``, where ``iy`` and ``ix`` are integer
-        indices along the y and x dimensions.
+        of array indices is inverted relative to the Dataset key
+        dimensions, e.g. an Image with key dimensions 'x' and 'y' can
+        be indexed with ``image.ndloc[iy, ix]``, where ``iy`` and
+        ``ix`` are integer indices along the y and x dimensions.
 
         Examples:
 
@@ -673,7 +673,7 @@ class Dataset(Element):
 
             dataset.ndloc[2:5, :]
 
-        * Select with integer coordinates along x- and y-axes:
+        * Vectorized (non-orthogonal) indexing along x- and y-axes:
 
             dataset.ndloc[[1, 2, 3], [0, 2, 3]]
         """
