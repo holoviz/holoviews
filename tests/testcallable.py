@@ -251,7 +251,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
         def fn(A,B):
             return Scatter([(A,2)], label=A)
 
-        regexp="Callable accepts more positional arguments than there are kdims and stream parameters"
+        regexp="Callable 'fn' accepts more positional arguments than there are kdims and stream parameters"
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(fn, kdims=['A'])
 
@@ -300,7 +300,7 @@ class TestDynamicMapInvocation(ComparisonTestCase):
             return Scatter([(x,y)], label=B)
 
         xy = streams.PointerXY(x=1, y=2)
-        regexp = "Callback signature over (.+?) does not accommodate required kdims"
+        regexp = "Callback 'fn' signature over (.+?) does not accommodate required kdims"
         with self.assertRaisesRegexp(KeyError, regexp):
             DynamicMap(fn, kdims=['A'], streams=[xy])
 
