@@ -95,8 +95,10 @@ class Plot3D(ColorbarPlot):
         ax = self.handles['axis']
         # Get colorbar label
         if dim is None:
-            dim = element.vdims[0]
-
+            if hasattr(self, 'color_index'):
+                dim = element.get_dimension(self.color_index)
+            else:
+                dim = element.get_dimension(2)
         elif not isinstance(dim, Dimension):
             dim = element.get_dimension(dim)
         label = dim.pprint_label
@@ -167,7 +169,7 @@ class SurfacePlot(Plot3D):
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride',
-                  'norm', 'edgecolors']
+                  'norm', 'edgecolor']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
@@ -183,7 +185,8 @@ class SurfacePlot(Plot3D):
         rn, cn = mat.shape
         l, b, _, r, t, _ = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
-        self._norm_kwargs(element, ranges, style, element.vdims[0])
+        if self.plot_type != 'wireframe':
+            self._norm_kwargs(element, ranges, style, element.vdims[0])
         return (r, c, mat), style, {}
             
 
