@@ -6,18 +6,17 @@ to compute the mean y-value of the current selection.
 
 import numpy as np
 import holoviews as hv
-import holoviews.plotting.bokeh    # noqa (Activate backend)
 from holoviews.streams import Selection1D
 
-renderer = hv.Store.renderers['bokeh']
+renderer = hv.renderer('bokeh')
 hv.Store.options(backend='bokeh').Points = hv.Options('plot', tools=['box_select'])
 
 data = np.random.multivariate_normal((0, 0), [[1, 0.1], [0.1, 1]], (1000,))
 points = hv.Points(data)
 sel = Selection1D(source=points)
-mean_sel = hv.DynamicMap(lambda index: hv.HLine(points['y'][index].mean()
+mean_sel = hv.DynamicMap(lambda index: hv.HLine(points.iloc[index]['y'].mean()
                                                 if index else -10),
                          kdims=[], streams=[sel])
 
-doc = renderer.app((points * mean_sel))
+doc = renderer.server_doc(points * mean_sel)
 doc.title = 'HoloViews Selection Stream'

@@ -5,7 +5,6 @@ bokeh plots using the HoloViews API and replacing the bokeh plot
 based on the current widget selections.
 """
 import holoviews as hv
-import holoviews.plotting.bokeh # noqa (Activate backend)
 
 from bokeh.layouts import row, widgetbox
 from bokeh.models import Select
@@ -39,7 +38,7 @@ discrete = [x for x in columns if df[x].dtype == object]
 continuous = [x for x in columns if x not in discrete]
 quantileable = [x for x in continuous if len(df[x].unique()) > 20]
 
-renderer = hv.Store.renderers['bokeh']
+renderer = hv.renderer('bokeh')
 options = hv.Store.options(backend='bokeh')
 options.Points = hv.Options('plot', width=800, height=600, size_index=None,)
 options.Points = hv.Options('style', cmap='rainbow', line_color='black')
@@ -54,12 +53,10 @@ def create_figure():
         opts['size_index'] = size.value
         opts['scaling_factor'] = (1./df[size.value].max())*200
     points = hv.Points(df, kdims=kdims, label=label)(plot=opts, style=style)
-    plot = renderer.get_plot(points)
-    return plot.state
+    return renderer.get_plot(points).state
 
 def update(attr, old, new):
     layout.children[1] = create_figure()
-
 
 x = Select(title='X-Axis', value='mpg', options=quantileable)
 x.on_change('value', update)
