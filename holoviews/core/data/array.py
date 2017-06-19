@@ -54,18 +54,19 @@ class ArrayInterface(Interface):
             except:
                 data = None
 
-        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
-            raise ValueError("ArrayInterface interface could not handle input type.")
-        elif data.ndim == 1:
-            if eltype._auto_indexable_1d:
-                data = np.column_stack([np.arange(len(data)), data])
-            else:
-                data = np.atleast_2d(data).T
-
         if kdims is None:
             kdims = eltype.kdims
         if vdims is None:
             vdims = eltype.vdims
+
+        if data is None or data.ndim > 2 or data.dtype.kind in ['S', 'U', 'O']:
+            raise ValueError("ArrayInterface interface could not handle input type.")
+        elif data.ndim == 1:
+            if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                data = np.column_stack([np.arange(len(data)), data])
+            else:
+                data = np.atleast_2d(data).T
+
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
     @classmethod
@@ -231,5 +232,24 @@ class ArrayInterface(Interface):
             rows.append(np.concatenate([k, (reduced,) if np.isscalar(reduced) else reduced]))
         return np.atleast_2d(rows)
 
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        if np.isscalar(cols):
+            if isinstance(cols, util.basestring):
+                cols = dataset.get_dimension_index(cols)
+            if np.isscalar(rows):
+                return dataset.data[rows, cols]
+            cols = [dataset.get_dimension_index(cols)]
+        elif not isinstance(cols, slice):
+            cols = [dataset.get_dimension_index(d) for d in cols]
+
+        if np.isscalar(rows):
+            rows = [rows]
+        data = dataset.data[rows, :][:, cols]
+        if data.ndim == 1:
+            return np.atleast_2d(data).T
+        return data
 
 Interface.register(ArrayInterface)

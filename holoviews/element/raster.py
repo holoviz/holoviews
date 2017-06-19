@@ -7,7 +7,7 @@ from ..core import util
 from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
-from ..core.sheetcoords import SheetCoordinateSystem
+from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import max_range
 from .chart import Curve
 from .tabular import Table
@@ -298,24 +298,77 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         coords = tuple(selection[kd.name] if kd.name in selection else slice(None)
                        for kd in self.kdims)
 
+        shape = self.interface.shape(self, gridded=True)
         if any([isinstance(el, slice) for el in coords]):
-            shape = self.interface.shape(self, gridded=True)
             bounds = compute_slice_bounds(coords, self, shape[:2])
 
             xdim, ydim = self.kdims
             l, b, r, t = bounds.lbrt()
-            selection = {xdim.name: slice(l, r), ydim.name: slice(b, t)}
-        else:
-            selection = {kd.name: c for kd, c in zip(self.kdims, self.closest(coords))}
 
-        data = self.interface.select(self, **selection)
-        if isinstance(data, np.ndarray) and data.ndim == 1:
-            return self.clone([tuple(data)], kdims=[], new_type=Dataset)
-        elif np.isscalar(data):
-            return data
+            # Situate resampled region into overall slice
+            y0, y1, x0, x1 = Slice(bounds, self)
+            y0, y1 = shape[0]-y1, shape[0]-y0
+            selection = (slice(y0, y1), slice(x0, x1))
+            sliced = True
+        else:
+            y, x = self.sheet2matrixidx(coords[0], coords[1])
+            y = shape[0]-y-1
+            selection = (y, x)
+            sliced = False
+
+        data = self.interface.ndloc(self, selection)
+        if not sliced:
+            if np.isscalar(data):
+                return data
+            return self.clone(data[self.ndims:], kdims=[], new_type=Dataset)
         else:
             return self.clone(data, xdensity=self.xdensity,
                               ydensity=self.ydensity, bounds=bounds)
+
+
+    def sample(self, samples=[], **kwargs):
+        """
+        Allows sampling of an Image as an iterator of coordinates
+        matching the key dimensions, returning a new object containing
+        just the selected samples. Alternatively may supply kwargs to
+        sample a coordinate on an object. On an Image the coordinates
+        are continuously indexed and will always snap to the nearest
+        coordinate.
+        """
+        kwargs = {k: v for k, v in kwargs.items() if k != 'closest'}
+        if kwargs and samples:
+            raise Exception('Supply explicit list of samples or kwargs, not both.')
+        elif kwargs:
+            sample = [slice(None) for _ in range(self.ndims)]
+            for dim, val in kwargs.items():
+                sample[self.get_dimension_index(dim)] = val
+            samples = [tuple(sample)]
+
+        # If a 1D cross-section of 2D space return Curve
+        shape = self.interface.shape(self, gridded=True)
+        if len(samples) == 1:
+            dims = [kd for kd, v in zip(self.kdims, samples[0]) if not np.isscalar(v)]
+            if len(dims) == 1:
+                kdims = [self.get_dimension(kd) for kd in dims]
+                sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+                dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
+                selection = self.select(**sel)
+                selection = tuple(selection.columns(kdims+self.vdims).values())
+                datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
+                return self.clone(selection, kdims=kdims, new_type=Curve,
+                                  datatype=datatype)
+            else:
+                new_type = Table
+                kdims = self.kdims
+        else:
+            new_type = Dataset
+            kdims = self.kdims
+
+        xs, ys = zip(*samples)
+        yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
+        yidx = shape[0]-yidx-1
+        data = self.interface.ndloc(self, (yidx, xidx))
+        return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
 
 
     def closest(self, coords=[], **kwargs):

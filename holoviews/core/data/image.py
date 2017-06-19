@@ -90,6 +90,13 @@ class ImageInterface(GridInterface):
         return data
 
     @classmethod
+    def coords(cls, dataset, dim, ordered=False, expanded=False):
+        dim = dataset.get_dimension(dim, strict=True)
+        if expanded:
+            return util.expand_grid_coords(dataset, dim)
+        return cls.values(dataset, dim, expanded=False)
+
+    @classmethod
     def range(cls, obj, dim):
         dim_idx = obj.get_dimension_index(dim)
         if dim_idx in [0, 1] and obj.bounds:

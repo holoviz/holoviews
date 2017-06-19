@@ -12,7 +12,7 @@ from dask.dataframe import DataFrame
 
 from .. import util
 from ..element import Element
-from ..ndmapping import NdMapping, item_check
+from ..ndmapping import NdMapping, item_check, OrderedDict
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -241,6 +241,30 @@ class DaskInterface(PandasInterface):
     def nonzero(cls, dataset):
         return True
 
+    @classmethod
+    def iloc(cls, dataset, index):
+        """
+        Dask does not support iloc, therefore iloc will execute
+        the call graph and lose the laziness of the operation.
+        """
+        rows, cols = index
+        scalar = False
+        if isinstance(cols, slice):
+            cols = [d.name for d in dataset.dimensions()][cols]
+        elif np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols).name]
+        else:
+            cols = [dataset.get_dimension(d).name for d in index[1]]
+        if np.isscalar(rows):
+            rows = [rows]
+
+        data = OrderedDict()
+        for c in cols:
+            data[c] = dataset.data[c].compute().iloc[rows].values
+        if scalar:
+            return data[cols[0]][0]
+        return tuple(data.values())
 
 
 Interface.register(DaskInterface)

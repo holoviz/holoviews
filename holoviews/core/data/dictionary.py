@@ -49,7 +49,7 @@ class DictInterface(Interface):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
-                if eltype._auto_indexable_1d:
+                if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
                     data = np.column_stack([np.arange(len(data)), data])
                 else:
                     data = np.atleast_2d(data).T
@@ -259,6 +259,31 @@ class DictInterface(Interface):
                         reduced = function(arr, **kwargs)
                     aggregated[vdim].append(reduced)
         return aggregated
+
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        if np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols, strict=True)]
+        elif isinstance(cols, slice):
+            cols = dataset.dimensions()[cols]
+        else:
+            cols = [dataset.get_dimension(d, strict=True) for d in cols]
+
+        if np.isscalar(rows):
+            rows = [rows]
+
+        new_data = OrderedDict()
+        for d, values in dataset.data.items():
+            if d in cols:
+                new_data[d] = values[rows]
+
+        if scalar:
+            return new_data[cols[0].name][0]
+        return new_data
 
 
 Interface.register(DictInterface)

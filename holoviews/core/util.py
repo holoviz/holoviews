@@ -1449,7 +1449,7 @@ def bound_range(vals, density):
     """
     low, high = vals.min(), vals.max()
     invert = False
-    if vals[0] > vals[1]:
+    if len(vals) > 1 and vals[0] > vals[1]:
         invert = True
     if not density:
         density = round(1./((high-low)/(len(vals)-1)), sys.float_info.dig)

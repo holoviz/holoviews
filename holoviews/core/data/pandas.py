@@ -61,8 +61,8 @@ class PandasInterface(Interface):
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:
-                    if eltype._auto_indexable_1d:
-                        data = (range(len(data)), data)
+                    if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                        data = (np.arange(len(data)), data)
                     else:
                         data = np.atleast_2d(data).T
                 else:
@@ -250,6 +250,27 @@ class PandasInterface(Interface):
             return columns.reindex(dimensions).data.copy()
         else:
             return columns.data.copy()
+
+
+    @classmethod
+    def iloc(cls, dataset, index):
+        rows, cols = index
+        scalar = False
+        columns = list(dataset.data.columns)
+        if isinstance(cols, slice):
+            cols = [d.name for d in dataset.dimensions()][cols]
+        elif np.isscalar(cols):
+            scalar = np.isscalar(rows)
+            cols = [dataset.get_dimension(cols).name]
+        else:
+            cols = [dataset.get_dimension(d).name for d in index[1]]
+        cols = [columns.index(c) for c in cols]
+        if np.isscalar(rows):
+            rows = [rows]
+
+        if scalar:
+            return dataset.data.iloc[rows[0], cols[0]]
+        return dataset.data.iloc[rows, cols]
 
 
 Interface.register(PandasInterface)
