@@ -293,7 +293,8 @@ class Stream(param.Parameterized):
     @property
     def contents(self):
         filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        return {self._rename.get(k,k):v for (k,v) in filtered.items()}
+        return {self._rename.get(k,k):v for (k,v) in filtered.items()
+                if (self._rename.get(k,True) is not None)}
 
 
     def _set_stream_parameters(self, **kwargs):
