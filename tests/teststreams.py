@@ -274,6 +274,16 @@ class TestParameterRenaming(ComparisonTestCase):
         with self.assertRaisesRegexp(ValueError, regexp):
             renamed.event(ytest=8)
 
+    def test_rename_suppression(self):
+        renamed = PointerXY(x=0,y=0).rename(x=None)
+        self.assertEquals(renamed.contents, {'y':0})
+
+    def test_rename_suppression_reenable(self):
+        renamed = PointerXY(x=0,y=0).rename(x=None)
+        self.assertEquals(renamed.contents, {'y':0})
+        reenabled = renamed.rename(x='foo')
+        self.assertEquals(reenabled.contents, {'foo':0, 'y':0})
+
 
 class TestPlotSizeTransform(ComparisonTestCase):
 
