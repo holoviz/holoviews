@@ -122,7 +122,8 @@ options.VectorField = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
-options.Contours = Options('plot', show_legend=True)
+if not config.style_17:
+    options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
