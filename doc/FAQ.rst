@@ -15,8 +15,8 @@ directly to disk, with custom options, like this:
 
 .. code:: python
 
-  from holoviews import Store
-  renderer = Store.renderers['matplotlib'].instance(fig='svg', holomap='gif')
+  import holoviews as hv
+  renderer = hv.renderer('matplotlib').instance(fig='svg', holomap='gif')
   renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
 
 This process is described in detail in the 
