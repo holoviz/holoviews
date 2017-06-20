@@ -820,7 +820,7 @@ class DynamicMap(HoloMap):
         if self.id not in Store.custom_options():
             return retval
         spec = StoreOptions.tree_to_dict(Store.custom_options()[self.id])
-        return retval(spec)
+        return retval.opts(spec)
 
 
     def _execute_callback(self, *args):
@@ -845,6 +845,17 @@ class DynamicMap(HoloMap):
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)
         return self._style(retval)
+
+
+    def opts(self, options=None, **kwargs):
+        """
+        Apply the supplied options to a clone of the DynamicMap which is
+        then returned. Note that if no options are supplied at all,
+        all ids are reset.
+        """
+        from ..util import Dynamic
+        return Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, **kwargs),
+                       streams=self.streams, shared_data=True, link_inputs=True)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, link_inputs=True,
