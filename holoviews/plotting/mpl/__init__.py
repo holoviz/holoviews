@@ -161,6 +161,12 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           Spikes: SideSpikesPlot,
                           BoxWhisker: SideBoxPlot})
 
+if config.style_17:
+    CurvePlot.show_grid = True
+    SideHistogramPlot.show_grid = True
+    PointPlot.show_grid = True
+
+
 options = Store.options(backend='matplotlib')
 dflt_cmap = 'hot' if config.style_17 else 'fire'
 # Default option definitions

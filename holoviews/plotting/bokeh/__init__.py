@@ -19,14 +19,13 @@ except:
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .bkcharts import BoxPlot
 from .callbacks import Callback # noqa (API import)
-from .element import OverlayPlot
+from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import (RasterPlot, RGBPlot, HeatmapPlot,
-                     HSVPlot, QuadMeshPlot)
+from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 from .util import bokeh_version
@@ -86,8 +85,11 @@ associations = {Overlay: OverlayPlot,
 if DFrame is not None:
     associations[DFrame] = TablePlot
 
-Store.register(associations,
-               'bokeh')
+Store.register(associations, 'bokeh')
+
+if config.style_17:
+    ElementPlot.show_grid = True
+    RasterPlot.show_grid = True
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot

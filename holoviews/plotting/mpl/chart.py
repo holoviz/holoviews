@@ -60,7 +60,7 @@ class CurvePlot(ChartPlot):
     show_frame = param.Boolean(default=False, doc="""
         Disabled by default for clarity.""")
 
-    show_grid = param.Boolean(default=True, doc="""
+    show_grid = param.Boolean(default=False, doc="""
         Enable axis grid.""")
 
     show_legend = param.Boolean(default=True, doc="""
@@ -391,7 +391,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
     offset = param.Number(default=0.2, bounds=(0,1), doc="""
         Histogram value offset for a colorbar.""")
 
-    show_grid = param.Boolean(default=True, doc="""
+    show_grid = param.Boolean(default=False, doc="""
         Whether to overlay a grid on the axis.""")
 
     def _process_hist(self, hist):
@@ -495,7 +495,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
       Scaling factor which is applied to either the width or area
       of each point, depending on the value of `scaling_method`.""")
 
-    show_grid = param.Boolean(default=True, doc="""
+    show_grid = param.Boolean(default=False, doc="""
       Whether to draw grid lines at the tick positions.""")
 
     size_fn = param.Callable(default=np.abs, doc="""

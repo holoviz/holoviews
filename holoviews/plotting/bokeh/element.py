@@ -102,7 +102,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
 
-    show_grid = param.Boolean(default=True, doc="""
+    show_grid = param.Boolean(default=False, doc="""
         Whether to show a Cartesian grid on the plot.""")
 
     show_legend = param.Boolean(default=True, doc="""
