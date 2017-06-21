@@ -1,6 +1,6 @@
 package:
   name: holoviews
-  version: 1.8dev2
+  version: 1.8dev3
 
 source:
   path: .
