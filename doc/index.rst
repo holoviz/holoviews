@@ -139,6 +139,8 @@ showing how to fix the bug or implement the feature!
    :maxdepth: 2
 
    Home <self>
+   Getting Started <getting_started/index>
+   User Guide <user_guide/index>
    Features <features>
    Tutorials <Tutorials/index>
    Examples <Examples/index>
