@@ -751,12 +751,21 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         if pd is None:
             raise SkipTest("Pandas not available")
         self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['dataframe']
+        Dataset.datatype = [self.datatype]
         self.data_instance_type = pd.DataFrame
         self.init_column_data()
 
+    def test_multi_dimension_groupby(self):
+        x, y, z = list('AB'*10), np.arange(20)%3, np.arange(20)
+        ds = Dataset((x, y, z), kdims=['x', 'y'], vdims=['z'],  datatype=[self.datatype])
+        keys = [('A', 0), ('A', 1), ('A', 2), ('B', 0), ('B', 1), ('B', 2)]
+        grouped = ds.groupby(['x', 'y'])
+        self.assertEqual(grouped.keys(), keys)
+        group = Dataset({'z': [5, 11, 17]}, vdims=['z'])
+        self.assertEqual(grouped.last, group)
 
-class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
+
+class DaskDatasetTest(DFDatasetTest):
     """
     Test of the pandas DaskDataset interface.
     """
@@ -767,7 +776,7 @@ class DaskDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         if dd is None:
             raise SkipTest("dask not available")
         self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['dask']
+        Dataset.datatype = [self.datatype]
         self.data_instance_type = dd.DataFrame
         self.init_column_data()
 
