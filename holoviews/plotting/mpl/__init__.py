@@ -46,15 +46,6 @@ def set_style(key):
         plt.rcParams.update(new_style)
 
 
-styles = {'default': './default.mplstyle',
-          'default>1.5': './default1.5.mplstyle'}
-
-if config.style_17:
-    if mpl_ge_150:
-        set_style('default>1.5')
-    else:
-        set_style('default')
-
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
     if mpl_ge_150:
@@ -68,7 +59,20 @@ def get_color_cycle():
             pass  # just return axes.color style below
     return mpl.rcParams['axes.color_cycle']
 
-Cycle.default_cycles.update({'default_colors': get_color_cycle()})
+
+styles = {'default': './default.mplstyle',
+          'default>1.5': './default1.5.mplstyle'}
+
+if config.style_17:
+    if mpl_ge_150:
+        set_style('default>1.5')
+    else:
+        set_style('default')
+    Cycle.default_cycles.update({'default_colors': get_color_cycle()})
+else:
+    Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
+                                               '#6d904f', '#8b8b8b']
+
 
 # Filter spectral colormaps to avoid warning in mpl 2.0
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
