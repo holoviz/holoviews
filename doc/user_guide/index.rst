@@ -24,7 +24,7 @@ concepts in HoloViews:
   Declaring multi-dimensional containers to animate and facet your
   data flexibly. Learn about ``HoloMap``, ``NdOverlay``, ``GridSpace``
   and ``NdLayout`` types and how to use them effectively with the
-  corresponding ``.layout``, ``.overlay`` and ``.grid`` method``.
+  corresponding ``.layout``, ``.overlay`` and ``.grid`` method.
 
 * `Building Composite Objects <Building_Composite_Objects.html>`_
   How to build and work with complex composite objects.
