@@ -204,7 +204,11 @@ options.GridMatrix = Options('plot', fig_size=160, shared_xaxis=True,
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
-options.Spline = Options('style', linewidth=2, edgecolor='r')
+if config.style_17:
+    options.Spline = Options('style', linewidth=2, edgecolor='r')
+else:
+    options.Spline = Options('style', edgecolor=Cycle())
+
 options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
