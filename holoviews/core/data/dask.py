@@ -149,7 +149,7 @@ class DaskInterface(PandasInterface):
             else:
                 indices = ((ind,) for ind in column.unique().compute())
         else:
-            group_tuples = columns.data[group_by].itertuple()
+            group_tuples = columns.data[group_by].itertuples()
             indices = util.unique_iterator(ind[1:] for ind in group_tuples)
         for coord in indices:
             if any(isinstance(c, float) and np.isnan(c) for c in coord):
