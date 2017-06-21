@@ -10,6 +10,7 @@ import IPython
 from IPython import get_ipython
 
 import holoviews
+from holoviews.plotting import Plot
 from ..core.options import Store, StoreOptions, SkipRendering, AbbreviatedException
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
@@ -311,12 +312,18 @@ def element_svg_display(element, max_frames):
 # middle_frame or last_frame (e.g. for testing purposes)
 render_anim = None
 
+def plot_display(plot):
+    return plot.renderer.html(plot)
+
+
 def set_display_hooks(ip):
     html_formatter = ip.display_formatter.formatters['text/html']
     html_formatter.for_type(ViewableElement, pprint_display)
     html_formatter.for_type(UniformNdMapping, pprint_display)
     html_formatter.for_type(AdjointLayout, pprint_display)
     html_formatter.for_type(Layout, pprint_display)
+    # Give plot instances rich display
+    html_formatter.for_type(Plot, plot_display)
 
     # Note: Disable additional hooks from calling archive
     #       (see disabled_suffixes variable in the display decorator)
