@@ -82,7 +82,10 @@ class BokehRenderer(Renderer):
             if bokeh_version < '0.12.6':
                 raise RuntimeError('Bokeh png export only supported by versions >=0.12.6.')
             from bokeh.io import _get_screenshot_as_png
-            img = _get_screenshot_as_png(plot.state)
+            if bokeh_version > '0.12.6':
+                img = _get_screenshot_as_png(plot.state, None)
+            else:
+                img = _get_screenshot_as_png(plot.state)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             return imgByteArr.getvalue(), info
