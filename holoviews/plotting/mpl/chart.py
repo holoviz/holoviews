@@ -537,7 +537,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         sdim = element.get_dimension(self.size_index)
         if sdim:
             sizes = element.dimension_values(self.size_index)
-            ms = style['s'] if 's' in style else plt.rcParams['lines.markersize']
+            ms = style['s'] if 's' in style else mpl.rcParams['lines.markersize']
             sizes = compute_sizes(sizes, self.size_fn, self.scaling_factor,
                                   self.scaling_method, ms)
             if sizes is None:

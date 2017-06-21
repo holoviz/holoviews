@@ -257,7 +257,7 @@ class MPLRenderer(Renderer):
                 fig.set_dpi(self.dpi)
                 fig.canvas.draw()
                 extra_artists = kw.pop("bbox_extra_artists", [])
-                pad = plt.rcParams['savefig.pad_inches']
+                pad = mpl.rcParams['savefig.pad_inches']
                 bbox_inches = get_tight_bbox(fig, extra_artists, pad=pad)
                 MPLRenderer.drawn[fig_id] = bbox_inches
                 kw['bbox_inches'] = bbox_inches
@@ -272,7 +272,8 @@ class MPLRenderer(Renderer):
             cls._rcParams = dict(mpl.rcParams)
             yield
         finally:
-            mpl.rcParams = cls._rcParams
+            mpl.rcParams.clear()
+            mpl.rcParams.update(cls._rcParams)
 
     @classmethod
     def validate(cls, options):

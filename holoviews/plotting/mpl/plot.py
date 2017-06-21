@@ -25,12 +25,13 @@ def _rc_context(rcparams):
     """
     Context manager that temporarily overrides the pyplot rcParams.
     """
-    old_rcparams = plt.rcParams.copy()
-    plt.rcParams.update(rcparams)
+    old_rcparams = mpl.rcParams.copy()
+    mpl.rcParams.update(rcparams)
     try:
         yield
     finally:
-        plt.rcParams = old_rcparams
+        mpl.rcParams.clear()
+        mpl.rcParams.update(old_rcparams)
 
 def mpl_rc_context(f):
     """
@@ -138,8 +139,7 @@ class MPLPlot(DimensionedPlot):
         elif not self.renderer.notebook_context:
             plt.ioff()
 
-        with mpl.rc_context(rc=self.fig_rcparams):
-            fig, axis = self._init_axis(fig, axis)
+        fig, axis = self._init_axis(fig, axis)
 
         self.handles['fig'] = fig
         self.handles['axis'] = axis
@@ -151,6 +151,7 @@ class MPLPlot(DimensionedPlot):
         self.handles['bbox_extra_artists'] = []
 
 
+    @mpl_rc_context
     def _init_axis(self, fig, axis):
         """
         Return an axis which may need to be initialized from
