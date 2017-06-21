@@ -11,7 +11,7 @@ import param
 __version__ = param.Version(release=(1,7,0), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
-from .core import archive                                # noqa (API import)
+from .core import archive, config                        # noqa (API import)
 from .core.dimension import OrderedDict, Dimension       # noqa (API import)
 from .core.boundingregion import BoundingBox             # noqa (API import)
 from .core.options import (Options, Store, Cycle,        # noqa (API import)

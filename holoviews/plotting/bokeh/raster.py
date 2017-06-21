@@ -10,9 +10,6 @@ from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 
 class RasterPlot(ColorbarPlot):
 
-    show_grid = param.Boolean(default=True, doc="""
-        Whether to show a Cartesian grid on the plot.""")
-
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 

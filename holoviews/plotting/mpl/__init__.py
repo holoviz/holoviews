@@ -3,7 +3,7 @@ from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
 
-from ...core import Layout, Collator, GridMatrix
+from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
 from ...element import * # noqa (API import)
@@ -46,14 +46,6 @@ def set_style(key):
         plt.rcParams.update(new_style)
 
 
-styles = {'default': './default.mplstyle',
-          'default>1.5': './default1.5.mplstyle'}
-
-if mpl_ge_150:
-    set_style('default>1.5')
-else:
-    set_style('default')
-
 # Define matplotlib based style cycles and Palettes
 def get_color_cycle():
     if mpl_ge_150:
@@ -67,7 +59,20 @@ def get_color_cycle():
             pass  # just return axes.color style below
     return mpl.rcParams['axes.color_cycle']
 
-Cycle.default_cycles.update({'default_colors': get_color_cycle()})
+
+styles = {'default': './default.mplstyle',
+          'default>1.5': './default1.5.mplstyle'}
+
+if config.style_17:
+    if mpl_ge_150:
+        set_style('default>1.5')
+    else:
+        set_style('default')
+    Cycle.default_cycles.update({'default_colors': get_color_cycle()})
+else:
+    Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
+                                               '#6d904f', '#8b8b8b']
+
 
 # Filter spectral colormaps to avoid warning in mpl 2.0
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
@@ -160,19 +165,25 @@ MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
                           Spikes: SideSpikesPlot,
                           BoxWhisker: SideBoxPlot})
 
-options = Store.options(backend='matplotlib')
+if config.style_17:
+    CurvePlot.show_grid = True
+    SideHistogramPlot.show_grid = True
+    PointPlot.show_grid = True
 
+
+options = Store.options(backend='matplotlib')
+dflt_cmap = 'hot' if config.style_17 else 'fire'
 # Default option definitions
 # Note: *No*short aliases here! e.g use 'facecolor' instead of 'fc'
 
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
-options.Scatter = Options('style', color=Cycle(), marker='o', cmap='hot')
+options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.ErrorBars = Options('style', ecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
 options.Histogram = Options('style', ec='k', facecolor=Cycle())
-options.Points = Options('style', color=Cycle(), marker='o', cmap='hot')
+options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
@@ -182,10 +193,10 @@ options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
 
 # Rasters
-options.Image = Options('style', cmap='hot', interpolation='nearest')
-options.GridImage = Options('style', cmap='hot', interpolation='nearest')
-options.Raster = Options('style', cmap='hot', interpolation='nearest')
-options.QuadMesh = Options('style', cmap='hot')
+options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.GridImage = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
+options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
 options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
 options.RGB = Options('style', interpolation='nearest')
@@ -197,16 +208,28 @@ options.GridMatrix = Options('plot', fig_size=160, shared_xaxis=True,
 # Annotations
 options.VLine = Options('style', color=Cycle())
 options.HLine = Options('style', color=Cycle())
-options.Spline = Options('style', linewidth=2, edgecolor='r')
+if config.style_17:
+    options.Spline = Options('style', linewidth=2, edgecolor='r')
+else:
+    options.Spline = Options('style', edgecolor=Cycle())
+
 options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle())
 options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle())
-options.Box = Options('style', color=Cycle())
-options.Bounds = Options('style', color=Cycle())
-options.Ellipse = Options('style', color=Cycle())
+
+if config.style_17:
+    options.Box = Options('style', color=Cycle())
+    options.Bounds = Options('style', color=Cycle())
+    options.Ellipse = Options('style', color=Cycle())
+else:
+    options.Box = Options('style', color='black')
+    options.Bounds = Options('style', color='black')
+    options.Ellipse = Options('style', color='black')
+    options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black')
+
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
 

@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import numpy as np
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
-                     GridSpace, GridMatrix, NdLayout)
+                     GridSpace, GridMatrix, NdLayout, config)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
@@ -19,14 +19,13 @@ except:
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
 from .bkcharts import BoxPlot
 from .callbacks import Callback # noqa (API import)
-from .element import OverlayPlot
+from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import (RasterPlot, RGBPlot, HeatmapPlot,
-                     HSVPlot, QuadMeshPlot)
+from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 from .util import bokeh_version
@@ -86,8 +85,11 @@ associations = {Overlay: OverlayPlot,
 if DFrame is not None:
     associations[DFrame] = TablePlot
 
-Store.register(associations,
-               'bokeh')
+Store.register(associations, 'bokeh')
+
+if config.style_17:
+    ElementPlot.show_grid = True
+    RasterPlot.show_grid = True
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
@@ -104,12 +106,13 @@ point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
 
+dflt_cmap = 'hot' if config.style_17 else 'fire'
 options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
-options.Scatter = Options('style', color=Cycle(), size=point_size, cmap='hot')
-options.Points = Options('style', color=Cycle(), size=point_size, cmap='hot')
+options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
@@ -121,6 +124,8 @@ options.VectorField = Options('style', color='black')
 
 # Paths
 options.Contours = Options('style', color=Cycle())
+if not config.style_17:
+    options.Contours = Options('plot', show_legend=True)
 options.Path = Options('style', color=Cycle())
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
@@ -128,10 +133,10 @@ options.Ellipse = Options('style', color='black')
 options.Polygons = Options('style', color=Cycle(), line_color='black')
 
 # Rasters
-options.Image = Options('style', cmap='hot')
-options.GridImage = Options('style', cmap='hot')
-options.Raster = Options('style', cmap='hot')
-options.QuadMesh = Options('style', cmap='hot', line_alpha=0)
+options.Image = Options('style', cmap=dflt_cmap)
+options.GridImage = Options('style', cmap=dflt_cmap)
+options.Raster = Options('style', cmap=dflt_cmap)
+options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 
 # Annotations
