@@ -20,9 +20,9 @@ HoloViews
    <div class="common"><img src="http://assets.holoviews.org/collage/texas.png" width='20%'></div>
    <div class="common"><img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'></div>
 
-   <div class="common"><img src="http://assets.holoviews.org/collage/dropdown.gif" width='30%'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/dragon.gif" width='25%'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/nydatashader.gif" width='30%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'></div>
 
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
