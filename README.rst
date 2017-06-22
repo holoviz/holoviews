@@ -8,13 +8,17 @@ holoviews
  .. raw:: html
 
    <div class="container">
-   <div class="common"><img src="http://assets.holoviews.org/collage/iris.png" width='200px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/cells.png" width='200px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/scatter_example.png" width='400px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/square_limit.png" width='200px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/bars_example.png" width='200px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/texas.png" width='200px'></div>
-   <div class="common"><img src="http://assets.holoviews.org/collage/mandelbrot.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/iris.png" width='20%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/cells.png" width='22%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/scatter_example.png" width='43%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/square_limit.png" width='20%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/bars_example.png" width='20%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/texas.png" width='20%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'></div>
+   
+   <div class="common"><img src="http://assets.holoviews.org/collage/dropdown.gif" width='25%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/roots.gif" width='25%'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/nydatashader.gif" width='30%'></div>
 
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
