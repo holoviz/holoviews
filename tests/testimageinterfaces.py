@@ -181,6 +181,48 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.ys = np.linspace(0.5, 9.5, 10)
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
         self.image = Image((self.xs, self.ys, self.array))
+        self.image_inv = Image((self.xs[::-1], self.ys[::-1], self.array[::-1, ::-1]))
+
+
+    def test_slice_xaxis_inv(self):
+        sliced = self.image_inv[0.3:5.2]
+        self.assertEqual(sliced.bounds.lbrt(), (0, 0, 6, 10))
+        self.assertEqual(sliced.xdensity, 0.5)
+        self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[:, 5:8])
+
+    def test_slice_yaxis_inv(self):
+        sliced = self.image_inv[:, 1.2:5.2]
+        self.assertEqual(sliced.bounds.lbrt(), (-10, 1., 10, 5))
+        self.assertEqual(sliced.xdensity, 0.5)
+        self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[1:5, :])
+
+    def test_slice_both_axes_inv(self):
+        sliced = self.image_inv[0.3:5.2, 1.2:5.2]
+        self.assertEqual(sliced.bounds.lbrt(), (0, 1., 6, 5))
+        self.assertEqual(sliced.xdensity, 0.5)
+        self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[1:5, 5:8])
+
+    def test_slice_x_index_y_inv(self):
+        sliced = self.image_inv[0.3:5.2, 5.2]
+        self.assertEqual(sliced.bounds.lbrt(), (0, 5.0, 6.0, 6.0))
+        self.assertEqual(sliced.xdensity, 0.5)
+        self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[5:6, 5:8])
+
+    def test_index_x_slice_y_inv(self):
+        sliced = self.image_inv[3.2, 1.2:5.2]
+        self.assertEqual(sliced.bounds.lbrt(), (2.0, 1.0, 4.0, 5.0))
+        self.assertEqual(sliced.xdensity, 0.5)
+        self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[1:5, 6:7])
 
 
 @attr(optional=1)
@@ -199,6 +241,7 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
         ys = np.linspace(0.5, 9.5, 10)
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
         self.image = Image((xs, ys, self.array))
+        self.image_inv = Image((xs[::-1], ys[::-1], self.array[::-1, ::-1]))
 
     def test_reduce_to_scalar(self):
         raise SkipTest("Not supported")
