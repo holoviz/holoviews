@@ -316,13 +316,15 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             selection = (y, x)
             sliced = False
 
+        datatype = list(util.unique_iterator([self.interface.datatype]+self.datatype))
         data = self.interface.ndloc(self, selection)
         if not sliced:
             if np.isscalar(data):
                 return data
-            return self.clone(data[self.ndims:], kdims=[], new_type=Dataset)
+            return self.clone(data[self.ndims:], kdims=[], new_type=Dataset,
+                              datatype=datatype)
         else:
-            return self.clone(data, xdensity=self.xdensity,
+            return self.clone(data, xdensity=self.xdensity, datatype=datatype,
                               ydensity=self.ydensity, bounds=bounds)
 
 
