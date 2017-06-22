@@ -8,32 +8,28 @@ ____________
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
 
+.. raw:: html
 
-..
-   # Code used to generate mandelbrot.npy, for reference
-   from numpy import *
-   import pylab
-
-   def mandelbrot( h,w, maxit=200 ):
-           y,x = ogrid[ -1.4:1.4:h*1j, -2:0.8:w*1j ]
-           c = x+y*1j
-           z = c
-           divtime = maxit + zeros(z.shape, dtype=int)
-           for i in xrange(maxit):
-                   z  = z**2 + c
-                   diverge = z*conj(z) > 2**2
-                   div_now = diverge & (divtime==maxit)
-                   divtime[div_now] = i
-                   z[diverge] = 2
-           return divtime
-   # Wait a long time..., then normalize
-   arr = mandelbrot(4000,4000, maxit=2000)[400:800, 2500:2900]
-
-
-..
-
-.. notebook:: holoviews Homepage.ipynb
-
+   <div>
+   <div ><img src="http://assets.holoviews.org/collage/iris.png" width='20%'>
+                    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'>
+                    <img src="http://assets.holoviews.org/collage/scatter_example.png"
+                    width='43%'></div>
+   <div ><img src="http://assets.holoviews.org/collage/square_limit.png"
+         width='20%'>
+                    <img src="http://assets.holoviews.org/collage/bars_example.png"
+                    width='20%'>
+                    <img src="http://assets.holoviews.org/collage/texas.png" width='20%'>
+                    <img src="http://assets.holoviews.org/collage/mandelbrot.png"
+                    width='20%'></div>
+   <div><img src="http://assets.holoviews.org/collage/dropdown.gif"
+   width='31%'>
+                    <img src="http://assets.holoviews.org/collage/dragon_fractal.gif"
+                    width='26%'>
+                    <img src="http://assets.holoviews.org/collage/ny_datashader.gif"
+                    width='31%'></div>
+   </div>
+     
 ------------
 
 Installation
