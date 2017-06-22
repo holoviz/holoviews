@@ -5,8 +5,17 @@ holoviews
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
 
-.. image:: http://assets.holoviews.org/demo.gif
-   :target: http://www.holoviews.org
+ .. raw:: html
+
+   <div class="container">
+   <div class="common"><img src="http://assets.holoviews.org/collage/iris.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/cells.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/scatter_example.png" width='400px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/square_limit.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/bars_example.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/texas.png" width='200px'></div>
+   <div class="common"><img src="http://assets.holoviews.org/collage/mandelbrot.png" width='200px'></div>
+
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
 `Numpy <http://www.numpy.org/>`_ and is designed to work 
