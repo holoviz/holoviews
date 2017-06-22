@@ -192,9 +192,7 @@ class GridInterface(DictInterface):
         adjusted_inds = []
         all_scalar = True
         for kd, ind in zip(dataset.kdims[::-1], indices):
-            coords = cls.coords(dataset, kd.name)
-            if np.all(coords[1:] < coords[:-1]):
-                ind = cls.invert_index(ind, len(coords))
+            coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
             else:
