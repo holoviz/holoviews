@@ -1,6 +1,10 @@
-|PyPI|_ |Conda|_ |Downloads|_ |BuildStatus|_ |holoviewsDocs|_ |Coveralls|_ |Gitter|_ |MyBinder|_ 
+|PyPI|_ |Conda|_ |Downloads|_ |BuildStatus|_ |holoviewsDocs|_ |Coveralls|_ |Gitter|_ |MyBinder|_
 
-holoviews
+.. raw:: html
+
+     <img src="http://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="70px" />
+
+HoloViews
 =========
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
@@ -15,17 +19,17 @@ holoviews
    <div class="common"><img src="http://assets.holoviews.org/collage/bars_example.png" width='20%'></div>
    <div class="common"><img src="http://assets.holoviews.org/collage/texas.png" width='20%'></div>
    <div class="common"><img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'></div>
-   
-   <div class="common"><img src="http://assets.holoviews.org/collage/dropdown.gif" width='25%'></div>
+
+   <div class="common"><img src="http://assets.holoviews.org/collage/dropdown.gif" width='30%'></div>
    <div class="common"><img src="http://assets.holoviews.org/collage/roots.gif" width='25%'></div>
    <div class="common"><img src="http://assets.holoviews.org/collage/nydatashader.gif" width='30%'></div>
 
 
 HoloViews requires `Param <http://ioam.github.com/param/>`_ and
-`Numpy <http://www.numpy.org/>`_ and is designed to work 
-together with `Matplotlib <http://matplotlib.org/>`_ or 
-`Bokeh <http://bokeh.pydata.org>`_, making use of the 
-`Jupyter/IPython Notebook <http://jupyter.org>`_.  
+`Numpy <http://www.numpy.org/>`_ and is designed to work
+together with `Matplotlib <http://matplotlib.org/>`_ or
+`Bokeh <http://bokeh.pydata.org>`_, making use of the
+`Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 You can get the latest version of HoloViews from the ioam conda
 channel:
@@ -101,7 +105,7 @@ Features
 * All features `available in vanilla Python 2 or 3 <http://www.holoviews.org/Tutorials/Options.html>`_, with minimal dependencies.
 
 **Support for maintainable, reproducible research**
-  
+
 * Supports a truly reproducible workflow by minimizing the code needed for analysis and visualization.
 * Already used in a variety of research projects, from conception to final publication.
 * All HoloViews objects can be pickled and unpickled.
@@ -136,7 +140,7 @@ Features
 * Automatic display of animated formats in the notebook or for export, including gif, webm, and mp4.
 * Useful IPython magics for configuring global display options and for customizing objects.
 * `Automatic archival and export of notebooks <http://www.holoviews.org/Tutorials/Exporting.html>`_, including extracting figures as SVG, generating a static HTML copy of your results for reference, and storing your optional metadata like version control information.
-   
+
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
@@ -164,4 +168,3 @@ Features
 
 .. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
 .. _Conda: https://anaconda.org/ioam/holoviews
-
