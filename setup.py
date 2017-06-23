@@ -18,7 +18,7 @@ extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornad
 extras_require['recommended'] = (extras_require['notebook-dependencies']
                                  + ['matplotlib', 'lancet-ioam'])
 # Additional, useful third-party packages
-extras_require['extras'] = (['pandas', 'seaborn', 'bokeh==0.12.5']
+extras_require['extras'] = (['pandas', 'seaborn', 'bokeh==0.12.6']
                             + extras_require['recommended'])
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = (extras_require['recommended']

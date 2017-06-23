@@ -16,7 +16,7 @@ requirements:
     - param >=1.5.1,<2.0
     - numpy
     - matplotlib
-    - bokeh ==0.12.5
+    - bokeh ==0.12.6
     - jupyter
     - notebook
     - ipython
