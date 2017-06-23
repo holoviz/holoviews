@@ -11,26 +11,25 @@ ____________
 .. raw:: html
 
    <div>
-   <div ><img src="http://assets.holoviews.org/collage/iris.png" width='20%'>
-                    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'>
+   <div ><img src="http://assets.holoviews.org/collage/iris.png" width='10%'>
+                    <img src="http://assets.holoviews.org/collage/cells.png" width='11%'>
                     <img src="http://assets.holoviews.org/collage/scatter_example.png"
-                    width='43%'></div>
+                    width='21%'></div>
    <div ><img src="http://assets.holoviews.org/collage/square_limit.png"
-         width='20%'>
+         width='10%'>
                     <img src="http://assets.holoviews.org/collage/bars_example.png"
-                    width='20%'>
-                    <img src="http://assets.holoviews.org/collage/texas.png" width='20%'>
+                    width='10%'>
+                    <img src="http://assets.holoviews.org/collage/texas.png" width='10%'>
                     <img src="http://assets.holoviews.org/collage/mandelbrot.png"
-                    width='20%'></div>
+                    width='10%'></div>
    <div><img src="http://assets.holoviews.org/collage/dropdown.gif"
-   width='31%'>
+   width='15%'>
                     <img src="http://assets.holoviews.org/collage/dragon_fractal.gif"
-                    width='26%'>
+                    width='13%'>
                     <img src="http://assets.holoviews.org/collage/ny_datashader.gif"
-                    width='31%'></div>
+                    width='15%'></div>
    </div>
-     
-------------
+
 
 Installation
 ____________
