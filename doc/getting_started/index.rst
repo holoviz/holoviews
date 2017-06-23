@@ -14,8 +14,8 @@ This 'Getting Started' guide aims to get you using HoloViews productively as qui
     :hidden:
     :maxdepth: 2
 
-	Introduction <Introduction>
-	Customization <Customization>
-	Tabular Datasets <Tabular_Datasets>
-	Gridded Datasets <Gridded_Datasets>
-	Live Data <Live_Data>
+    Introduction <Introduction>
+    Customization <Customization>
+    Tabular Datasets <Tabular_Datasets>
+    Gridded Datasets <Gridded_Datasets>
+    Live Data <Live_Data>
