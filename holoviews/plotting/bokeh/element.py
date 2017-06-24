@@ -702,7 +702,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
-        hover.renderers = [renderer]
+        hover.renderers.append(renderer)
 
         # If datetime column is in the data replace hover formatter
         for k, v in source.data.items():
