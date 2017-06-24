@@ -793,6 +793,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_glyphs(self, element, ranges):
         plot = self.handles['plot']
+        glyph = self.handles.get('glyph')
         source = self.handles['source']
         empty = False
         mapping = {}
