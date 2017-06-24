@@ -9,7 +9,8 @@ from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
 from ...core.dimension import Dimension
-from ...core.util import max_range, basestring, dimension_sanitizer
+from ...core.util import (max_range, basestring, dimension_sanitizer,
+                          wrap_tuple, unique_iterator)
 from ...core.options import abbreviated_exception
 from ...core.spaces import DynamicMap
 from ...element import Bars
@@ -868,28 +869,45 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
 class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    # Declare that y-range should auto-range if not bounded
+    # X-axis is categorical
     _x_range_type = FactorRange
+
+    # Declare that y-range should auto-range if not bounded
     _y_range_type = DataRange1d
+
+    # Map each glyph to a style group
     _glyph_styles = {'rect': 'whisker', 'segment': 'whisker',
-                     'vbar': 'box', 'circle': 'outlier'}
-    _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2', 'rect_1', 'rect_2', 'circle']
+                     'vbar': 'box', 'circle': 'outlier', 'hbar': 'box'}
+
+    # Define all the glyphs making up the plot
+    _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2',
+               'rect_1', 'rect_2', 'circle', 'hbar_1', 'hbar_2']
+
+    # Define all the glyph handles to update
     _update_handles = [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
                        for glyph in _glyphs] + ['color_mapper', 'colorbar']
+
     style_opts = (['whisker_'+p for p in line_properties] +\
                   ['box_'+p for p in fill_properties+line_properties] +\
                   ['outlier_'+p for p in fill_properties+line_properties] + ['cmap'])
 
     def get_extents(self, element, ranges):
+        """
+        Extents are set to None because x-axis is categorical and
+        y-axis auto-ranges.
+        """
         return (None, None, None, None)
 
     def _get_axis_labels(self, *args, **kwargs):
         """
-        Override axis mapping by setting the first key and value
-        dimension as the x-axis and y-axis labels.
+        Override axis labels to group all key dimensions together.
         """
         element = self.current_frame
         xlabel = ', '.join([kd.pprint_label for kd in element.kdims])
@@ -915,27 +933,52 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             groups = element.groupby(element.kdims).data
         else:
             groups = dict([(element.label, element)])
+        vdim = dimension_sanitizer(element.vdims[0].name)
 
-        r1_data = {'x': [], 'top': [], 'bottom': []}
-        r2_data = {'x': [], 'top': [], 'bottom': []}
-        s1_data = {'x0': [], 'y0': [], 'x1': [], 'y1': []}
-        s2_data = {'x0': [], 'y0': [], 'x1': [], 'y1': []}
-        w1_data = {'x': [], 'y': []}
-        w2_data = {'x': [], 'y': []}
-        out_data = {'x': [], 'y': []}
-        vbar_map = {'x': 'x', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
-        seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-        whisk_map = {'x': 'x', 'y': 'y', 'width': 0.2, 'height': 0.001}
-        out_map = {'x': 'x', 'y': 'y'}
+        # Define CDS data
+        r1_data = defaultdict(list, {'index': [], 'top': [], 'bottom': []})
+        r2_data = defaultdict(list, {'index': [], 'top': [], 'bottom': []})
+        s1_data = defaultdict(list, {'x0': [], 'y0': [], 'x1': [], 'y1': []})
+        s2_data = defaultdict(list, {'x0': [], 'y0': [], 'x1': [], 'y1': []})
+        w1_data = defaultdict(list, {'index': [], vdim: []})
+        w2_data = defaultdict(list, {'index': [], vdim: []})
+        out_data = defaultdict(list, {'index': [], vdim: []})
+
+        # Define glyph-data mapping
+        if self.invert_axes:
+            vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': 0.7}
+            seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
+            whisk_map = {'y': 'index', 'x': vdim, 'height': 0.2, 'width': 0.001}
+            out_map = {'x': 'index', 'y': vdim}
+        else:
+            vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
+            seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
+            whisk_map = {'x': 'index', 'y': vdim, 'width': 0.2, 'height': 0.001}
+            out_map = {'x': 'index', 'y': vdim}
+        vbar2_map = dict(vbar_map)
+
+        # Get color values
+        if self.color_index is not None:
+            cdim = element.get_dimension(self.color_index)
+            cidx = element.get_dimension_index(self.color_index)
+        else:
+            cdim, cidx = None, None
 
         factors = []
         for key, g in groups.items():
+            # Compute group label
             if element.kdims:
                 label = ', '.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
-            label = str(label)
-            factors.append(label)
+
+            # Add color factor
+            if cidx is not None and cidx<element.ndims:
+                factors.append(wrap_tuple(key)[cidx])
+            else:
+                factors.append(label)
+
+            # Compute statistics
             vals = g.dimension_values(g.vdims[0])
             q1 = np.percentile(vals, q=25)
             q2 = np.percentile(vals, q=50)
@@ -945,19 +988,15 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             iqr = q3 - q1
             upper = q3 + 1.5*iqr
             lower = q1 - 1.5*iqr
-
             outliers = vals[(vals>upper) | (vals<lower)]
-            if len(outliers):
-                out_data['x'] += [label]*len(outliers)
-                out_data['y'] += list(outliers)
 
-            r1_data['x'].append(label)
-            r2_data['x'].append(label)
+            # Add to CDS data
+            r1_data['index'].append(label)
+            r2_data['index'].append(label)
             r1_data['top'].append(q2)
             r2_data['top'].append(q1)
             r1_data['bottom'].append(q3)
             r2_data['bottom'].append(q2)
-
             s1_data['x0'].append(label)
             s2_data['x0'].append(label)
             s1_data['x1'].append(label)
@@ -966,25 +1005,44 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             s2_data['y0'].append(lower)
             s1_data['y1'].append(q3)
             s2_data['y1'].append(q1)
+            w1_data['index'].append(label)
+            w2_data['index'].append(label)
+            w1_data[vdim].append(lower)
+            w2_data[vdim].append(upper)
+            if len(outliers):
+                out_data['index'] += [label]*len(outliers)
+                out_data[vdim] += list(outliers)
+                if any(isinstance(t, HoverTool) for t in self.state.tools):
+                    for kd, k in zip(element.kdims, wrap_tuple(key)):
+                        out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
 
-            w1_data['x'].append(label)
-            w2_data['x'].append(label)
-            w1_data['y'].append(lower)
-            w2_data['y'].append(upper)
+        # Define combined data and mappings
+        bar_glyph = 'hbar' if self.invert_axes else 'vbar'
+        data = {
+            bar_glyph+'_1': r1_data, bar_glyph+'_2': r2_data, 'segment_1': s1_data,
+            'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
+            'circle': out_data
+        }
+        mapping = {
+            bar_glyph+'_1': vbar_map, bar_glyph+'_2': vbar2_map, 'segment_1': seg_map,
+            'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
+            'circle': out_map
+        }
 
-        vbar2_map = dict(vbar_map)
-        data = {'vbar_1': r1_data, 'vbar_2': r2_data, 'segment_1': s1_data,
-               'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
-               'circle': out_data}
-        mapping = {'vbar_1': vbar_map, 'vbar_2': vbar2_map, 'segment_1': seg_map,
-                   'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
-                   'circle': out_map}
-
+        # Return if not grouped
         if not element.kdims:
             return data, mapping
 
-        # Get colors
-        xdim = element.get_dimension(0)
+        # Define color dimension and data
+        if cidx is None or cidx>=element.ndims:
+            cdim = Dimension('index')
+        else:
+            r1_data[dimension_sanitizer(cdim.name)] = factors
+            r2_data[dimension_sanitizer(cdim.name)] = factors
+            factors = list(unique_iterator(factors))
+
+        # Get colors and define categorical colormapper
+        cname = dimension_sanitizer(cdim.name)
         style = self.style[self.cyclic_index]
         cmap = style.get('cmap')
         if cmap is None:
@@ -994,13 +1052,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
         else:
             colors = None
-        mapper = self._get_colormapper(xdim, element, ranges, style,
-                                       factors, colors)
-        vbar2_map['fill_color'] = {'field': xdim.name,
-                                  'transform': mapper}
-        vbar_map['fill_color'] = {'field': xdim.name,
-                                  'transform': mapper}
-        vbar_map['legend'] = xdim.name
+        mapper = self._get_colormapper(cdim, element, ranges, style, factors, colors)
+        vbar_map['fill_color'] = {'field': cname, 'transform': mapper}
+        vbar2_map['fill_color'] = {'field': cname, 'transform': mapper}
+        vbar_map['legend'] = cdim.name
 
         return data, mapping
 
