@@ -712,7 +712,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 hover.tooltips = tooltips
 
 
-    def _init_glyphs(self, plot, element, ranges):
+    def _init_glyphs(self, plot, element, ranges, source):
         empty = False
         style_element = element.last if self.batched else element
 
@@ -771,7 +771,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
-        self._init_glyphs(plot, element, ranges)
+        self._init_glyphs(plot, element, ranges, source)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
             self._update_ranges(style_element, ranges)
@@ -945,7 +945,7 @@ class CompositeElementPlot(ElementPlot):
     # Mapping between glyph name and style groups
     _glyph_styles = {}
 
-    def _init_glyphs(self, plot, element, ranges):
+    def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
         empty = False
         if self.batched:
@@ -975,7 +975,6 @@ class CompositeElementPlot(ElementPlot):
 
 
     def _process_properties(self, key, properties):
-
         style_group = self._glyph_styles[key.split('_')[0]]
         group_props = {}
         for k, v in properties.items():
