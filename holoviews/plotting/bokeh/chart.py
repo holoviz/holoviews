@@ -900,10 +900,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def get_extents(self, element, ranges):
         """
-        Extents are set to None because x-axis is categorical and
+        Extents are set to '' and None because x-axis is categorical and
         y-axis auto-ranges.
         """
-        return (None, None, None, None)
+        return ('', None, '', None)
 
     def _get_axis_labels(self, *args, **kwargs):
         """
@@ -924,9 +924,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             factors = [', '.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
                        for key in element.groupby(element.kdims).data.keys()]
             if self.invert_axes:
-                return None, factors
+                return [], factors
             else:
-                return factors, None
+                return factors, []
 
     def get_data(self, element, ranges=None, empty=False):
         if element.kdims:
