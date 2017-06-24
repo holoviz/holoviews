@@ -942,6 +942,9 @@ class CompositeElementPlot(ElementPlot):
     drawing of multiple glyphs.
     """
 
+    # Mapping between glyph name and style groups
+    _glyph_styles = {}
+
     def _init_glyphs(self, plot, element, ranges):
         # Get data and initialize data source
         empty = False
@@ -957,6 +960,7 @@ class CompositeElementPlot(ElementPlot):
             source = self._init_datasource(gdata)
             self.handles[key+'_source'] = source
             properties = self._glyph_properties(plot, element, source, ranges)
+            properties = self._process_properties(key, properties)
             with abbreviated_exception():
                 renderer, glyph = self._init_glyph(plot, mapping[key], properties, key)
             self.handles[key+'_glyph'] = glyph
@@ -968,6 +972,20 @@ class CompositeElementPlot(ElementPlot):
             # Update plot, source and glyph
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph)
+
+
+    def _process_properties(self, key, properties):
+
+        style_group = self._glyph_styles[key.split('_')[0]]
+        group_props = {}
+        for k, v in properties.items():
+            if k in self.style_opts:
+                if k.split('_')[0] == style_group:
+                    k = '_'.join(k.split('_')[1:])
+                else:
+                    continue
+            group_props[k] = v
+        return group_props
 
 
     def _update_glyphs(self, element, ranges):
@@ -992,6 +1010,7 @@ class CompositeElementPlot(ElementPlot):
 
             if glyph:
                 properties = self._glyph_properties(plot, element, source, ranges)
+                properties = self._process_properties(key, properties)
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
                     self._update_glyph(renderer, properties, mapping, glyph)

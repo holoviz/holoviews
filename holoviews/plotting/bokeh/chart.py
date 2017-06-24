@@ -4,7 +4,7 @@ import numpy as np
 import param
 from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
                           Range1d, CategoricalColorMapper, CustomJS,
-                          HoverTool)
+                          HoverTool, FactorRange)
 from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
@@ -870,10 +870,17 @@ class BoxWhiskerPlot(CompositeElementPlot):
 
     _x_range_type = FactorRange
 
+    _glyph_styles = {'rect': 'whisker', 'segment': 'whisker',
+                     'vbar': 'box', 'circle': 'outlier'}
+
     _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2', 'rect_1', 'rect_2', 'circle']
 
     _update_handles = [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
                        for glyph in _glyphs]
+
+    style_opts = (['whisker_'+p for p in line_properties] +\
+                  ['box_'+p for p in fill_properties+line_properties] +\
+                  ['outlier_'+p for p in fill_properties+line_properties])
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
