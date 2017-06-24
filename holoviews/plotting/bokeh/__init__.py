@@ -21,7 +21,7 @@ from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
-                    AreaPlot, VectorFieldPlot)
+                    AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
@@ -46,6 +46,7 @@ associations = {Overlay: OverlayPlot,
                 # Charts
                 Curve: CurvePlot,
                 Bars: BarPlot,
+                BoxWhisker: BoxWhiskerPlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
                 ErrorBars: ErrorPlot,

@@ -15,8 +15,8 @@ from ...core.spaces import DynamicMap
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label
-from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
-                      fill_properties)
+from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
+                      line_properties, fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex
 
@@ -863,3 +863,86 @@ class BarPlot(ColorbarPlot, LegendPlot):
         collapsed = Bars(element.table(), kdims=el.kdims+element.kdims,
                             vdims=el.vdims)
         return self.get_data(collapsed, ranges, empty)
+
+
+
+class BoxWhiskerPlot(CompositeElementPlot):
+
+    _x_range_type = FactorRange
+
+    _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2', 'rect_1', 'rect_2', 'circle']
+
+    _update_handles = [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
+                       for glyph in _glyphs]
+
+    def get_data(self, element, ranges=None, empty=False):
+        style = self.style[self.cyclic_index]
+        if element.kdims:
+            groups = element.groupby(element.kdims).data
+        else:
+            groups = hv.OrderedDict([((element.label,), element)])
+
+        r1_data = {'x': [], 'top': [], 'bottom': []}
+        r2_data = {'x': [], 'top': [], 'bottom': []}
+        s1_data = {'x0': [], 'y0': [], 'x1': [], 'y1': []}
+        s2_data = {'x0': [], 'y0': [], 'x1': [], 'y1': []}
+        w1_data = {'x': [], 'y': []}
+        w2_data = {'x': [], 'y': []}
+        out_data = {'x': [], 'y': []}
+
+        cats = []
+        for key, g in groups.items():
+            if element.kdims:
+                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+            else:
+                label = key
+            label = str(label)
+            cats.append(label)
+            vals = g.dimension_values(g.vdims[0])
+            q1 = np.percentile(vals, q=25)
+            q2 = np.percentile(vals, q=50)
+            q3 = np.percentile(vals, q=75)
+            qmin = np.percentile(vals, q=0)
+            qmax = np.percentile(vals, q=100)
+            iqr = q3 - q1
+            upper = q3 + 1.5*iqr
+            lower = q1 - 1.5*iqr
+
+            outliers = vals[(vals>upper) | (vals<lower)]
+            if len(outliers):
+                out_data['x'] += [label]*len(outliers)
+                out_data['y'] += list(outliers)
+
+            r1_data['x'].append(label)
+            r2_data['x'].append(label)
+            r1_data['top'].append(q2)
+            r2_data['top'].append(q1)
+            r1_data['bottom'].append(q3)
+            r2_data['bottom'].append(q2)
+
+            s1_data['x0'].append(label)
+            s2_data['x0'].append(label)
+            s1_data['x1'].append(label)
+            s2_data['x1'].append(label)
+            s1_data['y0'].append(upper)
+            s2_data['y0'].append(lower)
+            s1_data['y1'].append(q3)
+            s2_data['y1'].append(q1)
+
+            w1_data['x'].append(label)
+            w2_data['x'].append(label)
+            w1_data['y'].append(lower)
+            w2_data['y'].append(upper)
+
+        data = {'vbar_1': r1_data, 'vbar_2': r2_data, 'segment_1': s1_data,
+               'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
+               'circle': out_data}
+        vbar_map = {'x': 'x', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
+        seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
+        whisk_map = {'x': 'x', 'y': 'y', 'width': 0.2, 'height': 0.001}
+        out_map = {'x': 'x', 'y': 'y'}
+        mapping = {'vbar_1': vbar_map, 'vbar_2': vbar_map, 'segment_1': seg_map,
+                   'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
+                   'circle': out_map}
+        return data, mapping
+
