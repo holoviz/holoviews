@@ -866,28 +866,55 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
 
 
-class BoxWhiskerPlot(CompositeElementPlot):
+class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    # Declare that y-range should auto-range if not bounded
     _x_range_type = FactorRange
-
+    _y_range_type = DataRange1d
     _glyph_styles = {'rect': 'whisker', 'segment': 'whisker',
                      'vbar': 'box', 'circle': 'outlier'}
-
     _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2', 'rect_1', 'rect_2', 'circle']
-
     _update_handles = [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
-                       for glyph in _glyphs]
-
+                       for glyph in _glyphs] + ['color_mapper', 'colorbar']
     style_opts = (['whisker_'+p for p in line_properties] +\
                   ['box_'+p for p in fill_properties+line_properties] +\
-                  ['outlier_'+p for p in fill_properties+line_properties])
+                  ['outlier_'+p for p in fill_properties+line_properties] + ['cmap'])
+
+    def get_extents(self, element, ranges):
+        return (None, None, None, None)
+
+    def _get_axis_labels(self, *args, **kwargs):
+        """
+        Override axis mapping by setting the first key and value
+        dimension as the x-axis and y-axis labels.
+        """
+        element = self.current_frame
+        xlabel = ', '.join([kd.pprint_label for kd in element.kdims])
+        ylabel = element.vdims[0].pprint_label
+        return xlabel, ylabel, None
+
+    def _get_factors(self, element):
+        """
+        Get factors for categorical axes.
+        """
+        if not element.kdims:
+            return [element.label], []
+        else:
+            factors = [', '.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                       for key in element.groupby(element.kdims).data.keys()]
+            if self.invert_axes:
+                return None, factors
+            else:
+                return factors, None
 
     def get_data(self, element, ranges=None, empty=False):
-        style = self.style[self.cyclic_index]
         if element.kdims:
             groups = element.groupby(element.kdims).data
         else:
-            groups = hv.OrderedDict([((element.label,), element)])
+            groups = dict([(element.label, element)])
 
         r1_data = {'x': [], 'top': [], 'bottom': []}
         r2_data = {'x': [], 'top': [], 'bottom': []}
@@ -896,15 +923,19 @@ class BoxWhiskerPlot(CompositeElementPlot):
         w1_data = {'x': [], 'y': []}
         w2_data = {'x': [], 'y': []}
         out_data = {'x': [], 'y': []}
+        vbar_map = {'x': 'x', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
+        seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
+        whisk_map = {'x': 'x', 'y': 'y', 'width': 0.2, 'height': 0.001}
+        out_map = {'x': 'x', 'y': 'y'}
 
-        cats = []
+        factors = []
         for key, g in groups.items():
             if element.kdims:
-                label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
+                label = ', '.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
                 label = key
             label = str(label)
-            cats.append(label)
+            factors.append(label)
             vals = g.dimension_values(g.vdims[0])
             q1 = np.percentile(vals, q=25)
             q2 = np.percentile(vals, q=50)
@@ -941,15 +972,35 @@ class BoxWhiskerPlot(CompositeElementPlot):
             w1_data['y'].append(lower)
             w2_data['y'].append(upper)
 
+        vbar2_map = dict(vbar_map)
         data = {'vbar_1': r1_data, 'vbar_2': r2_data, 'segment_1': s1_data,
                'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
                'circle': out_data}
-        vbar_map = {'x': 'x', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
-        seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
-        whisk_map = {'x': 'x', 'y': 'y', 'width': 0.2, 'height': 0.001}
-        out_map = {'x': 'x', 'y': 'y'}
-        mapping = {'vbar_1': vbar_map, 'vbar_2': vbar_map, 'segment_1': seg_map,
+        mapping = {'vbar_1': vbar_map, 'vbar_2': vbar2_map, 'segment_1': seg_map,
                    'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
                    'circle': out_map}
+
+        if not element.kdims:
+            return data, mapping
+
+        # Get colors
+        xdim = element.get_dimension(0)
+        style = self.style[self.cyclic_index]
+        cmap = style.get('cmap')
+        if cmap is None:
+            styles = self.style.max_cycles(len(factors))
+            colors = [styles[i].get('box_color', styles[i]['box_fill_color'])
+                      for i in range(len(factors))]
+            colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
+        else:
+            colors = None
+        mapper = self._get_colormapper(xdim, element, ranges, style,
+                                       factors, colors)
+        vbar2_map['fill_color'] = {'field': xdim.name,
+                                  'transform': mapper}
+        vbar_map['fill_color'] = {'field': xdim.name,
+                                  'transform': mapper}
+        vbar_map['legend'] = xdim.name
+
         return data, mapping
 
