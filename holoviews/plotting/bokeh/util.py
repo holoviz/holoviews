@@ -457,41 +457,6 @@ def hsv_to_rgb(hsv):
     return rgb.reshape(shape+(3,))
 
 
-def update_plot(old, new):
-    """
-    Updates an existing plot or figure with a new plot,
-    useful for bokeh charts and mpl conversions, which do
-    not allow updating an existing plot easily.
-
-    ALERT: Should be replaced once bokeh supports it directly
-    """
-    old_renderers = old.select(type=GlyphRenderer)
-    new_renderers = new.select(type=GlyphRenderer)
-
-    old.x_range.update(**new.x_range.properties_with_values())
-    old.y_range.update(**new.y_range.properties_with_values())
-    updated = []
-    for new_r in new_renderers:
-        for old_r in old_renderers:
-            if type(old_r.glyph) == type(new_r.glyph):
-                old_renderers.pop(old_renderers.index(old_r))
-                new_props = new_r.properties_with_values()
-                source = new_props.pop('data_source')
-                value_props = new_r.glyph.properties_with_values()
-                value_props = {k: v for k, v in value_props.items()
-                               if not (isinstance(v, dict) and 'units' in v)}
-                old_r.glyph.update(**value_props)
-                old_r.update(**new_props)
-                old_r.data_source.data.update(source.data)
-                updated.append(old_r)
-                break
-
-    for old_r in old_renderers:
-        if old_r not in updated:
-            emptied = {k: [] for k in old_r.data_source.data}
-            old_r.data_source.data.update(emptied)
-
-
 def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     """
     Computes the width of a model and sets up appropriate padding

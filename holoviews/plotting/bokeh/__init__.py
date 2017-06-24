@@ -17,7 +17,6 @@ except:
     DFrame = None
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .bkcharts import BoxPlot
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
@@ -46,6 +45,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Charts
                 Curve: CurvePlot,
+                Bars: BarPlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
                 ErrorBars: ErrorPlot,
@@ -95,12 +95,6 @@ if config.style_17:
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
-try:
-    import pandas # noqa (Conditional import)
-    Store.register({BoxWhisker: BoxPlot,
-                    Bars: BarPlot}, 'bokeh')
-except ImportError:
-    pass
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
