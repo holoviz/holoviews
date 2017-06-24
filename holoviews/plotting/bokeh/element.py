@@ -971,7 +971,7 @@ class CompositeElementPlot(ElementPlot):
 
             # Update plot, source and glyph
             with abbreviated_exception():
-                self._update_glyph(renderer, properties, mapping, glyph)
+                self._update_glyph(renderer, properties, mapping[key], glyph)
 
 
     def _process_properties(self, key, properties):
@@ -1013,7 +1013,7 @@ class CompositeElementPlot(ElementPlot):
                 properties = self._process_properties(key, properties)
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
-                    self._update_glyph(renderer, properties, mapping, glyph)
+                    self._update_glyph(renderer, properties, mapping[key], glyph)
 
 
     def _init_glyph(self, plot, mapping, properties, key):
