@@ -345,17 +345,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
         categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
+        range_types = (self._x_range_type, self._y_range_type)
+        if self.invert_axes: range_types = range_types[::-1]
+        x_range_type, y_range_type = range_types
         if categorical or categorical_x:
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
         elif 'x_range' not in plot_ranges:
-            plot_ranges['x_range'] = self._x_range_type()
+            plot_ranges['x_range'] = x_range_type()
 
         if categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = self._y_range_type()
+            plot_ranges['y_range'] = y_range_type()
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
