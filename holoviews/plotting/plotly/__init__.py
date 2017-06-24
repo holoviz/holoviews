@@ -1,6 +1,6 @@
 from ...core.options import Store, Cycle, Options
 from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
-                     GridMatrix)
+                     GridMatrix, config)
 from ...interface.seaborn import *    # noqa (Element import for registration)
 from ...element import *              # noqa (Element import for registration)
 from .renderer import PlotlyRenderer
@@ -30,6 +30,7 @@ Store.register({Points: PointPlot,
                 Raster: RasterPlot,
                 Image: RasterPlot,
                 HeatMap: HeatMapPlot,
+                QuadMesh: QuadMeshPlot,
 
                 # 3D Plot
                 Scatter3D: Scatter3dPlot,
@@ -51,6 +52,7 @@ Store.register({Points: PointPlot,
 
 options = Store.options(backend='plotly')
 
+dflt_cmap = 'hot' if config.style_17 else 'fire'
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
@@ -62,3 +64,9 @@ options.ErrorBars = Options('style', color='black')
 options.Scatter = Options('style', color=Cycle())
 options.Points = Options('style', color=Cycle())
 options.Trisurface = Options('style', cmap='viridis')
+
+# Rasters
+options.Image = Options('style', cmap=dflt_cmap)
+options.Raster = Options('style', cmap=dflt_cmap)
+options.QuadMesh = Options('style', cmap=dflt_cmap)
+options.HeatMap = Options('style', cmap='RdBu_r')
