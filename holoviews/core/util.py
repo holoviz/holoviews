@@ -1479,6 +1479,8 @@ def bound_range(vals, density):
     if len(vals) > 1 and vals[0] > vals[1]:
         invert = True
     if not density:
-        density = round(1./((high-low)/(len(vals)-1)), sys.float_info.dig)
+        with warnings.catch_warnings():
+            warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
+            density = 1./((high-low)/(len(vals)-1))
     halfd = 0.5/density
     return low-halfd, high+halfd, density, invert
