@@ -39,9 +39,10 @@ class HeatMapPlot(RasterPlot):
         return (np.NaN,)*4
 
     def get_data(self, element, ranges):
-        return (), dict(x=unique_array(element.dimension_values(0, False)),
-                        y=unique_array(element.dimension_values(1, False)),
-                        z=np.flipud(element.raster))
+        gridded = element.gridded.sort()
+        return (), dict(x=gridded.dimension_values(0, False),
+                        y=gridded.dimension_values(1, False),
+                        z=gridded.dimension_values(2, flat=False))
 
 
 class QuadMeshPlot(RasterPlot):

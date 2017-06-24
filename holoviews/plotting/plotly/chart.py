@@ -12,7 +12,7 @@ class ScatterPlot(ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity']
+    style_opts = ['symbol', 'color', 'cmap', 'fillcolor', 'opacity', 'fill', 'marker', 'size']
 
     graph_obj = go.Scatter
 
@@ -216,3 +216,6 @@ class BoxWhiskerPlot(ElementPlot):
         fig = go.Figure(data=plots, layout=layout)
         self.handles['fig'] = fig
         return fig
+
+    def get_extents(self, element, ranges):
+        return (None, None, None, None)

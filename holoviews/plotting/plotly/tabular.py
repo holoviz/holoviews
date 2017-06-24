@@ -1,5 +1,5 @@
 import param
-from plotly.tools import FigureFactory as FF
+from plotly.figure_factory import create_table
 from .element import ElementPlot
 
 
@@ -16,7 +16,7 @@ class TablePlot(ElementPlot):
         return (headings+data,), {}
 
     def init_graph(self, plot_args, plot_kwargs):
-        return FF.create_table(*plot_args, **plot_kwargs)
+        return create_table(*plot_args, **plot_kwargs)
 
 
     def graph_options(self, element, ranges):

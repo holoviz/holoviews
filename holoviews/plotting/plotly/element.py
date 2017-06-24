@@ -1,6 +1,8 @@
+import numpy as np
 import plotly.graph_objs as go
 import param
 
+from ...core.util import basestring
 from .plot import PlotlyPlot
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from .. import util
@@ -211,7 +213,18 @@ class ColorbarPlot(ElementPlot):
         else:
             opts['showscale'] = False
 
-        opts['colorscale'] = style.pop('cmap', 'viridis')
+        cmap = style.pop('cmap', 'viridis')
+        if cmap == 'fire':
+            values = np.linspace(0, 1, len(util.fire_colors))
+            cmap = [(v, 'rgb(%d, %d, %d)' % tuple(c))
+                    for v, c in zip(values, np.array(util.fire_colors)*255)]
+        elif isinstance(cmap, basestring):
+            if cmap[0] == cmap[0].lower():
+                cmap = cmap[0].upper() + cmap[1:]
+            if cmap.endswith('_r'):
+                cmap = cmap[:-2]
+                opts['reversescale'] = True
+        opts['colorscale'] = cmap
         if dim:
             cmin, cmax = ranges.get(dim.name, element.range(dim.name))
             opts['cmin'] = cmin
