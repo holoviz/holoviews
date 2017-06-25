@@ -1481,6 +1481,11 @@ def bound_range(vals, density):
     if not density:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
-            density = 1./((high-low)/(len(vals)-1))
+            full_precision_density = 1./((high-low)/(len(vals)-1))
+            density = round(full_precision_density, sys.float_info.dig)
+        if density == 0:
+            density = full_precision_density
+    if density == 0:
+        raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
     return low-halfd, high+halfd, density, invert
