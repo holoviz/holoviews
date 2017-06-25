@@ -947,7 +947,7 @@ class CompositeElementPlot(ElementPlot):
     """
 
     # Mapping between glyph name and style groups
-    _glyph_styles = {}
+    _style_groups = {}
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
@@ -979,7 +979,7 @@ class CompositeElementPlot(ElementPlot):
 
 
     def _process_properties(self, key, properties):
-        style_group = self._glyph_styles[key.split('_')[0]]
+        style_group = self._style_groups[key.split('_')[0]]
         group_props = {}
         for k, v in properties.items():
             if k in self.style_opts:

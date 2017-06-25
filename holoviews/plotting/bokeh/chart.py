@@ -883,17 +883,14 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _y_range_type = DataRange1d
 
     # Map each glyph to a style group
-    _glyph_styles = {'rect': 'whisker', 'segment': 'whisker',
-                     'vbar': 'box', 'circle': 'outlier', 'hbar': 'box'}
-
-    # Define all the glyphs making up the plot
-    _glyphs = ['vbar_1', 'vbar_2', 'segment_1', 'segment_2',
-               'rect_1', 'rect_2', 'circle', 'hbar_1', 'hbar_2']
+    _style_groups = {'rect': 'whisker', 'segment': 'whisker',
+                     'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
     # Define all the glyph handles to update
-    _update_handles = (lambda gs:
-                       [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
-                        for glyph in gs] + ['color_mapper', 'colorbar'])(_glyphs)
+    _update_handles = ([glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
+                        for glyph in ['vbar_1', 'vbar_2', 'segment_1', 'segment_2',
+                                      'rect_1', 'rect_2', 'circle', 'hbar_1', 'hbar_2']] +
+                       ['color_mapper', 'colorbar'])
 
     style_opts = (['whisker_'+p for p in line_properties] +\
                   ['box_'+p for p in fill_properties+line_properties] +\
