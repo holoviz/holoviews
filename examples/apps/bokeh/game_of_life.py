@@ -64,8 +64,7 @@ def update(pattern, counter, x, y):
         r, c = pattern.shape
         y, x = img.sheet2matrixidx(x,y)
         img.data[y:y+r,x:x+c] = pattern[::-1]
-    img.data = img.data.copy()
-    return img
+    return hv.Image(img)
 
 title = 'Game of Life - Tap to place pattern, Doubletap to clear'
 opts =  {
@@ -73,12 +72,11 @@ opts =  {
     'plot' : {'height': 400, 'width': 800, 'title_format': '{label}',
               'xaxis': None, 'yaxis': None}
 }
-img = hv.Image(np.zeros((100, 200), dtype=np.uint8)).redim.range(z=(0, 1))(**opts)
-
+img = hv.Image(np.zeros((100, 200), dtype=np.uint8))
 counter, tap = Counter(transient=True), Tap(transient=True)
 pattern_dim = hv.Dimension('Pattern', values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 
-doc = renderer.app(dmap)
+doc = renderer.server_doc(dmap.redim.range(z=(0, 1))(**opts))
 dmap.periodic(0.05, None)
 doc.title = 'Game of Life'
