@@ -891,8 +891,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                'rect_1', 'rect_2', 'circle', 'hbar_1', 'hbar_2']
 
     # Define all the glyph handles to update
-    _update_handles = [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
-                       for glyph in _glyphs] + ['color_mapper', 'colorbar']
+    _update_handles = (lambda gs:
+                       [glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
+                        for glyph in gs] + ['color_mapper', 'colorbar'])(_glyphs)
 
     style_opts = (['whisker_'+p for p in line_properties] +\
                   ['box_'+p for p in fill_properties+line_properties] +\
