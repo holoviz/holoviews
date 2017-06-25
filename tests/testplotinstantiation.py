@@ -1181,7 +1181,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(box)
         formatted = [box.kdims[0].pprint_value(t).replace(':', ';') for t in times]
         self.assertTrue(all(cds.data['index'][0] in formatted for cds in
-                            plot.state.select(ColumnDataSource) if cds.data.get('index')))
+                            plot.state.select(ColumnDataSource)
+                            if len(cds.data.get('index', []))))
 
     def test_curve_datetime64(self):
         dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
