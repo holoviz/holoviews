@@ -897,7 +897,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     style_opts = (['whisker_'+p for p in line_properties] +\
                   ['box_'+p for p in fill_properties+line_properties] +\
-                  ['outlier_'+p for p in fill_properties+line_properties] + ['cmap'])
+                  ['outlier_'+p for p in fill_properties+line_properties] + ['width', 'cmap'])
 
     def get_extents(self, element, ranges):
         """
@@ -935,25 +935,24 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             groups = element.groupby(element.kdims).data
         else:
             groups = dict([(element.label, element)])
+        style = self.style[self.cyclic_index]
         vdim = dimension_sanitizer(element.vdims[0].name)
 
         # Define CDS data
-        r1_data = defaultdict(list, {'index': [], 'top': [], 'bottom': []})
-        r2_data = defaultdict(list, {'index': [], 'top': [], 'bottom': []})
-        s1_data = defaultdict(list, {'x0': [], 'y0': [], 'x1': [], 'y1': []})
-        s2_data = defaultdict(list, {'x0': [], 'y0': [], 'x1': [], 'y1': []})
-        w1_data = defaultdict(list, {'index': [], vdim: []})
-        w2_data = defaultdict(list, {'index': [], vdim: []})
+        r1_data, r2_data = ({'index': [], 'top': [], 'bottom': []} for i in range(2))
+        s1_data, s2_data = ({'x0': [], 'y0': [], 'x1': [], 'y1': []} for i in range(2))
+        w1_data, w2_data = ({'index': [], vdim: []} for i in range(2))
         out_data = defaultdict(list, {'index': [], vdim: []})
 
         # Define glyph-data mapping
+        width = style.get('width', 0.7)
         if self.invert_axes:
-            vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': 0.7}
+            vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
             whisk_map = {'y': 'index', 'x': vdim, 'height': 0.2, 'width': 0.001}
-            out_map = {'x': 'index', 'y': vdim}
+            out_map = {'y': 'index', 'x': vdim}
         else:
-            vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': 0.7}
+            vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
             seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
             whisk_map = {'x': 'index', 'y': vdim, 'width': 0.2, 'height': 0.001}
             out_map = {'x': 'index', 'y': vdim}
@@ -983,33 +982,26 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
-            q1 = np.percentile(vals, q=25)
-            q2 = np.percentile(vals, q=50)
-            q3 = np.percentile(vals, q=75)
-            qmin = np.percentile(vals, q=0)
-            qmax = np.percentile(vals, q=100)
+            qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
             iqr = q3 - q1
             upper = q3 + 1.5*iqr
             lower = q1 - 1.5*iqr
             outliers = vals[(vals>upper) | (vals<lower)]
 
             # Add to CDS data
-            r1_data['index'].append(label)
-            r2_data['index'].append(label)
+            for data in [r1_data, r2_data, w1_data, w2_data]:
+                data['index'].append(label)
+            for data in [s1_data, s2_data]:
+                data['x0'].append(label)
+                data['x1'].append(label)
             r1_data['top'].append(q2)
             r2_data['top'].append(q1)
             r1_data['bottom'].append(q3)
             r2_data['bottom'].append(q2)
-            s1_data['x0'].append(label)
-            s2_data['x0'].append(label)
-            s1_data['x1'].append(label)
-            s2_data['x1'].append(label)
             s1_data['y0'].append(upper)
             s2_data['y0'].append(lower)
             s1_data['y1'].append(q3)
             s2_data['y1'].append(q1)
-            w1_data['index'].append(label)
-            w2_data['index'].append(label)
             w1_data[vdim].append(lower)
             w2_data[vdim].append(upper)
             if len(outliers):
@@ -1032,6 +1024,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             'circle': out_map
         }
 
+        # Cast data to arrays to take advantage of base64 encoding
+        for gdata in [r1_data, r2_data, s1_data, s2_data, w1_data, w2_data, out_data]:
+            for k, values in gdata.items():
+                gdata[k] = np.array(values)
+
         # Return if not grouped
         if not element.kdims:
             return data, mapping
@@ -1046,7 +1043,6 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         # Get colors and define categorical colormapper
         cname = dimension_sanitizer(cdim.name)
-        style = self.style[self.cyclic_index]
         cmap = style.get('cmap')
         if cmap is None:
             styles = self.style.max_cycles(len(factors))
