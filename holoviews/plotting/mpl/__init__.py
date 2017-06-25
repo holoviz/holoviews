@@ -2,6 +2,7 @@ import os
 from distutils.version import LooseVersion
 
 from matplotlib import rc_params_from_file
+from matplotlib.colors import ListedColormap
 
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
@@ -73,10 +74,11 @@ else:
     Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                                '#6d904f', '#8b8b8b']
 
-
-# Filter spectral colormaps to avoid warning in mpl 2.0
+# Define Palettes and cycles from matplotlib colormaps
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
                           if 'spectral' not in cm and 'Vega' not in cm})
+listed_cmaps = [cm for cm in Palette.colormaps.values() if isinstance(cm, ListedColormap)]
+Cycle.default_cycles.update({cm.name: list(cm.colors) for cm in listed_cmaps})
 
 style_aliases = {'edgecolor': ['ec', 'ecolor'], 'facecolor': ['fc'],
                  'linewidth': ['lw'], 'edgecolors': ['ec', 'edgecolor'],

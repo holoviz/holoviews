@@ -1,6 +1,7 @@
 from __future__ import absolute_import
 
 import numpy as np
+from bokeh.palettes import all_palettes
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, GridMatrix, NdLayout, config)
@@ -9,7 +10,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField)
-from ...core.options import Options, Cycle
+from ...core.options import Options, Cycle, Palette
 
 try:
     from ...interface import DFrame
@@ -105,6 +106,16 @@ except ImportError:
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
                                            '#6d904f', '#8b8b8b']
+
+# Register bokeh.palettes with Palette and Cycle
+def colormap_generator(palette):
+    return lambda value: palette[int(value*(len(palette)-1))]
+
+Palette.colormaps.update({name: colormap_generator(p[max(p.keys())])
+                          for name, p in all_palettes.items()})
+
+Cycle.default_cycles.update({name: p[max(p.keys())] for name, p in all_palettes.items()
+                             if max(p.keys()) < 256})
 
 dflt_cmap = 'hot' if config.style_17 else 'fire'
 options = Store.options(backend='bokeh')

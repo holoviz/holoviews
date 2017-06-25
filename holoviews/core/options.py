@@ -252,7 +252,12 @@ class Cycle(param.Parameterized):
 
     default_cycles = {'default_colors': []}
 
-    def __init__(self, **params):
+    def __init__(self, cycle=None, **params):
+        if cycle is not None:
+            if isinstance(cycle, basestring):
+                params['key'] = cycle
+            else:
+                params['values'] = cycle
         super(Cycle, self).__init__(**params)
         self.values = self._get_values()
 
