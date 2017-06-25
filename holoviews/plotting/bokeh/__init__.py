@@ -18,12 +18,11 @@ except:
     DFrame = None
 
 from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
-from .bkcharts import BoxPlot
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
-                    AreaPlot, VectorFieldPlot)
+                    AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
@@ -47,6 +46,8 @@ associations = {Overlay: OverlayPlot,
 
                 # Charts
                 Curve: CurvePlot,
+                Bars: BarPlot,
+                BoxWhisker: BoxWhiskerPlot,
                 Points: PointPlot,
                 Scatter: PointPlot,
                 ErrorBars: ErrorPlot,
@@ -96,12 +97,6 @@ if config.style_17:
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
-try:
-    import pandas # noqa (Conditional import)
-    Store.register({BoxWhisker: BoxPlot,
-                    Bars: BarPlot}, 'bokeh')
-except ImportError:
-    pass
 
 point_size = np.sqrt(6) # Matches matplotlib default
 Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
@@ -122,6 +117,8 @@ options = Store.options(backend='bokeh')
 
 # Charts
 options.Curve = Options('style', color=Cycle(), line_width=2)
+options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='black',
+                             box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())

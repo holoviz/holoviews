@@ -345,17 +345,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
         categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
+        range_types = (self._x_range_type, self._y_range_type)
+        if self.invert_axes: range_types = range_types[::-1]
+        x_range_type, y_range_type = range_types
         if categorical or categorical_x:
             x_axis_type = 'auto'
             plot_ranges['x_range'] = FactorRange()
         elif 'x_range' not in plot_ranges:
-            plot_ranges['x_range'] = self._x_range_type()
+            plot_ranges['x_range'] = x_range_type()
 
         if categorical or categorical_y:
             y_axis_type = 'auto'
             plot_ranges['y_range'] = FactorRange()
         elif 'y_range' not in plot_ranges:
-            plot_ranges['y_range'] = self._y_range_type()
+            plot_ranges['y_range'] = y_range_type()
 
         return (x_axis_type, y_axis_type), (xlabel, ylabel, zlabel), plot_ranges
 
@@ -650,7 +653,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties['source'] = source
         return properties
 
-    def _update_glyphs(self, renderer, properties, mapping, glyph):
+    def _update_glyph(self, renderer, properties, mapping, glyph):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
@@ -699,7 +702,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
-        hover.renderers = [renderer]
+        hover.renderers.append(renderer)
 
         # If datetime column is in the data replace hover formatter
         for k, v in source.data.items():
@@ -710,6 +713,37 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         formatter = '@{%s_dt_strings}' % k
                     tooltips.append((name, formatter))
                 hover.tooltips = tooltips
+
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        empty = False
+        style_element = element.last if self.batched else element
+
+        # Get data and initialize data source
+        empty = False
+        if self.batched:
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
+            current_id = element._plot_id
+        if source is None:
+            source = self._init_datasource(data)
+        self.handles['previous_id'] = current_id
+        self.handles['source'] = source
+
+        properties = self._glyph_properties(plot, style_element, source, ranges)
+        with abbreviated_exception():
+            renderer, glyph = self._init_glyph(plot, mapping, properties)
+        self.handles['glyph'] = glyph
+        if isinstance(renderer, Renderer):
+            self.handles['glyph_renderer'] = renderer
+
+        self._postprocess_hover(renderer, source)
+
+        # Update plot, source and glyph
+        with abbreviated_exception():
+            self._update_glyph(renderer, properties, mapping, glyph)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -740,31 +774,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.handles['y_range'] = plot.y_range
         self.handles['plot'] = plot
 
-        # Get data and initialize data source
-        empty = False
-        if self.batched:
-            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-            data, mapping = self.get_batched_data(element, ranges, empty)
-        else:
-            data, mapping = self.get_data(element, ranges, empty)
-            current_id = element._plot_id
-        if source is None:
-            source = self._init_datasource(data)
-        self.handles['previous_id'] = current_id
-        self.handles['source'] = source
-
-        properties = self._glyph_properties(plot, style_element, source, ranges)
-        with abbreviated_exception():
-            renderer, glyph = self._init_glyph(plot, mapping, properties)
-        self.handles['glyph'] = glyph
-        if isinstance(renderer, Renderer):
-            self.handles['glyph_renderer'] = renderer
-
-        self._postprocess_hover(renderer, source)
-
-        # Update plot, source and glyph
-        with abbreviated_exception():
-            self._update_glyphs(renderer, properties, mapping, glyph)
+        self._init_glyphs(plot, element, ranges, source)
         if not self.overlaid:
             self._update_plot(key, plot, style_element)
             self._update_ranges(style_element, ranges)
@@ -779,6 +789,36 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return plot
+
+
+    def _update_glyphs(self, element, ranges):
+        plot = self.handles['plot']
+        glyph = self.handles.get('glyph')
+        source = self.handles['source']
+        empty = False
+        mapping = {}
+
+        # Cache frame object id to skip updating data if unchanged
+        previous_id = self.handles.get('previous_id', None)
+        if self.batched:
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
+        else:
+            current_id = element._plot_id
+        self.handles['previous_id'] = current_id
+        self.static_source = (self.dynamic and (current_id == previous_id))
+        if self.batched:
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
+
+        if not self.static_source:
+            self._update_datasource(source, data)
+
+        if glyph:
+            properties = self._glyph_properties(plot, element, source, ranges)
+            renderer = self.handles.get('glyph_renderer')
+            with abbreviated_exception():
+                self._update_glyph(renderer, properties, mapping, glyph)
 
 
     def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
@@ -814,33 +854,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.set_param(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
+        self._update_glyphs(element, ranges)
 
         plot = self.handles['plot']
-        source = self.handles['source']
-        empty = False
-        mapping = {}
-
-        # Cache frame object id to skip updating data if unchanged
-        previous_id = self.handles.get('previous_id', None)
-        if self.batched:
-            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-        else:
-            current_id = element._plot_id
-        self.handles['previous_id'] = current_id
-        self.static_source = (self.dynamic and (current_id == previous_id))
-        if self.batched:
-            data, mapping = self.get_batched_data(element, ranges, empty)
-        else:
-            data, mapping = self.get_data(element, ranges, empty)
-
-        if not self.static_source:
-            self._update_datasource(source, data)
-
-        if glyph:
-            properties = self._glyph_properties(plot, element, source, ranges)
-            renderer = self.handles.get('glyph_renderer')
-            with abbreviated_exception():
-                self._update_glyphs(renderer, properties, mapping, glyph)
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
@@ -922,6 +938,95 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                      if f else [])]
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
+
+
+class CompositeElementPlot(ElementPlot):
+    """
+    A CompositeElementPlot is an Element plot type that coordinates
+    drawing of multiple glyphs.
+    """
+
+    # Mapping between glyph name and style groups
+    _style_groups = {}
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        # Get data and initialize data source
+        empty = False
+        if self.batched:
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
+            data, mapping = self.get_batched_data(element, ranges, empty)
+        else:
+            data, mapping = self.get_data(element, ranges, empty)
+            current_id = element._plot_id
+
+        self.handles['previous_id'] = current_id
+        for key, gdata in data.items():
+            source = self._init_datasource(gdata)
+            self.handles[key+'_source'] = source
+            properties = self._glyph_properties(plot, element, source, ranges)
+            properties = self._process_properties(key, properties)
+            with abbreviated_exception():
+                renderer, glyph = self._init_glyph(plot, mapping[key], properties, key)
+            self.handles[key+'_glyph'] = glyph
+            if isinstance(renderer, Renderer):
+                self.handles[key+'glyph_renderer'] = renderer
+
+            self._postprocess_hover(renderer, source)
+
+            # Update plot, source and glyph
+            with abbreviated_exception():
+                self._update_glyph(renderer, properties, mapping[key], glyph)
+
+
+    def _process_properties(self, key, properties):
+        style_group = self._style_groups[key.split('_')[0]]
+        group_props = {}
+        for k, v in properties.items():
+            if k in self.style_opts:
+                if k.split('_')[0] == style_group:
+                    k = '_'.join(k.split('_')[1:])
+                else:
+                    continue
+            group_props[k] = v
+        return group_props
+
+
+    def _update_glyphs(self, element, ranges):
+        plot = self.handles['plot']
+        empty = False
+
+        # Cache frame object id to skip updating data if unchanged
+        previous_id = self.handles.get('previous_id', None)
+        if self.batched:
+            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
+        else:
+            current_id = element._plot_id
+        self.handles['previous_id'] = current_id
+        self.static_source = (self.dynamic and (current_id == previous_id))
+        data, mapping = self.get_data(element, ranges, empty)
+
+        for key, gdata in data.items():
+            source = self.handles[key+'_source']
+            glyph = self.handles[key+'_glyph']
+            if not self.static_source:
+                self._update_datasource(source, gdata)
+
+            if glyph:
+                properties = self._glyph_properties(plot, element, source, ranges)
+                properties = self._process_properties(key, properties)
+                renderer = self.handles.get(key+'_glyph_renderer')
+                with abbreviated_exception():
+                    self._update_glyph(renderer, properties, mapping[key], glyph)
+
+
+    def _init_glyph(self, plot, mapping, properties, key):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties = mpl_to_bokeh(properties)
+        plot_method = key.split('_')[0]
+        renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
+        return renderer, renderer.glyph
 
 
 

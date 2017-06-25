@@ -4,19 +4,20 @@ import numpy as np
 import param
 from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
                           Range1d, CategoricalColorMapper, CustomJS,
-                          HoverTool)
+                          HoverTool, FactorRange)
 from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
 from ...core.dimension import Dimension
-from ...core.util import max_range, basestring, dimension_sanitizer
+from ...core.util import (max_range, basestring, dimension_sanitizer,
+                          wrap_tuple, unique_iterator)
 from ...core.options import abbreviated_exception
 from ...core.spaces import DynamicMap
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label
-from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
-                      fill_properties)
+from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
+                      line_properties, fill_properties)
 from .path import PathPlot, PolygonPlot
 from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex
 
@@ -863,3 +864,200 @@ class BarPlot(ColorbarPlot, LegendPlot):
         collapsed = Bars(element.table(), kdims=el.kdims+element.kdims,
                             vdims=el.vdims)
         return self.get_data(collapsed, ranges, empty)
+
+
+
+class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    # X-axis is categorical
+    _x_range_type = FactorRange
+
+    # Declare that y-range should auto-range if not bounded
+    _y_range_type = DataRange1d
+
+    # Map each glyph to a style group
+    _style_groups = {'rect': 'whisker', 'segment': 'whisker',
+                     'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
+
+    # Define all the glyph handles to update
+    _update_handles = ([glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
+                        for glyph in ['vbar_1', 'vbar_2', 'segment_1', 'segment_2',
+                                      'rect_1', 'rect_2', 'circle', 'hbar_1', 'hbar_2']] +
+                       ['color_mapper', 'colorbar'])
+
+    style_opts = (['whisker_'+p for p in line_properties] +\
+                  ['box_'+p for p in fill_properties+line_properties] +\
+                  ['outlier_'+p for p in fill_properties+line_properties] + ['width', 'cmap'])
+
+    def get_extents(self, element, ranges):
+        """
+        Extents are set to '' and None because x-axis is categorical and
+        y-axis auto-ranges.
+        """
+        return ('', None, '', None)
+
+    def _get_axis_labels(self, *args, **kwargs):
+        """
+        Override axis labels to group all key dimensions together.
+        """
+        element = self.current_frame
+        xlabel = ', '.join([kd.pprint_label for kd in element.kdims])
+        ylabel = element.vdims[0].pprint_label
+        return xlabel, ylabel, None
+
+    def _glyph_properties(self, plot, element, source, ranges):
+        properties = dict(self.style[self.cyclic_index], source=source)
+        if self.show_legend and not element.kdims:
+            properties['legend'] = element.label
+        return properties
+
+    def _get_factors(self, element):
+        """
+        Get factors for categorical axes.
+        """
+        if not element.kdims:
+            return [element.label], []
+        else:
+            factors = [', '.join([d.pprint_value(v).replace(':', ';')
+                                  for d, v in zip(element.kdims, key)])
+                       for key in element.groupby(element.kdims).data.keys()]
+            if self.invert_axes:
+                return [], factors
+            else:
+                return factors, []
+
+    def get_data(self, element, ranges=None, empty=False):
+        if element.kdims:
+            groups = element.groupby(element.kdims).data
+        else:
+            groups = dict([(element.label, element)])
+        style = self.style[self.cyclic_index]
+        vdim = dimension_sanitizer(element.vdims[0].name)
+
+        # Define CDS data
+        r1_data, r2_data = ({'index': [], 'top': [], 'bottom': []} for i in range(2))
+        s1_data, s2_data = ({'x0': [], 'y0': [], 'x1': [], 'y1': []} for i in range(2))
+        w1_data, w2_data = ({'index': [], vdim: []} for i in range(2))
+        out_data = defaultdict(list, {'index': [], vdim: []})
+
+        # Define glyph-data mapping
+        width = style.get('width', 0.7)
+        if self.invert_axes:
+            vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
+            seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}
+            whisk_map = {'y': 'index', 'x': vdim, 'height': 0.2, 'width': 0.001}
+            out_map = {'y': 'index', 'x': vdim}
+        else:
+            vbar_map = {'x': 'index', 'top': 'top', 'bottom': 'bottom', 'width': width}
+            seg_map = {'x0': 'x0', 'x1': 'x1', 'y0': 'y0', 'y1': 'y1'}
+            whisk_map = {'x': 'index', 'y': vdim, 'width': 0.2, 'height': 0.001}
+            out_map = {'x': 'index', 'y': vdim}
+        vbar2_map = dict(vbar_map)
+
+        # Get color values
+        if self.color_index is not None:
+            cdim = element.get_dimension(self.color_index)
+            cidx = element.get_dimension_index(self.color_index)
+        else:
+            cdim, cidx = None, None
+
+        factors = []
+        for key, g in groups.items():
+            # Compute group label
+            if element.kdims:
+                label = ', '.join([d.pprint_value(v).replace(':', ';')
+                                   for d, v in zip(element.kdims, key)])
+            else:
+                label = key
+
+            # Add color factor
+            if cidx is not None and cidx<element.ndims:
+                factors.append(wrap_tuple(key)[cidx])
+            else:
+                factors.append(label)
+
+            # Compute statistics
+            vals = g.dimension_values(g.vdims[0])
+            qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
+            iqr = q3 - q1
+            upper = q3 + 1.5*iqr
+            lower = q1 - 1.5*iqr
+            outliers = vals[(vals>upper) | (vals<lower)]
+
+            # Add to CDS data
+            for data in [r1_data, r2_data, w1_data, w2_data]:
+                data['index'].append(label)
+            for data in [s1_data, s2_data]:
+                data['x0'].append(label)
+                data['x1'].append(label)
+            r1_data['top'].append(q2)
+            r2_data['top'].append(q1)
+            r1_data['bottom'].append(q3)
+            r2_data['bottom'].append(q2)
+            s1_data['y0'].append(upper)
+            s2_data['y0'].append(lower)
+            s1_data['y1'].append(q3)
+            s2_data['y1'].append(q1)
+            w1_data[vdim].append(lower)
+            w2_data[vdim].append(upper)
+            if len(outliers):
+                out_data['index'] += [label]*len(outliers)
+                out_data[vdim] += list(outliers)
+                if any(isinstance(t, HoverTool) for t in self.state.tools):
+                    for kd, k in zip(element.kdims, wrap_tuple(key)):
+                        out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
+
+        # Define combined data and mappings
+        bar_glyph = 'hbar' if self.invert_axes else 'vbar'
+        data = {
+            bar_glyph+'_1': r1_data, bar_glyph+'_2': r2_data, 'segment_1': s1_data,
+            'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
+            'circle': out_data
+        }
+        mapping = {
+            bar_glyph+'_1': vbar_map, bar_glyph+'_2': vbar2_map, 'segment_1': seg_map,
+            'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
+            'circle': out_map
+        }
+
+        # Cast data to arrays to take advantage of base64 encoding
+        for gdata in [r1_data, r2_data, s1_data, s2_data, w1_data, w2_data, out_data]:
+            for k, values in gdata.items():
+                gdata[k] = np.array(values)
+
+        # Return if not grouped
+        if not element.kdims:
+            return data, mapping
+
+        # Define color dimension and data
+        if cidx is None or cidx>=element.ndims:
+            cdim = Dimension('index')
+        else:
+            r1_data[dimension_sanitizer(cdim.name)] = factors
+            r2_data[dimension_sanitizer(cdim.name)] = factors
+            factors = list(unique_iterator(factors))
+
+        # Get colors and define categorical colormapper
+        cname = dimension_sanitizer(cdim.name)
+        cmap = style.get('cmap')
+        if cmap is None:
+            styles = self.style.max_cycles(len(factors))
+            colors = [styles[i].get('box_color', styles[i]['box_fill_color'])
+                      for i in range(len(factors))]
+            colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
+        else:
+            colors = None
+        mapper = self._get_colormapper(cdim, element, ranges, style, factors, colors)
+        vbar_map['fill_color'] = {'field': cname, 'transform': mapper}
+        vbar2_map['fill_color'] = {'field': cname, 'transform': mapper}
+        vbar_map['legend'] = cdim.name
+
+        return data, mapping
+
