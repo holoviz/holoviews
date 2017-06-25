@@ -915,6 +915,12 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         ylabel = element.vdims[0].pprint_label
         return xlabel, ylabel, None
 
+    def _glyph_properties(self, plot, element, source, ranges):
+        properties = dict(self.style[self.cyclic_index], source=source)
+        if self.show_legend and not element.kdims:
+            properties['legend'] = element.label
+        return properties
+
     def _get_factors(self, element):
         """
         Get factors for categorical axes.
