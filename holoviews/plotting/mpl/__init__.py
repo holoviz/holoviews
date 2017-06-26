@@ -177,8 +177,8 @@ if config.style_17:
         framelesscls.show_frame = False
 else:
     # Raster types, Path types and VectorField should have frames
-    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot,
-                      RasterPlot, QuadMeshPlot, HeatMapPlot, PolygonPlot]:
+    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
+                      QuadMeshPlot, HeatMapPlot, PolygonPlot]:
         framedcls.show_frame = True
 
 
@@ -247,4 +247,3 @@ else:
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
-
