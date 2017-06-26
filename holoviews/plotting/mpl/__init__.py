@@ -173,8 +173,7 @@ if config.style_17:
     PointPlot.show_grid = True
 
     MPLPlot.show_frame = True
-    for framelesscls in [GridPlot, AdjoinedPlot, Plot3D, CurvePlot,
-                         HistogramPlot, TimeSeriesPlot, DistributionPlot]:
+    for framelesscls in [GridPlot, AdjoinedPlot, Plot3D, CurvePlot, HistogramPlot]:
         framelesscls.show_frame = False
 else:
     # Raster types, Path types and VectorField should have frames

@@ -13,6 +13,7 @@ from ...interface.pandas import DFrame, DataFrameView
 from ...interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ...interface.seaborn import DFrame as SNSFrame
 from ...core.options import Store
+from ...core import config
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
 from .plot import MPLPlot, AdjoinedPlot, mpl_rc_context
@@ -322,3 +323,8 @@ Store.register({TimeSeries: TimeSeriesPlot,
                 DataFrameView: SNSFramePlot}, 'matplotlib')
 
 MPLPlot.sideplots.update({Distribution: SideDistributionPlot})
+
+
+if config.style_17:
+    for framelesscls in [TimeSeriesPlot, DistributionPlot]:
+        framelesscls.show_frame = False
