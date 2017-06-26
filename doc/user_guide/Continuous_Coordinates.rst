@@ -1,5 +1,5 @@
 Continuous Coordinates
 ______________________
 
-.. notebook:: holoviews ../../guides/user_guide/Continuous_Coordinates.ipynb
+.. notebook:: holoviews ../../examples/user_guide/Continuous_Coordinates.ipynb
     :offset: 1

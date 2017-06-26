@@ -1,5 +1,5 @@
 Exporting and Archiving
 _______________________
 
-.. notebook:: holoviews ../../guides/user_guide/Exporting_and_Archiving.ipynb
+.. notebook:: holoviews ../../examples/user_guide/Exporting_and_Archiving.ipynb
     :offset: 1

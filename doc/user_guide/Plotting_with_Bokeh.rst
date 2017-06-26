@@ -1,5 +1,5 @@
 Plotting with Bokeh
 ___________________
 
-.. notebook:: holoviews ../../guides/user_guide/Plotting_with_Bokeh.ipynb
+.. notebook:: holoviews ../../examples/user_guide/Plotting_with_Bokeh.ipynb
     :offset: 1
