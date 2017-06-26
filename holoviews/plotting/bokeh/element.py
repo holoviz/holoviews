@@ -497,7 +497,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                               for l in labels]
                     axis_props['ticker'] = FixedTicker(ticks=ticks)
                     if bokeh_version > '0.12.5':
-                        axis_props['major_label_overrides'] = dict(ticker)
+                        axis_props['major_label_overrides'] = dict(zip(ticks, labels))
                     else:
                         self.warning('Explicit tick labels not supported until'
                                      'bokeh 0.12.6, please upgrade')
