@@ -225,6 +225,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         dims += element.dimensions()
         return list(util.unique_iterator(dims)), {}
 
+
     def _init_tools(self, element, callbacks=[]):
         """
         Processes the list of tools to be supplied to the plot.
@@ -960,13 +961,13 @@ class CompositeElementPlot(ElementPlot):
             current_id = element._plot_id
 
         self.handles['previous_id'] = current_id
-        for key, gdata in data.items():
-            source = self._init_datasource(gdata)
+        for key in dict(mapping, **data):
+            source = self._init_datasource(data.get(key, {}))
             self.handles[key+'_source'] = source
             properties = self._glyph_properties(plot, element, source, ranges)
             properties = self._process_properties(key, properties)
             with abbreviated_exception():
-                renderer, glyph = self._init_glyph(plot, mapping[key], properties, key)
+                renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
             self.handles[key+'_glyph'] = glyph
             if isinstance(renderer, Renderer):
                 self.handles[key+'glyph_renderer'] = renderer
@@ -975,7 +976,7 @@ class CompositeElementPlot(ElementPlot):
 
             # Update plot, source and glyph
             with abbreviated_exception():
-                self._update_glyph(renderer, properties, mapping[key], glyph)
+                self._update_glyph(renderer, properties, mapping.get(key, {}), glyph)
 
 
     def _process_properties(self, key, properties):

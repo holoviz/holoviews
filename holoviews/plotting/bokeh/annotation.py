@@ -1,10 +1,18 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import Span
+from bokeh.models import Span, Arrow
+try:
+    from bokeh.models.arrow_heads import TeeHead, NormalHead
+    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
+    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead, '-': None}
+except:
+    from bokeh.models.arrow_heads import OpenHead, NormalHead
+    arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
+    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead, '-': None}
 
 from ...element import HLine
-from .element import ElementPlot, text_properties, line_properties
+from .element import ElementPlot, CompositeElementPlot, text_properties, line_properties
 
 
 class TextPlot(ElementPlot):
@@ -104,3 +112,75 @@ class SplinePlot(ElementPlot):
                          'unsupported splines were skipped during plotting.')
         data = {da: data[da] for da in data_attrs}
         return (data, dict(zip(data_attrs, data_attrs)))
+
+
+
+class ArrowPlot(CompositeElementPlot):
+
+    style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
+
+    _style_groups = {'arrow': 'arrow', 'label': 'text'}
+
+    _update_handles = ['glyph']
+
+    _plot_methods = dict(single='text')
+
+    def get_data(self, element, ranges=None, empty=False):
+        plot = self.state
+        label_mapping = dict(x='x', y='y', text='text')
+
+        # Compute arrow
+        x1, y1 = element.x, element.y
+        axrange = plot.x_range if self.invert_axes else plot.y_range
+        span = (axrange.end - axrange.start) / 6.
+        if element.direction == '^':
+            x2, y2 = x1, y1-span
+            label_mapping['text_baseline'] = 'top'
+        elif element.direction == '<':
+            x2, y2 = x1+span, y1
+            label_mapping['text_align'] = 'left'
+            label_mapping['text_baseline'] = 'middle'
+        elif element.direction == '>':
+            x2, y2 = x1-span, y1
+            label_mapping['text_align'] = 'right'
+            label_mapping['text_baseline'] = 'middle'
+        else:
+            x2, y2 = x1, y1+span
+            label_mapping['text_baseline'] = 'bottom'
+        arrow_opts = {'x_end': x1, 'y_end': y1,
+                      'x_start': x2, 'y_start': y2}
+
+        # Define arrowhead
+        arrow_opts['arrow_start'] = arrow_start.get(element.arrowstyle, None)
+        arrow_opts['arrow_end'] = arrow_end.get(element.arrowstyle, NormalHead)
+
+        # Compute label
+        if self.invert_axes:
+            label_data = dict(x=[y2], y=[x2])
+        else:
+            label_data = dict(x=[x2], y=[y2])
+        label_data['text'] = [element.text]
+        return ({'label': label_data},
+                {'arrow': arrow_opts, 'label': label_mapping})
+
+    def _init_glyph(self, plot, mapping, properties, key):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties.pop('legend')
+        if key == 'arrow':
+            properties.pop('source')
+            arrow_end = mapping.pop('arrow_end')
+            arrow_start = mapping.pop('arrow_start')
+            start = arrow_start(**properties) if arrow_start else None
+            end = arrow_end(**properties) if arrow_end else None
+            glyph = Arrow(start=start, end=end, **dict(**mapping))
+        else:
+            properties = {p if p == 'source' else 'text_'+p: v
+                          for p, v in properties.items()}
+            glyph, _ = super(ArrowPlot, self)._init_glyph(plot, mapping, properties, 'text')
+        plot.renderers.append(glyph)
+        return None, glyph
+
+    def get_extents(self, element, ranges=None):
+        return None, None, None, None
