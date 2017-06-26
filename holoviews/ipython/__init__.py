@@ -99,6 +99,10 @@ class notebook_extension(extension):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert. """)
 
+    case_sensitive_completion = param.Boolean(default=False, doc="""
+       Whether to monkey patch IPython to use the correct tab-completion
+       behavior. """)
+
     _loaded = False
 
     def __call__(self, *args, **params):
@@ -126,6 +130,10 @@ class notebook_extension(extension):
             holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
+        if p.case_sensitive_completion:
+            from IPython.core import completer
+            completer.completions_sorting_key = self.completions_sorting_key
+
         resources = self._get_resources(args, params)
 
         Store.display_formats = p.display_formats
@@ -160,6 +168,20 @@ class notebook_extension(extension):
         # Create a message for the logo (if shown)
         self.load_hvjs(logo=p.logo, JS=('holoviews' in resources), message='')
 
+    @classmethod
+    def completions_sorting_key(cls, word):
+        "Fixed version of IPyton.completer.completions_sorting_key"
+        prio1, prio2 = 0, 0
+        if word.startswith('__'):  prio1 = 2
+        elif word.startswith('_'): prio1 = 1
+        if word.endswith('='):     prio1 = -1
+        if word.startswith('%%'):
+            if not "%" in word[2:]:
+                word = word[2:];   prio2 = 2
+        elif word.startswith('%'):
+            if not "%" in word[1:]:
+                word = word[1:];   prio2 = 1
+        return prio1, word, prio2
 
 
     def _get_resources(self, args, params):
