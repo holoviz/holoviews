@@ -131,6 +131,9 @@ options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='bla
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+if not config.style_17:
+    options.Points = Options('plot', show_frame=True)
+
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')

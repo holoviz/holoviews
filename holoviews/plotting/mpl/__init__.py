@@ -191,6 +191,10 @@ dflt_cmap = 'hot' if config.style_17 else 'fire'
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
+
+if not config.style_17:
+    options.Points = Options('plot', show_frame=True)
+
 options.ErrorBars = Options('style', ecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
