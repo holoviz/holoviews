@@ -46,13 +46,14 @@ except ImportError as e:
         def __call__(self, *args, **opts):
             raise Exception("IPython notebook not available: use hv.extension instead.")
 
-
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                "~/.holoviews.rc",
-               "~/.config/holoviews/holoviews.rc"]:
-    try:
-        filename = os.path.expanduser(rcfile)
+               "~/.config/holoviews/holoviews.rc",
+               os.path.abspath(os.path.join(os.path.split(__file__)[0],
+                                            '..', 'holoviews.rc'))]:
+    filename = os.path.expanduser(rcfile)
+    if os.path.isfile(filename):
         with open(filename) as f:
             code = compile(f.read(), filename, 'exec')
             try:
@@ -60,9 +61,6 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
             except Exception as e:
                 print("Warning: Could not load %r [%r]" % (filename, str(e)))
         break
-    except IOError:
-        pass
-
 
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
