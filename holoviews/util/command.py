@@ -8,9 +8,12 @@ from __future__ import absolute_import
 
 import sys, os
 import nbformat, nbconvert
-from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
-from ..ipython.preprocessors import StripMagicsProcessor
-
+try:
+    from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
+    from ..ipython.preprocessors import StripMagicsProcessor
+except:
+    from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
+    from holoviews.ipython.preprocessors import StripMagicsProcessor
 
 def main(filename=None,
          preprocessors=[OptsMagicProcessor(),
