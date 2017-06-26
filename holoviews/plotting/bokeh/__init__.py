@@ -55,6 +55,7 @@ associations = {Overlay: OverlayPlot,
                 Spikes: SpikesPlot,
                 Area: AreaPlot,
                 VectorField: VectorFieldPlot,
+                Histogram: HistogramPlot,
 
                 # Rasters
                 Image: RasterPlot,
@@ -62,7 +63,6 @@ associations = {Overlay: OverlayPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
-                Histogram: HistogramPlot,
                 QuadMesh: QuadMeshPlot,
 
                 # Paths
@@ -93,6 +93,15 @@ Store.register(associations, 'bokeh')
 if config.style_17:
     ElementPlot.show_grid = True
     RasterPlot.show_grid = True
+
+    ElementPlot.show_frame = True
+else:
+    # Raster types, Path types and VectorField should have frames
+    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
+                      RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
+        framedcls.show_frame = True
+
+
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
