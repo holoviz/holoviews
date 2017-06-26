@@ -172,6 +172,16 @@ if config.style_17:
     SideHistogramPlot.show_grid = True
     PointPlot.show_grid = True
 
+    MPLPlot.show_frame = True
+    for framelesscls in [GridPlot, AdjoinedPlot, Plot3D, CurvePlot,
+                         HistogramPlot, TimeSeriesPlot, DistributionPlot]:
+        framelesscls.show_frame = False
+else:
+    # Raster types, Path types and VectorField should have frames
+    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot,
+                      RasterPlot, QuadMeshPlot, HeatMapPlot, PolygonPlot]:
+        framedcls.show_frame = True
+
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = 'hot' if config.style_17 else 'fire'
