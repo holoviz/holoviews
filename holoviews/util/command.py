@@ -5,7 +5,7 @@ OR
 holoviews Conversion_Example.ipynb
 """
 
-from __future__ import absolute_import
+from __future__ import absolute_import, print_function
 
 import sys, os
 import nbformat, nbconvert
@@ -32,5 +32,5 @@ def main(filename=None,
 
 
 if __name__ == '__main__':
-    print(main())
+    print(main(), file=sys.stdout)
 
