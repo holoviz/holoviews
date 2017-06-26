@@ -7,7 +7,7 @@ from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
                      GridSpace, GridMatrix, NdLayout, config)
 from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
-                        Box, Bounds, Ellipse, Polygons, BoxWhisker,
+                        Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField)
 from ...core.options import Options, Cycle, Palette
@@ -17,7 +17,7 @@ try:
 except:
     DFrame = None
 
-from .annotation import TextPlot, LineAnnotationPlot, SplinePlot
+from .annotation import TextPlot, LineAnnotationPlot, SplinePlot, ArrowPlot
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
@@ -79,6 +79,7 @@ associations = {Overlay: OverlayPlot,
                 VLine: LineAnnotationPlot,
                 Text: TextPlot,
                 Spline: SplinePlot,
+                Arrow: ArrowPlot,
 
                 # Tabular
                 Table: TablePlot,
@@ -150,6 +151,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
+options.Arrow = Options('style', arrow_size=10)
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
