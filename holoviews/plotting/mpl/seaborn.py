@@ -105,9 +105,6 @@ class TimeSeriesPlot(SeabornPlot):
     curve.
     """
 
-    show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
-
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
@@ -137,9 +134,6 @@ class DistributionPlot(SeabornPlot):
 
     apply_ranges = param.Boolean(default=False, doc="""
         Whether to compute the plot bounds from the data itself.""")
-
-    show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
 
     style_opts = ['bins', 'hist', 'kde', 'rug', 'fit', 'hist_kws',
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']

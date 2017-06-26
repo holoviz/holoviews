@@ -115,7 +115,7 @@ class MPLPlot(DimensionedPlot):
         May also supply a custom projection that is either a matplotlib
         projection type or implements the `_as_mpl_axes` method.""")
 
-    show_frame = param.Boolean(default=True, doc="""
+    show_frame = param.Boolean(default=False, doc="""
         Whether or not to show a complete frame around the plot.""")
 
     _close_figures = True
@@ -286,9 +286,6 @@ class GridPlot(CompositePlot):
     shared_yaxis = param.Boolean(default=False, doc="""
         If enabled the x-axes of the GridSpace will be drawn from the
         objects inside the Grid rather than the GridSpace dimensions.""")
-
-    show_frame = param.Boolean(default=False, doc="""
-        Whether to draw a frame around the Grid.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Legends add to much clutter in a grid and are disabled by default.""")
@@ -1112,8 +1109,6 @@ class AdjoinedPlot(DimensionedPlot):
 
     border_size = param.Number(default=0.25, doc="""
         The size of the border expressed as a fraction of the main plot.""")
-
-    show_frame = param.Boolean(default=False)
 
     show_title = param.Boolean(default=False, doc="""
         Titles should be disabled on all SidePlots to avoid clutter.""")

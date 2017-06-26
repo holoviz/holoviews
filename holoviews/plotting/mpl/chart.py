@@ -57,9 +57,6 @@ class CurvePlot(ChartPlot):
         If plotted quantity is cyclic and center_cyclic is enabled,
         will compute tick labels relative to the center.""")
 
-    show_frame = param.Boolean(default=False, doc="""
-        Disabled by default for clarity.""")
-
     show_grid = param.Boolean(default=False, doc="""
         Enable axis grid.""")
 
@@ -243,12 +240,6 @@ class HistogramPlot(ChartPlot):
     DataHistograms, which can be displayed as a single frame or
     animation.
     """
-
-    show_frame = param.Boolean(default=False, doc="""
-        Disabled by default for clarity.""")
-
-    show_grid = param.Boolean(default=False, doc="""
-        Whether to overlay a grid on the axis.""")
 
     style_opts = ['alpha', 'color', 'align', 'visible', 'facecolor',
                   'edgecolor', 'log', 'capsize', 'error_kw', 'hatch',
