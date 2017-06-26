@@ -7,8 +7,16 @@ holoviews Conversion_Example.ipynb
 
 from __future__ import absolute_import, print_function
 
-import sys, os
-import nbformat, nbconvert
+import sys
+import os
+import argparse
+from argparse import RawTextHelpFormatter
+
+try:
+    import nbformat, nbconvert
+except:
+    print('Both nbformat and nbconvert need to be installed to use the holoviews command')
+    sys.exit()
 try:
     from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from ..ipython.preprocessors import StripMagicsProcessor
@@ -31,6 +39,45 @@ def main(filename=None,
         return source
 
 
+
+description = """
+Command line interface for holoviews.
+
+This utility allows conversion of notebooks containing the HoloViews
+%opts, %%opts, %output and %%output magics to regular Python
+syntax. This is useful for turning Jupyter notebooks using HoloViews
+into Bokeh applications that can be served with:
+
+bokeh server --show converted_notebook.py
+
+The holoviews command supports the following options:
+"""
+
+epilog="""
+Example usage
+-------------
+
+$ holoviews ./examples/demos/matplotlib/area_chart.ipynb
+
+The converted syntax is then output to standard output where you can
+direct it to a Python file of your choosing.
+"""
+
+
 if __name__ == '__main__':
-    print(main(), file=sys.stdout)
+
+    if len(sys.argv) < 2:
+        print("For help with the holoviews command run:\n\nholoviews --help\n")
+        sys.exit()
+
+    parser = argparse.ArgumentParser(prog='holoviews',
+                                     formatter_class=RawTextHelpFormatter,
+                                     description=description,
+                                     epilog=epilog)
+
+    parser.add_argument('notebook', metavar='notebook', type=str, nargs=1,
+                    help='The Jupyter notebook to convert to Python syntax.')
+
+    args = parser.parse_args()
+    print(main(args.notebook[0]), file=sys.stdout)
 
