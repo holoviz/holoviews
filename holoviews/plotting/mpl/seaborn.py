@@ -13,6 +13,7 @@ from ...interface.pandas import DFrame, DataFrameView
 from ...interface.seaborn import Regression, TimeSeries, Bivariate, Distribution
 from ...interface.seaborn import DFrame as SNSFrame
 from ...core.options import Store
+from ...core import config
 from .element import ElementPlot
 from .pandas import DFrameViewPlot
 from .plot import MPLPlot, AdjoinedPlot, mpl_rc_context
@@ -105,9 +106,6 @@ class TimeSeriesPlot(SeabornPlot):
     curve.
     """
 
-    show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
-
     show_legend = param.Boolean(default=True, doc="""
       Whether to show legend for the plot.""")
 
@@ -137,9 +135,6 @@ class DistributionPlot(SeabornPlot):
 
     apply_ranges = param.Boolean(default=False, doc="""
         Whether to compute the plot bounds from the data itself.""")
-
-    show_frame = param.Boolean(default=False, doc="""
-       Disabled by default for clarity.""")
 
     style_opts = ['bins', 'hist', 'kde', 'rug', 'fit', 'hist_kws',
                   'kde_kws', 'rug_kws', 'fit_kws', 'color']
@@ -328,3 +323,8 @@ Store.register({TimeSeries: TimeSeriesPlot,
                 DataFrameView: SNSFramePlot}, 'matplotlib')
 
 MPLPlot.sideplots.update({Distribution: SideDistributionPlot})
+
+
+if config.style_17:
+    for framelesscls in [TimeSeriesPlot, DistributionPlot]:
+        framelesscls.show_frame = False

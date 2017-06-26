@@ -172,6 +172,16 @@ if config.style_17:
     SideHistogramPlot.show_grid = True
     PointPlot.show_grid = True
 
+    MPLPlot.show_frame = True
+    for framelesscls in [RasterGridPlot, GridPlot,
+                         AdjoinedPlot, Plot3D, CurvePlot, HistogramPlot]:
+        framelesscls.show_frame = False
+else:
+    # Raster types, Path types and VectorField should have frames
+    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, RasterPlot,
+                      QuadMeshPlot, HeatMapPlot, PolygonPlot]:
+        framedcls.show_frame = True
+
 
 options = Store.options(backend='matplotlib')
 dflt_cmap = 'hot' if config.style_17 else 'fire'
@@ -181,6 +191,10 @@ dflt_cmap = 'hot' if config.style_17 else 'fire'
 # Charts
 options.Curve = Options('style', color=Cycle(), linewidth=2)
 options.Scatter = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
+
+if not config.style_17:
+    options.Points = Options('plot', show_frame=True)
+
 options.ErrorBars = Options('style', ecolor='k')
 options.Spread = Options('style', facecolor=Cycle(), alpha=0.6, edgecolor='k', linewidth=0.5)
 options.Bars = Options('style', ec='k', color=Cycle())
@@ -234,4 +248,3 @@ else:
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
-

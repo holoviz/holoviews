@@ -39,9 +39,6 @@ class Plot3D(ColorbarPlot):
     projection = param.ObjectSelector(default='3d', objects=['3d'], doc="""
         The projection of the matplotlib axis.""")
 
-    show_frame = param.Boolean(default=False, doc="""
-        Whether to draw a frame around the figure.""")
-
     show_grid = param.Boolean(default=True, doc="""
         Whether to draw a grid in the figure.""")
 

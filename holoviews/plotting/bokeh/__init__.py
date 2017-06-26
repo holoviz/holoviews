@@ -55,6 +55,7 @@ associations = {Overlay: OverlayPlot,
                 Spikes: SpikesPlot,
                 Area: AreaPlot,
                 VectorField: VectorFieldPlot,
+                Histogram: HistogramPlot,
 
                 # Rasters
                 Image: RasterPlot,
@@ -62,7 +63,6 @@ associations = {Overlay: OverlayPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatmapPlot,
-                Histogram: HistogramPlot,
                 QuadMesh: QuadMeshPlot,
 
                 # Paths
@@ -94,6 +94,15 @@ if config.style_17:
     ElementPlot.show_grid = True
     RasterPlot.show_grid = True
 
+    ElementPlot.show_frame = True
+else:
+    # Raster types, Path types and VectorField should have frames
+    for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
+                      RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
+        framedcls.show_frame = True
+
+
+
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
@@ -122,6 +131,9 @@ options.BoxWhisker = Options('style', box_fill_color=Cycle(), whisker_color='bla
                              box_line_color='black', outlier_color='black')
 options.Scatter = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
 options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap)
+if not config.style_17:
+    options.Points = Options('plot', show_frame=True)
+
 options.Histogram = Options('style', line_color='black', fill_color=Cycle())
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
