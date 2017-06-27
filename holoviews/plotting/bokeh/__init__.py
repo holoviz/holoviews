@@ -25,7 +25,7 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatmapPlot, HSVPlot, QuadMeshPlot
+from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .tabular import TablePlot
 from .util import bokeh_version
@@ -62,7 +62,7 @@ associations = {Overlay: OverlayPlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
-                HeatMap: HeatmapPlot,
+                HeatMap: HeatMapPlot,
                 QuadMesh: QuadMeshPlot,
 
                 # Paths

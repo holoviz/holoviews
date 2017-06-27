@@ -97,7 +97,7 @@ class HSVPlot(RGBPlot):
         return super(HSVPlot, self).get_data(element.rgb, ranges, empty)
 
 
-class HeatmapPlot(ColorbarPlot):
+class HeatMapPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -117,7 +117,7 @@ class HeatmapPlot(ColorbarPlot):
     _categorical = True
 
     def _get_factors(self, element):
-        return super(HeatmapPlot, self)._get_factors(element.gridded)
+        return super(HeatMapPlot, self)._get_factors(element.gridded)
 
     def get_data(self, element, ranges=None, empty=False):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
