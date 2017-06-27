@@ -63,7 +63,7 @@ concepts in HoloViews:
   interacting with a bokeh plot, e.g. by responding to mouse position,
   mouse taps, selections or the current axis range.
 
-* `Data Transformation Pipelines <Data_Pipelines.html>`_
+* `Data Processing Pipelines <Data_Pipelines.html>`_
   Chaining different operations to build complex and lazy data
   analysis pipelines, which can drive interactive plots in a notebook
   or in a deployed dashboard.
@@ -127,6 +127,7 @@ These guides provide detail about specific additional features in HoloViews:
     Transforming Elements <Transforming_Elements>
     Responding to Events <Responding_to_Events>
     Custom Interactivity <Custom_Interactivity>
+    Data Processing Pipelines <Data_Pipelines>
     Working with large data <Large_Data>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
