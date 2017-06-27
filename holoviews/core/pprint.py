@@ -226,9 +226,7 @@ class InfoPrinter(object):
                + "\nHelp for the data object: holoviews.help({obj})"
                + " or holoviews.help(<{lower}_instance>)")
 
-        return '\n'.join([msg.format(obj=name,
-                                     lower=name.lower(),
-                                     link=link)])
+        return '\n'.join([msg.format(obj=name, lower=name.lower(), link=link)])
 
 
     @classmethod
