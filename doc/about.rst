@@ -1,16 +1,11 @@
 About Us
 ========
 
-HoloViews was developed as part of `IOAM <https://github.com/ioam>`_,
-a loose confederation of computational modelers from the
-University of Edinburgh (UK), the University of Texas (USA), and CNRS
-(France).  It is now sponsored and supported by
-`Continuum Analytics <https://continuum.io>`_.
+HoloViews is supported and maintained by Continuum Analytics <https://continuum.io>`_.  
 
 The primary developers are Jean-Luc Stevens, Philipp Rudiger, and
-James A. Bednar, with some code originally from Christopher Ball,
-Jefferson Provost, and Judah B. De Paula and bug reports and patches
-from numerous members of the Github community.
+James A. Bednar, with bug reports and patches from numerous members of
+the Github community.
 
 Prior Funding
 -------------
