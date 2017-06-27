@@ -10,7 +10,7 @@ potential pitfalls we hope to help users avoid:
 **A:** Yes! The IPython/Jupyter notebook support makes a lot of tasks easier, and
 helps keep your data objects separate from the customization options,
 but everything available in IPython can also be done directly from
-Python.  For instance, in HoloViews 1.3.0 you can render an object 
+Python.  For instance, since HoloViews 1.3.0 you can render an object
 directly to disk, with custom options, like this:
 
 .. code:: python
@@ -19,8 +19,8 @@ directly to disk, with custom options, like this:
   renderer = hv.renderer('matplotlib').instance(fig='svg', holomap='gif')
   renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
 
-This process is described in detail in the 
-`Options tutorial <Tutorials/Options.html>`_.
+This process is described in detail in the
+`Customizing Plots <user_guides/Customizing_Plots.html>`_ user guide.
 Of course, notebook-specific functionality like capturing the data in
 notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 
@@ -51,13 +51,10 @@ to use each backend's defaults where possible.
 
 **Q: Help! I don't know how to index into my object!**
 
-**A:** If you are in the IPython Notebook you can use the cell magic
-``%%output fig='repr' holomap='repr'`` at the top of your code cell to
-see the structure of your object.
-
-In any Python session, you can look at ``print repr(obj)``. For
+**A:**  In any Python session, you can look at ``print(obj)``. For
 an explanation of how this information helps you index into your
-object, see our `Composing Data tutorial <Tutorials/Composing_Data.html>`_.
+object, see our `Composing Elements <user_guides/Composing_Elements.html>`_
+user guide.
 
 
 **Q: Help! How do I find out the options for customizing the
@@ -68,9 +65,9 @@ appearance of my object?**
 present the available style and plotting options for that object.
 
 The same information is also available in any Python session using
-``holoviews.help(obj)``. For more
-information on customizing the display of an object,
-see our `Options Tutorial <Tutorials/Options.html>`_.
+``hv.help(obj)``. For more information on customizing the display
+of an object, see our `Customizing Plots <user_guides/Customizing_Plots.html>`_
+user guide.
 
 
 **Q: Why don't you let me pass** *matplotlib_option* **as a style
@@ -87,7 +84,7 @@ element:
 .. code:: python
 
   from holoviews import Store
-  Store.add_style_opts(Image, ['filternorm'])
+  Store.add_style_opts(Image, ['filternorm'], backend='matplotlib')
 
 Now you can freely use ``'filternorm'`` in the ``%opts`` line/cell
 magic, including tab-completion!
@@ -100,19 +97,14 @@ can always subclass any HoloViews object and modify any of its
 behavior, and the object will still normally interact with other
 HoloViews objects (e.g. in Layout or Overlay configurations).  
 
-There are also much simpler and more easily maintainable options for
-making customized modifications, and we expect to put together a new
-tutorial to explain the methods for `tweaking and extending HoloViews
-<https://github.com/ioam/holoviews/issues/19>`_.
-
 **Q: How do I get a legend on my overlay figure?**
 
 **A:** Legends are generated in two different ways, depending on the
 ``Overlay`` type you are using. When using ``*`` to generate a normal ``Overlay``,
 the legends are generated from the labels of the Elements.
 Alternatively, you can construct an ``NdOverlay``, where the key dimensions
-and values will become part of the legend. The 
-`Containers tutorial <Tutorials/Containers.html#NdOverlay>`_.
+and values will become part of the legend. The
+`Dimensioned Containers <user_guides/Dimensioned_Containers.html>`_ user guide
 shows an example of an ``NdOverlay`` in action.
 
 **Q: I wish to use special characters in my title, but then attribute
@@ -125,18 +117,8 @@ that let you refer to the object easily in the code, and then you can
 set the plot title directly, using the plot option
 ``title_format="my new title"``.
 
-For frequent cases you can define a dictionary of aliases, with short,
-Pythonic names for complicated typeset strings:::
-
-  al = hv.util.Aliases(Spectrum='Frequency spectrum',
-  Water='$H_2O$',
-  Glucose='$C_6H_{12}O_6$')
-
-  (hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Glucose) +
-  hv.Image(np.random.rand(10,10), group=al.Spectrum, label=al.Water))
-
-See this `pull request <https://github.com/ioam/holoviews/pull/312>`_
-for more details.
+You can also use 2-tuples when specifying ``group`` and ``label`` where
+the first item is the short name used for attribute access and the second name is the long descriptive name used in the title.
 
 **Q: Where have my custom styles gone after unpickling my object?**
 
@@ -147,7 +129,6 @@ your data, you need to use the corresponding methods ``Store.dump`` and
 ``Store.load`` if you also want to save and restore per-object
 customization. You can import ``Store`` from the main namespace with
 ``from holoviews import Store``.
-
 
 **Q: Can I avoid generating extremely large HTML files when exporting
 my notebook?**
@@ -168,12 +149,12 @@ include:
   formats may introduce visible artifacts.
 
 It is also possible to generate web pages that do not actually include
-all of the data shown, by specifying a `DynamicMap
-<https://github.com/ioam/holoviews/blob/babac9e2916384e03cd189865d5ca59a6b490708/holoviews/core/spaces.py#L332>`_
-rather than a HoloMap.  The DynamicMap will request data only as
-needed, and so requires a Python server to be running alongside the
-viewable web page.  Such pages are more difficult to share by email or
-on web sites, but much more feasible for large datasets.
+all of the data shown, by specifying a `DynamicMap`` as described in
+`Live Data <user_guides/Live_Data.html>`_ rather than a HoloMap.  The
+DynamicMap will request data only as needed, and so requires a Python
+server to be running alongside the viewable web page.  Such pages are
+more difficult to share by email or on web sites, but much more feasible
+for large datasets.
 
   
 **Q: How do I create a Layout or Overlay object from an arbitrary list?**
