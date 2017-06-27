@@ -42,7 +42,8 @@ def collate(obj):
                                 "we recommend calling .collate() on the Overlay "
                                 "in order to follow the recommended nesting "
                                 "structure shown in the Composing Data tutorial"
-                                "(http://git.io/vtIQh)" % nested_type)
+                                "(http://goo.gl/2YS8LJ)" % nested_type)
+
         return obj.collate()
     if isinstance(obj, DynamicMap):
         return obj.collate()
@@ -52,7 +53,7 @@ def collate(obj):
                                 "we recommend calling .collate() on the {1} "
                                 "in order to follow the recommended nesting "
                                 "structure shown in the Composing Data tutorial"
-                                "(http://git.io/vtIQh)".format(obj.type.__name__, type(obj).__name__))
+                                "(https://goo.gl/2YS8LJ)".format(obj.type.__name__, type(obj).__name__))
         return obj.collate()
     elif isinstance(obj, (Layout, NdLayout)):
         try:
@@ -61,7 +62,7 @@ def collate(obj):
                 "recommended format for accessing your data; calling "
                 ".collate() on these objects will resolve any violations "
                 "of the recommended nesting presented in the Composing Data "
-                "tutorial (http://git.io/vqs03)")
+                "tutorial (https://goo.gl/2YS8LJ)")
             expanded = []
             for el in obj.values():
                 if isinstance(el, HoloMap) and not displayable(el):
