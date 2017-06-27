@@ -160,7 +160,7 @@ class InfoPrinter(object):
                                                                         group=obj.group,
                                                                         label=obj.label)
         prefix = heading
-        lines = [prefix, cls.object_info(obj, name, ansi=ansi)]
+        lines = [prefix, cls.object_info(obj, name, backend=backend, ansi=ansi)]
 
         if not isclass:
             lines += ['', cls.target_info(obj, ansi=ansi)]
@@ -214,11 +214,12 @@ class InfoPrinter(object):
 
 
     @classmethod
-    def object_info(cls, obj, name, ansi=False):
+    def object_info(cls, obj, name, backend, ansi=False):
         element = not getattr(obj, '_deep_indexable', False)
-        url = ('http://holoviews.org/Tutorials/Elements.html#{obj}'
-               if element else 'http://holoviews.org/Tutorials/Containers.html#{obj}')
-        link = url.format(obj=name)
+        element_url ='http://holoviews.org/reference/elements/{backend}/{obj}.html'
+        container_url ='http://holoviews.org/reference/containers/{backend}/{obj}.html'
+        url = element_url if element else container_url
+        link = url.format(obj=name, backend=backend)
 
         link = None if element and (name not in cls.elements) else link
         msg = ("\nOnline example: {link}" if link else ''
