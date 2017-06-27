@@ -37,8 +37,8 @@ dimensions = {
 gapminder_ds = ds.redim(**dimensions).to(hv.Points, kdims, vdims, 'Year')
 
 # Define annotations
-text = ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
-                 for yr in gapminder_ds.keys()})
+text = gapminder_ds.clone({yr: hv.Text(1.2, 25, str(int(yr)), fontsize=30)
+                           for yr in gapminder_ds.keys()})
 
 # Define options
 opts = {'plot': dict(width=1000, height=600,tools=['hover'], size_index='Population',
