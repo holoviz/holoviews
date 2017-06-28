@@ -5,7 +5,6 @@
 [![holoviewsDocs](http://buildbot.holoviews.org:8010/png?builder=website)](http://buildbot.holoviews.org:8010/waterfall)
 [![Coveralls](https://img.shields.io/coveralls/ioam/holoviews.svg)](https://coveralls.io/r/ioam/holoviews)
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
-[![MyBinder](http://mybinder.org/badge.svg)](http://mybinder.org/repo/ioam/holoviews-contrib)
 
 # HoloViews <img src="http://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="40px" align="right" />
 
