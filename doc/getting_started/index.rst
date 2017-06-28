@@ -16,10 +16,19 @@ range of primitives), see our `Reference Gallery
 <../reference/index.html>`_.
 
 * `Introduction <Introduction.html>`_
+   What is HoloViews?
+
 * `Customization <Customization.html>`_
+   How to customize the visual representation.
+
 * `Tabular Datasets <Tabular_Datasets.html>`_
+   Introduction to working with tabular data.
+
 * `Gridded Datasets <Gridded_Datasets.html>`_
+   Introduction to working with array data.
+
 * `Live Data <Live_Data.html>`_
+   Working with dynamically generated data.
 
 .. toctree::
     :titlesonly:
