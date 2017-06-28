@@ -11,25 +11,34 @@ ____________
 .. raw:: html
 
    <div>
-   <div ><img src="http://assets.holoviews.org/collage/iris.png" width='10%'>
-                    <img src="http://assets.holoviews.org/collage/cells.png" width='11%'>
-                    <img src="http://assets.holoviews.org/collage/scatter_example.png"
-                    width='21%'></div>
-   <div ><img src="http://assets.holoviews.org/collage/square_limit.png"
-         width='10%'>
-                    <img src="http://assets.holoviews.org/collage/bars_example.png"
-                    width='10%'>
-                    <img src="http://assets.holoviews.org/collage/texas.png" width='10%'>
-                    <img src="http://assets.holoviews.org/collage/mandelbrot.png"
-                    width='10%'></div>
-   <div><img src="http://assets.holoviews.org/collage/dropdown.gif"
-   width='15%'>
-                    <img src="http://assets.holoviews.org/collage/dragon_fractal.gif"
-                    width='13%'>
-                    <img src="http://assets.holoviews.org/collage/ny_datashader.gif"
-                    width='15%'></div>
+   <div >
+     <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
+       <img src="http://build.holoviews.org/_images/iris_splom_example.png" width='20%'>    </img> </a>
+     <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
+       <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
+     <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
+       <img src="http://build.holoviews.org/_images/scatter_economic.png" width='43%'> </img>    </a>
    </div>
 
+   <div >
+     <a href="http://holoviews.org/gallery/demos/bokeh/square_limit.html">
+       <img src="http://build.holoviews.org/_images/square_limit.png" width='20%'> </a>
+     <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
+       <img src="http://build.holoviews.org/_images/bars_economic.png" width='20%'> </a>
+     <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
+       <img src="http://build.holoviews.org/_images/texas_choropleth_example.png"    width='20%'> </a>
+     <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
+       <img src="http://build.holoviews.org/_images/verhulst_mandelbrot.png" width='20%'>    </a>
+   </div>
+   <div >
+       <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
+         <img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+       <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
+         <img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+       <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
+         <img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+   </div>
+   </div>
 
 Installation
 ____________
@@ -43,7 +52,7 @@ it also provides optional extensions enabled with
 The quickest and easiest way to get the latest version of all the
 recommended packages for working with HoloViews on Linux, Windows, or
 Mac systems is via the
-`conda <http://conda.pydata.org/docs/>`_ command provided by 
+`conda <http://conda.pydata.org/docs/>`_ command provided by
 the `Anaconda <http://docs.continuum.io/anaconda/install>`_ or
 `Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
 Python distributions::
@@ -105,14 +114,14 @@ with support from `Continuum Analytics <https://continuum.io>`_.
 
 HoloViews is completely `open source
 <https://github.com/ioam/holoviews>`_, available under a BSD license
-freely for both commercial and non-commercial use.  HoloViews is 
+freely for both commercial and non-commercial use.  HoloViews is
 designed to be easily extensible, and contributions from
 users are welcome and encouraged.  In particular, HoloViews components
 can be combined in an infinite number of ways, and although the
 tutorials are tested continuously, it is impossible
 for us to test all other conceivable combinations.  Thus we welcome `bug
-reports and feature requests <https://github.com/ioam/holoviews/issues>`_, 
-particularly if they come with test cases showing how to reproduce the bugs and 
+reports and feature requests <https://github.com/ioam/holoviews/issues>`_,
+particularly if they come with test cases showing how to reproduce the bugs and
 `pull requests <http://yangsu.github.io/pull-request-tutorial/>`_
 showing how to fix the bug or implement the feature!
 
