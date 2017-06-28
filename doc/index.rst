@@ -141,10 +141,11 @@ showing how to fix the bug or implement the feature!
    Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
+   Reference <reference/index>
    Features <features>
    Tutorials <Tutorials/index>
    Examples <Examples/index>
-   Reference Manual <Reference_Manual/index>
+   API <Reference_Manual/index>
    FAQ
    Github source <http://github.com/ioam/holoviews>
    About <about>
