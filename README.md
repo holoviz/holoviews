@@ -13,16 +13,33 @@
 itself.**
 
 <div>
-<div ><img src="http://assets.holoviews.org/collage/iris.png" width='20%'>
-                    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'>
-                    <img src="http://assets.holoviews.org/collage/scatter_example.png" width='43%'></div>
-<div ><img src="http://assets.holoviews.org/collage/square_limit.png" width='20%'>
-                    <img src="http://assets.holoviews.org/collage/bars_example.png" width='20%'>
-                    <img src="http://assets.holoviews.org/collage/texas.png" width='20%'>
-                    <img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'></div>
-<div ><img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'>
-                    <img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'>
-                    <img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'></div>
+<div >
+  <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
+    <img src="http://assets.holoviews.org/collage/iris.png" width='20%'> </a>
+  <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
+    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </a>
+  <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
+    <img src="http://assets.holoviews.org/collage/scatter_example.png" width='43%'></a>
+</div>
+
+<div >
+  <a href="http://holoviews.org/gallery/demos/bokeh/square_limit.html">
+    <img src="http://assets.holoviews.org/collage/square_limit.png" width='20%'> </a>
+  <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
+    <img src="http://assets.holoviews.org/collage/bars_example.png" width='20%'> </a>
+  <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
+    <img src="http://assets.holoviews.org/collage/texas.png" width='20%'> </a>
+  <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
+    <img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'> </a>
+</div>
+<div >
+    <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
+      <img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+    <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
+      <img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+    <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
+      <img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+</div>
 </div>
 
 HoloViews requires [Param](http://ioam.github.com/param/) and
@@ -184,4 +201,3 @@ Features
     including extracting figures as SVG, generating a static HTML copy
     of your results for reference, and storing your optional metadata
     like version control information.
-
