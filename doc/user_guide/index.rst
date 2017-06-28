@@ -84,6 +84,9 @@ These guides provide detail about specific additional features in HoloViews:
 * `Exporting and Archiving <Exporting_and_Archiving.html>`_
    Archive both your data and visualization in scripts and notebooks.
 
+* `Configuring HoloViews <Configuring_HoloViews.html>`_
+   How to set configuration options including backwards compatibility switches.
+
 * `Continuous Coordinates <Continuous_Coordinates.html>`_
    How continuous coordinates are handled, specifically focusing on ``Image`` and ``Raster`` types.
 
