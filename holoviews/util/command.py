@@ -24,6 +24,8 @@ except:
     from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from holoviews.ipython.preprocessors import StripMagicsProcessor
 
+from . import examples
+
 
 def main():
     if len(sys.argv) < 2:
@@ -35,11 +37,24 @@ def main():
                                      description=description,
                                      epilog=epilog)
 
-    parser.add_argument('notebook', metavar='notebook', type=str, nargs=1,
+    parser.add_argument('--notebook', metavar='notebook', type=str, nargs=1,
                     help='The Jupyter notebook to convert to Python syntax.')
 
+    parser.add_argument('--install-examples', metavar='install_examples',
+                        type=str, nargs='?',
+                        help='Install examples to the specified directory.')
+
     args = parser.parse_args()
-    print(export_to_python(args.notebook[0]), file=sys.stdout)
+    if args.notebook:
+        print(export_to_python(args.notebook[0]), file=sys.stdout)
+    else:
+        if args.install_examples is None:
+            examples_dir = 'holoviews-examples'
+        else:
+            examples_dir = args.install_examples
+        curdir,_ = os.path.split(__file__)
+        root = os.path.abspath(os.path.join('..','..', curdir))
+        examples(path=examples_dir, root=root)
 
 
 def export_to_python(filename=None,
