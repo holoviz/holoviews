@@ -1,4 +1,4 @@
-import sys, inspect
+import os, sys, inspect, shutil
 
 import param
 
@@ -29,8 +29,11 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
             return
         shutil.rmtree(path)
     ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
-    shutil.copytree(os.path.abspath(example_dir), path, ignore=ignore,
-                    symlinks=True)
+    tree_root = os.path.abspath(example_dir)
+    if os.path.isdir(tree_root):
+        shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
+    else:
+        print('Cannot find %s' % tree_root)
 
 
 

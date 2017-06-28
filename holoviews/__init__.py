@@ -1,6 +1,6 @@
 
 from __future__ import print_function, absolute_import
-import os, sys, pydoc, shutil
+import os, sys, pydoc
 
 import numpy as np # noqa (API import)
 
