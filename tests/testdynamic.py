@@ -337,13 +337,13 @@ class DynamicTestOperation(ComparisonTestCase):
     def test_dynamic_operation_init_renamed_stream_params(self):
         img = Image(sine_array(0,5))
         stream = RangeX(rename={'x_range': 'bin_range'})
-        dmap_with_fn = histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
+        histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
         self.assertEqual(stream.x_range, (0, 1))
 
     def test_dynamic_operation_init_stream_params(self):
         img = Image(sine_array(0,5))
         stream = Stream.define('TestStream', bin_range=None)()
-        dmap_with_fn = histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
+        histogram(img, bin_range=(0, 1), streams=[stream], dynamic=True)
         self.assertEqual(stream.bin_range, (0, 1))
 
 

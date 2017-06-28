@@ -12,7 +12,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator)
 from ..core.data import ArrayInterface, DictInterface
 from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd
-from ..element.chart import Histogram, Scatter, Area
+from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
 from ..element.util import categorical_aggregate2d # noqa (API import)

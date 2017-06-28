@@ -6,7 +6,6 @@ from distutils.version import LooseVersion
 import numpy as np
 import matplotlib as mpl
 from matplotlib import cm
-from matplotlib import pyplot as plt
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path as MPLPath
 from matplotlib.dates import DateFormatter

@@ -360,10 +360,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 return self.clone(selection, kdims=kdims, new_type=Curve,
                                   datatype=datatype)
             else:
-                new_type = Table
                 kdims = self.kdims
         else:
-            new_type = Dataset
             kdims = self.kdims
 
         xs, ys = zip(*samples)

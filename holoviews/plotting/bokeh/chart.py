@@ -2,8 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import (GlyphRenderer, ColumnDataSource, DataRange1d,
-                          Range1d, CategoricalColorMapper, CustomJS,
+from bokeh.models import (DataRange1d, CategoricalColorMapper, CustomJS,
                           HoverTool, FactorRange)
 from bokeh.models.tools import BoxSelectTool
 
@@ -11,8 +10,6 @@ from ...core import Dataset, OrderedDict
 from ...core.dimension import Dimension
 from ...core.util import (max_range, basestring, dimension_sanitizer,
                           wrap_tuple, unique_iterator)
-from ...core.options import abbreviated_exception
-from ...core.spaces import DynamicMap
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label

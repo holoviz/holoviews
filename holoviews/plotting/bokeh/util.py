@@ -18,8 +18,7 @@ from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.layouts import WidgetBox, Row, Column
-from bokeh.models import (GlyphRenderer, Model, HasProps, ToolbarBox,
-                          FactorRange, Range1d, Plot)
+from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 
@@ -33,7 +32,7 @@ except:
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
-from ...core.util import basestring, unique_array
+from ...core.util import basestring, unique_array, callable_name
 from ...core.spaces import get_nested_dmaps, DynamicMap
 
 from ..util import dim_axis_label, rgb2hex

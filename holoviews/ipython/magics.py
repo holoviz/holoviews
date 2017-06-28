@@ -8,8 +8,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 
-from ..core import util
-from ..core.options import Options, OptionError, Store, StoreOptions, options_policy
+from ..core.options import Options, Store, StoreOptions, options_policy
 from ..core.pprint import InfoPrinter
 
 from IPython.display import display, HTML

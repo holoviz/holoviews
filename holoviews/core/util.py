@@ -23,9 +23,9 @@ except:
     from collections import OrderedDict
 
 try:
-   import __builtin__ as builtins
+   import __builtin__ as builtins # noqa (compatibility)
 except:
-   import builtins as builtins
+   import builtins as builtins   # noqa (compatibility)
 
 datetime_types = (np.datetime64, dt.datetime)
 

@@ -17,7 +17,7 @@ import geoviews as gv
 import dask.dataframe as dd
 import cartopy.crs as ccrs
 
-from holoviews.operation.datashader import datashade, aggregate
+from holoviews.operation.datashader import aggregate
 
 hv.extension('bokeh')
 

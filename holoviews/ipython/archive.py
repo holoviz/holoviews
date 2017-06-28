@@ -4,7 +4,6 @@ and export it to disk via the display hooks.
 """
 
 import time, sys, os, traceback
-import io
 
 from IPython import version_info
 from IPython.display import Javascript, display
@@ -14,7 +13,6 @@ from .preprocessors import Substitute
 if version_info[0] >= 4:
     # Jupyter/IPython >=4.0
     from nbformat import reader
-    from nbconvert.preprocessors import Preprocessor
     from nbconvert import HTMLExporter
 
     from nbconvert.preprocessors.clearoutput import ClearOutputPreprocessor
@@ -22,7 +20,6 @@ if version_info[0] >= 4:
 else:
     # IPython <= 3.0
     from IPython.nbformat import reader
-    from IPython.nbconvert.preprocessors import Preprocessor
     from IPython.nbconvert import HTMLExporter
 
     if version_info[0] == 3:
