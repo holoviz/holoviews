@@ -54,9 +54,9 @@ html_context = {
     'LINKS': (
         ('Getting started', 'getting_started/index.html'),
         ('User Guide', 'user_guide/index.html'),
-        ('Tutorials', 'Tutorials/index.html'),
         ('Gallery', 'gallery/index.html'),
         ('Reference Gallery', 'reference/index.html'),
+        ('Showcase', 'showcase/index.html'),
         ('API Docs', 'Reference_Manual/index.html'),
         ('FAQ', 'FAQ.html'),
         ('About', 'about.html')
@@ -77,6 +77,7 @@ html_context = {
         ('User Guide', 'user_guide/index'),
         ('Gallery', 'gallery/index'),
         ('Reference Gallery', 'reference/index'),
+        ('Showcase', 'showcase/index'),
         ('API', 'Reference_Manual/index'),
         ('FAQ', 'FAQ')
     ),
