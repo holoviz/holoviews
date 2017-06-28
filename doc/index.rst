@@ -64,7 +64,8 @@ The recommended way to install HoloViews is using the `conda <http://conda.pydat
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
 directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.github.com/param/>`_.
-See our `installation page <getting_started/Installation.html>`_ if you need other installation options.
+Additional installation and configuration options are described in the
+`user guide <user_guide/Installing_and_Configuring.html>`_.
 
 
 Usage

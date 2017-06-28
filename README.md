@@ -69,8 +69,8 @@ The recommended way to install HoloViews is using the
 This command will install the typical packages most useful with
 HoloViews, though HoloViews itself depends only on
 [Numpy](http://numpy.org) and [Param](http://ioam.github.com/param).
-See our [installation page](user_guide/Installing_and_Configuring.html) if you
-need other installation options.
+Additional installation and configuration options are described in the
+[user guide](http://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 You can also clone holoviews directly from GitHub and install it with:
 
