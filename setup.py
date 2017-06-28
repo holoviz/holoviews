@@ -1,7 +1,8 @@
 #!/usr/bin/env python
 
 import sys, os, glob
-from shutil import copyfile, rmtree
+from shutil import rmtree
+from collections import defaultdict
 try:
     from setuptools import setup
 except ImportError:
@@ -29,7 +30,6 @@ extras_require['all'] = (extras_require['recommended']
 setup_args.update(dict(
     name='holoviews',
     version="1.8dev4",
-    include_package_data=True,
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -90,19 +90,37 @@ def check_pseudo_package(path):
             raise Exception("Please make sure pseudo-package %s is populated." % path)
 
 
+excludes = ['DS_Store', '.log', 'ipynb_checkpoints']
+packages = []
+extensions = defaultdict(list)
+
+def walker(arg, top, names):
+    """
+    Walks a directory and records all packages and file extensions.
+    """
+    global packages, extensions
+    if any(exc in top for exc in excludes):
+        return
+    package = top[top.rfind('holoviews'):].replace(os.path.sep, '.')
+    packages.append(package)
+    for name in names:
+        ext = '.'.join(name.split('.')[1:])
+        ext_str = '*.%s' % ext
+        if ext and ext not in excludes and ext_str not in extensions[package]:
+            extensions[package].append(ext_str)
+
+
 def package_assets(example_path):
     """
-    Generates pseudo-packages for example files.
+    Generates pseudo-packages for the examples directory.
     """
     import holoviews
     holoviews.examples(example_path, force=True)
-
-    setup_args['packages'] += ['holoviews.examples', 'holoviews.examples.assets', 'holoviews.examples.notebooks']
-    setup_args['package_data']['holoviews.examples.notebooks'] = ['*.ipynb', '*.npy']
-    setup_args['package_data']['holoviews.examples.assets'] = ['*.png', '*.svg', '*.rst']
-
-    check_pseudo_package(os.path.join('.', 'holoviews', 'examples', 'assets'))
-    check_pseudo_package(os.path.join('.', 'holoviews', 'examples', 'notebooks'))
+    os.path.walk(example_path, walker, None)
+    setup_args['packages'] += packages
+    for p, exts in extensions.items():
+        if exts:
+            setup_args['package_data'][p] = exts
 
 
 if __name__=="__main__":

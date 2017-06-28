@@ -1,6 +1,6 @@
 
 from __future__ import print_function, absolute_import
-import os, sys, pydoc
+import os, sys, pydoc, shutil
 
 import numpy as np # noqa (API import)
 
@@ -92,28 +92,15 @@ def examples(path='holoviews-examples', verbose=False, force=False):
     """
     Copies the notebooks to the supplied path.
     """
-    import glob
-    from shutil import copytree, ignore_patterns, copyfile
-
-    # A dictionary defining the example files to collect structured
-    # into subfolders along with globs and file type extensions
-    example_files = {'notebooks': [('../doc/Tutorials/*.{ext}', ('ipynb',))],
-                     'assets':    [('../doc/assets/*.{ext}', ('png', 'svg', 'rst'))]}
-
-    packaged_examples = os.path.join(__path__[0], './examples')
-    if os.path.exists(packaged_examples) and not force:
-        copytree(packaged_examples, path, ignore=ignore_patterns('.ipynb_checkpoints','*.pyc','*~'))
-        if verbose:
-            print("%s copied to %s" % (source, path))
-    else:
-        if not os.path.isdir(path): os.mkdir(path)
-        for subpath, files in example_files.items():
-            subfolder = os.path.join(path, subpath)
-            if not os.path.isdir(subfolder): os.mkdir(subfolder)
-            for gl, extensions in files:
-                file_glob = os.path.join(__path__[0], gl)
-                for p in [p for ext in extensions for p in glob.glob(file_glob.format(ext=ext))]:
-                    dest = os.path.join(subfolder, os.path.basename(p))
-                    copyfile(p, dest)
-                    if verbose:
-                        print("%s copied to %s" % (p, path))
+    filepath = os.path.abspath(os.path.dirname(__file__))
+    example_dir = os.path.join(filepath, './examples')
+    if not os.path.exists(example_dir):
+        example_dir = os.path.join(filepath, '../examples')
+    if os.path.exists(path):
+        if not force:
+            print('%s directory already exists, either delete it or set the force flag' % path)
+            return
+        shutil.rmtree(path)
+    ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
+    shutil.copytree(os.path.abspath(example_dir), path, ignore=ignore,
+                    symlinks=True)
