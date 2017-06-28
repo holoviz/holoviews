@@ -66,6 +66,9 @@ Supplementary guides
 
 These guides provide detail about specific additional features in HoloViews:
 
+* `Installing and Configuring HoloViews <Installing_and_Configuring.html>`_
+   Additional information about installation and configuration options.
+
 * `Plotting with Bokeh <Plotting_with_Bokeh.html>`_
    Styling options and unique `Bokeh <bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
@@ -84,8 +87,6 @@ These guides provide detail about specific additional features in HoloViews:
 * `Exporting and Archiving <Exporting_and_Archiving.html>`_
    Archive both your data and visualization in scripts and notebooks.
 
-* `Configuring HoloViews <Configuring_HoloViews.html>`_
-   How to set configuration options including backwards compatibility switches.
 
 * `Continuous Coordinates <Continuous_Coordinates.html>`_
    How continuous coordinates are handled, specifically focusing on ``Image`` and ``Raster`` types.
