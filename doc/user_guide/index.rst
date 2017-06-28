@@ -12,7 +12,7 @@ concepts in HoloViews:
    Core concepts when annotating your data with semantic metadata.
 
 * `Composing Elements <Composing_Elements.html>`_
-   Composing your data into layouts and overlays with ``+`` and ``*``
+   Composing your data into layouts and overlays with the ``+`` and ``*`` operators.
 
 * `Customizing Plots <Customizing_Plots.html>`_
    Controlling the look and feel of the visual representation.
@@ -27,10 +27,10 @@ concepts in HoloViews:
    Lazily generate data on the fly and generate engaging interactive visualizations.
 
 * `Tabular Datasets <Tabular_Datasets.html>`_
-   Explore tabular data with NumPy, pandas and dask.
+   Explore tabular data with `NumPy <http://www.numpy.org/>`_, `pandas <http://pandas.pydata.org/>`_ and `dask <http://dask.pydata.org/>`_.
 
 * `Gridded Datasets <Gridded_Datasets.html>`_
-   Explore gridded data (n-dimensional arrays) with NumPy and XArray.
+   Explore gridded data (n-dimensional arrays) with `NumPy <http://www.numpy.org/>`_ and `XArray <http://xarray.pydata.org/>`_.
 
 * `Indexing and Selecting Data <Indexing_and_Selecting_Data.html>`_
    Select and index subsets of your data with HoloViews.
@@ -42,7 +42,7 @@ concepts in HoloViews:
    Allow your visualizations to respond to Python events using the 'streams' system.
 
 * `Custom Interactivity <Custom_Interactivity.html>`_
-   Use Bokeh and 'linked streams' to directly interact with your visualizations.
+   Use `Bokeh <bokeh.pydata.org>`_ and 'linked streams' to directly interact with your visualizations.
 
 * `Data Processing Pipelines <Data_Pipelines.html>`_
    Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
@@ -57,10 +57,10 @@ Supplementary guides
 These guides provide detail about specific additional features in HoloViews:
 
 * `Plotting with Bokeh <Plotting_with_Bokeh.html>`_
-   Styling options and unique Bokeh features such as plot tools and using bokeh models directly.
+   Styling options and unique `Bokeh <bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
 * `Deploying Bokeh Apps <Deploying_Bokeh_Apps.html>`_
-   Using the bokeh server using scripts and notebooks.
+   Using `bokeh server <http://bokeh.pydata.org/en/latest/docs/user_guide/server.html>`_ using scripts and notebooks.
 
 * `Plotting with matplotlib <Plotting_with_Matplotlib.html>`_
    Styling options and unique Matplotlib features such as GIF/MP4 support.
