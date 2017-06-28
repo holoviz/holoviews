@@ -57,6 +57,9 @@ concepts in HoloViews:
 * `Working with large data <Large_Data.html>`_
    Leverage datashader to interactively explore billions of datapoints.
 
+* `Creating interactive dashboards <Dashboards.html>`_
+   Use external widget libraries to build custom, interactive dashboards.
+
 
 Supplementary guides
 --------------------
@@ -104,6 +107,7 @@ These guides provide detail about specific additional features in HoloViews:
     Custom Interactivity <Custom_Interactivity>
     Data Processing Pipelines <Data_Pipelines>
     Working with large data <Large_Data>
+    Creating interactive dashboards <Dashboards>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
     Plotting with matplotlib <Plotting_with_Matplotlib>
