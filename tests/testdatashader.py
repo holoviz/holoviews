@@ -1,9 +1,5 @@
 from nose.plugins.attrib import attr
-
-import pandas as pd
-import numpy as np
-
-from holoviews import Curve, Scatter, Points, Image, Dataset
+from holoviews import Curve, Points, Image, Dataset
 from holoviews.element.comparison import ComparisonTestCase
 
 try:

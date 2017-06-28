@@ -1,7 +1,6 @@
 from io import BytesIO
 import logging
 
-import numpy as np
 import param
 from param.parameterized import bothmethod
 
@@ -9,7 +8,7 @@ import bokeh.core
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
-from bokeh.embed import notebook_div, autoload_server
+from bokeh.embed import notebook_div
 from bokeh.io import load_notebook, curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE

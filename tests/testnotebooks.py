@@ -2,13 +2,11 @@
 """
 Unit tests relating to notebook processing
 """
-from unittest import SkipTest
 import nbformat, nbconvert
 
 import os, sys
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
-from holoviews.ipython.preprocessors import StripMagicsProcessor
 
 
 def apply_preprocessors(preprocessors, nbname):
@@ -57,7 +55,7 @@ class TestOptsPreprocessor(ComparisonTestCase):
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), False)
 
-    def test_opts_image_line_magic(self):
+    def test_opts_image_line_magic_svg(self):
         nbname = 'test_output_svg_line_magic.ipynb'
         if sys.version_info.major == 2:
             expected = """hv.util.output(u" fig='svg'")"""

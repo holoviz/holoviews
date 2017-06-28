@@ -5,7 +5,6 @@ Unit tests of the helper functions in core.utils
 import sys, math
 import unittest
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 import datetime
 import numpy as np

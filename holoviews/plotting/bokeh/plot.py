@@ -6,9 +6,8 @@ import param
 from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, CompositeOverlay, Store, Layout, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element,
-                     Empty)
+from ...core import (OrderedDict, CompositeOverlay, Store, GridMatrix,
+                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
 from ...core.options import Compositor
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram

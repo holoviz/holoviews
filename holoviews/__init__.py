@@ -38,12 +38,12 @@ warnings.filterwarnings("ignore",
                         message="elementwise comparison failed; returning scalar instead")
 
 try:
-    import IPython  # noqa (API import)
+    import IPython                 # noqa (API import)
     from .ipython import notebook_extension
-    extension = notebook_extension
+    extension = notebook_extension # noqa (name remapping)
 except ImportError as e:
     class notebook_extension(param.ParameterizedFunction):
-        def __call__(self, *args, **opts):
+        def __call__(self, *args, **opts): # noqa (dummy signature)
             raise Exception("IPython notebook not available: use hv.extension instead.")
 
 # A single holoviews.rc file may be executed if found.

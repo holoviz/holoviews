@@ -2,7 +2,7 @@
 Unit tests of Path types.
 """
 import numpy as np
-from holoviews import Ellipse, Box, Bounds
+from holoviews import Ellipse, Box
 from holoviews.element.comparison import ComparisonTestCase
 
 

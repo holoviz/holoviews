@@ -2,20 +2,12 @@
 Operations manipulate Elements, HoloMaps and Layouts, typically for
 the purposes of analysis or visualization.
 """
-from functools import reduce
 import param
-
-try:
-    from itertools import izip as zip
-except:
-    pass
-
 from .dimension import ViewableElement
-from .element import Element, HoloMap, GridSpace, NdLayout, Collator
+from .element import Element, HoloMap, GridSpace, NdLayout
 from .layout import Layout
 from .overlay import NdOverlay, Overlay
 from .spaces import DynamicMap, Callable
-from .traversal import unique_dimkeys
 
 
 class Operation(param.ParameterizedFunction):

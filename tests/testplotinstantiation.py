@@ -1428,7 +1428,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
-    def test_element_xticks_list_of_tuples(self):
+    def test_element_xticks_list_of_tuples_xaxis(self):
         if bokeh_version < str('0.12.6'):
             raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
@@ -1443,7 +1443,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
 
-    def test_element_xticks_list_of_tuples(self):
+    def test_element_xticks_list_of_tuples_yaxis(self):
         if bokeh_version < str('0.12.6'):
             raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]

@@ -1,7 +1,6 @@
 import numpy as np
 import holoviews as hv
 
-from holoviews import Options
 from holoviews.streams import Tap, Counter
 from scipy.signal import convolve2d
 
