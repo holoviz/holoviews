@@ -1,8 +1,5 @@
 .. HoloViews documentation master file
 
-.. raw:: html
-  :file: latest_news.html
-
 Introduction
 ____________
 
@@ -145,10 +142,8 @@ showing how to fix the bug or implement the feature!
    Home <self>
    Getting Started <getting_started/index>
    User Guide <user_guide/index>
-   Reference <reference/index>
-   Features <features>
-   Tutorials <Tutorials/index>
-   Examples <Examples/index>
+   Reference Gallery <reference/index>
+   Showcase <showcase/index>
    API <Reference_Manual/index>
    FAQ
    Github source <http://github.com/ioam/holoviews>
