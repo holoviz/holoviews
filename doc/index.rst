@@ -15,7 +15,7 @@ The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews
 
 The `API <api>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
 
-If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_.
+If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/ioam/holoviews>`_.
 
 .. raw:: html
 
@@ -70,7 +70,7 @@ See our `installation page <getting_started/Installation.html>`_ if you need oth
 Usage
 -----
 
-Once you've installed HoloViews, you can get get a copy of all the examples shown on this website::
+Once you've installed HoloViews, you can get a copy of all the examples shown on this website::
 
   holoviews --install-examples
   cd holoviews-examples
