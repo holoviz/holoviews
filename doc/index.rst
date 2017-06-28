@@ -1,9 +1,21 @@
 .. HoloViews documentation master file
 
-Introduction
+HoloViews
 ____________
 
 **Stop plotting your data - annotate your data and let it visualize itself.**
+
+HoloViews is an `open-source <https://github.com/ioam/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+
+For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pretty pictures, to appreciate how easy it is to create such plots yourself!
+
+The `Getting-Started <getting_started>`_ guide explains the basic concepts and how to start using HoloViews, and is the recommended way to understand how everything works.
+
+The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews, when you are ready for further study.
+
+The `API <api>`_ is the definitive guide to each HoloViews object, containing the same information available via the `hv.help()` command and tab completion in the Jupyter notebook.
+
+If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <http://yangsu.github.io/pull-request-tutorial/>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_.
 
 .. raw:: html
 
@@ -37,90 +49,38 @@ ____________
    </div>
    </div>
 
+
 Installation
 ____________
 
-HoloViews works with Python `2.7 and Python 3
-<https://travis-ci.org/ioam/holoviews>`_.  HoloViews is pure Python, but
-it also provides optional extensions enabled with
-``hv.notebook_extension()`` above that make it integrate well with
-`Jupyter/IPython Notebook <http://jupyter.org>`_ versions 3, 4 and 5.
+|PyPI|_ |Conda|_ |License|_ |Coveralls|_
 
-The quickest and easiest way to get the latest version of all the
-recommended packages for working with HoloViews on Linux, Windows, or
-Mac systems is via the
-`conda <http://conda.pydata.org/docs/>`_ command provided by
-the `Anaconda <http://docs.continuum.io/anaconda/install>`_ or
-`Miniconda <http://conda.pydata.org/miniconda.html>`_ scientific
-Python distributions::
+
+HoloViews works with Python `2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+
+The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
   conda install -c ioam holoviews bokeh
 
-See our `installation page <install.html>`_ if you need other options,
-including `pip <https://pip.pypa.io/en/stable/installing>`_
-installations, additional packages, development versions, and minimal
-installations.  Minimal installations include only `Param
-<http://ioam.github.com/param/>`_ and `Numpy <http://numpy.org>`_ as
-dependencies, neither of which has any required dependencies, making
-it simple to generate HoloViews objects from within your own code.
-
-
-|PyPI|_ |Conda|_ |License|_  |Coveralls|_
+This command will install the typical packages most useful with HoloViews, though HoloViews itself
+directly depends only on `Numpy <http://numpy.org>`_ and <http://ioam.github.com/param/>`_.
+See our `installation page <getting_started/Installation.html>`_ if you need other installation options.
 
 
 Usage
 -----
 
-Once you've installed HoloViews, you can get started by launching
-Jupyter Notebook::
+Once you've installed HoloViews, you can get get a copy of all the examples shown on this website::
 
-  jupyter notebook
+  holoviews --install-examples
+  cd holoviews-examples
 
-Now you can download the `tutorial notebooks`_.  unzip them somewhere
-Jupyter Notebook can find them, and then open the Homepage.ipynb
-tutorial or any of the others in the Notebook.  Enjoy exploring your
-data!
+And then you can launch Jupyter Notebook to explore them::
 
-Note: When running HoloViews in Jupyter Notebook 5.0 a data rate limit
-was introduced which severely limits the output that HoloViews can
-display.  This limit will be removed again in the upcoming 5.1
-release, in the meantime you can raise the limit manually by
-overriding the default ``iopub_data_rate_limit``::
+  jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
 
-   jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
+(Increasing the rate limit in this way is `required for the current 5.0 Jupyter version <https://github.com/ioam/holoviews/issues/1181>`_, but should not be needed in later Jupyter releases.)
 
-Alternatively you can set a higher default in the user configuration file
-in ``~/.jupyter/jupyter_notebook_config.py``, by adding::
-
-   c.NotebookApp.iopub_data_rate_limit=100000000
-
-If the configuration file does not exist generate one first using::
-
-   jupyter notebook --generate-config
-
-
-------------
-
-Contributors
-____________
-
-HoloViews is developed by `Jean-Luc R. Stevens <https://github.com/jlstevens>`_
-and `Philipp Rudiger <https://github.com/philippjfr>`_,
-in collaboration with `James A. Bednar <http://homepages.inf.ed.ac.uk/jbednar>`_,
-with support from `Continuum Analytics <https://continuum.io>`_.
-
-HoloViews is completely `open source
-<https://github.com/ioam/holoviews>`_, available under a BSD license
-freely for both commercial and non-commercial use.  HoloViews is
-designed to be easily extensible, and contributions from
-users are welcome and encouraged.  In particular, HoloViews components
-can be combined in an infinite number of ways, and although the
-tutorials are tested continuously, it is impossible
-for us to test all other conceivable combinations.  Thus we welcome `bug
-reports and feature requests <https://github.com/ioam/holoviews/issues>`_,
-particularly if they come with test cases showing how to reproduce the bugs and
-`pull requests <http://yangsu.github.io/pull-request-tutorial/>`_
-showing how to fix the bug or implement the feature!
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
