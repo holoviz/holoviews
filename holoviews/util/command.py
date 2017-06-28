@@ -24,7 +24,25 @@ except:
     from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from holoviews.ipython.preprocessors import StripMagicsProcessor
 
-def main(filename=None,
+
+def main():
+    if len(sys.argv) < 2:
+        print("For help with the holoviews command run:\n\nholoviews --help\n")
+        sys.exit()
+
+    parser = argparse.ArgumentParser(prog='holoviews',
+                                     formatter_class=RawTextHelpFormatter,
+                                     description=description,
+                                     epilog=epilog)
+
+    parser.add_argument('notebook', metavar='notebook', type=str, nargs=1,
+                    help='The Jupyter notebook to convert to Python syntax.')
+
+    args = parser.parse_args()
+    print(export_to_python(args.notebook[0]), file=sys.stdout)
+
+
+def export_to_python(filename=None,
          preprocessors=[OptsMagicProcessor(),
                         OutputMagicProcessor(),
                         StripMagicsProcessor()]):
@@ -65,19 +83,4 @@ direct it to a Python file of your choosing.
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv) < 2:
-        print("For help with the holoviews command run:\n\nholoviews --help\n")
-        sys.exit()
-
-    parser = argparse.ArgumentParser(prog='holoviews',
-                                     formatter_class=RawTextHelpFormatter,
-                                     description=description,
-                                     epilog=epilog)
-
-    parser.add_argument('notebook', metavar='notebook', type=str, nargs=1,
-                    help='The Jupyter notebook to convert to Python syntax.')
-
-    args = parser.parse_args()
-    print(main(args.notebook[0]), file=sys.stdout)
-
+    main()
