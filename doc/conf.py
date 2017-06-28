@@ -55,8 +55,9 @@ html_context = {
         ('Getting started', 'getting_started/index.html'),
         ('User Guide', 'user_guide/index.html'),
         ('Tutorials', 'Tutorials/index.html'),
-        ('Gallery', 'Gallery/index.html'),
-        ('Reference', 'Reference_Manual/index.html'),
+        ('Gallery', 'gallery/index.html'),
+        ('Reference Gallery', 'reference/index.html'),
+        ('API Docs', 'Reference_Manual/index.html'),
         ('FAQ', 'FAQ.html'),
         ('About', 'about.html')
     ),
@@ -66,18 +67,18 @@ html_context = {
     ),
     # Social links
     'SOCIAL': (
-        ('Mailing list', '//gitter.im/ioam/holoviews'),
-        ('Github', '//github.com/ioam/holoviews')
+        ('Gitter', '//gitter.im/ioam/holoviews'),
+        ('Twitter', '//twitter.com/holoviews'),
+        ('Github', '//github.com/ioam/holoviews'),
     ),
     # Links for the docs sub navigation
     'NAV_DOCS': (
         ('Getting started', 'getting_started/index'),
         ('User Guide', 'user_guide/index'),
-        ('Tutorials', 'Tutorials/index'),
         ('Gallery', 'gallery/index'),
-        ('Reference', 'Reference_Manual/index'),
-        ('FAQ', 'FAQ'),
-        ('About', 'about')
+        ('Reference Gallery', 'reference/index'),
+        ('API', 'Reference_Manual/index'),
+        ('FAQ', 'FAQ')
     ),
     'css_server': os.environ.get('HOLOVIEWS_DOCS_CSS_SERVER', 'assets.holoviews.org'),
     'js_includes': ['custom.js', 'require.js']

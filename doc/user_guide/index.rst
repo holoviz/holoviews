@@ -12,7 +12,7 @@ concepts in HoloViews:
   How to wrap your data in Element and annotate it with additional
   metadata to explore and visualize it effectively.
 
-* `Composition of Elements <Composing_Elements.html>`_
+* `Composing Elements <Composing_Elements.html>`_
   Composing your wrapped data into ``Overlay`` and ``Layout``
   collections with the ``+`` and ``*`` operators.
 
@@ -116,7 +116,7 @@ These guides provide detail about specific additional features in HoloViews:
     :maxdepth: 2
 
     Annotating your Data <Annotating_Data>
-    Composition of Elements <Composing_Elements>
+    Composing Elements <Composing_Elements>
     Customizing Plots <Customizing_Plots>
     Dimensioned Containers <Dimensioned_Containers>
     Building Composite Objects <Building_Composite_Objects>
