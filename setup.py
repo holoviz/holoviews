@@ -115,7 +115,7 @@ def package_assets(example_path):
     Generates pseudo-packages for the examples directory.
     """
     import holoviews
-    holoviews.examples(example_path, force=True)
+    holoviews.util.examples(example_path, force=True, root=__file__)
     os.path.walk(example_path, walker, None)
     setup_args['packages'] += packages
     for p, exts in extensions.items():

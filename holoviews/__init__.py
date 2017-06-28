@@ -86,21 +86,3 @@ def help(obj, visualization=True, ansi=True, backend=None,
         print((msg if visualization is False else '') + info)
     else:
         pydoc.help(obj)
-
-
-def examples(path='holoviews-examples', verbose=False, force=False):
-    """
-    Copies the notebooks to the supplied path.
-    """
-    filepath = os.path.abspath(os.path.dirname(__file__))
-    example_dir = os.path.join(filepath, './examples')
-    if not os.path.exists(example_dir):
-        example_dir = os.path.join(filepath, '../examples')
-    if os.path.exists(path):
-        if not force:
-            print('%s directory already exists, either delete it or set the force flag' % path)
-            return
-        shutil.rmtree(path)
-    ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
-    shutil.copytree(os.path.abspath(example_dir), path, ignore=ignore,
-                    symlinks=True)
