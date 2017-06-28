@@ -15,22 +15,22 @@ itself.**
 <div>
 <div >
   <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
-    <img src="http://assets.holoviews.org/collage/iris.png" width='20%'> </a>
+    <img src="http://build.holoviews.org/_images/iris_splom_example.png" width='20%'> </img> </a>
   <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
-    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </a>
+    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
-    <img src="http://assets.holoviews.org/collage/scatter_example.png" width='43%'></a>
+    <img src="http://build.holoviews.org/_images/scatter_economic.png" width='43%'> </img> </a>
 </div>
 
 <div >
   <a href="http://holoviews.org/gallery/demos/bokeh/square_limit.html">
-    <img src="http://assets.holoviews.org/collage/square_limit.png" width='20%'> </a>
+    <img src="http://build.holoviews.org/_images/square_limit.png" width='20%'> </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
-    <img src="http://assets.holoviews.org/collage/bars_example.png" width='20%'> </a>
+    <img src="http://build.holoviews.org/_images/bars_economic.png" width='20%'> </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-    <img src="http://assets.holoviews.org/collage/texas.png" width='20%'> </a>
+    <img src="http://build.holoviews.org/_images/texas_choropleth_example.png" width='20%'> </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
-    <img src="http://assets.holoviews.org/collage/mandelbrot.png" width='20%'> </a>
+    <img src="http://build.holoviews.org/_images/verhulst_mandelbrot.png" width='20%'> </a>
 </div>
 <div >
     <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
