@@ -81,7 +81,7 @@ You can also clone holoviews directly from GitHub and install it with:
 Usage
 -----
 
-Once you've installed HoloViews, you can get get a copy of all the
+Once you've installed HoloViews, you can get a copy of all the
 examples shown on the website:
 
     holoviews --install-examples
@@ -92,7 +92,7 @@ And then you can launch Jupyter Notebook to explore them:
     jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
 
 (Increasing the rate limit in this way is [required for the current 5.0
-Jupyter version](https://github.com/ioam/holoviews/issues/1181), but
+Jupyter version](http://holoviews.org/user_guide/Installing_and_Configuring.html), but
 should not be needed in later Jupyter releases.)
 
 For general discussion, we have a [gitter channel](https://gitter.im/ioam/holoviews).

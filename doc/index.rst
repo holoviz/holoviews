@@ -79,7 +79,7 @@ And then you can launch Jupyter Notebook to explore them::
 
   jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
 
-(Increasing the rate limit in this way is `required for the current 5.0 Jupyter version <https://github.com/ioam/holoviews/issues/1181>`_, but should not be needed in later Jupyter releases.)
+(Increasing the rate limit in this way is `required for the current 5.0 Jupyter version <user_guide/Installing_and_Configuring.html>`_, but should not be needed in later Jupyter releases.)
 
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
