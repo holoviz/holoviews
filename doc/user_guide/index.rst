@@ -1,6 +1,13 @@
 User Guide
 __________
 
+The User Guide is the primary resource documenting key concepts that
+will help you use HoloViews in your work. For newcomers, a gentle
+introduction to HoloViews can be found in our `Getting Started <../getting_started/index.html>`_
+guide and an overview of some interesting HoloViews examples can be
+found in our `Gallery <../gallery/index.html>`_. If you are looking for a specific component
+or wish to view the range of primitives HoloViews has to offer, see our
+`Reference Gallery <../reference/index.html>`_.
 
 Core guides
 -----------
