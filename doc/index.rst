@@ -7,15 +7,15 @@ ____________
 
 HoloViews is an `open-source <https://github.com/ioam/holoviews/blob/master/LICENSE.txt>`_ Python library designed to make data analysis and visualization seamless and simple.  With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
-For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pretty pictures, to appreciate how easy it is to create such plots yourself!
+For examples, check out the thumbnails below and the other items in the `Gallery <gallery>`_ of demos and apps and the `Reference Gallery <reference>`_ that shows every HoloViews component.  Be sure to look at the code, not just the pictures, to appreciate how easy it is to create such plots yourself!
 
 The `Getting-Started <getting_started>`_ guide explains the basic concepts and how to start using HoloViews, and is the recommended way to understand how everything works.
 
 The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews, when you are ready for further study.
 
-The `API <api>`_ is the definitive guide to each HoloViews object, containing the same information available via the `hv.help()` command and tab completion in the Jupyter notebook.
+The `API <api>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
 
-If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <http://yangsu.github.io/pull-request-tutorial/>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_.
+If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_.
 
 .. raw:: html
 
@@ -63,7 +63,7 @@ The recommended way to install HoloViews is using the `conda <http://conda.pydat
   conda install -c ioam holoviews bokeh
 
 This command will install the typical packages most useful with HoloViews, though HoloViews itself
-directly depends only on `Numpy <http://numpy.org>`_ and <http://ioam.github.com/param/>`_.
+directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.github.com/param/>`_.
 See our `installation page <getting_started/Installation.html>`_ if you need other installation options.
 
 
