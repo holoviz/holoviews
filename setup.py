@@ -29,7 +29,7 @@ extras_require['all'] = (extras_require['recommended']
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.8dev4",
+    version="1.8.0",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
