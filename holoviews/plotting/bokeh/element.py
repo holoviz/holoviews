@@ -410,7 +410,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         Returns a dictionary of plot properties.
         """
-        size_multiplier = Store.renderers[self.renderer.backend].size/100.
+        size_multiplier = self.renderer.size/100.
         plot_props = dict(plot_height=int(self.height*size_multiplier),
                           plot_width=int(self.width*size_multiplier))
         if bokeh_version < '0.12':
