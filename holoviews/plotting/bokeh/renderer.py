@@ -247,15 +247,14 @@ class BokehRenderer(Renderer):
         utility. Note that this can be overridden explicitly per object
         using the fig_size and size plot options.
         """
-        factor = percent_size / 100.0
         obj = obj.last if isinstance(obj, HoloMap) else obj
         plot = Store.registry[cls.backend].get(type(obj), None)
         if not hasattr(plot, 'width') or not hasattr(plot, 'height'):
             from .plot import BokehPlot
             plot = BokehPlot
         options = plot.lookup_options(obj, 'plot').options
-        width = options.get('width', plot.width) * factor
-        height = options.get('height', plot.height) * factor
+        width = options.get('width', plot.width)
+        height = options.get('height', plot.height)
         return dict(options, **{'width':int(width), 'height': int(height)})
 
 
