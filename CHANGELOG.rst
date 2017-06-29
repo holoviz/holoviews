@@ -1,11 +1,13 @@
 Version 1.8.0
 -------------
 
-This release contains fixes and improvements to all the new features
-introduced in 1.7.0. Additionally this release has finally allowed us to
-completely overhaul the HoloViews documentation and website. We want to
-thank all our old and new contributors for providing feedback and
-submitting various fixes.
+This release includes a complete and long awaited overhaul of the
+HoloViews documentation and website, with a new gallery,
+getting-started section, and logo.  In the process, we have also
+improved and made small fixes to all of the major new functionality
+that appeared in 1.7.0 but was not properly documented until now.  We
+want to thank all our old and new contributors for providing feedback,
+bug reports, and pull requests.
 
 Major features:
 
@@ -83,48 +85,27 @@ Other new features and improvements:
   <https://github.com/ioam/holoviews/pull/1576>`_)
 * Define a number of ``Cycle`` and ``Palette`` defaults across
   backends (`#1605 <https://github.com/ioam/holoviews/pull/1605>`_)
-
-Bug fixes:
-
-* Fixed bug in sorting on array interface (`#1399
-  <https://github.com/ioam/holoviews/pull/1399>`_)
-* Fixed bug formatting tables values (`#1400
-  <https://github.com/ioam/holoviews/pull/1400>`_)
-* Fixed bug aggregating sparse ``HeatMap`` (`#1405
-  <https://github.com/ioam/holoviews/pull/1405>`_)
-* Compatibility with pandas 0.20.x (`#1412
-  <https://github.com/ioam/holoviews/pull/1412>`_)
-* Fixed bug when modifying data in place (`#1413
-  <https://github.com/ioam/holoviews/pull/1413>`_)
-* Ensure ``HLine``/``VLine`` are clipped by axes (`#1418
-  <https://github.com/ioam/holoviews/pull/1418>`_)
-* Fixed bug attaching linked streams in batched mode (`#1439
-  <https://github.com/ioam/holoviews/pull/1439>`_)
-* Allow setting bokeh toolbar option to None (`#1442
-  <https://github.com/ioam/holoviews/pull/1442>`_)
-* Suppressed warnings about empty plots (`#1443
-  <https://github.com/ioam/holoviews/pull/1443>`_)
-* Avoid unnecessary calls to compute xarray length for improved
-  laziness (`#1467 <https://github.com/ioam/holoviews/pull/1467>`_)
-* Compatibility fixes for bokeh 0.12.6 (`#1485
-  <https://github.com/ioam/holoviews/pull/1485>`_, `#1505
-  <https://github.com/ioam/holoviews/pull/1505>`_)
-* Fixed Dynamic utility dimension value sort order (``#1493
-  <https://github.com/ioam/holoviews/pull/1493>`_
-  <https://github.com/ioam/holoviews/pull/1493>`_)
-* Made ``Ellipse`` Element more general (`#1509
-  <https://github.com/ioam/holoviews/pull/1509>`_)
-* Fixed bugs handling xarray array orientation (`#1524
-  <https://github.com/ioam/holoviews/pull/1524>`_)
-* Fixed bug computing spread in ``Dataset.aggregate`` (`#1543
-  <https://github.com/ioam/holoviews/pull/1543>`_)
-* ``BokehRenderer`` correctly saves html output with required JS/CSS
-  assets (`#1547 <https://github.com/ioam/holoviews/pull/1547>`_)
-* Fixed bug saving to ``BytesIO`` object in Renderer (`#1560
-  <https://github.com/ioam/holoviews/pull/1560>`_)
-* Fixed floating point precision issues when constructing Image
-  (`#1603 <https://github.com/ioam/holoviews/pull/1603>`_)
-
+* Many other small improvements and fixes 
+  (`#1399 <https://github.com/ioam/holoviews/pull/1399>`_, 
+  `#1400 <https://github.com/ioam/holoviews/pull/1400>`_,
+  `#1405 <https://github.com/ioam/holoviews/pull/1405>`_,
+  `#1412 <https://github.com/ioam/holoviews/pull/1412>`_,
+  `#1413 <https://github.com/ioam/holoviews/pull/1413>`_,
+  `#1418 <https://github.com/ioam/holoviews/pull/1418>`_,
+  `#1439 <https://github.com/ioam/holoviews/pull/1439>`_,
+  `#1442 <https://github.com/ioam/holoviews/pull/1442>`_,
+  `#1443 <https://github.com/ioam/holoviews/pull/1443>`_,
+  `#1467 <https://github.com/ioam/holoviews/pull/1467>`_,
+  `#1485 <https://github.com/ioam/holoviews/pull/1485>`_, 
+  `#1505 <https://github.com/ioam/holoviews/pull/1505>`_,
+  `#1493 <https://github.com/ioam/holoviews/pull/1493>`_,
+  `#1509 <https://github.com/ioam/holoviews/pull/1509>`_,
+  `#1524 <https://github.com/ioam/holoviews/pull/1524>`_,
+  `#1543 <https://github.com/ioam/holoviews/pull/1543>`_,
+  `#1547 <https://github.com/ioam/holoviews/pull/1547>`_,
+  `#1560 <https://github.com/ioam/holoviews/pull/1560>`_,
+  `#1603 <https://github.com/ioam/holoviews/pull/1603>`_)
+  
 Changes affecting backwards compatibility:
 
 * Renamed ``ElementOperation`` to ``Operation`` (`#1421
@@ -133,13 +114,13 @@ Changes affecting backwards compatibility:
   classmethod (`#1515 <https://github.com/ioam/holoviews/pull/1515>`_)
 * Removed all mpld3 support (`#1516
   <https://github.com/ioam/holoviews/pull/1516>`_)
-* Added ``opts`` method on all types eventually replacing the
+* Added ``opts`` method on all types, replacing the now-deprecated
   ``__call__`` syntax to set options (`#1589
   <https://github.com/ioam/holoviews/pull/1589>`_)
-* Styling changes for both matplotlib and bokeh which can be reverted
-  with the the ``config`` option of ``hv.extension``. For instance,
-  ``hv.extension('bokeh', config=dict(style_17=True))`` (`#1518
-  <https://github.com/ioam/holoviews/pull/1518>`_)
+* Styling changes for both matplotlib and bokeh, which can be reverted
+  for a notebook with the ``config`` option of ``hv.extension``. For
+  instance, ``hv.extension('bokeh', config=dict(style_17=True))`` 
+  (`#1518 <https://github.com/ioam/holoviews/pull/1518>`_)
 
 
 Version 1.7.0
