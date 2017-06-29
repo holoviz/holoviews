@@ -34,6 +34,9 @@
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
 
   <script src="//ajax.googleapis.com/ajax/libs/jquery/2.1.1/jquery.min.js"></script>
+  <script type="text/javascript" async
+  src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.1/MathJax.js?config=TeX-MML-AM_CHTML">
+  </script>
   <script src="{{ pathto('_static/' + theme_js, 1) }}"></script>
   {% for link in js_includes %}
      <script src="{{ pathto('_static/' + link, 1) }}"></script>
@@ -113,6 +116,13 @@
 
 <!-- Google Analytics -->
 {% include 'includes/ga.html' %}
+
+<!-- MathJax Config -->
+<script type="text/x-mathjax-config">
+MathJax.Hub.Config({
+  tex2jax: {inlineMath: [['$','$'], ['\\(','\\)']]}
+});
+</script>
 
 <!-- End Document
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
