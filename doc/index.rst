@@ -13,7 +13,7 @@ The `Getting-Started <getting_started>`_ guide explains the basic concepts and h
 
 The `User Guide <user_guide>`_ goes more deeply into key concepts from HoloViews, when you are ready for further study.
 
-The `API <api>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
+The `API <Reference_Manual>`_ is the definitive guide to each HoloViews object, but the same information is available more conveniently via the `hv.help()` command and tab completion in the Jupyter notebook.
 
 If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/ioam/holoviews>`_.
 
