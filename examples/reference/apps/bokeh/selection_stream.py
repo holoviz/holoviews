@@ -1,7 +1,11 @@
 """
-Example app demonstrating how to use the HoloViews API to generate
+An example app demonstrating how to use the HoloViews API to generate
 a bokeh app with complex interactivity. Uses a Selection1D stream
 to compute the mean y-value of the current selection.
+
+The app can be served using:
+
+    bokeh serve --show selection_stream.py
 """
 
 import numpy as np
@@ -9,7 +13,7 @@ import holoviews as hv
 from holoviews.streams import Selection1D
 
 renderer = hv.renderer('bokeh')
-hv.Store.options(backend='bokeh').Points = hv.Options('plot', tools=['box_select'])
+hv.opts("Points [tools=['box_select']]")
 
 data = np.random.multivariate_normal((0, 0), [[1, 0.1], [0.1, 1]], (1000,))
 points = hv.Points(data)
