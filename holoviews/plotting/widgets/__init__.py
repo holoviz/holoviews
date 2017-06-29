@@ -24,7 +24,7 @@ def escape_vals(vals, escape_numerics=True):
     for v in vals:
         if not isnumeric(v):
             v = "'"+unicode(bytes_to_unicode(v))+"'"
-        elif isinstance(v, np.datetime64):
+        elif isinstance(v, (np.datetime64, np.timedelta64)):
             v = "'"+str(v)+"'"
         else:
             if v % 1 == 0:
