@@ -1,6 +1,8 @@
 #!/usr/bin/env python
 
-import sys, os
+import sys, os, glob
+from shutil import rmtree
+from collections import defaultdict
 try:
     from setuptools import setup
 except ImportError:
@@ -88,12 +90,48 @@ def check_pseudo_package(path):
             raise Exception("Please make sure pseudo-package %s is populated." % path)
 
 
+excludes = ['DS_Store', '.log', 'ipynb_checkpoints']
+packages = []
+extensions = defaultdict(list)
+
+def walker(arg, top, names):
+    """
+    Walks a directory and records all packages and file extensions.
+    """
+    global packages, extensions
+    if any(exc in top for exc in excludes):
+        return
+    package = top[top.rfind('holoviews'):].replace(os.path.sep, '.')
+    packages.append(package)
+    for name in names:
+        ext = '.'.join(name.split('.')[1:])
+        ext_str = '*.%s' % ext
+        if ext and ext not in excludes and ext_str not in extensions[package]:
+            extensions[package].append(ext_str)
+
+
+def package_assets(example_path):
+    """
+    Generates pseudo-packages for the examples directory.
+    """
+    import holoviews
+    holoviews.util.examples(example_path, force=True, root=__file__)
+    os.path.walk(example_path, walker, None)
+    setup_args['packages'] += packages
+    for p, exts in extensions.items():
+        if exts:
+            setup_args['package_data'][p] = exts
+
+
 if __name__=="__main__":
+    example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                               'holoviews/examples')
+    if not 'develop' in sys.argv:
+        package_assets(example_path)
 
     if ('upload' in sys.argv) or ('sdist' in sys.argv):
         import holoviews
         holoviews.__version__.verify(setup_args['version'])
-
 
     if 'install' in sys.argv:
         header = "HOLOVIEWS INSTALLATION INFORMATION"
@@ -111,5 +149,7 @@ if __name__=="__main__":
         print("For more information please visit http://holoviews.org/install.html\n")
         print(bars+'\n')
 
-
     setup(**setup_args)
+
+    if os.path.isdir(example_path):
+        rmtree(example_path)

@@ -24,7 +24,40 @@ except:
     from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from holoviews.ipython.preprocessors import StripMagicsProcessor
 
-def main(filename=None,
+from . import examples
+
+
+def main():
+    if len(sys.argv) < 2:
+        print("For help with the holoviews command run:\n\nholoviews --help\n")
+        sys.exit()
+
+    parser = argparse.ArgumentParser(prog='holoviews',
+                                     formatter_class=RawTextHelpFormatter,
+                                     description=description,
+                                     epilog=epilog)
+
+    parser.add_argument('--notebook', metavar='notebook', type=str, nargs=1,
+                    help='The Jupyter notebook to convert to Python syntax.')
+
+    parser.add_argument('--install-examples', metavar='install_examples',
+                        type=str, nargs='?',
+                        help='Install examples to the specified directory.')
+
+    args = parser.parse_args()
+    if args.notebook:
+        print(export_to_python(args.notebook[0]), file=sys.stdout)
+    else:
+        if args.install_examples is None:
+            examples_dir = 'holoviews-examples'
+        else:
+            examples_dir = args.install_examples
+        curdir,_ = os.path.split(__file__)
+        root = os.path.abspath(os.path.join('..','..', curdir))
+        examples(path=examples_dir, root=root)
+
+
+def export_to_python(filename=None,
          preprocessors=[OptsMagicProcessor(),
                         OutputMagicProcessor(),
                         StripMagicsProcessor()]):
@@ -65,19 +98,4 @@ direct it to a Python file of your choosing.
 
 
 if __name__ == '__main__':
-
-    if len(sys.argv) < 2:
-        print("For help with the holoviews command run:\n\nholoviews --help\n")
-        sys.exit()
-
-    parser = argparse.ArgumentParser(prog='holoviews',
-                                     formatter_class=RawTextHelpFormatter,
-                                     description=description,
-                                     epilog=epilog)
-
-    parser.add_argument('notebook', metavar='notebook', type=str, nargs=1,
-                    help='The Jupyter notebook to convert to Python syntax.')
-
-    args = parser.parse_args()
-    print(main(args.notebook[0]), file=sys.stdout)
-
+    main()
