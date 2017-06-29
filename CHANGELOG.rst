@@ -8,6 +8,8 @@ completely overhaul the HoloViews documentation and website. We want
 to thank all our old and new contributors for providing feedback and
 submitting various fixes.
 
+Major features:
+
 * Completely overhauled the documentation and website (`#1384
   <https://github.com/ioam/holoviews/pull/1384>`_, ``#1473
   <https://github.com/ioam/holoviews/pull/1473>`_
@@ -45,6 +47,10 @@ submitting various fixes.
 * Added ``iloc`` and ``ndloc`` method to allow integer based indexing
   on tabular and gridded datasets (`#1435
   <https://github.com/ioam/holoviews/pull/1435>`_)
+* Added option to restore case sensitive completion order by setting
+  ``hv.extension.case_sensitive_completion=True`` in python or via
+  holoviews.rc file (`#1613
+  <https://github.com/ioam/holoviews/pull/1613>`_)
 
 Other new features and improvements:
 
@@ -131,6 +137,11 @@ Changes affecting backwards compatibility:
 * Added ``opts`` method on all types eventually replacing the
   ``__call__`` syntax to set options (`#1589
   <https://github.com/ioam/holoviews/pull/1589>`_)
+* Styling changes for both matplotlib and bokeh which can be reverted
+  with ``hv.config(style_17=True)`` and/or
+  ``hv.extension(config=dict(style_17=True))`` (`#1518
+  <https://github.com/ioam/holoviews/pull/1518>`_)
+
 
 Version 1.7.0
 -------------
