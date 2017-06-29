@@ -1,11 +1,10 @@
 Version 1.8.0
 -------------
 
-This version is major release but to a large extent contained fixes
-and improvements for the huge range of features that were introduced
-in 1.7.0. Additionally this release has finally allowed us to
-completely overhaul the HoloViews documentation and website. We want
-to thank all our old and new contributors for providing feedback and
+This release contains fixes and improvements to all the new features
+introduced in 1.7.0. Additionally this release has finally allowed us to
+completely overhaul the HoloViews documentation and website. We want to
+thank all our old and new contributors for providing feedback and
 submitting various fixes.
 
 Major features:
@@ -138,8 +137,8 @@ Changes affecting backwards compatibility:
   ``__call__`` syntax to set options (`#1589
   <https://github.com/ioam/holoviews/pull/1589>`_)
 * Styling changes for both matplotlib and bokeh which can be reverted
-  with ``hv.config(style_17=True)`` and/or
-  ``hv.extension(config=dict(style_17=True))`` (`#1518
+  with the the ``config`` option of ``hv.extension``. For instance,
+  ``hv.extension('bokeh', config=dict(style_17=True))`` (`#1518
   <https://github.com/ioam/holoviews/pull/1518>`_)
 
 
