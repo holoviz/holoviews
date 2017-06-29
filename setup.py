@@ -94,7 +94,7 @@ excludes = ['DS_Store', '.log', 'ipynb_checkpoints']
 packages = []
 extensions = defaultdict(list)
 
-def walker(arg, top, names):
+def walker(top, names):
     """
     Walks a directory and records all packages and file extensions.
     """
@@ -116,7 +116,8 @@ def package_assets(example_path):
     """
     import holoviews
     holoviews.util.examples(example_path, force=True, root=__file__)
-    os.path.walk(example_path, walker, None)
+    for root, dirs, files in os.walk(example_path):
+        walker(root, dirs+files)
     setup_args['packages'] += packages
     for p, exts in extensions.items():
         if exts:
