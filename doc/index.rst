@@ -56,7 +56,7 @@ ____________
 |PyPI|_ |Conda|_ |License|_ |Coveralls|_
 
 
-HoloViews works with Python `2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
