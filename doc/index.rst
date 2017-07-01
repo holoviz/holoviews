@@ -53,7 +53,7 @@ If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to 
 Installation
 ____________
 
-|PyPI|_ |CondaPkg|_ |License|_ |Coveralls|_
+|CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
 
 HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
