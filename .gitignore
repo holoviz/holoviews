@@ -23,3 +23,5 @@
 /doc/Tutorials-WIP/*.ipynb
 .idea
 holoviews.rc
+/examples/assets/
+ghostdriver.log
