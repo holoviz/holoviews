@@ -502,7 +502,7 @@ class RangeY(LinkedStream):
       Range of the y-axis of a plot in data coordinates""")
 
 
-class Bounds(LinkedStream):
+class BoundsXY(LinkedStream):
     """
     A stream representing the bounds of a box selection as an
     tuple of the left, bottom, right and top coordinates.
@@ -512,6 +512,12 @@ class Bounds(LinkedStream):
                                 allow_None=True, doc="""
         Bounds defined as (left, bottom, right, top) tuple.""")
 
+
+class Bounds(BoundsXY):
+
+    def __init__(self, *args, **kwargs):
+        self.warning('Bounds is deprecated use BoundsXY instead.')
+        super(Bounds, self).__init__(*args, **kwargs)
 
 class BoundsX(LinkedStream):
     """
