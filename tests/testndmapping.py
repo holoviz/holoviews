@@ -202,3 +202,10 @@ class HoloMapTest(ComparisonTestCase):
     def test_columns_sample_homogeneous(self):
         samples = self.columns.sample([0, 5, 10]).dimension_values('y')
         self.assertEqual(samples, np.array([0, 10, 20]))
+
+    def test_holomap_map_with_none(self):
+        hmap = HoloMap({i: Dataset({'x':self.xs, 'y': self.ys * i},
+                                   kdims=['x'], vdims=['y'])
+                        for i in range(10)}, kdims=['z'])
+        mapped = hmap.map(lambda x: x if x.range(1)[1] > 0 else None, Dataset)
+        self.assertEqual(hmap[1:10], mapped)
