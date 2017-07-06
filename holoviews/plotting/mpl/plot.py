@@ -774,6 +774,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         for (r, c) in self.coords:
             # Get view at layout position and wrap in AdjointLayout
             _, view = layout_items.get((c, r) if self.transpose else (r, c), (None, None))
+            if isinstance(view, NdLayout):
+                raise SkipRendering("Cannot render NdLayout nested inside a Layout")
             layout_view = view if isinstance(view, AdjointLayout) else AdjointLayout([view])
             layouts[(r, c)] = layout_view
 
