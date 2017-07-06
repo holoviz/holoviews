@@ -1311,7 +1311,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                             for j in range(2,4) if not (i==1 and j == 2)})
         plot = bokeh_renderer.get_plot(grid)
         size = bokeh_renderer.get_size(plot.state)
-        self.assertEqual(size, (302, 298))
+        self.assertEqual(size, (289, 283))
 
     def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
