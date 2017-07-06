@@ -1,7 +1,7 @@
 from collections import OrderedDict
 
 from holoviews.core import Dimension
-from holoviews.core.ndmapping import MultiDimensionalMapping
+from holoviews.core.ndmapping import MultiDimensionalMapping, NdMapping
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import HoloMap, Dataset
 import numpy as np
@@ -87,6 +87,38 @@ class NdIndexableMappingTest(ComparisonTestCase):
 
         nested_ndmap[1.5] = ndmap3
         self.assertEquals(list(nested_ndmap[1.5].values()), ['e', 'f'])
+
+    def test_ndmapping_slice_lower_bound_inclusive_int(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[1:].keys(), [(1, 2.0), (5, 3.0)])
+
+    def test_ndmapping_slice_lower_bound_inclusive2_int(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[1:6].keys(), [(1, 2.0), (5, 3.0)])
+
+    def test_ndmapping_slice_upper_bound_exclusive_int(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[1:5].keys(), [(1, 2.0)])
+
+    def test_ndmapping_slice_upper_bound_exclusive2_int(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[:5].keys(), [(1, 2.0)])
+
+    def test_ndmapping_slice_lower_bound_inclusive_float(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[:, 2.0:].keys(), [(1, 2.0), (5, 3.0)])
+
+    def test_ndmapping_slice_lower_bound_inclusive2_float(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[:, 2.0:5.0].keys(), [(1, 2.0), (5, 3.0)])
+
+    def test_ndmapping_slice_upper_bound_exclusive_float(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[:, :3.0].keys(), [(1, 2.0)])
+
+    def test_ndmapping_slice_upper_bound_exclusive2_float(self):
+        ndmap = NdMapping(self.init_item_odict, kdims=[self.dim1, self.dim2])
+        self.assertEqual(ndmap[:, 0.0:3.0].keys(), [(1, 2.0)])
 
     def test_idxmapping_unsorted(self):
         data = [('B', 1), ('C', 2), ('A', 3)]

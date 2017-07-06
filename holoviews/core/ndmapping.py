@@ -705,9 +705,9 @@ class NdMapping(MultiDimensionalMapping):
 
     def _from_condition(self, slice):
         if slice.step is None:
-            lmbd = lambda x: x > slice.start
+            lmbd = lambda x: x >= slice.start
         else:
-            lmbd = lambda x: x > slice.start and ((x-slice.start) % slice.step)
+            lmbd = lambda x: x >= slice.start and ((x-slice.start) % slice.step)
         return lmbd
 
     def _all_condition(self):
