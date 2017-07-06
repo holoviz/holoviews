@@ -18,7 +18,7 @@ from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.layouts import WidgetBox, Row, Column
-from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot
+from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot, Spacer
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 
@@ -172,7 +172,7 @@ def compute_plot_size(plot):
         width, height = w_agg(widths), h_agg(heights)
     elif isinstance(plot, (Figure, Chart)):
         width, height = plot.plot_width, plot.plot_height
-    elif isinstance(plot, (Plot, DataTable)):
+    elif isinstance(plot, (Plot, DataTable, Spacer)):
         width, height = plot.width, plot.height
     return width, height
 

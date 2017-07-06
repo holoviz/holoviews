@@ -1306,6 +1306,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(plot.subplots), 1)
 
+    def test_gridspace_sparse(self):
+        grid = GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
+                            for j in range(2,4) if not (i==1 and j == 2)})
+        plot = bokeh_renderer.get_plot(grid)
+        size = bokeh_renderer.get_size(plot.state)
+        self.assertEqual(size, (302, 298))
+
     def test_layout_gridspaces(self):
         layout = (GridSpace({(i, j): Curve(range(i+j)) for i in range(1, 3)
                              for j in range(2,4)}) +
