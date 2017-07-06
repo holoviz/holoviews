@@ -203,7 +203,7 @@ options.Points = Options('style', color=Cycle(), marker='o', cmap=dflt_cmap)
 options.Scatter3D = Options('style', c=Cycle(), marker='o')
 options.Scatter3D = Options('plot', fig_size=150)
 options.Surface = Options('plot', fig_size=150)
-options.Spikes = Options('style', color='black')
+options.Spikes = Options('style', color='black', cmap='fire')
 options.Area = Options('style', facecolor=Cycle(), edgecolor='black')
 options.BoxWhisker = Options('style', boxprops=dict(color='k', linewidth=1.5),
                              whiskerprops=dict(color='k', linewidth=1.5))
