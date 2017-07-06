@@ -637,7 +637,9 @@ class LabelledData(param.Parameterized):
         if self._deep_indexable:
             deep_mapped = self.clone(shared_data=False) if clone else self
             for k, v in self.items():
-                deep_mapped[k] = v.map(map_fn, specs, clone)
+                new_val = v.map(map_fn, specs, clone)
+                if new_val is not None:
+                    deep_mapped[k] = new_val
             if applies: deep_mapped = map_fn(deep_mapped)
             return deep_mapped
         else:
