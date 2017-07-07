@@ -40,7 +40,7 @@ setup_args.update(dict(
     maintainer_email= "holoviews@gmail.com",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
-    url='http://ioam.github.com/holoviews/',
+    url='http://www.holoviews.org',
     entry_points={
           'console_scripts': [
               'holoviews = holoviews.util.command:main'
