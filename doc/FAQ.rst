@@ -20,7 +20,7 @@ directly to disk, with custom options, like this:
   renderer.save(my_object, 'example_I', style=dict(Image={'cmap':'jet'}))
 
 This process is described in detail in the
-`Customizing Plots <user_guides/Customizing_Plots.html>`_ user guide.
+`Customizing Plots <user_guide/Customizing_Plots.html>`_ user guide.
 Of course, notebook-specific functionality like capturing the data in
 notebook cells or saving cleared notebooks is only for IPython/Jupyter.
 

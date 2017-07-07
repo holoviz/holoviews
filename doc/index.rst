@@ -53,10 +53,10 @@ If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to 
 Installation
 ____________
 
-|PyPI|_ |Conda|_ |License|_ |Coveralls|_
+|CondaPkg|_ |PyPI|_ |License|_ |Coveralls|_
 
 
-HoloViews works with Python `2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
+HoloViews works with `Python 2.7 and Python 3 <https://travis-ci.org/ioam/holoviews>`_ on Linux, Windows, or Mac, and provides optional extensions for working with the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 
 The recommended way to install HoloViews is using the `conda <http://conda.pydata.org/docs/>`_ command provided by `Anaconda <http://docs.continuum.io/anaconda/install>`_ or `Miniconda <http://conda.pydata.org/miniconda.html>`_::
 
@@ -86,8 +86,8 @@ And then you can launch Jupyter Notebook to explore them::
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg
 .. _PyPI: https://pypi.python.org/pypi/holoviews
 
-.. |Conda| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
-.. _Conda: https://anaconda.org/ioam/holoviews
+.. |CondaPkg| image:: https://anaconda.org/ioam/holoviews/badges/installer/conda.svg
+.. _CondaPkg: https://anaconda.org/ioam/holoviews
 
 .. |License| image:: https://img.shields.io/pypi/l/holoviews.svg
 .. _License: https://github.com/ioam/holoviews/blob/master/LICENSE.txt
