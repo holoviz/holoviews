@@ -812,7 +812,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_spikes_colormapping(self):
         spikes = Spikes(np.random.rand(20, 2), vdims=['Intensity'])
-        self._test_colormapping(spikes, 1)
+        color_spikes = spikes.opts(plot=dict(color_index=1))
+        self._test_colormapping(color_spikes, 1)
 
     def test_empty_spikes_plot(self):
         spikes = Spikes([], vdims=['Intensity'])
