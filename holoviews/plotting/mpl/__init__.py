@@ -159,7 +159,8 @@ Store.register({Curve: CurvePlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
-                Polygons: PolygonPlot}, 'matplotlib', style_aliases=style_aliases)
+                Polygons: PolygonPlot},
+               'matplotlib', style_aliases=style_aliases)
 
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
