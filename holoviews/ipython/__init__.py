@@ -166,7 +166,12 @@ class notebook_extension(extension):
             Store.renderers[r].load_nb(inline=p.inline)
 
         # Create a message for the logo (if shown)
-        self.load_hvjs(logo=p.logo, JS=('holoviews' in resources), message='')
+        self.load_hvjs(logo=p.logo,
+                       bokeh_logo=  p.logo and ('bokeh' in resources),
+                       mpl_logo=    p.logo and (('matplotlib' in resources)
+                                                or resources==['holoviews']),
+                       plotly_logo= p.logo and ('plotly' in resources),
+                       JS=('holoviews' in resources), message='')
 
     @classmethod
     def completions_sorting_key(cls, word):
@@ -214,7 +219,8 @@ class notebook_extension(extension):
         return resources
 
     @classmethod
-    def load_hvjs(cls, logo=False, JS=True, message='HoloViewsJS successfully loaded.'):
+    def load_hvjs(cls, logo=False, bokeh_logo=False, mpl_logo=False, plotly_logo=False,
+                  JS=True, message='HoloViewsJS successfully loaded.'):
         """
         Displays javascript and CSS to initialize HoloViews widgets.
         """
@@ -227,10 +233,13 @@ class notebook_extension(extension):
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        display(HTML(template.render({'widgetjs': widgetjs,
-                                      'widgetcss': widgetcss,
-                                      'logo': logo,
-                                      'message':message})))
+        display(HTML(template.render({'widgetjs':    widgetjs,
+                                      'widgetcss':   widgetcss,
+                                      'logo':        logo,
+                                      'bokeh_logo':  bokeh_logo,
+                                      'mpl_logo':    mpl_logo,
+                                      'plotly_logo': plotly_logo,
+                                      'message':     message})))
 
     @param.parameterized.bothmethod
     def tab_completion_docstring(self_or_cls):
