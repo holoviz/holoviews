@@ -14,7 +14,7 @@ mpl_version = LooseVersion(mpl.__version__)
 
 import param
 
-from ...core import OrderedDict, Dimension
+from ...core import OrderedDict, Dimension, Store
 from ...core.util import match_spec, unique_iterator, basestring, max_range
 from ...element import Points, Raster, Polygons, HeatMap
 from ...operation import interpolate_curve
@@ -412,7 +412,18 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         _, y1 = element.range(1)
         offset = self.offset * y1
         range_item, main_range, dim = get_sideplot_ranges(self, element, main, ranges)
-        if isinstance(range_item, (Raster, Points, Polygons, HeatMap)):
+
+        # Check if plot is colormapped
+        plot_type = Store.registry['matplotlib'].get(type(range_item))
+        opts = self.lookup_options(range_item, 'plot')
+        if plot_type and issubclass(plot_type, ColorbarPlot):
+            cidx = opts.options.get('color_index', None)
+            cdim = None if cidx is None else range_item.get_dimension(cidx)
+        else:
+            cdim = None
+
+        # Get colormapping options
+        if isinstance(range_item, Raster) or cdim:
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
