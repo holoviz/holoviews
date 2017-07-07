@@ -12,13 +12,13 @@ Feature:
 Fixes:
 
 * Updated search ordering when looking for holoviews.rc (`#1700
-    <https://github.com/ioam/holoviews/pull/1700>`_)
+  <https://github.com/ioam/holoviews/pull/1700>`_)
 * Fixed lower bound inclusivity bug when no upper bound supplied (`#1686
   <https://github.com/ioam/holoviews/pull/1686>`_)
 * Raise SkipRendering error when plotting nested layouts (`#1687
   <https://github.com/ioam/holoviews/pull/1687>`_)
 * Added safety margin for grid axis constraint issue (`#1695
-    <https://github.com/ioam/holoviews/pull/1685>`_)
+  <https://github.com/ioam/holoviews/pull/1685>`_)
 * Fixed bug when using +framewise (`#1685
   <https://github.com/ioam/holoviews/pull/1685>`_)
 * Fixed handling of Spacer models in sparse grid (`#1682
