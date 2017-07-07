@@ -557,12 +557,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
         if not self.drawn or (not self.model_changed(x_range) and framewise):
-            self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'])
+            self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
         if not self.drawn or (not self.model_changed(y_range) and framewise):
-            self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'])
+            self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
 
 
-    def _update_range(self, axis_range, low, high, factors, invert, shared):
+    def _update_range(self, axis_range, low, high, factors, invert, shared, log):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None and
                 not isinstance(high, util.datetime_types)):
@@ -573,6 +573,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if shared:
                 shared = (axis_range.start, axis_range.end)
                 low, high = util.max_range([(low, high), shared])
+            if log and low <= 0:
+                low = 0.01 if high < 0.01 else 10**(np.log10(high)-1)
+                self.warning("Logarithmic axis range encountered value less than or equal to zero, "
+                             "please supply explicit lower-bound to override default of %.3f." % low)
             if low is not None and (isinstance(low, util.datetime_types)
                                     or np.isfinite(low)):
                 axis_range.start = low
