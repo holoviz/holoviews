@@ -49,10 +49,10 @@ except ImportError as e:
 
 # A single holoviews.rc file may be executed if found.
 for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
-               "~/.holoviews.rc",
-               "~/.config/holoviews/holoviews.rc",
                os.path.abspath(os.path.join(os.path.split(__file__)[0],
-                                            '..', 'holoviews.rc'))]:
+                                            '..', 'holoviews.rc')),
+               "~/.holoviews.rc",
+               "~/.config/holoviews/holoviews.rc"]:
     filename = os.path.expanduser(rcfile)
     if os.path.isfile(filename):
         with open(filename) as f:
