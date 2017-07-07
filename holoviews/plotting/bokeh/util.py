@@ -208,7 +208,7 @@ def font_size_to_pixels(size):
 
 
 def make_axis(axis, size, factors, dim, flip=False, rotation=0,
-              label_size=None, tick_size=None, axis_height=40):
+              label_size=None, tick_size=None, axis_height=25):
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
@@ -233,7 +233,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         align = 'center'
         # Adjust height to compensate for label rotation
         height = int(axis_height + np.abs(np.sin(rotation)) *
-                     ((nchars*tick_px)*0.5)) + tick_px + label_px
+                     ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(x_axis_type='auto', x_axis_label=axis_label,
                     x_range=ranges, y_range=ranges2, plot_height=height,
                     plot_width=size)
@@ -241,7 +241,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         # Adjust width to compensate for label rotation
         align = 'left' if flip else 'right'
         width = int(axis_height + np.abs(np.cos(rotation)) *
-                    ((nchars*tick_px)*0.5)) + tick_px + label_px
+                    ((nchars*tick_px)*0.82)) + tick_px + label_px
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
 
