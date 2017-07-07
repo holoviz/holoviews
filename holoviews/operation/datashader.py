@@ -24,7 +24,7 @@ from ..core.data import PandasInterface, DaskInterface
 from ..core.util import get_param_values, basestring
 from ..element import Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY, PlotSize
-
+from ..plotting.util import fire
 
 @dispatch(Element)
 def discover(dataset):
@@ -345,7 +345,7 @@ class shade(Operation):
     Iterable or a Callable.
     """
 
-    cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
+    cmap = param.ClassSelector(default=fire, class_=(Iterable, Callable, dict), doc="""
         Iterable or callable which returns colors as hex colors.
         Callable type must allow mapping colors between 0 and 1.""")
 
