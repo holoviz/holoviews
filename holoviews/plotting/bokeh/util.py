@@ -208,7 +208,7 @@ def font_size_to_pixels(size):
 
 
 def make_axis(axis, size, factors, dim, flip=False, rotation=0,
-              label_size=None, tick_size=None, axis_height=25):
+              label_size=None, tick_size=None, axis_height=35):
     factors = list(map(dim.pprint_value, factors))
     nchars = np.max([len(f) for f in factors])
     ranges = FactorRange(factors=factors)
