@@ -1,3 +1,44 @@
+Version 1.8.1
+-------------
+
+This bugfix release addresses a number of minor issues identified since
+the 1.8 release:
+
+Feature:
+
+* All enabled plotting extension logos now shown (`#1694
+  <https://github.com/ioam/holoviews/pull/1694>`_)
+
+Fixes:
+
+* Updated search ordering when looking for holoviews.rc (`#1700
+    <https://github.com/ioam/holoviews/pull/1700>`_)
+* Fixed lower bound inclusivity bug when no upper bound supplied (`#1686
+  <https://github.com/ioam/holoviews/pull/1686>`_)
+* Raise SkipRendering error when plotting nested layouts (`#1687
+  <https://github.com/ioam/holoviews/pull/1687>`_)
+* Added safety margin for grid axis constraint issue (`#1695
+    <https://github.com/ioam/holoviews/pull/1685>`_)
+* Fixed bug when using +framewise (`#1685
+  <https://github.com/ioam/holoviews/pull/1685>`_)
+* Fixed handling of Spacer models in sparse grid (`#1682
+  <https://github.com/ioam/holoviews/pull/>`_)
+* Renamed Bounds to BoundsXY for consistency (`#1672
+  <https://github.com/ioam/holoviews/pull/1672>`_)
+* Fixed bokeh log axes with axis lower bound <=0 (`#1691
+  <https://github.com/ioam/holoviews/pull/1691>`_)
+* Set default datashader cmap to fire (`#1697
+  <https://github.com/ioam/holoviews/pull/1697>`_)
+* Set SpikesPlot color index to None by default (`#1671
+  <https://github.com/ioam/holoviews/pull/1671>`_)
+* Documentation fixes (`#1662
+  <https://github.com/ioam/holoviews/pull/1662>`_, `#1665
+  <https://github.com/ioam/holoviews/pull/1665>`_, `#1690
+  <https://github.com/ioam/holoviews/pull/1690>`_, `#1692
+  <https://github.com/ioam/holoviews/pull/1692>`_, `#1658
+  <https://github.com/ioam/holoviews/pull/1658>`_)
+
+
 Version 1.8.0
 -------------
 
@@ -85,8 +126,8 @@ Other new features and improvements:
   <https://github.com/ioam/holoviews/pull/1576>`_)
 * Define a number of ``Cycle`` and ``Palette`` defaults across
   backends (`#1605 <https://github.com/ioam/holoviews/pull/1605>`_)
-* Many other small improvements and fixes 
-  (`#1399 <https://github.com/ioam/holoviews/pull/1399>`_, 
+* Many other small improvements and fixes
+  (`#1399 <https://github.com/ioam/holoviews/pull/1399>`_,
   `#1400 <https://github.com/ioam/holoviews/pull/1400>`_,
   `#1405 <https://github.com/ioam/holoviews/pull/1405>`_,
   `#1412 <https://github.com/ioam/holoviews/pull/1412>`_,
@@ -96,7 +137,7 @@ Other new features and improvements:
   `#1442 <https://github.com/ioam/holoviews/pull/1442>`_,
   `#1443 <https://github.com/ioam/holoviews/pull/1443>`_,
   `#1467 <https://github.com/ioam/holoviews/pull/1467>`_,
-  `#1485 <https://github.com/ioam/holoviews/pull/1485>`_, 
+  `#1485 <https://github.com/ioam/holoviews/pull/1485>`_,
   `#1505 <https://github.com/ioam/holoviews/pull/1505>`_,
   `#1493 <https://github.com/ioam/holoviews/pull/1493>`_,
   `#1509 <https://github.com/ioam/holoviews/pull/1509>`_,
@@ -105,7 +146,7 @@ Other new features and improvements:
   `#1547 <https://github.com/ioam/holoviews/pull/1547>`_,
   `#1560 <https://github.com/ioam/holoviews/pull/1560>`_,
   `#1603 <https://github.com/ioam/holoviews/pull/1603>`_)
-  
+
 Changes affecting backwards compatibility:
 
 * Renamed ``ElementOperation`` to ``Operation`` (`#1421
@@ -119,7 +160,7 @@ Changes affecting backwards compatibility:
   <https://github.com/ioam/holoviews/pull/1589>`_)
 * Styling changes for both matplotlib and bokeh, which can be reverted
   for a notebook with the ``config`` option of ``hv.extension``. For
-  instance, ``hv.extension('bokeh', config=dict(style_17=True))`` 
+  instance, ``hv.extension('bokeh', config=dict(style_17=True))``
   (`#1518 <https://github.com/ioam/holoviews/pull/1518>`_)
 
 
@@ -588,7 +629,7 @@ Version 1.5
 
 A major release with a large number of new features including new data
 interfaces for grid based data, major improvements for DynamicMaps
-and a large number of bug fixes. 
+and a large number of bug fixes.
 
 Features and improvements:
 
@@ -759,7 +800,7 @@ New features:
 * New Spikes and BoxWhisker elements suitable for representing
   distributions as a sequence of lines or as a box-and-whisker plot.
   (`PR #346 <https://github.com/ioam/holoviews/pull/346>`_,
-  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_) 
+  `PR #339 <https://github.com/ioam/holoviews/pull/339>`_)
 
 * Improvements to the notebook_extension. For instance, executing
   hv.notebook_extension('bokeh') will now load BokehJS and automatically
@@ -778,8 +819,8 @@ Notable bug fixes:
 
 * Widgets now work correctly when unicode is used in the dimension
   labels and values (`PR #376 <https://github.com/ioam/holoviews/pull/376>`_).
-  
-  
+
+
 Version 1.4.0
 -------------
 
@@ -800,7 +841,7 @@ Major new features:
   plotting and IPython display system to make it easy to add new plotting
   backends. Data may be styled and pickled for each backend independently and
   renderers now support exporting all plotting data including widgets
-  as standalone HTML files or with separate JSON data. 
+  as standalone HTML files or with separate JSON data.
 
 * Bokeh backend: The first new plotting backend added via the new backend
   API. Bokeh plots allow for much faster plotting and greater interactivity.
@@ -935,7 +976,7 @@ Highlights/Features:
   browsers and make use of jinja2 template inheritance. (fc7dd2b)
 * Calling a HoloViews object without arguments now clears any
   associated custom styles. (9e8c343)
-  
+
 
 API Changes
 
@@ -950,12 +991,12 @@ API Changes
   ``backend='matplotlib:nbagg'`` and ``backend='matplotlib:mpld3'``
   respectively. The 'd3' and 'nbagg' options remain supported but will
   be deprecated in future.
-* Customizations should no longer be applied directly to ``Store.options``;  
+* Customizations should no longer be applied directly to ``Store.options``;
   the ``Store.options(backend='matplotlib')`` object should be
   customized instead.  There is no longer a need to call the
   deprecated ``Store.register_plots`` method.
-  
-  
+
+
 Version 1.2.0
 -------------
 
