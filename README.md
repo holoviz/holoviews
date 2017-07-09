@@ -36,7 +36,7 @@ Check out the [HoloViews web site](http://holoviews.org) for extensive examples 
   <a href="http://holoviews.org/gallery/demos/bokeh/bars_economic.html">
     <img src="http://holoviews.org/_images/bars_economic.png" width='20%'> </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/texas_choropleth_example.html">
-    <img src="http://holoviews.org/_images/texas_choropleth_example.png" width='20%'> </a>
+    <img src="http://holoviews.org/_images/texas_choropleth_example_large.png" width='20%'> </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/verhulst_mandelbrot.html">
     <img src="http://holoviews.org/_images/verhulst_mandelbrot.png" width='20%'> </a>
 </div>
