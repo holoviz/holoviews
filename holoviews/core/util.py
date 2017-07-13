@@ -263,9 +263,9 @@ def validate_dynamic_argspec(callback, kdims, streams):
     if argspec.keywords is None:
         unassigned_streams = set(stream_params) - set(argspec.args)
         if unassigned_streams:
-            unassigned = ''.join(unassigned_streams)
+            unassigned = ','.join(unassigned_streams)
             raise KeyError('Callable {name!r} missing keywords to '
-                           'accept {unassigned} stream parameters'.format(name=name,
+                           'accept stream parameters: {unassigned}'.format(name=name,
                                                                     unassigned=unassigned))
 
 
