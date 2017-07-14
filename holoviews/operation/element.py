@@ -9,9 +9,9 @@ import param
 from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
-                    HoloMap, Dataset, Element, Collator)
+                    HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface
-from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd
+from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd, basestring
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
@@ -471,6 +471,9 @@ class histogram(Operation):
     dimension = param.String(default=None, doc="""
       Along which dimension of the Element to compute the histogram.""")
 
+    groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
+      Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
+
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
@@ -496,6 +499,13 @@ class histogram(Operation):
       Used for setting a common style for histograms in a HoloMap or AdjointLayout.""")
 
     def _process(self, view, key=None):
+        if self.p.groupby:
+            if not isinstance(view, Dataset):
+                raise ValueError('Cannot use histogram groupby on non-Dataset Element')
+            grouped = view.groupby(self.p.groupby, group_type=Dataset, container_type=NdOverlay)
+            self.p.groupby = None
+            return grouped.map(self._process, Dataset)
+
         if self.p.dimension:
             selected_dim = self.p.dimension
         else:
