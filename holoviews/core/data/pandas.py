@@ -55,8 +55,9 @@ class PandasInterface(Interface):
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
             elif isinstance(data, dict) and not all(d in data for d in columns):
+                column_data = sorted(data.items())
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                                    for k, v in data.items()))
+                                    for k, v in column_data))
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
             elif isinstance(data, np.ndarray):
                 if data.ndim == 1:

@@ -68,8 +68,9 @@ class DictInterface(Interface):
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            dict_data = sorted(data.items())
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                              for k, v in data.items()))
+                              for k, v in dict_data))
             data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
 
         if not isinstance(data, cls.types):
