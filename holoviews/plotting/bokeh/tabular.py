@@ -17,6 +17,11 @@ class TablePlot(BokehPlot, GenericElementPlot):
     style_opts = ['row_headers', 'selectable', 'editable',
                   'sortable', 'fit_columns', 'width', 'height']
 
+    finalize_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a column.
+        The hook is passed the plot object and the displayed
+        object, and other plotting handles can be accessed via plot.handles.""")
+
     _update_handles = ['source', 'glyph']
 
     def __init__(self, element, plot=None, **params):
@@ -25,6 +30,17 @@ class TablePlot(BokehPlot, GenericElementPlot):
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = [] # Callback support on tables not implemented
+
+
+    def _execute_hooks(self, element):
+        """
+        Executes finalize hooks
+        """
+        for hook in self.finalize_hooks:
+            try:
+                hook(self, element)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
     def get_data(self, element, ranges=None, empty=False):
@@ -59,6 +75,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
                           width=self.width, **properties)
         self.handles['plot'] = table
         self.handles['glyph_renderer'] = table
+        self._execute_hooks(element)
         self.drawn = True
 
         return table
