@@ -12,7 +12,9 @@ except:
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead, '-': None}
 
 from ...element import HLine
+from ...core.util import datetime_types
 from .element import ElementPlot, CompositeElementPlot, text_properties, line_properties
+from .util import date_to_integer
 
 
 class TextPlot(ElementPlot):
@@ -69,7 +71,10 @@ class LineAnnotationPlot(ElementPlot):
         if self.invert_axes:
             dim = 'width' if dim == 'height' else 'height'
         mapping['dimension'] = dim
-        mapping['location'] = element.data
+        loc = element.data
+        if isinstance(loc, datetime_types):
+            loc = date_to_integer(loc)
+        mapping['location'] = loc
         return (data, mapping)
 
     def _init_glyph(self, plot, mapping, properties):

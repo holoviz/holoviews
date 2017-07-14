@@ -1,6 +1,7 @@
 import itertools, inspect, re, time
 from distutils.version import LooseVersion
 from collections import defaultdict
+import datetime as dt
 
 import numpy as np
 
@@ -32,7 +33,7 @@ except:
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
-from ...core.util import basestring, unique_array, callable_name
+from ...core.util import basestring, unique_array, callable_name, pd
 from ...core.spaces import get_nested_dmaps, DynamicMap
 
 from ..util import dim_axis_label, rgb2hex
@@ -732,8 +733,6 @@ class periodic(object):
         return repr(self)
 
 
-
-
 def attach_periodic(plot):
     """
     Attaches plot refresh to all streams on the object.
@@ -742,3 +741,18 @@ def attach_periodic(plot):
         for dmap in get_nested_dmaps(dmap):
             dmap.periodic._periodic_util = periodic(plot.document)
     return plot.hmap.traverse(append_refresh, [DynamicMap])
+
+
+def date_to_integer(date):
+    """
+    Converts datetime types to bokeh's integer format.
+    """
+    if isinstance(date, np.datetime64):
+        date = dt64_to_dt(date)
+    elif pd and isinstance(date, pd.Timestamp):
+        date = date.to_pydatetime()
+    if isinstance(date, dt.datetime):
+        dt_int = time.mktime(date.timetuple())*1000
+    else:
+        raise ValueError('Datetime type not recognized')
+    return dt_int
