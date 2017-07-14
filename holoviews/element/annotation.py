@@ -82,6 +82,14 @@ class VLine(Annotation):
     def __init__(self, x, **params):
         super(VLine, self).__init__(x, x=x, **params)
 
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        index = self.get_dimension_index(dimension)
+        if index == 0:
+            return np.array([self.data])
+        elif index == 1:
+            return np.array([])
+        else:
+            return super(VLine, self).dimension_values(dimension)
 
 
 class HLine(Annotation):
@@ -100,9 +108,9 @@ class HLine(Annotation):
     def dimension_values(self, dimension):
         index = self.get_dimension_index(dimension)
         if index == 0:
-            return []
+            return np.array([])
         elif index == 1:
-            return [self.data]
+            return np.array([self.data])
         else:
             return super(HLine, self).dimension_values(dimension)
 
