@@ -7,6 +7,7 @@ import xarray as xr
 
 try:
     import dask
+    import dask.array
 except ImportError:
     dask = None
 
