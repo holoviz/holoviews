@@ -157,6 +157,8 @@ class Dataset(Element):
         format listed will be used until a suitable format is found (or
         the data fails to be understood).""")
 
+    group = param.String(default='Dataset', constant=True)
+
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
     _auto_indexable_1d = True
