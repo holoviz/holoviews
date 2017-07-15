@@ -140,7 +140,7 @@ class BokehRenderer(Renderer):
         default port ('localhost:8888').
         """
         renderer = self_or_cls.instance(mode='server')
-        # If show=False and not in noteboook context return document
+        # If show=False and not in notebook context return document
         if not show and not self_or_cls.notebook_context:
             doc, _ = renderer(plot)
             return doc

@@ -3,7 +3,7 @@ A Path element is a way of drawing arbitrary shapes that can be
 overlayed on top of other elements.
 
 Subclasses of Path are designed to generate certain common shapes
-quickly and condeniently. For instance, the Box path is often useful
+quickly and conveniently. For instance, the Box path is often useful
 for marking areas of a raster image.
 
 Contours is also a subclass of Path but in addition to simply
@@ -222,12 +222,12 @@ class Ellipse(BaseShape):
 
     Ellipse(x,y, (width, height))
 
-    There is also an apect parameter allowing you to generate an ellipse
+    There is also an aspect parameter allowing you to generate an ellipse
     by specifying a multiplicating factor that will be applied to the
     height only.
 
     Note that as a subclass of Path, internally an Ellipse is a
-    sequency of (x,y) sample positions. Ellipse could also be
+    sequence of (x,y) sample positions. Ellipse could also be
     implemented as an annotation that uses a dedicated ellipse artist.
     """
     x = param.Number(default=0, doc="The x-position of the ellipse center.")

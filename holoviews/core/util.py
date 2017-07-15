@@ -424,12 +424,12 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
     'dollar sign'
 
     As these names are often very long, this parameterized function
-    allows filtered, substitions and transforms to help shorten these
+    allows filtered, substitutions and transforms to help shorten these
     names appropriately.
     """
 
     version = param.ObjectSelector(sys.version_info.major, objects=[2,3], doc="""
-        The sanitization version. If set to 2, more aggresive
+        The sanitization version. If set to 2, more aggressive
         sanitization appropriate for Python 2 is applied. Otherwise,
         if set to 3, more relaxed, Python 3 sanitization is used.""")
 
@@ -549,7 +549,7 @@ class sanitize_identifier_fn(param.ParameterizedFunction):
         # Filtering
         for elim in eliminations:
             name = name.replace(elim, '')
-        # Substitition
+        # Substitution
         for i,o in substitutions.items():
             name = name.replace(i, o)
         for transform in transforms:
@@ -711,7 +711,7 @@ def max_extents(extents, zrange=False):
     """
     Computes the maximal extent in 2D and 3D space from
     list of 4-tuples or 6-tuples. If zrange is enabled
-    all extents are converted to 6-tuples to comput
+    all extents are converted to 6-tuples to compute
     x-, y- and z-limits.
     """
     if zrange:
@@ -984,7 +984,7 @@ def sort_topologically(graph):
 def is_cyclic(graph):
     """
     Return True if the directed graph g has a cycle. The directed graph
-    should be represented as adictionary mapping of edges for each node.
+    should be represented as a dictionary mapping of edges for each node.
     """
     path = set()
 
@@ -1107,7 +1107,7 @@ def find_file(folder, filename):
 
 def is_dataframe(data):
     """
-    Checks whether the supplied data is DatFrame type.
+    Checks whether the supplied data is DataFrame type.
     """
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
@@ -1262,7 +1262,7 @@ def wrap_tuple_streams(unwrapped, kdims, streams):
 
 def drop_streams(streams, kdims, keys):
     """
-    Drop any dimensionsed streams from the keys and kdims.
+    Drop any dimensioned streams from the keys and kdims.
     """
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)

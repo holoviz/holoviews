@@ -88,7 +88,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     lod = param.Dict(default={'factor': 10, 'interval': 300,
                               'threshold': 2000, 'timeout': 500}, doc="""
         Bokeh plots offer "Level of Detail" (LOD) capability to
-        accomodate large (but not huge) amounts of data. The available
+        accommodate large (but not huge) amounts of data. The available
         options are:
 
           * factor    - Decimation factor to use when applying

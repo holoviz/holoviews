@@ -408,7 +408,7 @@ def delete_refs(obj, models=[], dropped_attributes=[], ignored_attributes=[]):
             return None
         new_obj = {}
         for k, v in list(obj.items()):
-            # Drop unneccessary attributes, i.e. those that do not
+            # Drop unnecessary attributes, i.e. those that do not
             # contain references to other objects.
             if k in dropped_attributes or (k == 'attributes' and not get_ids(v)):
                 continue

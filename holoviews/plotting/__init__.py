@@ -2,7 +2,7 @@
 HoloViews plotting sub-system the defines the interface to be used by
 any third-party plotting/rendering package.
 
-This file defines the HTML tags used to wrap renderered output for
+This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
 """
 

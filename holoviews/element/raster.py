@@ -19,7 +19,7 @@ class Raster(Element2D):
     Raster is a basic 2D element type for presenting either numpy or
     dask arrays as two dimensional raster images.
 
-    Arrays with a shape of (N,M) are valid inputs for Raster wheras
+    Arrays with a shape of (N,M) are valid inputs for Raster whereas
     subclasses of Raster (e.g. RGB) may also accept 3D arrays
     containing channel information.
 

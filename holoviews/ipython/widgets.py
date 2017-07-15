@@ -36,7 +36,7 @@ class ProgressBar(ProgressIndicator):
        a different process.""")
 
     width = param.Integer(default=70, doc="""
-        The width of the progress bar as the number of chararacters""")
+        The width of the progress bar as the number of characters""")
 
     fill_char = param.String(default='#', doc="""
         The character used to fill the progress bar.""")

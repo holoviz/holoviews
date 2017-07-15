@@ -133,7 +133,7 @@ class transform(Operation):
     output Image.
 
     This operator is extremely versatile; for instance, you could
-    implement an alternative to the explict threshold operator with:
+    implement an alternative to the explicit threshold operator with:
 
     operator=lambda x: np.clip(x, 0, 0.5)
 

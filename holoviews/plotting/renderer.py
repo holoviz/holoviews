@@ -123,7 +123,7 @@ class Renderer(Exporter):
        data (according to the output format) before it is returned.
 
        Each hook is passed the rendered data and the object that is
-       being rendered. These hooks allow post-processing of renderered
+       being rendered. These hooks allow post-processing of rendered
        data before output is saved to file or displayed.""")
 
     # Defines the valid output formats for each mode.

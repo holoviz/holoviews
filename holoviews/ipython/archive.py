@@ -223,7 +223,7 @@ class NotebookArchive(FileArchive):
 
 
     def _export_with_html(self):                    # pragma: no cover
-        "Computes substitions before using nbconvert with preprocessors"
+        "Computes substitutions before using nbconvert with preprocessors"
         self.export_success = False
         try:
             tstamp = time.strftime(self.timestamp_format, self._timestamp)

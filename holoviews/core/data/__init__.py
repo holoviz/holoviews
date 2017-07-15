@@ -77,7 +77,7 @@ class DataConversion(object):
         optionally the key dimensions (kdims), value dimensions
         (vdims) and the dimensions.  to group over. Converted Columns
         can be automatically sorted via the sort option and kwargs can
-        bepassed through.
+        be passed through.
         """
         if 'mdims' in kwargs:
             if groupby:
@@ -412,7 +412,7 @@ class Dataset(Element):
             samples = [tuple(sample)]
 
         # Note: Special handling sampling of gridded 2D data as Curve
-        # may be replaced wih more general handling
+        # may be replaced with more general handling
         # see https://github.com/ioam/holoviews/issues/1173
         from ...element import Table, Curve
         if len(samples) == 1:

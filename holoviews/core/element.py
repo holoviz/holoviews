@@ -102,7 +102,7 @@ class Element(ViewableElement, Composable, Overlayable):
     def sample(self, samples=[], **sample_values):
         """
         Base class signature to demonstrate API for sampling Elements.
-        To sample an Element supply either a list of sampels or keyword
+        To sample an Element supply either a list of samples or keyword
         arguments, where the key should match an existing key dimension
         on the Element.
         """

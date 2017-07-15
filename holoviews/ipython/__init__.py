@@ -24,7 +24,7 @@ AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist
 
 def show_traceback():
     """
-    Display the full traceback after an abbreviated traceback has occured.
+    Display the full traceback after an abbreviated traceback has occurred.
     """
     from .display_hooks import FULL_TRACEBACK
     print(FULL_TRACEBACK)

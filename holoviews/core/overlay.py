@@ -167,7 +167,7 @@ class Overlay(Layout, CompositeOverlay):
         types = [type(el) for el in elements]
         values = [el.group for el in elements]
         if not len(set(types)) == 1 and len(set(values)) == 1:
-            raise Exception("Overlay is not homogenous in type or group "
+            raise Exception("Overlay is not homogeneous in type or group "
                             "and cannot be collapsed.")
         else:
             return elements[0].clone(types[0].collapse_data([el.data for el in elements],
