@@ -258,8 +258,8 @@ class HoloMap(UniformNdMapping, Overlayable):
     def collapse(self, dimensions=None, function=None, spreadfn=None, **kwargs):
         """
         Allows collapsing one of any number of key dimensions
-        on the HoloMap. Homogenous Elements may be collapsed by
-        supplying a function, inhomogenous elements are merged.
+        on the HoloMap. Homogeneous Elements may be collapsed by
+        supplying a function, inhomogeneous elements are merged.
         """
         if not dimensions:
             dimensions = self.kdims
@@ -294,7 +294,7 @@ class HoloMap(UniformNdMapping, Overlayable):
         requested using dimension-value pairs. Optionally, the bounds
         argument can be used to specify the bounding extent from which
         the coordinates are to regularly sampled. Regular sampling
-        assumes homogenous and regularly sampled data.
+        assumes homogeneous and regularly sampled data.
 
         For 1D sampling, the shape is simply as the desired number of
         samples (and not a tuple). The bounds format for 1D sampling
@@ -689,7 +689,7 @@ class DynamicMap(HoloMap):
 
         if 'sampled' in params:
             self.warning('DynamicMap sampled parameter is deprecated '
-                         'and no longer neededs to be specified.')
+                         'and no longer needs to be specified.')
             del params['sampled']
 
         super(DynamicMap, self).__init__(initial_items, callback=callback, **params)

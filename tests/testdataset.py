@@ -71,7 +71,7 @@ class HomogeneousColumnTypes(object):
     def tearDown(self):
         Dataset.datatype = self.restore_datatype
 
-    # Test the array constructor (homogenous data) to be supported by
+    # Test the array constructor (homogeneous data) to be supported by
     # all interfaces.
 
     def test_dataset_array_init_hm(self):

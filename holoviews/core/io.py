@@ -765,7 +765,7 @@ class FileArchive(Archive):
         either a list of (basename, ext) pairs or an absolute path to
         a directory.
 
-        By default, uniqueness is enforced dependning on the state of
+        By default, uniqueness is enforced depending on the state of
         the unique_name parameter (for export names). If force is
         True, this parameter is ignored and uniqueness is guaranteed.
         """

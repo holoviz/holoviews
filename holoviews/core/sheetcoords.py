@@ -15,7 +15,7 @@ floating-point numbers to allow precise conversion between the two
 schemes. Where it is necessary to address a specific element of the
 matrix (as is often the case in calculations), we also have the usual
 matrix index coordinates (r_idx, c_idx). We refer to these as
-matrixidx coordinates. SheetCoordinateSystem provies methods for converting
+matrixidx coordinates. SheetCoordinateSystem proxies methods for converting
 between sheet and matrix coordinates, as well as sheet and matrixidx
 coordinates.
 
@@ -283,7 +283,7 @@ class SheetCoordinateSystem(object):
 
     def closest_cell_center(self,x,y):
         """
-        Given arbitary sheet coordinates, return the sheet coordinates
+        Given arbitrary sheet coordinates, return the sheet coordinates
         of the center of the closest unit.
         """
         return self.matrixidx2sheet(*self.sheet2matrixidx(x,y))
@@ -432,7 +432,7 @@ class Slice(np.ndarray):
     @staticmethod
     def _createoddslicespec(bounds,scs,min_matrix_radius):
         """
-        Create the 'odd' Slice that best approximates the specifed
+        Create the 'odd' Slice that best approximates the specified
         sheet-coordinate bounds.
 
         The supplied bounds are translated to have a center at the

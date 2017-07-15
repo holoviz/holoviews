@@ -221,7 +221,7 @@ class Dimension(param.Parameterized):
     specifically the type of unit) will be part of the core dimension
     specification used to establish equality.
 
-    Until this feature is implemented, there are two auxillary
+    Until this feature is implemented, there are two auxiliary
     parameters that hold some partial information about the unit: the
     name of the unit and whether or not it is cyclic. The name of the
     unit is used as part of the pretty-printed representation and
@@ -463,7 +463,7 @@ class LabelledData(param.Parameterized):
     [group='Height', label='Children'] and another may use
     [group='Height', label='Adults'].
 
-    Note: Another level of specification is implict in the type (i.e
+    Note: Another level of specification is implicit in the type (i.e
     class) of the LabelledData object. A full specification of a
     LabelledData object is therefore given by the tuple
     (<type>, <group>, label>). This additional level of specification is

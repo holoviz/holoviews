@@ -71,11 +71,11 @@ class ErrorBars(Chart):
     ErrorBars is a Chart Element type representing any number of
     errorbars situated in a 2D space. The errors must be supplied
     as an Nx3 or Nx4 array representing the x/y-positions and
-    either the symmetric error or assymetric errors respectively.
+    either the symmetric error or asymmetric errors respectively.
     """
 
     group = param.String(default='ErrorBars', constant=True, doc="""
-        A string describing the quantitity measured by the ErrorBars
+        A string describing the quantity measured by the ErrorBars
         object.""")
 
     kdims = param.List(default=[Dimension('x')],
@@ -110,12 +110,12 @@ class ErrorBars(Chart):
 
 class Spread(ErrorBars):
     """
-    Spread is a Chart Element type respresenting a spread of
+    Spread is a Chart Element type representing a spread of
     values as given by a mean and standard error or confidence
     intervals. Just like the ErrorBars Element type, mean and
     deviations from the mean should be supplied as either an
     Nx3 or Nx4 array representing the x-values, mean values
-    and symmetric or assymetric errors respective. Internally
+    and symmetric or asymmetric errors respective. Internally
     the data is always expanded to an Nx4 array.
     """
 

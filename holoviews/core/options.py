@@ -713,7 +713,7 @@ class OptionTree(AttrTree):
         groups = self.__dict__['groups']
         # Tab and group entry separators
         tab, gsep = '   ', ',\n\n'
-        # Entry seperator and group specifications
+        # Entry separator and group specifications
         esep, gspecs = (",\n"+(tab*2)), []
 
         for group in groups.keys():

@@ -26,7 +26,7 @@ class GridInterface(DictInterface):
     representing the values in that column.
 
     To use this compressed format, the key dimensions must be orthogonal
-    to one another with each key dimension specifiying an axis of the
+    to one another with each key dimension specifying an axis of the
     multidimensional space occupied by the value dimension data. For
     instance, given an temperature recordings sampled regularly across
     the earth surface, a list of N unique latitudes and M unique

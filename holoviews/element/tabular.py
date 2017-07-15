@@ -109,7 +109,7 @@ class ItemTable(Element):
 
 
     def hist(self, *args, **kwargs):
-        raise NotImplementedError("ItemTables are not homogenous and "
+        raise NotImplementedError("ItemTables are not homogeneous and "
                                   "don't support histograms.")
 
 

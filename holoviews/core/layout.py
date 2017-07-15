@@ -1,7 +1,7 @@
 """
 Supplies Pane, Layout, NdLayout and AdjointLayout. Pane extends View
 to allow multiple Views to be presented side-by-side in a NdLayout. An
-AdjointLayout allows one or two Views to be ajoined to a primary View
+AdjointLayout allows one or two Views to be adjoined to a primary View
 to act as supplementary elements.
 """
 

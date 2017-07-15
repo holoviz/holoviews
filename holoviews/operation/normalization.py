@@ -26,7 +26,7 @@ class Normalization(Operation):
 
     This class standardizes how normalization is specified using the
     ranges and keys parameter. The ranges parameter is designed to be
-    very flexible, allowing a concise desciption for simple
+    very flexible, allowing a concise description for simple
     normalization while allowing complex key- and element- specific
     normalization to also be specified.
     """
@@ -57,7 +57,7 @@ class Normalization(Operation):
        <label>). A 1- or 2-tuple may be supplied by omitting the
        <group>, <label> or just the <label> components
        respectively. This tuple key then uses the dictionary
-       value-range specification decribed above.
+       value-range specification described above.
 
       For instance, you could normalize only the Image elements of
       group pattern using:
