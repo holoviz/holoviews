@@ -32,6 +32,16 @@ def triggering_streams(streams):
         for stream in streams:
             stream._triggering = False
 
+class Updater(object):
+
+    def __init__(self):
+        self.enabled = True
+
+    def __call__(self, target):
+        def inner(obj, val):
+            if self.enabled:
+                target.trigger([target])
+        return inner
 
 class Stream(param.Parameterized):
     """
@@ -72,6 +82,8 @@ class Stream(param.Parameterized):
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
 
+    updater = Updater()
+
 
     @classmethod
     def define(cls, name, **kwargs):
@@ -89,7 +101,7 @@ class Stream(param.Parameterized):
         """
         params = {'name':param.String(default=name)}
         for k,v in kwargs.items():
-            kws = dict(default=v, constant=True)
+            kws = dict(default=v)
             if isinstance(v, param.Parameter):
                 params[k] = v
             elif isinstance(v, bool):
@@ -183,10 +195,15 @@ class Stream(param.Parameterized):
         # indicate where the event originated from
         self._metadata = {}
 
+        self.updater.enabled = False
         super(Stream, self).__init__(**params)
+
         if source:
             self.registry[id(source)].append(self)
-
+        for parameter in self.params().values():
+            update_fn = self.updater(self)
+            parameter.post_set_hooks = [update_fn]
+        self.updater.enabled = True
 
     @property
     def subscribers(self):
@@ -321,10 +338,12 @@ class Stream(param.Parameterized):
 
         To update and trigger, use the event method.
         """
+        self.updater.enabled = False
         self._set_stream_parameters(**kwargs)
         transformed = self.transform()
         if transformed:
             self._set_stream_parameters(**transformed)
+        self.updater.enabled = True
 
     def __repr__(self):
         cls_name = self.__class__.__name__
@@ -405,11 +424,11 @@ class PointerXY(LinkedStream):
     """
 
     x = param.ClassSelector(class_=(Number, util.basestring), default=None,
-                            constant=True, doc="""
+                            doc="""
            Pointer position along the x-axis in data coordinates""")
 
     y = param.ClassSelector(class_=(Number, util.basestring), default=None,
-                            constant=True, doc="""
+                            doc="""
            Pointer position along the y-axis in data coordinates""")
 
 
