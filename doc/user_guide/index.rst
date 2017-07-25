@@ -55,7 +55,7 @@ concepts in HoloViews:
    Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
 
 * `Working with large data <Large_Data.html>`_
-   Leverage datashader to interactively explore billions of datapoints.
+   Leverage Datashader to interactively explore millions or billions of datapoints.
 
 * `Creating interactive dashboards <Dashboards.html>`_
    Use external widget libraries to build custom, interactive dashboards.
