@@ -52,7 +52,7 @@ def create_figure():
     if size.value != 'None':
         opts['size_index'] = size.value
         opts['scaling_factor'] = (1./df[size.value].max())*200
-    points = hv.Points(df, kdims=kdims, label=label)(plot=opts, style=style)
+    points = hv.Points(df, kdims=kdims, label=label).opts(plot=opts, style=style)
     return renderer.get_plot(points).state
 
 def update(attr, old, new):
