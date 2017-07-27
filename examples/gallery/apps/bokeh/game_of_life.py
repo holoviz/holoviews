@@ -76,6 +76,6 @@ counter, tap = Counter(transient=True), Tap(transient=True)
 pattern_dim = hv.Dimension('Pattern', values=sorted(shapes.keys()))
 dmap = hv.DynamicMap(update, kdims=[pattern_dim], streams=[counter, tap])
 
-doc = renderer.server_doc(dmap.redim.range(z=(0, 1))(**opts))
+doc = renderer.server_doc(dmap.redim.range(z=(0, 1)).opts(**opts))
 dmap.periodic(0.05, None)
 doc.title = 'Game of Life'
