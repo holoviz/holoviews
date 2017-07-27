@@ -171,7 +171,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
-        points = Points(data, vdims=['z'])(plot=dict(size_index=2))
+        points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
         with ParamLogStream() as log:
             plot = mpl_renderer.get_plot(points)
         log_msg = log.stream.read()
@@ -235,7 +235,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['cbar'].extend, 'max')
 
     def test_image_cbar_extend_clime(self):
-        img = Image(np.array([[0, 1], [2, 3]]))(style=dict(clim=(None, None)))
+        img = Image(np.array([[0, 1], [2, 3]])).opts(style=dict(clim=(None, None)))
         plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
 
@@ -255,7 +255,7 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['cbar'].extend, 'max')
 
     def test_points_cbar_extend_clime(self):
-        img = Points(([0, 1], [0, 3]))(style=dict(clim=(None, None)))
+        img = Points(([0, 1], [0, 3])).opts(style=dict(clim=(None, None)))
         plot = mpl_renderer.get_plot(img(plot=dict(colorbar=True, color_index=1)))
         self.assertEqual(plot.handles['cbar'].extend, 'neither')
 
@@ -294,13 +294,13 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
 
     def test_points_rcparams_do_not_persist(self):
         opts = dict(fig_rcparams={'text.usetex': True})
-        points = Points(([0, 1], [0, 3]))(plot=opts)
+        points = Points(([0, 1], [0, 3])).opts(plot=opts)
         mpl_renderer.get_plot(points)
         self.assertFalse(pyplot.rcParams['text.usetex'])
 
     def test_points_rcparams_used(self):
         opts = dict(fig_rcparams={'grid.color': 'red'})
-        points = Points(([0, 1], [0, 3]))(plot=opts)
+        points = Points(([0, 1], [0, 3])).opts(plot=opts)
         plot = mpl_renderer.get_plot(points)
         ax = plot.state.axes[0]
         lines = ax.get_xgridlines()
@@ -425,7 +425,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(extents, (0, 0, 98, 98))
 
     def test_batched_spike_plot(self):
-        overlay = NdOverlay({i: Spikes([i], kdims=['Time'])(plot=dict(position=0.1*i,
+        overlay = NdOverlay({i: Spikes([i], kdims=['Time']).opts(plot=dict(position=0.1*i,
                                                                       spike_length=0.1,
                                                                       show_legend=False))
                              for i in range(10)})
@@ -438,7 +438,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
-                                                  for i in range(2)})(opts), kdims=[],
+                                                  for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertIn(plot.refresh, posx.subscribers)
@@ -451,7 +451,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = DynamicMap(lambda x: NdOverlay({i: Curve([(i, j) for j in range(2)])
-                                                  for i in range(2)})(opts), kdims=[],
+                                                  for i in range(2)}).opts(opts), kdims=[],
                              streams=[posx])
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual(len(Callback._callbacks), 1)
@@ -462,7 +462,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Points': dict(style=dict(size=Cycle(values=[1, 2])))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         size = np.array([1, 1, 2, 2])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
@@ -473,7 +473,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_cyclic_palette_curves(self):
         palette = Palette('Set1')
         opts = dict(color=palette)
-        hmap = HoloMap({i: NdOverlay({j: Curve(np.random.rand(3))(style=opts)
+        hmap = HoloMap({i: NdOverlay({j: Curve(np.random.rand(3)).opts(style=opts)
                                       for j in range(3)})
                         for i in range(3)})
         colors = palette[3].values
@@ -486,7 +486,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Points': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = np.array(['red', 'red', 'blue', 'blue'])
         fill_color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
@@ -498,7 +498,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Points': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = np.array([0.5, 0.5, 1., 1.])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
@@ -510,7 +510,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Points': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Points([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = np.array([0.5, 0.5, 1., 1.])
         color = np.array(['#30a2da', '#30a2da', '#fc4f30', '#fc4f30'],
@@ -522,7 +522,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = ['red', 'blue']
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
@@ -531,7 +531,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
@@ -542,7 +542,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Curve': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Curve([(i, j) for j in range(2)])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
@@ -553,7 +553,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Path': dict(style=dict(line_color=Cycle(values=['red', 'blue'])))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_color = ['red', 'blue']
         self.assertEqual(plot.handles['source'].data['line_color'], line_color)
@@ -562,7 +562,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Path': dict(style=dict(alpha=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         alpha = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
@@ -573,7 +573,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),
                 'Path': dict(style=dict(line_width=Cycle(values=[0.5, 1])))}
         overlay = NdOverlay({i: Path([[(i, j) for j in range(2)]])
-                             for i in range(2)})(opts)
+                             for i in range(2)}).opts(opts)
         plot = bokeh_renderer.get_plot(overlay).subplots[()]
         line_width = [0.5, 1.]
         color = ['#30a2da', '#fc4f30']
@@ -689,7 +689,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_hover_tool_instance_renderer_association(self):
         hover = HoverTool(tooltips=[("index", "$index")])
         opts = dict(tools=[hover])
-        overlay = Curve(np.random.rand(10,2))(plot=opts) * Points(np.random.rand(10,2))
+        overlay = Curve(np.random.rand(10,2)).opts(plot=opts) * Points(np.random.rand(10,2))
         plot = bokeh_renderer.get_plot(overlay)
         curve_plot = plot.subplots[('Curve', 'I')]
         self.assertEqual(len(curve_plot.handles['hover'].renderers), 1)
@@ -718,7 +718,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_polygons_colored_batched(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
-                              for j in range(5)})(plot=dict(legend_limit=0))
+                              for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
@@ -730,7 +730,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_polygons_colored_batched_unsanitized(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)] for i in range(2)],
                                           level=j, vdims=['some ? unescaped name'])
-                              for j in range(5)})(plot=dict(legend_limit=0))
+                              for j in range(5)}).opts(plot=dict(legend_limit=0))
         plot = list(bokeh_renderer.get_plot(polygons).subplots.values())[0]
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low, 0)
@@ -740,18 +740,18 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          [j for i in range(5) for j in [i, i]])
 
     def test_points_colormapping(self):
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(plot=dict(color_index=3))
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(plot=dict(color_index=3))
         self._test_colormapping(points, 3)
 
     def test_points_colormapping_with_nonselection(self):
         opts = dict(plot=dict(color_index=3),
                     style=dict(nonselection_color='red'))
-        points = Points(np.random.rand(10, 4), vdims=['a', 'b'])(**opts)
+        points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(**opts)
         self._test_colormapping(points, 3)
 
     def test_points_colormapping_categorical(self):
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b'])(plot=dict(color_index='b'))
+                         vdims=['a', 'b']).opts(plot=dict(color_index='b'))
         plot = bokeh_renderer.get_plot(points)
         plot.initialize_plot()
         cmapper = plot.handles['color_mapper']
@@ -761,7 +761,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_points_color_selection_nonselection(self):
         opts = dict(color='green', selection_color='red', nonselection_color='blue')
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b'])(style=opts)
+                         vdims=['a', 'b']).opts(style=opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_color, 'green')
@@ -774,7 +774,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_points_alpha_selection_nonselection(self):
         opts = dict(alpha=0.8, selection_alpha=1.0, nonselection_alpha=0.2)
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b'])(style=opts)
+                         vdims=['a', 'b']).opts(style=opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_alpha, 0.8)
@@ -787,7 +787,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_points_alpha_selection_partial(self):
         opts = dict(selection_alpha=1.0, selection_fill_alpha=0.2)
         points = Points([(i, i*2, i*3, chr(65+i)) for i in range(10)],
-                         vdims=['a', 'b'])(style=opts)
+                         vdims=['a', 'b']).opts(style=opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
         self.assertEqual(glyph_renderer.glyph.fill_alpha, 1.0)
@@ -796,7 +796,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(glyph_renderer.selection_glyph.line_alpha, 1)
 
     def test_image_colormapping(self):
-        img = Image(np.random.rand(10, 10))(plot=dict(logz=True))
+        img = Image(np.random.rand(10, 10)).opts(plot=dict(logz=True))
         self._test_colormapping(img, 2, True)
 
     def test_heatmap_colormapping(self):
@@ -906,14 +906,14 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(data['y'], np.arange(10, 20))
 
     def test_bars_suppress_legend(self):
-        bars = Bars([('A', 1), ('B', 2)])(plot=dict(show_legend=False))
+        bars = Bars([('A', 1), ('B', 2)]).opts(plot=dict(show_legend=False))
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         fig = plot.state
         self.assertEqual(len(fig.legend), 0)
 
     def test_empty_bars(self):
-        bars = Bars([], kdims=['x', 'y'], vdims=['z'])(plot=dict(group_index=1))
+        bars = Bars([], kdims=['x', 'y'], vdims=['z']).opts(plot=dict(group_index=1))
         plot = bokeh_renderer.get_plot(bars)
         plot.initialize_plot()
         source = plot.handles['source']
@@ -949,7 +949,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_layout_title_fontsize(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
-        layout = Layout([hmap1, hmap2])(plot=dict(fontsize={'title': '12pt'}))
+        layout = Layout([hmap1, hmap2]).opts(plot=dict(fontsize={'title': '12pt'}))
         plot = bokeh_renderer.get_plot(layout)
         title = plot.handles['title']
         self.assertIsInstance(title, Div)
@@ -959,7 +959,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def test_layout_title_show_title_false(self):
         hmap1 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
         hmap2 = HoloMap({a: Image(np.random.rand(10,10)) for a in range(3)})
-        layout = Layout([hmap1, hmap2])(plot=dict(show_title=False))
+        layout = Layout([hmap1, hmap2]).opts(plot=dict(show_title=False))
         plot = bokeh_renderer.get_plot(layout)
         self.assertTrue('title' not in plot.handles)
 
@@ -996,7 +996,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_points_non_numeric_size_warning(self):
         data = (np.arange(10), np.arange(10), list(map(chr, range(94,104))))
-        points = Points(data, vdims=['z'])(plot=dict(size_index=2))
+        points = Points(data, vdims=['z']).opts(plot=dict(size_index=2))
         with ParamLogStream() as log:
             plot = bokeh_renderer.get_plot(points)
         log_msg = log.stream.read()
@@ -1012,7 +1012,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(x_range.factors, ['A', 'B', 'C'])
 
     def test_curve_categorical_xaxis_invert_axes(self):
-        curve = Curve((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        curve = Curve((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(curve)
         y_range = plot.handles['y_range']
         self.assertIsInstance(y_range, FactorRange)
@@ -1034,7 +1034,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(x_range.factors, list(map(str, range(10))) + ['A', 'B', 'C', '2.0'])
 
     def test_points_categorical_xaxis_invert_axes(self):
-        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(points)
         y_range = plot.handles['y_range']
         self.assertIsInstance(y_range, FactorRange)
@@ -1049,7 +1049,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'])
 
     def test_points_overlay_categorical_xaxis_invert_axis(self):
-        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_xaxis=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_xaxis=True))
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         x_range = plot.handles['x_range']
@@ -1057,7 +1057,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(x_range.factors, ['A', 'B', 'C', 'D'][::-1])
 
     def test_points_overlay_categorical_xaxis_invert_axes(self):
-        points = Points((['A', 'B', 'C'], (1,2,3)))(plot=dict(invert_axes=True))
+        points = Points((['A', 'B', 'C'], (1,2,3))).opts(plot=dict(invert_axes=True))
         points2 = Points((['B', 'C', 'D'], (1,2,3)))
         plot = bokeh_renderer.get_plot(points*points2)
         y_range = plot.handles['y_range']
@@ -1076,7 +1076,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_heatmap_categorical_axes_string_int_invert_xyaxis(self):
         opts = dict(invert_xaxis=True, invert_yaxis=True)
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=opts)
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(plot=opts)
         plot = bokeh_renderer.get_plot(hmap)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
@@ -1086,7 +1086,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(y_range.factors, ['1', '2'][::-1])
 
     def test_heatmap_categorical_axes_string_int_inverted(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(hmap)
         x_range = plot.handles['x_range']
         y_range = plot.handles['y_range']
@@ -1107,7 +1107,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(y_range.factors, ['1', '2', '3'])
 
     def test_heatmap_points_categorical_axes_string_int_inverted(self):
-        hmap = HeatMap([('A',1, 1), ('B', 2, 2)])(plot=dict(invert_axes=True))
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).opts(plot=dict(invert_axes=True))
         points = Points([('A', 2), ('B', 1),  ('C', 3)])
         plot = bokeh_renderer.get_plot(hmap*points)
         x_range = plot.handles['x_range']
@@ -1138,7 +1138,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         overlay = NdOverlay({i: Points(([chr(65+i)]*10,np.random.randn(10)))
                              for i in range(5)})
         error = ErrorBars([(el['x'][0], np.mean(el['y']), np.std(el['y']))
-                           for el in overlay])(plot=dict(invert_axes=True))
+                           for el in overlay]).opts(plot=dict(invert_axes=True))
         text = Text('C', 0, 'Test')
         plot = bokeh_renderer.get_plot(overlay*error*text)
         x_range = plot.handles['x_range']
@@ -1148,7 +1148,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
 
     def test_hline_invert_axes(self):
-        hline = HLine(1.1)(plot=dict(invert_axes=True))
+        hline = HLine(1.1).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(hline)
         span = plot.handles['glyph']
         self.assertEqual(span.dimension, 'height')
@@ -1162,7 +1162,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(span.location, 1.1)
 
     def test_vline_invert_axes(self):
-        vline = VLine(1.1)(plot=dict(invert_axes=True))
+        vline = VLine(1.1).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(vline)
         span = plot.handles['glyph']
         self.assertEqual(span.dimension, 'width')
@@ -1231,19 +1231,19 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(plot.handles['x_range'].end, np.datetime64(dt.datetime(2016, 1, 13)))
 
     def test_curve_fontsize_xlabel(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'xlabel': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'xlabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
                          {'value': '14pt'})
 
     def test_curve_fontsize_ylabel(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'ylabel': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'ylabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
                          {'value': '14pt'})
 
     def test_curve_fontsize_both_labels(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'labels': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'labels': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
                          {'value': '14pt'})
@@ -1251,19 +1251,19 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          {'value': '14pt'})
 
     def test_curve_fontsize_xticks(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'xticks': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          {'value': '14pt'})
 
     def test_curve_fontsize_yticks(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'yticks': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'yticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].major_label_text_font_size,
                          {'value': '14pt'})
 
     def test_curve_fontsize_both_ticks(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'ticks': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'ticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          {'value': '14pt'})
@@ -1271,7 +1271,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          {'value': '14pt'})
 
     def test_curve_fontsize_xticks_and_both_ticks(self):
-        curve = Curve(range(10))(plot=dict(fontsize={'xticks': '18pt', 'ticks': '14pt'}))
+        curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '18pt', 'ticks': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].major_label_text_font_size,
                          {'value': '18pt'})
@@ -1381,57 +1381,57 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
     def test_element_show_frame_disabled(self):
-        curve = Curve(range(10))(plot=dict(show_frame=False))
+        curve = Curve(range(10)).opts(plot=dict(show_frame=False))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.outline_line_alpha, 0)
 
     def test_overlay_show_frame_disabled(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(show_frame=False))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(show_frame=False))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.outline_line_alpha, 0)
 
     def test_element_no_xaxis(self):
-        curve = Curve(range(10))(plot=dict(xaxis=None))
+        curve = Curve(range(10)).opts(plot=dict(xaxis=None))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertFalse(plot.xaxis[0].visible)
 
     def test_element_no_yaxis(self):
-        curve = Curve(range(10))(plot=dict(yaxis=None))
+        curve = Curve(range(10)).opts(plot=dict(yaxis=None))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertFalse(plot.yaxis[0].visible)
 
     def test_overlay_no_xaxis(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xaxis=None))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(xaxis=None))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertFalse(plot.xaxis[0].visible)
 
     def test_overlay_no_yaxis(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yaxis=None))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(yaxis=None))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertFalse(plot.yaxis[0].visible)
 
     def test_element_xrotation(self):
-        curve = Curve(range(10))(plot=dict(xrotation=90))
+        curve = Curve(range(10)).opts(plot=dict(xrotation=90))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.xaxis[0].major_label_orientation, np.pi/2)
 
     def test_element_yrotation(self):
-        curve = Curve(range(10))(plot=dict(yrotation=90))
+        curve = Curve(range(10)).opts(plot=dict(yrotation=90))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
 
     def test_overlay_xrotation(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xrotation=90))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(xrotation=90))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.xaxis[0].major_label_orientation, np.pi/2)
 
     def test_overlay_yrotation(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yrotation=90))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(yrotation=90))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
 
     def test_element_xticks_list(self):
-        curve = Curve(range(10))(plot=dict(xticks=[0, 5, 10]))
+        curve = Curve(range(10)).opts(plot=dict(xticks=[0, 5, 10]))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
@@ -1440,13 +1440,13 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         if bokeh_version < str('0.12.6'):
             raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
-        curve = Curve(range(10))(plot=dict(xticks=ticks))
+        curve = Curve(range(10)).opts(plot=dict(xticks=ticks))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].major_label_overrides, dict(ticks))
 
     def test_element_yticks_list(self):
-        curve = Curve(range(10))(plot=dict(yticks=[0, 5, 10]))
+        curve = Curve(range(10)).opts(plot=dict(yticks=[0, 5, 10]))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
@@ -1455,19 +1455,19 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         if bokeh_version < str('0.12.6'):
             raise SkipTest('Bokeh 0.12.6 required for specifying explicit tick labels')
         ticks = [(0, 'zero'), (5, 'five'), (10, 'ten')]
-        curve = Curve(range(10))(plot=dict(yticks=ticks))
+        curve = Curve(range(10)).opts(plot=dict(yticks=ticks))
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].major_label_overrides, dict(ticks))
 
     def test_overlay_xticks_list(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(xticks=[0, 5, 10]))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(xticks=[0, 5, 10]))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertIsInstance(plot.xaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.xaxis[0].ticker.ticks, [0, 5, 10])
 
     def test_overlay_yticks_list(self):
-        overlay = (Curve(range(10)) * Curve(range(10)))(plot=dict(yticks=[0, 5, 10]))
+        overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(yticks=[0, 5, 10]))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertIsInstance(plot.yaxis[0].ticker, FixedTicker)
         self.assertEqual(plot.yaxis[0].ticker.ticks, [0, 5, 10])
@@ -1499,7 +1499,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
     def test_shared_axes_disable(self):
         curve = Curve(range(10))
-        img = Image(np.random.rand(10,10))(plot=dict(shared_axes=False))
+        img = Image(np.random.rand(10,10)).opts(plot=dict(shared_axes=False))
         plot = bokeh_renderer.get_plot(curve+img)
         plot = plot.subplots[(0, 1)].subplots['main']
         x_range, y_range = plot.handles['x_range'], plot.handles['y_range']
@@ -1529,7 +1529,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
         # Pop key (1,) for one of the HoloMaps and make Layout
         hmap2.pop((1,))
-        layout = (hmap1 + hmap2)(plot=dict(shared_datasource=True))
+        layout = (hmap1 + hmap2).opts(plot=dict(shared_datasource=True))
 
         # Get plot
         plot = bokeh_renderer.get_plot(layout)
@@ -1566,7 +1566,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
 
         # Pop key (1,) for one of the HoloMaps and make GridSpace
         hmap2.pop(1)
-        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X'])(plot=dict(shared_datasource=True))
+        grid = GridSpace({0: hmap1, 2: hmap2}, kdims=['X']).opts(plot=dict(shared_datasource=True))
 
         # Get plot
         plot = bokeh_renderer.get_plot(grid)
