@@ -775,7 +775,7 @@ class gridmatrix(param.ParameterizedFunction):
                     opts = dict(axiswise=True, framewise=True)
                     el = p.diagonal_operation(element,
                                               dimension=d1.name,
-                                              bin_range=bin_range)(norm=opts)
+                                              bin_range=bin_range).opts(norm=opts)
                 else:
                     el = p.diagonal_operation(element, dimension=d1.name)
             else:
