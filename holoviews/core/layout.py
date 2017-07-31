@@ -339,6 +339,18 @@ class NdLayout(UniformNdMapping):
         return self.clone(last_items)
 
 
+    def clone(self, *args, **overrides):
+        """
+        Clone method for NdLayout matches Dimensioned.clone except the
+        display mode is also propagated.
+        """
+        clone = super(NdLayout, self).clone(*args, **overrides)
+        clone._max_cols = self._max_cols
+        clone.id = self.id
+        return clone
+
+
+
 # To be removed after 1.3.0
 class Warning(param.Parameterized): pass
 collate_deprecation = Warning(name='Deprecation Warning')
