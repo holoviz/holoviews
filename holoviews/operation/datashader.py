@@ -20,11 +20,13 @@ from datashape import discover as dsdiscover
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
-from ..core.data import PandasInterface, DaskInterface
+from ..core.data import PandasInterface, DaskInterface, XArrayInterface
+from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring
 from ..element import Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
+
 
 @dispatch(Element)
 def discover(dataset):
@@ -59,32 +61,8 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
     return agg
 
 
-class aggregate(Operation):
-    """
-    aggregate implements 2D binning for any valid HoloViews Element
-    type using datashader. I.e., this operation turns a HoloViews
-    Element or overlay of Elements into an hv.Image or an overlay of
-    hv.Images by rasterizing it, which provides a fixed-sized
-    representation independent of the original dataset size.
 
-    By default it will simply count the number of values in each bin
-    but other aggregators can be supplied implementing mean, max, min
-    and other reduction operations.
-
-    The bins of the aggregate are defined by the width and height and
-    the x_range and y_range. If x_sampling or y_sampling are supplied
-    the operation will ensure that a bin is no smaller than the minimum
-    sampling distance by reducing the width and height when the zoomed
-    in beyond the minimum sampling distance.
-
-    By default, the PlotSize stream is applied when this operation
-    is used dynamically, which means that the height and width
-    will automatically be set to match the inner dimensions of 
-    the linked plot.
-    """
-
-    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=ds.count())
+class resample_operation(Operation):
 
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
@@ -122,6 +100,67 @@ class aggregate(Operation):
                                         is_instance=False, default=Image,
                                         doc="""
         The type of the returned Elements, must be a 2D Dataset type.""")
+
+    link_inputs = param.Boolean(default=True, doc="""
+         By default, the link_inputs parameter is set to True so that
+         when applying shade, backends that support linked streams
+         update RangeXY streams on the inputs of the shade operation.""")
+
+    def _get_sampling(self, element, x, y):
+        target = self.p.target
+        if target:
+            x_range, y_range = target.range(x), target.range(y)
+            height, width = target.dimension_values(2, flat=False).shape
+        else:
+            if x is None or y is None:
+                x_range = self.p.x_range or (-0.5, 0.5)
+                y_range = self.p.y_range or (-0.5, 0.5)
+            else:
+                x_range = self.p.x_range or element.range(x)
+                y_range = self.p.y_range or element.range(y)
+            width, height = self.p.width, self.p.height
+        (xstart, xend), (ystart, yend) = x_range, y_range
+
+        # Compute highest allowed sampling density
+        xspan = xend - xstart
+        yspan = yend - ystart
+        if self.p.x_sampling:
+            width = int(min([(xspan/self.p.x_sampling), width]))
+        if self.p.y_sampling:
+            height = int(min([(yspan/self.p.y_sampling), height]))
+        xunit, yunit = float(xspan)/width, float(yspan)/height
+        xs, ys = (np.linspace(xstart, xend-xunit/2., width),
+                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
+        return (x_range, y_range), (xs, ys), (width, height)
+
+
+
+class aggregate(resample_operation):
+    """
+    aggregate implements 2D binning for any valid HoloViews Element
+    type using datashader. I.e., this operation turns a HoloViews
+    Element or overlay of Elements into an hv.Image or an overlay of
+    hv.Images by rasterizing it, which provides a fixed-sized
+    representation independent of the original dataset size.
+
+    By default it will simply count the number of values in each bin
+    but other aggregators can be supplied implementing mean, max, min
+    and other reduction operations.
+
+    The bins of the aggregate are defined by the width and height and
+    the x_range and y_range. If x_sampling or y_sampling are supplied
+    the operation will ensure that a bin is no smaller than the minimum
+    sampling distance by reducing the width and height when the zoomed
+    in beyond the minimum sampling distance.
+
+    By default, the PlotSize stream is applied when this operation
+    is used dynamically, which means that the height and width
+    will automatically be set to match the inner dimensions of
+    the linked plot.
+    """
+
+    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
+                                     default=ds.count())
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
@@ -188,34 +227,6 @@ class aggregate(Operation):
                 df[d] = df[d].astype('int64') / 1000000.
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
-
-
-    def _get_sampling(self, element, x, y):
-        target = self.p.target
-        if target:
-            x_range, y_range = target.range(x), target.range(y)
-            height, width = target.dimension_values(2, flat=False).shape
-        else:
-            if x is None or y is None:
-                x_range = self.p.x_range or (-0.5, 0.5)
-                y_range = self.p.y_range or (-0.5, 0.5)
-            else:
-                x_range = self.p.x_range or element.range(x)
-                y_range = self.p.y_range or element.range(y)
-            width, height = self.p.width, self.p.height
-        (xstart, xend), (ystart, yend) = x_range, y_range
-
-        # Compute highest allowed sampling density
-        xspan = xend - xstart
-        yspan = yend - ystart
-        if self.p.x_sampling:
-            width = int(min([(xspan/self.p.x_sampling), width]))
-        if self.p.y_sampling:
-            height = int(min([(yspan/self.p.y_sampling), height]))
-        xunit, yunit = float(xspan)/width, float(yspan)/height
-        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
-                  np.linspace(ystart+yunit/2., yend-yunit/2., height))
-        return (x_range, y_range), (xs, ys), (width, height)
 
 
     def _aggregate_ndoverlay(self, element, agg_fn):
@@ -330,6 +341,57 @@ class aggregate(Operation):
                 layers[c] = self.p.element_type((xs, ys, cagg.data), **params)
             return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
+
+
+class regrid(resample_operation):
+    """
+    Regridding allows resampling a HoloViews Image type using specified
+    up- and downsampling functions.
+    """
+
+    aggregator = param.ObjectSelector(default='mean',
+        objects=['first', 'last', 'mean', 'mode', 'std', 'var'], doc="""
+        Aggregation method.
+        """)
+
+    interpolation = param.ObjectSelector(default='nearest',
+        objects=['linear', 'nearest'], doc="""
+        Interpolation method""")
+
+    def _process(self, element, key=None):
+        x, y = element.kdims
+        (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
+
+        # Get expanded or bounded ranges
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        if element.interface is XArrayInterface and len(element.vdims) == 1:
+            xarr = element.data[element.vdims[0].name]
+        else:
+            coords = tuple(element.dimension_values(d, expanded=False)
+                           for d in [x, y])
+            coords = {x.name: coords[0], y.name: coords[1]}
+            dims = [y.name, x.name]
+            arrays = []
+            for vd in element.vdims:
+                arrays.append(element.dimension_values(vd, flat=False))
+            if len(arrays) > 1:
+                array = np.dstack(arrays).transpose([2, 0, 1])
+            else:
+                array = arrays[0]
+                coords['layer'] = range(len(arrays))
+                dims = ['layer'] + dims
+            xarr = xr.DataArray(array, coords=coords, dims=dims)
+        regridded = cvs.raster(xarr, upsample_method=self.p.interpolation,
+                               downsample_method=self.p.aggregator)
+
+        if regridded.ndim > 2:
+            regridded = xr.Dataset({vd.name: regridded[i] for i, vd in enumerate(element.vdims)})
+        (xstart, xend), (ystart, yend) = (x_range, y_range)
+        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
+        return element.clone(regridded, datatype=['xarray'], bounds=bbox,
+                             new_type=self.p.element_type)
 
 
 class shade(Operation):
@@ -539,4 +601,5 @@ class dynspread(Operation):
             if i < img.shape[-1]:
                 new_data[vd.name] = np.flipud(img[..., i])
         return element.clone(new_data)
+
 
