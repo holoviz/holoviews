@@ -67,6 +67,10 @@ class resample_operation(Operation):
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
 
+    expand = param.Boolean(default=True, doc="""
+       Whether the x_range and y_range should be allowed to expand
+       beyond the extent of the data.""")
+
     height = param.Integer(default=400, doc="""
        The height of the aggregated image in pixels.""")
 
@@ -116,8 +120,18 @@ class resample_operation(Operation):
                 x_range = self.p.x_range or (-0.5, 0.5)
                 y_range = self.p.y_range or (-0.5, 0.5)
             else:
-                x_range = self.p.x_range or element.range(x)
-                y_range = self.p.y_range or element.range(y)
+                if self.p.expand or not self.p.x_range:
+                    x_range = self.p.x_range or element.range(x)
+                else:
+                    x0, x1 = self.p.x_range
+                    ex0, ex1 = element.range(x)
+                    x_range = max([x0, ex0]), min([x1, ex1])
+                if self.p.expand or not self.p.y_range:
+                    y_range = self.p.y_range or element.range(y)
+                else:
+                    y0, y1 = self.p.y_range
+                    ey0, ey1 = element.range(y)
+                    y_range = max([y0, ey0]), min([y1, ey1])
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
