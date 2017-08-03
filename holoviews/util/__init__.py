@@ -15,6 +15,7 @@ from .settings import OutputSettings, list_formats, list_backends
 Store.output_settings = OutputSettings
 
 
+
 def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
     """
     Copies the notebooks to the supplied path.
@@ -34,7 +35,6 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
         print('Cannot find %s' % tree_root)
-
 
 
 class opts(param.ParameterizedFunction):

@@ -15,7 +15,7 @@ from argparse import RawTextHelpFormatter
 try:
     import nbformat, nbconvert
 except:
-    print('Both nbformat and nbconvert need to be installed to use the holoviews command')
+    print('nbformat, nbconvert and ipython need to be installed to use the holoviews command')
     sys.exit()
 try:
     from ..ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
