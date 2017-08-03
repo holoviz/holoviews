@@ -372,40 +372,55 @@ class regrid(resample_operation):
         objects=['linear', 'nearest'], doc="""
         Interpolation method""")
 
+    upsample = param.Boolean(default=True, doc="""
+        Whether to allow upsampling if the source array is smaller than
+        the requested array.""")
+
     def _process(self, element, key=None):
         x, y = element.kdims
         (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
 
-        # Get expanded or bounded ranges
-        cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
-
+        coords = tuple(element.dimension_values(d, expanded=False)
+                       for d in [x, y])
         if element.interface is XArrayInterface and len(element.vdims) == 1:
             xarr = element.data[element.vdims[0].name]
         else:
-            coords = tuple(element.dimension_values(d, expanded=False)
-                           for d in [x, y])
-            coords = {x.name: coords[0], y.name: coords[1]}
+            coord_dict = {x.name: coords[0], y.name: coords[1]}
             dims = [y.name, x.name]
             arrays = []
             for vd in element.vdims:
                 arrays.append(element.dimension_values(vd, flat=False))
             if len(arrays) > 1:
                 array = np.dstack(arrays).transpose([2, 0, 1])
-            else:
-                array = arrays[0]
                 coords['layer'] = range(len(arrays))
                 dims = ['layer'] + dims
-            xarr = xr.DataArray(array, coords=coords, dims=dims)
+            else:
+                array = arrays[0]
+            xarr = xr.DataArray(array, coords=coord_dict, dims=dims)
+
+        # Disable upsampling if requested
+        (xstart, xend), (ystart, yend) = (x_range, y_range)
+        xspan, yspan = (xend-xstart), (yend-ystart)
+        if not self.p.upsample:
+            (x0, x1), (y0, y1) = element.range(0), element.range(1)
+            exspan, eyspan = (x1-x0), (y1-y0)
+            width = min([int((xspan/exspan) * len(coords[0])), width])
+            height = min([int((yspan/eyspan) * len(coords[1])), height])
+
+        # Get expanded or bounded ranges
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
         regridded = cvs.raster(xarr, upsample_method=self.p.interpolation,
                                downsample_method=self.p.aggregator)
 
         if regridded.ndim > 2:
             regridded = xr.Dataset({vd.name: regridded[i] for i, vd in enumerate(element.vdims)})
-        (xstart, xend), (ystart, yend) = (x_range, y_range)
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
+        xd = float(width) / xspan
+        yd = float(height) / yspan
         return element.clone(regridded, datatype=['xarray'], bounds=bbox,
-                             new_type=self.p.element_type)
+                             new_type=self.p.element_type, xdensity=xd,
+                             ydensity=yd)
 
 
 class shade(Operation):
