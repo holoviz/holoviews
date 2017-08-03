@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 import sys, os, glob
-from shutil import rmtree
+import shutil
 from collections import defaultdict
 try:
     from setuptools import setup
@@ -110,12 +110,34 @@ def walker(top, names):
             extensions[package].append(ext_str)
 
 
+
+def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
+    """
+    Copies the notebooks to the supplied path.
+    """
+    filepath = os.path.abspath(os.path.dirname(root))
+    example_dir = os.path.join(filepath, './examples')
+    if not os.path.exists(example_dir):
+        example_dir = os.path.join(filepath, '../examples')
+    if os.path.exists(path):
+        if not force:
+            print('%s directory already exists, either delete it or set the force flag' % path)
+            return
+        shutil.rmtree(path)
+    ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
+    tree_root = os.path.abspath(example_dir)
+    if os.path.isdir(tree_root):
+        shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
+    else:
+        print('Cannot find %s' % tree_root)
+
+
+
 def package_assets(example_path):
     """
     Generates pseudo-packages for the examples directory.
     """
-    import holoviews
-    holoviews.util.examples(example_path, force=True, root=__file__)
+    examples(example_path, force=True, root=__file__)
     for root, dirs, files in os.walk(example_path):
         walker(root, dirs+files)
     setup_args['packages'] += packages
@@ -153,4 +175,4 @@ if __name__=="__main__":
     setup(**setup_args)
 
     if os.path.isdir(example_path):
-        rmtree(example_path)
+        shutil.rmtree(example_path)

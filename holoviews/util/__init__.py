@@ -14,29 +14,6 @@ from .settings import OutputSettings, list_formats, list_backends
 
 Store.output_settings = OutputSettings
 
-
-def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
-    """
-    Copies the notebooks to the supplied path.
-    """
-    filepath = os.path.abspath(os.path.dirname(root))
-    example_dir = os.path.join(filepath, './examples')
-    if not os.path.exists(example_dir):
-        example_dir = os.path.join(filepath, '../examples')
-    if os.path.exists(path):
-        if not force:
-            print('%s directory already exists, either delete it or set the force flag' % path)
-            return
-        shutil.rmtree(path)
-    ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
-    tree_root = os.path.abspath(example_dir)
-    if os.path.isdir(tree_root):
-        shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
-    else:
-        print('Cannot find %s' % tree_root)
-
-
-
 class opts(param.ParameterizedFunction):
     """
     Utility function to set options either at the global level or on a
