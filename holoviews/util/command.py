@@ -24,7 +24,7 @@ except:
     from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
     from holoviews.ipython.preprocessors import StripMagicsProcessor
 
-from ..setup import examples
+from . import examples
 
 
 def main():
