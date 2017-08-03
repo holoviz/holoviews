@@ -56,8 +56,9 @@ def dataset_pipeline(dataset, schema, canvas, glyph, summary):
         agg = dask_pipeline(dataset.data, schema, canvas,
                             glyph, summary)
 
-    agg = agg.rename({'x_axis': kdims[0].name,
-                      'y_axis': kdims[1].name})
+    if 'x_axis' in agg and 'y_axis' in agg:
+        agg = agg.rename({'x_axis': kdims[0].name,
+                          'y_axis': kdims[1].name})
     return agg
 
 
