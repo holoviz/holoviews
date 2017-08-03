@@ -364,7 +364,7 @@ class regrid(resample_operation):
     """
 
     aggregator = param.ObjectSelector(default='mean',
-        objects=['first', 'last', 'mean', 'mode', 'std', 'var'], doc="""
+        objects=['first', 'last', 'mean', 'mode', 'std', 'var', 'min', 'max'], doc="""
         Aggregation method.
         """)
 
