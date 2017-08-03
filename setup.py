@@ -110,7 +110,8 @@ def walker(top, names):
             extensions[package].append(ext_str)
 
 
-
+# Note: This function should be identical to util.examples
+# (unfortunate and unavoidable duplication)
 def examples(path='holoviews-examples', verbose=False, force=False, root=__file__):
     """
     Copies the notebooks to the supplied path.
