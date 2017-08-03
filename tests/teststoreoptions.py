@@ -87,7 +87,7 @@ class TestStoreOptionsCall(ComparisonTestCase):
         Short __call__ syntax.
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im)({'Layout':dict(plot={'hspace':5})})
+        layout = (im + im).opts({'Layout':dict(plot={'hspace':5})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 5)
 
@@ -96,7 +96,7 @@ class TestStoreOptionsCall(ComparisonTestCase):
         The old (longer) syntax in __call__
         """
         im = Image(np.random.rand(10,10))
-        layout = (im + im)({'Layout':dict(plot={'hspace':10})})
+        layout = (im + im).opts({'Layout':dict(plot={'hspace':10})})
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 10)
 
