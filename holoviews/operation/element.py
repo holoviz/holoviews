@@ -486,10 +486,6 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
-    height_normed = param.Boolean(default=False, doc="""
-        Whether the histogram frequencies are normalized such that *max bin height* is unity.
-          This is distinct from 'normed', that normalizes the integral of the distribution.""")
-
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
@@ -499,9 +495,14 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.Boolean(default=True, doc="""
-      Whether the histogram frequencies are normalized such that the integral 
-        over the distribution is unity (passed to np.histogram).""")
+    normed = param.ObjectSelector(default=True, 
+                                  objects=[True, False, 'integral', 'height'],
+                                  doc="""
+      Controls normalization behavior.  If `True` or `'integral'`, then 
+      `density=True` is passed to np.histogram, and the distribution
+      is normalized such that the integral is unity.  If `False`, 
+      then the frequencies will be raw counts. If `'height'`, then the 
+      frequencies are normalized such that the max bin height is unity.""")
 
     nonzero = param.Boolean(default=False, doc="""
       Whether to use only nonzero values when computing the histogram""")
@@ -557,12 +558,19 @@ class histogram(Operation):
 
         data = data[np.isfinite(data)]
         if len(data):
-            hist, edges = np.histogram(data, normed=normed, range=hist_range,
-                                       weights=weights, bins=edges)
-            if not normed and self.p.weight_dimension and self.p.mean_weighted:
-                hist_mean, _ = np.histogram(data, normed=normed,
-                                            range=hist_range, bins=self.p.num_bins)
-                hist /= hist_mean
+            if normed: 
+                # This covers True, 'height', 'integral'
+                hist, edges = np.histogram(data[np.isfinite(data)], density=True,
+                                       range=hist_range, weights=weights, bins=edges)
+                if normed=='height':
+                    hist /= hist.max()
+            else:
+                hist, edges = np.histogram(data, normed=normed, range=hist_range,
+                                           weights=weights, bins=edges)
+                if self.p.weight_dimension and self.p.mean_weighted:
+                    hist_mean, _ = np.histogram(data, normed=normed,
+                                                range=hist_range, bins=self.p.num_bins)
+                    hist /= hist_mean
         else:
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
