@@ -1,3 +1,29 @@
+Version 1.8.2
+=============
+
+This bugfix release addresses a number of minor issues identified since
+the 1.8.1 release:
+
+Feature:
+
+-   Added support for groupby to histogram operation.
+    ([\#1725](https://github.com/ioam/holoviews/pull/1725))
+
+Fixes:
+
+-   Fixed problem with HTML export due to new extension logos.
+    ([\#1778](https://github.com/ioam/holoviews/pull/1778))
+-   Replaced deprecated ``__call__`` usage with opts method throughout codebase.
+    ([\#1759](https://github.com/ioam/holoviews/pull/1759),
+    [\#1763](https://github.com/ioam/holoviews/pull/1763),
+    [\#1779](https://github.com/ioam/holoviews/pull/1779))
+-   Fixed pip installation.
+    ([\#1782](https://github.com/ioam/holoviews/pull/1782))
+-   Fixed miscellaneous bugs
+   ([\#1724](https://github.com/ioam/holoviews/pull/1724),
+   [\#1739](https://github.com/ioam/holoviews/pull/1739),
+   [\#1711](https://github.com/ioam/holoviews/pull/1711))
+
 Version 1.8.1
 =============
 
