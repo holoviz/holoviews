@@ -37,7 +37,13 @@ class resample_operation(Operation):
 
     expand = param.Boolean(default=True, doc="""
        Whether the x_range and y_range should be allowed to expand
-       beyond the extent of the data.""")
+       beyond the extent of the data.  Setting this value to True is
+       useful for the case where you want to ensure a certain size of
+       output grid, e.g. if you are doing masking or other arithmetic
+       on the grids.  A value of False ensures that the grid is only
+       just as large as it needs to be to contain the data, which will
+       be faster and use less memory if the resulting aggregate is
+       being overlaid on a much larger background.""")
 
     height = param.Integer(default=400, doc="""
        The height of the aggregated image in pixels.""")
@@ -133,7 +139,7 @@ class aggregate(resample_operation):
     the x_range and y_range. If x_sampling or y_sampling are supplied
     the operation will ensure that a bin is no smaller than the minimum
     sampling distance by reducing the width and height when the zoomed
-    in beyond the minimum sampling distance.
+    beyond the minimum sampling distance.
 
     By default, the PlotSize stream is applied when this operation
     is used dynamically, which means that the height and width
@@ -333,8 +339,13 @@ class aggregate(resample_operation):
 
 class regrid(resample_operation):
     """
-    Regridding allows resampling a HoloViews Image type using specified
-    up- and downsampling functions.
+    regrid allows resampling a HoloViews Image type using specified
+    up- and downsampling functions defined using the aggregator and
+    interpolation parameters respectively. By default upsampling is
+    disabled to avoid unnecessarily upscaling an image that has to be
+    sent to the browser. Also disables expanding the image beyond its
+    original bounds avoiding unneccessarily padding the output array
+    with nan values.
     """
 
     aggregator = param.ObjectSelector(default='mean',
@@ -342,11 +353,21 @@ class regrid(resample_operation):
         Aggregation method.
         """)
 
+    expand = param.Boolean(default=False, doc="""
+       Whether the x_range and y_range should be allowed to expand
+       beyond the extent of the data.  Setting this value to True is
+       useful for the case where you want to ensure a certain size of
+       output grid, e.g. if you are doing masking or other arithmetic
+       on the grids.  A value of False ensures that the grid is only
+       just as large as it needs to be to contain the data, which will
+       be faster and use less memory if the resulting aggregate is
+       being overlaid on a much larger background.""")
+
     interpolation = param.ObjectSelector(default='nearest',
         objects=['linear', 'nearest'], doc="""
         Interpolation method""")
 
-    upsample = param.Boolean(default=True, doc="""
+    upsample = param.Boolean(default=False, doc="""
         Whether to allow upsampling if the source array is smaller than
         the requested array.""")
 
@@ -378,7 +399,7 @@ class regrid(resample_operation):
         # Disable upsampling if requested
         (xstart, xend), (ystart, yend) = (x_range, y_range)
         xspan, yspan = (xend-xstart), (yend-ystart)
-        if not self.p.upsample:
+        if not self.p.upsample and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
@@ -433,7 +454,9 @@ class shade(Operation):
     link_inputs = param.Boolean(default=True, doc="""
          By default, the link_inputs parameter is set to True so that
          when applying shade, backends that support linked streams
-         update RangeXY streams on the inputs of the shade operation.""")
+         update RangeXY streams on the inputs of the shade operation.
+         Disable when you do not want the resulting plot to be interactive,
+         e.g. when trying to display an interactive plot a second time.""")
 
     @classmethod
     def concatenate(cls, overlay):

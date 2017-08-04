@@ -83,7 +83,7 @@ class DatashaderRegridTests(ComparisonTestCase):
 
     def test_regrid_upsampling(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, dynamic=False)
+        regridded = regrid(img, width=4, height=4, upsample=True, dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                           [[0, 0, 1, 1],
                            [0, 0, 1, 1],
@@ -93,7 +93,7 @@ class DatashaderRegridTests(ComparisonTestCase):
 
     def test_regrid_upsampling_linear(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, interpolation='linear', dynamic=False)
+        regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
         expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
                           [[0, 0, 0, 1],
                            [0, 1, 1, 1],
@@ -101,12 +101,12 @@ class DatashaderRegridTests(ComparisonTestCase):
                            [2, 2, 2, 3]]))
         self.assertEqual(regridded, expected)
 
-    def test_regrid_disable_upsampling(self):
+    def test_regrid_disabled_upsampling(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
         regridded = regrid(img, width=3, height=3, dynamic=False, upsample=False)
         self.assertEqual(regridded, img)
 
-    def test_regrid_disable_expand(self):
+    def test_regrid_disabled_expand(self):
         img = Image(([0.5, 1.5], [0.5, 1.5], [[0., 1.], [2., 3.]]))
         regridded = regrid(img, width=2, height=2, x_range=(-2, 4), y_range=(-2, 4), expand=False,
                            dynamic=False)
