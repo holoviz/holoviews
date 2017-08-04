@@ -552,9 +552,12 @@ class histogram(Operation):
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
-        return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
-                         label=view.label, **params)
+        vdim = Dimension('{}_frequency'.format(selected_dim), 
+                         label='{} Frequency'.format(selected_dim))
 
+        return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
+                         vdims=[vdim],
+                         label=view.label, **params)
 
 
 class decimate(Operation):
