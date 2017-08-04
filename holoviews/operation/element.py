@@ -487,7 +487,8 @@ class histogram(Operation):
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
     height_normed = param.Boolean(default=False, doc="""
-        Whether the histogram frequencies are normalized such that max height is unity.""")
+        Whether the histogram frequencies are normalized such that *max bin height* is unity.
+          This is distinct from 'normed', that normalizes the integral of the distribution.""")
 
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
