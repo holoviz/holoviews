@@ -9,7 +9,7 @@ sys.path.insert(0, os.path.join(_cwd, '..', 'param'))
 
 import param
 
-__version__ = param.Version(release=(1,8,1), fpath=__file__,
+__version__ = param.Version(release=(1,8,2), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core import archive, config                        # noqa (API import)
