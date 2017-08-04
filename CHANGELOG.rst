@@ -53,11 +53,9 @@ bug reports, and pull requests.
 Major features:
 
 * Completely overhauled the documentation and website (`#1384
-  <https://github.com/ioam/holoviews/pull/1384>`_, ``#1473
-  <https://github.com/ioam/holoviews/pull/1473>`_
+  <https://github.com/ioam/holoviews/pull/1384>`_, `#1473
   <https://github.com/ioam/holoviews/pull/1473>`_, `#1476
-  <https://github.com/ioam/holoviews/pull/1476>`_, ``#1473
-  <https://github.com/ioam/holoviews/pull/1473>`_
+  <https://github.com/ioam/holoviews/pull/1476>`_, `#1473
   <https://github.com/ioam/holoviews/pull/1473>`_, `#1537
   <https://github.com/ioam/holoviews/pull/1537>`_, `#1585
   <https://github.com/ioam/holoviews/pull/1585>`_, `#1628
@@ -80,8 +78,7 @@ Major features:
 * Added utilities and entry points to convert notebooks to scripts
   including magics (`#1491
   <https://github.com/ioam/holoviews/pull/1491>`_)
-* Added support for rendering to png in bokeh backend (``#1493
-  <https://github.com/ioam/holoviews/pull/1493>`_
+* Added support for rendering to png in bokeh backend (`#1493
   <https://github.com/ioam/holoviews/pull/1493>`_)
 * Made matplotlib and bokeh styling more consistent and dropped custom
   matplotlib rc file (`#1518
