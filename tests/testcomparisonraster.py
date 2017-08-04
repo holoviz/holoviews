@@ -108,7 +108,7 @@ class BasicRasterComparisonTest(RasterTestCase):
         try:
             self.assertEqual(self.mat1, self.mat4)
         except AssertionError as e:
-            self.assertEqual(str(e), 'BoundingBoxes are mismatched.')
+            self.assertEqual(str(e), 'BoundingBoxes are mismatched: (-0.5, -0.5, 0.5, 0.5) != (-0.3, -0.3, 0.3, 0.3).')
 
 
 
