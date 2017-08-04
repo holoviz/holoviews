@@ -27,13 +27,20 @@ extras_require['all'] = (extras_require['recommended']
                          + extras_require['extras']
                          + ['cyordereddict', 'nose'])
 
+
+PYPI_BLURB="""
+HoloViews is designed to make data analysis and visualization seamless and simple. With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
+
+Check out the `HoloViews web site <http://holoviews.org>`_ for extensive examples and documentation.
+"""
+
 setup_args.update(dict(
     name='holoviews',
     version="1.8.2",
     install_requires = install_requires,
     extras_require = extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
-    long_description=open('README.rst').read() if os.path.isfile('README.rst') else 'Consult README.rst',
+    long_description=PYPI_BLURB,
     author= "Jean-Luc Stevens and Philipp Rudiger",
     author_email= "holoviews@gmail.com",
     maintainer= "IOAM",
