@@ -2,6 +2,7 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
+from __future__ import division
 
 import numpy as np
 
@@ -474,6 +475,9 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
+    height_normed = param.Boolean(default=False, doc="""
+        Whether the histogram frequencies are normalized such that max height is unity.""")
+
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
@@ -537,7 +541,9 @@ class histogram(Operation):
         try:
             hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
                                        range=hist_range, weights=weights, bins=edges)
-            if not normed and self.p.weight_dimension and self.p.mean_weighted:
+            if self.height_normed:
+                hist /= hist.max()
+            elif not normed and self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
                                             range=hist_range, bins=self.p.num_bins)
                 hist /= hist_mean
