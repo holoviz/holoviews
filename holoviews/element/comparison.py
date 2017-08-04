@@ -254,7 +254,8 @@ class Comparison(ComparisonInterface):
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
         if el1.bounds.lbrt() != el2.bounds.lbrt():
-            raise cls.failureException("BoundingBoxes are mismatched.")
+            raise cls.failureException("BoundingBoxes are mismatched: %s != %s."
+                                       % (el1.bounds.lbrt(), el2.bounds.lbrt()))
 
 
     #=======================================#
