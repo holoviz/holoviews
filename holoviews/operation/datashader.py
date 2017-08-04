@@ -49,10 +49,10 @@ class ResamplingOperation(Operation):
        being overlaid on a much larger background.""")
 
     height = param.Integer(default=400, doc="""
-       The height of the aggregated image in pixels.""")
+       The height of the output image in pixels.""")
 
     width = param.Integer(default=400, doc="""
-       The width of the aggregated image in pixels.""")
+       The width of the output image in pixels.""")
 
     x_range  = param.NumericTuple(default=None, length=2, doc="""
        The x_range as a tuple of min and max x-value. Auto-ranges
@@ -83,9 +83,11 @@ class ResamplingOperation(Operation):
         The type of the returned Elements, must be a 2D Dataset type.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         By default, the link_inputs parameter is set to True so that
-         when applying shade, backends that support linked streams
-         update RangeXY streams on the inputs of the shade operation.""")
+        By default, the link_inputs parameter is set to True so that
+        when applying shade, backends that support linked streams
+        update RangeXY streams on the inputs of the shade operation.
+        Disable when you do not want the resulting plot to be interactive,
+        e.g. when trying to display an interactive plot a second time.""")
 
     def _get_sampling(self, element, x, y):
         target = self.p.target
@@ -371,8 +373,13 @@ class regrid(ResamplingOperation):
         Interpolation method""")
 
     upsample = param.Boolean(default=False, doc="""
-        Whether to allow upsampling if the source array is smaller than
-        the requested array.""")
+        Whether to allow upsampling if the source array is smaller
+        than the requested array. Setting this value to True will
+        enable upsampling using the interpolation method, when the
+        requested width and height are larger than what is available
+        on the source grid. If upsampling is disabled (the default)
+        the width and height are clipped to what is available on the
+        source array.""")
 
     def _process(self, element, key=None):
         if ds_version <= '0.5.0':
@@ -455,11 +462,11 @@ class shade(Operation):
         """)
 
     link_inputs = param.Boolean(default=True, doc="""
-         By default, the link_inputs parameter is set to True so that
-         when applying shade, backends that support linked streams
-         update RangeXY streams on the inputs of the shade operation.
-         Disable when you do not want the resulting plot to be interactive,
-         e.g. when trying to display an interactive plot a second time.""")
+        By default, the link_inputs parameter is set to True so that
+        when applying shade, backends that support linked streams
+        update RangeXY streams on the inputs of the shade operation.
+        Disable when you do not want the resulting plot to be interactive,
+        e.g. when trying to display an interactive plot a second time.""")
 
     @classmethod
     def concatenate(cls, overlay):
@@ -599,9 +606,11 @@ class dynspread(Operation):
         allowed.""")
 
     link_inputs = param.Boolean(default=True, doc="""
-         By default, the link_inputs parameter is set to True so that
-         when applying dynspread, backends that support linked streams
-         update RangeXY streams on the inputs of the dynspread operation.""")
+        By default, the link_inputs parameter is set to True so that
+        when applying dynspread, backends that support linked streams
+        update RangeXY streams on the inputs of the dynspread operation.
+        Disable when you do not want the resulting plot to be interactive,
+        e.g. when trying to display an interactive plot a second time.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):
