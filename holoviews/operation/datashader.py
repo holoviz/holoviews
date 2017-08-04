@@ -12,6 +12,8 @@ import datashader as ds
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
 
+ds_version = LooseVersion(ds.__version__)
+
 from datashader.core import bypixel
 from datashader.pandas import pandas_pipeline
 from datashader.dask import dask_pipeline
@@ -26,41 +28,6 @@ from ..core.util import get_param_values, basestring
 from ..element import Image, Path, Curve, Contours, RGB
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
-
-
-@dispatch(Element)
-def discover(dataset):
-    """
-    Allows datashader to correctly discover the dtypes of the data
-    in a holoviews Element.
-    """
-    return dsdiscover(PandasInterface.as_dframe(dataset))
-
-
-@bypixel.pipeline.register(Element)
-def dataset_pipeline(dataset, schema, canvas, glyph, summary):
-    """
-    Defines how to apply a datashader pipeline to a holoviews Element,
-    using multidispatch. Returns an Image type with the appropriate
-    bounds and dimensions. Passing the returned Image to datashader
-    transfer functions is not yet supported.
-    """
-    x0, x1 = canvas.x_range
-    y0, y1 = canvas.y_range
-    kdims = [dataset.get_dimension(d) for d in (glyph.x, glyph.y)]
-
-    if dataset.interface is PandasInterface:
-        agg = pandas_pipeline(dataset.data, schema, canvas,
-                              glyph, summary)
-    elif dataset.interface is DaskInterface:
-        agg = dask_pipeline(dataset.data, schema, canvas,
-                            glyph, summary)
-
-    if 'x_axis' in agg and 'y_axis' in agg:
-        agg = agg.rename({'x_axis': kdims[0].name,
-                          'y_axis': kdims[1].name})
-    return agg
-
 
 
 class resample_operation(Operation):
@@ -144,7 +111,7 @@ class resample_operation(Operation):
         if self.p.y_sampling:
             height = int(min([(yspan/self.p.y_sampling), height]))
         xunit, yunit = float(xspan)/width, float(yspan)/height
-        xs, ys = (np.linspace(xstart, xend-xunit/2., width),
+        xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
         return (x_range, y_range), (xs, ys), (width, height)
 
@@ -345,15 +312,21 @@ class aggregate(resample_operation):
         params = dict(get_param_values(element), kdims=element.dimensions()[:2],
                       datatype=['xarray'], vdims=vdims)
 
-        agg = getattr(cvs, glyph)(data, x, y, self.p.aggregator)
+        dfdata = PandasInterface.as_dframe(data)
+        agg = getattr(cvs, glyph)(dfdata, x, y, self.p.aggregator)
+        if 'x_axis' in agg and 'y_axis' in agg:
+            agg = agg.rename({'x_axis': x, 'y_axis': y})
+
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
-            return self.p.element_type((xs, ys, agg.data), **params)
+            eldata = agg if ds_version > '0.5.0' else (xs, ys, agg.data)
+            return self.p.element_type(eldata, **params)
         else:
             layers = {}
             for c in agg.coords[column].data:
                 cagg = agg.sel(**{column: c})
-                layers[c] = self.p.element_type((xs, ys, cagg.data), **params)
+                eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
+                layers[c] = self.p.element_type(eldata, **params)
             return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
@@ -530,7 +503,7 @@ class shade(Operation):
 
         if self.p.clims:
             shade_opts['span'] = self.p.clims
-        elif LooseVersion(ds.__version__) > '0.5.0' and self.p.normalization != 'eq_hist':
+        elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
 
         with warnings.catch_warnings():
