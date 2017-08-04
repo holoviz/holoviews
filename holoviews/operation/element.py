@@ -486,10 +486,6 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
-    height_normed = param.Boolean(default=False, doc="""
-        Whether the histogram frequencies are normalized such that *max bin height* is unity.
-          This is distinct from 'normed', that normalizes the integral of the distribution.""")
-
     individually = param.Boolean(default=True, doc="""
       Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
 
@@ -565,7 +561,7 @@ class histogram(Operation):
             if normed: 
                 # This covers True, 'height', 'integral'
                 hist, edges = np.histogram(data[np.isfinite(data)], density=True,
-                                       range=hist_range, weights=weights, bins=edges)
+                                           range=hist_range, weights=weights, bins=edges)
                 if normed=='height':
                     hist /= hist.max()
             else:
