@@ -1,3 +1,4 @@
+from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
@@ -5,7 +6,7 @@ from holoviews import Curve, Points, Image, Dataset
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.operation.datashader import aggregate, regrid
+    from holoviews.operation.datashader import aggregate, regrid, ds_version
 except:
     aggregate = None
 
@@ -63,6 +64,10 @@ class DatashaderRegridTests(ComparisonTestCase):
     """
     Tests for datashader aggregation
     """
+
+    def setUp(self):
+        if ds_version <= '0.5.0':
+            raise SkipTest('Regridding operations require datashader>=0.6.0')
 
     def test_regrid_mean(self):
         img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))

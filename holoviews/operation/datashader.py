@@ -351,6 +351,9 @@ class regrid(resample_operation):
         the requested array.""")
 
     def _process(self, element, key=None):
+        if ds_version <= '0.5.0':
+            raise RuntimeError('regrid operation requires datashader>=0.6.0')
+
         x, y = element.kdims
         (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
 
