@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, division
 
 from collections import Callable, Iterable
 from distutils.version import LooseVersion
@@ -30,7 +30,10 @@ from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
 
 
-class resample_operation(Operation):
+class ResamplingOperation(Operation):
+    """
+    Abstract baseclass for resampling operations
+    """
 
     dynamic = param.Boolean(default=True, doc="""
        Enables dynamic processing by default.""")
@@ -123,7 +126,7 @@ class resample_operation(Operation):
 
 
 
-class aggregate(resample_operation):
+class aggregate(ResamplingOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
@@ -337,7 +340,7 @@ class aggregate(resample_operation):
 
 
 
-class regrid(resample_operation):
+class regrid(ResamplingOperation):
     """
     regrid allows resampling a HoloViews Image type using specified
     up- and downsampling functions defined using the aggregator and
