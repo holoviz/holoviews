@@ -541,7 +541,7 @@ class histogram(Operation):
         try:
             hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
                                        range=hist_range, weights=weights, bins=edges)
-            if self.height_normed:
+            if self.p.height_normed:
                 hist /= hist.max()
             elif not normed and self.p.weight_dimension and self.p.mean_weighted:
                 hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
