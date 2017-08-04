@@ -138,7 +138,7 @@ class aggregate(resample_operation):
     The bins of the aggregate are defined by the width and height and
     the x_range and y_range. If x_sampling or y_sampling are supplied
     the operation will ensure that a bin is no smaller than the minimum
-    sampling distance by reducing the width and height when the zoomed
+    sampling distance by reducing the width and height when zoomed in
     beyond the minimum sampling distance.
 
     By default, the PlotSize stream is applied when this operation
