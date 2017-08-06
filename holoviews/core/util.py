@@ -164,7 +164,10 @@ class periodic(Thread):
             else:
                 self._completed.wait(self.period)
             self.counter += 1
-            self.callback(self.counter)
+            try:
+                self.callback(self.counter)
+            except Exception as e:
+                self.stop()
 
             if self.timeout is not None:
                 dt = (time.time() - self._start_time)
