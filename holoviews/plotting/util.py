@@ -179,7 +179,7 @@ def initialize_dynamic(obj):
 def get_plot_frame(map_obj, key_map, cached=False):
     """
     Returns an item in a HoloMap or DynamicMap given a mapping key
-    dimensons and their values.
+    dimensions and their values.
     """
     if map_obj.kdims and len(map_obj.kdims) == 1 and map_obj.kdims[0] == 'Frame':
         # Special handling for static plots
@@ -192,6 +192,8 @@ def get_plot_frame(map_obj, key_map, cached=False):
             return map_obj[key]
         except KeyError:
             return None
+        except StopIteration as e:
+            raise e
         except Exception:
             print(traceback.format_exc())
             return None
