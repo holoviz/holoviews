@@ -612,3 +612,13 @@ class PositionXY(PointerXY):
     def __init__(self, **params):
         self.warning('PositionXY stream deprecated: use PointerXY instead')
         super(PositionXY, self).__init__(**params)
+
+
+class DataStream(Stream):
+    """
+    Allows streaming live data to a plot updating it.
+    """
+
+    element = param.Parameter()
+
+    rollover = param.Integer(default=None)

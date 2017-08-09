@@ -10,7 +10,7 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
-from ..streams import LinkedStream
+from ..streams import LinkedStream, DataStream
 
 def displayable(obj):
     """
@@ -418,8 +418,9 @@ def attach_streams(plot, obj, precedence=1.1):
     """
     def append_refresh(dmap):
         for stream in get_nested_streams(dmap):
-            if plot.refresh not in stream._subscribers:
-                stream.add_subscriber(plot.refresh, precedence)
+            method = plot.stream if isinstance(stream, DataStream) else plot.refresh
+            if method not in stream._subscribers:
+                stream.add_subscriber(method, precedence)
     return obj.traverse(append_refresh, [DynamicMap])
 
 

@@ -15,7 +15,7 @@ from .layout import Layout, AdjointLayout, NdLayout
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
-from ..streams import Stream
+from ..streams import Stream, DataStream
 
 
 
@@ -699,7 +699,7 @@ class DynamicMap(HoloMap):
                    'are not Stream instances: {objs}')
             raise TypeError(msg.format(objs = ', '.join('%r' % el for el in invalid)))
 
-
+        streams = [s for s in self.streams if not isinstance(s, DataStream)]
         if self.callback.noargs:
             prefix = 'DynamicMaps using generators (or callables without arguments)'
             if self.kdims:
@@ -707,12 +707,12 @@ class DynamicMap(HoloMap):
             if len(self.streams)> 1:
                 raise Exception(prefix + ' must have either streams=[] or a single, '
                                 + 'stream instance without any stream parameters')
-            if util.stream_parameters(self.streams) != []:
+            if util.stream_parameters(streams) != []:
                 raise Exception(prefix + ' cannot accept any stream parameters')
 
         self._posarg_keys = util.validate_dynamic_argspec(self.callback,
                                                           self.kdims,
-                                                          self.streams)
+                                                          streams)
         # Set source to self if not already specified
         for stream in self.streams:
             if stream.source is None:
@@ -832,7 +832,8 @@ class DynamicMap(HoloMap):
 
         # Additional validation needed to ensure kwargs don't clash
         kdims = [kdim.name for kdim in self.kdims]
-        kwarg_items = [s.contents.items() for s in self.streams]
+        kwarg_items = [s.contents.items() for s in self.streams
+                       if not isinstance(s, DataStream)]
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
 

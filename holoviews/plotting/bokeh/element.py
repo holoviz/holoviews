@@ -26,7 +26,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title, bokeh_version,
-                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple)
+                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple,
+                   serialize_json, compute_static_patch)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -540,6 +541,30 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
+
+
+    def stream(self, element, rollover):
+        """
+        The stream method allows streaming new data to a plot with a specified
+        rollover to drop old samples.
+        """
+        previous = self.current_frame
+        if rollover:
+            previous = previous.iloc[-(rollover-len(element)):]
+        self.current_frame = previous.interface.concatenate([previous, element])
+        ranges = {}
+        for d in element.dimensions():
+            ranges[d.name] = util.max_range([element.range(d), previous.range(d)])
+        self._update_ranges(element, ranges)
+        data, _ = self.get_data(element, ranges)
+        patch = compute_static_patch(self.document, [self.handles['x_range'], self.handles['y_range']])
+        source = self.handles['source']
+        event = {'kind' : 'ColumnsStreamed',
+                 'column_source' : source.ref,
+                 'data' : data,
+                 'rollover' : rollover}
+        json = {'events' : [event]+patch['events'], 'references' : patch['references']}
+        self.comm.send(serialize_json(json))
 
 
     def _update_ranges(self, element, ranges):

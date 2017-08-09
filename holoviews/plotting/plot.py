@@ -488,6 +488,10 @@ class DimensionedPlot(Plot):
         return item
 
 
+    def stream(self, element, rollover):
+        raise NotImplementedError('Streaming data is only supported for specific backends and Elements.')
+
+
     def refresh(self, **kwargs):
         """
         Refreshes the plot by rerendering it and then pushing
