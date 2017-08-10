@@ -3,7 +3,7 @@ import numpy as np
 
 import param
 
-from bokeh.models import (ColumnDataSource, VBox, HBox, Column, Row, Div)
+from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, CompositeOverlay, Store, GridMatrix,
@@ -692,9 +692,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             plots, width = pad_plots(plots)
             layout_plot = gridplot(children=plots, width=width)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = VBox(children=[HBox(children=plots[0])])
+            layout_plot = Column(children=[Row(children=plots[0])])
         elif len(plots[0]) == 1:
-            layout_plot = VBox(children=[p[0] for p in plots])
+            layout_plot = Column(children=[p[0] for p in plots])
         else:
             layout_plot = BokehGridPlot(children=plots)
 
