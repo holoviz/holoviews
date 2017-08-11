@@ -4,12 +4,18 @@ from ..util import max_range
 from .interface import Interface
 
 class MultiInterface(Interface):
+    """
+    MultiInterface allows wrapping around a list of tabular datasets
+    including dataframes, the columnar dictionary format or 2D tabular
+    NumPy arrays. Using the split method the list of tabular data can
+    be split into individual datasets.
+    """
 
     types = ()
 
     datatype = 'multi'
 
-    subtypes = ['dataframe', 'dictionary', 'array']
+    subtypes = ['dataframe', 'dictionary', 'array', 'dask']
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -26,14 +32,16 @@ class MultiInterface(Interface):
     def validate(cls, dataset):
         pass
 
-
     @classmethod
     def template(cls, dataset):
+        """
+        Returns a Dataset template used as a wrapper around the data
+        contained within the multi-interface dataset.
+        """
         from . import Dataset
         vdims = dataset.vdims if getattr(dataset, 'level', None) is None else []
         return Dataset(dataset.data[0], datatype=cls.subtypes,
                        kdims=dataset.kdims, vdims=vdims)
-
 
     @classmethod
     def dimension_type(cls, dataset, dim):
@@ -59,7 +67,6 @@ class MultiInterface(Interface):
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
         return max_range(ranges)
-
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -137,6 +144,10 @@ class MultiInterface(Interface):
 
     @classmethod
     def split(cls, dataset, start, end):
+        """
+        Splits a multi-interface Dataset into regular Datasets using
+        regular tabular interfaces.
+        """
         from ...element.path import BaseShape
         if isinstance(dataset, BaseShape):
             return [dataset]
