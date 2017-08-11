@@ -74,7 +74,7 @@ class PolygonPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         value = element.level
-        vdim = element.vdims[0]
+        vdim = element.vdims[0] if element.vdims else None
         polys = []
         paths = [p.array(p.kdims[:2]) for p in element.split()]
         for segments in paths:
@@ -83,7 +83,7 @@ class PolygonPlot(ColorbarPlot):
                     segments = segments[:, ::-1]
                 polys.append(Polygon(segments))
 
-        if value is not None and np.isfinite(value):
+        if None not in [value, vdim] and np.isfinite(value):
             self._norm_kwargs(element, ranges, style, vdim)
             style['clim'] = style.pop('vmin'), style.pop('vmax')
             style['array'] = np.array([value]*len(polys))
@@ -99,13 +99,13 @@ class PolygonPlot(ColorbarPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         value = element.level
-        vdim = element.vdims[0]
+        vdim = element.vdims[0] if element.vdims else None
         collection = self.handles['artist']
         paths = [p.array(p.kdims[:2]) for p in element.split()]
         if any(not np.array_equal(data, poly.get_xy()) for data, poly in
                zip(paths, self.handles['polys'])):
             return super(PolygonPlot, self).update_handles(key, axis, element, ranges, style)
-        elif value is not None and np.isfinite(value):
+        elif None not in [value, vdim] and np.isfinite(value):
             self._norm_kwargs(element, ranges, style, vdim)
             collection.set_array(np.array([value]*len(element.data)))
             collection.set_clim((style['vmin'], style['vmax']))
