@@ -79,6 +79,13 @@ class Path(Dataset, Element2D):
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
 
+    def select(self, selection_specs=None, **kwargs):
+        """
+        Bypasses selection on data and sets extents based on selection.
+        """
+        return super(Element2D, self).select(selection_specs, **kwargs)
+
+
     @classmethod
     def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
         if function is None:

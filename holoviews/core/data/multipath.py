@@ -60,6 +60,17 @@ class MultiInterface(Interface):
             ranges.append(ds.interface.range(ds, dim))
         return max_range(ranges)
 
+
+    @classmethod
+    def select(cls, dataset, selection_mask=None, **selection):
+        ds = cls.template(dataset)
+        data = []
+        for d in dataset.data:
+            ds.data = d
+            sel = ds.interface.select(ds, **selection)
+            data.append(sel)
+        return data
+
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
         raise NotImplementedError
