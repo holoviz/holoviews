@@ -5,7 +5,7 @@ from .interface import Interface
 
 class MultiInterface(Interface):
 
-    types = (list,)
+    types = ()
 
     datatype = 'multi'
 

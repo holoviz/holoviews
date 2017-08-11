@@ -118,11 +118,13 @@ class Contours(Path):
             self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
                           for d in vdims]
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, expanded=True, flat=True):
         dimension = self.get_dimension(dim, strict=True)
         if dimension in self.vdims and self.level is not None:
+            if expanded:
+                return np.full(len(self), self.level)
             return np.array([self.level])
-        return super(Contours, self).dimension_values(dim)
+        return super(Contours, self).dimension_values(dim, expanded, flat)
 
 
 
@@ -134,7 +136,7 @@ class Polygons(Contours):
 
     group = param.String(default="Polygons", constant=True)
 
-    vdims = param.List(default=[Dimension('Value')], doc="""
+    vdims = param.List(default=[], doc="""
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""")
 
