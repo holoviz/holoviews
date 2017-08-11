@@ -43,7 +43,7 @@ class AttrTree(object):
         else:
             return dir(type(self)) + list(dict_keys)
 
-    def __init__(self, items=None, identifier=None, parent=None, dir_mode='default'):
+    def __init__(self, items=None, identifier=None, parent=None, dir_mode='user'):
         """
         identifier: A string identifier for the current node (if any)
         parent:     The parent node (if any)
