@@ -725,7 +725,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
             self.assertEqual(cmapper.low, 0)
             self.assertEqual(cmapper.high, 4)
             source = splot.handles['source']
-            self.assertEqual(source.data['Level'], np.array([i]))
+            self.assertEqual(source.data['Value'], np.array([i]))
 
     def test_polygons_colored_batched(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)]], level=j)
@@ -736,7 +736,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(cmapper.high, 4)
         source = plot.handles['source']
         self.assertEqual(plot.handles['glyph'].fill_color['transform'], cmapper)
-        self.assertEqual(source.data['Level'], list(range(5)))
+        self.assertEqual(source.data['Value'], list(range(5)))
 
     def test_polygons_colored_batched_unsanitized(self):
         polygons = NdOverlay({j: Polygons([[(i**j, i) for i in range(10)] for i in range(2)],

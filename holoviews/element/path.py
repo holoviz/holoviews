@@ -115,10 +115,12 @@ class Contours(Path):
 
     group = param.String(default='Contours', constant=True)
 
+    _level_vdim = Dimension('Level') # For backward compatibility
+
     def __init__(self, data, **params):
         data = [] if data is None else data
         if 'level' in params:
-            vdims = params.get('vdims', [Dimension('Level')])
+            vdims = params.get('vdims', [self._level_vdim])
             params['vdims'] = []
         super(Contours, self).__init__(data, **params)
         if 'level' in params:
@@ -147,6 +149,7 @@ class Polygons(Contours):
         Polygons optionally accept a value dimension, corresponding
         to the supplied value.""")
 
+    _level_vdim = Dimension('Value')
 
 
 class BaseShape(Path):
