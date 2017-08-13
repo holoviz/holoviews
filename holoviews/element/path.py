@@ -20,14 +20,14 @@ from ..core.data import MultiInterface, ArrayInterface
 
 class Path(Dataset, Element2D):
     """
-    The Path Element contains a list of Paths stored as Nx2 numpy
-    arrays. The data may be supplied in one of the following ways:
+    The Path Element contains a list of Paths stored as tabular data types
+    including arrays, dataframes and dictionary of column arrays. In addition
+    a number of convenient constructors are supported:
 
-    1) A list of Nx2 numpy arrays.
-    2) A list of lists containing x/y coordinate tuples.
-    3) A tuple containing an array of length N with the x-values and a
+    1) A list of lists containing x/y coordinate tuples.
+    2) A tuple containing an array of length N with the x-values and a
        second array of shape NxP, where P is the number of paths.
-    4) A list of tuples each containing separate x and y values.
+    3) A list of tuples each containing arrays x and y values.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -37,7 +37,7 @@ class Path(Dataset, Element2D):
 
     group = param.String(default="Path", constant=True)
 
-    datatype = param.ObjectSelector(default=['multi'])
+    datatype = param.ObjectSelector(default=['multitabular'])
 
     def __init__(self, data, **params):
         if isinstance(data, tuple):
@@ -95,6 +95,11 @@ class Path(Dataset, Element2D):
                             "therefore cannot be collapsed with a function.")
 
     def split(self, start=None, end=None):
+        """
+        The split method allows splitting a Path type into a list of
+        subpaths of the same type. A start and end may be supplied to
+        select a subset of paths.
+        """
         if not issubclass(self.interface, MultiInterface):
             return [self]
         return self.interface.split(self, start, end)

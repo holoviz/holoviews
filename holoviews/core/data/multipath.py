@@ -9,11 +9,16 @@ class MultiInterface(Interface):
     including dataframes, the columnar dictionary format or 2D tabular
     NumPy arrays. Using the split method the list of tabular data can
     be split into individual datasets.
+
+    The interface makes the data appear a list of tabular datasets as
+    a single dataset. The length, shape and values methods therefore
+    make the data appear like a single array of concatenated subpaths,
+    separated by NaN values.
     """
 
     types = ()
 
-    datatype = 'multi'
+    datatype = 'multitabular'
 
     subtypes = ['dataframe', 'dictionary', 'array', 'dask']
 
@@ -21,19 +26,29 @@ class MultiInterface(Interface):
     def init(cls, eltype, data, kdims, vdims):
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
-        extra_kws = {}
+        if not isinstance(data, list):
+            raise ValueError('MultiInterface data must be a list tabular data types.')
+        prev_interface, prev_dims = None, None
         for d in data:
-            d, interface, dims, extra_kws = Interface.initialize(eltype, d, kdims, vdims,
-                                                                 datatype=cls.subtypes)
+            d, interface, dims, _ = Interface.initialize(eltype, d, kdims, vdims,
+                                                         datatype=cls.subtypes)
+            if prev_interface:
+                if prev_interface != interface:
+                    raise ValueError('MultiInterface subpaths must all have matching datatype.')
+                if dims['kdims'] != prev_dims['kdims']:
+                    raise ValueError('MultiInterface subpaths must all have matching kdims.')
+                if dims['vdims'] != prev_dims['vdims']:
+                    raise ValueError('MultiInterface subpaths must all have matching vdims.')
             new_data.append(d)
-        return new_data, dims, extra_kws
+            prev_interface, prev_dims = interface, dims
+        return new_data, dims, {}
 
     @classmethod
     def validate(cls, dataset):
         pass
 
     @classmethod
-    def template(cls, dataset):
+    def _inner_dataset_template(cls, dataset):
         """
         Returns a Dataset template used as a wrapper around the data
         contained within the multi-interface dataset.
@@ -46,8 +61,11 @@ class MultiInterface(Interface):
     @classmethod
     def dimension_type(cls, dataset, dim):
         if not dataset.data:
+            # Note: Required to make empty datasets work at all (should fix)
+            # Other interfaces declare equivalent of empty array
+            # which defaults to float type
             return float
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
         return ds.interface.dimension_type(ds, dim)
 
     @classmethod
@@ -55,9 +73,9 @@ class MultiInterface(Interface):
         if not dataset.data:
             return (None, None)
         ranges = []
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
 
-        # Backward compatibility for level
+        # Backward compatibility for Contours/Polygons level
         level = getattr(dataset, 'level', None)
         dim = dataset.get_dimension(dim)
         if level is not None and dim is dataset.vdims[0]:
@@ -70,7 +88,10 @@ class MultiInterface(Interface):
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
-        ds = cls.template(dataset)
+        """
+        Applies selectiong on all the subpaths.
+        """
+        ds = cls._inner_dataset_template(dataset)
         data = []
         for d in dataset.data:
             ds.data = d
@@ -80,23 +101,27 @@ class MultiInterface(Interface):
 
     @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('Aggregation currently not implemented')
 
     @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
-        raise NotImplementedError
+        raise NotImplementedError('Grouping currently not implemented')
 
     @classmethod
     def sample(cls, columns, samples=[]):
-        raise NotImplementedError
+        raise NotImplementedError('Sampling operation on subpaths not supported')
 
     @classmethod
     def shape(cls, dataset):
+        """
+        Returns the shape of all subpaths, making it appear like a
+        single array of concatenated subpaths separated by NaN values.
+        """
         if not dataset.data:
             return (0, len(dataset.dimensions()))
 
         rows, cols = 0, 0
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             r, cols = ds.interface.shape(ds)
@@ -105,10 +130,15 @@ class MultiInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
+        """
+        Returns the length of the multi-tabular dataset making it appear
+        like a single array of concatenated subpaths separated by NaN
+        values.
+        """
         if not dataset.data:
             return 0
         length = 0
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             length += ds.interface.length(ds)
@@ -123,7 +153,7 @@ class MultiInterface(Interface):
         if not dataset.data:
             return dataset.data
         new_data = []
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             new_data.append(ds.interface.redim(ds, dimensions))
@@ -131,10 +161,14 @@ class MultiInterface(Interface):
 
     @classmethod
     def values(cls, dataset, dimension, expanded, flat):
+        """
+        Returns a single concatenated array of all subpaths separated
+        by NaN values. If not expanded NaN separators are not included.
+        """
         if not dataset.data:
             return np.array([])
         values = []
-        ds = cls.template(dataset)
+        ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
             values.append(ds.interface.values(ds, dimension, expanded, flat))
