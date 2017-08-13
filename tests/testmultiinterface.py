@@ -69,11 +69,21 @@ class MultiInterfaceTest(ComparisonTestCase):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.shape, (5, 2))
-    
+
     def test_multi_array_values(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.NaN, 1, 2]))
+
+    def test_multi_array_values_coordinates_nonexpanded(self):
+        arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(mds.dimension_values(0, expanded=False), np.array([[0., 1], [1, 2]]))
+
+    def test_multi_array_values_coordinates_nonexpanded_constant_kdim(self):
+        arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2), np.ones(2)*i]) for i in range(2)]
+        mds = Path(arrays, kdims=['x', 'y', 'z'], datatype=['multitabular'])
+        self.assertEqual(mds.dimension_values(2, expanded=False), np.array([0, 1]))
 
     def test_multi_array_redim(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
@@ -87,10 +97,19 @@ class MultiInterfaceTest(ComparisonTestCase):
         error = "None of the available storage backends were able to support the supplied data format."
         with self.assertRaisesRegexp(ValueError, error):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
-    
+
     def test_multi_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
         error = "None of the available storage backends were able to support the supplied data format."
         with self.assertRaisesRegexp(ValueError, error):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+
+    def test_multi_nonconstant_kdims_raises(self):
+        arrays = [{'x': range(10), 'y': range(10), 'z': range(10)}
+                  for i in range(2)]
+        error = ("z' key dimension value must have a constant value on each subpath, "
+                 "for paths with value for each coordinate of the array declare a "
+                 "value dimension instead.")
+        with self.assertRaisesRegexp(ValueError, error):
+            mds = Path(arrays, kdims=['x', 'y', 'z'], datatype=['multitabular'])

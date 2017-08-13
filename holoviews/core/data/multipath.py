@@ -45,7 +45,17 @@ class MultiInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        pass
+        # Ensure that auxilliary key dimensions on each subpaths are scalar
+        if dataset.ndims <= 2:
+            return
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            for dim in dataset.kdims[2:]:
+                if len(ds.dimension_values(dim, expanded=False)) > 1:
+                    raise ValueError("'%s' key dimension value must have a constant value on each subpath, "
+                                     "for paths with value for each coordinate of the array declare a "
+                                     "value dimension instead." % dim)
 
     @classmethod
     def _inner_dataset_template(cls, dataset):
@@ -163,18 +173,29 @@ class MultiInterface(Interface):
     def values(cls, dataset, dimension, expanded, flat):
         """
         Returns a single concatenated array of all subpaths separated
-        by NaN values. If not expanded NaN separators are not included.
+        by NaN values. If expanded keyword is False an array of arrays
+        is returned.
         """
         if not dataset.data:
             return np.array([])
         values = []
         ds = cls._inner_dataset_template(dataset)
+        didx = dataset.get_dimension_index(dimension)
         for d in dataset.data:
             ds.data = d
-            values.append(ds.interface.values(ds, dimension, expanded, flat))
+            expand = expanded if didx>1 and dimension in dataset.kdims else True
+            dvals = ds.interface.values(ds, dimension, expand, flat)
+            values.append(dvals)
             if expanded:
                 values.append([np.NaN])
-        return np.concatenate(values[:-1] if expanded else values) if values else []
+            elif not expand and len(dvals):
+                values[-1] = dvals[0]
+        if not values:
+            return np.array()
+        elif expanded:
+            return np.concatenate(values[:-1])
+        else:
+            return np.array(values)
 
     @classmethod
     def split(cls, dataset, start, end):
