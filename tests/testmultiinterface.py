@@ -26,13 +26,13 @@ class MultiInterfaceTest(ComparisonTestCase):
 
     def test_multi_array_dataset(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['array']))
 
     def test_multi_dict_dataset(self):
         arrays = [{'x': np.arange(i, i+2), 'y': np.arange(i, i+2)} for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dictionary']))
 
@@ -41,7 +41,7 @@ class MultiInterfaceTest(ComparisonTestCase):
             raise SkipTest('Pandas not available')
         arrays = [pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]), columns=['x', 'y'])
                   for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dataframe']))
 
@@ -51,32 +51,46 @@ class MultiInterfaceTest(ComparisonTestCase):
         arrays = [dd.from_pandas(pd.DataFrame(np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]),
                                               columns=['x', 'y']), npartitions=2)
                   for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x', 'y'], datatype=['dask']))
 
     def test_multi_array_length(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(len(mds), 5)
 
     def test_multi_array_range(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.range(0), (0, 2))
 
     def test_multi_array_shape(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.shape, (5, 2))
     
     def test_multi_array_values(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi'])
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.NaN, 1, 2]))
 
     def test_multi_array_redim(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y'], datatype=['multi']).redim(x='x2')
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular']).redim(x='x2')
         for i, ds in enumerate(mds.split()):
             self.assertEqual(ds, Path(arrays[i], kdims=['x2', 'y'], datatype=['dask']))
+
+    def test_multi_mixed_interface_raises(self):
+        arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}
+                  for i in range(2) for j in range(2)]
+        error = "None of the available storage backends were able to support the supplied data format."
+        with self.assertRaisesRegexp(ValueError, error):
+            mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+    
+    def test_multi_mixed_dims_raises(self):
+        arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
+                  for i in range(2) for j in range(2)]
+        error = "None of the available storage backends were able to support the supplied data format."
+        with self.assertRaisesRegexp(ValueError, error):
+            mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
