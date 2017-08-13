@@ -24,15 +24,31 @@ class PathPlot(ElementPlot):
         if self.batched:
             dims = list(self.hmap.last.kdims)
         else:
-            dims = list(self.overlay_dims.keys())
+            dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
         return dims, {}
+
+
+    def _get_hover_data(self, data, element, empty=False):
+        """
+        Initializes hover data based on Element dimension values.
+        """
+        if not any(isinstance(t, HoverTool) for t in self.state.tools):
+            return
+
+        for k, v in self.overlay_dims.items():
+            dim = util.dimension_sanitizer(k.name)
+            if dim not in data:
+                data[dim] = [v for _ in range(len(list(data.values())[0]))]
+
 
     def get_data(self, element, ranges=None, empty=False):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         paths = [p.array(p.kdims[:2]) for p in element.split()]
         xs = [] if empty else [path[:, xidx] for path in paths]
         ys = [] if empty else [path[:, yidx] for path in paths]
-        return dict(xs=xs, ys=ys), dict(self._mapping)
+        data = dict(xs=xs, ys=ys)
+        self._get_hover_data(data, element, empty)
+        return data, dict(self._mapping)
 
 
     def _categorize_data(self, data, cols, dims):
@@ -87,13 +103,14 @@ class ContourPlot(ColorbarPlot, PathPlot):
         data, mapping = super(ContourPlot, self).get_data(element, ranges, empty)
         ncontours = len(list(data.values())[0])
         style = self.style[self.cyclic_index]
-        if element.vdims and element.level is not None and 'cmap' in style:
+        if element.vdims and element.level is not None:
             cdim = element.vdims[0]
             dim_name = util.dimension_sanitizer(cdim.name)
-            cmapper = self._get_colormapper(cdim, element, ranges, style)
-            data[dim_name] = [] if empty else np.full(ncontours, float(element.level))
-            mapping['line_color'] = {'field': dim_name,
-                                     'transform': cmapper}
+            if 'cmap' in style or any(isinstance(t, HoverTool) for t in self.state.tools):
+                data[dim_name] = np.full(ncontours, float(element.level))
+            if 'cmap' in style:
+                cmapper = self._get_colormapper(cdim, element, ranges, style)
+                mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
         return data, mapping
 
 
@@ -124,8 +141,8 @@ class PolygonPlot(ColorbarPlot, PathPlot):
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
             dim_name = util.dimension_sanitizer(cdim.name)
+            data[dim_name] = [element.level for _ in range(len(xs))]
             cmapper = self._get_colormapper(cdim, element, ranges, style)
-            data[dim_name] = [] if empty else [element.level for _ in range(len(xs))]
             mapping['fill_color'] = {'field': dim_name,
                                      'transform': cmapper}
 
