@@ -1,7 +1,10 @@
 """
 Unit test of the streams system
 """
+from collections import defaultdict
+
 import param
+from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
 
@@ -224,6 +227,22 @@ class TestSubscribers(ComparisonTestCase):
 
         self.assertEqual(subscriber2.kwargs, dict(x=50, y=100))
         self.assertEqual(subscriber2.call_count, 1)
+
+
+class TestStreamSource(ComparisonTestCase):
+
+    def tearDown(self):
+        Stream.registry = defaultdict(list)
+
+    def test_source_registry(self):
+        points = Points([(0, 0)])
+        positionX = PointerX(source=points)
+        self.assertIn(id(points), Stream.registry)
+
+    def test_source_registry_empty_element(self):
+        points = Points([])
+        positionX = PointerX(source=points)
+        self.assertIn(id(points), Stream.registry)
 
 
 class TestParameterRenaming(ComparisonTestCase):
