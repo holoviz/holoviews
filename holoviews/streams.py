@@ -184,7 +184,7 @@ class Stream(param.Parameterized):
         self._metadata = {}
 
         super(Stream, self).__init__(**params)
-        if source:
+        if source is not None:
             self.registry[id(source)].append(self)
 
 
