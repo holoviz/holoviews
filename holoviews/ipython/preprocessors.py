@@ -72,17 +72,6 @@ def filter_magic(source, magic, strip=True):
     return '\n'.join(filtered), magic_lines
 
 
-def strip_magics(source):
-    """
-    Given the source of a cell, filter out all cell and line magics.
-    """
-    filtered=[]
-    for line in source.splitlines():
-        if not line.startswith('%') or line.startswith('%%'):
-            filtered.append(line)
-    return '\n'.join(filtered)
-
-
 def replace_line_magic(source, magic, template='{line}'):
     """
     Given a cell's source, replace line magics using a formatting
@@ -150,9 +139,20 @@ class StripMagicsProcessor(Preprocessor):
     holoviews magics appropriately.
     """
 
+    def strip_magics(self, source):
+        """
+        Given the source of a cell, filter out all cell and line magics.
+        """
+        filtered=[]
+        for line in source.splitlines():
+            if not line.startswith('%') or line.startswith('%%'):
+                filtered.append(line)
+        return '\n'.join(filtered)
+
+
     def preprocess_cell(self, cell, resources, index):
         if cell['cell_type'] == 'code':
-            cell['source'] = strip_magics(cell['source'])
+            cell['source'] = self.strip_magics(cell['source'])
         return cell, resources
 
     def __call__(self, nb, resources): return self.preprocess(nb,resources)
