@@ -78,7 +78,10 @@ class TestOptsPreprocessor(ComparisonTestCase):
         source = apply_preprocessors([OptsMagicProcessor()], nbname)
         self.assertEqual(source.strip().endswith(expected), False)
 
-    def test_opts_image_line_magic_svg(self):
+
+class TestOutputPreprocessor(ComparisonTestCase):
+
+    def test_output_image_line_magic_svg(self):
         nbname = 'test_output_svg_line_magic.ipynb'
         if sys.version_info.major == 2:
             expected = """hv.util.output(u" fig='svg'")"""
