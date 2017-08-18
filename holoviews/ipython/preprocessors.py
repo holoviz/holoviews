@@ -135,8 +135,9 @@ class OutputMagicProcessor(Preprocessor):
 class StripMagicsProcessor(Preprocessor):
     """
     Preprocessor to convert notebooks to Python source to strips out all
-    magics. To be applied after the preprocessors that can handle
-    holoviews magics appropriately.
+    magics. Should be applied after any more-specific magic
+    pre-processors that may be in use, to ensure that any remaining
+    magics are silently stripped to avoid Python syntax errors
     """
 
     def strip_magics(self, source):
