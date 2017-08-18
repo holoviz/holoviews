@@ -110,6 +110,8 @@ class BokehRenderer(Renderer):
         combining the bokeh model with another plot.
         """
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
+        if self_or_cls.mode == 'server' and doc is None:
+            doc = curdoc()
         if doc is not None:
             plot.document = doc
         return plot

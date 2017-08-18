@@ -22,6 +22,8 @@ except:
     pass
 
 try:
+    from bokeh.io import curdoc
+
     from holoviews.plotting.bokeh import BokehRenderer
     from holoviews.plotting.bokeh.util import bokeh_version
 except:
@@ -114,6 +116,11 @@ class BokehRendererTest(ComparisonTestCase):
     def test_export_widgets(self):
         bytesio = BytesIO()
         self.renderer.export_widgets(self.map1, bytesio, fmt='widgets')
+
+    def test_render_get_plot_server_doc(self):
+        renderer = self.renderer.instance(mode='server')
+        plot = renderer.get_plot(self.image1)
+        self.assertIs(plot.document, curdoc())
 
     def test_get_size_single_plot(self):
         plot = self.renderer.get_plot(self.image1)
