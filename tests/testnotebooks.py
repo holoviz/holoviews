@@ -6,7 +6,8 @@ import nbformat, nbconvert
 
 import os, sys
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.ipython.preprocessors import OptsMagicProcessor, OutputMagicProcessor
+from holoviews.ipython.preprocessors import (OptsMagicProcessor, OutputMagicProcessor,
+                                             StripMagicsProcessor)
 
 
 def apply_preprocessors(preprocessors, nbname):
@@ -18,6 +19,28 @@ def apply_preprocessors(preprocessors, nbname):
             exporter.register_preprocessor(preprocessor)
         source, meta = exporter.from_notebook_node(nb)
     return source
+
+
+class TestStripMagicsPreprocessor(ComparisonTestCase):
+
+    def test_opts_image_line_magic_strip(self):
+        nbname = 'test_opts_image_line_magic.ipynb'
+        source = apply_preprocessors([StripMagicsProcessor()], nbname)
+        removed = "%opts Image [xaxis=None] (cmap='viridis')"
+        self.assertEqual(removed not in source, True)
+
+    def test_opts_image_cell_magic_strip(self):
+        nbname = 'test_opts_image_cell_magic.ipynb'
+        source = apply_preprocessors([StripMagicsProcessor()], nbname)
+        removed = "%%opts Image [xaxis=None] (cmap='viridis')"
+        self.assertEqual(removed not in source, True)
+
+    def test_opts_image_cell_magic_offset_strip(self):
+        nbname = 'test_opts_image_cell_magic_offset.ipynb'
+        source = apply_preprocessors([StripMagicsProcessor()], nbname)
+        removed = "%%opts Image [xaxis=None] (cmap='viridis')"
+        self.assertEqual(removed not in source, True)
+
 
 class TestOptsPreprocessor(ComparisonTestCase):
 
