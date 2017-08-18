@@ -171,7 +171,7 @@ class notebook_extension(extension):
                        mpl_logo=    p.logo and (('matplotlib' in resources)
                                                 or resources==['holoviews']),
                        plotly_logo= p.logo and ('plotly' in resources),
-                       JS=('holoviews' in resources), message='')
+                       JS=('holoviews' in resources))
 
     @classmethod
     def completions_sorting_key(cls, word):
