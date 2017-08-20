@@ -412,7 +412,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         size_multiplier = self.renderer.size/100.
         plot_props = dict(plot_height=int(self.height*size_multiplier),
-                          plot_width=int(self.width*size_multiplier))
+                          plot_width=int(self.width*size_multiplier),
+                          sizing_mode=self.sizing_mode)
         if bokeh_version < '0.12':
             plot_props.update(self._title_properties(key, plot, element))
         if self.bgcolor:
