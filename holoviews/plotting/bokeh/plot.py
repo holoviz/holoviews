@@ -40,6 +40,28 @@ class BokehPlot(DimensionedPlot):
     height = param.Integer(default=300, doc="""
         Height of the plot in pixels""")
 
+    sizing_mode = param.ObjectSelector(default='fixed',
+        objects=['fixed', 'stretch_both', 'scale_width', 'scale_height',
+                 'scale_both'], doc="""
+        How the item being displayed should size itself.
+
+        "stretch_both" plots will resize to occupy all available
+        space, even if this changes the aspect ratio of the element.
+
+        "fixed" plots are not responsive and will retain their
+        original width and height regardless of any subsequent browser
+        window resize events.
+
+        "scale_width" elements will responsively resize to fit to the
+        width available, while maintaining the original aspect ratio.
+
+        "scale_height" elements will responsively resize to fit to the
+        height available, while maintaining the original aspect ratio.
+
+        "scale_both" elements will responsively resize to for both the
+        width and height available, while maintaining the original
+        aspect ratio.""")
+
     shared_datasource = param.Boolean(default=True, doc="""
         Whether Elements drawing the data from the same object should
         share their Bokeh data source allowing for linked brushing
@@ -415,6 +437,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def _make_axes(self, plot):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
+        kwargs = dict(sizing_mode=self.sizing_mode)
         if self.xaxis:
             flip = self.shared_xaxis
             rotation = self.xrotation
@@ -441,15 +464,15 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_yaxis:
                 r1, r2 = r1[::-1], r2[::-1]
             models = layout_padding([r1, r2], self.renderer)
-            plot = gridplot(models)
+            plot = gridplot(models, **kwargs)
         elif y_axis:
             models = [y_axis, plot]
             if self.shared_yaxis: models = models[::-1]
-            plot = Row(*models)
+            plot = Row(*models, **kwargs)
         elif x_axis:
             models = [plot, x_axis]
             if self.shared_xaxis: models = models[::-1]
-            plot = Column(*models)
+            plot = Column(*models, **kwargs)
         return plot
 
     @update_shared_sources
@@ -681,6 +704,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         plots = layout_padding(plots, self.renderer)
 
         # Wrap in appropriate layout model
+        kwargs = dict(sizing_mode=self.sizing_mode)
         if self.tabs:
             panels = [Panel(child=child, title=str(tab_titles.get((r, c))))
                       for r, row in enumerate(plots)
@@ -690,18 +714,18 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         elif bokeh_version >= '0.12':
             plots = filter_toolboxes(plots)
             plots, width = pad_plots(plots)
-            layout_plot = gridplot(children=plots, width=width)
+            layout_plot = gridplot(children=plots, width=width, **kwargs)
         elif len(plots) == 1 and not adjoined:
-            layout_plot = Column(children=[Row(children=plots[0])])
+            layout_plot = Column(children=[Row(children=plots[0])], **kwargs)
         elif len(plots[0]) == 1:
-            layout_plot = Column(children=[p[0] for p in plots])
+            layout_plot = Column(children=[p[0] for p in plots], **kwargs)
         else:
-            layout_plot = BokehGridPlot(children=plots)
+            layout_plot = BokehGridPlot(children=plots, **kwargs)
 
         title = self._get_title(self.keys[-1])
         if title:
             self.handles['title'] = title
-            layout_plot = Column(title, layout_plot)
+            layout_plot = Column(title, layout_plot, **kwargs)
 
         self._update_callbacks(layout_plot)
         self.handles['plot'] = layout_plot

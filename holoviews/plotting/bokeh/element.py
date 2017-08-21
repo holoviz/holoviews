@@ -412,7 +412,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         """
         size_multiplier = self.renderer.size/100.
         plot_props = dict(plot_height=int(self.height*size_multiplier),
-                          plot_width=int(self.width*size_multiplier))
+                          plot_width=int(self.width*size_multiplier),
+                          sizing_mode=self.sizing_mode)
         if bokeh_version < '0.12':
             plot_props.update(self._title_properties(key, plot, element))
         if self.bgcolor:
@@ -1274,7 +1275,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
-                          'border', 'invert_xaxis', 'invert_yaxis']
+                          'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode']
 
     def _process_legend(self):
         plot = self.handles['plot']
