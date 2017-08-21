@@ -99,7 +99,7 @@ class BokehServerWidgets(param.Parameterized):
                                                   title=dim.pprint_label)
                     else:
                         label = Div(text='<b>%s</b>' % dim.pprint_value_string(labels[0]))
-                    widget = Slider(value=0, end=len(dim.values)-1, title=None, step=1)
+                    widget = Slider(value=0, start=0, end=len(dim.values)-1, title=None, step=1)
                     mapping = list(zip(values, labels))
                 else:
                     values = [(v, dim.pprint_value(v)) for v in dim.values]
@@ -132,7 +132,7 @@ class BokehServerWidgets(param.Parameterized):
                                               title=dim.pprint_label)
                 else:
                     label = Div(text='<b>%s</b>' % (dim.pprint_value_string(labels[0])))
-                widget = Slider(value=0, end=len(values)-1, title=None, step=1)
+                widget = Slider(value=0, start=0, end=len(values)-1, title=None, step=1)
             else:
                 widget = Select(title=dim.pprint_label, value=values[0],
                                 options=list(zip(values, labels)))
