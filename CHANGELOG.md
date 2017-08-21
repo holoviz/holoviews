@@ -1,3 +1,28 @@
+Version 1.8.3
+=============
+
+This bugfix release fixes a number of minor issues identified since the
+last release:
+
+Features:
+
+-   Add support for setting the bokeh sizing_mode as a plot option
+    ([\#1813](https://github.com/ioam/holoviews/pull/1813))
+
+Fixes:
+
+-   Handle StopIteration on DynamicMap correctly.
+    ([\#1792](https://github.com/ioam/holoviews/pull/1792))
+-   Fix bug with linked streams on empty source element
+    ([\#1725](https://github.com/ioam/holoviews/pull/1806))
+-   Compatibility with latest datashader 0.6.0 release
+    ([\#1773](https://github.com/ioam/holoviews/pull/1773))
+-   Fixed missing HTML closing tag in extension
+    ([\#1803](https://github.com/ioam/holoviews/pull/1803))
+-   Various fixes and improvements for documentation
+    ([\#1664](https://github.com/ioam/holoviews/pull/1664),
+    [\#1796](https://github.com/ioam/holoviews/pull/1796))
+
 Version 1.8.2
 =============
 
