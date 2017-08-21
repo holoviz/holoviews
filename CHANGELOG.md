@@ -18,10 +18,12 @@ Fixes:
 -   Compatibility with latest datashader 0.6.0 release
     ([\#1773](https://github.com/ioam/holoviews/pull/1773))
 -   Fixed missing HTML closing tag in extension
-    ([\#1803](https://github.com/ioam/holoviews/pull/1803))
+    ([\#1797](https://github.com/ioam/holoviews/issues/1797),
+     [\#1809](https://github.com/ioam/holoviews/pull/1809))
 -   Various fixes and improvements for documentation
     ([\#1664](https://github.com/ioam/holoviews/pull/1664),
     [\#1796](https://github.com/ioam/holoviews/pull/1796))
+
 
 Version 1.8.2
 =============
