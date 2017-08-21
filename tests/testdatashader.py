@@ -6,7 +6,7 @@ from holoviews import Curve, Points, Image, Dataset
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.operation.datashader import aggregate, regrid, ds_version
+    from holoviews.operation.datashader import aggregate, ds_version
 except:
     aggregate = None
 
@@ -56,58 +56,3 @@ class DatashaderAggregateTests(ComparisonTestCase):
         img = aggregate(ndoverlay, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         self.assertEqual(img, expected)
-
-
-
-@attr(optional=1)
-class DatashaderRegridTests(ComparisonTestCase):
-    """
-    Tests for datashader aggregation
-    """
-
-    def setUp(self):
-        if ds_version <= '0.5.0':
-            raise SkipTest('Regridding operations require datashader>=0.6.0')
-
-    def test_regrid_mean(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
-        regridded = regrid(img, width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
-        self.assertEqual(regridded, expected)
-
-    def test_regrid_max(self):
-        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
-        regridded = regrid(img, aggregator='max', width=2, height=2, dynamic=False)
-        expected = Image(([2., 7.], [0.75, 3.25], [[8, 18], [16, 36]]))
-        self.assertEqual(regridded, expected)
-
-    def test_regrid_upsampling(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, upsample=True, dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
-                          [[0, 0, 1, 1],
-                           [0, 0, 1, 1],
-                           [2, 2, 3, 3],
-                           [2, 2, 3, 3]]))
-        self.assertEqual(regridded, expected)
-
-    def test_regrid_upsampling_linear(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=4, height=4, upsample=True, interpolation='linear', dynamic=False)
-        expected = Image(([0.25, 0.75, 1.25, 1.75], [0.25, 0.75, 1.25, 1.75],
-                          [[0, 0, 0, 1],
-                           [0, 1, 1, 1],
-                           [1, 1, 2, 2],
-                           [2, 2, 2, 3]]))
-        self.assertEqual(regridded, expected)
-
-    def test_regrid_disabled_upsampling(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0, 1], [2, 3]]))
-        regridded = regrid(img, width=3, height=3, dynamic=False, upsample=False)
-        self.assertEqual(regridded, img)
-
-    def test_regrid_disabled_expand(self):
-        img = Image(([0.5, 1.5], [0.5, 1.5], [[0., 1.], [2., 3.]]))
-        regridded = regrid(img, width=2, height=2, x_range=(-2, 4), y_range=(-2, 4), expand=False,
-                           dynamic=False)
-        self.assertEqual(regridded, img)
