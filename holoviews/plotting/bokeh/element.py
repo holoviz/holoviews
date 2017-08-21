@@ -1374,6 +1374,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             if tool:
                 renderers = tool.renderers+hover.renderers
                 tool.renderers = list(util.unique_iterator(renderers))
+            if 'hover' not in self.handles:
+                self.handles['hover'] = tool
+
 
     def _get_factors(self, overlay):
         xfactors, yfactors = [], []
