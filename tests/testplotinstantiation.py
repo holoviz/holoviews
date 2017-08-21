@@ -687,13 +687,24 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self._test_hover_info(obj, [('Test', '@{Test}'), ('z', '@{z}')])
 
     def test_hover_tool_instance_renderer_association(self):
-        hover = HoverTool(tooltips=[("index", "$index")])
+        tooltips = [("index", "$index")]
+        hover = HoverTool(tooltips=tooltips)
         opts = dict(tools=[hover])
         overlay = Curve(np.random.rand(10,2)).opts(plot=opts) * Points(np.random.rand(10,2))
         plot = bokeh_renderer.get_plot(overlay)
         curve_plot = plot.subplots[('Curve', 'I')]
         self.assertEqual(len(curve_plot.handles['hover'].renderers), 1)
         self.assertIn(curve_plot.handles['glyph_renderer'], curve_plot.handles['hover'].renderers)
+        self.assertEqual(plot.handles['hover'].tooltips, tooltips)
+
+    def test_hover_tool_nested_overlay_renderers(self):
+        overlay1 = NdOverlay({0: Curve(range(2)), 1: Curve(range(3))}, kdims=['Test'])
+        overlay2 = NdOverlay({0: Curve(range(4)), 1: Curve(range(5))}, kdims=['Test'])
+        nested_overlay = (overlay1 * overlay2).opts(plot={'Curve': dict(tools=['hover'])})
+        plot = bokeh_renderer.get_plot(nested_overlay)
+        self.assertEqual(len(plot.handles['hover'].renderers), 4)
+        self.assertEqual(plot.handles['hover'].tooltips,
+                         [('Test', '@{Test}'), ('x', '@{x}'), ('y', '@{y}')])
 
     def _test_colormapping(self, element, dim, log=False):
         plot = bokeh_renderer.get_plot(element)
