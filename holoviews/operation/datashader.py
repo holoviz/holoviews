@@ -215,8 +215,8 @@ class aggregate(ResamplingOperation):
 
         for d in (x, y):
             if df[d].dtype.kind == 'M':
-                param.warning('Casting %s dimension data to integer '
-                              'datashader cannot process datetime data ')
+                param.main.warning('Casting %s dimension data to integer; '
+                                   'datashader cannot process datetime data', d)
                 df[d] = df[d].astype('int64') / 1000000.
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
