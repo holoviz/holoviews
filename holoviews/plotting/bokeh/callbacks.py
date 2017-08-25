@@ -3,10 +3,10 @@ from bokeh.models import CustomJS
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
-                        RangeY, PointerX, PointerY, Bounds, BoundsX, BoundsY,
+                        RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw)
-from ...streams import PositionX, PositionY, PositionXY # Deprecated: remove in 2.0
+                        PlotSize, Draw, BoundsXY)
+from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
 from .util import bokeh_version
 
@@ -765,6 +765,7 @@ callbacks[RangeXY]     = RangeXYCallback
 callbacks[RangeX]      = RangeXCallback
 callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
+callbacks[BoundsXY]     = BoundsCallback
 callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
 callbacks[Selection1D] = Selection1DCallback
