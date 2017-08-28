@@ -986,7 +986,8 @@ class CompositeElementPlot(ElementPlot):
 
 
     def _process_properties(self, key, properties):
-        style_group = self._style_groups[key.split('_')[0]]
+        key = '_'.join(key.split('_')[:-1])
+        style_group = self._style_groups[key]
         group_props = {}
         for k, v in properties.items():
             if k in self.style_opts:
