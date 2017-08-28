@@ -9,7 +9,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, VectorField)
+                        Table, ItemTable, Area, HSV, QuadMesh, VectorField,
+                        Graph, Nodes, NodePaths)
 from ...core.options import Options, Cycle, Palette
 
 try:
@@ -23,6 +24,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
+from .graphs import GraphPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -81,6 +83,11 @@ associations = {Overlay: OverlayPlot,
                 Spline: SplinePlot,
                 Arrow: ArrowPlot,
 
+                # Graph Elements
+                Graph: GraphPlot,
+                Nodes: PointPlot,
+                NodePaths: PathPlot,
+
                 # Tabular
                 Table: TablePlot,
                 ItemTable: TablePlot}
@@ -100,8 +107,6 @@ else:
     for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
                       RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
         framedcls.show_frame = True
-
-
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
