@@ -91,7 +91,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
 
     # Add cartesian product of DynamicMap values to keys
     values = [d.values for d in all_dims]
-    if obj.traverse(lambda x: x, ['DynamicMap']) and all(values):
+    if obj.traverse(lambda x: x, ['DynamicMap']) and values and all(values):
         unique_keys += list(zip(*cartesian_product(values)))
 
     with item_check(False):

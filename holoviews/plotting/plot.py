@@ -589,7 +589,7 @@ class GenericElementPlot(DimensionedPlot):
         if self.top_level:
             dimensions = self.hmap.kdims
             values = [d.values for d in dimensions]
-            if dynamic and all(values):
+            if dynamic and values and all(values):
                 keys = list(zip(*cartesian_product(values)))
             else:
                 keys = list(self.hmap.data.keys())
