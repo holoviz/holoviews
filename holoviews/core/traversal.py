@@ -8,7 +8,7 @@ from collections import defaultdict
 from operator import itemgetter
 
 from .dimension import Dimension
-from .util import merge_dimensions
+from .util import merge_dimensions, cartesian_product
 
 try:
     import itertools.izip as zip
@@ -88,6 +88,11 @@ def unique_dimkeys(obj, default_dim='Frame'):
                                               for i, k in zip(item, padded_key))]
             if not matches:
                 unique_keys.append(padded_key)
+
+    # Add cartesian product of DynamicMap values to keys
+    values = [d.values for d in all_dims]
+    if obj.traverse(lambda x: x, ['DynamicMap']) and all(values):
+        unique_keys += list(zip(*cartesian_product(values)))
 
     with item_check(False):
         sorted_keys = NdMapping({key: None for key in unique_keys},
