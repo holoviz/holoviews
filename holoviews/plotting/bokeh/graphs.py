@@ -1,4 +1,10 @@
-from bokeh.models import (StaticLayoutProvider, DataRange1d, GraphRenderer, NodesAndLinkedEdges, EdgesAndLinkedNodes, Circle, MultiLine)
+from bokeh.models import DataRange1d, Circle, MultiLine
+
+try:
+    from bokeh.models import (StaticLayoutProvider, GraphRenderer, NodesAndLinkedEdges,
+                              EdgesAndLinkedNodes)
+except:
+    pass
 
 from ...core.options import abbreviated_exception
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
