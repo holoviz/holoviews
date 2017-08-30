@@ -302,7 +302,7 @@ ScrubberWidget.prototype.anim_step_forward = function() {
 }
 
 ScrubberWidget.prototype.anim_step_reverse = function() {
-    if(this.current_frame >= 0){
+    if(this.current_frame > 0){
         this.previous_frame();
     } else {
         var loop_state = this.get_loop_state();
