@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters
+from ..core.util import stream_parameters, cartesian_product
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -531,10 +531,11 @@ class DimensionedPlot(Plot):
 
 
     def __len__(self):
-        """
-        Returns the total number of available frames.
-        """
-        return len(self.keys)
+        values = [len(d.values) for d in self.dimensions]
+        if self.dynamic and all(values):
+            return np.prod(values)
+        else:
+            return len(self.keys)
 
 
 
@@ -587,10 +588,15 @@ class GenericElementPlot(DimensionedPlot):
         if self.batched and not isinstance(self, GenericOverlayPlot):
             plot_element = plot_element.last
 
+        dynamic = isinstance(element, DynamicMap) and not element.unbounded
         self.top_level = keys is None
         if self.top_level:
             dimensions = self.hmap.kdims
-            keys = list(self.hmap.data.keys())
+            values = [d.values for d in dimensions]
+            if dynamic and all(values):
+                keys = list(zip(*cartesian_product(values)))
+            else:
+                keys = list(self.hmap.data.keys())
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
@@ -600,7 +606,6 @@ class GenericElementPlot(DimensionedPlot):
                                                defaults=False)
             plot_opts.update(**{k: v[0] for k, v in inherited.items()})
 
-        dynamic = isinstance(element, DynamicMap) and not element.unbounded
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
@@ -995,10 +1000,6 @@ class GenericCompositePlot(DimensionedPlot):
 
         self.current_frame = layout_frame
         return layout_frame
-
-
-    def __len__(self):
-        return len(self.keys)
 
 
     def _format_title(self, key, dimensions=True, separator='\n'):
