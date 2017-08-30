@@ -531,11 +531,7 @@ class DimensionedPlot(Plot):
 
 
     def __len__(self):
-        values = [len(d.values) for d in self.dimensions]
-        if self.dynamic and all(values):
-            return np.prod(values)
-        else:
-            return len(self.keys)
+        return len(self.keys)
 
 
 
