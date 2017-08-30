@@ -639,7 +639,10 @@ class LabelledData(param.Parameterized):
             for k, v in self.items():
                 new_val = v.map(map_fn, specs, clone)
                 if new_val is not None:
-                    deep_mapped[k] = new_val
+                    try:
+                        deep_mapped[k] = new_val
+                    except KeyError:
+                        pass
             if applies: deep_mapped = map_fn(deep_mapped)
             return deep_mapped
         else:
