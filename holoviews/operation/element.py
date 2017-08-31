@@ -2,6 +2,7 @@
 Collection of either extremely generic or simple Operation
 examples.
 """
+from __future__ import division
 
 import numpy as np
 
@@ -483,8 +484,14 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.Boolean(default=True, doc="""
-      Whether the histogram frequencies are normalized.""")
+    normed = param.ObjectSelector(default=True, 
+                                  objects=[True, False, 'integral', 'height'],
+                                  doc="""
+      Controls normalization behavior.  If `True` or `'integral'`, then 
+      `density=True` is passed to np.histogram, and the distribution
+      is normalized such that the integral is unity.  If `False`, 
+      then the frequencies will be raw counts. If `'height'`, then the 
+      frequencies are normalized such that the max bin height is unity.""")
 
     nonzero = param.Boolean(default=False, doc="""
       Whether to use only nonzero values when computing the histogram""")
@@ -535,12 +542,21 @@ class histogram(Operation):
             edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
         try:
-            hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
+            if normed: 
+                # This covers True, 'height', 'integral'
+                hist, edges = np.histogram(data[np.isfinite(data)], density=True,
                                        range=hist_range, weights=weights, bins=edges)
-            if not normed and self.p.weight_dimension and self.p.mean_weighted:
-                hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
+                if normed=='height':
+                    hist /= hist.max()
+            else:
+                hist, edges = np.histogram(data[np.isfinite(data)], density=False,
+                                       range=hist_range, weights=weights, bins=edges)
+
+                if self.p.weight_dimension and self.p.mean_weighted:
+                    hist_mean, _ = np.histogram(data[np.isfinite(data)], density=False,
                                             range=hist_range, bins=self.p.num_bins)
-                hist /= hist_mean
+
+                    hist /= hist_mean
         except:
             hist = np.zeros(self.p.num_bins)
 
@@ -549,12 +565,16 @@ class histogram(Operation):
         params = {}
         if self.p.weight_dimension:
             params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
+        else:
+            params['vdims'] = [Dimension('{}_frequency'.format(selected_dim), 
+                                    label='{} Frequency'.format(selected_dim))]
+
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
+
         return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
                          label=view.label, **params)
-
 
 
 class decimate(Operation):
