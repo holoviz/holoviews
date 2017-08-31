@@ -254,19 +254,19 @@ def get_sideplot_ranges(plot, element, main, ranges):
     dictionary of ranges.
     """
     key = plot.current_key
-    dims = element.dimensions(label=True)
-    dim = dims[1] if dims[1] != 'Frequency' else dims[0]
+    dims = element.dimensions()
+    dim = dims[0] if 'frequency' in dims[1].name else dims[1]
     range_item = main
     if isinstance(main, HoloMap):
         if issubclass(main.type, CompositeOverlay):
             range_item = [hm for hm in main.split_overlays()[1]
-                          if dim in hm.dimensions('all', label=True)][0]
+                          if dim in hm.dimensions('all')][0]
     else:
         range_item = HoloMap({0: main}, kdims=['Frame'])
         ranges = match_spec(range_item.last, ranges)
 
-    if dim in ranges:
-        main_range = ranges[dim]
+    if dim.name in ranges:
+        main_range = ranges[dim.name]
     else:
         framewise = plot.lookup_options(range_item.last, 'norm').options.get('framewise')
         if framewise and range_item.get(key, False):
@@ -279,7 +279,7 @@ def get_sideplot_ranges(plot, element, main, ranges):
         range_item = range_item.last
     if isinstance(range_item, CompositeOverlay):
         range_item = [ov for ov in range_item
-                      if dim in ov.dimensions('all', label=True)][0]
+                      if dim in ov.dimensions('all')][0]
     return range_item, main_range, dim
 
 
