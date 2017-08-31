@@ -531,6 +531,9 @@ class DimensionedPlot(Plot):
 
 
     def __len__(self):
+        """
+        Returns the total number of available frames.
+        """
         return len(self.keys)
 
 
