@@ -257,17 +257,7 @@ ScrubberWidget.prototype.get_loop_state = function(){
 
 
 ScrubberWidget.prototype.next_frame = function() {
-	if (this.dynamic || !this.cached) {
-		if (this.wait) {
-			return
-		}
-		this.wait = true;
-	}
-	if (this.dynamic && this.current_frame + 1 >= this.length) {
-		this.length += 1;
-        document.getElementById(this.slider_id).max = this.length-1;
-	}
-    this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
+	this.set_frame(Math.min(this.length - 1, this.current_frame + 1));
 }
 
 ScrubberWidget.prototype.previous_frame = function() {
@@ -295,7 +285,7 @@ ScrubberWidget.prototype.faster = function() {
 }
 
 ScrubberWidget.prototype.anim_step_forward = function() {
-    if(this.current_frame < this.length || (this.dynamic && !this.stopped)){
+    if(this.current_frame < this.length - 1){
         this.next_frame();
     }else{
         var loop_state = this.get_loop_state();
@@ -312,9 +302,8 @@ ScrubberWidget.prototype.anim_step_forward = function() {
 }
 
 ScrubberWidget.prototype.anim_step_reverse = function() {
-    this.current_frame -= 1;
-    if(this.current_frame >= 0){
-        this.set_frame(this.current_frame);
+    if(this.current_frame > 0){
+        this.previous_frame();
     } else {
         var loop_state = this.get_loop_state();
         if(loop_state == "loop"){

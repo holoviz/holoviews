@@ -301,15 +301,16 @@ class Renderer(Exporter):
         if not isinstance(plot, Plot):
             plot = self_or_cls.get_plot(plot)
         dynamic = plot.dynamic
+        # Whether dimensions define discrete space
+        discrete = all(d.values for d in plot.dimensions)
         if widget_type == 'auto':
             isuniform = plot.uniform
             if not isuniform:
                 widget_type = 'scrubber'
             else:
                 widget_type = 'widgets'
-        elif dynamic: widget_type = 'widgets'
-        elif widget_type == 'scrubber' and dynamic:
-            raise ValueError('DynamicMap do not support scrubber widget')
+        elif dynamic and not discrete:
+            widget_type = 'widgets'
 
         if widget_type in [None, 'auto']:
             holomap_formats = self_or_cls.mode_formats['holomap'][self_or_cls.mode]

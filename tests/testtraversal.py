@@ -27,6 +27,27 @@ class TestUniqueDimKeys(ComparisonTestCase):
         with self.assertRaisesRegexp(Exception, exception):
             dims, keys = unique_dimkeys(hmap1+hmap2)
 
+    def test_unique_keys_dmap_complete_overlap(self):
+        hmap1 = DynamicMap(lambda x: Curve(range(10)), kdims=['x']).redim.values(x=[1, 2, 3])
+        hmap2 = DynamicMap(lambda x: Curve(range(10)), kdims=['x']).redim.values(x=[1, 2, 3])
+        dims, keys = unique_dimkeys(hmap1+hmap2)
+        self.assertEqual(hmap1.kdims, dims)
+        self.assertEqual(keys, [(i,) for i in range(1, 4)])
+
+    def test_unique_keys_dmap_partial_overlap(self):
+        hmap1 = DynamicMap(lambda x: Curve(range(10)), kdims=['x']).redim.values(x=[1, 2, 3])
+        hmap2 = DynamicMap(lambda x: Curve(range(10)), kdims=['x']).redim.values(x=[1, 2, 3, 4])
+        dims, keys = unique_dimkeys(hmap1+hmap2)
+        self.assertEqual(hmap2.kdims, dims)
+        self.assertEqual(keys, [(i,) for i in range(1, 5)])
+
+    def test_unique_keys_dmap_cartesian_product(self):
+        hmap1 = DynamicMap(lambda x, y: Curve(range(10)), kdims=['x', 'y']).redim.values(x=[1, 2, 3])
+        hmap2 = DynamicMap(lambda x, y: Curve(range(10)), kdims=['x', 'y']).redim.values(y=[1, 2, 3])
+        dims, keys = unique_dimkeys(hmap1+hmap2)
+        self.assertEqual(hmap1.kdims[:1]+hmap2.kdims[1:], dims)
+        self.assertEqual(keys, [(x, y) for x in range(1, 4) for y in range(1, 4)])
+
     def test_unique_keys_no_overlap_dynamicmap_uninitialized(self):
         dmap1 = DynamicMap(lambda A: Curve(range(10)), kdims=['A'])
         dmap2 = DynamicMap(lambda B: Curve(range(10)), kdims=['B'])

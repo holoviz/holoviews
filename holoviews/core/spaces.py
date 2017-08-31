@@ -518,6 +518,10 @@ class Callable(param.Parameterized):
 
         try:
             ret = self.callable(*args, **kwargs)
+        except KeyError:
+            # KeyError is caught separately because it is used to signal
+            # invalid keys on DynamicMap and should not warn
+            raise
         except:
             posstr = ', '.join(['%r' % el for el in self.args]) if self.args else ''
             kwstr = ', '.join('%s=%r' % (k,v) for k,v in self.kwargs.items())
@@ -1055,7 +1059,7 @@ class DynamicMap(HoloMap):
         if len(self) >= cache_size:
             first_key = next(k for k in self.data)
             self.data.pop(first_key)
-        self.data[key] = val
+        self[key] = val
 
 
     def map(self, map_fn, specs=None, clone=True):
