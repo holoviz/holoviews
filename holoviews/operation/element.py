@@ -804,10 +804,7 @@ class gridmatrix(param.ParameterizedFunction):
                         el = p.diagonal_type(values, kdims=[d1])
                 elif p.diagonal_operation is histogram or isinstance(p.diagonal_operation, histogram):
                     bin_range = ranges.get(d1.name, element.range(d1))
-                    opts = dict(axiswise=True, framewise=True)
-                    el = p.diagonal_operation(element,
-                                              dimension=d1.name,
-                                              bin_range=bin_range).opts(norm=opts)
+                    el = p.diagonal_operation(element, dimension=d1.name, bin_range=bin_range)
                 else:
                     el = p.diagonal_operation(element, dimension=d1.name)
             else:
