@@ -254,3 +254,10 @@ else:
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
+
+# Graphs
+options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
+                        edge_color='black', node_size=20)
+options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
+                        marker='o', s=20**2)
+options.Path = Options('style', color='black')

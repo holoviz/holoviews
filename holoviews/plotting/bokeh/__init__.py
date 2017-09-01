@@ -170,6 +170,14 @@ options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
 
+# Graphs
+options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
+                        edge_line_width=2, node_hover_fill_color='indianred',
+                        edge_hover_line_color='indianred', node_selection_fill_color='limegreen',
+                        edge_selection_line_color='limegreen')
+options.Nodes = Options('style', line_color='black', fill_color=Cycle(), size=20)
+options.NodePaths = Options('style', color='black')
+
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
                              xaxis=None, yaxis=None)
