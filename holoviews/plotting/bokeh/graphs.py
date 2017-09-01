@@ -1,3 +1,5 @@
+import param
+
 from bokeh.models import DataRange1d, Circle, MultiLine
 
 try:
@@ -12,6 +14,14 @@ from .util import mpl_to_bokeh
 
 
 class GraphPlot(CompositeElementPlot):
+
+    selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+        Determines policy for inspection of graph components, i.e. whether to highlight
+        nodes or edges when selecting connected edges and nodes respectively.""")
+
+    inspection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
+        Determines policy for inspection of graph components, i.e. whether to highlight
+        nodes or edges when hovering over connected edges and nodes respectively.""")
 
     # X-axis is categorical
     _x_range_type = DataRange1d
@@ -100,12 +110,22 @@ class GraphPlot(CompositeElementPlot):
             setattr(graph.edge_renderer, glyph_key, self.handles[edge_key])
         graph.node_renderer.data_source.data = self.handles['scatter_1_source'].data
         graph.edge_renderer.data_source.data = self.handles['multi_line_1_source'].data
-        graph.selection_policy = NodesAndLinkedEdges()
-        graph.inspection_policy = NodesAndLinkedEdges()
+        if self.selection_policy == 'nodes':
+            graph.selection_policy = NodesAndLinkedEdges()
+        elif self.selection_policy == 'edges':
+            graph.selection_policy = EdgesAndLinkedNodes()
+        else:
+            graph.selection_policy = None
+
+        if self.inspection_policy == 'nodes':
+            graph.inspection_policy = NodesAndLinkedEdges()
+        elif self.inspection_policy == 'edges':
+            graph.inspection_policy = EdgesAndLinkedNodes()
+        else:
+            graph.inspection_policy = None
         self.handles['renderer'] = graph
         self.handles['scatter_1_renderer'] = graph.node_renderer
         self.handles['multi_line_1_renderer'] = graph.edge_renderer
-
 
     def _init_glyph(self, plot, mapping, properties, key):
         """
