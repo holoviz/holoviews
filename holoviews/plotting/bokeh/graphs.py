@@ -8,9 +8,9 @@ try:
 except:
     pass
 
-from ...core.options import abbreviated_exception
+from ...core.options import abbreviated_exception, SkipRendering
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
-from .util import mpl_to_bokeh
+from .util import mpl_to_bokeh, bokeh_version
 
 
 class GraphPlot(CompositeElementPlot):
@@ -39,6 +39,11 @@ class GraphPlot(CompositeElementPlot):
 
     style_opts = (['edge_'+p for p in line_properties] +\
                   ['node_'+p for p in fill_properties+line_properties]+['node_size'])
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None):
+        if bokeh_version < '0.12.7':
+            raise SkipRendering('Graph rendering requires bokeh version >=0.12.7.')
+        super(GraphPlot, self).initialize_plot(ranges, plot, plots)
 
     def get_extents(self, element, ranges):
         """
