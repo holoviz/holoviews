@@ -53,9 +53,9 @@ class Graph(Dataset, Element2D):
         for start, end in self.array(self.kdims):
             start_ds = self.nodes.select(index=start)
             end_ds = self.nodes.select(index=end)
-            sx, sy = start_ds.array(start_ds.kdims).T
-            ex, ey = end_ds.array(end_ds.kdims).T
-            paths.append([(sx, sy), (ex, ey)])
+            sx, sy = start_ds.array(start_ds.kdims[:2]).T
+            ex, ey = end_ds.array(end_ds.kdims[:2]).T
+            paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
         return NodePaths(paths)
 
     @classmethod
