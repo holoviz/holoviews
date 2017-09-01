@@ -12,6 +12,7 @@ from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
 from .plot import * # noqa (API import)
 from .raster import * # noqa (API import)
@@ -145,6 +146,11 @@ Store.register({Curve: CurvePlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
+
+                # Graph Elements
+                Graph: GraphPlot,
+                Nodes: PointPlot,
+                NodePaths: PathPlot,
 
                 # Annotation plots
                 VLine: VLinePlot,
