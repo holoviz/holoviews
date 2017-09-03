@@ -45,6 +45,10 @@ class GraphPlot(CompositeElementPlot):
             raise SkipRendering('Graph rendering requires bokeh version >=0.12.7.')
         super(GraphPlot, self).initialize_plot(ranges, plot, plots)
 
+    def _hover_opts(self, element):
+        dims = element.nodes.dimensions()[3:]
+        return dims, {}
+
     def get_extents(self, element, ranges):
         """
         Extents are set to '' and None because x-axis is categorical and
@@ -64,15 +68,19 @@ class GraphPlot(CompositeElementPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         point_data = {'index': element.nodes.dimension_values(2).astype(int)}
-        point_mapping = {'index': 'index'}
+        for d in element.nodes.dimensions()[2:]:
+            point_data[d.name] = element.nodes.dimension_values(d)
 
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         xs, ys = (element.dimension_values(i) for i in range(2))
         path_data = dict(start=xs, end=ys)
-        path_mapping = dict(start='start', end='end')
+        if element._nodepaths:
+            edges = element.nodepaths
+            path_data['xs'] = [path[:, xidx] for path in edges.data]
+            path_data['ys'] = [path[:, yidx] for path in edges.data]
 
         data = {'scatter_1': point_data, 'multi_line_1': path_data}
-        mapping = {'scatter_1': point_mapping, 'multi_line_1': path_mapping}
+        mapping = {'scatter_1': {}, 'multi_line_1': {}}
         return data, mapping
 
     def _init_glyphs(self, plot, element, ranges, source):
