@@ -233,6 +233,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tooltips, hover_opts = self._hover_opts(element)
         tooltips = [(ttp.pprint_label, '@{%s}' % util.dimension_sanitizer(ttp.name))
                     if isinstance(ttp, Dimension) else ttp for ttp in tooltips]
+        if not tooltips: tooltips = None
 
         callbacks = callbacks+self.callbacks
         cb_tools, tool_names = [], []
@@ -1353,10 +1354,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     else:
                         tool_type = type(tool)
                     if isinstance(tool, HoverTool):
-                        if tuple(tool.tooltips) in hover_tools:
+                        tooltips = tuple(tool.tooltips) if tool.tooltips else ()
+                        if tooltips in hover_tools:
                             continue
                         else:
-                            hover_tools[tuple(tool.tooltips)] = tool
+                            hover_tools[tooltips] = tool
                     elif tool_type in tool_types:
                         continue
                     else:
@@ -1376,9 +1378,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             hover = subplot.handles['hover']
             # Datetime formatter may have been applied, remove _dt_strings
             # to match on the hover tooltips, then merge tool renderers
-            tooltips = [(name, spec.replace('_dt_strings', ''))
-                        for name, spec in hover.tooltips]
-            tool = self.handles['hover_tools'].get(tuple(tooltips))
+            if hover.tooltips:
+                tooltips = tuple((name, spec.replace('_dt_strings', ''))
+                                  for name, spec in hover.tooltips)
+            else:
+                tooltips = ()
+            tool = self.handles['hover_tools'].get(tooltips)
             if tool:
                 renderers = tool.renderers+hover.renderers
                 tool.renderers = list(util.unique_iterator(renderers))
