@@ -7,6 +7,8 @@ from ...core import Dataset
 from ...element import ItemTable
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
+from .util import bokeh_version
+
 
 class TablePlot(BokehPlot, GenericElementPlot):
 
@@ -71,6 +73,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
         dims = element.dimensions()
         columns = [TableColumn(field=d.name, title=d.pprint_label) for d in dims]
         properties = self.lookup_options(element, 'style')[self.cyclic_index]
+        if bokeh_version > '0.12.7':
+            properties['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **properties)
         self.handles['plot'] = table
