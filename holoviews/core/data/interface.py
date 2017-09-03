@@ -1,7 +1,7 @@
 import param
 import numpy as np
 
-from ..element import Element, NdElement
+from ..element import Element
 from ..ndmapping import OrderedDict
 from .. import util
 
@@ -129,9 +129,7 @@ class Interface(param.Parameterized):
             datatype = eltype.datatype
 
         # Process Element data
-        if isinstance(data, NdElement):
-            kdims = [kdim for kdim in kdims if kdim != 'Index']
-        elif (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
+        if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
             if data.interface.datatype in datatype:
                 data = data.data
             elif data.interface.gridded:

@@ -7,7 +7,7 @@ from nose.plugins.attrib import attr
 from itertools import product
 
 import numpy as np
-from holoviews import Dataset, NdElement, HoloMap, Dimension, Image
+from holoviews import Dataset, HoloMap, Dimension, Image
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -78,12 +78,6 @@ class HomogeneousColumnTypes(object):
         "Tests support for arrays (homogeneous)"
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
-
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.xs_2),
-                                    kdims=['x'], vdims=['x2']))
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dataframe_init_hm(self):
@@ -361,11 +355,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     # Test the constructor to be supported by all interfaces supporting
     # heterogeneous column types.
-
-    def test_dataset_ndelement_init_ht(self):
-        "Tests support for heterogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.ys), kdims=['x'], vdims=['y']))
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
@@ -824,52 +813,6 @@ class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
 
 
 
-class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
-    """
-    Test of the NdDataset interface (mostly for backwards compatibility)
-    """
-
-    def setUp(self):
-        self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['ndelement']
-        self.data_instance_type = NdElement
-        self.init_column_data()
-
-    def test_dataset_sort_hm(self):
-        """
-        Sorting broken in this case for some reason, since deprecated
-        this is not worth fixing
-        """
-        raise SkipTest("Not supported")
-
-    # Literal formats that have been previously been supported but
-    # currently are only supported via NdElement.
-
-    def test_dataset_empty_list_init(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
-
-    def test_dataset_double_zip_init(self):
-        dataset = Dataset(zip(zip(self.gender, self.age),
-                              zip(self.weight, self.height)),
-                          kdims=self.kdims, vdims=self.vdims)
-        self.assertTrue(isinstance(dataset.data, NdElement))
-
-    def test_dataset_empty_aggregate(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
-
-    def test_dataset_empty_aggregate_with_spreadfn(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
-
-
 class GridTests(object):
     """
     Test of the Grid array interface
@@ -1083,14 +1026,6 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         with self.assertRaisesRegexp(Exception, exception):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
-
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
-            Dataset(NdElement(zip(self.xs, self.xs_2),
-                              kdims=['x'], vdims=['x2']))
 
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
