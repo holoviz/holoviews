@@ -122,6 +122,13 @@ class HomogeneousColumnTypes(object):
                             kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(ds.sort(), ds_sorted)
 
+    def test_dataset_sort_reverse_hm(self):
+        ds = Dataset(([2, 1, 2, 1], [2, 2, 1, 1], [0.1, 0.2, 0.3, 0.4]),
+                     kdims=['x', 'y'], vdims=['z'])
+        ds_sorted = Dataset(([2, 2, 1, 1], [2, 1, 2, 1], [0.1, 0.3, 0.2, 0.4]),
+                            kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(ds.sort(reverse=True), ds_sorted)
+
     def test_dataset_sort_vdim_hm(self):
         xs_2 = np.array(self.xs_2)
         dataset = Dataset(np.column_stack([self.xs, -xs_2]),
@@ -129,6 +136,14 @@ class HomogeneousColumnTypes(object):
         dataset_sorted = Dataset(np.column_stack([self.xs[::-1], -xs_2[::-1]]),
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.sort('y'), dataset_sorted)
+
+    def test_dataset_sort_reverse_vdim_hm(self):
+        xs_2 = np.array(self.xs_2)
+        dataset = Dataset(np.column_stack([self.xs, -xs_2]),
+                          kdims=['x'], vdims=['y'])
+        dataset_sorted = Dataset(np.column_stack([self.xs, -xs_2]),
+                                 kdims=['x'], vdims=['y'])
+        self.assertEqual(dataset.sort('y', reverse=True), dataset_sorted)
 
     def test_dataset_sort_vdim_hm_alias(self):
         xs_2 = np.array(self.xs_2)
@@ -782,6 +797,9 @@ class DaskDatasetTest(DFDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_ht(self):
         raise SkipTest("Not supported")
 
@@ -1030,11 +1048,20 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
                      'in the desired order or use the expanded format.')
         with self.assertRaisesRegexp(Exception, exception):
             self.dataset_hm.sort('y')
+
+    def test_dataset_sort_reverse_vdim_hm(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.dataset_hm.sort('y', reverse=True)
 
     def test_dataset_sort_vdim_hm_alias(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
@@ -1194,7 +1221,13 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_vdim_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
@@ -1271,10 +1304,16 @@ class XArrayDatasetTest(GridDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm_alias(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_vdim_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):
