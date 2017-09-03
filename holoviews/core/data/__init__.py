@@ -14,9 +14,8 @@ from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
 from .image import ImageInterface             # noqa (API import)
-from .ndelement import NdElementInterface
 
-datatypes = ['array', 'dictionary', 'grid', 'ndelement']
+datatypes = ['array', 'dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
@@ -190,25 +189,6 @@ class Dataset(Element):
         self.interface.validate(self)
 
         self.redim = redim(self, mode='dataset')
-
-
-    def __setstate__(self, state):
-        """
-        Restores OrderedDict based Dataset objects, converting them to
-        the up-to-date NdElement format.
-        """
-        self.__dict__ = state
-        if isinstance(self.data, OrderedDict):
-            self.data = Dataset(self.data, kdims=self.kdims,
-                                vdims=self.vdims, group=self.group,
-                                label=self.label)
-            self.interface = NdColumns
-        elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayInterface
-        elif util.is_dataframe(self.data):
-            self.interface = PandasInterface
-
-        super(Dataset, self).__setstate__(state)
 
 
     def closest(self, coords=[], **kwargs):
@@ -686,5 +666,4 @@ class Dataset(Element):
 Columns      = Dataset
 ArrayColumns = ArrayInterface
 DictColumns  = DictInterface
-NdColumns    = NdElementInterface
 GridColumns  = GridInterface
