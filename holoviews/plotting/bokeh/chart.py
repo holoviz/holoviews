@@ -799,9 +799,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
             xs = ds.dimension_values(xdim)
             ys = ds.dimension_values(ydim)
             k = k[0] if isinstance(k, tuple) else k
-            gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
-            if bokeh_version < '0.12.7':
-                gval = gval.replace(':', ';')
+            if group_dim:
+                gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
+                if bokeh_version < '0.12.7':
+                    gval = gval.replace(':', ';')
 
             # Apply stacking or grouping
             if grouping == 'stacked':
