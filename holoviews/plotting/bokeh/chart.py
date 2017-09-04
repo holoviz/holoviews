@@ -681,8 +681,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
         element = self.current_frame
         if self.batched:
             element = element.last
-        return (dim_axis_label(element.kdims[0]),
-                dim_axis_label(element.vdims[0]), None)
+        xlabel = dim_axis_label(element.kdims[0])
+        gdim = element.get_dimension(self.group_index)
+        if bokeh_version >= '0.12.7' and gdim:
+            xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
+        return (xlabel, dim_axis_label(element.vdims[0]), None)
 
     def get_group(self, xvals, nshift, ngroups, width, xdim):
         """
