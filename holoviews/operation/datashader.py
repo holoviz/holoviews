@@ -445,7 +445,13 @@ class shade(Operation):
     """
 
     cmap = param.ClassSelector(default=fire, class_=(Iterable, Callable, dict), doc="""
-        Iterable or callable which returns colors as hex colors.
+        Iterable or callable which returns colors as hex colors, to
+        be used for the colormap of single-layer datashader output. 
+        Callable type must allow mapping colors between 0 and 1.""")
+
+    color_key = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
+        Iterable or callable which returns colors as hex colors, to
+        be used for the color key of categorical datashader output.
         Callable type must allow mapping colors between 0 and 1.""")
 
     normalization = param.ClassSelector(default='eq_hist',
@@ -519,15 +525,15 @@ class shade(Operation):
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
-            if not self.p.cmap:
+            if not self.p.color_key:
                 pass
-            elif isinstance(self.p.cmap, dict):
-                shade_opts['color_key'] = self.p.cmap
-            elif isinstance(self.p.cmap, Iterable):
+            elif isinstance(self.p.color_key, dict):
+                shade_opts['color_key'] = self.p.color_key
+            elif isinstance(self.p.color_key, Iterable):
                 shade_opts['color_key'] = [c for i, c in
-                                           zip(range(categories), self.p.cmap)]
+                                           zip(range(categories), self.p.color_key)]
             else:
-                colors = [self.p.cmap(s) for s in np.linspace(0, 1, categories)]
+                colors = [self.p.color_key(s) for s in np.linspace(0, 1, categories)]
                 shade_opts['color_key'] = map(self.rgb2hex, colors)
         elif not self.p.cmap:
             pass
