@@ -655,6 +655,24 @@ class BarPlot(ColorbarPlot, LegendPlot):
         x1 = xdim.pprint_value(extents[2])
         return (x0, y0, x1, y1)
 
+
+    def _get_factors(self, element):
+        """
+        Get factors for categorical axes.
+        """
+        xdim, ydim = element.dimensions()[:2]
+        gdim = element.get_dimension(self.group_index)
+        xvals = element.dimension_values(0, False)
+        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals]
+        if bokeh_version >= '0.12.7' and gdim:
+            gvals = element.dimension_values(gdim, False)
+            gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
+            coords = ([(x, g) for x in xvals for g in gvals], [])
+        else:
+            coords = ([x.replace(':', ';') for x in xvals], [])
+        if self.invert_axes: coords = coords[::-1]
+        return coords
+
     def _get_axis_labels(self, *args, **kwargs):
         """
         Override axis mapping by setting the first key and value
@@ -672,6 +690,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         x-axis overlapping. Currently bokeh uses a suffix
         of the format ':%f' with a floating value to set up
         offsets within a single category.
+
+        Needed for bokeh version <0.12.7
         """
         adjusted_xvals = []
         gwidth = float(width)/ngroups
@@ -742,7 +762,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             mapping = {'x': xdim.name, 'top': 'top',
                        'bottom': 'bottom', 'width': width}
         elif grouping == 'grouped':
-            if len(grouped):
+            if len(grouped) and bokeh_version < '0.12.7':
                 gwidth = width / float(len(grouped))
             else:
                 gwidth = width
@@ -775,6 +795,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         for i, (k, ds) in enumerate(grouped.items()):
             xs = ds.dimension_values(xdim)
             ys = ds.dimension_values(ydim)
+            k = k[0] if isinstance(k, tuple) else k
+            gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
+            if bokeh_version < '0.12.7':
+                gval = gval.replace(':', ';')
 
             # Apply stacking or grouping
             if grouping == 'stacked':
@@ -784,7 +808,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 data[xdim.name].append(xs)
                 if hover: data[ydim.name].append(ys)
             elif grouping == 'grouped':
-                xoffsets = self.get_group(xs, i, len(grouped), width, xdim)
+                if bokeh_version >= '0.12.7':
+                    xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
+                                for x in xs]
+                else:
+                    xoffsets = self.get_group(xs, i, len(grouped), width, xdim)
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
@@ -794,8 +822,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
             # Add group dimension to data
             if group_dim and group_dim not in ds.dimensions():
-                k = k[0] if isinstance(k, tuple) else k
-                gval = group_dim.pprint_value(k).replace(':', ';')
                 ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
 
             # Get colormapper
