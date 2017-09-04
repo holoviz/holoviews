@@ -951,9 +951,13 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if not element.kdims:
             return [element.label], []
         else:
-            factors = [', '.join([d.pprint_value(v).replace(':', ';')
-                                  for d, v in zip(element.kdims, key)])
-                       for key in element.groupby(element.kdims).data.keys()]
+            if bokeh_version < '0.12.7':
+                factors = [', '.join([d.pprint_value(v).replace(':', ';')
+                                      for d, v in zip(element.kdims, key)])
+                           for key in element.groupby(element.kdims).data.keys()]
+            else:
+                factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
+                           for key in element.groupby(element.kdims).data.keys()]
             if self.invert_axes:
                 return [], factors
             else:
@@ -998,8 +1002,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
-                label = ', '.join([d.pprint_value(v).replace(':', ';')
-                                   for d, v in zip(element.kdims, key)])
+                if bokeh_version < '0.12.7':
+                    label = ', '.join([d.pprint_value(v).replace(':', ';')
+                                       for d, v in zip(element.kdims, key)])
+                else:
+                    label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
             else:
                 label = key
 
