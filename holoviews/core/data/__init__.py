@@ -218,14 +218,14 @@ class Dataset(Element):
         return [xs[idx] for idx in idxs]
 
 
-    def sort(self, by=[]):
+    def sort(self, by=[], reverse=False):
         """
         Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
         if not isinstance(by, list): by = [by]
 
-        sorted_columns = self.interface.sort(self, by)
+        sorted_columns = self.interface.sort(self, by, reverse)
         return self.clone(sorted_columns)
 
 

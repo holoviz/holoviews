@@ -177,14 +177,14 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def sort(cls, columns, by=[]):
+    def sort(cls, columns, by=[], reverse=False):
         import pandas as pd
         cols = [columns.get_dimension(d, strict=True).name for d in by]
 
         if (not isinstance(columns.data, pd.DataFrame) or
             LooseVersion(pd.__version__) < '0.17.0'):
-            return columns.data.sort(columns=cols)
-        return columns.data.sort_values(by=cols)
+            return columns.data.sort(columns=cols, ascending=not reverse)
+        return columns.data.sort_values(by=cols, ascending=not reverse)
 
 
     @classmethod

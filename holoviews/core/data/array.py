@@ -98,7 +98,7 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[]):
+    def sort(cls, dataset, by=[], reverse=False):
         data = dataset.data
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
@@ -107,7 +107,8 @@ class ArrayInterface(Interface):
             sort_fields = tuple(dataset.get_dimension(d).name for d in by)
             sorting = dataset.data.view(dtypes, np.recarray).T
             sorting = sorting.argsort(order=sort_fields)[0]
-        return data[sorting]
+        sorted_data = data[sorting]
+        return sorted_data[::-1] if reverse else sorted_data
 
 
     @classmethod

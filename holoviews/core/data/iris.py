@@ -259,7 +259,7 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def sort(cls, columns, by=[]):
+    def sort(cls, columns, by=[], reverse=False):
         """
         Cubes are assumed to be sorted by default.
         """

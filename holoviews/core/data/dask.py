@@ -63,7 +63,7 @@ class DaskInterface(PandasInterface):
             return dd.compute(column.min(), column.max())
 
     @classmethod
-    def sort(cls, columns, by=[]):
+    def sort(cls, columns, by=[], reverse=False):
         columns.warning('Dask dataframes do not support sorting')
         return columns.data
 

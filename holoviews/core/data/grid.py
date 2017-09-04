@@ -429,7 +429,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[]):
+    def sort(cls, dataset, by=[], reverse=False):
         if not by or by in [dataset.kdims, dataset.dimensions()]:
             return dataset.data
         else:
