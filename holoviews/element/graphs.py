@@ -1,8 +1,24 @@
 import param
 
 from ..core import Dimension, Dataset, Element2D
+from ..core.dimension import redim
 from .chart import Points
 from .path import Path
+
+class graph_redim(redim):
+    """
+    Extension for the redim utility that allows re-dimensioning
+    Graph objects including their nodes and nodepaths.
+    """
+
+    def __call__(self, specs=None, **dimensions):
+        redimmed = super(graph_redim, self).__call__(specs, **dimensions)
+        new_data = (redimmed.data,)
+        if self.parent.nodes:
+            new_data = new_data + (self.parent.nodes.redim(specs, **dimensions),)
+        if self.parent._nodepaths:
+            new_data = new_data + (self.parent.nodepaths.redim(specs, **dimensions),)
+        return redimmed.clone(new_data)
 
 
 class Graph(Dataset, Element2D):
@@ -38,6 +54,7 @@ class Graph(Dataset, Element2D):
         self.nodes = nodes
         self._nodepaths = nodepaths
         super(Graph, self).__init__(edges, **params)
+        self.redim = graph_redim(self)
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if data is None:
