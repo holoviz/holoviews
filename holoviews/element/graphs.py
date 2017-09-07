@@ -87,14 +87,19 @@ class Graph(Dataset, Element2D):
         return NodePaths(paths)
 
     @classmethod
-    def from_networkx(cls, G, layout_function, **kwargs):
+    def from_networkx(cls, G, layout_function, nodes=None, **kwargs):
         """
         Generate a HoloViews Graph from a networkx.Graph object and
         networkx layout function. Any keyword arguments will be passed
         to the layout function.
         """
         positions = layout_function(G, **kwargs)
-        nodes = Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+        if nodes:
+            xs, ys = zip(*[v for k, v in sorted(positions.items())])
+            nodes = nodes.add_dimension('x', 0, xs)
+            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=Nodes)
+        else:
+            nodes = Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
         return cls((G.edges(), nodes))
 
 
