@@ -9,11 +9,17 @@ except:
     pass
 
 from ...core.options import abbreviated_exception, SkipRendering
+from ...core.util import basestring
+from .chart import ColorbarPlot
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
 from .util import mpl_to_bokeh, bokeh_version
 
 
-class GraphPlot(CompositeElementPlot):
+class GraphPlot(CompositeElementPlot, ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
 
     selection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
@@ -38,7 +44,7 @@ class GraphPlot(CompositeElementPlot):
                        ['color_mapper', 'colorbar'])
 
     style_opts = (['edge_'+p for p in line_properties] +\
-                  ['node_'+p for p in fill_properties+line_properties]+['node_size'])
+                  ['node_'+p for p in fill_properties+line_properties]+['node_size', 'cmap'])
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         if bokeh_version < '0.12.7':
@@ -67,9 +73,14 @@ class GraphPlot(CompositeElementPlot):
         return xlabel, ylabel, None
 
     def get_data(self, element, ranges=None, empty=False):
+        style = self.style[self.cyclic_index]
         point_data = {'index': element.nodes.dimension_values(2).astype(int)}
         for d in element.nodes.dimensions()[2:]:
             point_data[d.name] = element.nodes.dimension_values(d)
+
+        cdata, cmapping = self._get_color_data(element.nodes, ranges, style, 'fill_color')
+        point_data.update(cdata)
+        point_mapping = cmapping
 
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         xs, ys = (element.dimension_values(i) for i in range(2))
@@ -80,7 +91,7 @@ class GraphPlot(CompositeElementPlot):
             path_data['ys'] = [path[:, yidx] for path in edges.data]
 
         data = {'scatter_1': point_data, 'multi_line_1': path_data}
-        mapping = {'scatter_1': {}, 'multi_line_1': {}}
+        mapping = {'scatter_1': point_mapping, 'multi_line_1': {}}
         return data, mapping
 
     def _init_glyphs(self, plot, element, ranges, source):
@@ -97,9 +108,10 @@ class GraphPlot(CompositeElementPlot):
                 glyph_key = prefix+'_'+key if prefix else key
                 other_prefixes = [p for p in property_prefixes if p != prefix]
                 gprops = {p[len(prefix)+1:] if prefix and prefix in p else p: v for p, v in properties.items()
-                          if not any(pre in p for pre in other_prefixes)}
+                          if prefix in p and not any(pre in p for pre in other_prefixes)}
+                map_key = None if prefix else key
                 with abbreviated_exception():
-                    renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), gprops, key)
+                    renderer, glyph = self._init_glyph(plot, mapping.get(map_key, {}), gprops, key)
                 self.handles[glyph_key+'_glyph'] = glyph
 
         # Define static layout
@@ -136,6 +148,7 @@ class GraphPlot(CompositeElementPlot):
             graph.inspection_policy = EdgesAndLinkedNodes()
         else:
             graph.inspection_policy = None
+
         self.handles['renderer'] = graph
         self.handles['scatter_1_renderer'] = graph.node_renderer
         self.handles['multi_line_1_renderer'] = graph.edge_renderer
@@ -145,7 +158,8 @@ class GraphPlot(CompositeElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
+        mapping.pop('legend', None)
         plot_method = '_'.join(key.split('_')[:-1])
         glyph = MultiLine if plot_method == 'multi_line' else Circle
-        glyph = glyph(**properties)
+        glyph = glyph(**dict(properties, **mapping))
         return None, glyph
