@@ -156,7 +156,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
-              
+
             # Apply title
             title = self._format_title(key)
             if self.show_title and title is not None:
