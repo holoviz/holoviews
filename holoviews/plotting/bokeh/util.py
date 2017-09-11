@@ -31,6 +31,9 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
+if bokeh_version > '0.12.7':
+    from bokeh.document.util import _event_for_attribute_change
+
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array, callable_name, pd, dt64_to_dt
@@ -382,9 +385,12 @@ def compute_static_patch(document, models):
         else:
             priority = float('inf')
         for key, val in obj['attributes'].items():
-            event = Document._event_for_attribute_change(references,
-                                                         obj, key, val,
-                                                         value_refs)
+            if bokeh_version > '0.12.7':
+                event = _event_for_attribute_change(references, obj, key, val, value_refs)
+            else:
+                event = Document._event_for_attribute_change(references,
+                                                             obj, key, val,
+                                                             value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
     events = [delete_refs(e, IGNORED_MODELS, ignored_attributes=IGNORED_ATTRIBUTES)
