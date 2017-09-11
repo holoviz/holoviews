@@ -959,6 +959,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             else:
                 factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
                            for key in element.groupby(element.kdims).data.keys()]
+                factors = [f[0] if len(f) == 1 else f for f in factors]
             if self.invert_axes:
                 return [], factors
             else:
@@ -1008,6 +1009,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                                        for d, v in zip(element.kdims, key)])
                 else:
                     label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
+                    if len(label) == 1:
+                        label = label[0]
             else:
                 label = key
 
