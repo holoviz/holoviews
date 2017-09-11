@@ -1,6 +1,6 @@
 import param
 
-from bokeh.models import DataRange1d, Circle, MultiLine
+from bokeh.models import Range1d, Circle, MultiLine
 
 try:
     from bokeh.models import (StaticLayoutProvider, GraphRenderer, NodesAndLinkedEdges,
@@ -30,10 +30,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         nodes or edges when hovering over connected edges and nodes respectively.""")
 
     # X-axis is categorical
-    _x_range_type = DataRange1d
+    _x_range_type = Range1d
 
     # Declare that y-range should auto-range if not bounded
-    _y_range_type = DataRange1d
+    _y_range_type = Range1d
 
         # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge'}

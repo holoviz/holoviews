@@ -67,6 +67,7 @@ class Graph(Dataset, Element2D):
                 data = data + (self.nodepaths,)
         return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
 
+
     @property
     def nodepaths(self):
         """
