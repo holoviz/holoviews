@@ -174,7 +174,8 @@ options.Arrow = Options('style', arrow_size=10)
 options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
                         edge_line_width=2, node_hover_fill_color='indianred',
                         edge_hover_line_color='indianred', node_selection_fill_color='limegreen',
-                        edge_selection_line_color='limegreen')
+                        edge_selection_line_color='limegreen', edge_line_color='black',
+                        node_line_color='black')
 options.Nodes = Options('style', line_color='black', fill_color=Cycle(), size=20)
 options.NodePaths = Options('style', color='black')
 
