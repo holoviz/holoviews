@@ -614,7 +614,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
+        coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
                   for dim, vals in [(xdim, xvals), (ydim, yvals)])
         if bokeh_version < '0.12.7':
             coords = tuple([v.replace(':', ';') for v in vals] for vals in coords)
