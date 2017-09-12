@@ -9,6 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
+from ..util import dimension_range
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -238,25 +239,13 @@ class Dataset(Element):
         dim = self.get_dimension(dim)
         if dim is None:
             return (None, None)
-        elif None not in dim.range:
+        elif all(v is not None and np.isfinite(v) for v in dim.range):
             return dim.range
-        elif dim in self.dimensions() and data_range:
-            if len(self):
-                drange = self.interface.range(self, dim)
-            else:
-                drange = (np.NaN, np.NaN)
-            soft_range = [r for r in dim.soft_range if r is not None]
-            if soft_range:
-                drange = util.max_range([drange, soft_range])
+        elif dim in self.dimensions() and data_range and len(self):
+            lower, upper = self.interface.range(self, dim)
         else:
-            drange = dim.soft_range
-        if dim.range[0] is not None:
-            return (dim.range[0], drange[1])
-        elif dim.range[1] is not None:
-            return (drange[0], dim.range[1])
-        else:
-            return drange
-
+            lower, upper = (np.NaN, np.NaN)
+        return dimension_range(lower, upper, dim)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):

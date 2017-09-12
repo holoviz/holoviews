@@ -710,6 +710,18 @@ def max_range(ranges):
         return (np.NaN, np.NaN)
 
 
+def dimension_range(lower, upper, dimension):
+    """
+    Computes the range along a dimension by combining the data range
+    with the Dimension soft_range and range.
+    """
+    lower, upper = max_range([(lower, upper), dimension.soft_range])
+    dmin, dmax = dimension.range
+    lower = lower if dmin is None or not np.isfinite(dmin) else dmin
+    upper = upper if dmax is None or not np.isfinite(dmax) else dmax
+    return lower, upper
+
+
 def max_extents(extents, zrange=False):
     """
     Computes the maximal extent in 2D and 3D space from

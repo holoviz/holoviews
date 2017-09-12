@@ -15,7 +15,7 @@ from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins, config)
+                         builtins, config, dimension_range)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -1053,29 +1053,21 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
-        if None not in dimension.range:
+        elif all(v is not None and np.isfinite(v) for v in dimension.range):
             return dimension.range
         elif data_range:
             if dimension in self.kdims+self.vdims:
                 dim_vals = self.dimension_values(dimension.name)
-                drange = find_range(dim_vals)
+                lower, upper = find_range(dim_vals)
             else:
                 dname = dimension.name
                 match_fn = lambda x: dname in x.kdims + x.vdims
                 range_fn = lambda x: x.range(dname)
                 ranges = self.traverse(range_fn, [match_fn])
-                drange = max_range(ranges)
-            soft_range = [r for r in dimension.soft_range if r is not None]
-            if soft_range:
-                drange = max_range([drange, soft_range])
+                lower, upper = max_range(ranges)
         else:
-            drange = dimension.soft_range
-        if dimension.range[0] is not None:
-            return (dimension.range[0], drange[1])
-        elif dimension.range[1] is not None:
-            return (drange[0], dimension.range[1])
-        else:
-            return drange
+            lower, upper = (np.NaN, np.NaN)
+        return dimension_range(lower, upper, dimension)
 
 
     def __repr__(self):

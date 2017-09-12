@@ -88,23 +88,19 @@ class ErrorBars(Chart):
 
 
     def range(self, dim, data_range=True):
-        drange = super(ErrorBars, self).range(dim, data_range)
         didx = self.get_dimension_index(dim)
         dim = self.get_dimension(dim)
-        if didx == 1 and data_range:
+        if didx == 1 and data_range and len(self):
             mean = self.dimension_values(1)
             neg_error = self.dimension_values(2)
-            pos_idx = 3 if len(self.dimensions()) > 3 else 2
-            pos_error = self.dimension_values(pos_idx)
+            if len(self.dimensions()) > 3:
+                pos_error = self.dimension_values(3)
+            else:
+                pos_error = neg_error
             lower = np.nanmin(mean-neg_error)
             upper = np.nanmax(mean+pos_error)
-            lower, upper = util.max_range([(lower, upper), drange])
-            dmin, dmax = dim.range
-            lower = lower if dmin is None or not np.isfinite(dmin) else dmin
-            upper = upper if dmax is None or not np.isfinite(dmax) else dmax
-            return lower, upper
-        else:
-            return drange
+            return util.dimension_range(lower, upper, dim)
+        return super(ErrorBars, self).range(dim, data_range)
 
 
 
@@ -248,11 +244,7 @@ class Histogram(Element2D):
         if self.get_dimension_index(dimension) == 0 and data_range:
             dim = self.get_dimension(dimension)
             lower, upper = np.min(self.edges), np.max(self.edges)
-            lower, upper = util.max_range([(lower, upper), dim.soft_range])
-            dmin, dmax = dim.range
-            lower = lower if dmin is None or not np.isfinite(dmin) else dmin
-            upper = upper if dmax is None or not np.isfinite(dmax) else dmax
-            return lower, upper
+            return util.dimension_range(lower, upper, dim)
         else:
             return super(Histogram, self).range(dimension, data_range)
 
