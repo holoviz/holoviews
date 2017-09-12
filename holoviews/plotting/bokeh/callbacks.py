@@ -544,7 +544,14 @@ class PointerXCallback(PointerXYCallback):
     """
 
     attributes = {'x': 'cb_obj.x'}
-
+    extra_models= ['x_range']
+    code = """
+           if (x_range.type.endsWith('Range1d')) {
+             if (cb_obj.x < x_range.start) {
+               data['x'] = x_range.start }
+             else if (cb_obj.x > x_range.end) {
+               data['x'] = x_range.end }}
+           """
 
 class PointerYCallback(PointerXYCallback):
     """
@@ -552,7 +559,14 @@ class PointerYCallback(PointerXYCallback):
     """
 
     attributes = {'y': 'cb_obj.y'}
-
+    extra_models= ['y_range']
+    code = """
+           if (y_range.type.endsWith('Range1d')) {
+             if (cb_obj.y < y_range.start) {
+               data['y'] = y_range.start }
+             else if (cb_obj.y > y_range.end) {
+               data['y'] = y_range.end }}
+           """
 
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
