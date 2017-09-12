@@ -19,7 +19,7 @@ from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars, Text,
-                               BoxWhisker, HLine)
+                               BoxWhisker, HLine, RGB)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream, PointerXY, PointerX
 from holoviews.operation import gridmatrix
@@ -1498,6 +1498,58 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         curve = Curve(range(10), vdims=[Dimension('y', value_format=formatter)])
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
+
+    def test_image_invert_xaxis(self):
+        arr = np.random.rand(10, 10)
+        img = Image(arr).opts(plot=dict(invert_xaxis=True))
+        plot = bokeh_renderer.get_plot(img)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.start, 0.5)
+        self.assertEqual(x_range.end, -0.5)
+        cdata = plot.handles['source'].data
+        self.assertEqual(cdata['x'], [0.5])
+        self.assertEqual(cdata['y'], [-0.5])
+        self.assertEqual(cdata['dh'], [1.0])
+        self.assertEqual(cdata['dw'], [-1.0])
+        self.assertEqual(cdata['image'][0], arr[::-1, ::-1])
+
+    def test_image_invert_yaxis(self):
+        arr = np.random.rand(10, 10)
+        img = Image(arr).opts(plot=dict(invert_yaxis=True))
+        plot = bokeh_renderer.get_plot(img)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0.5)
+        self.assertEqual(y_range.end, -0.5)
+        cdata = plot.handles['source'].data
+        self.assertEqual(cdata['x'], [-0.5])
+        self.assertEqual(cdata['y'], [0.5])
+        self.assertEqual(cdata['dh'], [-1.0])
+        self.assertEqual(cdata['dw'], [1.0])
+        self.assertEqual(cdata['image'][0], arr)
+
+    def test_rgb_invert_xaxis(self):
+        rgb = RGB(np.random.rand(10, 10, 3)).opts(plot=dict(invert_xaxis=True))
+        plot = bokeh_renderer.get_plot(rgb)
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.start, 0.5)
+        self.assertEqual(x_range.end, -0.5)
+        cdata = plot.handles['source'].data
+        self.assertEqual(cdata['x'], [0.5])
+        self.assertEqual(cdata['y'], [-0.5])
+        self.assertEqual(cdata['dh'], [1.0])
+        self.assertEqual(cdata['dw'], [-1.0])
+
+    def test_rgb_invert_yaxis(self):
+        rgb = RGB(np.random.rand(10, 10, 3)).opts(plot=dict(invert_yaxis=True))
+        plot = bokeh_renderer.get_plot(rgb)
+        y_range = plot.handles['y_range']
+        self.assertEqual(y_range.start, 0.5)
+        self.assertEqual(y_range.end, -0.5)
+        cdata = plot.handles['source'].data
+        self.assertEqual(cdata['x'], [-0.5])
+        self.assertEqual(cdata['y'], [0.5])
+        self.assertEqual(cdata['dh'], [-1.0])
+        self.assertEqual(cdata['dw'], [1.0])
 
     def test_shared_axes(self):
         curve = Curve(range(10))

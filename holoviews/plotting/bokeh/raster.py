@@ -30,11 +30,18 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
         else:
-            img = np.flipud(img.T)
+            img = img.T[::-1] if self.invert_yaxis else img.T
             l, b, r, t = element.extents
-        dh, dw = t-b, r-l
-        if type(element) is Raster:
+
+        # Ensure axis inversions are handled correctly
+        if self.invert_xaxis:
+            l, r = r, l
+            img = img[:, ::-1]
+        if self.invert_yaxis:
             b, t = t, b
+            if type(element) is not Raster:
+                img = img[::-1]
+        dh, dw = t-b, r-l
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
@@ -62,9 +69,6 @@ class RGBPlot(RasterPlot):
     _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges=None, empty=False):
-        l, b, r, t = element.bounds.lbrt()
-        dh, dw = t-b, r-l
-
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
         if img.ndim == 3:
@@ -78,6 +82,16 @@ class RGBPlot(RasterPlot):
             N, M, _ = img.shape
             #convert image NxM dtype=uint32
             img = img.view(dtype=np.uint32).reshape((N, M))
+
+        # Ensure axis inversions are handled correctly
+        l, b, r, t = element.bounds.lbrt()
+        if self.invert_xaxis:
+            l, r = r, l
+            img = img[:, ::-1]
+        if self.invert_yaxis:
+            b, t = t, b
+            img = img[::-1]
+        dh, dw = t-b, r-l
 
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if empty:
