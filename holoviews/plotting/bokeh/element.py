@@ -73,6 +73,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
 
+    initial_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called before plotting the data onto
+        the axis. The hook is passed the plot object and the displayed
+        object, other plotting handles can be accessed via plot.handles.""")
+
     invert_axes = param.Boolean(default=False, doc="""
         Whether to invert the x- and y-axis""")
 
@@ -182,6 +187,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
+        for hook in self.initial_hooks:
+            try:
+                hook(self, element)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
     def _construct_callbacks(self):
