@@ -640,7 +640,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Compute stack heights
         if stacked:
             ds = Dataset(element)
-            y0, y1 = ds.aggregate(xdim, function=np.sum).range(ydim)
+            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
+            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
+            y0, y1 = max_range([pos_range, neg_range])
         else:
             y0, y1 = ranges[ydim.name]
 
@@ -715,7 +717,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             adjusted_xvals.append(xcat+':%.4f' % adjustment)
         return adjusted_xvals
 
-    def get_stack(self, xvals, yvals, baselines):
+    def get_stack(self, xvals, yvals, baselines, positive=True):
         """
         Iterates over a x- and y-values in a stack layer
         and appropriately offsets the layer on top of the
@@ -723,9 +725,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         bottoms, tops = [], []
         for x, y in zip(xvals, yvals):
-            bottom = baselines[x]
-            top = bottom+y
-            baselines[x] = top
+            baseline = baselines[x][positive]
+            if positive:
+                bottom = baseline
+                top = bottom+y
+            else:
+                top = baseline
+                bottom = top+y
+            baselines[x][positive] = top
             bottoms.append(bottom)
             tops.append(top)
         return bottoms, tops
@@ -810,10 +817,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
-        baselines = defaultdict(float)
+        baselines = defaultdict(lambda: {True: 0, False: 0})
         for i, (k, ds) in enumerate(grouped.items()):
-            xs = ds.dimension_values(xdim)
-            ys = ds.dimension_values(ydim)
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
@@ -822,11 +827,16 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
             # Apply stacking or grouping
             if grouping == 'stacked':
-                bs, ts = self.get_stack(xs, ys, baselines)
-                data['bottom'].append(bs)
-                data['top'].append(ts)
-                data[xdim.name].append(xs)
-                if hover: data[ydim.name].append(ys)
+                ds = ds.sort(ds.vdims[0])
+                for sign, slc in enumerate([(None, 0), (0, None)]):
+                    slc_ds = ds.select(**{ds.vdims[0].name: slc})
+                    xs = slc_ds.dimension_values(xdim)
+                    ys = slc_ds.dimension_values(ydim)
+                    bs, ts = self.get_stack(xs, ys, baselines, bool(sign))
+                    data['bottom'].append(bs)
+                    data['top'].append(ts)
+                    data[xdim.name].append(xs)
+                    if hover: data[ydim.name].append(ys)
             elif grouping == 'grouped':
                 if bokeh_version >= '0.12.7':
                     xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
