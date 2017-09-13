@@ -1,6 +1,7 @@
 import param
+import numpy as np
 
-from bokeh.models import Range1d, Circle, MultiLine
+from bokeh.models import Range1d, Circle, MultiLine, HoverTool, ColumnDataSource
 
 try:
     from bokeh.models import (StaticLayoutProvider, GraphRenderer, NodesAndLinkedEdges,
@@ -41,7 +42,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
     # Define all the glyph handles to update
     _update_handles = ([glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
                         for glyph in ['scatter_1', 'multi_line_1']] +
-                       ['color_mapper', 'colorbar'])
+                       ['color_mapper', 'colorbar', 'layout_source'])
 
     style_opts = (['edge_'+p for p in line_properties] +\
                   ['node_'+p for p in fill_properties+line_properties]+['node_size', 'cmap'])
@@ -53,6 +54,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
     def _hover_opts(self, element):
         dims = element.nodes.dimensions()[3:]
+        if element.nodes.dimension_values(2).dtype.kind not in 'if':
+            dims = [('Node', '$node')] + dims
         return dims, {}
 
     def get_extents(self, element, ranges):
@@ -60,8 +63,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         Extents are set to '' and None because x-axis is categorical and
         y-axis auto-ranges.
         """
-        x0, x1 = element.nodes.range(0)
-        y0, y1 = element.nodes.range(1)
+        xdim, ydim = element.nodes.kdims[:2]
+        x0, x1 = ranges[xdim.name]
+        y0, y1 = ranges[ydim.name]
         return (x0, y0, x1, y1)
 
     def _get_axis_labels(self, *args, **kwargs):
@@ -74,25 +78,59 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
     def get_data(self, element, ranges=None, empty=False):
         style = self.style[self.cyclic_index]
-        point_data = {'index': element.nodes.dimension_values(2).astype(int)}
-        for d in element.nodes.dimensions()[2:]:
-            point_data[d.name] = element.nodes.dimension_values(d)
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
 
+        # Get node data
+        nodes = element.nodes.dimension_values(2)
+        node_positions = element.nodes.array([0, 1, 2])
+        # Map node indices to integers
+        if nodes.dtype.kind not in 'if':
+            node_indices = {v: i for i, v in enumerate(nodes)}
+            index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
+            layout = {node_indices[z]: (y, x) if self.invert_axes else (x, y)
+                      for x, y, z in node_positions}
+        else:
+            index = nodes.astype(np.int32)
+            layout = {int(z): (y, x) if self.invert_axes else (x, y)
+                      for x, y, z in node_positions}
+        point_data = {'index': index}
         cdata, cmapping = self._get_color_data(element.nodes, ranges, style, 'node_fill_color')
         point_data.update(cdata)
         point_mapping = cmapping
 
-        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        # Get hover data
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
+            if nodes.dtype.kind not in 'if':
+                point_data['node'] = nodes
+            for d in element.nodes.dimensions()[3:]:
+                point_data[d.name] = element.nodes.dimension_values(d)
+
+        # Get edge data
+        nan_node = index.max()+1
         xs, ys = (element.dimension_values(i) for i in range(2))
+        if nodes.dtype.kind not in 'if':
+            xs = np.array([node_indices.get(x, nan_node) for x in xs], dtype=np.int32)
+            ys = np.array([node_indices.get(y, nan_node) for y in ys], dtype=np.int32)
         path_data = dict(start=xs, end=ys)
         if element._nodepaths:
             edges = element.nodepaths
             path_data['xs'] = [path[:, xidx] for path in edges.data]
             path_data['ys'] = [path[:, yidx] for path in edges.data]
 
-        data = {'scatter_1': point_data, 'multi_line_1': path_data}
+        data = {'scatter_1': point_data, 'multi_line_1': path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, 'multi_line_1': {}}
         return data, mapping
+
+
+    def _update_datasource(self, source, data):
+        """
+        Update datasource with data for a new frame.
+        """
+        if isinstance(source, ColumnDataSource):
+            source.data.update(data)
+        else:
+            source.graph_layout.update(data)
+
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
@@ -100,7 +138,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         self.handles['previous_id'] = element._plot_id
         properties = {}
         mappings = {}
-        for key in dict(mapping, **data):
+        for key in mapping:
             source = self._init_datasource(data.get(key, {}))
             self.handles[key+'_source'] = source
             glyph_props = self._glyph_properties(plot, element, source, ranges)
@@ -110,8 +148,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         properties.update(mappings)
 
         # Define static layout
-        layout_dict = {int(z): (x, y) for x, y, z in element.nodes.array([0, 1, 2])}
-        layout = StaticLayoutProvider(graph_layout=layout_dict)
+        layout = StaticLayoutProvider(graph_layout=data['layout'])
         node_source = self.handles['scatter_1_source']
         edge_source = self.handles['multi_line_1_source']
         renderer = plot.graph(node_source, edge_source, layout, **properties)
@@ -131,6 +168,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         else:
             renderer.inspection_policy = None
 
-        self.handles['renderer'] = renderer
-        self.handles['scatter_1_renderer'] = renderer.node_renderer
-        self.handles['multi_line_1_renderer'] = renderer.edge_renderer
+        self.handles['layout_source'] = layout
+        self.handles['glyph_renderer'] = renderer
+        self.handles['scatter_1_glyph_renderer'] = renderer.node_renderer
+        self.handles['multi_line_1_glyph_renderer'] = renderer.edge_renderer
+        self.handles['scatter_1_glyph'] = renderer.node_renderer.glyph
+        self.handles['multi_line_1_glyph'] = renderer.edge_renderer.glyph
