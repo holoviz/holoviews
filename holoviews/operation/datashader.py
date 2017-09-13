@@ -431,6 +431,7 @@ class regrid(ResamplingOperation):
                              xdensity=xd, ydensity=yd)
 
 
+
 class shade(Operation):
     """
     shade applies a normalization function followed by colormapping to
