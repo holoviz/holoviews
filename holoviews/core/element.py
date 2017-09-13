@@ -207,7 +207,7 @@ class Tabular(Element):
 
     @property
     def cols(self):
-        return len(self.dimensions())
+        return len(self.kdims+self.vdims)
 
 
     def pprint_cell(self, row, col):

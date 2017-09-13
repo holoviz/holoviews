@@ -250,7 +250,7 @@ class DaskInterface(PandasInterface):
         rows, cols = index
         scalar = False
         if isinstance(cols, slice):
-            cols = [d.name for d in dataset.dimensions()][cols]
+            cols = [d.name for d in dataset.kdims+dataset.vdims][cols]
         elif np.isscalar(cols):
             scalar = np.isscalar(rows)
             cols = [dataset.get_dimension(cols).name]
