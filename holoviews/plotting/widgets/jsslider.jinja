@@ -174,10 +174,10 @@
           </select>
         </div>
         <script>
-        var vals = {{ widget_data['vals'] }};
-        var labels = {{ widget_data['labels'] }};
         function init_dropdown() {
         var widget = $("#_anim_widget{{ id }}_{{ widget_data['dim'] }}");
+        var vals = {{ widget_data['vals'] }};
+        var labels = {{ widget_data['labels'] }};
         widget.data('values', vals)
         for (var i=0; i<vals.length; i++){
 			if ({{ dynamic }}) {
