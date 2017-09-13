@@ -1014,9 +1014,10 @@ class CompositeElementPlot(ElementPlot):
         self.static_source = (self.dynamic and (current_id == previous_id))
         data, mapping = self.get_data(element, ranges, empty)
 
-        for key, gdata in data.items():
+        for key in dict(mapping, **data):
+            gdata = data[key]
             source = self.handles[key+'_source']
-            glyph = self.handles[key+'_glyph']
+            glyph = self.handles.get(key+'_glyph')
             if not self.static_source:
                 self._update_datasource(source, gdata)
 
