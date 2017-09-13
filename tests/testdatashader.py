@@ -2,7 +2,7 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Curve, Points, Image, Dataset
+from holoviews import Curve, Points, Image, Dataset, RGB
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -73,6 +73,14 @@ class DatashaderRegridTests(ComparisonTestCase):
         img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
         regridded = regrid(img, width=2, height=2, dynamic=False)
         expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        self.assertEqual(regridded, expected)
+    
+    def test_regrid_rgb_mean(self):
+        arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('f')
+        rgb = RGB((range(10), range(5), arr, arr*2, arr*2))
+        regridded = regrid(rgb, width=2, height=2, dynamic=False)
+        new_arr = np.array([[1.6, 5.6], [6.4, 22.4]])
+        expected = RGB(([2., 7.], [0.75, 3.25], new_arr, new_arr*2, new_arr*2), datatype=['xarray'])
         self.assertEqual(regridded, expected)
 
     def test_regrid_max(self):

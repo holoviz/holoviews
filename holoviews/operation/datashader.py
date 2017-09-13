@@ -400,8 +400,8 @@ class regrid(ResamplingOperation):
                 arrays.append(element.dimension_values(vd, flat=False))
             if len(arrays) > 1:
                 array = np.dstack(arrays).transpose([2, 0, 1])
-                coords['layer'] = range(len(arrays))
-                dims = ['layer'] + dims
+                coord_dict['temp_vdim_layer'] = range(len(arrays))
+                dims = ['temp_vdim_layer'] + dims
             else:
                 array = arrays[0]
             xarr = xr.DataArray(array, coords=coord_dict, dims=dims)
@@ -422,13 +422,13 @@ class regrid(ResamplingOperation):
                                downsample_method=self.p.aggregator)
 
         if regridded.ndim > 2:
-            regridded = xr.Dataset({vd.name: regridded[i] for i, vd in enumerate(element.vdims)})
+            regridded = xr.Dataset({vd.name: regridded[i].drop('temp_vdim_layer')
+                                    for i, vd in enumerate(element.vdims)})
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
         xd = float(width) / xspan
         yd = float(height) / yspan
         return element.clone(regridded, datatype=['xarray'], bounds=bbox,
-                             new_type=self.p.element_type, xdensity=xd,
-                             ydensity=yd)
+                             xdensity=xd, ydensity=yd)
 
 
 class shade(Operation):
