@@ -2,6 +2,7 @@ import param
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.dimension import redim
+from ..core.util import max_range
 from .chart import Points
 from .path import Path
 
@@ -66,6 +67,23 @@ class Graph(Dataset, Element2D):
             if self._nodepaths:
                 data = data + (self.nodepaths,)
         return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
+
+
+    def range(self, dimension, data_range=True):
+        if self.nodes and dimension in self.nodes.dimensions():
+            node_range = self.nodes.range(dimension, data_range)
+            if self._nodepaths:
+                path_range = self._nodepaths.range(dimension, data_range)
+                return max_range([node_range, path_range])
+            return node_range
+        return super(Graph, self).range(dimension, data_range)
+
+
+    def dimensions(self, selection='all', label=False):
+        dimensions = super(Graph, self).dimensions(selection, label)
+        if self.nodes and selection == 'all':
+            return dimensions+self.nodes.dimensions(selection, label)
+        return dimensions
 
 
     @property
