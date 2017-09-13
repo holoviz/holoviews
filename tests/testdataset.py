@@ -7,7 +7,7 @@ from nose.plugins.attrib import attr
 from itertools import product
 
 import numpy as np
-from holoviews import Dataset, NdElement, HoloMap, Dimension, Image
+from holoviews import Dataset, HoloMap, Dimension, Image
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -80,12 +80,6 @@ class HomogeneousColumnTypes(object):
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.xs_2),
-                                    kdims=['x'], vdims=['x2']))
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
-
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
         if pd is None:
@@ -128,6 +122,13 @@ class HomogeneousColumnTypes(object):
                             kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(ds.sort(), ds_sorted)
 
+    def test_dataset_sort_reverse_hm(self):
+        ds = Dataset(([2, 1, 2, 1], [2, 2, 1, 1], [0.1, 0.2, 0.3, 0.4]),
+                     kdims=['x', 'y'], vdims=['z'])
+        ds_sorted = Dataset(([2, 2, 1, 1], [2, 1, 2, 1], [0.1, 0.3, 0.2, 0.4]),
+                            kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(ds.sort(reverse=True), ds_sorted)
+
     def test_dataset_sort_vdim_hm(self):
         xs_2 = np.array(self.xs_2)
         dataset = Dataset(np.column_stack([self.xs, -xs_2]),
@@ -135,6 +136,14 @@ class HomogeneousColumnTypes(object):
         dataset_sorted = Dataset(np.column_stack([self.xs[::-1], -xs_2[::-1]]),
                                  kdims=['x'], vdims=['y'])
         self.assertEqual(dataset.sort('y'), dataset_sorted)
+
+    def test_dataset_sort_reverse_vdim_hm(self):
+        xs_2 = np.array(self.xs_2)
+        dataset = Dataset(np.column_stack([self.xs, -xs_2]),
+                          kdims=['x'], vdims=['y'])
+        dataset_sorted = Dataset(np.column_stack([self.xs, -xs_2]),
+                                 kdims=['x'], vdims=['y'])
+        self.assertEqual(dataset.sort('y', reverse=True), dataset_sorted)
 
     def test_dataset_sort_vdim_hm_alias(self):
         xs_2 = np.array(self.xs_2)
@@ -361,11 +370,6 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
 
     # Test the constructor to be supported by all interfaces supporting
     # heterogeneous column types.
-
-    def test_dataset_ndelement_init_ht(self):
-        "Tests support for heterogeneous NdElement (backwards compatibility)"
-        dataset = Dataset(NdElement(zip(self.xs, self.ys), kdims=['x'], vdims=['y']))
-        self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_dataframe_init_ht(self):
         "Tests support for heterogeneous DataFrames"
@@ -793,6 +797,9 @@ class DaskDatasetTest(DFDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_ht(self):
         raise SkipTest("Not supported")
 
@@ -822,52 +829,6 @@ class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = (dict, cyODict, OrderedDict)
         self.init_column_data()
 
-
-
-class NdDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
-    """
-    Test of the NdDataset interface (mostly for backwards compatibility)
-    """
-
-    def setUp(self):
-        self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['ndelement']
-        self.data_instance_type = NdElement
-        self.init_column_data()
-
-    def test_dataset_sort_hm(self):
-        """
-        Sorting broken in this case for some reason, since deprecated
-        this is not worth fixing
-        """
-        raise SkipTest("Not supported")
-
-    # Literal formats that have been previously been supported but
-    # currently are only supported via NdElement.
-
-    def test_dataset_empty_list_init(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
-
-    def test_dataset_double_zip_init(self):
-        dataset = Dataset(zip(zip(self.gender, self.age),
-                              zip(self.weight, self.height)),
-                          kdims=self.kdims, vdims=self.vdims)
-        self.assertTrue(isinstance(dataset.data, NdElement))
-
-    def test_dataset_empty_aggregate(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
-
-    def test_dataset_empty_aggregate_with_spreadfn(self):
-        """
-        Will soon be deprecated, new features not supported
-        """
-        raise SkipTest("Not supported")
 
 
 class GridTests(object):
@@ -1084,15 +1045,10 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
             Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
                     kdims=['x'], vdims=['x2'])
 
-    def test_dataset_ndelement_init_hm(self):
-        "Tests support for homogeneous NdElement (backwards compatibility)"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
-            Dataset(NdElement(zip(self.xs, self.xs_2),
-                              kdims=['x'], vdims=['x2']))
-
     def test_dataset_sort_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
@@ -1100,6 +1056,12 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
                      'in the desired order or use the expanded format.')
         with self.assertRaisesRegexp(Exception, exception):
             self.dataset_hm.sort('y')
+
+    def test_dataset_sort_reverse_vdim_hm(self):
+        exception = ('Compressed format cannot be sorted, either instantiate '
+                     'in the desired order or use the expanded format.')
+        with self.assertRaisesRegexp(Exception, exception):
+            self.dataset_hm.sort('y', reverse=True)
 
     def test_dataset_sort_vdim_hm_alias(self):
         exception = ('Compressed format cannot be sorted, either instantiate '
@@ -1259,7 +1221,13 @@ class IrisDatasetTest(GridDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_vdim_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm_alias(self):
@@ -1336,10 +1304,16 @@ class XArrayDatasetTest(GridDatasetTest):
     def test_dataset_sort_hm(self):
         raise SkipTest("Not supported")
 
+    def test_dataset_sort_reverse_hm(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sort_vdim_hm_alias(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sort_vdim_hm(self):
+        raise SkipTest("Not supported")
+
+    def test_dataset_sort_reverse_vdim_hm(self):
         raise SkipTest("Not supported")
 
     def test_dataset_sample_hm(self):

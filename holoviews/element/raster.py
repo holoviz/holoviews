@@ -8,7 +8,7 @@ from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import max_range
+from ..core.util import max_range, dimension_range
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
@@ -71,14 +71,8 @@ class Raster(Element2D):
         idx = self.get_dimension_index(dim)
         if data_range and idx == 2:
             dimension = self.get_dimension(dim)
-            drange = self.data.min(), self.data.max()
-            drange = max_range([drange, dimension.soft_range])
-            if dimension.range[0] is not None:
-                return (dimension.range[0], drange[1])
-            elif dimension.range[1] is not None:
-                return (drange[0], dimension.range[1])
-            else:
-                return drange
+            lower, upper = np.nanmin(self.data), np.nanmax(self.data)
+            return dimension_range(lower, upper, dimension)
         return super(Raster, self).range(dim, data_range)
 
 
@@ -720,15 +714,14 @@ class QuadMesh(Raster):
                      for i in [1, 0])
 
 
-    def range(self, dimension):
+    def range(self, dimension, data_range=True):
         idx = self.get_dimension_index(dimension)
-        if idx in [0, 1]:
+        dim = self.get_dimension(dimension)
+        if idx in [0, 1, 2] and data_range:
             data = self.data[idx]
-            return np.min(data), np.max(data)
-        elif idx == 2:
-            data = self.data[idx]
-            return np.nanmin(data), np.nanmax(data)
-        super(QuadMesh, self).range(dimension)
+            lower, upper = np.nanmin(data), np.nanmax(data)
+            return dimension_range(lower, upper, dim)
+        return super(QuadMesh, self).range(dimension, data_range)
 
 
     def dimension_values(self, dimension, expanded=True, flat=True):

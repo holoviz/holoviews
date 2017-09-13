@@ -220,7 +220,7 @@ class XArrayInterface(GridInterface):
         return dataset.data
 
     @classmethod
-    def sort(cls, dataset, by=[]):
+    def sort(cls, dataset, by=[], reverse=False):
         return dataset
 
     @classmethod

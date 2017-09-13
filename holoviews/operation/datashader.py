@@ -342,6 +342,96 @@ class aggregate(ResamplingOperation):
 
 
 
+class regrid(ResamplingOperation):
+    """
+    regrid allows resampling a HoloViews Image type using specified
+    up- and downsampling functions defined using the aggregator and
+    interpolation parameters respectively. By default upsampling is
+    disabled to avoid unnecessarily upscaling an image that has to be
+    sent to the browser. Also disables expanding the image beyond its
+    original bounds avoiding unneccessarily padding the output array
+    with nan values.
+    """
+
+    aggregator = param.ObjectSelector(default='mean',
+        objects=['first', 'last', 'mean', 'mode', 'std', 'var', 'min', 'max'], doc="""
+        Aggregation method.
+        """)
+
+    expand = param.Boolean(default=False, doc="""
+       Whether the x_range and y_range should be allowed to expand
+       beyond the extent of the data.  Setting this value to True is
+       useful for the case where you want to ensure a certain size of
+       output grid, e.g. if you are doing masking or other arithmetic
+       on the grids.  A value of False ensures that the grid is only
+       just as large as it needs to be to contain the data, which will
+       be faster and use less memory if the resulting aggregate is
+       being overlaid on a much larger background.""")
+
+    interpolation = param.ObjectSelector(default='nearest',
+        objects=['linear', 'nearest'], doc="""
+        Interpolation method""")
+
+    upsample = param.Boolean(default=False, doc="""
+        Whether to allow upsampling if the source array is smaller
+        than the requested array. Setting this value to True will
+        enable upsampling using the interpolation method, when the
+        requested width and height are larger than what is available
+        on the source grid. If upsampling is disabled (the default)
+        the width and height are clipped to what is available on the
+        source array.""")
+
+    def _process(self, element, key=None):
+        if ds_version <= '0.5.0':
+            raise RuntimeError('regrid operation requires datashader>=0.6.0')
+
+        x, y = element.kdims
+        (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
+
+        coords = tuple(element.dimension_values(d, expanded=False)
+                       for d in [x, y])
+        if element.interface is XArrayInterface and len(element.vdims) == 1:
+            xarr = element.data[element.vdims[0].name]
+        else:
+            coord_dict = {x.name: coords[0], y.name: coords[1]}
+            dims = [y.name, x.name]
+            arrays = []
+            for vd in element.vdims:
+                arrays.append(element.dimension_values(vd, flat=False))
+            if len(arrays) > 1:
+                array = np.dstack(arrays).transpose([2, 0, 1])
+                coord_dict['temp_vdim_layer'] = range(len(arrays))
+                dims = ['temp_vdim_layer'] + dims
+            else:
+                array = arrays[0]
+            xarr = xr.DataArray(array, coords=coord_dict, dims=dims)
+
+        # Disable upsampling if requested
+        (xstart, xend), (ystart, yend) = (x_range, y_range)
+        xspan, yspan = (xend-xstart), (yend-ystart)
+        if not self.p.upsample and self.p.target is None:
+            (x0, x1), (y0, y1) = element.range(0), element.range(1)
+            exspan, eyspan = (x1-x0), (y1-y0)
+            width = min([int((xspan/exspan) * len(coords[0])), width])
+            height = min([int((yspan/eyspan) * len(coords[1])), height])
+
+        # Get expanded or bounded ranges
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+        regridded = cvs.raster(xarr, upsample_method=self.p.interpolation,
+                               downsample_method=self.p.aggregator)
+
+        if regridded.ndim > 2:
+            regridded = xr.Dataset({vd.name: regridded[i].drop('temp_vdim_layer')
+                                    for i, vd in enumerate(element.vdims)})
+        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
+        xd = float(width) / xspan
+        yd = float(height) / yspan
+        return element.clone(regridded, datatype=['xarray'], bounds=bbox,
+                             xdensity=xd, ydensity=yd)
+
+
+
 class shade(Operation):
     """
     shade applies a normalization function followed by colormapping to

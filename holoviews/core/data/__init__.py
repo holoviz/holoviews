@@ -9,14 +9,14 @@ import numpy as np
 import param
 
 from ..dimension import redim
+from ..util import dimension_range
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
 from .grid import GridInterface
 from .image import ImageInterface             # noqa (API import)
-from .ndelement import NdElementInterface
 
-datatypes = ['array', 'dictionary', 'grid', 'ndelement']
+datatypes = ['array', 'dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
@@ -192,25 +192,6 @@ class Dataset(Element):
         self.redim = redim(self, mode='dataset')
 
 
-    def __setstate__(self, state):
-        """
-        Restores OrderedDict based Dataset objects, converting them to
-        the up-to-date NdElement format.
-        """
-        self.__dict__ = state
-        if isinstance(self.data, OrderedDict):
-            self.data = Dataset(self.data, kdims=self.kdims,
-                                vdims=self.vdims, group=self.group,
-                                label=self.label)
-            self.interface = NdColumns
-        elif isinstance(self.data, np.ndarray):
-            self.interface = ArrayInterface
-        elif util.is_dataframe(self.data):
-            self.interface = PandasInterface
-
-        super(Dataset, self).__setstate__(state)
-
-
     def closest(self, coords=[], **kwargs):
         """
         Given a single coordinate or multiple coordinates as
@@ -238,14 +219,14 @@ class Dataset(Element):
         return [xs[idx] for idx in idxs]
 
 
-    def sort(self, by=[]):
+    def sort(self, by=[], reverse=False):
         """
         Sorts the data by the values along the supplied dimensions.
         """
         if not by: by = self.kdims
         if not isinstance(by, list): by = [by]
 
-        sorted_columns = self.interface.sort(self, by)
+        sorted_columns = self.interface.sort(self, by, reverse)
         return self.clone(sorted_columns)
 
 
@@ -258,25 +239,13 @@ class Dataset(Element):
         dim = self.get_dimension(dim)
         if dim is None:
             return (None, None)
-        elif None not in dim.range:
+        elif all(v is not None and np.isfinite(v) for v in dim.range):
             return dim.range
-        elif dim in self.dimensions() and data_range:
-            if len(self):
-                drange = self.interface.range(self, dim)
-            else:
-                drange = (np.NaN, np.NaN)
-            soft_range = [r for r in dim.soft_range if r is not None]
-            if soft_range:
-                drange = util.max_range([drange, soft_range])
+        elif dim in self.dimensions() and data_range and len(self):
+            lower, upper = self.interface.range(self, dim)
         else:
-            drange = dim.soft_range
-        if dim.range[0] is not None:
-            return (dim.range[0], drange[1])
-        elif dim.range[1] is not None:
-            return (drange[0], dim.range[1])
-        else:
-            return drange
-
+            lower, upper = (np.NaN, np.NaN)
+        return dimension_range(lower, upper, dim)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):
@@ -686,5 +655,4 @@ class Dataset(Element):
 Columns      = Dataset
 ArrayColumns = ArrayInterface
 DictColumns  = DictInterface
-NdColumns    = NdElementInterface
 GridColumns  = GridInterface

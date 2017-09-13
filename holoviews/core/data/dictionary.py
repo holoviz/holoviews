@@ -10,7 +10,7 @@ import numpy as np
 
 from .interface import Interface
 from ..dimension import Dimension
-from ..element import Element, NdElement
+from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check
 from .. import util
@@ -44,8 +44,7 @@ class DictInterface(Interface):
                       d for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
-        elif ((util.is_dataframe(data) and all(d in data for d in dimensions)) or
-              (isinstance(data, NdElement) and all(d in data.dimensions() for d in dimensions))):
+        elif util.is_dataframe(data) and all(d in data for d in dimensions):
             data = {d: data[d] for d in dimensions}
         elif isinstance(data, np.ndarray):
             if data.ndim == 1:
@@ -154,14 +153,15 @@ class DictInterface(Interface):
 
 
     @classmethod
-    def sort(cls, dataset, by=[]):
+    def sort(cls, dataset, by=[], reverse=False):
         by = [dataset.get_dimension(d).name for d in by]
         if len(by) == 1:
             sorting = cls.values(dataset, by[0]).argsort()
         else:
             arrays = [dataset.dimension_values(d) for d in by]
             sorting = util.arglexsort(arrays)
-        return OrderedDict([(d, v[sorting]) for d, v in dataset.data.items()])
+        return OrderedDict([(d, v[sorting][::-1] if reverse else v[sorting])
+                            for d, v in dataset.data.items()])
 
 
     @classmethod
