@@ -156,7 +156,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                     axis.set_axis_bgcolor(self.bgcolor)
                 else:
                     axis.set_facecolor(self.bgcolor)
-              
+
             # Apply title
             title = self._format_title(key)
             if self.show_title and title is not None:
@@ -759,7 +759,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
                           'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation'
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
-                          'invert_zaxis']
+                          'invert_zaxis', 'title_format']
 
     def __init__(self, overlay, ranges=None, **params):
         if 'projection' not in params:

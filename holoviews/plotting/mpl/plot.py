@@ -180,7 +180,7 @@ class MPLPlot(DimensionedPlot):
     def _subplot_label(self, axis):
         layout_num = self.layout_num if self.subplot else 1
         if self.sublabel_format and not self.adjoined and layout_num > 0:
-            from mpl_toolkits.axes_grid1.anchored_artists import AnchoredText
+            from matplotlib.offsetbox import AnchoredText
             labels = {}
             if '{Alpha}' in self.sublabel_format:
                 labels['Alpha'] = int_to_alpha(layout_num-1)

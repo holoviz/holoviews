@@ -1,7 +1,7 @@
 About Us
 ========
 
-HoloViews is supported and maintained by `Continuum Analytics <https://continuum.io>`_.
+HoloViews is supported and maintained by `Anaconda <https://www.anaconda.com>`_.
 
 The primary developers are Jean-Luc Stevens, Philipp Rudiger, and
 James A. Bednar, with bug reports and patches from numerous members of

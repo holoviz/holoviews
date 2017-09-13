@@ -1,3 +1,29 @@
+Version 1.8.4
+=============
+
+This bugfix release includes a number of critical fixes for compatiblity
+with bokeh 0.12.9 along with various other bug fixes. Many thanks to our
+users for various detailed bug reports, feedback and contributions.
+
+Fixes:
+
+-   Fixes to register BoundsXY stream.
+    ([\#1826](https://github.com/ioam/holoviews/pull/1826))
+-   Fix for Bounds streams on bokeh server.
+    ([\#1883](https://github.com/ioam/holoviews/pull/1883))
+-   Compatibility with matplotlib 2.1
+    ([\#1842](https://github.com/ioam/holoviews/pull/1842))
+-   Fixed bug in scrubber widget and support for scrubbing discrete
+    DynamicMaps ([\#1832](https://github.com/ioam/holoviews/pull/1832))
+-   Various fixes for compatibility with bokeh 0.12.9
+    ([\#1849](https://github.com/ioam/holoviews/pull/1849),
+    [\#1866](https://github.com/ioam/holoviews/pull/1886))
+-   Fixes for setting QuadMesh ranges.
+    ([\#1876](https://github.com/ioam/holoviews/pull/1876))
+-   Fixes for inverting Image/RGB/Raster axes in bokeh.
+    ([\#1872](https://github.com/ioam/holoviews/pull/1872))
+
+
 Version 1.8.3
 =============
 

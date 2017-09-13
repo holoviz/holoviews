@@ -614,8 +614,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         xdim, ydim = element.dimensions()[:2]
         xvals, yvals = [element.dimension_values(i, False)
                         for i in range(2)]
-        coords = ([x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x).replace(':', ';') for x in xvals],
-                  [y if yvals.dtype.kind in 'SU' else ydim.pprint_value(y).replace(':', ';') for y in yvals])
+        coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
+                  for dim, vals in [(xdim, xvals), (ydim, yvals)])
+        if bokeh_version < '0.12.7':
+            coords = tuple([v.replace(':', ';') for v in vals] for vals in coords)
         if self.invert_axes: coords = coords[::-1]
         return coords
 
@@ -1275,7 +1277,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
-                          'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode']
+                          'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
+                          'title_format']
 
     def _process_legend(self):
         plot = self.handles['plot']
