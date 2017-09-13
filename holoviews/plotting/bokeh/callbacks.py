@@ -706,11 +706,14 @@ class BoundsCallback(Callback):
     """
     Returns the bounds of a box_select tool.
     """
-    attributes = {'x0': 'cb_data.geometry.x0',
-                  'x1': 'cb_data.geometry.x1',
-                  'y0': 'cb_data.geometry.y0',
-                  'y1': 'cb_data.geometry.y1'}
-    models = ['box_select']
+    attributes = {'x0': 'cb_obj.geometry.x0',
+                  'x1': 'cb_obj.geometry.x1',
+                  'y0': 'cb_obj.geometry.y0',
+                  'y1': 'cb_obj.geometry.y1'}
+    models = ['plot']
+    extra_models = ['box_select']
+    on_events = ['selectiongeometry']
+    skip = ["!box_select || !box_select.active"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -724,8 +727,11 @@ class BoundsXCallback(Callback):
     Returns the bounds of a xbox_select tool.
     """
 
-    attributes = {'x0': 'cb_data.geometry.x0', 'x1': 'cb_data.geometry.x1'}
-    models = ['xbox_select']
+    attributes = {'x0': 'cb_obj.geometry.x0', 'x1': 'cb_obj.geometry.x1'}
+    models = ['plot']
+    extra_models = ['xbox_select']
+    on_events = ['selectiongeometry']
+    skip = ["!xbox_select || !xbox_select.active"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'x1']):
@@ -739,8 +745,11 @@ class BoundsYCallback(Callback):
     Returns the bounds of a ybox_select tool.
     """
 
-    attributes = {'y0': 'cb_data.geometry.y0', 'y1': 'cb_data.geometry.y1'}
-    models = ['ybox_select']
+    attributes = {'y0': 'cb_obj.geometry.y0', 'y1': 'cb_obj.geometry.y1'}
+    models = ['plot']
+    extra_models = ['ybox_select']
+    on_events = ['selectiongeometry']
+    skip = ["!ybox_select || !ybox_select.active"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['y0', 'y1']):
