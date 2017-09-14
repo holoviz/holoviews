@@ -203,9 +203,6 @@ class MultiInterface(Interface):
         Splits a multi-interface Dataset into regular Datasets using
         regular tabular interfaces.
         """
-        from ...element.path import BaseShape
-        if isinstance(dataset, BaseShape):
-            return [dataset]
         objs = []
         for d in dataset.data[start: end]:
             objs.append(dataset.clone(d, datatype=cls.subtypes))
