@@ -55,7 +55,7 @@ class Graph(Dataset, Element2D):
         self.nodes = nodes
         self._nodepaths = nodepaths
         super(Graph, self).__init__(edges, **params)
-        self.redim = graph_redim(self)
+        self.redim = graph_redim(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if data is None:
