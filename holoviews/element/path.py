@@ -14,27 +14,35 @@ each collection of paths.
 import numpy as np
 
 import param
-from ..core import Dimension, Element2D
+from ..core import Dimension, Element2D, Dataset
+from ..core.data import MultiInterface, ArrayInterface
 
 
-class Path(Element2D):
+class Path(Dataset, Element2D):
     """
-    The Path Element contains a list of Paths stored as Nx2 numpy
-    arrays. The data may be supplied in one of the following ways:
+    The Path Element contains a list of Paths stored as tabular data
+    types including arrays, dataframes and dictionary of column
+    arrays. In addition a number of convenient constructors are
+    supported:
 
-    1) A list of Nx2 numpy arrays.
-    2) A list of lists containing x/y coordinate tuples.
-    3) A tuple containing an array of length N with the x-values and a
+    1) A list of lists containing x/y coordinate tuples.
+    2) A tuple containing an array of length N with the x-values and a
        second array of shape NxP, where P is the number of paths.
-    4) A list of tuples each containing separate x and y values.
+    3) A list of tuples each containing arrays x and y values.
+
+    A Path can be split into subpaths using the split method or combined
+    into a flat view using the dimension_values, table, and dframe methods,
+    where each path is separated by a NaN value.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       constant=True, bounds=(2, 2), doc="""
+                       constant=True, bounds=(2, None), doc="""
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
     group = param.String(default="Path", constant=True)
+
+    datatype = param.ObjectSelector(default=['multitabular'])
 
     def __init__(self, data, **params):
         if isinstance(data, tuple):
@@ -46,9 +54,20 @@ class Path(Element2D):
             data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
             data = [np.column_stack(path) for path in data]
-        elif len(data) >= 1:
-            data = [np.array(p) if not isinstance(p, np.ndarray) else p for p in data]
         super(Path, self).__init__(data, **params)
+
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style unpickled Path types without an interface
+        use the MultiInterface.
+
+        Note: Deprecate as part of 2.0
+        """
+        self.__dict__ = state
+        if 'interface' not in state:
+            self.interface = MultiInterface
+        super(Dataset, self).__setstate__(state)
 
 
     def __getitem__(self, key):
@@ -65,6 +84,13 @@ class Path(Element2D):
         return self.clone(extents=(xstart, ystart, xstop, ystop))
 
 
+    def select(self, selection_specs=None, **kwargs):
+        """
+        Bypasses selection on data and sets extents based on selection.
+        """
+        return super(Element2D, self).select(selection_specs, **kwargs)
+
+
     @classmethod
     def collapse_data(cls, data_list, function=None, kdims=None, **kwargs):
         if function is None:
@@ -73,20 +99,15 @@ class Path(Element2D):
             raise Exception("Path types are not uniformly sampled and"
                             "therefore cannot be collapsed with a function.")
 
-
-    def __len__(self):
-        return len(self.data)
-
-
-    def dimension_values(self, dimension):
-        dim_idx = self.get_dimension_index(dimension)
-        if dim_idx >= len(self.dimensions()):
-            return super(Path, self).dimension_values(dimension)
-        values = []
-        for contour in self.data:
-            values.append(contour[:, dim_idx])
-        return np.concatenate(values) if values else []
-
+    def split(self, start=None, end=None, paths=None):
+        """
+        The split method allows splitting a Path type into a list of
+        subpaths of the same type. A start and/or end may be supplied
+        to select a subset of paths.
+        """
+        if not issubclass(self.interface, MultiInterface):
+            return [self]
+        return self.interface.split(self, start, end)
 
 
 class Contours(Path):
@@ -98,21 +119,31 @@ class Contours(Path):
     level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
-    vdims = param.List(default=[Dimension('Level')], doc="""
+    vdims = param.List(default=[], doc="""
         Contours optionally accept a value dimension, corresponding
-        to the supplied values.""", bounds=(1,1))
+        to the supplied values.""")
 
     group = param.String(default='Contours', constant=True)
 
+    _level_vdim = Dimension('Level') # For backward compatibility
+
     def __init__(self, data, **params):
         data = [] if data is None else data
+        if 'level' in params:
+            vdims = params.get('vdims', [self._level_vdim])
+            params['vdims'] = []
         super(Contours, self).__init__(data, **params)
+        if 'level' in params:
+            self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
+                          for d in vdims]
 
-    def dimension_values(self, dim):
+    def dimension_values(self, dim, expanded=True, flat=True):
         dimension = self.get_dimension(dim, strict=True)
-        if dimension in self.vdims:
+        if dimension in self.vdims and self.level is not None:
+            if expanded:
+                return np.full(len(self), self.level)
             return np.array([self.level])
-        return super(Contours, self).dimension_values(dim)
+        return super(Contours, self).dimension_values(dim, expanded, flat)
 
 
 
@@ -124,10 +155,11 @@ class Polygons(Contours):
 
     group = param.String(default="Polygons", constant=True)
 
-    vdims = param.List(default=[Dimension('Value')], doc="""
+    vdims = param.List(default=[], doc="""
         Polygons optionally accept a value dimension, corresponding
-        to the supplied value.""", bounds=(1,1))
+        to the supplied value.""")
 
+    _level_vdim = Dimension('Value')
 
 
 class BaseShape(Path):
@@ -140,6 +172,9 @@ class BaseShape(Path):
 
     __abstract = True
 
+    def __init__(self, **params):
+        super(BaseShape, self).__init__([], **params)
+        self.interface = MultiInterface
 
     def clone(self, *args, **overrides):
         """
@@ -195,7 +230,7 @@ class Box(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Box, self).__init__([], x=x, y=y, height=height, **params)
+        super(Box, self).__init__(x=x, y=y, height=height, **params)
 
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -264,8 +299,7 @@ class Ellipse(BaseShape):
             width, height = params.get('width', spec), spec
 
         params['width']=params.get('width',width)
-        super(Ellipse, self).__init__([], x=x, y=y, height=height, **params)
-
+        super(Ellipse, self).__init__(x=x, y=y, height=height, **params)
         angles = np.linspace(0, 2*np.pi, self.samples)
         half_width = (self.width * self.aspect)/ 2.0
         half_height = self.height / 2.0
@@ -300,6 +334,6 @@ class Bounds(BaseShape):
         if not isinstance(lbrt, tuple):
             lbrt = (-lbrt, -lbrt, lbrt, lbrt)
 
-        super(Bounds, self).__init__([], lbrt=lbrt, **params)
+        super(Bounds, self).__init__(lbrt=lbrt, **params)
         (l,b,r,t) = self.lbrt
         self.data = [np.array([(l, b), (l, t), (r, t), (r, b),(l, b)])]
