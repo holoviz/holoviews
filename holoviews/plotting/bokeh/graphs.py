@@ -53,10 +53,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         super(GraphPlot, self).initialize_plot(ranges, plot, plots)
 
     def _hover_opts(self, element):
-        dims = element.nodes.dimensions()[3:]
-        if element.nodes.dimension_values(2).dtype.kind not in 'if':
-            dims = [('Node', '$node')] + dims
-        return dims, {}
+        return element.nodes.dimensions()[2:], {}
 
     def get_extents(self, element, ranges):
         """
