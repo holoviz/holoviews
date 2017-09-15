@@ -15,6 +15,7 @@ import dask.dataframe as dd
 ds_version = LooseVersion(ds.__version__)
 
 from datashader.core import bypixel
+from datashader.bundling import hammer_bundle
 from datashader.pandas import pandas_pipeline
 from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
@@ -651,3 +652,32 @@ class dynspread(Operation):
         return element.clone(new_data)
 
 
+def split_dataframe(path_df):
+    """
+    Splits a dataframe of paths separated by NaNs into individual
+    dataframes.
+    """
+    splits = np.where(path_df.iloc[:, 0].isnull())[0]+1
+    return [df for df in np.split(path_df, splits) if len(df) > 1]
+
+
+class bundle_graph(Operation, hammer_bundle):
+    """
+    Iteratively group edges and return as paths suitable for datashading.
+
+    Breaks each edge into a path with multiple line segments, and
+    iteratively curves this path to bundle edges into groups.
+    """
+
+    split = param.Boolean(default=True, doc="""
+        Determines whether bundled edges will be split into individual edges
+        or concatenated with NaN separators.""")
+
+    def _process(self, element, key=None):
+        index = element.nodes.kdims[2].name
+        position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
+        rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
+        edges_df = element.redim(**rename).dframe([0, 1])
+        paths = hammer_bundle.__call__(self, position_df, edges_df, **self.p)
+        paths = split_dataframe(paths) if self.p.split else [paths]
+        return element.clone((element.data, element.nodes, paths))
