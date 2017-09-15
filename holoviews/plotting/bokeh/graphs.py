@@ -107,15 +107,19 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
         # Get edge data
         nan_node = index.max()+1
-        xs, ys = (element.dimension_values(i) for i in range(2))
+        start, end = (element.dimension_values(i) for i in range(2))
         if nodes.dtype.kind not in 'if':
-            xs = np.array([node_indices.get(x, nan_node) for x in xs], dtype=np.int32)
-            ys = np.array([node_indices.get(y, nan_node) for y in ys], dtype=np.int32)
-        path_data = dict(start=xs, end=ys)
+            start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
+            end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
+        path_data = dict(start=start, end=end)
         if element._nodepaths:
-            edges = element.nodepaths
-            path_data['xs'] = [path[:, xidx] for path in edges.data]
-            path_data['ys'] = [path[:, yidx] for path in edges.data]
+            edges = element.nodepaths.split()
+            if len(edges) == len(start):
+                path_data['xs'] = [path.dimension_values(xidx) for path in edges]
+                path_data['ys'] = [path.dimension_values(yidx) for path in edges]
+            else:
+                self.warning('Graph edge paths do not match the number of abstract edges '
+                             'and will be skipped')
 
         data = {'scatter_1': point_data, 'multi_line_1': path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, 'multi_line_1': {}}
