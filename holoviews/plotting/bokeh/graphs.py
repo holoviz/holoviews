@@ -112,8 +112,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
-        if element._nodepaths:
-            edges = element.nodepaths.split()
+        if element._edgepaths:
+            edges = element.edgepaths.split()
             if len(edges) == len(start):
                 path_data['xs'] = [path.dimension_values(xidx) for path in edges]
                 path_data['ys'] = [path.dimension_values(yidx) for path in edges]

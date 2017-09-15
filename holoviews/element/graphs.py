@@ -9,7 +9,7 @@ from .path import Path
 class graph_redim(redim):
     """
     Extension for the redim utility that allows re-dimensioning
-    Graph objects including their nodes and nodepaths.
+    Graph objects including their nodes and edgepaths.
     """
 
     def __call__(self, specs=None, **dimensions):
@@ -17,8 +17,8 @@ class graph_redim(redim):
         new_data = (redimmed.data,)
         if self.parent.nodes:
             new_data = new_data + (self.parent.nodes.redim(specs, **dimensions),)
-        if self.parent._nodepaths:
-            new_data = new_data + (self.parent.nodepaths.redim(specs, **dimensions),)
+        if self.parent._edgepaths:
+            new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
 
 
@@ -29,12 +29,12 @@ class Graph(Dataset, Element2D):
     the abstract edges between nodes and optionally may be made
     concrete by supplying a Nodes Element defining the concrete
     positions of each node. If the node positions are supplied
-    the NodePaths (defining the concrete edges) can be inferred
+    the EdgePaths (defining the concrete edges) can be inferred
     automatically or supplied explicitly.
 
     The constructor accepts regular columnar data defining the edges
     or a tuple of the abstract edges and nodes, or a tuple of the
-    abstract edges, nodes, and nodepaths.
+    abstract edges, nodes, and edgepaths.
     """
 
     group = param.String(default='Graph')
@@ -45,27 +45,27 @@ class Graph(Dataset, Element2D):
     def __init__(self, data, **params):
         if isinstance(data, tuple):
             data = data + (None,)* (3-len(data))
-            edges, nodes, nodepaths = data
+            edges, nodes, edgepaths = data
         else:
-            edges, nodes, nodepaths = data, None, None
+            edges, nodes, edgepaths = data, None, None
         if nodes is not None and not isinstance(nodes, Nodes):
             nodes = Nodes(nodes)
-        if nodepaths is not None and not isinstance(nodepaths, NodePaths):
-            nodepaths = NodePaths(nodepaths)
+        if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
+            edgepaths = EdgePaths(edgepaths)
         self.nodes = nodes
-        self._nodepaths = nodepaths
+        self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, **params)
         self.redim = graph_redim(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if data is None:
             data = (self.data, self.nodes)
-            if self._nodepaths:
-                data = data + (self.nodepaths,)
+            if self._edgepaths:
+                data = data + (self.edgepaths,)
         elif not isinstance(data, tuple):
             data = (data, self.nodes)
-            if self._nodepaths:
-                data = data + (self.nodepaths,)
+            if self._edgepaths:
+                data = data + (self.edgepaths,)
         return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
 
 
@@ -96,21 +96,21 @@ class Graph(Dataset, Element2D):
         if selection:
             mask = self.interface.select_mask(self, selection)
             data = self.interface.select(self, mask)
-            if self._nodepaths:
-                paths = self.nodepaths.interface.select_paths(self.nodepaths, mask)
+            if self._edgepaths:
+                paths = self.edgepaths.interface.select_paths(self.edgepaths, mask)
                 return self.clone((data, nodes, paths))
         else:
             data = self.data
-            if self._nodepaths:
-                return self.clone((data, nodes, self._nodepaths))
+            if self._edgepaths:
+                return self.clone((data, nodes, self._edgepaths))
         return self.clone((data, nodes))
 
 
     def range(self, dimension, data_range=True):
         if self.nodes and dimension in self.nodes.dimensions():
             node_range = self.nodes.range(dimension, data_range)
-            if self._nodepaths:
-                path_range = self._nodepaths.range(dimension, data_range)
+            if self._edgepaths:
+                path_range = self._edgepaths.range(dimension, data_range)
                 return max_range([node_range, path_range])
             return node_range
         return super(Graph, self).range(dimension, data_range)
@@ -124,15 +124,13 @@ class Graph(Dataset, Element2D):
 
 
     @property
-    def nodepaths(self):
+    def edgepaths(self):
         """
-        Returns the fixed NodePaths or computes direct connections
+        Returns the fixed EdgePaths or computes direct connections
         between supplied nodes.
         """
-        if self.nodes is None:
-            raise ValueError('Cannot return NodePaths without node positions')
-        elif self._nodepaths:
-            return self._nodepaths
+        if self._edgepaths:
+            return self._edgepaths
         paths = []
         for start, end in self.array(self.kdims):
             start_ds = self.nodes[:, :, start]
@@ -140,7 +138,7 @@ class Graph(Dataset, Element2D):
             sx, sy = start_ds.array(start_ds.kdims[:2]).T
             ex, ey = end_ds.array(end_ds.kdims[:2]).T
             paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
-        return NodePaths(paths)
+        return EdgePaths(paths)
 
     @classmethod
     def from_networkx(cls, G, layout_function, nodes=None, **kwargs):
@@ -172,10 +170,10 @@ class Nodes(Points):
     group = param.String(default='Nodes')
 
 
-class NodePaths(Path):
+class EdgePaths(Path):
     """
-    NodePaths is a simple Element representing the paths of edges
+    EdgePaths is a simple Element representing the paths of edges
     connecting nodes in a graph.
     """
 
-    group = param.String(default='NodePaths')
+    group = param.String(default='EdgePaths')

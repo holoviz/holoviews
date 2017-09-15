@@ -10,7 +10,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
-                        Graph, Nodes, NodePaths)
+                        Graph, Nodes, EdgePaths)
 from ...core.options import Options, Cycle, Palette
 
 try:
@@ -86,7 +86,7 @@ associations = {Overlay: OverlayPlot,
                 # Graph Elements
                 Graph: GraphPlot,
                 Nodes: PointPlot,
-                NodePaths: PathPlot,
+                EdgePaths: PathPlot,
 
                 # Tabular
                 Table: TablePlot,
@@ -177,7 +177,7 @@ options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
                         edge_selection_line_color='limegreen', edge_line_color='black',
                         node_line_color='black')
 options.Nodes = Options('style', line_color='black', color=Cycle(), size=20)
-options.NodePaths = Options('style', color='black')
+options.EdgePaths = Options('style', color='black')
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,

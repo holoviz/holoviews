@@ -150,7 +150,7 @@ Store.register({Curve: CurvePlot,
                 # Graph Elements
                 Graph: GraphPlot,
                 Nodes: PointPlot,
-                NodePaths: PathPlot,
+                EdgePaths: PathPlot,
 
                 # Annotation plots
                 VLine: VLinePlot,
