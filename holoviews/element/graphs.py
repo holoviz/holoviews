@@ -69,6 +69,43 @@ class Graph(Dataset, Element2D):
         return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
 
 
+    def select(self, selection_specs=None, **selection):
+        """
+        Allows selecting data by the slices, sets and scalar values
+        along a particular dimension. The indices should be supplied as
+        keywords mapping between the selected dimension and
+        value. Additionally selection_specs (taking the form of a list
+        of type.group.label strings, types or functions) may be
+        supplied, which will ensure the selection is only applied if the
+        specs match the selected object.
+        """
+        selection = {dim: sel for dim, sel in selection.items()
+                     if dim in self.dimensions()+['selection_mask']}
+        if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
+            or not selection):
+            return self
+
+        nodes = self.nodes.select(**selection)
+        dimensions = self.kdims+self.vdims
+        selection = {k: v for k, v in selection.items() if k in dimensions}
+        if len(nodes) != len(self):
+            xdim, ydim = dimensions[:2]
+            indices = list(nodes.dimension_values(2))
+            selection[xdim.name] = indices
+            selection[ydim.name] = indices
+        if selection:
+            mask = self.interface.select_mask(self, selection)
+            data = self.interface.select(self, mask)
+            if self._nodepaths:
+                paths = self.nodepaths.interface.select_paths(self.nodepaths, mask)
+                return self.clone((data, nodes, paths))
+        else:
+            data = self.data
+            if self._nodepaths:
+                return self.clone((data, nodes, self._nodepaths))
+        return self.clone((data, nodes))
+
+
     def range(self, dimension, data_range=True):
         if self.nodes and dimension in self.nodes.dimensions():
             node_range = self.nodes.range(dimension, data_range)
