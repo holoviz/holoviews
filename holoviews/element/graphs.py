@@ -33,6 +33,11 @@ def circular_layout(nodes):
 
 
 class layout_nodes(Operation):
+    """
+    Accepts a Graph and lays out the corresponding nodes with the
+    supplied networkx layout function. If no layout function is
+    supplied uses a simple circular_layout function.
+    """
 
     layout = param.Callable(default=None, doc="""
         A NetworkX layout function""")
@@ -64,7 +69,7 @@ class Graph(Dataset, Element2D):
     abstract edges, nodes, and edgepaths.
     """
 
-    group = param.String(default='Graph')
+    group = param.String(default='Graph', constant=True)
 
     kdims = param.List(default=[Dimension('start'), Dimension('end')],
                        bounds=(2, 2))
