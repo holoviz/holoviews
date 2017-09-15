@@ -201,7 +201,7 @@ class Nodes(Points):
     kdims = param.List(default=[Dimension('x'), Dimension('y'),
                                 Dimension('index')], bounds=(3, 3))
 
-    group = param.String(default='Nodes')
+    group = param.String(default='Nodes', constant=True)
 
 
 class EdgePaths(Path):
@@ -210,4 +210,4 @@ class EdgePaths(Path):
     connecting nodes in a graph.
     """
 
-    group = param.String(default='EdgePaths')
+    group = param.String(default='EdgePaths', constant=True)
