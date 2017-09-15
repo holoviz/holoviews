@@ -282,7 +282,7 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        kwargs = {'notebook_type': 'jupyter'} if bokeh_version > '0.12.5' else {}
+        kwargs = {'notebook_type': 'jupyter'} if '0.12.9' >= bokeh_version > '0.12.5' else {}
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
         from bokeh.io import _state
         _state.output_notebook()
