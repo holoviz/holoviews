@@ -1,8 +1,10 @@
 import param
+import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.dimension import redim
 from ..core.util import max_range
+from ..core.operation import Operation
 from .chart import Points
 from .path import Path
 
@@ -20,6 +22,31 @@ class graph_redim(redim):
         if self.parent._edgepaths:
             new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
+
+
+def circular_layout(nodes):
+    N = len(nodes)
+    circ = np.pi/N*np.arange(N)*2
+    x = np.cos(circ)
+    y = np.sin(circ)
+    return (x, y, nodes)
+
+
+class layout_nodes(Operation):
+
+    layout = param.Callable(default=None, doc="""
+        A NetworkX layout function""")
+
+    def _process(self, element, key=None):
+        if self.p.layout:
+            graph = nx.from_edgelist(element.array([0, 1]))
+            positions = self.p.layout(graph)
+            return Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+        else:
+            source = element.dimension_values(0, expanded=False)
+            target = element.dimension_values(1, expanded=False)
+            nodes = np.unique(np.concatenate([source, target]))
+            return Nodes(circular_layout(nodes))
 
 
 class Graph(Dataset, Element2D):
@@ -55,6 +82,8 @@ class Graph(Dataset, Element2D):
         self.nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, **params)
+        if self.nodes is None:
+            self.nodes = layout_nodes(self)
         self.redim = graph_redim(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
