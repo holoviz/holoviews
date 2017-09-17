@@ -172,12 +172,26 @@ options.Arrow = Options('style', arrow_size=10)
 
 # Graphs
 options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
-                        edge_line_width=2, node_hover_fill_color='indianred',
-                        edge_hover_line_color='indianred', node_selection_fill_color='limegreen',
-                        edge_selection_line_color='limegreen', edge_line_color='black',
-                        node_line_color='black')
-options.Nodes = Options('style', line_color='black', color=Cycle(), size=20)
-options.EdgePaths = Options('style', color='black')
+                        node_line_color='black',
+                        node_selection_fill_color='limegreen',
+                        node_nonselection_fill_color=Cycle(),
+                        node_hover_line_color='black',
+                        node_hover_fill_color='indianred',
+                        node_nonselection_alpha=0.2,
+                        edge_nonselection_alpha=0.2,
+                        edge_line_color='black', edge_line_width=2,
+                        edge_nonselection_line_color='black',
+                        edge_hover_line_color='indianred',
+                        edge_selection_line_color='limegreen')
+options.Nodes = Options('style', line_color='black', color=Cycle(),
+                        size=20, nonselection_fill_color=Cycle(),
+                        selection_fill_color='limegreen',
+                        hover_fill_color='indianred')
+options.Nodes = Options('plot', tools=['hover', 'tap'])
+options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
+                            line_width=2, selection_color='limegreen',
+                            hover_line_color='indianred')
+options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
