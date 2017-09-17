@@ -80,15 +80,31 @@ class Graph(Dataset, Element2D):
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
-        if nodes is not None and not isinstance(nodes, Nodes):
-            nodes = Nodes(nodes)
+        if nodes is not None:
+            node_info = None
+            if isinstance(nodes, Nodes):
+                pass
+            elif not isinstance(nodes, Dataset) or nodes.ndims == 3:
+                nodes = Nodes(nodes)
+            else:
+                node_info = nodes
+                nodes = None
+        else:
+            node_info = None
         if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
             edgepaths = EdgePaths(edgepaths)
         self.nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, **params)
         if self.nodes is None:
-            self.nodes = layout_nodes(self)
+            nodes = layout_nodes(self)
+            if node_info:
+                nodes = nodes.clone(datatype=['pandas', 'dictionary'])
+                for d in node_info.dimensions():
+                    nodes = nodes.add_dimension(d, len(nodes.vdims),
+                                                node_info.dimension_values(d),
+                                                vdim=True)
+            self.nodes = nodes
         self.redim = graph_redim(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
