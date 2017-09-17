@@ -10,7 +10,7 @@ except:
     pass
 
 from ...core.options import abbreviated_exception, SkipRendering
-from ...core.util import basestring
+from ...core.util import basestring, dimension_sanitizer
 from .chart import ColorbarPlot
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
 from .util import mpl_to_bokeh, bokeh_version
@@ -29,6 +29,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
     inspection_policy = param.ObjectSelector(default='nodes', objects=['edges', 'nodes', None], doc="""
         Determines policy for inspection of graph components, i.e. whether to highlight
         nodes or edges when hovering over connected edges and nodes respectively.""")
+
+    tools = param.List(default=['hover', 'tap'], doc="""
+        A list of plugin tools to use on the plot.""")
 
     # X-axis is categorical
     _x_range_type = Range1d
@@ -50,10 +53,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
     def initialize_plot(self, ranges=None, plot=None, plots=None):
         if bokeh_version < '0.12.7':
             raise SkipRendering('Graph rendering requires bokeh version >=0.12.7.')
-        super(GraphPlot, self).initialize_plot(ranges, plot, plots)
+        return super(GraphPlot, self).initialize_plot(ranges, plot, plots)
 
     def _hover_opts(self, element):
-        return element.nodes.dimensions()[2:], {}
+        if self.inspection_policy == 'nodes':
+            dims = element.nodes.dimensions()[2:]
+        elif self.inspection_policy == 'edges':
+            dims = element.kdims+element.vdims
+        return dims, {}
 
     def get_extents(self, element, ranges):
         """
@@ -94,13 +101,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         cdata, cmapping = self._get_color_data(element.nodes, ranges, style, 'node_fill_color')
         point_data.update(cdata)
         point_mapping = cmapping
-
-        # Get hover data
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
-            if nodes.dtype.kind not in 'if':
-                point_data['node'] = nodes
-            for d in element.nodes.dimensions()[3:]:
-                point_data[d.name] = element.nodes.dimension_values(d)
+        if 'node_fill_color' in point_mapping:
+            point_mapping['node_nonselection_fill_color'] = point_mapping['node_fill_color']
 
         # Get edge data
         nan_node = index.max()+1
@@ -117,6 +119,15 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             else:
                 self.warning('Graph edge paths do not match the number of abstract edges '
                              'and will be skipped')
+
+        # Get hover data
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
+            if self.inspection_policy == 'nodes':
+                for d in element.nodes.dimensions()[2:]:
+                    point_data[dimension_sanitizer(d.name)] = element.nodes.dimension_values(d)
+            elif self.inspection_policy == 'edges':
+                for d in element.vdims:
+                    path_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
 
         data = {'scatter_1': point_data, 'multi_line_1': path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, 'multi_line_1': {}}
@@ -175,3 +186,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         self.handles['multi_line_1_glyph_renderer'] = renderer.edge_renderer
         self.handles['scatter_1_glyph'] = renderer.node_renderer.glyph
         self.handles['multi_line_1_glyph'] = renderer.edge_renderer.glyph
+        if 'hover' in self.handles:
+            self.handles['hover'].renderers.append(renderer)
+
