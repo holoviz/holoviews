@@ -6,6 +6,7 @@ import numpy as np
 from holoviews.core.options import Store
 from holoviews.element import Graph, circular_layout
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import comms
 
 try:
     from holoviews.plotting.bokeh.util import bokeh_version
@@ -17,14 +18,32 @@ except :
 
 class BokehGraphPlotTests(ComparisonTestCase):
 
+    
     def setUp(self):
-        if bokeh_version < str('0.12.9'):
+        if not bokeh_renderer:
+            raise SkipTest("Bokeh required to test plot instantiation")
+        elif bokeh_version < str('0.12.9'):
             raise SkipTest("Bokeh >= 0.12.9 required to test graphs")
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'bokeh'
+        Callback._comm_type = comms.Comm
+        self.default_comm = bokeh_renderer.comms['default']
+        bokeh_renderer.comms['default'] = (comms.Comm, '')
+
         N = 8
         self.nodes = circular_layout(np.arange(N))
         self.source = np.arange(N)
         self.target = np.zeros(N)
         self.graph = Graph(((self.source, self.target),))
+        self.node_info = Dataset(['Output']+['Input']*(N-1), vdims=['Label'])
+        self.graph2 = Graph(((self.source, self.target), self.node_info))
+
+        
+    def tearDown(self):
+        Store.current_backend = self.previous_backend
+        Callback._comm_type = comms.JupyterCommJS
+        mpl_renderer.comms['default'] = self.default_comm
+        Callback._callbacks = {}
 
     def test_plot_simple_graph(self):
         plot = bokeh_renderer.get_plot(self.graph)
@@ -36,7 +55,7 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.assertEqual(edge_source.data['end'], self.target)
         layout = {z: (x, y) for x, y, z in self.graph.nodes.array()}
         self.assertEqual(layout_source.graph_layout, layout)
-    
+
     def test_plot_graph_with_paths(self):
         graph = self.graph.clone((self.graph.data, self.graph.nodes, self.graph.edgepaths))
         plot = bokeh_renderer.get_plot(graph)
