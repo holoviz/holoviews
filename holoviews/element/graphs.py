@@ -139,13 +139,16 @@ class Graph(Dataset, Element2D):
         specs match the selected object.
         """
         selection = {dim: sel for dim, sel in selection.items()
-                     if dim in self.dimensions()+['selection_mask']}
+                     if dim in self.dimensions('ranges')+['selection_mask']}
         if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
             or not selection):
             return self
 
-        nodes = self.nodes.select(**selection)
+        index_dim = self.nodes.kdims[2].name
         dimensions = self.kdims+self.vdims
+        node_selection = {index_dim: v for k, v in selection.items()
+                          if k in self.kdims}
+        nodes = self.nodes.select(**dict(selection, **node_selection))
         selection = {k: v for k, v in selection.items() if k in dimensions}
         if len(nodes) != len(self):
             xdim, ydim = dimensions[:2]
