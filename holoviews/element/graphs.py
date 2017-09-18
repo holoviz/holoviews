@@ -105,6 +105,15 @@ class Graph(Dataset, Element2D):
                                                 node_info.dimension_values(d),
                                                 vdim=True)
             self.nodes = nodes
+        if self._edgepaths:
+            mismatch = []
+            for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
+                if kd1 != kd2:
+                    print(kd1, kd2)
+                    mismatch.append('%s != %s' % (kd1, kd2))
+            if mismatch:
+                raise ValueError('Ensure that the first two key dimensions on '
+                                 'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
         self.redim = graph_redim(self, mode='dataset')
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
@@ -188,7 +197,8 @@ class Graph(Dataset, Element2D):
             sx, sy = start_ds.array(start_ds.kdims[:2]).T
             ex, ey = end_ds.array(end_ds.kdims[:2]).T
             paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
-        return EdgePaths(paths)
+        return EdgePaths(paths, kdims=self.nodes.kdims[:2])
+
 
     @classmethod
     def from_networkx(cls, G, layout_function, nodes=None, **kwargs):
