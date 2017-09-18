@@ -31,9 +31,6 @@ try:
 except:
     Chart = type(None) # Create stub for isinstance check
 
-if bokeh_version > '0.12.7':
-    from bokeh.document.util import _event_for_attribute_change
-
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array, callable_name, pd, dt64_to_dt
@@ -346,6 +343,32 @@ def to_references(doc):
     return references
 
 
+def _value_record_references(all_references, value, result):
+    if value is None: return
+    if isinstance(value, dict) and set(['id', 'type']).issubset(set(value.keys())):
+        if value['id'] not in result:
+            ref = all_references[value['id']]
+            result[value['id']] = ref
+            _value_record_references(all_references, ref['attributes'], result)
+    elif isinstance(value, (list, tuple)):
+        for elem in value:
+            _value_record_references(all_references, elem, result)
+    elif isinstance(value, dict):
+        for k, elem in value.items():
+            _value_record_references(all_references, elem, result)
+
+
+def _event_for_attribute_change(all_references, changed_obj, key, new_value, value_refs):
+    event = dict(
+        kind='ModelChanged',
+        model=dict(id=changed_obj['id'], type=changed_obj['type']),
+        attr=key,
+        new=new_value,
+    )
+    _value_record_references(all_references, new_value, value_refs)
+    return event
+
+
 def compute_static_patch(document, models):
     """
     Computes a patch to update an existing document without
@@ -385,12 +408,7 @@ def compute_static_patch(document, models):
         else:
             priority = float('inf')
         for key, val in obj['attributes'].items():
-            if bokeh_version > '0.12.7':
-                event = _event_for_attribute_change(references, obj, key, val, value_refs)
-            else:
-                event = Document._event_for_attribute_change(references,
-                                                             obj, key, val,
-                                                             value_refs)
+            event = _event_for_attribute_change(references, obj, key, val, value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
     events = [delete_refs(e, IGNORED_MODELS, ignored_attributes=IGNORED_ATTRIBUTES)
