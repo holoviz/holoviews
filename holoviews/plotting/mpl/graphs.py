@@ -84,6 +84,12 @@ class GraphPlot(ColorbarPlot):
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         xs, ys = data['nodes']
         nodes.set_offsets(np.column_stack([xs, ys]))
+        cdim = element.nodes.get_dimension(self.color_index)
+        if cdim:
+            nodes.set_clim((style['vmin'], style['vmax']))
+            nodes.set_array(style['c'])
+            if 'norm' in style:
+                nodes.norm = style['norm']
 
         edges = self.handles['edges']
         paths = data['edges']
