@@ -10,9 +10,7 @@ from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.embed import notebook_div
 from bokeh.io import curdoc, show as bkshow
-from bokeh.io.notebook import load_notebook
 from bokeh.models import Model
-from bokeh.protocol import Protocol
 from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
 
@@ -23,6 +21,12 @@ from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import (compute_static_patch, serialize_json, attach_periodic,
                    bokeh_version, compute_plot_size)
+
+if bokeh_version > '0.12.9':
+    from bokeh.io.notebook import load_notebook
+    from bokeh.protocol import Protocol
+else:
+    from bokeh.io import load_notebook
 
 
 class BokehRenderer(Renderer):
