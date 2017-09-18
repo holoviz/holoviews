@@ -60,6 +60,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             dims = element.nodes.dimensions()[2:]
         elif self.inspection_policy == 'edges':
             dims = element.kdims+element.vdims
+        else:
+            dims = []
         return dims, {}
 
     def get_extents(self, element, ranges):
