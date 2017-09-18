@@ -232,9 +232,9 @@ class BokehRenderer(Renderer):
         the latest plot data.
         """
         if binary:
-            events = list(self.document._held_events)
+            events = list(plot.document._held_events)
             msg = Protocol("1.0").create("PATCH-DOC", events)
-            self.document._held_events = []
+            plot.document._held_events = []
             return msg
         else:
             plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles, [lambda x: x._updated])
