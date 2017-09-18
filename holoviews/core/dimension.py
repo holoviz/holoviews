@@ -865,7 +865,7 @@ class Dimensioned(LabelledData):
                    'v': (lambda x: x.vdims, {}),
                    'c': (lambda x: x.cdims, {})}
         aliases = {'key': 'k', 'value': 'v', 'constant': 'c'}
-        if selection == 'all':
+        if selection in ['all', 'ranges']:
             groups = [d for d in self._dim_groups if d != 'cdims']
             dims = [dim for group in groups
                     for dim in getattr(self, group)]

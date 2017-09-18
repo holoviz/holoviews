@@ -137,7 +137,7 @@ class CubeInterface(GridInterface):
         if gridded:
             return dataset.data.shape
         else:
-            return (cls.length(dataset), len(dataset.kdims+dataset.vdims))
+            return (cls.length(dataset), len(dataset.dimensions()))
 
 
     @classmethod

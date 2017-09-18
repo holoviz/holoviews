@@ -168,7 +168,7 @@ class Graph(Dataset, Element2D):
 
     def dimensions(self, selection='all', label=False):
         dimensions = super(Graph, self).dimensions(selection, label)
-        if self.nodes and selection == 'all':
+        if self.nodes and selection == 'ranges':
             return dimensions+self.nodes.dimensions(selection, label)
         return dimensions
 

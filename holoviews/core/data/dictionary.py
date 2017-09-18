@@ -87,11 +87,11 @@ class DictInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        dimensions = dataset.kdims+dataset.vdims
-        not_found = [d for d in dimensions if d.name not in dataset.data]
+        dimensions = dataset.dimensions(label='name')
+        not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
             raise ValueError('Following dimensions not found in data: %s' % not_found)
-        lengths = [len(dataset.data[dim.name]) for dim in dimensions]
+        lengths = [len(dataset.data[dim]) for dim in dimensions]
         if len({l for l in lengths if l > 1}) > 1:
             raise ValueError('Length of columns do not match')
 
