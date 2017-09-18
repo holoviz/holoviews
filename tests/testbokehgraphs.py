@@ -3,6 +3,7 @@ from __future__ import absolute_import
 from unittest import SkipTest
 
 import numpy as np
+from holoviews.core.data import Dataset
 from holoviews.core.options import Store
 from holoviews.element import Graph, circular_layout
 from holoviews.element.comparison import ComparisonTestCase
@@ -12,6 +13,7 @@ try:
     from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes)
+    from bokeh.models.mappers import CategoricalColorMapper
 except :
     bokeh_renderer = None
 
@@ -35,7 +37,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.graph = Graph(((self.source, self.target),))
         self.node_info = Dataset(['Output']+['Input']*(N-1), vdims=['Label'])
         self.graph2 = Graph(((self.source, self.target), self.node_info))
-
         
     def tearDown(self):
         Store.current_backend = self.previous_backend
@@ -108,3 +109,14 @@ class BokehGraphPlotTests(ComparisonTestCase):
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
         self.assertIs(renderer.selection_policy, None)
+
+    def test_graph_nodes_colormapped(self):
+        g = self.graph2.opts(plot=dict(color_index='Label'), style=dict(cmap='Set1'))
+        plot = bokeh_renderer.get_plot(g)
+        cmapper = plot.handles['color_mapper']
+        node_source = plot.handles['scatter_1_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['Input', 'Output'])
+        self.assertEqual(node_source.data['Label'], self.node_info['Label'])
+        self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
