@@ -26,9 +26,7 @@ class BokehGraphPlotTests(ComparisonTestCase):
             raise SkipTest("Bokeh >= 0.12.9 required to test graphs")
         self.previous_backend = Store.current_backend
         Store.current_backend = 'bokeh'
-        Callback._comm_type = comms.Comm
         self.default_comm = bokeh_renderer.comms['default']
-        bokeh_renderer.comms['default'] = (comms.Comm, '')
 
         N = 8
         self.nodes = circular_layout(np.arange(N))
@@ -41,10 +39,8 @@ class BokehGraphPlotTests(ComparisonTestCase):
         
     def tearDown(self):
         Store.current_backend = self.previous_backend
-        Callback._comm_type = comms.JupyterCommJS
-        mpl_renderer.comms['default'] = self.default_comm
-        Callback._callbacks = {}
-
+        bokeh_renderer.comms['default'] = self.default_comm
+        
     def test_plot_simple_graph(self):
         plot = bokeh_renderer.get_plot(self.graph)
         node_source = plot.handles['scatter_1_source']

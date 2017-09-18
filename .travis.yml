@@ -30,7 +30,7 @@ install:
   - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy=0.18.1 numpy freetype nose pandas=0.19.2 jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray
   - source activate test-environment
   - conda install -c conda-forge  iris sip=4.18 plotly flexx
-  - conda install -c bokeh datashader dask=0.13 bokeh=0.12.9
+  - conda install -c bokeh datashader dask=0.13 bokeh=0.12.9 selenium
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
