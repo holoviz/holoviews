@@ -13,6 +13,7 @@ class GraphTests(ComparisonTestCase):
         self.nodes = circular_layout(np.arange(N))
         self.source = np.arange(N)
         self.target = np.zeros(N)
+        self.graph = Graph(((self.source, self.target),))
 
     def test_basic_constructor(self):
         graph = Graph(((self.source, self.target),))
@@ -55,3 +56,9 @@ class GraphTests(ComparisonTestCase):
         graph = Graph(((self.target, self.source),))
         self.assertEqual(graph.range('x'), (-1, 1))
         self.assertEqual(graph.range('y'), (-1, 1))
+
+    def test_graph_redim_nodes(self):
+        graph = Graph(((self.target, self.source),))
+        redimmed = graph.redim(x='x2', y='y2')
+        self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
+        self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
