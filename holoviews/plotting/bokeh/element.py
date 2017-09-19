@@ -1161,8 +1161,12 @@ class ColorbarPlot(ElementPlot):
 
         if 'color_mapper' in self.handles:
             cmapper = self.handles['color_mapper']
-            cmapper.palette = palette
-            cmapper.update(**opts)
+            if cmapper.palette != palette:
+                cmapper.palette = palette
+            opts = {k: opt for k, opt in opts.items()
+                    if getattr(cmapper, k) != opt}
+            if opts:
+                cmapper.update(**opts)
         else:
             cmapper = colormapper(palette=palette, **opts)
             self.handles['color_mapper'] = cmapper
