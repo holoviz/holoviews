@@ -210,8 +210,6 @@ class BokehRenderer(Renderer):
     def figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
         doc = Document() if doc is None else doc
-        if bokeh_version > '0.12.9':
-            doc.hold()
         for m in model.references():
             m._document = None
         doc.add_root(model)
@@ -227,6 +225,7 @@ class BokehRenderer(Renderer):
             raise
         logger.disabled = False
         plot.document = doc
+        if bokeh_version > '0.12.9': doc.hold()
         return div
 
 
