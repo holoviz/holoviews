@@ -67,7 +67,7 @@ class Comm(object):
         """
 
 
-    def send(self, data):
+    def send(self, data=None, buffers=[]):
         """
         Sends data to the frontend
         """
@@ -165,13 +165,13 @@ class JupyterComm(Comm):
         return msg['content']['data']
 
 
-    def send(self, data):
+    def send(self, data=None, buffers=[]):
         """
         Pushes data across comm socket.
         """
         if not self._comm:
             self.init()
-        self.comm.send(data)
+        self.comm.send(data, buffers=buffers)
 
 
 
@@ -216,9 +216,9 @@ class JupyterCommJS(JupyterComm):
         self._comm.on_msg(self._handle_msg)
 
 
-    def send(self, data):
+    def send(self, data=None, buffers=[]):
         """
         Pushes data across comm socket.
         """
-        self.comm.send(data)
+        self.comm.send(data, buffers=buffers)
 

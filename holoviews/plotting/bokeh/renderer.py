@@ -9,7 +9,7 @@ from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
 from bokeh.embed import notebook_div
-from bokeh.io import load_notebook, curdoc, show as bkshow
+from bokeh.io import curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
@@ -21,6 +21,12 @@ from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import (compute_static_patch, serialize_json, attach_periodic,
                    bokeh_version, compute_plot_size)
+
+if bokeh_version > '0.12.9':
+    from bokeh.io.notebook import load_notebook
+    from bokeh.protocol import Protocol
+else:
+    from bokeh.io import load_notebook
 
 
 class BokehRenderer(Renderer):
@@ -204,6 +210,8 @@ class BokehRenderer(Renderer):
     def figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
         doc = Document() if doc is None else doc
+        if bokeh_version > '0.12.9':
+            doc.hold()
         for m in model.references():
             m._document = None
         doc.add_root(model)
@@ -222,15 +230,21 @@ class BokehRenderer(Renderer):
         return div
 
 
-    def diff(self, plot, serialize=True):
+    def diff(self, plot, serialize=True, binary=False):
         """
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles, [lambda x: x._updated])
-                       for h in handles]
-        plot.traverse(lambda x: setattr(x, '_updated', False))
-        patch = compute_static_patch(plot.document, plotobjects)
+        if binary:
+            events = list(plot.document._held_events)
+            msg = Protocol("1.0").create("PATCH-DOC", events)
+            plot.document._held_events = []
+            return msg
+        else:
+            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles, [lambda x: x._updated])
+                           for h in handles]
+            plot.traverse(lambda x: setattr(x, '_updated', False))
+            patch = compute_static_patch(plot.document, plotobjects)
         processed = self._apply_post_render_hooks(patch, plot, 'json')
         return serialize_json(processed) if serialize else processed
 
@@ -284,5 +298,9 @@ class BokehRenderer(Renderer):
         """
         kwargs = {'notebook_type': 'jupyter'} if '0.12.9' >= bokeh_version > '0.12.5' else {}
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
-        from bokeh.io import _state
-        _state.output_notebook()
+        if bokeh_version < '0.12.9':
+            from bokeh.io import _state
+            _state.output_notebook()
+        else:
+            from bokeh.io.notebook import curstate
+            curstate().output_notebook()

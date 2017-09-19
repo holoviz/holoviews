@@ -1,6 +1,7 @@
+import json
 from itertools import groupby
-import numpy as np
 
+import numpy as np
 import param
 
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
@@ -111,8 +112,18 @@ class BokehPlot(DimensionedPlot):
             return
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
-        diff = self.renderer.diff(self)
-        self.comm.send(diff)
+
+        if bokeh_version > '0.12.9':
+            msg = self.renderer.diff(self, binary=True)
+            self.comm.send(msg.header_json)
+            self.comm.send(msg.metadata_json)
+            self.comm.send(msg.content_json)
+            for header, payload in msg.buffers:
+                self.comm.send(json.dumps(header))
+                self.comm.send(buffers=[payload])
+        else:
+            diff = self.renderer.diff(self)
+            self.comm.send(diff)
 
 
     def set_root(self, root):
