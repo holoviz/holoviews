@@ -47,18 +47,14 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
 		}
 		if (msg.msg_type != "execute_result") {
 			console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
-			this.time = undefined;
-			this.wait = false;
-			return
-		}
-		this.timed = (Date.now() - this.time) * 1.1;
-		if (msg.msg_type == "execute_result") {
+		} else {
 			if (msg.content.data['text/plain'].includes('Complete')) {
-				this.wait = false;
 				if (this.queue.length > 0) {
 					this.time = Date.now();
 					this.dynamic_update(this.queue[this.queue.length-1]);
 					this.queue = [];
+				} else {
+					this.wait = false;
 				}
 				return
 			}
@@ -158,32 +154,23 @@ SelectionWidget.prototype.get_key = function(current_vals) {
 
 SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 	this.current_vals[dim_idx] = dim_val;
-    var current = this.get_key(this.current_vals);
-    if(current === undefined && !this.dynamic) {
-        return
-    }
+	var key = this.current_vals;
+	if (!this.dynamic) {
+		key = this.get_key(key)
+	}
 	if (this.dynamic || !this.cached) {
-		if (this.time === undefined) {
-			// Do nothing the first time
-		} else if ((this.timed === undefined) || ((this.time + this.timed) > Date.now())) {
-			var key = this.current_vals;
-			if (!this.dynamic) {
-				key = this.get_key(key);
-			}
+		if ((this.time !== undefined) && ((this.wait) && ((this.time + 10000) > Date.now()))) {
 			this.queue.push(key);
 			return
 		}
+		this.queue = [];
+		this.time = Date.now();
+		this.current_frame = key;
+		this.wait = true;
+		this.dynamic_update(key)
+	} else if (key !== undefined) {
+		this.update(key)
 	}
-	this.queue = [];
-	this.time = Date.now();
-	this.current_frame = current;
-    if(this.dynamic) {
-        this.dynamic_update(this.current_vals)
-    } else if(this.cached) {
-        this.update(current)
-    } else {
-        this.dynamic_update(current)
-    }
 }
 
 
@@ -228,19 +215,6 @@ ScrubberWidget.prototype.set_frame = function(frame){
     } else {
         this.dynamic_update(frame)
     }
-}
-
-
-ScrubberWidget.prototype.process_error = function(msg){
-	if (msg.content.ename === 'StopIteration') {
-		this.pause_animation();
-		this.stopped = true;
-		var keys = Object.keys(this.frames)
-		this.length = keys.length;
-		document.getElementById(this.slider_id).max = this.length-1;
-		document.getElementById(this.slider_id).value = this.length-1;
-		this.current_frame = this.length-1;
-	}
 }
 
 
