@@ -236,6 +236,8 @@ class BokehRenderer(Renderer):
         """
         if binary:
             events = list(plot.document._held_events)
+            if not events:
+                return None
             msg = Protocol("1.0").create("PATCH-DOC", events)
             plot.document._held_events = []
             return msg
