@@ -2,13 +2,13 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Curve, Points, Image, Dataset, RGB
+from holoviews import Curve, Points, Image, Dataset, RGB, Path
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from holoviews.operation.datashader import aggregate, regrid, ds_version
 except:
-    aggregate = None
+    ds_version = None
 
 
 @attr(optional=1)
@@ -57,6 +57,23 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         self.assertEqual(img, expected)
 
+    def test_aggregate_path(self):
+        path = Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=['Count'])
+        img = aggregate(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        self.assertEqual(img, expected)
+
+    def test_aggregate_dframe_nan_path(self):
+        path = Path([Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]]).dframe()])
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=['Count'])
+        img = aggregate(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        self.assertEqual(img, expected)
+
+
 
 
 @attr(optional=1)
@@ -66,7 +83,7 @@ class DatashaderRegridTests(ComparisonTestCase):
     """
 
     def setUp(self):
-        if ds_version <= '0.5.0':
+        if ds_version is None or ds_version <= '0.5.0':
             raise SkipTest('Regridding operations require datashader>=0.6.0')
 
     def test_regrid_mean(self):
