@@ -677,6 +677,7 @@ class bundle_graph(Operation, hammer_bundle):
         or concatenated with NaN separators.""")
 
     def _process(self, element, key=None):
+        from datashader.bundling import hammer_bundle
         index = element.nodes.kdims[2].name
         position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
         rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
