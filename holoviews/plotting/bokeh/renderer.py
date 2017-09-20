@@ -299,7 +299,7 @@ class BokehRenderer(Renderer):
         """
         kwargs = {'notebook_type': 'jupyter'} if '0.12.9' >= bokeh_version > '0.12.5' else {}
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
-        if bokeh_version < '0.12.9':
+        if bokeh_version <= '0.12.9':
             from bokeh.io import _state
             _state.output_notebook()
         else:
