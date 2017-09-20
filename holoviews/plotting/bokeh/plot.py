@@ -115,6 +115,8 @@ class BokehPlot(DimensionedPlot):
 
         if bokeh_version > '0.12.9':
             msg = self.renderer.diff(self, binary=True)
+            if msg is None:
+                return
             self.comm.send(msg.header_json)
             self.comm.send(msg.metadata_json)
             self.comm.send(msg.content_json)
