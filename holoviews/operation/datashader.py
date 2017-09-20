@@ -174,11 +174,8 @@ class aggregate(ResamplingOperation):
         dims = obj.dimensions()[:2]
         if isinstance(obj, Path):
             glyph = 'line'
-            for p in obj.data:
-                df = pd.DataFrame(p, columns=obj.dimensions('key', True))
-                if isinstance(obj, Contours) and obj.vdims and obj.level:
-                    df[obj.vdims[0].name] = p.level
-                paths.append(df)
+            for p in obj.split():
+                paths.append(PandasInterface.as_dframe(p))
         elif isinstance(obj, CompositeOverlay):
             element = None
             for key, el in obj.data.items():
