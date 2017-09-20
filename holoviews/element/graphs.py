@@ -93,28 +93,26 @@ class Graph(Dataset, Element2D):
             node_info = None
         if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
             edgepaths = EdgePaths(edgepaths)
-        self.nodes = nodes
+        self._nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, **params)
-        if self.nodes is None:
-            nodes = layout_nodes(self)
-            if node_info:
-                nodes = nodes.clone(datatype=['pandas', 'dictionary'])
-                for d in node_info.dimensions():
-                    nodes = nodes.add_dimension(d, len(nodes.vdims),
-                                                node_info.dimension_values(d),
-                                                vdim=True)
-            self.nodes = nodes
+        if self._nodes is None and node_info:
+            nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
+            for d in node_info.dimensions():
+                nodes = nodes.add_dimension(d, len(nodes.vdims),
+                                            node_info.dimension_values(d),
+                                            vdim=True)
+            self._nodes = nodes
         if self._edgepaths:
             mismatch = []
             for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
                 if kd1 != kd2:
-                    print(kd1, kd2)
                     mismatch.append('%s != %s' % (kd1, kd2))
             if mismatch:
                 raise ValueError('Ensure that the first two key dimensions on '
                                  'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
         self.redim = graph_redim(self, mode='dataset')
+
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if data is None:
@@ -180,9 +178,28 @@ class Graph(Dataset, Element2D):
 
     def dimensions(self, selection='all', label=False):
         dimensions = super(Graph, self).dimensions(selection, label)
-        if self.nodes and selection == 'ranges':
-            return dimensions+self.nodes.dimensions(selection, label)
+        if selection == 'ranges':
+            if self._nodes:
+                node_dims = self.nodes.dimensions(selection, label)
+            else:
+                node_dims = Nodes.kdims+Nodes.vdims
+                if label in ['name', True, 'short']:
+                    node_dims = [d.name for d in node_dims]
+                elif label in ['long', 'label']:
+                    node_dims = [d.label for d in node_dims]
+            return dimensions+node_dims
         return dimensions
+
+
+    @property
+    def nodes(self):
+        """
+        Computes the node positions the first time they are requested
+        if no explicit node information was supplied.
+        """
+        if self._nodes is None:
+            self._nodes = layout_nodes(self)
+        return self._nodes
 
 
     @property
