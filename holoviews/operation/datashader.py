@@ -20,12 +20,17 @@ from datashader.dask import dask_pipeline
 from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
 
+try:
+    from datashader.bundling import hammer_bundle
+except:
+    hammer_bundle = object
+
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring
-from ..element import Image, Path, Curve, Contours, RGB
+from ..element import Image, Path, Curve, Contours, RGB, Graph
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
 
@@ -162,9 +167,11 @@ class aggregate(ResamplingOperation):
         xarray Dataset that can be aggregated.
         """
         paths = []
+        if isinstance(obj, Graph):
+            obj = obj.edgepaths
         kdims = list(obj.kdims)
         vdims = list(obj.vdims)
-        dims = obj.dimensions(label=True)[:2]
+        dims = obj.dimensions()[:2]
         if isinstance(obj, Path):
             glyph = 'line'
             for p in obj.data:
@@ -214,10 +221,10 @@ class aggregate(ResamplingOperation):
             df[category] = df[category].astype('category')
 
         for d in (x, y):
-            if df[d].dtype.kind == 'M':
+            if df[d.name].dtype.kind == 'M':
                 param.main.warning('Casting %s dimension data to integer; '
                                    'datashader cannot process datetime data', d)
-                df[d] = df[d].astype('int64') / 1000000.
+                df[d.name] = df[d.name].astype('int64') / 1000000.
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
@@ -320,11 +327,11 @@ class aggregate(ResamplingOperation):
             name = column
         vdims = [element.get_dimension(column)(name) if column
                  else Dimension('Count')]
-        params = dict(get_param_values(element), kdims=element.dimensions()[:2],
+        params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=vdims)
 
         dfdata = PandasInterface.as_dframe(data)
-        agg = getattr(cvs, glyph)(dfdata, x, y, self.p.aggregator)
+        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, self.p.aggregator)
         if 'x_axis' in agg and 'y_axis' in agg:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
 
@@ -651,3 +658,32 @@ class dynspread(Operation):
         return element.clone(new_data)
 
 
+def split_dataframe(path_df):
+    """
+    Splits a dataframe of paths separated by NaNs into individual
+    dataframes.
+    """
+    splits = np.where(path_df.iloc[:, 0].isnull())[0]+1
+    return [df for df in np.split(path_df, splits) if len(df) > 1]
+
+
+class bundle_graph(Operation, hammer_bundle):
+    """
+    Iteratively group edges and return as paths suitable for datashading.
+
+    Breaks each edge into a path with multiple line segments, and
+    iteratively curves this path to bundle edges into groups.
+    """
+
+    split = param.Boolean(default=True, doc="""
+        Determines whether bundled edges will be split into individual edges
+        or concatenated with NaN separators.""")
+
+    def _process(self, element, key=None):
+        index = element.nodes.kdims[2].name
+        position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
+        rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
+        edges_df = element.redim(**rename).dframe([0, 1])
+        paths = hammer_bundle.__call__(self, position_df, edges_df, **self.p)
+        paths = split_dataframe(paths) if self.p.split else [paths]
+        return element.clone((element.data, element.nodes, paths))

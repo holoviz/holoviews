@@ -408,7 +408,7 @@ class DimensionedPlot(Plot):
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions(label=True):
+            for dim in el.dimensions('ranges', label=True):
                 dim_range = el.range(dim)
                 if dim not in group_ranges:
                     group_ranges[dim] = []

@@ -12,6 +12,7 @@ from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
+from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
 from .plot import * # noqa (API import)
 from .raster import * # noqa (API import)
@@ -146,6 +147,11 @@ Store.register({Curve: CurvePlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
 
+                # Graph Elements
+                Graph: GraphPlot,
+                Nodes: PointPlot,
+                EdgePaths: PathPlot,
+
                 # Annotation plots
                 VLine: VLinePlot,
                 HLine: HLinePlot,
@@ -248,3 +254,10 @@ else:
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
+
+# Graphs
+options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
+                        edge_color='black', node_size=20)
+options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
+                        marker='o', s=20**2)
+options.EdgePaths = Options('style', color='black')

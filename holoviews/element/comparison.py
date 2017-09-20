@@ -166,6 +166,11 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[BoxWhisker] =   cls.compare_boxwhisker
         cls.equality_type_funcs[VectorField] =  cls.compare_vectorfield
 
+        # Graphs
+        cls.equality_type_funcs[Graph] =        cls.compare_graph
+        cls.equality_type_funcs[Nodes] =        cls.compare_nodes
+        cls.equality_type_funcs[EdgePaths] =    cls.compare_edgepaths
+
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
         cls.equality_type_funcs[Table] =        cls.compare_tables
@@ -560,6 +565,27 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_boxwhisker(cls, el1, el2, msg='BoxWhisker'):
         cls.compare_dataset(el1, el2, msg)
+
+
+    #=========#
+    # Graphs  #
+    #=========#
+
+    @classmethod
+    def compare_graph(cls, el1, el2, msg='Graph'):
+        cls.compare_dataset(el1, el2, msg)
+        cls.compare_nodes(el1.nodes, el2.nodes, msg)
+        if el1._edgepaths or el2._edgepaths:
+            cls.compare_edgepaths(el1.nodes, el2.nodes, msg)
+
+    @classmethod
+    def compare_nodes(cls, el1, el2, msg='Nodes'):
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
+    def compare_edgepaths(cls, el1, el2, msg='Nodes'):
+        cls.compare_paths(el1, el2, msg)
+
 
     #=========#
     # Rasters #

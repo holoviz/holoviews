@@ -110,6 +110,13 @@ class MultiInterface(Interface):
         return data
 
     @classmethod
+    def select_paths(cls, dataset, selection):
+        """
+        Allows selecting paths with usual NumPy slicing index.
+        """
+        return [s[0] for s in np.array([{0: p} for p in dataset.data])[selection]]
+
+    @classmethod
     def aggregate(cls, columns, dimensions, function, **kwargs):
         raise NotImplementedError('Aggregation currently not implemented')
 

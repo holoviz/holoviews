@@ -1191,7 +1191,9 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                           dt.timedelta(days=1))
         box = BoxWhisker((times, np.random.rand(len(times))), kdims=['Date'])
         plot = bokeh_renderer.get_plot(box)
-        formatted = [box.kdims[0].pprint_value(t).replace(':', ';') for t in times]
+        formatted = [box.kdims[0].pprint_value(t) for t in times]
+        if bokeh_version < str('0.12.7'):
+            formatted = [f.replace(':', ';') for f in formatted]
         self.assertTrue(all(cds.data['index'][0] in formatted for cds in
                             plot.state.select(ColumnDataSource)
                             if len(cds.data.get('index', []))))

@@ -9,7 +9,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         RGB, Histogram, Spread, HeatMap, Contours, Bars,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
-                        Table, ItemTable, Area, HSV, QuadMesh, VectorField)
+                        Table, ItemTable, Area, HSV, QuadMesh, VectorField,
+                        Graph, Nodes, EdgePaths)
 from ...core.options import Options, Cycle, Palette
 
 try:
@@ -23,6 +24,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
+from .graphs import GraphPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -81,6 +83,11 @@ associations = {Overlay: OverlayPlot,
                 Spline: SplinePlot,
                 Arrow: ArrowPlot,
 
+                # Graph Elements
+                Graph: GraphPlot,
+                Nodes: PointPlot,
+                EdgePaths: PathPlot,
+
                 # Tabular
                 Table: TablePlot,
                 ItemTable: TablePlot}
@@ -100,8 +107,6 @@ else:
     for framedcls in [VectorFieldPlot, ContourPlot, PathPlot, PolygonPlot,
                       RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot, HeatMapPlot]:
         framedcls.show_frame = True
-
-
 
 
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
@@ -164,6 +169,29 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
+
+# Graphs
+options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
+                        node_line_color='black',
+                        node_selection_fill_color='limegreen',
+                        node_nonselection_fill_color=Cycle(),
+                        node_hover_line_color='black',
+                        node_hover_fill_color='indianred',
+                        node_nonselection_alpha=0.2,
+                        edge_nonselection_alpha=0.2,
+                        edge_line_color='black', edge_line_width=2,
+                        edge_nonselection_line_color='black',
+                        edge_hover_line_color='indianred',
+                        edge_selection_line_color='limegreen')
+options.Nodes = Options('style', line_color='black', color=Cycle(),
+                        size=20, nonselection_fill_color=Cycle(),
+                        selection_fill_color='limegreen',
+                        hover_fill_color='indianred')
+options.Nodes = Options('plot', tools=['hover', 'tap'])
+options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
+                            line_width=2, selection_color='limegreen',
+                            hover_line_color='indianred')
+options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
