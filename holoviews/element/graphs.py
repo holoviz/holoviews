@@ -148,7 +148,7 @@ class Graph(Dataset, Element2D):
                           if k in self.kdims}
         nodes = self.nodes.select(**dict(selection, **node_selection))
         selection = {k: v for k, v in selection.items() if k in dimensions}
-        if len(nodes) != len(self):
+        if len(nodes) != len(self.nodes):
             xdim, ydim = dimensions[:2]
             indices = list(nodes.dimension_values(2))
             selection[xdim.name] = indices
@@ -156,14 +156,19 @@ class Graph(Dataset, Element2D):
         if selection:
             mask = self.interface.select_mask(self, selection)
             data = self.interface.select(self, mask)
+            if not np.all(mask):
+                new_graph = self.clone((data, nodes))
+                source = new_graph.dimension_values(0, expanded=False)
+                target = new_graph.dimension_values(1, expanded=False)
+                unique_nodes = np.unique(np.concatenate([source, target]))
+                nodes = new_graph.nodes[:, :, list(unique_nodes)]
+            paths = None
             if self._edgepaths:
                 paths = self.edgepaths.interface.select_paths(self.edgepaths, mask)
-                return self.clone((data, nodes, paths))
         else:
             data = self.data
-            if self._edgepaths:
-                return self.clone((data, nodes, self._edgepaths))
-        return self.clone((data, nodes))
+            paths = self._edgepaths
+        return self.clone((data, nodes, paths))
 
 
     def range(self, dimension, data_range=True):

@@ -13,6 +13,7 @@ class GraphTests(ComparisonTestCase):
         self.nodes = circular_layout(np.arange(N))
         self.source = np.arange(N)
         self.target = np.zeros(N)
+        self.edge_info = np.arange(N)
         self.graph = Graph(((self.source, self.target),))
 
     def test_basic_constructor(self):
@@ -45,12 +46,17 @@ class GraphTests(ComparisonTestCase):
     def test_select_by_source(self):
         graph = Graph(((self.source, self.target),))
         selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes))[:2]))
-        self.assertEqual(graph.select(start=(0, 2)), selection) 
+        self.assertEqual(graph.select(start=(0, 2)), selection)
 
     def test_select_by_target(self):
-        graph = Graph(((self.target, self.source),))
-        selection = Graph(([(0,0), (0, 1)], list(zip(*self.nodes))[:2]))
-        self.assertEqual(graph.select(end=(0, 2)), selection) 
+        graph = Graph(((self.source, self.target),))
+        selection = Graph(([(0,0), (1, 0)], list(zip(*self.nodes))[:2]))
+        self.assertEqual(graph.select(start=(0, 2)), selection)
+
+    def test_select_by_edge_data(self):
+        graph = Graph(((self.target, self.source, self.edge_info),), vdims=['info'])
+        selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes))[:2]), vdims=['info'])
+        self.assertEqual(graph.select(info=(0, 2)), selection) 
 
     def test_graph_node_range(self):
         graph = Graph(((self.target, self.source),))
