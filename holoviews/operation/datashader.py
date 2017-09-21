@@ -583,6 +583,51 @@ class datashade(aggregate, shade):
 
 
 
+class stack(Operation):
+    """
+    The stack operation allows compositing multiple RGB Elements using
+    the defined compositing operator.
+    """
+
+    compositor = param.ObjectSelector(objects=['add', 'over', 'saturate', 'source'],
+                                      default='over', doc="""
+        Defines how the compositing operation combines the images""")
+
+    def uint8_to_uint32(self, element):
+        img = np.dstack([element.dimension_values(d, flat=False)
+                         for d in element.vdims])
+        if img.shape[2] == 3: # alpha channel not included
+            alpha = np.ones(img.shape[:2])
+            if img.dtype.name == 'uint8':
+                alpha = (alpha*255).astype('uint8')
+            img = np.dstack([img, alpha])
+        if img.dtype.name != 'uint8':
+            img = (img*255).astype(np.uint8)
+        N, M, _ = img.shape
+        return img.view(dtype=np.uint32).reshape((N, M))
+
+    def _process(self, overlay, key=None):
+        if not isinstance(overlay, CompositeOverlay):
+            return overlay
+        elif len(overlay) == 1:
+            return overlay.last if isinstance(overlay, NdOverlay) else overlay.get(0)
+
+        imgs = []
+        for rgb in overlay:
+            dims = [kd.name for kd in rgb.kdims][::-1]
+            coords = {kd.name: rgb.dimension_values(kd, False)
+                      for kd in rgb.kdims}
+            imgs.append(tf.Image(self.uint8_to_uint32(rgb), coords=coords, dims=dims))
+        stacked = tf.stack(*imgs, how=self.p.compositor)
+        arr = shade.uint32_to_uint8(stacked.data)
+        data = (coords[dims[1]], coords[dims[0]], arr[:, :, 0],
+                arr[:, :, 1], arr[:, :, 2])
+        if arr.shape[-1] == 4:
+            data = data + (arr[:, :, 3],)
+        return rgb.clone(data)
+
+
+
 class dynspread(Operation):
     """
     Spreading expands each pixel in an Image based Element a certain
