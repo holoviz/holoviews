@@ -8,6 +8,12 @@ from ..core.operation import Operation
 from .chart import Points
 from .path import Path
 
+try:
+    from datashader.layout import LayoutAlgorithm
+except:
+    LayoutAlgorithm = None
+
+
 class graph_redim(redim):
     """
     Extension for the redim utility that allows re-dimensioning
@@ -43,7 +49,7 @@ class layout_nodes(Operation):
         A NetworkX layout function""")
 
     def _process(self, element, key=None):
-        if self.p.layout:
+        if self.p.layout and not (LayoutAlgorithm and issubclass(self.p.layout, LayoutAlgorithm)):
             graph = nx.from_edgelist(element.array([0, 1]))
             positions = self.p.layout(graph)
             return Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
@@ -51,6 +57,11 @@ class layout_nodes(Operation):
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
+            if self.p.layout:
+                import pandas as pd
+                df = pd.DataFrame({'index': nodes})
+                nodes = self.p.layout(df, element.dframe())
+                return Nodes(nodes[['x', 'y', 'index']])
             return Nodes(circular_layout(nodes))
 
 
