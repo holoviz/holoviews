@@ -42,11 +42,14 @@ class PathPlot(ElementPlot):
 
 
     def get_data(self, element, ranges=None, empty=False):
-        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
-        paths = [p.array(p.kdims[:2]) for p in element.split()]
-        xs = [] if empty else [path[:, xidx] for path in paths]
-        ys = [] if empty else [path[:, yidx] for path in paths]
-        data = dict(xs=xs, ys=ys)
+        if self.static_source:
+            data = {}
+        else:
+            xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+            paths = [p.array(p.kdims[:2]) for p in element.split()]
+            xs = [] if empty else [path[:, xidx] for path in paths]
+            ys = [] if empty else [path[:, yidx] for path in paths]
+            data = dict(xs=xs, ys=ys)
         self._get_hover_data(data, element, empty)
         return data, dict(self._mapping)
 
@@ -130,14 +133,16 @@ class PolygonPlot(ColorbarPlot, PathPlot):
         return dims, {}
 
     def get_data(self, element, ranges=None, empty=False):
-        paths = [p.array(p.kdims[:2]) for p in element.split()]
-        xs = [] if empty else [path[:, 0] for path in paths]
-        ys = [] if empty else [path[:, 1] for path in paths]
-        data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
+        if not self.static_source:
+            paths = [p.array(p.kdims[:2]) for p in element.split()]
+            xs = [] if empty else [path[:, 0] for path in paths]
+            ys = [] if empty else [path[:, 1] for path in paths]
+            data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
+        else:
+            data = {}
 
         style = self.style[self.cyclic_index]
         mapping = dict(self._mapping)
-
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
             dim_name = util.dimension_sanitizer(cdim.name)
