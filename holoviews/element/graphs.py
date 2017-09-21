@@ -9,9 +9,9 @@ from .chart import Points
 from .path import Path
 
 try:
-    from datashader.layout import LayoutAlgorithm
+    from datashader.layout import LayoutAlgorithm as ds_layout
 except:
-    LayoutAlgorithm = None
+    ds_layout = None
 
 
 class graph_redim(redim):
@@ -42,17 +42,22 @@ class layout_nodes(Operation):
     """
     Accepts a Graph and lays out the corresponding nodes with the
     supplied networkx layout function. If no layout function is
-    supplied uses a simple circular_layout function.
+    supplied uses a simple circular_layout function. Also supports
+    LayoutAlgorithm function provided in datashader layouts.
     """
+
+    as_graph = param.Boolean(default=False, doc="""
+        Whether to return Nodes or Graph.""")
 
     layout = param.Callable(default=None, doc="""
         A NetworkX layout function""")
 
     def _process(self, element, key=None):
-        if self.p.layout and not (LayoutAlgorithm and issubclass(self.p.layout, LayoutAlgorithm)):
+        if self.p.layout and not (ds_layout and (isinstance(self.p.layout, ds_layout) or
+                                                 issubclass(self.p.layout, ds_layout))):
             graph = nx.from_edgelist(element.array([0, 1]))
             positions = self.p.layout(graph)
-            return Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+            nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
@@ -61,8 +66,13 @@ class layout_nodes(Operation):
                 import pandas as pd
                 df = pd.DataFrame({'index': nodes})
                 nodes = self.p.layout(df, element.dframe())
-                return Nodes(nodes[['x', 'y', 'index']])
-            return Nodes(circular_layout(nodes))
+                nodes = nodes[['x', 'y', 'index']]
+            else:
+                nodes = circular_layout(nodes)
+        if self.p.as_graph:
+            return element.clone((element.data, nodes))
+        return Nodes(nodes)
+
 
 
 class Graph(Dataset, Element2D):
