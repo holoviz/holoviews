@@ -201,7 +201,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self._set_axis_limits(axis, element, subplots, ranges)
 
             # Apply aspects
-            if self.aspect is not None and self.projection != 'polar':
+            if self.aspect is not None and self.projection != 'polar' and not self.adjoined:
                 self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
