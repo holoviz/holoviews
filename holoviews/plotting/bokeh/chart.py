@@ -662,9 +662,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         xdim, ydim = element.dimensions()[:2]
         gdim = element.get_dimension(self.group_index)
+        sdim = element.get_dimension(self.stack_index)
         xvals = element.dimension_values(0, False)
         xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals]
-        if bokeh_version >= '0.12.7' and gdim:
+        if bokeh_version >= '0.12.7' and gdim and not sdim:
             gvals = element.dimension_values(gdim, False)
             gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
             coords = ([(x, g) for x in xvals for g in gvals], [])
