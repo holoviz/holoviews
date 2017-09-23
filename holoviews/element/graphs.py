@@ -8,14 +8,20 @@ from ..core.operation import Operation
 from .chart import Points
 from .path import Path
 
-class graph_redim(redim):
+try:
+    from datashader.layout import LayoutAlgorithm as ds_layout
+except:
+    ds_layout = None
+
+
+class redim_graph(redim):
     """
     Extension for the redim utility that allows re-dimensioning
     Graph objects including their nodes and edgepaths.
     """
 
     def __call__(self, specs=None, **dimensions):
-        redimmed = super(graph_redim, self).__call__(specs, **dimensions)
+        redimmed = super(redim_graph, self).__call__(specs, **dimensions)
         new_data = (redimmed.data,)
         if self.parent.nodes:
             new_data = new_data + (self.parent.nodes.redim(specs, **dimensions),)
@@ -36,22 +42,37 @@ class layout_nodes(Operation):
     """
     Accepts a Graph and lays out the corresponding nodes with the
     supplied networkx layout function. If no layout function is
-    supplied uses a simple circular_layout function.
+    supplied uses a simple circular_layout function. Also supports
+    LayoutAlgorithm function provided in datashader layouts.
     """
+
+    only_nodes = param.Boolean(default=False, doc="""
+        Whether to return Nodes or Graph.""")
 
     layout = param.Callable(default=None, doc="""
         A NetworkX layout function""")
 
     def _process(self, element, key=None):
-        if self.p.layout:
+        if self.p.layout and not (ds_layout and (isinstance(self.p.layout, ds_layout) or
+                                                 issubclass(self.p.layout, ds_layout))):
             graph = nx.from_edgelist(element.array([0, 1]))
             positions = self.p.layout(graph)
-            return Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+            nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
-            return Nodes(circular_layout(nodes))
+            if self.p.layout:
+                import pandas as pd
+                df = pd.DataFrame({'index': nodes})
+                nodes = self.p.layout(df, element.dframe())
+                nodes = nodes[['x', 'y', 'index']]
+            else:
+                nodes = circular_layout(nodes)
+        if self.p.only_nodes:
+            return Nodes(nodes)
+        return element.clone((element.data, nodes))
+        
 
 
 class Graph(Dataset, Element2D):
@@ -111,7 +132,7 @@ class Graph(Dataset, Element2D):
             if mismatch:
                 raise ValueError('Ensure that the first two key dimensions on '
                                  'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
-        self.redim = graph_redim(self, mode='dataset')
+        self.redim = redim_graph(self, mode='dataset')
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
@@ -203,7 +224,7 @@ class Graph(Dataset, Element2D):
         if no explicit node information was supplied.
         """
         if self._nodes is None:
-            self._nodes = layout_nodes(self)
+            self._nodes = layout_nodes(self, only_nodes=True)
         return self._nodes
 
 
