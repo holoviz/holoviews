@@ -1062,11 +1062,13 @@ class DynamicMap(HoloMap):
         self[key] = val
 
 
-    def map(self, map_fn, specs=None, clone=True):
+    def map(self, map_fn, specs=None, clone=True, link_inputs=True):
         """
         Recursively replaces elements using a map function when the
         specification applies. Extends regular map with functionality
-        to dynamically apply functions.
+        to dynamically apply functions. By default all streams are
+        still linked to the mapped object, to disable linked streams
+        set linked_inputs=False.
         """
         deep_mapped = super(DynamicMap, self).map(map_fn, specs, clone)
         if isinstance(deep_mapped, type(self)):
@@ -1074,7 +1076,8 @@ class DynamicMap(HoloMap):
             def apply_map(obj, **dynkwargs):
                 return obj.map(map_fn, specs, clone)
             dmap = Dynamic(deep_mapped, operation=apply_map,
-                           streams=self.streams, shared_data=True)
+                           streams=self.streams, shared_data=True,
+                           link_inputs=link_inputs)
             return dmap
         return deep_mapped
 
