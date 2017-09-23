@@ -65,6 +65,10 @@ class RasterPlot(ColorbarPlot):
             l, b, r, t = element.bounds.lbrt()
 
         data = get_raster_array(element)
+        if self.invert_axes:
+            data = data[::-1]
+            data = data.transpose([1, 0, 2]) if isinstance(element, RGB) else data.T
+            l, b, r, t = b, l, t, r
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
@@ -151,6 +155,7 @@ class HeatMapPlot(RasterPlot):
 
         data = np.flipud(element.gridded.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        if self.invert_axes: data = data.T
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
@@ -187,9 +192,12 @@ class ImagePlot(RasterPlot):
     def get_data(self, element, ranges, style):
         data = np.flipud(element.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            data = data[::-1].T
+            l, b, r, t = b, l, t, r
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
-        l, b, r, t = element.bounds.lbrt()
         style['extent'] = [l, r, b, t]
         return (data,), style, {}
 
@@ -211,7 +219,11 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
-        cmesh_data = list(element.data[:2]) + [data]
+        coords = list(element.data[:2])
+        if self.invert_axes:
+            coords = coords[::-1]
+            data = data.T
+        cmesh_data = coords + [data]
         style['locs'] = np.concatenate(element.data[:2])
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
