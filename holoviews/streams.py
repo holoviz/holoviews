@@ -191,7 +191,7 @@ class Stream(param.Parameterized):
     @property
     def subscribers(self):
         " Property returning the subscriber list"
-        return [s for p, s in sorted(self._subscribers)]
+        return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
 
 
     def clear(self, policy='all'):
