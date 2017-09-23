@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import param
 from bokeh.models import (DataRange1d, CategoricalColorMapper, CustomJS,
-                          HoverTool, FactorRange)
+                          HoverTool, FactorRange, Whisker, Band)
 from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
@@ -16,7 +16,7 @@ from ..util import compute_sizes, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
                       line_properties, fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex
+from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -331,31 +331,6 @@ class AreaPlot(PolygonPlot):
         return data, mapping
 
 
-class SpreadPlot(PolygonPlot):
-
-    style_opts = line_properties + fill_properties
-
-    def get_data(self, element, ranges=None, empty=None):
-        if empty:
-            return dict(xs=[], ys=[]), dict(self._mapping)
-
-        xvals = element.dimension_values(0)
-        mean = element.dimension_values(1)
-        neg_error = element.dimension_values(2)
-        pos_idx = 3 if len(element.dimensions()) > 3 else 2
-        pos_error = element.dimension_values(pos_idx)
-
-        lower = mean - neg_error
-        upper = mean + pos_error
-        band_x = np.append(xvals, xvals[::-1])
-        band_y = np.append(lower, upper[::-1])
-        if self.invert_axes:
-            data = dict(xs=[band_y], ys=[band_x])
-        else:
-            data = dict(xs=[band_x], ys=[band_y])
-        return data, dict(self._mapping)
-
-
 class HistogramPlot(ElementPlot):
 
     style_opts = line_properties + fill_properties
@@ -455,39 +430,62 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         return ret
 
 
-class ErrorPlot(PathPlot):
-
-    horizontal = param.Boolean(default=False)
+class ErrorPlot(ElementPlot):
 
     style_opts = line_properties
 
+    _mapping = dict(base="base", upper="upper", lower="lower")
+
+    _plot_methods = dict(single=Whisker)
+
     def get_data(self, element, ranges=None, empty=False):
-        if empty:
-            return dict(xs=[], ys=[]), dict(self._mapping)
-
-        data = element.array(dimensions=element.dimensions()[0:4])
-        err_xs = []
-        err_ys = []
-        for row in data:
-            x, y = row[0:2]
-            if len(row) > 3:
-                neg, pos = row[2:]
-            else:
-                neg, pos = row[2], row[2]
-
-            if self.horizontal:
-                err_xs.append((x - neg, x + pos))
-                err_ys.append((y, y))
-            else:
-                err_xs.append((x, x))
-                err_ys.append((y - neg, y + pos))
+        mapping = dict(self._mapping)
+        base = element.dimension_values(0)
+        ys = element.dimension_values(1)
+        if len(element.vdims) > 2:
+            neg, pos = (element.dimension_values(vd) for vd in element.vdims[1:3])
+            lower, upper = ys-neg, ys+pos
+        else:
+            err = element.dimension_values(2)
+            lower, upper = ys-err, ys+err
+        data = dict(base=base, lower=lower, upper=upper)
 
         if self.invert_axes:
-            data = dict(xs=err_ys, ys=err_xs)
+            mapping['dimension'] = 'width'
         else:
-            data = dict(xs=err_xs, ys=err_ys)
-        self._categorize_data(data, ('xs', 'ys'), element.dimensions())
-        return (data, dict(self._mapping))
+            mapping['dimension'] = 'height'
+        self._categorize_data(data, ('base',), element.dimensions())
+        return (data, mapping)
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties.pop('legend', None)
+        for prop in ['color', 'alpha']:
+            if prop not in properties:
+                continue
+            pval = properties.pop(prop)
+            line_prop = 'line_%s' % prop
+            fill_prop = 'fill_%s' % prop
+            if line_prop not in properties:
+                properties[line_prop] = pval
+            if fill_prop not in properties and fill_prop in self.style_opts:
+                properties[fill_prop] = pval
+        properties = mpl_to_bokeh(properties)
+        plot_method = self._plot_methods['single']
+        glyph = plot_method(**dict(properties, **mapping))
+        plot.add_layout(glyph)
+        return None, glyph
+
+
+
+class SpreadPlot(ErrorPlot):
+
+    style_opts = line_properties + fill_properties
+    _plot_methods = dict(single=Band)
+
 
 
 class SpikesPlot(PathPlot, ColorbarPlot):
