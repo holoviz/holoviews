@@ -250,8 +250,10 @@ class TestPlotUtils(ComparisonTestCase):
         combined1[()]
         sources = compute_overlayable_zorders(combined1)
 
-        self.assertNotIn(curve_redim, sources[0])
-        self.assertNotIn(curve, sources[0])
+        self.assertIn(curve_redim, sources[0])
+        self.assertIn(curve, sources[0])
+        self.assertIn(area_redim, sources[0])
+        self.assertIn(area, sources[0])
         self.assertNotIn(curve2_redim, sources[0])
         self.assertNotIn(curve2, sources[0])
 
