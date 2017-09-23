@@ -138,7 +138,6 @@ class ArrayInterface(Interface):
         # Get dimension objects, labels, indexes and data
         dimensions = [dataset.get_dimension(d, strict=True) for d in dimensions]
         dim_idxs = [dataset.get_dimension_index(d) for d in dimensions]
-        ndims = len(dimensions)
         kdims = [kdim for kdim in dataset.kdims
                  if kdim not in dimensions]
         vdims = dataset.vdims
@@ -163,10 +162,12 @@ class ArrayInterface(Interface):
         # Iterate over the unique entries building masks
         # to apply the group selection
         grouped_data = []
+        col_idxs = [dataset.get_dimension_index(d) for d in dataset.dimensions()
+                    if d not in dimensions]
         for group in unique_indices:
             mask = np.logical_and.reduce([data[:, d_idx] == group[i]
                                           for i, d_idx in enumerate(dim_idxs)])
-            group_data = data[mask, ndims:]
+            group_data = data[mask][:, col_idxs]
             if not group_type == 'raw':
                 if issubclass(group_type, dict):
                     group_data = {d.name: group_data[:, i] for i, d in

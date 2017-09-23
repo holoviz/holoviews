@@ -538,6 +538,22 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                           kdims=[('gender', 'Gender')])
         self.assertEqual(self.alias_table.groupby('Gender'), grouped)
 
+        self.gender, self.age = np.array(['M','M','F']), np.array([10,16,12])
+        self.weight, self.height = np.array([15,18,10]), np.array([0.8,0.6,0.8])
+        self.table = Dataset({'Gender':self.gender, 'Age':self.age,
+                              'Weight':self.weight, 'Height':self.height},
+                             kdims=self.kdims, vdims=self.vdims)
+
+    def test_dataset_groupby_second_dim(self):
+        group1 = {'Gender':['M'], 'Weight':[15], 'Height':[0.8]}
+        group2 = {'Gender':['M'], 'Weight':[18], 'Height':[0.6]}
+        group3 = {'Gender':['F'], 'Weight':[10], 'Height':[0.8]}
+        grouped = HoloMap([(10, Dataset(group1, kdims=['Gender'], vdims=self.vdims)),
+                           (16, Dataset(group2, kdims=['Gender'], vdims=self.vdims)),
+                           (12, Dataset(group3, kdims=['Gender'], vdims=self.vdims))],
+                          kdims=['Age'])
+        self.assertEqual(self.table.groupby(['Age']), grouped)
+
     def test_dataset_groupby_dynamic(self):
         grouped_dataset = self.table.groupby('Gender', dynamic=True)
         self.assertEqual(grouped_dataset['M'],
