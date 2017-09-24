@@ -145,10 +145,11 @@ class HeatMapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges=None):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
+        if self.invert_axes: x, y = y, x
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if self.static_source:
-            return {}, {'fill_color': {'field': 'zvalues', 'transform': cmapper}}
+            return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}
         
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
@@ -157,7 +158,6 @@ class HeatMapPlot(ColorbarPlot):
             xvals = [xdim.pprint_value(xv) for xv in xvals]
         if yvals.dtype.kind not in 'SU':
             yvals = [ydim.pprint_value(yv) for yv in yvals]
-        if self.invert_axes: x, y = y, x
         data = {x: xvals, y: yvals, 'zvalues': zvals}
 
         if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
@@ -182,25 +182,24 @@ class QuadMeshPlot(ColorbarPlot):
         if self.invert_axes: x, y = y, x
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-
         if self.static_source:
-            data = {}
-        else:
-            if len(set(v.shape for v in element.data)) == 1:
-                raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
-            xvals = element.dimension_values(0, False)
-            yvals = element.dimension_values(1, False)
-            widths = np.diff(element.data[0])
-            heights = np.diff(element.data[1])
-            if self.invert_axes:
-                zvals = element.data[2].flatten()
-                xvals, yvals, widths, heights = yvals, xvals, heights, widths
-            else:
-                zvals = element.data[2].T.flatten()
-            xs, ys = cartesian_product([xvals, yvals], copy=True)
-            ws, hs = cartesian_product([widths, heights], copy=True)
-            data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
+            return {}, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper}}
 
+        if len(set(v.shape for v in element.data)) == 1:
+            raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
+        zdata = element.data[2]
+        xvals = element.dimension_values(0, False)
+        yvals = element.dimension_values(1, False)
+        widths = np.diff(element.data[0])
+        heights = np.diff(element.data[1])
+        if self.invert_axes:
+            zvals = zdata.flatten()
+            xvals, yvals, widths, heights = yvals, xvals, heights, widths
+        else:
+            zvals = zdata.T.flatten()
+        xs, ys = cartesian_product([xvals, yvals], copy=True)
+        ws, hs = cartesian_product([widths, heights], copy=True)
+        data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
         return (data, {'x': x, 'y': y,
                        'fill_color': {'field': z, 'transform': cmapper},
                        'height': 'heights', 'width': 'widths'})
