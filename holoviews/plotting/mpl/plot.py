@@ -230,7 +230,7 @@ class MPLPlot(DimensionedPlot):
         Method to return a matplotlib animation. The start and stop
         frames may be specified as well as the fps.
         """
-        figure = self.initialize_plot()
+        figure = self.state or self.initialize_plot()
         anim = animation.FuncAnimation(figure, self.update_frame,
                                        frames=self.keys,
                                        interval = 1000.0/fps)
