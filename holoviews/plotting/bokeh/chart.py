@@ -190,8 +190,12 @@ class VectorFieldPlot(ColorbarPlot):
         input_scale = style.pop('scale', 1.0)
 
         # Get x, y, angle, magnitude and color data
-        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         rads = element.dimension_values(2)
+        if self.invert_axes:
+            xidx, yidx = (1, 0)
+            rads = rads+1.5*np.pi
+        else:
+            xidx, yidx = (0, 1)
         lens = self._get_lengths(element, ranges)/input_scale
         cdim = element.get_dimension(self.color_index)
         cdata, cmapping = self._get_color_data(element, ranges, style,
@@ -537,6 +541,9 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                 frame = self.current_frame or self.hmap.last 
                 for el in frame.values():
                     opts = self.lookup_options(el, 'plot').options
+                frame = self.current_frame or self.hmap.last
+                for el in frame.values():
+                    opts = self.lookup_options(element, 'plot').options
                     pos = opts.get('position', self.position)
                     length = opts.get('spike_length', self.spike_length)
                     bs.append(pos)
@@ -1001,7 +1008,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Get factors for categorical axes.
         """
         if not element.kdims:
-            return [element.label], []
+            xfactors, yfactors =  [element.label], []
         else:
             if bokeh_version < '0.12.7':
                 factors = [', '.join([d.pprint_value(v).replace(':', ';')
@@ -1011,10 +1018,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
                            for key in element.groupby(element.kdims).data.keys()]
                 factors = [f[0] if len(f) == 1 else f for f in factors]
-            if self.invert_axes:
-                return [], factors
-            else:
-                return factors, []
+            xfactors, yfactors = factors, []
+        return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
     def get_data(self, element, ranges=None):
         if element.kdims:
