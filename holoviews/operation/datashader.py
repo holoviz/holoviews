@@ -614,15 +614,21 @@ class stack(Operation):
 
         imgs = []
         for rgb in overlay:
+            if not isinstance(rgb, RGB):
+                raise TypeError('stack operation expect RGB type elements, '
+                                'not %s name.' % type(rgb).__name__)
+            rgb = rgb.rgb
             dims = [kd.name for kd in rgb.kdims][::-1]
             coords = {kd.name: rgb.dimension_values(kd, False)
                       for kd in rgb.kdims}
             imgs.append(tf.Image(self.uint8_to_uint32(rgb), coords=coords, dims=dims))
+
         try:
             imgs = xr.align(*imgs, join='exact')
         except ValueError:
             raise ValueError('RGB inputs to stack operation could not be aligned, '
                              'ensure they share the same grid sampling.')
+
         stacked = tf.stack(*imgs, how=self.p.compositor)
         arr = shade.uint32_to_uint8(stacked.data)[::-1]
         data = (coords[dims[1]], coords[dims[0]], arr[:, :, 0],
