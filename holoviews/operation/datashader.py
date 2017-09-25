@@ -619,12 +619,12 @@ class stack(Operation):
                       for kd in rgb.kdims}
             imgs.append(tf.Image(self.uint8_to_uint32(rgb), coords=coords, dims=dims))
         stacked = tf.stack(*imgs, how=self.p.compositor)
-        arr = shade.uint32_to_uint8(stacked.data)
+        arr = shade.uint32_to_uint8(stacked.data)[::-1]
         data = (coords[dims[1]], coords[dims[0]], arr[:, :, 0],
                 arr[:, :, 1], arr[:, :, 2])
         if arr.shape[-1] == 4:
             data = data + (arr[:, :, 3],)
-        return rgb.clone(data)
+        return rgb.clone(data, datatype=[rgb.interface.datatype]+rgb.datatype)
 
 
 
