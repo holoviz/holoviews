@@ -300,36 +300,6 @@ class CurvePlot(ElementPlot):
         return data, mapping
 
 
-class AreaPlot(PolygonPlot):
-
-    def get_extents(self, element, ranges):
-        vdims = element.vdims
-        vdim = vdims[0].name
-        if len(vdims) > 1:
-            ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
-        else:
-            vdim = vdims[0].name
-            ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
-        return super(AreaPlot, self).get_extents(element, ranges)
-
-    def get_data(self, element, ranges=None, empty=False):
-        mapping = dict(self._mapping)
-        if empty: return {'xs': [], 'ys': []}
-        xs = element.dimension_values(0)
-        x2 = np.hstack((xs[::-1], xs))
-
-        if len(element.vdims) > 1:
-            bottom = element.dimension_values(2)
-        else:
-            bottom = np.zeros(len(element))
-        ys = np.hstack((bottom[::-1], element.dimension_values(1)))
-
-        if self.invert_axes:
-            data = dict(xs=[ys], ys=[x2])
-        else:
-            data = dict(xs=[x2], ys=[ys])
-        return data, mapping
-
 
 class HistogramPlot(ElementPlot):
 
@@ -430,6 +400,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         return ret
 
 
+
 class ErrorPlot(ElementPlot):
 
     style_opts = line_properties
@@ -485,6 +456,36 @@ class SpreadPlot(ErrorPlot):
 
     style_opts = line_properties + fill_properties
     _plot_methods = dict(single=Band)
+
+
+
+class AreaPlot(SpreadPlot):
+
+    def get_extents(self, element, ranges):
+        vdims = element.vdims
+        vdim = vdims[0].name
+        if len(vdims) > 1:
+            ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        else:
+            vdim = vdims[0].name
+            ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
+        return super(AreaPlot, self).get_extents(element, ranges)
+
+    def get_data(self, element, ranges=None, empty=False):
+        xs = element.dimension_values(0)
+        if len(element.vdims) > 1:
+            lower = element.dimension_values(2)
+        else:
+            lower = np.zeros(len(element))
+        upper = element.dimension_values(1)
+        data = dict(base=xs, upper=upper, lower=lower)
+
+        mapping = dict(self._mapping)
+        if self.invert_axes:
+            mapping['dimension'] = 'width'
+        else:
+            mapping['dimension'] = 'height'
+        return data, mapping
 
 
 
