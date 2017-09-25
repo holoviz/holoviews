@@ -913,7 +913,7 @@ class GenericOverlayPlot(GenericElementPlot):
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
                             renderer=self.renderer, stream_sources=stream_sources,
-                            zorder=zorder, **passed_handles)
+                            zorder=zorder, adjoined=self.adjoined, **passed_handles)
 
             if not isinstance(key, tuple): key = (key,)
             subplots[key] = plottype(vmap, **plotopts)
