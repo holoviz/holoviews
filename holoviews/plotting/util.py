@@ -130,10 +130,10 @@ def compute_overlayable_zorders(obj, path=[]):
     # Process the inputs of the DynamicMap callback
     dmap_inputs = obj.callback.inputs if obj.callback.link_inputs else []
     for z, inp in enumerate(dmap_inputs):
-        no_increment = False
+        no_zorder_increment = False
         if any(not (isoverlay_fn(p) or p.last is None) for p in path) and isoverlay_fn(inp):
             # If overlay has been collapsed do not increment zorder
-            no_increment = True
+            no_zorder_increment = True
 
         input_depth = overlay_depth(inp)
         if depth is not None and input_depth is not None and depth < input_depth:
@@ -142,14 +142,14 @@ def compute_overlayable_zorders(obj, path=[]):
             if depth > 1:
                 continue
             else:
-                no_increment = True
+                no_zorder_increment = True
 
         # Recurse into DynamicMap.callback.inputs and update zorder_map
         z = z if isdynoverlay else 0
         deep_zorders = compute_overlayable_zorders(inp, path=path)
         offset = max(zorder_map.keys())
         for dz, objs in deep_zorders.items():
-            global_z = offset+z if no_increment else offset+dz+z
+            global_z = offset+z if no_zorder_increment else offset+dz+z
             zorder_map[global_z] = list(unique_iterator(zorder_map[global_z]+objs))
 
     # If object branches but does not declare inputs (e.g. user defined
