@@ -145,7 +145,7 @@ options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
 options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8)
 
 options.Spikes = Options('style', color='black', cmap='fire')
-options.Area = Options('style', color=Cycle(), line_color='black')
+options.Area = Options('style', color=Cycle(), alpha=1, line_color='black')
 options.VectorField = Options('style', color='black')
 
 # Paths
