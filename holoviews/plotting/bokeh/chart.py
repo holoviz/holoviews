@@ -514,7 +514,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
                 bs, ts = [], []
                 # Iterate over current NdOverlay and compute extents
                 # from position and length plot options
-                for el in self.current_frame.values():
+                frame = self.current_frame or self.hmap.last 
+                for el in frame.values():
                     opts = self.lookup_options(el, 'plot').options
                     pos = opts.get('position', self.position)
                     length = opts.get('spike_length', self.spike_length)
