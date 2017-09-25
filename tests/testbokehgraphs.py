@@ -84,6 +84,15 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.assertEqual(hover.tooltips, [('start', '@{start}'), ('end', '@{end}')])
         self.assertIn(renderer, hover.renderers)
 
+    def test_graph_inspection_policy_edges_non_default_names(self):
+        graph = self.graph.redim(start='source', end='target')
+        plot = bokeh_renderer.get_plot(graph.opts(plot=dict(inspection_policy='edges')))
+        renderer = plot.handles['glyph_renderer']
+        hover = plot.handles['hover']
+        self.assertIsInstance(renderer.inspection_policy, EdgesAndLinkedNodes)
+        self.assertEqual(hover.tooltips, [('source', '@{start}'), ('target', '@{end}')])
+        self.assertIn(renderer, hover.renderers)
+
     def test_graph_inspection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(plot=dict(inspection_policy=None)))
         renderer = plot.handles['glyph_renderer']

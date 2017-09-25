@@ -59,7 +59,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         if self.inspection_policy == 'nodes':
             dims = element.nodes.dimensions()[2:]
         elif self.inspection_policy == 'edges':
-            dims = element.kdims+element.vdims
+            kdims = [(kd.pprint_label, '@{%s}' % ref)
+                     for kd, ref in zip(element.kdims, ['start', 'end'])]
+            dims = kdims+element.vdims
         else:
             dims = []
         return dims, {}
