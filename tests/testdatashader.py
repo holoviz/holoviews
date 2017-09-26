@@ -6,7 +6,7 @@ from holoviews import Curve, Points, Image, Dataset, RGB, Path
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.operation.datashader import aggregate, regrid, ds_version
+    from holoviews.operation.datashader import aggregate, regrid, ds_version, stack
 except:
     ds_version = None
 
@@ -136,3 +136,41 @@ class DatashaderRegridTests(ComparisonTestCase):
         regridded = regrid(img, width=2, height=2, x_range=(-2, 4), y_range=(-2, 4), expand=False,
                            dynamic=False)
         self.assertEqual(regridded, img)
+
+
+
+@attr(optional=1)
+class DatashaderStackTests(ComparisonTestCase):
+
+    def setUp(self):
+        self.rgb1_arr = np.array([[[0, 1], [1, 0]],
+                                  [[1, 0], [0, 1]],
+                                  [[0, 0], [0, 0]]], dtype=np.uint8).T*255
+        self.rgb2_arr = np.array([[[0, 0], [0, 0]],
+                                  [[0, 0], [0, 0]],
+                                  [[1, 0], [0, 1]]], dtype=np.uint8).T*255
+        self.rgb1 = RGB(self.rgb1_arr)
+        self.rgb2 = RGB(self.rgb2_arr)
+
+
+    def test_stack_add_compositor(self):
+        combined = stack(self.rgb1*self.rgb2, compositor='add')
+        arr = np.array([[[0, 255, 255], [255,0, 0]], [[255, 0, 0], [0, 255, 255]]], dtype=np.uint8)
+        expected = RGB(arr)
+        self.assertEqual(combined, expected)
+
+    def test_stack_over_compositor(self):
+        combined = stack(self.rgb1*self.rgb2, compositor='over')
+        self.assertEqual(combined, self.rgb2)
+    
+    def test_stack_over_compositor_reverse(self):
+        combined = stack(self.rgb2*self.rgb1, compositor='over')
+        self.assertEqual(combined, self.rgb1)
+
+    def test_stack_saturate_compositor(self):
+        combined = stack(self.rgb1*self.rgb2, compositor='saturate')
+        self.assertEqual(combined, self.rgb1)
+
+    def test_stack_saturate_compositor_reverse(self):
+        combined = stack(self.rgb2*self.rgb1, compositor='saturate')
+        self.assertEqual(combined, self.rgb2)
