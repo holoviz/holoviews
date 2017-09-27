@@ -7,7 +7,7 @@ from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw, BoundsXY)
+                        PlotSize, Draw, BoundsXY, PlotReset)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
 from .util import convert_timestamp
@@ -807,6 +807,18 @@ class Selection1DCallback(Callback):
             return {}
 
 
+class ResetCallback(Callback):
+    """
+    Signals the Reset stream if an event has been triggered.
+    """
+
+    models = ['plot']
+    on_events = ['reset']
+
+    def _process_msg(self, msg):
+        return {'reset': True}
+
+
 callbacks = Stream._callbacks['bokeh']
 
 callbacks[PointerXY]   = PointerXYCallback
@@ -821,12 +833,13 @@ callbacks[RangeXY]     = RangeXYCallback
 callbacks[RangeX]      = RangeXCallback
 callbacks[RangeY]      = RangeYCallback
 callbacks[Bounds]      = BoundsCallback
-callbacks[BoundsXY]     = BoundsCallback
+callbacks[BoundsXY]    = BoundsCallback
 callbacks[BoundsX]     = BoundsXCallback
 callbacks[BoundsY]     = BoundsYCallback
 callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
-callbacks[Draw] = DrawCallback
+callbacks[Draw]        = DrawCallback
+callbacks[PlotReset]   = ResetCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback
