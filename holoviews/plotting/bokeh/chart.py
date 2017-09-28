@@ -661,8 +661,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
         Get factors for categorical axes.
         """
         xdim, ydim = element.dimensions()[:2]
-        gdim = element.get_dimension(self.group_index)
-        sdim = element.get_dimension(self.stack_index)
+        if self.group_index and self.group_index < element.ndims:
+            gdim = element.get_dimension(self.group_index)
+        else:
+            gdim = None
+        if self.stack_index and self.stack_index < element.ndims:
+            sdim = element.get_dimension(self.stack_index)
+        else:
+            sdim = None
         xvals = element.dimension_values(0, False)
         xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals]
         if bokeh_version >= '0.12.7' and gdim and not sdim:
@@ -683,7 +689,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if self.batched:
             element = element.last
         xlabel = dim_axis_label(element.kdims[0])
-        gdim = element.get_dimension(self.group_index)
+        if self.group_index and self.group_index < element.ndims:
+            gdim = element.get_dimension(self.group_index)
+        else:
+            gdim = None
         if bokeh_version >= '0.12.7' and gdim:
             xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
         return (xlabel, dim_axis_label(element.vdims[0]), None)
@@ -728,8 +737,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, empty):
         # Get x, y, group, stack and color dimensions
-        group_dim = element.get_dimension(self.group_index)
-        stack_dim = element.get_dimension(self.stack_index)
+        if self.group_index and self.group_index < element.ndims:
+            group_dim = element.get_dimension(self.group_index)
+        else:
+            group_dim = None
+        if self.stack_index and self.stack_index < element.ndims:
+            stack_dim = element.get_dimension(self.stack_index)
+        else:
+            stack_dim = None
         if stack_dim:
             group_dim = stack_dim
             grouping = 'stacked'
