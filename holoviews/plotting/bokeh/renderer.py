@@ -8,7 +8,6 @@ import bokeh.core
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.document import Document
-from bokeh.embed import notebook_div
 from bokeh.io import curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
@@ -23,10 +22,21 @@ from .util import (compute_static_patch, serialize_json, attach_periodic,
                    bokeh_version, compute_plot_size)
 
 if bokeh_version > '0.12.9':
-    from bokeh.io.notebook import load_notebook
+    from bokeh.io.notebook import (load_notebook, publish_display_data,
+                                   JS_MIME_TYPE, LOAD_MIME_TYPE, EXEC_MIME_TYPE)
     from bokeh.protocol import Protocol
+    from bokeh.embed import notebook_content
+    from bokeh.embed.notebook import encode_utf8
 else:
     from bokeh.io import load_notebook
+    from bokeh.embed import notebook_div
+
+NOTEBOOK_DIV = """
+{plot_div}
+<script type="text/javascript">
+  {plot_script}
+</script>
+"""
 
 
 class BokehRenderer(Renderer):
@@ -98,7 +108,7 @@ class BokehRenderer(Renderer):
             img.save(imgByteArr, format='PNG')
             return imgByteArr.getvalue(), info
         elif fmt == 'html':
-            html = self.figure_data(plot, doc=doc)
+            html = self._figure_data(plot, doc=doc)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             return self._apply_post_render_hooks(html, obj, fmt), info
         elif fmt == 'json':
@@ -210,7 +220,7 @@ class BokehRenderer(Renderer):
         return doc
 
 
-    def figure_data(self, plot, fmt='html', doc=None, **kwargs):
+    def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
         doc = Document() if doc is None else doc
         for m in model.references():
@@ -222,13 +232,18 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
         try:
-            div = notebook_div(model, comm_id)
+            if bokeh_version > '0.12.9':
+                js, div, _ = notebook_content(model, comm_id)
+                html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
+                div = encode_utf8(html)
+                doc.hold()
+            else:
+                div = notebook_div(model, comm_id)
         except:
             logger.disabled = False
             raise
         logger.disabled = False
         plot.document = doc
-        if bokeh_version > '0.12.9': doc.hold()
         return div
 
 
