@@ -50,15 +50,6 @@ markers = {'s': {'marker': 'square'},
            '3': {'marker': 'triangle', 'angle': np.pi},
            '4': {'marker': 'triangle', 'angle': np.pi/2}}
 
-# List of models that do not update correctly and must be ignored
-# Should only include models that have no direct effect on the display
-# and can therefore be safely ignored. Axes currently fail saying
-# LinearAxis.computed_bounds cannot be updated
-IGNORED_MODELS = ['LinearAxis', 'LogAxis', 'DatetimeAxis', 'DatetimeTickFormatter',
-                  'BasicTicker', 'BasicTickFormatter', 'FixedTicker',
-                  'FuncTickFormatter', 'LogTickFormatter',
-                  'CategoricalTickFormatter']
-
 # List of attributes that can safely be dropped from the references
 IGNORED_ATTRIBUTES = ['data', 'palette', 'image', 'x', 'y', 'factors']
 
@@ -411,25 +402,23 @@ def compute_static_patch(document, models):
             event = _event_for_attribute_change(references, obj, key, val, value_refs)
             events.append((priority, event))
             update_types[obj['type']].append(key)
-    events = [delete_refs(e, IGNORED_MODELS, ignored_attributes=IGNORED_ATTRIBUTES)
+    events = [delete_refs(e, ignored_attributes=IGNORED_ATTRIBUTES)
               for _, e in sorted(events, key=lambda x: x[0])]
     events = [e for e in events if all(i in requested_updates for i in get_ids(e))
               if 'new' in e]
-    value_refs = {ref_id: delete_refs(val, IGNORED_MODELS, IGNORED_ATTRIBUTES)
+    value_refs = {ref_id: delete_refs(val, IGNORED_ATTRIBUTES)
                   for ref_id, val in value_refs.items()}
     references = [val for val in value_refs.values()
                   if val not in [None, {}]]
     return dict(events=events, references=references)
 
 
-def delete_refs(obj, models=[], dropped_attributes=[], ignored_attributes=[]):
+def delete_refs(obj, dropped_attributes=[], ignored_attributes=[]):
     """
     Recursively traverses the object and looks for models and model
     attributes to be deleted.
     """
     if isinstance(obj, dict):
-        if 'type' in obj and obj['type'] in models:
-            return None
         new_obj = {}
         for k, v in list(obj.items()):
             # Drop unnecessary attributes, i.e. those that do not
@@ -439,12 +428,12 @@ def delete_refs(obj, models=[], dropped_attributes=[], ignored_attributes=[]):
             if k in ignored_attributes:
                 ref = v
             else:
-                ref = delete_refs(v, models, dropped_attributes, ignored_attributes)
+                ref = delete_refs(v, dropped_attributes, ignored_attributes)
             if ref is not None:
                 new_obj[k] = ref
         return new_obj
     elif isinstance(obj, list):
-        objs = [delete_refs(v, models, dropped_attributes, ignored_attributes)
+        objs = [delete_refs(v, dropped_attributes, ignored_attributes)
                 for v in obj]
         return [o for o in objs if o is not None]
     else:
