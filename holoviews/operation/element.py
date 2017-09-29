@@ -483,6 +483,9 @@ class histogram(Operation):
     dimension = param.String(default=None, doc="""
       Along which dimension of the Element to compute the histogram.""")
 
+    frequency_label = param.String(default='{dim} Frequency', doc="""
+      Format string defining the label of the frequency dimension of the Histogram.""")
+
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
@@ -579,8 +582,9 @@ class histogram(Operation):
         if self.p.weight_dimension:
             params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
         else:
+            label = self.p.frequency_label.format(dim=selected_dim)
             params['vdims'] = [Dimension('{}_frequency'.format(selected_dim), 
-                                         label='{} Frequency'.format(selected_dim))]
+                                         label=label)]
 
         if view.group != view.__class__.__name__:
             params['group'] = view.group
