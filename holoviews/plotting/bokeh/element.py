@@ -26,7 +26,8 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title, bokeh_version,
-                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple)
+                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple,
+                   recursive_model_update)
 
 if bokeh_version >= '0.12':
     from bokeh.models import FuncTickFormatter
@@ -532,10 +533,16 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not len(dimensions) >= 2:
             dimensions = dimensions+[None]
         plot.update(**self._plot_properties(key, plot, element))
+
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
-        plot.xaxis[0].update(**props.get('x', {}))
-        plot.yaxis[0].update(**props.get('y', {}))
+        xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
+        if self.invert_axes:
+            xlabel, ylabel = ylabel, xlabel
+        props['x']['axis_label'] = xlabel
+        props['y']['axis_label'] = xlabel
+        recursive_model_update(plot.xaxis[0], props.get('x', {}))
+        recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
         if bokeh_version >= '0.12' and not self.overlaid:
             plot.title.update(**self._title_properties(key, plot, element))
