@@ -36,8 +36,9 @@ class ArrayInterface(Interface):
             dataset = [data[d] for d in dimensions]
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
+            dict_data = sorted(data.items())
             dataset = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
-                            for k, v in data.items()))
+                            for k, v in dict_data))
             data = np.column_stack(dataset)
         elif isinstance(data, tuple):
             data = [d if isinstance(d, np.ndarray) else np.array(d) for d in data]
