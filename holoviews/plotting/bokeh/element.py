@@ -537,10 +537,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         props = {axis: self._axis_properties(axis, key, plot, dim)
                  for axis, dim in zip(['x', 'y'], dimensions)}
         xlabel, ylabel, zlabel = self._get_axis_labels(dimensions)
-        if self.invert_axes:
-            xlabel, ylabel = ylabel, xlabel
+        if self.invert_axes: xlabel, ylabel = ylabel, xlabel
         props['x']['axis_label'] = xlabel
-        props['y']['axis_label'] = xlabel
+        props['y']['axis_label'] = ylabel
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
