@@ -931,6 +931,28 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         for v in source.data.values():
             self.assertEqual(len(v), 0)
 
+    def test_bars_grouped_categories(self):
+        bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],
+                    kdims=['Index', 'Category'], vdims=['Value'])
+        plot = bokeh_renderer.get_plot(bars)
+        source = plot.handles['source']
+        self.assertEqual([tuple(x) for x in source.data['xoffsets']],
+                         [('A', '0'), ('B', '0'), ('A', '1')])
+        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
+        self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
+        x_range = plot.handles['x_range']
+        self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
+
+    def test_bars_positive_negative_mixed(self):
+        bars = Bars([('A', 0, 1), ('A', 1, -1), ('B', 0, 2)],
+                    kdims=['Index', 'Category'], vdims=['Value'])
+        plot = bokeh_renderer.get_plot(bars.opts(plot=dict(stack_index=1)))
+        source = plot.handles['source']
+        self.assertEqual(list(source.data['Category']), ['1', '0', '0'])
+        self.assertEqual(list(source.data['Index']), ['A', 'A', 'B'])
+        self.assertEqual(source.data['top'], np.array([0, 1, 2]))
+        self.assertEqual(source.data['bottom'], np.array([-1, 0, 0]))
+
     def test_points_no_single_item_legend(self):
         points = Points([('A', 1), ('B', 2)], label='A')
         plot = bokeh_renderer.get_plot(points)

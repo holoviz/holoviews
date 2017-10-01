@@ -602,7 +602,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
        Index of the dimension from which the color will the drawn""")
 
-    group_index = param.ClassSelector(default=None, class_=(basestring, int),
+    group_index = param.ClassSelector(default=1, class_=(basestring, int),
                                       allow_None=True, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
@@ -640,7 +640,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Compute stack heights
         if stacked:
             ds = Dataset(element)
-            y0, y1 = ds.aggregate(xdim, function=np.sum).range(ydim)
+            pos_range = ds.select(**{ydim.name: (0, None)}).aggregate(xdim, function=np.sum).range(ydim)
+            neg_range = ds.select(**{ydim.name: (None, 0)}).aggregate(xdim, function=np.sum).range(ydim)
+            y0, y1 = max_range([pos_range, neg_range])
         else:
             y0, y1 = ranges[ydim.name]
 
@@ -660,21 +662,24 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         Get factors for categorical axes.
         """
-        xdim, ydim = element.dimensions()[:2]
-        if self.group_index and self.group_index < element.ndims:
-            gdim = element.get_dimension(self.group_index)
-        else:
+        gdim = element.get_dimension(self.group_index)
+        if gdim not in element.kdims:
             gdim = None
-        if self.stack_index and self.stack_index < element.ndims:
-            sdim = element.get_dimension(self.stack_index)
-        else:
+        sdim = element.get_dimension(self.stack_index)
+        if sdim not in element.kdims:
             sdim = None
+
+        xdim, ydim = element.dimensions()[:2]
         xvals = element.dimension_values(0, False)
-        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x) for x in xvals]
-        if bokeh_version >= '0.12.7' and gdim and not sdim:
-            gvals = element.dimension_values(gdim, False)
-            gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
-            coords = ([(x, g) for x in xvals for g in gvals], [])
+        xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
+                 for x in xvals]
+        if bokeh_version >= '0.12.7':
+            if gdim and not sdim:
+                gvals = element.dimension_values(gdim, False)
+                gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
+                coords = ([(x, g) for x in xvals for g in gvals], [])
+            else:
+                coords = (xvals, [])
         else:
             coords = ([x.replace(':', ';') for x in xvals], [])
         if self.invert_axes: coords = coords[::-1]
@@ -689,11 +694,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         if self.batched:
             element = element.last
         xlabel = dim_axis_label(element.kdims[0])
-        if self.group_index and self.group_index < element.ndims:
-            gdim = element.get_dimension(self.group_index)
-        else:
-            gdim = None
-        if bokeh_version >= '0.12.7' and gdim:
+        gdim = element.get_dimension(self.group_index)
+        if bokeh_version >= '0.12.7' and gdim and gdim in element.kdims:
             xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
         return (xlabel, dim_axis_label(element.vdims[0]), None)
 
@@ -715,7 +717,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             adjusted_xvals.append(xcat+':%.4f' % adjustment)
         return adjusted_xvals
 
-    def get_stack(self, xvals, yvals, baselines):
+    def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """
         Iterates over a x- and y-values in a stack layer
         and appropriately offsets the layer on top of the
@@ -723,9 +725,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         bottoms, tops = [], []
         for x, y in zip(xvals, yvals):
-            bottom = baselines[x]
-            top = bottom+y
-            baselines[x] = top
+            baseline = baselines[x][sign]
+            if sign == 'positive':
+                bottom = baseline
+                top = bottom+y
+            else:
+                top = baseline
+                bottom = top+y
+            baselines[x][sign] = top
             bottoms.append(bottom)
             tops.append(top)
         return bottoms, tops
@@ -737,26 +744,23 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, empty):
         # Get x, y, group, stack and color dimensions
-        if self.group_index and self.group_index < element.ndims:
-            group_dim = element.get_dimension(self.group_index)
-        else:
+        grouping = None
+        group_dim = element.get_dimension(self.group_index)
+        if group_dim not in element.kdims:
             group_dim = None
-        if self.stack_index and self.stack_index < element.ndims:
-            stack_dim = element.get_dimension(self.stack_index)
         else:
-            stack_dim = None
-        if stack_dim:
-            group_dim = stack_dim
-            grouping = 'stacked'
-        elif group_dim:
             grouping = 'grouped'
-            group_dim = group_dim
+        stack_dim = element.get_dimension(self.stack_index)
+        if stack_dim not in element.kdims:
+            stack_dim = None
         else:
-            grouping, group_dim = None, None
+            grouping = 'stacked'
+            group_dim = None
+
         xdim = element.get_dimension(0)
-        ydim = element.get_dimension(element.vdims[0])
+        ydim = element.vdims[0]
         no_cidx = self.color_index is None
-        color_index = group_dim if no_cidx else self.color_index
+        color_index = (group_dim or stack_dim) if no_cidx else self.color_index
         color_dim = element.get_dimension(color_index)
         if color_dim:
             self.color_index = color_dim.name
@@ -795,7 +799,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
             if cvals.dtype.kind in 'if' and no_cidx:
-                cvals = categorize_array(cvals, group_dim)
+                cvals = categorize_array(cvals, color_dim)
+
             factors = None if cvals.dtype.kind in 'if' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
@@ -810,10 +815,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
-        baselines = defaultdict(float)
+        baselines = defaultdict(lambda: {'positive': 0, 'negative': 0})
         for i, (k, ds) in enumerate(grouped.items()):
-            xs = ds.dimension_values(xdim)
-            ys = ds.dimension_values(ydim)
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
@@ -822,12 +825,19 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
             # Apply stacking or grouping
             if grouping == 'stacked':
-                bs, ts = self.get_stack(xs, ys, baselines)
-                data['bottom'].append(bs)
-                data['top'].append(ts)
-                data[xdim.name].append(xs)
-                if hover: data[ydim.name].append(ys)
+                ds = ds.sort(ds.vdims[0])
+                for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
+                    slc_ds = ds.select(**{ds.vdims[0].name: slc})
+                    xs = slc_ds.dimension_values(xdim)
+                    ys = slc_ds.dimension_values(ydim)
+                    bs, ts = self.get_stack(xs, ys, baselines, sign)
+                    data['bottom'].append(bs)
+                    data['top'].append(ts)
+                    data[xdim.name].append(xs)
+                    if hover: data[ydim.name].append(ys)
             elif grouping == 'grouped':
+                xs = ds.dimension_values(xdim)
+                ys = ds.dimension_values(ydim)
                 if bokeh_version >= '0.12.7':
                     xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
                                 for x in xs]
@@ -837,12 +847,20 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
             else:
-                data[xdim.name].append(xs)
-                data[ydim.name].append(ys)
+                data[xdim.name].append(ds.dimension_values(xdim))
+                data[ydim.name].append(ds.dimension_values(ydim))
 
             # Add group dimension to data
             if group_dim and group_dim not in ds.dimensions():
                 ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
+
+            if hover:
+                # Fill in missing hover data if dimension other than group_dim is colormapped
+                if group_dim and cdim != group_dim:
+                    data[group_dim.name].append(ds.dimension_values(group_dim))
+                # Add other hover info
+                for vd in ds.vdims[1:]:
+                    data[vd.name].append(ds.dimension_values(vd))
 
             # Get colormapper
             cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
@@ -863,13 +881,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
             for k, cd in cdata.items():
                 # If values have already been added, skip
                 if no_cidx and cd.dtype.kind in 'if':
-                    cd = categorize_array(cd, group_dim)
+                    cd = categorize_array(cd, color_dim)
                 if not len(data[k]) == i+1:
                     data[k].append(cd)
-
-            # Fill in missing hover data if dimension other than group_dim is colormapped
-            if hover and group_dim and cdim != group_dim:
-                data[group_dim.name].append(ds.dimension_values(group_dim))
 
         # Concatenate the stacks or groups
         sanitized_data = {}

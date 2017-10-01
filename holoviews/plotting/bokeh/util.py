@@ -688,7 +688,10 @@ def categorize_array(array, dim):
     (i.e. string) values and applies escaping for colons, which bokeh
     treats as a categorical suffix.
     """
-    return np.array([dim.pprint_value(x).replace(':', ';') for x in array])
+    categories = [dim.pprint_value(x) for x in array]
+    if bokeh_version < '0.12.7':
+        categories = [cat.replace(':', ';') for cat in categories]
+    return np.array(categories)
 
 
 class periodic(object):
