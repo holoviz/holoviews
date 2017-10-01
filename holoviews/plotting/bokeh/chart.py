@@ -602,7 +602,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
                                       allow_None=True, doc="""
        Index of the dimension from which the color will the drawn""")
 
-    group_index = param.ClassSelector(default=None, class_=(basestring, int),
+    group_index = param.ClassSelector(default=1, class_=(basestring, int),
                                       allow_None=True, doc="""
        Index of the dimension in the supplied Bars
        Element, which will be laid out into groups.""")
