@@ -101,7 +101,7 @@ class Graph(Dataset, Element2D):
     kdims = param.List(default=[Dimension('start'), Dimension('end')],
                        bounds=(2, 2))
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)* (3-len(data))
             edges, nodes, edgepaths = data
@@ -122,7 +122,7 @@ class Graph(Dataset, Element2D):
             edgepaths = EdgePaths(edgepaths)
         self._nodes = nodes
         self._edgepaths = edgepaths
-        super(Graph, self).__init__(edges, **params)
+        super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if self._nodes is None and node_info:
             nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
             for d in node_info.dimensions():

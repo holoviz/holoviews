@@ -95,11 +95,13 @@ class MultiDimensionalMapping(Dimensioned):
     _deep_indexable = False
     _check_items = True
 
-    def __init__(self, initial_items=None, **params):
+    def __init__(self, initial_items=None, kdims=None, **params):
         if isinstance(initial_items, MultiDimensionalMapping):
             params = dict(util.get_param_values(initial_items),
                           **dict({'sort': self.sort}, **params))
-        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **params)
+        if kdims is not None:
+            params['kdims'] = kdims
+        super(MultiDimensionalMapping, self).__init__(OrderedDict(), **dict(params))
         if type(initial_items) is dict and not self.sort:
             raise ValueError('If sort=False the data must define a fixed '
                              'ordering, please supply a list of items or '
@@ -733,11 +735,11 @@ class UniformNdMapping(NdMapping):
     _deep_indexable = True
     _auxiliary_component = False
 
-    def __init__(self, initial_items=None, group=None, label=None, **params):
+    def __init__(self, initial_items=None, kdims=None, group=None, label=None, **params):
         self._type = None
         self._group_check, self.group = None, group
         self._label_check, self.label = None, label
-        super(UniformNdMapping, self).__init__(initial_items, **params)
+        super(UniformNdMapping, self).__init__(initial_items, kdims=kdims, **params)
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):

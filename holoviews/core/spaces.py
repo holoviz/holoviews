@@ -1341,8 +1341,8 @@ class GridSpace(UniformNdMapping):
 
     kdims = param.List(default=[Dimension("X"), Dimension("Y")], bounds=(1,2))
 
-    def __init__(self, initial_items=None, **params):
-        super(GridSpace, self).__init__(initial_items, **params)
+    def __init__(self, initial_items=None, kdims=None, **params):
+        super(GridSpace, self).__init__(initial_items, kdims=kdims, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
 

@@ -783,35 +783,20 @@ class Dimensioned(LabelledData):
     _dim_aliases = dict(key_dimensions='kdims', value_dimensions='vdims',
                         constant_dimensions='cdims', deep_dimensions='ddims')
 
-
-    # Long-name aliases
-
-    @property
-    def key_dimensions(self): return self.kdims
-
-    @property
-    def value_dimensions(self): return self.vdims
-
-    @property
-    def constant_dimensions(self): return self.cdims
-
-    @property
-    def deep_dimensions(self): return self.ddims
-
-    def __init__(self, data, **params):
-        for group in self._dim_groups+list(self._dim_aliases.keys()):
-            if group in ['deep_dimensions', 'ddims']: continue
-            if group in params:
-                if group in self._dim_aliases:
-                    params[self._dim_aliases[group]] = params.pop(group)
-                    group = self._dim_aliases[group]
-                if group == 'cdims':
-                    dimensions = {d if isinstance(d, Dimension) else Dimension(d): val
-                                  for d, val in params.pop(group).items()}
-                else:
-                    dimensions = [d if isinstance(d, Dimension) else Dimension(d)
-                                  for d in params.pop(group)]
-                params[group] = dimensions
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        for group, dims in [('kdims', kdims), ('vdims', vdims)]:
+            if dims is None:
+                continue
+            elif isinstance(dims, (tuple, basestring, Dimension)):
+                dims = [dims]
+            elif not isinstance(dims, list):
+                raise ValueError("%s must be a Dimension or list of dimensions, "
+                                 "specified as tuples, string or Dimension instances.")
+            params[group] = [d if isinstance(d, Dimension) else Dimension(d)
+                             for d in dims]
+        if 'cdims' in params:
+            params['cdims'] = {d if isinstance(d, Dimension) else Dimension(d): val
+                               for d, val in params['cdims'].items()}
         super(Dimensioned, self).__init__(data, **params)
         self.ndims = len(self.kdims)
         cdims = [(d.name, val) for d, val in self.cdims.items()]

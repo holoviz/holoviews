@@ -27,9 +27,9 @@ class Surface(Image, Element3D):
 
     group = param.String(default='Surface', constant=True)
 
-    def __init__(self, data, extents=None, **params):
+    def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
         extents = extents if extents else (None, None, None, None, None, None)
-        Image.__init__(self, data, extents=extents, **params)
+        Image.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
 
 

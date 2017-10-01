@@ -44,7 +44,7 @@ class Path(Dataset, Element2D):
 
     datatype = param.ObjectSelector(default=['multitabular'])
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             x, y = map(np.asarray, data)
             if y.ndim == 1:
@@ -54,7 +54,7 @@ class Path(Dataset, Element2D):
             data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
         elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
             data = [np.column_stack(path) for path in data]
-        super(Path, self).__init__(data, **params)
+        super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
     def __setstate__(self, state):
@@ -127,13 +127,13 @@ class Contours(Path):
 
     _level_vdim = Dimension('Level') # For backward compatibility
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
-        if 'level' in params:
-            vdims = params.get('vdims', [self._level_vdim])
+        if params.get('level') is not None:
+            vdims = vdims or [self._level_vdim]
             params['vdims'] = []
         super(Contours, self).__init__(data, **params)
-        if 'level' in params:
+        if params.get('level') is not None:
             self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
                           for d in vdims]
 

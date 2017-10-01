@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from ..util import dimension_range
+from ..util import dimension_range, basestring
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -170,19 +170,23 @@ class Dataset(Element):
     _vdim_reductions = {}
     _kdim_reductions = {}
 
-    def __init__(self, data, **kwargs):
+    def __init__(self, data, kdims=None, vdims=None, **kwargs):
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
 
-        kdims, vdims = None, None
-        if 'kdims' in kwargs:
-            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
-                     for kd in kwargs['kdims']]
-        if 'vdims' in kwargs:
-            vdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
-                     for kd in kwargs['vdims']]
+        for group, dims in [('kdims', kdims), ('vdims', vdims)]:
+            if dims is None:
+                continue
+            elif isinstance(dims, (tuple, basestring, Dimension)):
+                dims = [dims]
+            elif not isinstance(dims, list):
+                raise ValueError("%s must be a Dimension or list of dimensions, "
+                                 "specified as tuples, string or Dimension instances.")
+            kwargs[group] = [d if isinstance(d, Dimension) else Dimension(d)
+                             for d in dims]
+        kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))

@@ -17,12 +17,12 @@ class RasterTestCase(ComparisonTestCase):
         self.arr2 = np.array([[10,2], [3,4]])
         self.arr3 = np.array([[10,2], [3,40]])
         # Varying arrays, default bounds
-        self.mat1 = Image(self.arr1, BoundingBox())
-        self.mat2 = Image(self.arr2, BoundingBox())
-        self.mat3 = Image(self.arr3, BoundingBox())
+        self.mat1 = Image(self.arr1, bounds=BoundingBox())
+        self.mat2 = Image(self.arr2, bounds=BoundingBox())
+        self.mat3 = Image(self.arr3, bounds=BoundingBox())
         # Varying arrays, different bounds
-        self.mat4 = Image(self.arr1, BoundingBox(radius=0.3))
-        self.mat5 = Image(self.arr2, BoundingBox(radius=0.3))
+        self.mat4 = Image(self.arr1, bounds=BoundingBox(radius=0.3))
+        self.mat5 = Image(self.arr2, bounds=BoundingBox(radius=0.3))
 
 
 class RasterOverlayTestCase(RasterTestCase):

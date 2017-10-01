@@ -280,10 +280,11 @@ class NdLayout(UniformNdMapping):
 
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
 
-    def __init__(self, initial_items=None, **params):
+    def __init__(self, initial_items=None, kdims=None, **params):
         self._max_cols = 4
         self._style = None
-        super(NdLayout, self).__init__(initial_items=initial_items, **params)
+        super(NdLayout, self).__init__(initial_items=initial_items, kdims=kdims,
+                                       **params)
 
 
     @property

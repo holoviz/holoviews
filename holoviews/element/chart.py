@@ -165,6 +165,10 @@ class Histogram(Element2D):
     vdims = param.List(default=[Dimension('Frequency')], bounds=(1,1))
 
     def __init__(self, values, edges=None, **params):
+        if edges is not None:
+            self.warning("Histogram edges should be supplied as a tuple "
+                         "along with the values, passing the edges will "
+                         "be deprecated in holoviews 2.0.")
         self.values, self.edges, settings = self._process_data(values, edges)
         settings.update(params)
         super(Histogram, self).__init__((self.values, self.edges), **settings)
@@ -340,10 +344,10 @@ class VectorField(Points):
     _null_value = np.array([[], [], [], []]).T # For when data is None
     _min_dims = 3                              # Minimum number of columns
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, list) and all(isinstance(d, np.ndarray) for d in data):
             data = np.column_stack([d.flat if d.ndim > 1 else d for d in data])
-        super(VectorField, self).__init__(data, **params)
+        super(VectorField, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 

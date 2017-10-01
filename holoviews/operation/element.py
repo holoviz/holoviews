@@ -154,10 +154,10 @@ class transform(Operation):
        Image to the data in the output Image. By default, acts as
        the identity function such that the output matches the input.""")
 
-    def _process(self, matrix, key=None):
-        processed = (matrix.data if not self.p.operator
-                     else self.p.operator(matrix.data))
-        return Image(processed, matrix.bounds, group=self.p.group)
+    def _process(self, img, key=None):
+        processed = (img.data if not self.p.operator
+                     else self.p.operator(img.data))
+        return img.clone(processed, group=self.p.group)
 
 
 
@@ -347,7 +347,7 @@ class gradient(Operation):
             dx = np.where(np.abs(dx_negatives)<dx, dx_negatives, dx)
             dy = np.where(np.abs(dy_negatives)<dy, dy_negatives, dy)
 
-        return Image(np.sqrt(dx * dx + dy * dy), matrix.bounds, group=self.p.group)
+        return Image(np.sqrt(dx * dx + dy * dy), bounds=matrix.bounds, group=self.p.group)
 
 
 
