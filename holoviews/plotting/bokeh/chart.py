@@ -717,7 +717,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             adjusted_xvals.append(xcat+':%.4f' % adjustment)
         return adjusted_xvals
 
-    def get_stack(self, xvals, yvals, baselines, positive=True):
+    def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """
         Iterates over a x- and y-values in a stack layer
         and appropriately offsets the layer on top of the
@@ -725,14 +725,14 @@ class BarPlot(ColorbarPlot, LegendPlot):
         """
         bottoms, tops = [], []
         for x, y in zip(xvals, yvals):
-            baseline = baselines[x][positive]
-            if positive:
+            baseline = baselines[x][sign]
+            if sign == 'positive':
                 bottom = baseline
                 top = bottom+y
             else:
                 top = baseline
                 bottom = top+y
-            baselines[x][positive] = top
+            baselines[x][sign] = top
             bottoms.append(bottom)
             tops.append(top)
         return bottoms, tops
@@ -815,7 +815,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
-        baselines = defaultdict(lambda: {True: 0, False: 0})
+        baselines = defaultdict(lambda: {'positive': 0, 'negative': 0})
         for i, (k, ds) in enumerate(grouped.items()):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
@@ -826,11 +826,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
             # Apply stacking or grouping
             if grouping == 'stacked':
                 ds = ds.sort(ds.vdims[0])
-                for sign, slc in enumerate([(None, 0), (0, None)]):
+                for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
                     slc_ds = ds.select(**{ds.vdims[0].name: slc})
                     xs = slc_ds.dimension_values(xdim)
                     ys = slc_ds.dimension_values(ydim)
-                    bs, ts = self.get_stack(xs, ys, baselines, bool(sign))
+                    bs, ts = self.get_stack(xs, ys, baselines, sign)
                     data['bottom'].append(bs)
                     data['top'].append(ts)
                     data[xdim.name].append(xs)

@@ -936,10 +936,9 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                     kdims=['Index', 'Category'], vdims=['Value'])
         plot = bokeh_renderer.get_plot(bars)
         source = plot.handles['source']
-        self.assertEqual(source.data['xoffsets'],
-                         np.array([['A', '0'], ['B', '0'], ['A', '1']], dtype='<U1'))
-        self.assertEqual(source.data['Category'],
-                         np.array(['0', '0', '1'], dtype='|S1'))
+        self.assertEqual([tuple(x) for x in source.data['xoffsets']],
+                         [('A', '0'), ('B', '0'), ('A', '1')])
+        self.assertEqual(list(source.data['Category']), ['0', '0', '1'])
         self.assertEqual(source.data['Value'], np.array([1, 2, -1]))
         x_range = plot.handles['x_range']
         self.assertEqual(x_range.factors, [('A', '0'), ('A', '1'), ('B', '0'), ('B', '1')])
@@ -949,8 +948,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                     kdims=['Index', 'Category'], vdims=['Value'])
         plot = bokeh_renderer.get_plot(bars.opts(plot=dict(stack_index=1)))
         source = plot.handles['source']
-        self.assertEqual(source.data['Category'], np.array(['1', '0', '0'], dtype='|S1'))
-        self.assertEqual(source.data['Index'], np.array(['A', 'A', 'B'], dtype='<U1'))
+        self.assertEqual(list(source.data['Category']), ['1', '0', '0'])
+        self.assertEqual(list(source.data['Index']), ['A', 'A', 'B'])
         self.assertEqual(source.data['top'], np.array([0, 1, 2]))
         self.assertEqual(source.data['bottom'], np.array([-1, 0, 0]))
 
