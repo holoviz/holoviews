@@ -24,7 +24,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
-from .graphs import GraphPlot
+from .graphs import GraphPlot, NodePlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -85,7 +85,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
-                Nodes: PointPlot,
+                Nodes: NodePlot,
                 EdgePaths: PathPlot,
 
                 # Tabular

@@ -720,7 +720,27 @@ def split_dataframe(path_df):
     return [df for df in np.split(path_df, splits) if len(df) > 1]
 
 
-class bundle_graph(Operation, hammer_bundle):
+class _connect_edges(Operation):
+
+    split = param.Boolean(default=False, doc="""
+        Determines whether bundled edges will be split into individual edges
+        or concatenated with NaN separators.""")
+
+    def _bundle(self, position_df, edges_df):
+        raise NotImplementedError('_connect edges is an abstract baseclass '
+                                  'and does not implement any actual bundling.')
+
+    def _process(self, element, key=None):
+        index = element.nodes.kdims[2].name
+        position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
+        rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
+        edges_df = element.redim(**rename).dframe([0, 1])
+        paths = self._bundle(position_df, edges_df)
+        paths = split_dataframe(paths) if self.p.split else [paths]
+        return element.clone((element.data, element.nodes, paths))
+
+
+class bundle_graph(_connect_edges, hammer_bundle):
     """
     Iteratively group edges and return as paths suitable for datashading.
 
@@ -728,16 +748,16 @@ class bundle_graph(Operation, hammer_bundle):
     iteratively curves this path to bundle edges into groups.
     """
 
-    split = param.Boolean(default=True, doc="""
-        Determines whether bundled edges will be split into individual edges
-        or concatenated with NaN separators.""")
-
-    def _process(self, element, key=None):
+    def _bundle(self, position_df, edges_df):
         from datashader.bundling import hammer_bundle
-        index = element.nodes.kdims[2].name
-        position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
-        rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
-        edges_df = element.redim(**rename).dframe([0, 1])
-        paths = hammer_bundle.__call__(self, position_df, edges_df, **self.p)
-        paths = split_dataframe(paths) if self.p.split else [paths]
-        return element.clone((element.data, element.nodes, paths))
+        return hammer_bundle.__call__(self, position_df, edges_df, **self.p)
+
+
+class directly_connect_edges(_connect_edges):
+    """
+    Given a Graph object will directly connect all nodes.
+    """
+
+    def _bundle(self, position_df, edges_df):
+        from datashader.bundling import directly_connect_edges
+        return directly_connect_edges.__call__(self, position_df, edges_df)

@@ -11,7 +11,7 @@ except:
 
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core.util import basestring, dimension_sanitizer
-from .chart import ColorbarPlot
+from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
 from .util import mpl_to_bokeh, bokeh_version
 
@@ -116,7 +116,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
         if element._edgepaths:
-            edges = element.edgepaths.split()
+            edges = element._split_edgepaths.split()
             if len(edges) == len(start):
                 path_data['xs'] = [path.dimension_values(xidx) for path in edges]
                 path_data['ys'] = [path.dimension_values(yidx) for path in edges]
@@ -192,4 +192,13 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         self.handles['multi_line_1_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             self.handles['hover'].renderers.append(renderer)
+
+
+class NodePlot(PointPlot):
+    """
+    Simple subclass of PointPlot which hides x, y position on hover.
+    """
+
+    def _hover_opts(self, element):
+        return element.dimensions()[2:], {}
 
