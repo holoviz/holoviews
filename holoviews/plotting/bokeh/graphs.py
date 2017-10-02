@@ -11,7 +11,7 @@ except:
 
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core.util import basestring, dimension_sanitizer
-from .chart import ColorbarPlot
+from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
 from .util import mpl_to_bokeh, bokeh_version
 
@@ -192,4 +192,13 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         self.handles['multi_line_1_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             self.handles['hover'].renderers.append(renderer)
+
+
+class NodePlot(PointPlot):
+    """
+    Simple subclass of PointPlot which hides x, y position on hover.
+    """
+
+    def _hover_opts(self, element):
+        return element.dimensions()[2:], {}
 
