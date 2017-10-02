@@ -153,9 +153,9 @@ class Graph(Dataset, Element2D):
                     npaths += 1
                 mismatch = npaths != nedges
             if mismatch:
-                raise ValueError('Ensure that the number of edges supplied to '
-                                 'the Graph matches the number of edgepaths: '
-                                 'expected %d, found %d' % (nedges, npaths))
+                raise ValueError('Ensure that the number of edges supplied '
+                                 'to the Graph (%d) matches the number of '
+                                 'edgepaths (%d)' % (nedges, npaths))
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
