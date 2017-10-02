@@ -42,11 +42,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge'}
 
-    # Define all the glyph handles to update
-    _update_handles = ([glyph+'_'+model for model in ['glyph', 'glyph_renderer', 'source']
-                        for glyph in ['scatter_1', 'multi_line_1']] +
-                       ['color_mapper', 'colorbar', 'layout_source'])
-
     style_opts = (['edge_'+p for p in line_properties] +\
                   ['node_'+p for p in fill_properties+line_properties]+['node_size', 'cmap'])
 

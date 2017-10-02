@@ -262,9 +262,9 @@ class BokehWidget(NdWidget):
             if fig_format == 'html':
                 msg = self.renderer.html(self.plot, fig_format)
             else:
-                json_patch = self.renderer.diff(self.plot, serialize=False)
-                msg = dict(patch=json_patch, root=self.plot.state._id)
-                msg = serialize_json(msg)
+                patch = self.renderer.diff(self.plot, binary=False)
+                msg = serialize_json(dict(content=patch.content,
+                                          root=self.plot.state._id))
             return msg
 
 

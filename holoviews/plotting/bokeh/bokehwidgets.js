@@ -26,7 +26,7 @@ var BokehMethods = {
 		}
 		if (data !== undefined) {
 			var doc = Bokeh.index[data.root].model.document;
-			doc.apply_json_patch(data.patch);
+			doc.apply_json_patch(data.content);
 		}
 	},
 	init_comms : function() {

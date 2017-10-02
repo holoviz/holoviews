@@ -58,8 +58,6 @@ class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
 
-    _update_handles = ['glyph']
-
     _plot_methods = dict(single='Span')
 
     def get_data(self, element, ranges, style):
@@ -125,8 +123,6 @@ class ArrowPlot(CompositeElementPlot):
     style_opts = (['arrow_%s' % p for p in line_properties+['size']] + text_properties)
 
     _style_groups = {'arrow': 'arrow', 'label': 'text'}
-
-    _update_handles = ['glyph']
 
     _plot_methods = dict(single='text')
 

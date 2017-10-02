@@ -18,8 +18,7 @@ from ..comms import JupyterComm, Comm
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import (compute_static_patch, serialize_json, attach_periodic,
-                   bokeh_version, compute_plot_size)
+from .util import attach_periodic, bokeh_version, compute_plot_size
 
 if bokeh_version > '0.12.9':
     from bokeh.io.notebook import (load_notebook, publish_display_data,
@@ -248,25 +247,17 @@ class BokehRenderer(Renderer):
         return div
 
 
-    def diff(self, plot, serialize=True, binary=False):
+    def diff(self, plot, binary=True):
         """
         Returns a json diff required to update an existing plot with
         the latest plot data.
         """
-        if binary:
-            events = list(plot.document._held_events)
-            if not events:
-                return None
-            msg = Protocol("1.0").create("PATCH-DOC", events)
-            plot.document._held_events = []
-            return msg
-        else:
-            plotobjects = [h for handles in plot.traverse(lambda x: x.current_handles, [lambda x: x._updated])
-                           for h in handles]
-            plot.traverse(lambda x: setattr(x, '_updated', False))
-            patch = compute_static_patch(plot.document, plotobjects)
-        processed = self._apply_post_render_hooks(patch, plot, 'json')
-        return serialize_json(processed) if serialize else processed
+        events = list(plot.document._held_events)
+        if not events:
+            return None
+        msg = Protocol("1.0").create("PATCH-DOC", events, use_buffers=binary)
+        plot.document._held_events = []
+        return msg
 
 
     @classmethod

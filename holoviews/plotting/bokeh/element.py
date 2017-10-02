@@ -163,10 +163,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         tick locations or bokeh Ticker object. If set to None
         default bokeh ticking behavior is applied.""")
 
-    # The plot objects to be updated on each frame
-    # Any entries should be existing keys in the handles
-    # instance attribute.
-    _update_handles = ['source', 'glyph', 'glyph_renderer']
     _categorical = False
 
     # Declares the default types for continuous x- and y-axes
@@ -892,52 +888,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     @property
-    def current_handles(self):
-        """
-        Returns a list of the plot objects to update.
-        """
-        handles = []
-        if self.static and not self.dynamic:
-            return handles
-
-        for handle in self._update_handles:
-            if (handle == 'source' and self.static_source):
-                continue
-            if handle in self.handles:
-                handles.append(self.handles[handle])
-
-        if self.overlaid:
-            return handles
-
-        plot = self.state
-        handles.append(plot)
-        if bokeh_version >= '0.12':
-            handles.append(plot.title)
-
-        for ax in 'xy':
-            key = '%s_range' % ax
-            if isinstance(self.handles.get(key), FactorRange):
-                handles.append(self.handles[key])
-
-        framewise = self.framewise
-        if self.current_frame:
-            if not self.apply_ranges:
-                rangex, rangey = False, False
-            elif isinstance(self.hmap, DynamicMap):
-                rangex = not self.model_changed(plot.x_range) and framewise
-                rangey = not self.model_changed(plot.y_range) and framewise
-            elif self.framewise:
-                rangex, rangey = True, True
-            else:
-                rangex, rangey = False, False
-            if rangex:
-                handles += [plot.x_range]
-            if rangey:
-                handles += [plot.y_range]
-        return handles
-
-
-    @property
     def framewise(self):
         """
         Property to determine whether the current frame should have
@@ -1096,8 +1046,6 @@ class ColorbarPlot(ElementPlot):
 
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
-
-    _update_handles = ['color_mapper', 'source', 'glyph', 'colorbar']
 
     _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
                               major_tick_line_color='black')
@@ -1280,8 +1228,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         Whether to display overlaid plots in separate panes""")
 
     style_opts = legend_dimensions + line_properties + text_properties
-
-    _update_handles = ['source']
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
