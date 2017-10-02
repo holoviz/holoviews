@@ -951,6 +951,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         current_frames = [el for f in self.traverse(lambda x: x.current_frame)
                           for el in (f.traverse(lambda x: x, [Element])
                                      if f else [])]
+        current_frames = util.unique_iterator(current_frames)
         return any(self.lookup_options(frame, 'norm').options.get('framewise')
                    for frame in current_frames)
 
