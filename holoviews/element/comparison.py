@@ -576,7 +576,7 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
         cls.compare_nodes(el1.nodes, el2.nodes, msg)
         if el1._edgepaths or el2._edgepaths:
-            cls.compare_edgepaths(el1.nodes, el2.nodes, msg)
+            cls.compare_edgepaths(el1.edgepaths, el2.edgepaths, msg)
 
     @classmethod
     def compare_nodes(cls, el1, el2, msg='Nodes'):
