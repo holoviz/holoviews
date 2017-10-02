@@ -170,7 +170,7 @@ class Graph(Dataset, Element2D):
         return super(Graph, self).clone(data, shared_data, new_type, *args, **overrides)
 
 
-    def select(self, selection_specs=None, **selection):
+    def select(self, selection_specs=None, selection_mode='edges', **selection):
         """
         Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
@@ -179,6 +179,10 @@ class Graph(Dataset, Element2D):
         of type.group.label strings, types or functions) may be
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
+
+        Selecting by a node dimensions selects all edges and nodes that are
+        connected to the selected nodes. To select only edges between the
+        selected nodes set the selection_mode to 'nodes'.
         """
         selection = {dim: sel for dim, sel in selection.items()
                      if dim in self.dimensions('ranges')+['selection_mask']}
@@ -198,9 +202,14 @@ class Graph(Dataset, Element2D):
         if len(nodes) != len(self.nodes):
             xdim, ydim = dimensions[:2]
             indices = list(nodes.dimension_values(2, False))
-            mask1 = self.interface.select_mask(self, {xdim.name: indices})
-            mask2 = self.interface.select_mask(self, {ydim.name: indices})
-            nodemask = mask1 | mask2
+            if selection_mode == 'edges':
+                mask1 = self.interface.select_mask(self, {xdim.name: indices})
+                mask2 = self.interface.select_mask(self, {ydim.name: indices})
+                nodemask = (mask1 | mask2)
+                nodes = self.nodes
+            else:
+                nodemask = self.interface.select_mask(self, {xdim.name: indices,
+                                                             ydim.name: indices})
 
         # Compute mask for edge selection
         mask = None
@@ -218,7 +227,7 @@ class Graph(Dataset, Element2D):
         if mask is not None:
             data = self.interface.select(self, mask)
             if not np.all(mask):
-                new_graph = self.clone((data, self.nodes))
+                new_graph = self.clone((data, nodes))
                 source = new_graph.dimension_values(0, expanded=False)
                 target = new_graph.dimension_values(1, expanded=False)
                 unique_nodes = np.unique(np.concatenate([source, target]))

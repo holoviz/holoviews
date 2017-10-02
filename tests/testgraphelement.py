@@ -38,10 +38,15 @@ class GraphTests(ComparisonTestCase):
         with self.assertRaisesRegexp(ValueError, exception):
             graph = Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
-    def test_select_by_node(self):
+    def test_select_by_node_in_edges_selection_mode(self):
         graph = Graph(((self.source, self.target),))
         selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes))[0:3]))
         self.assertEqual(graph.select(index=(1, 3)), selection) 
+
+    def test_select_by_node_in_nodes_selection_mode(self):
+        graph = Graph(((self.source, self.source+1), self.nodes))
+        selection = Graph(([(1, 2)], list(zip(*self.nodes))[1:3]))
+        self.assertEqual(graph.select(index=(1, 3), selection_mode='nodes'), selection)
 
     def test_select_by_source(self):
         graph = Graph(((self.source, self.target),))
