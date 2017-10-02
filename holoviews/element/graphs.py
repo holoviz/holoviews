@@ -1,3 +1,5 @@
+from types import FunctionType
+
 import param
 import numpy as np
 
@@ -54,8 +56,8 @@ class layout_nodes(Operation):
         A NetworkX layout function""")
 
     def _process(self, element, key=None):
-        if self.p.layout and not (ds_layout and (isinstance(self.p.layout, ds_layout) or
-                                                 issubclass(self.p.layout, ds_layout))):
+        if self.p.layout and isinstance(self.p.layout, FunctionType):
+            import networkx as nx
             graph = nx.from_edgelist(element.array([0, 1]))
             positions = self.p.layout(graph)
             nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
