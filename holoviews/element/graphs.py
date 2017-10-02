@@ -7,6 +7,7 @@ from ..core.util import max_range
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
+from .util import split_path, pd
 
 try:
     from datashader.layout import LayoutAlgorithm as ds_layout
@@ -124,15 +125,35 @@ class Graph(Dataset, Element2D):
                                             node_info.dimension_values(d),
                                             vdim=True)
             self._nodes = nodes
-        if self._edgepaths:
-            mismatch = []
-            for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
-                if kd1 != kd2:
-                    mismatch.append('%s != %s' % (kd1, kd2))
-            if mismatch:
-                raise ValueError('Ensure that the first two key dimensions on '
-                                 'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
+        self._validate()
         self.redim = redim_graph(self, mode='dataset')
+
+
+    def _validate(self):
+        if self._edgepaths is None:
+            return
+        mismatch = []
+        for kd1, kd2 in zip(self.nodes.kdims, self.edgepaths.kdims):
+            if kd1 != kd2:
+                mismatch.append('%s != %s' % (kd1, kd2))
+        if mismatch:
+            raise ValueError('Ensure that the first two key dimensions on '
+                             'Nodes and EdgePaths match: %s' % ', '.join(mismatch))
+        npaths = len(self._edgepaths.data)
+        nedges = len(self)
+        if nedges != npaths:
+            mismatch = True
+            if npaths == 1:
+                edges = self.edgepaths.split()[0]
+                vals = edges.dimension_values(0)
+                npaths = len(np.where(np.isnan(vals))[0])
+                if not np.isnan(vals[-1]):
+                    npaths += 1
+                mismatch = npaths != nedges
+            if mismatch:
+                raise ValueError('Ensure that the number of edges supplied to '
+                                 'the Graph matches the number of edgepaths: '
+                                 'expected %d, found %d' % (nedges, npaths))
 
 
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
@@ -169,27 +190,55 @@ class Graph(Dataset, Element2D):
                           if k in self.kdims}
         nodes = self.nodes.select(**dict(selection, **node_selection))
         selection = {k: v for k, v in selection.items() if k in dimensions}
+
+        # Compute mask for edges if nodes were selected on
+        nodemask = None
         if len(nodes) != len(self.nodes):
             xdim, ydim = dimensions[:2]
-            indices = list(nodes.dimension_values(2))
-            selection[xdim.name] = indices
-            selection[ydim.name] = indices
+            indices = list(nodes.dimension_values(2, False))
+            mask1 = self.interface.select_mask(self, {xdim.name: indices})
+            mask2 = self.interface.select_mask(self, {ydim.name: indices})
+            nodemask = mask1 | mask2
+
+        # Compute mask for edge selection
+        mask = None
         if selection:
             mask = self.interface.select_mask(self, selection)
+
+        # Combine masks
+        if nodemask is not None:
+            if mask is not None:
+                mask &= nodemask
+            else:
+                mask = nodemask
+
+        # Apply edge mask
+        if mask is not None:
             data = self.interface.select(self, mask)
             if not np.all(mask):
-                new_graph = self.clone((data, nodes))
+                new_graph = self.clone((data, self.nodes))
                 source = new_graph.dimension_values(0, expanded=False)
                 target = new_graph.dimension_values(1, expanded=False)
                 unique_nodes = np.unique(np.concatenate([source, target]))
                 nodes = new_graph.nodes[:, :, list(unique_nodes)]
             paths = None
             if self._edgepaths:
-                paths = self.edgepaths.interface.select_paths(self.edgepaths, mask)
+                edgepaths = self._split_edgepaths
+                paths = edgepaths.clone(edgepaths.interface.select_paths(edgepaths, mask))
+                if len(self._edgepaths.data) == 1:
+                    paths = paths.clone([paths.dframe() if pd else paths.array()])
         else:
             data = self.data
             paths = self._edgepaths
         return self.clone((data, nodes, paths))
+
+
+    @property
+    def _split_edgepaths(self):
+        if len(self) == len(self._edgepaths.data):
+            return self._edgepaths
+        else:
+            return self._edgepaths.clone(split_path(self._edgepaths))
 
 
     def range(self, dimension, data_range=True):
@@ -283,3 +332,4 @@ class EdgePaths(Path):
     """
 
     group = param.String(default='EdgePaths', constant=True)
+
