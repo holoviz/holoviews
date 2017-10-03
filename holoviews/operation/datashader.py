@@ -394,21 +394,16 @@ class regrid(ResamplingOperation):
 
         coords = tuple(element.dimension_values(d, expanded=False)
                        for d in [x, y])
-        if element.interface is XArrayInterface and len(element.vdims) == 1:
-            xarr = element.data[element.vdims[0].name]
-        else:
-            coord_dict = {x.name: coords[0], y.name: coords[1]}
-            dims = [y.name, x.name]
-            arrays = []
-            for vd in element.vdims:
-                arrays.append(element.dimension_values(vd, flat=False))
-            if len(arrays) > 1:
-                array = np.dstack(arrays).transpose([2, 0, 1])
-                coord_dict['temp_vdim_layer'] = range(len(arrays))
-                dims = ['temp_vdim_layer'] + dims
+        coord_dict = {x.name: coords[0], y.name: coords[1]}
+        dims = [y.name, x.name]
+        arrays = []
+        for vd in element.vdims:
+            if element.interface is XArrayInterface:
+                xarr = element.data[vd.name]
             else:
-                array = arrays[0]
-            xarr = xr.DataArray(array, coords=coord_dict, dims=dims)
+                arr = element.dimension_values(vd, flat=False)
+                xarr = xr.DataArray(arr, coords=coord_dict, dims=dims)
+            arrays.append(xarr)
 
         # Disable upsampling if requested
         (xstart, xend), (ystart, yend) = (x_range, y_range)
@@ -422,12 +417,13 @@ class regrid(ResamplingOperation):
         # Get expanded or bounded ranges
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
-        regridded = cvs.raster(xarr, upsample_method=self.p.interpolation,
-                               downsample_method=self.p.aggregator)
+        regridded = []
+        for xarr in arrays:
+            rarray = cvs.raster(xarr, upsample_method=self.p.interpolation,
+                                downsample_method=self.p.aggregator)
+            regridded.append(rarray)
 
-        if regridded.ndim > 2:
-            regridded = xr.Dataset({vd.name: regridded[i].drop('temp_vdim_layer')
-                                    for i, vd in enumerate(element.vdims)})
+        regridded = xr.Dataset({vd.name: xarr for vd, xarr in zip(element.vdims, regridded)})
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
         xd = float(width) / xspan
         yd = float(height) / yspan
