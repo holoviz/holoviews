@@ -3,7 +3,7 @@ from __future__ import absolute_import
 import matplotlib.pyplot as plt
 
 try:
-    import seaborn.apionly as sns
+    import seaborn as sns
 except:
     sns = None
 
