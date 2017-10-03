@@ -52,24 +52,26 @@ class PointPlot(LegendPlot, ColorbarPlot):
     def _get_size_data(self, element, ranges, style):
         data, mapping = {}, {}
         sdim = element.get_dimension(self.size_index)
-        if sdim:
-            map_key = 'size_' + sdim.name
-            ms = style.get('size', np.sqrt(6))**2
-            sizes = element.dimension_values(self.size_index)
-            sizes = compute_sizes(sizes, self.size_fn,
-                                  self.scaling_factor,
-                                  self.scaling_method, ms)
-            if sizes is None:
-                eltype = type(element).__name__
-                self.warning('%s dimension is not numeric, cannot '
-                             'use to scale %s size.' % (sdim.pprint_label, eltype))
-            else:
-                data[map_key] = np.sqrt(sizes)
-                mapping['size'] = map_key
+        if not sdim or self.static_source:
+            return data, mapping
+        
+        map_key = 'size_' + sdim.name
+        ms = style.get('size', np.sqrt(6))**2
+        sizes = element.dimension_values(self.size_index)
+        sizes = compute_sizes(sizes, self.size_fn,
+                              self.scaling_factor,
+                              self.scaling_method, ms)
+        if sizes is None:
+            eltype = type(element).__name__
+            self.warning('%s dimension is not numeric, cannot '
+                         'use to scale %s size.' % (sdim.pprint_label, eltype))
+        else:
+            data[map_key] = np.sqrt(sizes)
+            mapping['size'] = map_key
         return data, mapping
 
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
@@ -77,10 +79,11 @@ class PointPlot(LegendPlot, ColorbarPlot):
         mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
-        xdim, ydim = dims[xidx], dims[yidx]
-        data[xdim] = [] if empty else element.dimension_values(xidx)
-        data[ydim] = [] if empty else element.dimension_values(yidx)
-        self._categorize_data(data, (xdim, ydim), element.dimensions())
+        if not self.static_source:
+            xdim, ydim = dims[xidx], dims[yidx]
+            data[xdim] = element.dimension_values(xidx)
+            data[ydim] = element.dimension_values(yidx)
+            self._categorize_data(data, (xdim, ydim), element.dimensions())
 
         cdata, cmapping = self._get_color_data(element, ranges, style)
         data.update(cdata)
@@ -90,20 +93,24 @@ class PointPlot(LegendPlot, ColorbarPlot):
         data.update(sdata)
         mapping.update(smapping)
 
-        self._get_hover_data(data, element, empty)
+        self._get_hover_data(data, element)
         return data, mapping
 
 
-    def get_batched_data(self, element, ranges=None, empty=False):
+    def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
         styles = self.lookup_options(element.last, 'style')
         styles = styles.max_cycles(len(self.ordering))
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
-            eldata, elmapping = self.get_data(el, ranges, empty)
+            eldata, elmapping = self.get_data(el, ranges)
             for k, eld in eldata.items():
                 data[k].append(eld)
+
+            # Skip if data is empty
+            if not eldata:
+                continue
 
             # Apply static styles
             nvals = len(list(eldata.values())[0])
@@ -178,7 +185,7 @@ class VectorFieldPlot(ColorbarPlot):
         return properties
 
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         input_scale = style.pop('scale', 1.0)
 
@@ -248,15 +255,18 @@ class CurvePlot(ElementPlot):
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
 
-    def get_data(self, element, ranges=None, empty=False):
-        if 'steps' in self.interpolation:
-            element = interpolate_curve(element, interpolation=self.interpolation)
+    def get_data(self, element, ranges=None):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
-        data = {x: [] if empty else element.dimension_values(xidx),
-                y: [] if empty else element.dimension_values(yidx)}
-        self._get_hover_data(data, element, empty)
+        if self.static_source:
+            return {}, dict(x=x, y=y)
+
+        if 'steps' in self.interpolation:
+            element = interpolate_curve(element, interpolation=self.interpolation)
+        data = {x: element.dimension_values(xidx),
+                y: element.dimension_values(yidx)}
+        self._get_hover_data(data, element)
         self._categorize_data(data, (x, y), element.dimensions())
         return (data, dict(x=x, y=y))
 
@@ -269,7 +279,7 @@ class CurvePlot(ElementPlot):
             line_policy = 'nearest'
         return dims, dict(line_policy=line_policy)
 
-    def get_batched_data(self, overlay, ranges=None, empty=False):
+    def get_batched_data(self, overlay, ranges=None):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(overlay)
@@ -278,7 +288,12 @@ class CurvePlot(ElementPlot):
 
         for (key, el), zorder in zip(overlay.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
-            eldata, elmapping = self.get_data(el, ranges, empty)
+            eldata, elmapping = self.get_data(el, ranges)
+
+            # Skip if data empty
+            if not eldata:
+                continue
+
             for k, eld in eldata.items():
                 data[k].append(eld)
 
@@ -306,17 +321,17 @@ class HistogramPlot(ElementPlot):
     style_opts = line_properties + fill_properties
     _plot_methods = dict(single='quad')
 
-    def get_data(self, element, ranges=None, empty=None):
+    def get_data(self, element, ranges=None):
         if self.invert_axes:
             mapping = dict(top='left', bottom='right', left=0, right='top')
         else:
             mapping = dict(top='top', bottom=0, left='left', right='right')
-        if empty:
+        if self.static_source:
             data = dict(top=[], left=[], right=[])
         else:
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
-        self._get_hover_data(data, element, empty)
+        self._get_hover_data(data, element)
         return (data, mapping)
 
     def get_extents(self, element, ranges):
@@ -350,13 +365,13 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
     main_source.trigger('change')
     """
 
-    def get_data(self, element, ranges=None, empty=None):
+    def get_data(self, element, ranges=None):
         if self.invert_axes:
             mapping = dict(top='right', bottom='left', left=0, right='top')
         else:
             mapping = dict(top='top', bottom=0, left='left', right='right')
 
-        if empty:
+        if self.static_source:
             data = dict(top=[], left=[], right=[])
         else:
             data = dict(top=element.values, left=element.edges[:-1],
@@ -366,10 +381,10 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         dim = color_dims[0] if color_dims else None
         cmapper = self._get_colormapper(dim, element, {}, {})
         if cmapper and dim in element.dimensions():
-            data[dim.name] = [] if empty else element.dimension_values(dim)
+            data[dim.name] = [] if self.static_source else element.dimension_values(dim)
             mapping['fill_color'] = {'field': dim.name,
                                      'transform': cmapper}
-        self._get_hover_data(data, element, empty)
+        self._get_hover_data(data, element)
         return (data, mapping)
 
 
@@ -409,8 +424,11 @@ class ErrorPlot(ElementPlot):
 
     _plot_methods = dict(single=Whisker)
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         mapping = dict(self._mapping)
+        if self.static_source:
+            return {}, mapping
+
         base = element.dimension_values(0)
         ys = element.dimension_values(1)
         if len(element.vdims) > 2:
@@ -471,7 +489,11 @@ class AreaPlot(SpreadPlot):
             ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
         return super(AreaPlot, self).get_extents(element, ranges)
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
+        mapping = dict(self._mapping)
+        if self.static_source:
+            return {}, mapping
+
         xs = element.dimension_values(0)
         if len(element.vdims) > 1:
             lower = element.dimension_values(2)
@@ -480,7 +502,6 @@ class AreaPlot(SpreadPlot):
         upper = element.dimension_values(1)
         data = dict(base=xs, upper=upper, lower=lower)
 
-        mapping = dict(self._mapping)
         if self.invert_axes:
             mapping['dimension'] = 'width'
         else:
@@ -529,13 +550,13 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             t = np.nanmax([0, t])
         return l, b, r, t
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         dims = element.dimensions(label=True)
 
         pos = self.position
         mapping = dict(xs='xs', ys='ys')
-        if len(element) == 0:
+        if len(element) == 0 or self.static_source:
             xs, ys = [], []
         elif len(dims) > 1:
             xs, ys = zip(*((np.array([x, x]), np.array([pos+y, pos]))
@@ -545,16 +566,16 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             xs, ys = zip(*((np.array([x[0], x[0]]), np.array([pos+height, pos]))
                            for x in element.array(dims[:1])))
 
-        if not empty and self.invert_axes: xs, ys = ys, xs
+        if self.invert_axes: xs, ys = ys, xs
         data = dict(zip(('xs', 'ys'), (xs, ys)))
         cdim = element.get_dimension(self.color_index)
         if cdim:
             cmapper = self._get_colormapper(cdim, element, ranges, style)
-            data[cdim.name] = [] if empty else element.dimension_values(cdim)
+            data[cdim.name] = [] if self.static_source else element.dimension_values(cdim)
             mapping['color'] = {'field': cdim.name,
                                 'transform': cmapper}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
+        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
             for d in dims:
                 data[dimension_sanitizer(d)] = element.dimension_values(d)
 
@@ -742,7 +763,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         del props['width']
         return props
 
-    def get_data(self, element, ranges, empty):
+    def get_data(self, element, ranges):
         # Get x, y, group, stack and color dimensions
         grouping = None
         group_dim = element.get_dimension(self.group_index)
@@ -916,11 +937,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         return sanitized_data, mapping
 
-    def get_batched_data(self, element, ranges, empty):
+    def get_batched_data(self, element, ranges):
         el = element.last
         collapsed = Bars(element.table(), kdims=el.kdims+element.kdims,
                             vdims=el.vdims)
-        return self.get_data(collapsed, ranges, empty)
+        return self.get_data(collapsed, ranges)
 
 
 
@@ -995,7 +1016,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             else:
                 return factors, []
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         if element.kdims:
             groups = element.groupby(element.kdims).data
         else:

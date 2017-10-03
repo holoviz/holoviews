@@ -45,11 +45,10 @@ class TablePlot(BokehPlot, GenericElementPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         dims = element.dimensions()
-        data = {d: np.array([]) if empty else element.dimension_values(d)
-                 for d in dims}
         mapping = {d.name: d.name for d in dims}
+        data = {d: element.dimension_values(d) for d in dims}
         data = {d.name: values if values.dtype.kind in "if" else list(map(d.pprint_value, values))
                 for d, values in data.items()}
         return data, mapping
@@ -94,20 +93,12 @@ class TablePlot(BokehPlot, GenericElementPlot):
         if self.static and not self.dynamic:
             return handles
 
-
         element = self.current_frame
-        previous_id = self.handles.get('previous_id', None)
-        current_id = None if self.current_frame is None else element._plot_id
         for handle in self._update_handles:
-            if (handle == 'source' and self.dynamic and current_id == previous_id):
+            if (handle == 'source' and self.static_source):
                 continue
             if handle in self.handles:
                 handles.append(self.handles[handle])
-
-        # Cache frame object id to skip updating if unchanged
-        if self.dynamic:
-            self.handles['previous_id'] = current_id
-
         return handles
 
 
@@ -117,6 +108,15 @@ class TablePlot(BokehPlot, GenericElementPlot):
         to the key.
         """
         element = self._get_frame(key)
+
+        # Cache frame object id to skip updating data if unchanged
+        previous_id = self.handles.get('previous_id', None)
+        current_id = element._plot_id
+        self.handles['previous_id'] = current_id
+        self.static_source = (self.dynamic and (current_id == previous_id))
+
+        if self.static_source:
+            return
         source = self.handles['source']
         data, _ = self.get_data(element, ranges)
         self._update_datasource(source, data)
