@@ -84,7 +84,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         xlabel, ylabel = [kd.pprint_label for kd in element.nodes.kdims[:2]]
         return xlabel, ylabel, None
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         style = self.style[self.cyclic_index]
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
 
@@ -115,7 +115,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             start = np.array([node_indices.get(x, nan_node) for x in start], dtype=np.int32)
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
-        if element._edgepaths:
+        if element._edgepaths and not self.static_source:
             edges = element._split_edgepaths.split()
             if len(edges) == len(start):
                 path_data['xs'] = [path.dimension_values(xidx) for path in edges]
@@ -150,7 +150,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
-        data, mapping = self.get_data(element, ranges, False)
+        data, mapping = self.get_data(element, ranges)
         self.handles['previous_id'] = element._plot_id
         properties = {}
         mappings = {}

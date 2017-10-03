@@ -30,9 +30,9 @@ class TextPlot(ElementPlot):
             props['text_color'] = props.pop('color')
         return props
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         mapping = dict(x='x', y='y', text='text')
-        if empty:
+        if self.static_source:
             return dict(x=[], y=[], text=[]), mapping
         if self.invert_axes:
             data = dict(x=[element.y], y=[element.x])
@@ -43,10 +43,10 @@ class TextPlot(ElementPlot):
         return (data, mapping)
 
 
-    def get_batched_data(self, element, ranges=None, empty=False):
+    def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         for key, el in element.data.items():
-            eldata, elmapping = self.get_data(el, ranges, empty)
+            eldata, elmapping = self.get_data(el, ranges)
             for k, eld in eldata.items():
                 data[k].extend(eld)
         return data, elmapping
@@ -65,7 +65,7 @@ class LineAnnotationPlot(ElementPlot):
 
     _plot_methods = dict(single='Span')
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         data, mapping = {}, {}
         dim = 'width' if isinstance(element, HLine) else 'height'
         if self.invert_axes:
@@ -99,7 +99,7 @@ class SplinePlot(ElementPlot):
     style_opts = line_properties
     _plot_methods = dict(single='bezier')
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         data_attrs = ['x0', 'y0', 'cx0', 'cy0', 'cx1', 'cy1', 'x1', 'y1',]
         verts = np.array(element.data[0])
         inds = np.where(np.array(element.data[1])==1)[0]
@@ -130,7 +130,7 @@ class ArrowPlot(CompositeElementPlot):
 
     _plot_methods = dict(single='text')
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         plot = self.state
         label_mapping = dict(x='x', y='y', text='text')
 

@@ -264,12 +264,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return tools
 
 
-    def _get_hover_data(self, data, element, empty=False):
+    def _get_hover_data(self, data, element):
         """
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
         """
-        if not any(isinstance(t, HoverTool) for t in self.state.tools):
+        if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
             return
 
         for d in element.dimensions():
@@ -732,16 +732,14 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _init_glyphs(self, plot, element, ranges, source):
-        empty = False
         style_element = element.last if self.batched else element
 
         # Get data and initialize data source
-        empty = False
         if self.batched:
             current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-            data, mapping = self.get_batched_data(element, ranges, empty)
+            data, mapping = self.get_batched_data(element, ranges)
         else:
-            data, mapping = self.get_data(element, ranges, empty)
+            data, mapping = self.get_data(element, ranges)
             current_id = element._plot_id
         if source is None:
             source = self._init_datasource(data)
@@ -811,7 +809,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot = self.handles['plot']
         glyph = self.handles.get('glyph')
         source = self.handles['source']
-        empty = False
         mapping = {}
 
         # Cache frame object id to skip updating data if unchanged
@@ -823,9 +820,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
         if self.batched:
-            data, mapping = self.get_batched_data(element, ranges, empty)
+            data, mapping = self.get_batched_data(element, ranges)
         else:
-            data, mapping = self.get_data(element, ranges, empty)
+            data, mapping = self.get_data(element, ranges)
 
         if not self.static_source:
             self._update_datasource(source, data)
@@ -837,7 +834,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self._update_glyph(renderer, properties, mapping, glyph)
 
 
-    def update_frame(self, key, ranges=None, plot=None, element=None, empty=False):
+    def update_frame(self, key, ranges=None, plot=None, element=None):
         """
         Updates an existing plot with data corresponding
         to the key.
@@ -967,12 +964,11 @@ class CompositeElementPlot(ElementPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
-        empty = False
         if self.batched:
             current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-            data, mapping = self.get_batched_data(element, ranges, empty)
+            data, mapping = self.get_batched_data(element, ranges)
         else:
-            data, mapping = self.get_data(element, ranges, empty)
+            data, mapping = self.get_data(element, ranges)
             current_id = element._plot_id
 
         self.handles['previous_id'] = current_id
@@ -1010,7 +1006,6 @@ class CompositeElementPlot(ElementPlot):
 
     def _update_glyphs(self, element, ranges):
         plot = self.handles['plot']
-        empty = False
 
         # Cache frame object id to skip updating data if unchanged
         previous_id = self.handles.get('previous_id', None)
@@ -1020,7 +1015,7 @@ class CompositeElementPlot(ElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        data, mapping = self.get_data(element, ranges, empty)
+        data, mapping = self.get_data(element, ranges)
 
         for key in dict(mapping, **data):
             gdata = data[key]
@@ -1188,17 +1183,19 @@ class ColorbarPlot(ElementPlot):
     def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
-        if cdim:
-            cdata = element.dimension_values(cdim)
-            if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in 'OSU'):
-                factors = list(np.unique(cdata))
-            mapper = self._get_colormapper(cdim, element, ranges, style,
-                                           factors, colors)
-            data[cdim.name] = cdata
-            if factors is not None:
-                mapping['legend'] = {'field': cdim.name}
-            mapping[name] = {'field': cdim.name,
-                             'transform': mapper}
+        if not cdim:
+            return data, mapping
+
+        cdata = element.dimension_values(cdim)
+        if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in 'OSU'):
+            factors = list(np.unique(cdata))
+        mapper = self._get_colormapper(cdim, element, ranges, style,
+                                       factors, colors)
+        data[cdim.name] = cdata
+        if factors is not None:
+            mapping['legend'] = {'field': cdim.name}
+        mapping[name] = {'field': cdim.name,
+                         'transform': mapper}
         return data, mapping
 
 
@@ -1462,7 +1459,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         return self.handles['plot']
 
 
-    def update_frame(self, key, ranges=None, element=None, empty=False):
+    def update_frame(self, key, ranges=None, element=None):
         """
         Update the internal state of the Plot to represent the given
         key tuple (where integers represent frames). Returns this
@@ -1481,24 +1478,21 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         else:
             range_obj = self.hmap
 
-        all_empty = empty
         if element is not None:
             ranges = self.compute_ranges(range_obj, key, ranges)
         for k, subplot in self.subplots.items():
-            empty, el = False, None
+            el = None
             # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
                 # In batched mode NdOverlay is passed to subplot directly
                 if self.batched:
                     el = element
-                    empty = False
                 # If not batched get the Element matching the subplot
                 elif element is not None:
                     idx = dynamic_update(self, subplot, k, element, items)
-                    empty = idx is None
-                    if not empty:
+                    if idx is None:
                         _, el = items.pop(idx)
-            subplot.update_frame(key, ranges, element=el, empty=(empty or all_empty))
+            subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
             self.warning("Some Elements returned by the dynamic callback "

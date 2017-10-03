@@ -28,11 +28,11 @@ class PathPlot(ElementPlot):
         return dims, {}
 
 
-    def _get_hover_data(self, data, element, empty=False):
+    def _get_hover_data(self, data, element):
         """
         Initializes hover data based on Element dimension values.
         """
-        if not any(isinstance(t, HoverTool) for t in self.state.tools):
+        if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
             return
 
         for k, v in self.overlay_dims.items():
@@ -41,16 +41,15 @@ class PathPlot(ElementPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         if self.static_source:
             data = {}
         else:
             xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
             paths = [p.array(p.kdims[:2]) for p in element.split()]
-            xs = [] if empty else [path[:, xidx] for path in paths]
-            ys = [] if empty else [path[:, yidx] for path in paths]
+            xs, ys = ([path[:, idx] for path in paths] for idx in [xidx, yidx])
             data = dict(xs=xs, ys=ys)
-        self._get_hover_data(data, element, empty)
+        self._get_hover_data(data, element)
         return data, dict(self._mapping)
 
 
@@ -72,7 +71,7 @@ class PathPlot(ElementPlot):
                 data[col] = [[dims[i].pprint_value(v) for v in vals] for vals in column]
 
 
-    def get_batched_data(self, element, ranges=None, empty=False):
+    def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(element)
@@ -82,19 +81,22 @@ class PathPlot(ElementPlot):
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
             self.overlay_dims = dict(zip(element.kdims, key))
-            eldata, elmapping = self.get_data(el, ranges, empty)
+            eldata, elmapping = self.get_data(el, ranges)
             for k, eld in eldata.items():
                 data[k].extend(eld)
 
+            # Skip if data is empty
+            if not eldata:
+                continue
+
             # Apply static styles
-            if eldata:
-                nvals = len(list(eldata.values())[0])
-                style = styles[zorder]
-                sdata, smapping = expand_batched_style(style, self._batched_style_opts,
-                                                       elmapping, nvals)
-                elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})
-                for k, v in sdata.items():
-                    data[k].extend(list(v))
+            nvals = len(list(eldata.values())[0])
+            style = styles[zorder]
+            sdata, smapping = expand_batched_style(style, self._batched_style_opts,
+                                                   elmapping, nvals)
+            elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})
+            for k, v in sdata.items():
+                data[k].extend(list(v))
 
         return data, elmapping
 
@@ -103,8 +105,8 @@ class ContourPlot(ColorbarPlot, PathPlot):
 
     style_opts = line_properties + ['cmap']
 
-    def get_data(self, element, ranges=None, empty=False):
-        data, mapping = super(ContourPlot, self).get_data(element, ranges, empty)
+    def get_data(self, element, ranges=None):
+        data, mapping = super(ContourPlot, self).get_data(element, ranges)
         ncontours = len(list(data.values())[0])
         style = self.style[self.cyclic_index]
         if element.vdims and element.level is not None:
@@ -133,14 +135,14 @@ class PolygonPlot(ColorbarPlot, PathPlot):
         dims += element.vdims
         return dims, {}
 
-    def get_data(self, element, ranges=None, empty=False):
-        if not self.static_source:
-            paths = [p.array(p.kdims[:2]) for p in element.split()]
-            xs = [] if empty else [path[:, 0] for path in paths]
-            ys = [] if empty else [path[:, 1] for path in paths]
-            data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
-        else:
+    def get_data(self, element, ranges=None):
+        if self.static_source:
             data = {}
+        else:
+            paths = [p.array(p.kdims[:2]) for p in element.split()]
+            xs = [path[:, 0] for path in paths]
+            ys = [path[:, 1] for path in paths]
+            data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
 
         style = self.style[self.cyclic_index]
         mapping = dict(self._mapping)
@@ -152,7 +154,7 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             mapping['fill_color'] = {'field': dim_name,
                                      'transform': cmapper}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
+        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
             dim_name = util.dimension_sanitizer(element.vdims[0].name)
             for k, v in self.overlay_dims.items():
                 dim = util.dimension_sanitizer(k.name)

@@ -22,7 +22,11 @@ class RasterPlot(ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
+        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        if self.static_source:
+            return {}, mapping
+
         img = element.dimension_values(2, flat=False)
         if img.dtype.kind == 'b':
             img = img.astype(np.int8)
@@ -43,12 +47,7 @@ class RasterPlot(ColorbarPlot):
                 img = img[::-1]
         dh, dw = t-b, r-l
 
-        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
-        if empty:
-            data = dict(image=[], x=[], y=[], dw=[], dh=[])
-        else:
-            data = dict(image=[img], x=[l],
-                        y=[b], dw=[dw], dh=[dh])
+        data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
 
 
@@ -68,7 +67,11 @@ class RGBPlot(RasterPlot):
     style_opts = []
     _plot_methods = dict(single='image_rgba')
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
+        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
+        if self.static_source:
+            return {}, mapping
+
         img = np.dstack([element.dimension_values(d, flat=False)
                          for d in element.vdims])
         if img.ndim == 3:
@@ -93,12 +96,7 @@ class RGBPlot(RasterPlot):
             img = img[::-1]
         dh, dw = t-b, r-l
 
-        mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
-        if empty:
-            data = dict(image=[], x=[], y=[], dw=[], dh=[])
-        else:
-            data = dict(image=[img], x=[l],
-                        y=[b], dw=[dw], dh=[dh])
+        data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
 
     def _glyph_properties(self, plot, element, source, ranges):
@@ -107,8 +105,8 @@ class RGBPlot(RasterPlot):
 
 class HSVPlot(RGBPlot):
 
-    def get_data(self, element, ranges=None, empty=False):
-        return super(HSVPlot, self).get_data(element.rgb, ranges, empty)
+    def get_data(self, element, ranges=None):
+        return super(HSVPlot, self).get_data(element.rgb, ranges)
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -133,14 +131,14 @@ class HeatMapPlot(ColorbarPlot):
     def _get_factors(self, element):
         return super(HeatMapPlot, self)._get_factors(element.gridded)
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
-        aggregate = element.gridded
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if empty:
-            data = {x: [], y: [], z: []}
+        if self.static_source:
+            data = {}
         else:
+            aggregate = element.gridded
             xdim, ydim = aggregate.dimensions()[:2]
             xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
             if xvals.dtype.kind not in 'SU':
@@ -149,7 +147,7 @@ class HeatMapPlot(ColorbarPlot):
                 yvals = [ydim.pprint_value(yv) for yv in yvals]
             data = {x: xvals, y: yvals, 'zvalues': zvals}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
+        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
             for vdim in element.vdims:
                 sanitized = dimension_sanitizer(vdim.name)
                 data[sanitized] = ['-' if is_nan(v) else vdim.pprint_value(v)
@@ -166,12 +164,12 @@ class QuadMeshPlot(ColorbarPlot):
     _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
-    def get_data(self, element, ranges=None, empty=False):
+    def get_data(self, element, ranges=None):
         x, y, z = element.dimensions(label=True)
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if empty:
-            data = {x: [], y: [], z: [], 'height': [], 'width': []}
+        if self.static_source:
+            data = {}
         else:
             if len(set(v.shape for v in element.data)) == 1:
                 raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
