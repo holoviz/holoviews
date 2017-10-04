@@ -56,7 +56,7 @@ class ElementConversion(DataConversion):
         return self(HeatMap, kdims, vdims, groupby, **kwargs)
 
     def image(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(GridImage, kdims, vdims, groupby, **kwargs)
+        return self(Image, kdims, vdims, groupby, **kwargs)
 
     def points(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(Points, kdims, vdims, groupby, **kwargs)
