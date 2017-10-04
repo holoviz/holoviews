@@ -235,7 +235,10 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def dframe(cls, columns, dimensions):
-        return columns.data[dimensions].compute()
+        if dimensions:
+            return columns.data[dimensions].compute()
+        else:
+            return columns.data.compute()
 
     @classmethod
     def nonzero(cls, dataset):

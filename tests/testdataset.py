@@ -341,9 +341,17 @@ class HomogeneousColumnTypes(object):
                         kdims=['x'], vdims=['y'], datatype=['dictionary'])
         self.assertEqual(sliced, table)
 
+    def test_dataset_get_array(self):
+        arr = self.dataset_hm.array()
+        self.assertEqual(arr, np.column_stack([self.xs, self.y_ints]))
+
     def test_dataset_get_array_by_dimension(self):
         arr = self.dataset_hm.array(['x'])
         self.assertEqual(arr, self.xs[:, np.newaxis])
+
+    def test_dataset_get_dframe(self):
+        df = self.dataset_hm.dframe()
+        self.assertEqual(df, pd.DataFrame({'x': self.xs, 'y': self.y_ints}))
 
     def test_dataset_get_dframe_by_dimension(self):
         df = self.dataset_hm.dframe(['x'])
