@@ -225,7 +225,7 @@ class XArrayInterface(GridInterface):
         # Detect if the indexing is selecting samples or slicing the array
         sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
-        if sampled:
+        if sampled or all_scalar:
             return dataset.data.isel_points(**isel).to_dataframe().reset_index()
         else:
             return dataset.data.isel(**isel)
