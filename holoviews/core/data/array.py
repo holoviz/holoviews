@@ -81,7 +81,8 @@ class ArrayInterface(Interface):
     @classmethod
     def array(cls, dataset, dimensions):
         if dimensions:
-            return Element.dframe(dataset, dimensions)
+            indices = [dataset.get_dimension_index(d) for d in dimensions]
+            return dataset.data[:, indices]
         else:
             return dataset.data
 

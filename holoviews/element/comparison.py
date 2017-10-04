@@ -27,6 +27,7 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
+from ..core.util import pd
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
 from ..interface.seaborn import DFrame, Bivariate, Distribution, \
@@ -115,6 +116,10 @@ class Comparison(ComparisonInterface):
 
         # Numpy array comparison
         cls.equality_type_funcs[np.ndarray] =   cls.compare_arrays
+
+        # Pandas dataframe comparison
+        if pd:
+            cls.equality_type_funcs[pd.DataFrame] = cls.compare_dataframe
 
         # Dimension objects
         cls.equality_type_funcs[Dimension] =    cls.compare_dimensions
@@ -255,6 +260,11 @@ class Comparison(ComparisonInterface):
                 assert_array_almost_equal(arr1, arr2)
             except AssertionError as e:
                 raise cls.failureException(msg + str(e)[11:])
+
+    @classmethod
+    def compare_dataframe(cls, df1, df2, msg='DataFrames'):
+        if not df1.equals(df2):
+            raise cls.failureException('%s are not equal' % msg)
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):

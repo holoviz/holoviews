@@ -341,6 +341,23 @@ class HomogeneousColumnTypes(object):
                         kdims=['x'], vdims=['y'], datatype=['dictionary'])
         self.assertEqual(sliced, table)
 
+    def test_dataset_get_array(self):
+        arr = self.dataset_hm.array()
+        self.assertEqual(arr, np.column_stack([self.xs, self.y_ints]))
+
+    def test_dataset_get_array_by_dimension(self):
+        arr = self.dataset_hm.array(['x'])
+        self.assertEqual(arr, self.xs[:, np.newaxis])
+
+    def test_dataset_get_dframe(self):
+        df = self.dataset_hm.dframe()
+        self.assertEqual(df, pd.DataFrame({'x': self.xs, 'y': self.y_ints}))
+
+    def test_dataset_get_dframe_by_dimension(self):
+        df = self.dataset_hm.dframe(['x'])
+        self.assertEqual(df, pd.DataFrame({'x': self.xs}))
+
+
 
 class HeterogeneousColumnTypes(HomogeneousColumnTypes):
     """
@@ -582,6 +599,12 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         table = self.dataset_ht.add_dimension('z', 1, range(1,12))
         self.assertEqual(table.kdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_redim_with_extra_dimension(self):
+        dataset = self.dataset_ht.add_dimension('Temp', 0, 0).clone(kdims=['x', 'y'], vdims=[])
+        redimmed = dataset.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_ht.dimension_values('x'))
 
     # Indexing
 

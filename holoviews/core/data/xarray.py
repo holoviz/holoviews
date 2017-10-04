@@ -271,10 +271,10 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def dframe(cls, dataset, dimensions):
+        data = dataset.data.to_dataframe().reset_index()
         if dimensions:
-            return dataset.reindex(columns=dimensions).data.to_dataframe().reset_index(dimensions)
-        else:
-            return dataset.data.to_dataframe().reset_index(dimensions)
+            return data[dimensions]
+        return data
 
     @classmethod
     def sample(cls, columns, samples=[]):
