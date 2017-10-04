@@ -2,11 +2,13 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Curve, Points, Image, Dataset, RGB, Path
+from holoviews import Curve, Points, Image, Dataset, RGB, Path, Graph
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.operation.datashader import aggregate, regrid, ds_version, stack
+    from holoviews.operation.datashader import (
+        aggregate, regrid, ds_version, stack, directly_connect_edges
+    )
 except:
     ds_version = None
 
@@ -174,3 +176,15 @@ class DatashaderStackTests(ComparisonTestCase):
     def test_stack_saturate_compositor_reverse(self):
         combined = stack(self.rgb2*self.rgb1, compositor='saturate')
         self.assertEqual(combined, self.rgb2)
+
+@attr(optional=1)
+class GraphBundlingTests(ComparisonTestCase):
+
+    def setUp(self):
+        self.source = np.arange(8)
+        self.target = np.zeros(8)
+        self.graph = Graph(((self.source, self.target),))
+
+    def test_directly_connect_paths(self):
+        direct = directly_connect_edges(self.graph)._split_edgepaths
+        self.assertEqual(direct, self.graph.edgepaths)
