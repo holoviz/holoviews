@@ -16,6 +16,7 @@ from __future__ import absolute_import
 
 import re, os, time, string, zipfile, tarfile, shutil, itertools, pickle
 from collections import defaultdict
+from cStringIO import StringIO # CEBALERT
 
 from io import BytesIO
 from hashlib import sha256
@@ -854,3 +855,101 @@ class FileArchive(Archive):
     def listing(self):
         "Return a list of filename entries currently in the archive"
         return ['.'.join([f,ext]) if ext else f for (f,ext) in self._files.keys()]
+
+
+
+class ArchiveReader(object):
+    """
+    ArchiveReaders abstract operations over different archive formats,
+    e.g. directory vs. zip file.
+    """
+    def __init__(self,archive):
+        self.archive_location = archive
+        self.root,self.archive_name=os.path.split(self.archive_location)
+
+    def open_member(self,name):
+        raise NotImplementedError
+
+    def member_exists(self,name):
+        raise NotImplementedError
+
+    def list_members(self):
+        raise NotImplementedError
+
+
+
+class Directory(ArchiveReader):
+    
+    def __init__(self,archive):
+        super(Directory,self).__init__(archive)        
+        if not os.path.isdir(self.archive_location):
+            raise ValueError("Directory archive not found at %s"%self.archive_location)
+        self.archive=self.archive_location
+
+    def list_members(self):
+        return os.listdir(self.archive)
+
+    def open_member(self,name):
+        return open(self._fullname(name),'r')
+
+    def member_exists(self,name):
+        return os.path.exists(self._fullname(name))
+
+    def _fullname(self,name):
+        return os.path.join(self.archive,name)
+
+
+
+class ZipFile(ArchiveReader):
+
+    def __init__(self,archive):
+        super(ZipFile,self).__init__(archive)
+        self.archive = zipfile.ZipFile(self.archive_location,'r')
+        self.archive_name=os.path.splitext(self.archive_name)[0] # drop .zip
+    
+    def list_members(self):
+        return [self._name(member) for member in self.archive.namelist()]
+
+    def open_member(self,name):        
+        # ZipFile().open() returns a file-like object that's not
+        # file-like enough for ZipFile.open() :( See
+        # e.g. http://stackoverflow.com/a/12025492
+        return StringIO(self.archive.read(self._fullname(name))) # CEBALERT: python3
+
+    def member_exists(self,name):
+        return name in self.list_members()
+
+    def _fullname(self,name):
+        return self.archive_name + '/' + name
+
+    def _name(self,fullname):
+        return fullname.split(self.archive_name+'/',1).pop()
+
+
+
+class TarFile(ArchiveReader):
+
+    def __init__(self,archive):
+        super(TarFile,self).__init__(archive)
+        self.archive = tarfile.open(self.archive_location,'r')
+        self.archive_name=os.path.splitext(self.archive_name)[0] # drop .tar
+
+    def list_members(self):
+        return [self._name(member) for member in self.archive.getnames()]
+
+    def open_member(self,name):
+        return self.archive.extractfile(self._fullname(name))
+    
+    def member_exists(self,name):
+        try:
+            self.archive.getmember(self._fullname(name))
+        except KeyError:
+            return False
+        else:
+            return True
+
+    def _fullname(self,name):
+        return self.archive_name + '/' + name
+
+    def _name(self,fullname):
+        return fullname.split(self.archive_name+'/',1).pop()

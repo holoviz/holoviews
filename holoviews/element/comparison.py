@@ -17,16 +17,24 @@ methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+
+import traceback
+import os
+from collections import defaultdict, namedtuple
+
 import numpy as np
 from unittest.util import safe_repr
 from unittest import TestCase
 from numpy.testing import assert_array_equal, assert_array_almost_equal
+import param
 
 from . import *    # noqa (All Elements need to support comparison)
 from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
+from ..core.io import Unpickler, Directory, TarFile, ZipFile
+from ..core.dimension import OrderedDict
 from ..interface.pandas import DFrame as PandasDFrame
 from ..interface.pandas import DataFrameView
 from ..interface.seaborn import DFrame, Bivariate, Distribution, \
@@ -739,3 +747,140 @@ class ComparisonTestCase(Comparison, TestCase):
         registry = Comparison.register()
         for k, v in registry.items():
             self.addTypeEqualityFunc(k, v)
+
+
+
+
+############################################################
+# Archive comparison
+
+ComparisonResult = namedtuple('ComparisonResult', ['ref_archive', 'test_archive', 'ref_member', 'match', 'msg'])
+
+def loadpickle(x):
+    return Unpickler.load(x)
+
+def read(x):
+    return x.read()
+
+# CEBALERT
+Comparison.register()
+
+
+
+def match_by_name(ref_reader, test_reader):
+    """
+    Given reference and test archive readers, match up
+    their contents by name and return in sorted order.
+    Data that exists in test but not ref is returned in extra.
+    """
+    ref_files = sorted(ref_reader.list_members())
+
+    matches = OrderedDict()
+    for ref_file in ref_files:
+        matches[ref_file] = ref_file if test_reader.member_exists(ref_file) else None
+
+    extra = set(test_reader.list_members()) - set(ref_files)
+    return matches, extra
+
+
+class ArchiveComparison(param.Parameterized):
+    """
+    Compare a 'test' archive against a 'reference' archive.
+
+    Use equal() to find out if the archives match or not,
+    or step through comparisons() for information about
+    each comparison performed.
+
+    Specify a custom match_fn to control exactly what (and 
+    in what order) to compare.
+
+    By default, archive members will simply be opened and read for
+    comparison; specify alternatives for particular file types
+    by adding them to load_fns.
+    """
+
+    match_fn = param.Callable(default=match_by_name,doc="""
+        Function that matches up files in a 'reference' archive to
+        those in a 'test' archive.
+
+        Should accept two archive readers and return:
+
+            1. a dict-like mapping of files to compare (using a value 
+               of None to indicate missing test data);
+
+            2. a list (potentially empty) of files present in the test
+               that are not present in the reference.
+        """)
+
+    load_fns = param.Dict(default=defaultdict(lambda: read, {'.hvz': loadpickle}))
+
+    def __init__(self,ref,test,**params):
+        super(ArchiveComparison,self).__init__(**params)
+        self.ref = self._read_archive(ref)
+        self.test = self._read_archive(test)        
+
+
+    def equal(self):
+        """
+        Return True if the two archives contain the same contents,
+        otherwise False.
+        
+        Stops at first failure to match (subsequently available as
+        .first_failure).
+        """
+        for result in self.comparisons():
+            if not result.match:
+                self.first_failure = result
+                return False
+        return True
+
+
+    def comparisons(self):
+        """
+        Return a generator to allow stepping through comparisons.
+
+        Each comparison yields a ComparisonResult.
+        """
+        matches,extra = self.match_fn(self.ref,self.test)
+
+        for unused in extra:
+            yield self._result(unused,False,'Extra test member')
+        
+        for rmember in matches:
+            if matches[rmember] is None:
+                yield self._result(rmember,False,'Test is missing member')
+            else:
+                load_fn = self.load_fns[os.path.splitext(rmember)[1].lower()]
+                r = load_fn(self.ref.open_member(rmember))
+                try:
+                    t = load_fn(self.test.open_member(matches[rmember]))
+                except:
+                    yield self._result(rmember,False,'Cannot open test and ref members with same function (%s): %s'%(lf,traceback.format_exc()))
+                    continue # sorry
+                    
+                # ok finally we discovered we can actually do a comparison
+                try:
+                    Comparison.assertEqual(r,t)
+                except:
+                    yield self._result(rmember,False,traceback.format_exc())
+                else:
+                    yield self._result(rmember,True,None)
+                
+
+
+    def _read_archive(self,archive_location):
+        if not os.path.exists(archive_location):
+            raise IOError("Cannot find archive %s"%archive_location)
+
+        if os.path.isdir(archive_location):
+            return Directory(archive_location)
+        elif os.path.splitext(archive_location)[1].lower()=='.zip':
+            return ZipFile(archive_location)
+        elif os.path.splitext(archive_location)[1].lower()=='.tar':
+            return TarFile(archive_location)
+        else:
+            raise IOError('Do not know how to read %s'%archive)
+
+
+    def _result(self,rmember,match,msg):
+        return ComparisonResult(self.ref.archive_location,self.test.archive_location,rmember,match,msg)
