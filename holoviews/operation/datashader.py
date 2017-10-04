@@ -24,7 +24,7 @@ try:
     from datashader.bundling import (directly_connect_edges as connect_edges,
                                      hammer_bundle)
 except:
-    hammer_bundle, directly_connect_edges = object, object
+    hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
