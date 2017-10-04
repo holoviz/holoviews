@@ -177,10 +177,13 @@ class DatashaderStackTests(ComparisonTestCase):
         combined = stack(self.rgb2*self.rgb1, compositor='saturate')
         self.assertEqual(combined, self.rgb2)
 
+
 @attr(optional=1)
 class GraphBundlingTests(ComparisonTestCase):
 
     def setUp(self):
+        if ds_version is None or ds_version <= '0.7.0':
+            raise SkipTest('Regridding operations require datashader>=0.7.0')
         self.source = np.arange(8)
         self.target = np.zeros(8)
         self.graph = Graph(((self.source, self.target),))
