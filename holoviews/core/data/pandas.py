@@ -245,9 +245,7 @@ class PandasInterface(Interface):
     @classmethod
     def dframe(cls, columns, dimensions):
         if dimensions:
-            dimensions = [columns.get_dimension(d, strict=True).name
-                          for d in dimensions]
-            return columns.reindex(dimensions).data.copy()
+            return columns.data[dimensions]
         else:
             return columns.data.copy()
 

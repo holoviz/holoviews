@@ -235,7 +235,7 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def dframe(cls, columns, dimensions):
-        return columns.data.compute()
+        return columns.data[dimensions].compute()
 
     @classmethod
     def nonzero(cls, dataset):
