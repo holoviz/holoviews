@@ -1490,7 +1490,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 # If not batched get the Element matching the subplot
                 elif element is not None:
                     idx = dynamic_update(self, subplot, k, element, items)
-                    if idx is None:
+                    if idx is not None:
                         _, el = items.pop(idx)
             subplot.update_frame(key, ranges, element=el)
 
