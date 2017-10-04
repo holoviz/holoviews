@@ -244,7 +244,7 @@ class HomogeneousColumnTypes(object):
                           kdims=['x', 'y'], vdims=['z'])
         self.assertEqual(dataset.aggregate(['x'], np.mean),
                          Dataset({'x':self.xs, 'z':z_ints}, kdims=['x'], vdims=['z']))
-
+        
     # Indexing
 
     def test_dataset_index_column_idx_hm(self):
@@ -591,6 +591,12 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         table = self.dataset_ht.add_dimension('z', 1, range(1,12))
         self.assertEqual(table.kdims[1], 'z')
         self.compare_arrays(table.dimension_values('z'), np.array(list(range(1,12))))
+
+    def test_redim_with_extra_dimension(self):
+        dataset = self.dataset_ht.add_dimension('Temp', 0, 0).clone(kdims=['x', 'y'], vdims=[])
+        redimmed = dataset.redim(x='Time')
+        self.assertEqual(redimmed.dimension_values('Time'),
+                         self.dataset_ht.dimension_values('x'))
 
     # Indexing
 
