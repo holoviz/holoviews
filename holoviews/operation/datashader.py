@@ -21,9 +21,10 @@ from datashape.dispatch import dispatch
 from datashape import discover as dsdiscover
 
 try:
-    from datashader.bundling import hammer_bundle
+    from datashader.bundling import (directly_connect_edges as connect_edges,
+                                     hammer_bundle)
 except:
-    hammer_bundle = object
+    hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
@@ -728,10 +729,12 @@ class _connect_edges(Operation):
 
     def _process(self, element, key=None):
         index = element.nodes.kdims[2].name
-        position_df = element.nodes.dframe([0, 1, 2]).set_index(index)
-        rename = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
-        edges_df = element.redim(**rename).dframe([0, 1])
+        rename_edges = {d.name: v for d, v in zip(element.kdims[:2], ['source', 'target'])}
+        rename_nodes = {d.name: v for d, v in zip(element.nodes.kdims[:2], ['x', 'y'])}
+        position_df = element.nodes.redim(**rename_nodes).dframe([0, 1, 2]).set_index(index)
+        edges_df = element.redim(**rename_edges).dframe([0, 1])
         paths = self._bundle(position_df, edges_df)
+        paths = paths.rename(columns={v: k for k, v in rename_nodes.items()})
         paths = split_dataframe(paths) if self.p.split else [paths]
         return element.clone((element.data, element.nodes, paths))
 
@@ -749,11 +752,10 @@ class bundle_graph(_connect_edges, hammer_bundle):
         return hammer_bundle.__call__(self, position_df, edges_df, **self.p)
 
 
-class directly_connect_edges(_connect_edges):
+class directly_connect_edges(_connect_edges, connect_edges):
     """
     Given a Graph object will directly connect all nodes.
     """
 
     def _bundle(self, position_df, edges_df):
-        from datashader.bundling import directly_connect_edges
-        return directly_connect_edges.__call__(self, position_df, edges_df)
+        return connect_edges.__call__(self, position_df, edges_df)

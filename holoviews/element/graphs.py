@@ -55,11 +55,14 @@ class layout_nodes(Operation):
     layout = param.Callable(default=None, doc="""
         A NetworkX layout function""")
 
+    kwargs = param.Dict(default={}, doc="""
+        Keyword arguments passed to the layout function.""")
+
     def _process(self, element, key=None):
         if self.p.layout and isinstance(self.p.layout, FunctionType):
             import networkx as nx
             graph = nx.from_edgelist(element.array([0, 1]))
-            positions = self.p.layout(graph)
+            positions = self.p.layout(graph, **self.p.kwargs)
             nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
@@ -68,7 +71,7 @@ class layout_nodes(Operation):
             if self.p.layout:
                 import pandas as pd
                 df = pd.DataFrame({'index': nodes})
-                nodes = self.p.layout(df, element.dframe())
+                nodes = self.p.layout(df, element.dframe(), **self.p.kwargs)
                 nodes = nodes[['x', 'y', 'index']]
             else:
                 nodes = circular_layout(nodes)
@@ -300,6 +303,8 @@ class Graph(Dataset, Element2D):
         for start, end in self.array(self.kdims):
             start_ds = self.nodes[:, :, start]
             end_ds = self.nodes[:, :, end]
+            if not len(start_ds) or not len(end_ds):
+                raise ValueError('Could not find node positions for all edges')
             sx, sy = start_ds.array(start_ds.kdims[:2]).T
             ex, ey = end_ds.array(end_ds.kdims[:2]).T
             paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
