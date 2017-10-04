@@ -185,7 +185,8 @@ class BokehRenderer(Renderer):
         from tornado.ioloop import IOLoop
         loop = IOLoop.current()
         opts = dict(allow_websocket_origin=[websocket_origin]) if websocket_origin else {}
-        server = Server({'/': app}, port=0, loop=loop, **opts)
+        opts['io_loop' if bokeh_version > '0.12.7' else 'loop'] = loop
+        server = Server({'/': app}, port=0, **opts)
         def show_callback():
             server.show('/')
         server.io_loop.add_callback(show_callback)
