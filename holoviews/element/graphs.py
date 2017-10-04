@@ -55,11 +55,14 @@ class layout_nodes(Operation):
     layout = param.Callable(default=None, doc="""
         A NetworkX layout function""")
 
+    kwargs = param.Dict(default={}, doc="""
+        Keyword arguments passed to the layout function.""")
+
     def _process(self, element, key=None):
         if self.p.layout and isinstance(self.p.layout, FunctionType):
             import networkx as nx
             graph = nx.from_edgelist(element.array([0, 1]))
-            positions = self.p.layout(graph)
+            positions = self.p.layout(graph, **self.p.kwargs)
             nodes = [tuple(pos)+(idx,) for idx, pos in sorted(positions.items())]
         else:
             source = element.dimension_values(0, expanded=False)
@@ -68,7 +71,7 @@ class layout_nodes(Operation):
             if self.p.layout:
                 import pandas as pd
                 df = pd.DataFrame({'index': nodes})
-                nodes = self.p.layout(df, element.dframe())
+                nodes = self.p.layout(df, element.dframe(), **self.p.kwargs)
                 nodes = nodes[['x', 'y', 'index']]
             else:
                 nodes = circular_layout(nodes)
