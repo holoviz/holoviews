@@ -361,6 +361,14 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         xs, ys = zip(*samples)
         yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
         yidx = shape[0]-yidx-1
+
+        # Detect out-of-bounds indices
+        out_of_bounds= (yidx<0) | (xidx<0) | (yidx>=shape[0]) | (xidx>=shape[1])
+        if out_of_bounds.any():
+            coords = [samples[idx] for idx in np.where(out_of_bounds)[0]]
+            raise IndexError('Coordinate(s) %s out of bounds for %s with bounds %s' %
+                             (coords, type(self).__name__, self.bounds.lbrt()))
+
         data = self.interface.ndloc(self, (yidx, xidx))
         return self.clone(data, new_type=Table, datatype=['dataframe', 'dict'])
 
