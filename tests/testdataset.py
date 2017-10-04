@@ -918,6 +918,24 @@ class GridTests(object):
         ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
         self.assertEqual(ds.ndloc[0,0], arr[0, 0])
 
+    def test_dataset_ndloc_index_inverted_x(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[0,0], arr[0, 9])
+
+    def test_dataset_ndloc_index_inverted_y(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[0,0], arr[4, 0])
+
+    def test_dataset_ndloc_index_inverted_xy(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[0,0], arr[4, 9])
+
     def test_dataset_ndloc_index2(self):
         xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
         arr = np.arange(10)*np.arange(5)[np.newaxis].T
@@ -932,11 +950,59 @@ class GridTests(object):
                          datatype=[self.datatype])
         self.assertEqual(ds.ndloc[1:, 2:5], sliced)
 
+    def test_dataset_ndloc_slice_inverted_x(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        sliced = Dataset((xs[::-1][5:8], ys[1:], arr[1:, 5:8]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[1:, 2:5], sliced)
+
+    def test_dataset_ndloc_slice_inverted_y(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        sliced = Dataset((xs[2:5], ys[::-1][:-1], arr[:-1, 2:5]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[1:, 2:5], sliced)
+
+    def test_dataset_ndloc_slice_inverted_xy(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype])
+        sliced = Dataset((xs[::-1][5:8], ys[::-1][:-1], arr[:-1, 5:8]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=[self.datatype])
+        self.assertEqual(ds.ndloc[1:, 2:5], sliced)
+
     def test_dataset_ndloc_lists(self):
         xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
         arr = np.arange(10)*np.arange(5)[np.newaxis].T
         ds = Dataset((xs, ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype, 'dictionary'])
         sliced = Dataset((xs[[1, 2, 3]], ys[[0, 1, 2]], arr[[0, 1, 2], [1, 2, 3]]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=['dictionary'])
+        self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
+
+    def test_dataset_ndloc_lists_invert_x(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys, arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype, 'dictionary'])
+        sliced = Dataset((xs[::-1][[8, 7, 6]], ys[[0, 1, 2]], arr[[0, 1, 2], [8, 7, 6]]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=['dictionary'])
+        self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
+
+    def test_dataset_ndloc_lists_invert_y(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs, ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype, 'dictionary'])
+        sliced = Dataset((xs[[1, 2, 3]], ys[::-1][[4, 3, 2]], arr[[4, 3, 2], [1, 2, 3]]), kdims=['x', 'y'], vdims=['z'],
+                         datatype=['dictionary'])
+        self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
+
+    def test_dataset_ndloc_lists_invert_xy(self):
+        xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
+        arr = np.arange(10)*np.arange(5)[np.newaxis].T
+        ds = Dataset((xs[::-1], ys[::-1], arr), kdims=['x', 'y'], vdims=['z'], datatype=[self.datatype, 'dictionary'])
+        sliced = Dataset((xs[::-1][[8, 7, 6]], ys[::-1][[4, 3, 2]], arr[[4, 3, 2], [8, 7, 6]]), kdims=['x', 'y'], vdims=['z'],
                          datatype=['dictionary'])
         self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
 
