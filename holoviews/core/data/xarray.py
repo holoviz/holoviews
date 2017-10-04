@@ -194,6 +194,45 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
+    def ndloc(cls, dataset, indices):
+        kdims = [d.name for d in dataset.kdims[::-1]]
+        adjusted_indices = []
+        for kd, ind in zip(kdims, indices):
+            coords = cls.coords(dataset, kd, False)
+            ncoords = len(coords)
+            if np.all(coords[1:] < coords[:-1]):
+                if np.isscalar(ind):
+                    ind = ncoords-ind-1 
+                elif isinstance(ind, slice):
+                    start = None if ind.stop is None else ncoords-ind.stop
+                    stop = None if ind.start is None else ncoords-ind.start
+                    ind = slice(start, stop, ind.step)
+                elif isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+                    ind = ind[::-1]
+                elif isinstance(ind, (np.ndarray, list)):
+                    ind = [ncoords-i-1 for i in ind]
+            if isinstance(ind, list):
+                ind = np.array(ind)
+            if isinstance(ind, np.ndarray) and ind.dtype.kind == 'b':
+                ind = np.where(ind)[0]
+            adjusted_indices.append(ind)
+
+        isel = dict(zip(kdims, adjusted_indices))
+        all_scalar = all(map(np.isscalar, indices))
+        if all_scalar and len(dataset.vdims) == 1:
+            return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
+
+        # Detect if the indexing is selecting samples or slicing the array
+        sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
+                       for ind in adjusted_indices) and len(indices) == len(kdims))
+        if sampled or all_scalar:
+            if all_scalar: isel = {k: [v] for k, v in isel.items()}
+            return dataset.data.isel_points(**isel).to_dataframe().reset_index()
+        else:
+            return dataset.data.isel(**isel)
+
+
+    @classmethod
     def concat(cls, dataset_objs):
         #cast_objs = cls.cast(dataset_objs)
         # Reimplement concat to automatically add dimensions
