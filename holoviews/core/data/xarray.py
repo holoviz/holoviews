@@ -226,6 +226,7 @@ class XArrayInterface(GridInterface):
         sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
         if sampled or all_scalar:
+            if all_scalar: isel = {k: [v] for k, v in isel.items()}
             return dataset.data.isel_points(**isel).to_dataframe().reset_index()
         else:
             return dataset.data.isel(**isel)

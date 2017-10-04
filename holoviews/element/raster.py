@@ -315,7 +315,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if not sliced:
             if np.isscalar(data):
                 return data
-            return self.clone(data[self.ndims:], kdims=[], new_type=Dataset,
+            elif isinstance(data, tuple):
+                data = data[self.ndims:]
+            return self.clone(data, kdims=[], new_type=Dataset,
                               datatype=datatype)
         else:
             return self.clone(data, xdensity=self.xdensity, datatype=datatype,
