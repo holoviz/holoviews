@@ -300,6 +300,8 @@ class Graph(Dataset, Element2D):
         for start, end in self.array(self.kdims):
             start_ds = self.nodes[:, :, start]
             end_ds = self.nodes[:, :, end]
+            if not len(start_ds) or not len(end_ds):
+                raise ValueError('Could not find node positions for all edges')
             sx, sy = start_ds.array(start_ds.kdims[:2]).T
             ex, ey = end_ds.array(end_ds.kdims[:2]).T
             paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
