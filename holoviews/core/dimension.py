@@ -301,6 +301,9 @@ class Dimension(param.Parameterized):
 
         all_params = dict(existing_params, **params)
         if isinstance(spec, tuple):
+            if not all(isinstance(s, basestring) for s in spec) or len(spec) != 2:
+                raise ValueError("Dimensions specified as a tuple must be a tuple "
+                                 "consisting of the name and label not: %s" % spec) 
             name, label = spec
             all_params['name'] = name
             all_params['label'] = label
@@ -791,7 +794,8 @@ class Dimensioned(LabelledData):
                 dims = [dims]
             elif not isinstance(dims, list):
                 raise ValueError("%s must be a Dimension or list of dimensions, "
-                                 "specified as tuples, string or Dimension instances.")
+                                 "specified as tuples, string or Dimension instances, "
+                                 "not %s." % (group, dims))
             params[group] = [d if isinstance(d, Dimension) else Dimension(d)
                              for d in dims]
         if 'cdims' in params:

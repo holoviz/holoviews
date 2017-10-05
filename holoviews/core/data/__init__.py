@@ -183,7 +183,8 @@ class Dataset(Element):
                 dims = [dims]
             elif not isinstance(dims, list):
                 raise ValueError("%s must be a Dimension or list of dimensions, "
-                                 "specified as tuples, string or Dimension instances.")
+                                 "specified as tuples, string or Dimension instances, "
+                                 "not %s." % (group, dims))
             kwargs[group] = [d if isinstance(d, Dimension) else Dimension(d)
                              for d in dims]
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
