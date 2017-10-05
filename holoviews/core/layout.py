@@ -382,20 +382,6 @@ class Layout(AttrTree, Dimensioned):
 
 
     @classmethod
-    def collate(cls, data, kdims=None, key_dimensions=None):
-        kdims = key_dimensions if (kdims is None) else kdims
-        if kdims is None:
-            raise Exception("Please specify the key dimensions.")
-
-        collate_deprecation.warning("Layout.collate will be deprecated after version 1.3.0."
-                                    "\nUse HoloMap.collate instead (see HoloViews homepage for example usage)")
-        from .element import Collator
-        layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
-                      for k,v in data.items()}
-        return Collator(layouts, kdims=kdims)()
-
-
-    @classmethod
     def from_values(cls, vals):
         """
         Returns a Layout given a list (or tuple) of viewable
