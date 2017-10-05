@@ -662,7 +662,7 @@ class interpolate_curve(Operation):
         x, y = element.dimension_values(0), element.dimension_values(1)
         array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
-        return element.clone((array[0, :], array[1, :])+dvals)
+        return element.clone((array[0, :].astype(x.dtype), array[1, :].astype(y.dtype))+dvals)
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
