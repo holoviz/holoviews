@@ -105,7 +105,7 @@ class HLine(Annotation):
     def __init__(self, y, **params):
         super(HLine, self).__init__(y, y=y, **params)
 
-    def dimension_values(self, dimension):
+    def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
             return np.array([])
