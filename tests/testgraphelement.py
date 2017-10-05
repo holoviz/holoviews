@@ -38,6 +38,9 @@ class GraphTests(ComparisonTestCase):
         with self.assertRaisesRegexp(ValueError, exception):
             graph = Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
+    def test_graph_clone_static_plot_id(self):
+        self.assertEqual(self.graph.clone()._plot_id, self.graph._plot_id)
+
     def test_select_by_node_in_edges_selection_mode(self):
         graph = Graph(((self.source, self.target),))
         selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes))[0:3]))
