@@ -166,6 +166,7 @@ class Graph(Dataset, Element2D):
             data = (self.data, self.nodes)
             if self._edgepaths:
                 data = data + (self.edgepaths,)
+            overrides['plot_id'] = self._plot_id
         elif not isinstance(data, tuple):
             data = (data, self.nodes)
             if self._edgepaths:
