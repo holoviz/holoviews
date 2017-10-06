@@ -670,8 +670,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Set y-baseline
         if y0 < 0:
             y1 = max([y1, 0])
+        elif self.logy:
+            y0 = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
         else:
-            y0 = None if self.logy else 0
+            y0 = 0
 
         # Ensure x-axis is picked up as categorical
         x0 = xdim.pprint_value(extents[0])
@@ -801,6 +803,11 @@ class BarPlot(ColorbarPlot, LegendPlot):
                                       container_type=OrderedDict,
                                       datatype=['dataframe', 'dictionary'])
 
+        y0, y1 = ranges.get(ydim.name, (None, None))
+        if self.logy:
+            bottom = (ydim.range[0] or (10**(np.log10(y1)-2)) if y1 else 0.01)
+        else:
+            bottom = 0
         # Map attributes to data
         if grouping == 'stacked':
             mapping = {'x': xdim.name, 'top': 'top',
@@ -810,10 +817,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 gwidth = width / float(len(grouped))
             else:
                 gwidth = width
-            mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': 0,
+            mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': bottom,
                        'width': gwidth}
         else:
-            mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': 0, 'width': width}
+            mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': bottom, 'width': width}
 
         # Get colors
         cdim = color_dim or group_dim
@@ -836,7 +843,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
         # Iterate over stacks and groups and accumulate data
         data = defaultdict(list)
-        baselines = defaultdict(lambda: {'positive': 0, 'negative': 0})
+        baselines = defaultdict(lambda: {'positive': bottom, 'negative': 0})
         for i, (k, ds) in enumerate(grouped.items()):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
