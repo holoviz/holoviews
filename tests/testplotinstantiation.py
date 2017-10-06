@@ -953,6 +953,32 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(source.data['top'], np.array([0, 1, 2]))
         self.assertEqual(source.data['bottom'], np.array([-1, 0, 0]))
 
+    def test_bars_logy(self):
+        bars = Bars([('A', 1), ('B', 2), ('C', 3)],
+                    kdims=['Index'], vdims=['Value'])
+        plot = bokeh_renderer.get_plot(bars.opts(plot=dict(logy=True)))
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+        y_range = plot.handles['y_range']
+        self.assertEqual(list(source.data['Index']), ['A', 'B', 'C'])
+        self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
+        self.assertEqual(glyph.bottom, 10**(np.log10(3)-2))
+        self.assertEqual(y_range.start, 10**(np.log10(3)-2))
+        self.assertEqual(y_range.end, 3.)
+
+    def test_bars_logy_explicit_range(self):
+        bars = Bars([('A', 1), ('B', 2), ('C', 3)],
+                    kdims=['Index'], vdims=['Value']).redim.range(Value=(0.001, 3))
+        plot = bokeh_renderer.get_plot(bars.opts(plot=dict(logy=True)))
+        source = plot.handles['source']
+        glyph = plot.handles['glyph']
+        y_range = plot.handles['y_range']
+        self.assertEqual(list(source.data['Index']), ['A', 'B', 'C'])
+        self.assertEqual(source.data['Value'], np.array([1, 2, 3]))
+        self.assertEqual(glyph.bottom, 0.001)
+        self.assertEqual(y_range.start, 0.001)
+        self.assertEqual(y_range.end, 3.)
+
     def test_points_no_single_item_legend(self):
         points = Points([('A', 1), ('B', 2)], label='A')
         plot = bokeh_renderer.get_plot(points)
