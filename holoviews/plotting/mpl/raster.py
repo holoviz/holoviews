@@ -57,18 +57,20 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, RGB):
             style.pop('cmap', None)
 
+        data = get_raster_array(element)
         if type(element) is Raster:
             l, b, r, t = element.extents
-            if self.invert_yaxis:
-                b, t = t, b
+            if self.invert_axes:
+                data = data[:, ::-1]
+            else:
+                data = data[::-1]
         else:
             l, b, r, t = element.bounds.lbrt()
 
-        data = get_raster_array(element)
         if self.invert_axes:
-            data = data[::-1]
             data = data.transpose([1, 0, 2]) if isinstance(element, RGB) else data.T
             l, b, r, t = b, l, t, r
+
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
@@ -222,7 +224,7 @@ class QuadMeshPlot(ColorbarPlot):
         coords = list(element.data[:2])
         if self.invert_axes:
             coords = coords[::-1]
-            data = data.T
+            data = data.T[::-1, ::-1]
         cmesh_data = coords + [data]
         style['locs'] = np.concatenate(element.data[:2])
         vdim = element.vdims[0]
