@@ -342,22 +342,27 @@ class ElementPlot(GenericElementPlot, MPLPlot):
             if self.invert_xaxis or any(p.invert_xaxis for p in subplots):
                 r, l = l, r
             if l != r:
+                lims = {}
                 if valid_lim(l):
-                    axis.set_xlim(left=l)
+                    lims['left'] = l
                     scalex = False
                 if valid_lim(r):
-                    axis.set_xlim(right=r)
+                    lims['right'] = r
                     scalex = False
-
+                if lims:
+                    axis.set_xlim(**lims)
             if self.invert_yaxis or any(p.invert_yaxis for p in subplots):
                 t, b = b, t
             if b != t:
+                lims = {}
                 if valid_lim(b):
-                    axis.set_ylim(bottom=b)
+                    lims['bottom'] = b
                     scaley = False
                 if valid_lim(t):
-                    axis.set_ylim(top=t)
+                    lims['top'] = t
                     scaley = False
+                if lims:
+                    axis.set_ylim(**lims)
         axis.autoscale_view(scalex=scalex, scaley=scaley)
 
 
