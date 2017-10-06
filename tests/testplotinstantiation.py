@@ -1224,7 +1224,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         raster = Image(arr).opts(plot=dict(invert_axes=True))
         plot = bokeh_renderer.get_plot(raster)
         source = plot.handles['source']
-        self.assertEqual(source.data['image'][0], np.rot90(arr))
+        self.assertEqual(source.data['image'][0], np.rot90(arr)[::-1, ::-1])
         self.assertEqual(source.data['x'][0], -.5)
         self.assertEqual(source.data['y'][0], -.5)
         self.assertEqual(source.data['dw'][0], 1)
@@ -1238,6 +1238,16 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(source.data['z'], qmesh.dimension_values(2, flat=False)[::-1, ::-1].flatten())
         self.assertEqual(source.data['x'], qmesh.dimension_values(0))
         self.assertEqual(source.data['y'], qmesh.dimension_values(1))
+
+    def test_heatmap_invert_axes(self):
+        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        hm = HeatMap(Image(arr)).opts(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(hm)
+        xdim, ydim = hm.kdims
+        source = plot.handles['source']
+        self.assertEqual(source.data['zvalues'], hm.dimension_values(2, flat=False).T.flatten())
+        self.assertEqual(source.data['x'], [xdim.pprint_value(v) for v in hm.dimension_values(0)])
+        self.assertEqual(source.data['y'], [ydim.pprint_value(v) for v in hm.dimension_values(1)])
 
     def test_box_whisker_datetime(self):
         times = np.arange(dt.datetime(2017,1,1), dt.datetime(2017,2,1),

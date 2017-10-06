@@ -35,7 +35,7 @@ class RasterPlot(ColorbarPlot):
             l, b, r, t = element.bounds.lbrt()
             if self.invert_yaxis: img = img[::-1]
         else:
-            img = img.T[::-1] if self.invert_yaxis else img.T
+            img = img.T[:, ::-1] if self.invert_yaxis else img.T
             l, b, r, t = element.extents
 
         # Ensure axis inversions are handled correctly
@@ -50,7 +50,7 @@ class RasterPlot(ColorbarPlot):
             dh, dw, l, b = dw, dh, b, l
             if self.invert_yaxis: l = t
             if self.invert_yaxis: b = r
-            img = img.T[::-1, ::-1]
+            img = img.T
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
@@ -149,10 +149,17 @@ class HeatMapPlot(ColorbarPlot):
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}
-        
+
         aggregate = element.gridded
         xdim, ydim = aggregate.dimensions()[:2]
-        xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
+        xvals, yvals = (aggregate.dimension_values(x),
+                        aggregate.dimension_values(y))
+        zvals = aggregate.dimension_values(2, flat=False)
+        if self.invert_axes:
+            xdim, ydim = ydim, xdim
+            zvals = zvals.T.flatten()
+        else:
+            zvals = zvals.T.flatten()
         if xvals.dtype.kind not in 'SU':
             xvals = [xdim.pprint_value(xv) for xv in xvals]
         if yvals.dtype.kind not in 'SU':
