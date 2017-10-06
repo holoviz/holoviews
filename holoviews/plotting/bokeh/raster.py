@@ -33,6 +33,7 @@ class RasterPlot(ColorbarPlot):
 
         if isinstance(element, Image):
             l, b, r, t = element.bounds.lbrt()
+            if self.invert_yaxis: img = img[::-1]
         else:
             img = img.T[::-1] if self.invert_yaxis else img.T
             l, b, r, t = element.extents
@@ -43,15 +44,13 @@ class RasterPlot(ColorbarPlot):
             img = img[:, ::-1]
         if self.invert_yaxis:
             b, t = t, b
-            if type(element) is not Raster:
-                img = img[::-1]
         dh, dw = t-b, r-l
 
         if self.invert_axes:
             dh, dw, l, b = dw, dh, b, l
             if self.invert_yaxis: l = t
             if self.invert_yaxis: b = r
-            img = np.rot90(img)
+            img = img.T[::-1, ::-1]
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
@@ -193,7 +192,7 @@ class QuadMeshPlot(ColorbarPlot):
         widths = np.diff(element.data[0])
         heights = np.diff(element.data[1])
         if self.invert_axes:
-            zvals = zdata.flatten()
+            zvals = zdata[::-1, ::-1].flatten()
             xvals, yvals, widths, heights = yvals, xvals, heights, widths
         else:
             zvals = zdata.T.flatten()

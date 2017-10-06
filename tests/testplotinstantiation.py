@@ -19,7 +19,7 @@ from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars, Text,
-                               BoxWhisker, HLine, RGB)
+                               BoxWhisker, HLine, RGB, Raster)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream, PointerXY, PointerX
 from holoviews.operation import gridmatrix
@@ -1207,6 +1207,37 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         span = plot.handles['glyph']
         self.assertEqual(span.dimension, 'height')
         self.assertEqual(span.location, 1.1)
+
+    def test_raster_invert_axes(self):
+        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        raster = Raster(arr).opts(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(raster)
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0], np.rot90(arr))
+        self.assertEqual(source.data['x'][0], 0)
+        self.assertEqual(source.data['y'][0], 3)
+        self.assertEqual(source.data['dw'][0], -2)
+        self.assertEqual(source.data['dh'][0], 3)
+
+    def test_image_invert_axes(self):
+        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        raster = Image(arr).opts(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(raster)
+        source = plot.handles['source']
+        self.assertEqual(source.data['image'][0], np.rot90(arr))
+        self.assertEqual(source.data['x'][0], -.5)
+        self.assertEqual(source.data['y'][0], -.5)
+        self.assertEqual(source.data['dw'][0], 1)
+        self.assertEqual(source.data['dh'][0], 1)
+
+    def test_quadmesh_invert_axes(self):
+        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        qmesh = QuadMesh(Image(arr)).opts(plot=dict(invert_axes=True))
+        plot = bokeh_renderer.get_plot(qmesh)
+        source = plot.handles['source']
+        self.assertEqual(source.data['z'], qmesh.dimension_values(2, flat=False)[::-1, ::-1].flatten())
+        self.assertEqual(source.data['x'], qmesh.dimension_values(0))
+        self.assertEqual(source.data['y'], qmesh.dimension_values(1))
 
     def test_box_whisker_datetime(self):
         times = np.arange(dt.datetime(2017,1,1), dt.datetime(2017,2,1),
