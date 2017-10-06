@@ -276,6 +276,8 @@ class Renderer(Exporter):
         html = tag.format(src=src, mime_type=mime_type, css=css)
         if comm and plot.comm is not None:
             comm, msg_handler = self.comms[self.mode]
+            if msg_handler is None:
+                return html
             msg_handler = msg_handler.format(comm_id=plot.comm.id)
             return comm.template.format(init_frame=html,
                                         msg_handler=msg_handler,
