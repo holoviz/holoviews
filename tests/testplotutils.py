@@ -1,12 +1,14 @@
 from unittest import SkipTest
 from nose.plugins.attrib import attr
 
+import numpy as np
+
 from holoviews import NdOverlay, Overlay
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import Curve, Area
-from holoviews.plotting.util import compute_overlayable_zorders
+from holoviews.element import Curve, Area, Points
+from holoviews.plotting.util import compute_overlayable_zorders, get_min_distance
 from holoviews.streams import PointerX
 
 try:
@@ -16,7 +18,7 @@ except:
     bokeh_renderer = None
 
 
-class TestPlotUtils(ComparisonTestCase):
+class TestOverlayableZorders(ComparisonTestCase):
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers(self):
         area = Area(range(10))
@@ -300,6 +302,22 @@ class TestPlotUtils(ComparisonTestCase):
         self.assertNotIn(curve_redim, sources[2])
         self.assertNotIn(curve, sources[2])
 
+
+class TestPlotUtils(ComparisonTestCase):
+
+    def test_get_min_distance_float32_type(self):
+        xs, ys = (np.arange(0, 2., .2, dtype='float32'),
+                  np.arange(0, 2., .2, dtype='float32'))
+        X, Y = np.meshgrid(xs, ys)
+        dist = get_min_distance(Points((X.flatten(), Y.flatten())))
+        self.assertEqual(round(dist, 5), 0.2)
+
+    def test_get_min_distance_int32_type(self):
+        xs, ys = (np.arange(0, 10, dtype='int32'),
+                  np.arange(0, 10, dtype='int32'))
+        X, Y = np.meshgrid(xs, ys)
+        dist = get_min_distance(Points((X.flatten(), Y.flatten())))
+        self.assertEqual(dist, 1.0)
 
 
 @attr(optional=1)  # Flexx is optional

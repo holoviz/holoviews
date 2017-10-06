@@ -441,7 +441,7 @@ def get_min_distance(element):
     Gets the minimum sampling distance of the x- and y-coordinates
     in a grid.
     """
-    xys = element.array([0, 1]).view(dtype=np.complex128)
+    xys = element.array([0, 1]).astype('float64').view(dtype=np.complex128)
     m, n = np.meshgrid(xys, xys)
     distances = np.abs(m-n)
     np.fill_diagonal(distances, np.inf)
