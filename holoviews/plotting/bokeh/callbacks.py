@@ -1,5 +1,5 @@
 from collections import defaultdict
-from bokeh.models import CustomJS
+from bokeh.models import CustomJS, FactorRange
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
@@ -536,6 +536,15 @@ class PointerXYCallback(Callback):
              else if (cb_obj.y > y_range.end) {
                data['y'] = y_range.end }}
            """
+
+    def _process_msg(self, msg):
+        x_range = self.plot.handles.get('x_range')
+        y_range = self.plot.handles.get('y_range')
+        if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
+            msg['x'] = x_range.factors[int(msg['x'])]
+        if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
+            msg['y'] = y_range.factors[int(msg['y'])]    
+        return msg
 
 
 class PointerXCallback(PointerXYCallback):
