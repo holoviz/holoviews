@@ -57,14 +57,22 @@ class RasterPlot(ColorbarPlot):
         if isinstance(element, RGB):
             style.pop('cmap', None)
 
+        data = get_raster_array(element)
         if type(element) is Raster:
             l, b, r, t = element.extents
-            if self.invert_yaxis:
-                b, t = t, b
+            if self.invert_axes:
+                data = data[:, ::-1]
+            else:
+                data = data[::-1]
         else:
             l, b, r, t = element.bounds.lbrt()
+            if self.invert_axes:
+                data = data[::-1, ::-1]
 
-        data = get_raster_array(element)
+        if self.invert_axes:
+            data = data.transpose([1, 0, 2]) if isinstance(element, RGB) else data.T
+            l, b, r, t = b, l, t, r
+
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
@@ -109,8 +117,15 @@ class HeatMapPlot(RasterPlot):
 
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
-        vals = element.dimension_values(2)
+        vals = element.dimension_values(2, flat=False)
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
+        if self.invert_axes:
+            d1uniq, d2uniq = d2uniq, d1uniq
+        else:
+            vals = vals.T
+        if self.invert_xaxis: vals = vals[::-1]
+        if self.invert_yaxis: vals = vals[:, ::-1]
+        vals = vals.flatten()
         num_x, num_y = len(d1uniq), len(d2uniq)
         xpos = np.linspace(0.5, num_x-0.5, num_x)
         ypos = np.linspace(0.5, num_y-0.5, num_y)
@@ -127,6 +142,8 @@ class HeatMapPlot(RasterPlot):
         agg = element.gridded
         dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
                                 for i in range(2)]
+        if self.invert_axes:
+            dim1_keys, dim2_keys = dim2_keys, dim1_keys
         num_x, num_y = len(dim1_keys), len(dim2_keys)
         xpos = np.linspace(.5, num_x-0.5, num_x)
         ypos = np.linspace(.5, num_y-0.5, num_y)
@@ -151,6 +168,9 @@ class HeatMapPlot(RasterPlot):
 
         data = np.flipud(element.gridded.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        if self.invert_axes: data = data.T[::-1, ::-1]
+        if self.invert_xaxis: data = data[:, ::-1]
+        if self.invert_yaxis: data = data[::-1]
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
@@ -164,8 +184,7 @@ class HeatMapPlot(RasterPlot):
         im = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         im.set_data(data[0])
-        shape = data[0].shape
-        im.set_extent((0, shape[1], 0, shape[0]))
+        im.set_extent(style['extent'])
         im.set_clim((style['vmin'], style['vmax']))
         if 'norm' in style:
             im.norm = style['norm']
@@ -187,9 +206,12 @@ class ImagePlot(RasterPlot):
     def get_data(self, element, ranges, style):
         data = np.flipud(element.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            data = data[::-1].T
+            l, b, r, t = b, l, t, r
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
-        l, b, r, t = element.bounds.lbrt()
         style['extent'] = [l, r, b, t]
         return (data,), style, {}
 
@@ -211,7 +233,11 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         data = np.ma.array(element.data[2],
                            mask=np.logical_not(np.isfinite(element.data[2])))
-        cmesh_data = list(element.data[:2]) + [data]
+        coords = list(element.data[:2])
+        if self.invert_axes:
+            coords = coords[::-1]
+            data = data.T
+        cmesh_data = coords + [data]
         style['locs'] = np.concatenate(element.data[:2])
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)

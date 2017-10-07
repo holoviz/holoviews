@@ -42,7 +42,6 @@ class TextPlot(ElementPlot):
         data['text'] = [element.text]
         return (data, mapping)
 
-
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         for key, el in element.data.items():
@@ -50,7 +49,6 @@ class TextPlot(ElementPlot):
             for k, eld in eldata.items():
                 data[k].extend(eld)
         return data, elmapping
-
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
@@ -100,7 +98,10 @@ class SplinePlot(ElementPlot):
     _plot_methods = dict(single='bezier')
 
     def get_data(self, element, ranges=None):
-        data_attrs = ['x0', 'y0', 'cx0', 'cy0', 'cx1', 'cy1', 'x1', 'y1',]
+        if self.invert_axes:
+            data_attrs = ['y0', 'x0', 'cy0', 'cx0', 'cy1', 'cx1', 'y1', 'x1']
+        else:
+            data_attrs = ['x0', 'y0', 'cx0', 'cy0', 'cx1', 'cy1', 'x1', 'y1']
         verts = np.array(element.data[0])
         inds = np.where(np.array(element.data[1])==1)[0]
         data = {da: [] for da in data_attrs}

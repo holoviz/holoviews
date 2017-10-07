@@ -45,7 +45,10 @@ class VLinePlot(AnnotationPlot):
     style_opts = ['alpha', 'color', 'linewidth', 'linestyle', 'visible']
 
     def draw_annotation(self, axis, position, opts):
-        return [axis.axvline(position, **opts)]
+        if self.invert_axes:
+            return [axis.axhline(position, **opts)]
+        else:
+            return [axis.axvline(position, **opts)]
 
 
 
@@ -56,7 +59,10 @@ class HLinePlot(AnnotationPlot):
 
     def draw_annotation(self, axis, position, opts):
         "Draw a horizontal line on the axis"
-        return [axis.axhline(position, **opts)]
+        if self.invert_axes:
+            return [axis.axvline(position, **opts)]
+        else:
+            return [axis.axhline(position, **opts)]
 
 
 class TextPlot(AnnotationPlot):
@@ -67,6 +73,7 @@ class TextPlot(AnnotationPlot):
     def draw_annotation(self, axis, data, opts):
         (x,y, text, fontsize,
          horizontalalignment, verticalalignment, rotation) = data
+        if self.invert_axes: x, y = y, x
         opts['fontsize'] = fontsize
         return [axis.text(x,y, text,
                           horizontalalignment = horizontalalignment,
@@ -85,6 +92,7 @@ class ArrowPlot(AnnotationPlot):
 
     def draw_annotation(self, axis, data, opts):
         x, y, text, direction, points, arrowstyle = data
+        if self.invert_axes: x, y = y, x
         direction = direction.lower()
         arrowprops = dict({'arrowstyle':arrowstyle},
                           **{k: opts[k] for k in self._arrow_style_opts if k in opts})

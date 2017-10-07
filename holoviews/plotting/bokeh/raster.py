@@ -22,6 +22,16 @@ class RasterPlot(ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
+    def _glyph_properties(self, plot, element, source, ranges):
+        properties = super(RasterPlot, self)._glyph_properties(plot, element,
+                                                               source, ranges)
+        properties = {k: v for k, v in properties.items()}
+        val_dim = [d for d in element.vdims][0]
+        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
+                                                           properties)
+        return properties
+
+
     def get_data(self, element, ranges=None):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if self.static_source:
@@ -31,34 +41,28 @@ class RasterPlot(ColorbarPlot):
         if img.dtype.kind == 'b':
             img = img.astype(np.int8)
 
-        if isinstance(element, Image):
-            l, b, r, t = element.bounds.lbrt()
-        else:
-            img = img.T[::-1] if self.invert_yaxis else img.T
+        if type(element) is Raster:
             l, b, r, t = element.extents
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
+            else:
+                img = img.T
+        else:
+            l, b, r, t = element.bounds.lbrt()
+            if self.invert_axes:
+                img = img.T
+                l, b, r, t = b, l, t, r
 
-        # Ensure axis inversions are handled correctly
         if self.invert_xaxis:
             l, r = r, l
             img = img[:, ::-1]
         if self.invert_yaxis:
+            img = img[::-1]
             b, t = t, b
-            if type(element) is not Raster:
-                img = img[::-1]
         dh, dw = t-b, r-l
-
+  
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
-
-
-    def _glyph_properties(self, plot, element, source, ranges):
-        properties = super(RasterPlot, self)._glyph_properties(plot, element,
-                                                               source, ranges)
-        properties = {k: v for k, v in properties.items()}
-        val_dim = [d for d in element.vdims][0]
-        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
-                                                           properties)
-        return properties
 
 
 
@@ -88,12 +92,15 @@ class RGBPlot(RasterPlot):
 
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            img = img.T
+            l, b, r, t = b, l, t, r
         if self.invert_xaxis:
             l, r = r, l
             img = img[:, ::-1]
         if self.invert_yaxis:
-            b, t = t, b
             img = img[::-1]
+            b, t = t, b
         dh, dw = t-b, r-l
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
@@ -133,19 +140,27 @@ class HeatMapPlot(ColorbarPlot):
 
     def get_data(self, element, ranges=None):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
+        if self.invert_axes: x, y = y, x
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if self.static_source:
-            data = {}
+            return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}
+
+        aggregate = element.gridded
+        xdim, ydim = aggregate.dimensions()[:2]
+        xvals, yvals = (aggregate.dimension_values(x),
+                        aggregate.dimension_values(y))
+        zvals = aggregate.dimension_values(2, flat=False)
+        if self.invert_axes:
+            xdim, ydim = ydim, xdim
+            zvals = zvals.T.flatten()
         else:
-            aggregate = element.gridded
-            xdim, ydim = aggregate.dimensions()[:2]
-            xvals, yvals, zvals = (aggregate.dimension_values(i) for i in range(3))
-            if xvals.dtype.kind not in 'SU':
-                xvals = [xdim.pprint_value(xv) for xv in xvals]
-            if yvals.dtype.kind not in 'SU':
-                yvals = [ydim.pprint_value(yv) for yv in yvals]
-            data = {x: xvals, y: yvals, 'zvalues': zvals}
+            zvals = zvals.T.flatten()
+        if xvals.dtype.kind not in 'SU':
+            xvals = [xdim.pprint_value(xv) for xv in xvals]
+        if yvals.dtype.kind not in 'SU':
+            yvals = [ydim.pprint_value(yv) for yv in yvals]
+        data = {x: xvals, y: yvals, 'zvalues': zvals}
 
         if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
             for vdim in element.vdims:
@@ -166,22 +181,27 @@ class QuadMeshPlot(ColorbarPlot):
 
     def get_data(self, element, ranges=None):
         x, y, z = element.dimensions(label=True)
+        if self.invert_axes: x, y = y, x
         style = self.style[self.cyclic_index]
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
         if self.static_source:
-            data = {}
-        else:
-            if len(set(v.shape for v in element.data)) == 1:
-                raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
-            zvals = element.data[2].T.flatten()
-            xvals = element.dimension_values(0, False)
-            yvals = element.dimension_values(1, False)
-            widths = np.diff(element.data[0])
-            heights = np.diff(element.data[1])
-            xs, ys = cartesian_product([xvals, yvals], copy=True)
-            ws, hs = cartesian_product([widths, heights], copy=True)
-            data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
+            return {}, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper}}
 
+        if len(set(v.shape for v in element.data)) == 1:
+            raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
+        zdata = element.data[2]
+        xvals = element.dimension_values(0, False)
+        yvals = element.dimension_values(1, False)
+        widths = np.diff(element.data[0])
+        heights = np.diff(element.data[1])
+        if self.invert_axes:
+            zvals = zdata.flatten()
+            xvals, yvals, widths, heights = yvals, xvals, heights, widths
+        else:
+            zvals = zdata.T.flatten()
+        xs, ys = cartesian_product([xvals, yvals], copy=True)
+        ws, hs = cartesian_product([widths, heights], copy=True)
+        data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
         return (data, {'x': x, 'y': y,
                        'fill_color': {'field': z, 'transform': cmapper},
                        'height': 'heights', 'width': 'widths'})
