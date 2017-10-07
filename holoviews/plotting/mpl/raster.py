@@ -118,15 +118,14 @@ class HeatMapPlot(RasterPlot):
     def _annotate_values(self, element):
         val_dim = element.vdims[0]
         vals = element.dimension_values(2, flat=False)
-        if not self.invert_axes:
-            vals = vals.T
-        
-        if self.invert_xaxis: vals = vals[::-1]
-        if self.invert_yaxis: vals = vals[:, ::-1]
-        vals = vals.flatten()
         d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
         if self.invert_axes:
             d1uniq, d2uniq = d2uniq, d1uniq
+        else:
+            vals = vals.T
+        if self.invert_xaxis: vals = vals[::-1]
+        if self.invert_yaxis: vals = vals[:, ::-1]
+        vals = vals.flatten()
         num_x, num_y = len(d1uniq), len(d2uniq)
         xpos = np.linspace(0.5, num_x-0.5, num_x)
         ypos = np.linspace(0.5, num_y-0.5, num_y)
@@ -169,9 +168,9 @@ class HeatMapPlot(RasterPlot):
 
         data = np.flipud(element.gridded.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
+        if self.invert_axes: data = data.T[::-1, ::-1]
         if self.invert_xaxis: data = data[:, ::-1]
         if self.invert_yaxis: data = data[::-1]
-        if self.invert_axes: data = data.T[::-1, ::-1]
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
@@ -237,7 +236,7 @@ class QuadMeshPlot(ColorbarPlot):
         coords = list(element.data[:2])
         if self.invert_axes:
             coords = coords[::-1]
-            data = data.T[::-1, ::-1]
+            data = data.T
         cmesh_data = coords + [data]
         style['locs'] = np.concatenate(element.data[:2])
         vdim = element.vdims[0]

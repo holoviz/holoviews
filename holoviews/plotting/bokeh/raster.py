@@ -22,6 +22,16 @@ class RasterPlot(ColorbarPlot):
             self.invert_yaxis = not self.invert_yaxis
 
 
+    def _glyph_properties(self, plot, element, source, ranges):
+        properties = super(RasterPlot, self)._glyph_properties(plot, element,
+                                                               source, ranges)
+        properties = {k: v for k, v in properties.items()}
+        val_dim = [d for d in element.vdims][0]
+        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
+                                                           properties)
+        return properties
+
+
     def get_data(self, element, ranges=None):
         mapping = dict(image='image', x='x', y='y', dw='dw', dh='dh')
         if self.static_source:
@@ -31,39 +41,28 @@ class RasterPlot(ColorbarPlot):
         if img.dtype.kind == 'b':
             img = img.astype(np.int8)
 
-        if isinstance(element, Image):
-            l, b, r, t = element.bounds.lbrt()
-            if self.invert_yaxis: img = img[::-1]
-        else:
-            img = img.T[:, ::-1] if self.invert_yaxis else img.T
+        if type(element) is Raster:
             l, b, r, t = element.extents
+            if self.invert_axes:
+                l, b, r, t = b, l, t, r
+            else:
+                img = img.T
+        else:
+            l, b, r, t = element.bounds.lbrt()
+            if self.invert_axes:
+                img = img.T
+                l, b, r, t = b, l, t, r
 
-        # Ensure axis inversions are handled correctly
         if self.invert_xaxis:
             l, r = r, l
             img = img[:, ::-1]
         if self.invert_yaxis:
+            img = img[::-1]
             b, t = t, b
         dh, dw = t-b, r-l
-
-        if self.invert_axes:
-            dh, dw, l, b = dw, dh, b, l
-            if self.invert_yaxis: l = t
-            if self.invert_yaxis: b = r
-            img = img.T
-
+  
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
-
-
-    def _glyph_properties(self, plot, element, source, ranges):
-        properties = super(RasterPlot, self)._glyph_properties(plot, element,
-                                                               source, ranges)
-        properties = {k: v for k, v in properties.items()}
-        val_dim = [d for d in element.vdims][0]
-        properties['color_mapper'] = self._get_colormapper(val_dim, element, ranges,
-                                                           properties)
-        return properties
 
 
 
@@ -93,19 +92,16 @@ class RGBPlot(RasterPlot):
 
         # Ensure axis inversions are handled correctly
         l, b, r, t = element.bounds.lbrt()
+        if self.invert_axes:
+            img = img.T
+            l, b, r, t = b, l, t, r
         if self.invert_xaxis:
             l, r = r, l
             img = img[:, ::-1]
         if self.invert_yaxis:
-            b, t = t, b
             img = img[::-1]
+            b, t = t, b
         dh, dw = t-b, r-l
-
-        if self.invert_axes:
-            dh, dw, l, b = dw, dh, b, l
-            if self.invert_yaxis: l = t
-            if self.invert_yaxis: b = r
-            img = np.rot90(img)
 
         data = dict(image=[img], x=[l], y=[b], dw=[dw], dh=[dh])
         return (data, mapping)
@@ -199,7 +195,7 @@ class QuadMeshPlot(ColorbarPlot):
         widths = np.diff(element.data[0])
         heights = np.diff(element.data[1])
         if self.invert_axes:
-            zvals = zdata[::-1, ::-1].flatten()
+            zvals = zdata.flatten()
             xvals, yvals, widths, heights = yvals, xvals, heights, widths
         else:
             zvals = zdata.T.flatten()
