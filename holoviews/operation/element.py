@@ -520,8 +520,11 @@ class histogram(Operation):
                 weights = weights[mask]
         else:
             weights = None
-        hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
-            if self.p.bin_range is None else self.p.bin_range
+        try:
+            hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
+                         if self.p.bin_range is None else self.p.bin_range
+        except ValueError:
+            hist_range = (0, 1)
 
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0):
