@@ -25,6 +25,9 @@ class BokehServerWidgets(param.Parameterized):
     and dropdown widgets letting you select non-numeric values.
     """
 
+    display_options = param.Dict(default={}, doc="""
+        Additional options controlling display options of the widgets.""")
+
     editable = param.Boolean(default=False, doc="""
         Whether the slider text fields should be editable. Disabled
         by default for a more compact widget layout.""")
