@@ -280,10 +280,11 @@ class NdLayout(UniformNdMapping):
 
     data_type = (ViewableElement, AdjointLayout, UniformNdMapping)
 
-    def __init__(self, initial_items=None, **params):
+    def __init__(self, initial_items=None, kdims=None, **params):
         self._max_cols = 4
         self._style = None
-        super(NdLayout, self).__init__(initial_items=initial_items, **params)
+        super(NdLayout, self).__init__(initial_items=initial_items, kdims=kdims,
+                                       **params)
 
 
     @property
@@ -378,20 +379,6 @@ class Layout(AttrTree, Dimensioned):
         params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
         AttrTree.__init__(self, items, identifier, parent, **kwargs)
         Dimensioned.__init__(self, self.data, **params)
-
-
-    @classmethod
-    def collate(cls, data, kdims=None, key_dimensions=None):
-        kdims = key_dimensions if (kdims is None) else kdims
-        if kdims is None:
-            raise Exception("Please specify the key dimensions.")
-
-        collate_deprecation.warning("Layout.collate will be deprecated after version 1.3.0."
-                                    "\nUse HoloMap.collate instead (see HoloViews homepage for example usage)")
-        from .element import Collator
-        layouts = {k:(v if isinstance(v, Layout) else Layout.from_values([v]))
-                      for k,v in data.items()}
-        return Collator(layouts, kdims=kdims)()
 
 
     @classmethod

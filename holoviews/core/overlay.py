@@ -245,8 +245,8 @@ class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
 
     _deep_indexable = True
 
-    def __init__(self, overlays=None, **params):
-        super(NdOverlay, self).__init__(overlays, **params)
+    def __init__(self, overlays=None, kdims=None, **params):
+        super(NdOverlay, self).__init__(overlays, kdims=kdims, **params)
 
 
 __all__ = list(set([_k for _k, _v in locals().items()

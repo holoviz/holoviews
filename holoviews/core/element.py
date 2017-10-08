@@ -390,7 +390,7 @@ class Collator(NdMapping):
         elif isinstance(item, self._nest_order[self.merge_type]):
             if len(dim_vals):
                 dimensions, key = zip(*dim_vals)
-                new_item = self.merge_type({key: item}, kdims=dimensions,
+                new_item = self.merge_type({key: item}, kdims=list(dimensions),
                                            cdims=constant_keys)
             else:
                 new_item = item

@@ -26,6 +26,10 @@ class MultiInterface(Interface):
     def init(cls, eltype, data, kdims, vdims):
         new_data = []
         dims = {'kdims': eltype.kdims, 'vdims': eltype.vdims}
+        if kdims is not None:
+            dims['kdims'] = kdims
+        if vdims is not None:
+            dims['vdims'] = vdims
         if not isinstance(data, list):
             raise ValueError('MultiInterface data must be a list tabular data types.')
         prev_interface, prev_dims = None, None

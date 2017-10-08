@@ -39,11 +39,11 @@ class Raster(Element2D):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-    def __init__(self, data, extents=None, **params):
+    def __init__(self, data, kdims=None, vdims=None, extents=None, **params):
         if extents is None:
             (d1, d2) = data.shape[:2]
             extents = (0, 0, d2, d1)
-        super(Raster, self).__init__(data, extents=extents, **params)
+        super(Raster, self).__init__(data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
 
     def __getitem__(self, slices):
@@ -227,10 +227,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-    def __init__(self, data, bounds=None, extents=None, xdensity=None, ydensity=None, **params):
+    def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
+                 xdensity=None, ydensity=None, **params):
         extents = extents if extents else (None, None, None, None)
         if data is None: data = np.array([[0]])
-        Dataset.__init__(self, data, extents=extents, **params)
+        Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
@@ -525,7 +526,7 @@ class RGB(Image):
         return rgb
 
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, Overlay):
             images = data.values()
             if not all(isinstance(im, Image) for im in images):
@@ -538,12 +539,14 @@ class RGB(Image):
                 raise ValueError("Ranges must be defined on all the value dimensions of all the Images")
             arrays = [(im.data - r[0]) / (r[1] - r[0]) for r,im in zip(ranges, images)]
             data = np.dstack(arrays)
-        vdims = list(params.get('vdims', self.vdims))
+        if vdims is None:
+            vdims = list(self.vdims)
+        else:
+            vdims = list(vdims) if isinstance(vdims, list) else [vdims]
         if isinstance(data, np.ndarray):
             if data.shape[-1] == 4 and len(vdims) == 3:
                 vdims.append(self.alpha_dimension)
-                params['vdims'] = vdims
-        super(RGB, self).__init__(data, **params)
+        super(RGB, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
 
 
@@ -610,9 +613,9 @@ class QuadMesh(Raster):
 
     vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
-    def __init__(self, data, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         data = self._process_data(data)
-        Element2D.__init__(self, data, **params)
+        Element2D.__init__(self, data, kdims=kdims, vdims=vdims, **params)
         self.data = self._validate_data(self.data)
         self._grid = self.data[0].ndim == 1
 
@@ -772,8 +775,8 @@ class HeatMap(Dataset, Element2D):
 
     vdims = param.List(default=[Dimension('z')])
 
-    def __init__(self, data, **params):
-        super(HeatMap, self).__init__(data, **params)
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)
         self.gridded = categorical_aggregate2d(self)
 
     @property
