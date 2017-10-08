@@ -19,7 +19,7 @@ from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
 from bokeh.document import Document
 from bokeh.layouts import WidgetBox, Row, Column
-from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot, Spacer
+from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 
@@ -206,6 +206,8 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
     ranges = FactorRange(factors=factors)
     ranges2 = Range1d(start=0, end=1)
     axis_label = dim_axis_label(dim)
+    reset = "range.setv({start: 0, end: range.factors.length})"
+    ranges.callback = CustomJS(args=dict(range=ranges), code=reset)
 
     axis_props = {}
     if label_size:
