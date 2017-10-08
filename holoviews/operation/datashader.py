@@ -111,12 +111,17 @@ class ResamplingOperation(Operation):
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
                     x_range = max([x0, ex0]), min([x1, ex1])
+                if x_range[0] == x_range[1]:
+                    x_range = (x_range[0]-0.5, x_range[0]+0.5)
+                    
                 if self.p.expand or not self.p.y_range:
                     y_range = self.p.y_range or element.range(y)
                 else:
                     y0, y1 = self.p.y_range
                     ey0, ey1 = element.range(y)
                     y_range = max([y0, ey0]), min([y1, ey1])
+                if y_range[0] == y_range[1]:
+                    y_range = (y_range[0]-0.5, y_range[0]+0.5)
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
