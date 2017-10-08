@@ -22,7 +22,7 @@ class RasterPlot(ColorbarPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
-    situate_axes = param.Boolean(default=False, doc="""
+    situate_axes = param.Boolean(default=True, doc="""
         Whether to situate the image relative to other plots. """)
 
     style_opts = ['alpha', 'cmap', 'interpolation', 'visible',
