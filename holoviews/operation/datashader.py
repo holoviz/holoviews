@@ -111,6 +111,9 @@ class ResamplingOperation(Operation):
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
                     x_range = max([x0, ex0]), min([x1, ex1])
+                if x_range[0] == x_range[1]:
+                    x_range = (x_range[0]-0.5, x_range[0]+0.5)
+                    
                 if self.p.expand or not self.p.y_range:
                     y_range = self.p.y_range or element.range(y)
                 else:
@@ -119,6 +122,18 @@ class ResamplingOperation(Operation):
                     y_range = max([y0, ey0]), min([y1, ey1])
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
+
+        if not np.isfinite(xstart) and not np.isfinite(xend):
+            xstart, xend = 0, 1
+        elif xstart == xend:
+            xstart, xend = (xstart-0.5, xend+0.5)
+        x_range = (xstart, xend)
+
+        if not np.isfinite(ystart) and not np.isfinite(yend):
+            ystart, yend = 0, 1
+        elif ystart == yend:
+            ystart, yend = (ystart-0.5, yend+0.5)
+        y_range = (ystart, yend)
 
         # Compute highest allowed sampling density
         xspan = xend - xstart
@@ -130,6 +145,7 @@ class ResamplingOperation(Operation):
         xunit, yunit = float(xspan)/width, float(yspan)/height
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
+
         return (x_range, y_range), (xs, ys), (width, height)
 
 
