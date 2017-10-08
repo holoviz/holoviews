@@ -345,7 +345,7 @@ class VectorField(Points):
     _min_dims = 3                              # Minimum number of columns
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, list) and all(isinstance(d, np.ndarray) for d in data):
+        if isinstance(data, list) and data and all(isinstance(d, np.ndarray) for d in data):
             data = np.column_stack([d.flat if d.ndim > 1 else d for d in data])
         super(VectorField, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
