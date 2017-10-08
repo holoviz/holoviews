@@ -30,6 +30,7 @@ from holoviews.plotting.util import rgb2hex
 try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
+    from matplotlib.colors import ListedColormap
     from holoviews.plotting.mpl import OverlayPlot
     mpl_renderer = Store.renderers['matplotlib']
 except:
@@ -339,14 +340,21 @@ class TestMPLPlotInstantiation(ComparisonTestCase):
         self.assertEqual(artist.get_array().data, arr.T[:, ::-1].flatten())
 
     def test_heatmap_invert_axes(self):
-        arr = np.array([[0, 1, 2], [3, 4,  5]])
+        arr = np.array([[0, 1, 2], [3, 4, 5]])
         hm = HeatMap(Image(arr)).opts(plot=dict(invert_axes=True))
         plot = mpl_renderer.get_plot(hm)
         artist = plot.handles['artist']
         self.assertEqual(artist.get_array().data, arr.T[::-1, ::-1])
         self.assertEqual(artist.get_extent(), (0, 2, 0, 3))
 
-
+    def test_image_listed_cmap(self):
+        colors = ['#ffffff','#000000']
+        img = Image(np.array([[0, 1, 2], [3, 4, 5]])).opts(style=dict(cmap=colors))
+        plot = mpl_renderer.get_plot(img)
+        artist = plot.handles['artist']
+        cmap = artist.get_cmap()
+        self.assertIsInstance(cmap, ListedColormap)
+        self.assertEqual(cmap.colors, colors)
 
 
 class TestBokehPlotInstantiation(ComparisonTestCase):
