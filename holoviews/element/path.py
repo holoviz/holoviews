@@ -56,7 +56,6 @@ class Path(Dataset, Element2D):
             data = [np.column_stack(path) for path in data]
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
-
     def __setstate__(self, state):
         """
         Ensures old-style unpickled Path types without an interface
@@ -132,7 +131,9 @@ class Contours(Path):
         if params.get('level') is not None:
             vdims = vdims or [self._level_vdim]
             params['vdims'] = []
-        super(Contours, self).__init__(data, **params)
+        else:
+            params['vdims'] = vdims
+        super(Contours, self).__init__(data, kdims=kdims, **params)
         if params.get('level') is not None:
             self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
                           for d in vdims]
