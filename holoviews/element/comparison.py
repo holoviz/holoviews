@@ -28,10 +28,6 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
 from ..core.util import pd
-from ..interface.pandas import DFrame as PandasDFrame
-from ..interface.pandas import DataFrameView
-from ..interface.seaborn import DFrame, Bivariate, Distribution, \
-                                Regression, TimeSeries
 
 
 class ComparisonInterface(object):
@@ -181,16 +177,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Table] =        cls.compare_tables
         cls.equality_type_funcs[Points] =       cls.compare_points
 
-        # Pandas DFrame objects
-        cls.equality_type_funcs[DataFrameView] = cls.compare_dframe
-        cls.equality_type_funcs[PandasDFrame] =  cls.compare_dframe
-        cls.equality_type_funcs[DFrame] =        cls.compare_dframe
-
         # Seaborn Views
         cls.equality_type_funcs[Bivariate] =    cls.compare_bivariate
         cls.equality_type_funcs[Distribution] = cls.compare_distribution
         cls.equality_type_funcs[Regression] =   cls.compare_regression
-        cls.equality_type_funcs[TimeSeries] =   cls.compare_timeseries
 
         # NdMappings
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
@@ -677,11 +667,6 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_distribution(cls, el1, el2, msg='Distribution'):
         cls.compare_dataset(el1, el2, msg)
-
-    @classmethod
-    def compare_timeseries(cls, el1, el2, msg='TimeSeries'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg)
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg='Bivariate'):

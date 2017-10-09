@@ -1,7 +1,6 @@
 from ...core.options import Store, Cycle, Options
 from ...core import (Overlay, NdOverlay, Layout, NdLayout, GridSpace,
                      GridMatrix, config)
-from ...interface.seaborn import *    # noqa (Element import for registration)
 from ...element import *              # noqa (Element import for registration)
 from .renderer import PlotlyRenderer
 

@@ -6,6 +6,7 @@ from .chart3d import * # noqa (API import)
 from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
 from .raster import * # noqa (API import)
+from .stats import * # noqa (API import)
 from .tabular import * # noqa (API import)
 
 
