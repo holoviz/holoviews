@@ -22,33 +22,29 @@ class TextPlot(ElementPlot):
     style_opts = text_properties+['color']
     _plot_methods = dict(single='text', batched='text')
 
-    def _glyph_properties(self, plot, element, source, ranges):
-        props = super(TextPlot, self)._glyph_properties(plot, element, source, ranges)
-        props['text_align'] = element.halign
-        props['text_baseline'] = 'middle' if element.valign == 'center' else element.valign
-        if 'color' in props:
-            props['text_color'] = props.pop('color')
-        return props
-
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         mapping = dict(x='x', y='y', text='text')
         if self.static_source:
-            return dict(x=[], y=[], text=[]), mapping
+            return dict(x=[], y=[], text=[]), mapping, style
         if self.invert_axes:
             data = dict(x=[element.y], y=[element.x])
         else:
             data = dict(x=[element.x], y=[element.y])
         self._categorize_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
-        return (data, mapping)
+        style['text_align'] = element.halign
+        style['text_baseline'] = 'middle' if element.valign == 'center' else element.valign
+        if 'color' in style:
+            style['text_color'] = style.pop('color')
+        return (data, mapping, style)
 
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
         for key, el in element.data.items():
-            eldata, elmapping = self.get_data(el, ranges)
+            eldata, elmapping, style = self.get_data(el, ranges)
             for k, eld in eldata.items():
                 data[k].extend(eld)
-        return data, elmapping
+        return data, elmapping, style
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
@@ -63,7 +59,7 @@ class LineAnnotationPlot(ElementPlot):
 
     _plot_methods = dict(single='Span')
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         data, mapping = {}, {}
         dim = 'width' if isinstance(element, HLine) else 'height'
         if self.invert_axes:
@@ -73,7 +69,7 @@ class LineAnnotationPlot(ElementPlot):
         if isinstance(loc, datetime_types):
             loc = date_to_integer(loc)
         mapping['location'] = loc
-        return (data, mapping)
+        return (data, mapping, style)
 
     def _init_glyph(self, plot, mapping, properties):
         """
@@ -97,7 +93,7 @@ class SplinePlot(ElementPlot):
     style_opts = line_properties
     _plot_methods = dict(single='bezier')
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if self.invert_axes:
             data_attrs = ['y0', 'x0', 'cy0', 'cx0', 'cy1', 'cx1', 'y1', 'x1']
         else:
@@ -117,7 +113,7 @@ class SplinePlot(ElementPlot):
             self.warning('Bokeh SplitPlot only support cubic splines, '
                          'unsupported splines were skipped during plotting.')
         data = {da: data[da] for da in data_attrs}
-        return (data, dict(zip(data_attrs, data_attrs)))
+        return (data, dict(zip(data_attrs, data_attrs)), style)
 
 
 
@@ -131,7 +127,7 @@ class ArrowPlot(CompositeElementPlot):
 
     _plot_methods = dict(single='text')
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         plot = self.state
         label_mapping = dict(x='x', y='y', text='text')
 
@@ -167,7 +163,7 @@ class ArrowPlot(CompositeElementPlot):
             label_data = dict(x=[x2], y=[y2])
         label_data['text'] = [element.text]
         return ({'label': label_data},
-                {'arrow': arrow_opts, 'label': label_mapping})
+                {'arrow': arrow_opts, 'label': label_mapping}, style)
 
     def _init_glyph(self, plot, mapping, properties, key):
         """

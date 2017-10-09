@@ -41,7 +41,7 @@ class PathPlot(ElementPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if self.static_source:
             data = {}
         else:
@@ -50,7 +50,7 @@ class PathPlot(ElementPlot):
             xs, ys = ([path[:, idx] for path in paths] for idx in [xidx, yidx])
             data = dict(xs=xs, ys=ys)
         self._get_hover_data(data, element)
-        return data, dict(self._mapping)
+        return data, dict(self._mapping), style
 
 
     def _categorize_data(self, data, cols, dims):
@@ -75,13 +75,12 @@ class PathPlot(ElementPlot):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(element)
-        styles = self.lookup_options(element.last, 'style')
-        styles = styles.max_cycles(len(self.ordering))
-
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))[zorder]
             self.overlay_dims = dict(zip(element.kdims, key))
-            eldata, elmapping = self.get_data(el, ranges)
+            eldata, elmapping, style = self.get_data(el, ranges, style)
             for k, eld in eldata.items():
                 data[k].extend(eld)
 
@@ -91,24 +90,22 @@ class PathPlot(ElementPlot):
 
             # Apply static styles
             nvals = len(list(eldata.values())[0])
-            style = styles[zorder]
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
             elmapping.update({k: v for k, v in smapping.items() if k not in elmapping})
             for k, v in sdata.items():
                 data[k].extend(list(v))
 
-        return data, elmapping
+        return data, elmapping, style
 
 
 class ContourPlot(ColorbarPlot, PathPlot):
 
     style_opts = line_properties + ['cmap']
 
-    def get_data(self, element, ranges=None):
-        data, mapping = super(ContourPlot, self).get_data(element, ranges)
+    def get_data(self, element, ranges, style):
+        data, mapping, style = super(ContourPlot, self).get_data(element, ranges, style)
         ncontours = len(list(data.values())[0])
-        style = self.style[self.cyclic_index]
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
             dim_name = util.dimension_sanitizer(cdim.name)
@@ -117,7 +114,7 @@ class ContourPlot(ColorbarPlot, PathPlot):
             if 'cmap' in style:
                 cmapper = self._get_colormapper(cdim, element, ranges, style)
                 mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
-        return data, mapping
+        return data, mapping, style
 
 
 class PolygonPlot(ColorbarPlot, PathPlot):
@@ -135,7 +132,7 @@ class PolygonPlot(ColorbarPlot, PathPlot):
         dims += element.vdims
         return dims, {}
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if self.static_source:
             data = {}
         else:
@@ -144,7 +141,6 @@ class PolygonPlot(ColorbarPlot, PathPlot):
             ys = [path[:, 1] for path in paths]
             data = dict(xs=ys, ys=xs) if self.invert_axes else dict(xs=xs, ys=ys)
 
-        style = self.style[self.cyclic_index]
         mapping = dict(self._mapping)
         if element.vdims and element.level is not None:
             cdim = element.vdims[0]
@@ -161,4 +157,4 @@ class PolygonPlot(ColorbarPlot, PathPlot):
                 data[dim] = [v for _ in range(len(xs))]
             data[dim_name] = [element.level for _ in range(len(xs))]
 
-        return data, mapping
+        return data, mapping, style

@@ -84,8 +84,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
         xlabel, ylabel = [kd.pprint_label for kd in element.nodes.kdims[:2]]
         return xlabel, ylabel, None
 
-    def get_data(self, element, ranges=None):
-        style = self.style[self.cyclic_index]
+    def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
 
         # Get node data
@@ -135,7 +134,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
         data = {'scatter_1': point_data, 'multi_line_1': path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, 'multi_line_1': {}}
-        return data, mapping
+        return data, mapping, style
 
 
     def _update_datasource(self, source, data):
@@ -150,14 +149,15 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
-        data, mapping = self.get_data(element, ranges)
+        style = self.style[self.cyclic_index]
+        data, mapping, style = self.get_data(element, ranges, style)
         self.handles['previous_id'] = element._plot_id
         properties = {}
         mappings = {}
         for key in mapping:
             source = self._init_datasource(data.get(key, {}))
             self.handles[key+'_source'] = source
-            glyph_props = self._glyph_properties(plot, element, source, ranges)
+            glyph_props = self._glyph_properties(plot, element, source, ranges, style)
             properties.update(glyph_props)
             mappings.update(mapping.get(key, {}))
         properties = {p: v for p, v in properties.items() if p not in ('legend', 'source')}
