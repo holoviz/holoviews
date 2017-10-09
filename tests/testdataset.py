@@ -769,6 +769,55 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                          np.column_stack([self.xs, self.ys]))
 
 
+class ScalarColumnTypes(object):
+    """
+    Tests for interfaces that allow on or more columns to be of scalar
+    types.
+    """
+
+    def setUp(self):
+        self.restore_datatype = Dataset.datatype
+        self.data_instance_type = None
+
+    def test_dataset_scalar_constructor(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.dimension_values('A'), np.ones(10))
+
+    def test_dataset_scalar_length(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(len(ds), 10)
+
+    def test_dataset_scalar_array(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.array(), np.column_stack([np.ones(10), np.arange(10)]))
+
+    def test_dataset_scalar_select(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.select(A=1).dimension_values('B'), np.arange(10))
+
+    def test_dataset_scalar_empty_select(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.select(A=0).dimension_values('B'), np.array([]))
+
+    def test_dataset_scalar_sample(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.sample([(1,)]).dimension_values('B'), np.arange(10))
+
+    def test_dataset_scalar_sort(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)[::-1]}, kdims=['A', 'B'])
+        self.assertEqual(ds.sort().dimension_values('B'), np.arange(10))
+
+    def test_dataset_scalar_groupby(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        groups = ds.groupby('A')
+        self.assertEqual(groups, HoloMap({1: Dataset({'B': np.arange(10)}, 'B')}, 'A'))
+
+    def test_dataset_scalar_iloc(self):
+        ds = Dataset({'A': 1, 'B': np.arange(10)}, kdims=['A', 'B'])
+        self.assertEqual(ds.iloc[:5], Dataset({'A': 1, 'B': np.arange(5)}, kdims=['A', 'B']))
+
+
+
 class ArrayDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
     """
     Test of the ArrayDataset interface.
@@ -866,7 +915,7 @@ class DaskDatasetTest(DFDatasetTest):
         raise SkipTest("Not supported")
 
 
-class DictDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
+class DictDatasetTest(HeterogeneousColumnTypes, ScalarColumnTypes, ComparisonTestCase):
     """
     Test of the generic dictionary interface.
     """
