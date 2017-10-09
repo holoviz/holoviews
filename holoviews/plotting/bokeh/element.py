@@ -7,7 +7,8 @@ import bokeh
 import bokeh.plotting
 from bokeh import palettes
 from bokeh.core.properties import value
-from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange, FuncTickFormatter
+from bokeh.models import  (HoverTool, Renderer, Range1d, DataRange1d,
+                           FactorRange, FuncTickFormatter, value)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -637,7 +638,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                     self.overlay_dims.items()])
             else:
                 legend = element.label
-            properties['legend'] = legend
+            properties['legend'] = value(legend)
         return properties
 
     def _update_glyph(self, renderer, properties, mapping, glyph):
