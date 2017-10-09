@@ -656,9 +656,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _glyph_properties(self, plot, element, source, ranges):
-        properties = self.style[self.cyclic_index]
-
+    def _glyph_properties(self, plot, element, source, ranges, style):
+        properties = dict(style, source=source)
         if self.show_legend:
             if self.overlay_dims:
                 legend = ', '.join([d.pprint_value(v) for d, v in
@@ -666,7 +665,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             else:
                 legend = element.label
             properties['legend'] = legend
-        properties['source'] = source
         return properties
 
     def _update_glyph(self, renderer, properties, mapping, glyph):
@@ -737,16 +735,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         # Get data and initialize data source
         if self.batched:
             current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-            data, mapping = self.get_batched_data(element, ranges)
+            data, mapping, style = self.get_batched_data(element, ranges)
         else:
-            data, mapping = self.get_data(element, ranges)
+            style = self.style[self.cyclic_index]
+            data, mapping, style = self.get_data(element, ranges, style)
             current_id = element._plot_id
         if source is None:
             source = self._init_datasource(data)
         self.handles['previous_id'] = current_id
         self.handles['source'] = source
 
-        properties = self._glyph_properties(plot, style_element, source, ranges)
+        properties = self._glyph_properties(plot, style_element, source, ranges, style)
         with abbreviated_exception():
             renderer, glyph = self._init_glyph(plot, mapping, properties)
         self.handles['glyph'] = glyph
@@ -819,16 +818,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
+        style = self.style[self.cyclic_index]
         if self.batched:
-            data, mapping = self.get_batched_data(element, ranges)
+            data, mapping, style = self.get_batched_data(element, ranges)
         else:
-            data, mapping = self.get_data(element, ranges)
+            data, mapping, style = self.get_data(element, ranges, style)
 
         if not self.static_source:
             self._update_datasource(source, data)
 
         if glyph:
-            properties = self._glyph_properties(plot, element, source, ranges)
+            properties = self._glyph_properties(plot, element, source, ranges, style)
             renderer = self.handles.get('glyph_renderer')
             with abbreviated_exception():
                 self._update_glyph(renderer, properties, mapping, glyph)
@@ -964,18 +964,15 @@ class CompositeElementPlot(ElementPlot):
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
-        if self.batched:
-            current_id = tuple(element.traverse(lambda x: x._plot_id, [Element]))
-            data, mapping = self.get_batched_data(element, ranges)
-        else:
-            data, mapping = self.get_data(element, ranges)
-            current_id = element._plot_id
+        style = self.style[self.cyclic_index]
+        data, mapping, style = self.get_data(element, ranges, style)
 
+        current_id = element._plot_id
         self.handles['previous_id'] = current_id
         for key in dict(mapping, **data):
             source = self._init_datasource(data.get(key, {}))
             self.handles[key+'_source'] = source
-            properties = self._glyph_properties(plot, element, source, ranges)
+            properties = self._glyph_properties(plot, element, source, ranges, style)
             properties = self._process_properties(key, properties)
             with abbreviated_exception():
                 renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
@@ -1015,7 +1012,8 @@ class CompositeElementPlot(ElementPlot):
             current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-        data, mapping = self.get_data(element, ranges)
+        style = self.style[self.cyclic_index]
+        data, mapping, style = self.get_data(element, ranges, style)
 
         for key in dict(mapping, **data):
             gdata = data[key]
@@ -1025,7 +1023,7 @@ class CompositeElementPlot(ElementPlot):
                 self._update_datasource(source, gdata)
 
             if glyph:
-                properties = self._glyph_properties(plot, element, source, ranges)
+                properties = self._glyph_properties(plot, element, source, ranges, style)
                 properties = self._process_properties(key, properties)
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():

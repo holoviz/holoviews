@@ -71,8 +71,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         return data, mapping
 
 
-    def get_data(self, element, ranges=None):
-        style = self.style[self.cyclic_index]
+    def get_data(self, element, ranges, style):
         dims = element.dimensions(label=True)
 
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
@@ -94,17 +93,17 @@ class PointPlot(LegendPlot, ColorbarPlot):
         mapping.update(smapping)
 
         self._get_hover_data(data, element)
-        return data, mapping
+        return data, mapping, style
 
 
-    def get_batched_data(self, element, ranges=None):
+    def get_batched_data(self, element, ranges):
         data = defaultdict(list)
         zorders = self._updated_zorders(element)
-        styles = self.lookup_options(element.last, 'style')
-        styles = styles.max_cycles(len(self.ordering))
         for (key, el), zorder in zip(element.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
-            eldata, elmapping = self.get_data(el, ranges)
+            style = self.lookup_options(element.last, 'style')
+            style = style.max_cycles(len(self.ordering))[zorder]
+            eldata, elmapping, style = self.get_data(el, ranges, style)
             for k, eld in eldata.items():
                 data[k].append(eld)
 
@@ -114,7 +113,6 @@ class PointPlot(LegendPlot, ColorbarPlot):
 
             # Apply static styles
             nvals = len(list(eldata.values())[0])
-            style = styles[zorder]
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals)
             elmapping.update(smapping)
@@ -127,7 +125,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
                     data[sanitized].append([k]*nvals)
 
         data = {k: np.concatenate(v) for k, v in data.items()}
-        return data, elmapping
+        return data, elmapping, style
 
 
 
@@ -185,8 +183,7 @@ class VectorFieldPlot(ColorbarPlot):
         return properties
 
 
-    def get_data(self, element, ranges=None):
-        style = self.style[self.cyclic_index]
+    def get_data(self, element, ranges, style):
         input_scale = style.pop('scale', 1.0)
 
         # Get x, y, angle, magnitude and color data
@@ -242,7 +239,7 @@ class VectorFieldPlot(ColorbarPlot):
             data[cdim.name] = color
             mapping.update(cmapping)
 
-        return (data, mapping)
+        return (data, mapping, style)
 
 
 
@@ -259,12 +256,12 @@ class CurvePlot(ElementPlot):
     _plot_methods = dict(single='line', batched='multi_line')
     _batched_style_opts = line_properties
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
         if self.static_source:
-            return {}, dict(x=x, y=y)
+            return {}, dict(x=x, y=y), style
 
         if 'steps' in self.interpolation:
             element = interpolate_curve(element, interpolation=self.interpolation)
@@ -272,7 +269,7 @@ class CurvePlot(ElementPlot):
                 y: element.dimension_values(yidx)}
         self._get_hover_data(data, element)
         self._categorize_data(data, (x, y), element.dimensions())
-        return (data, dict(x=x, y=y))
+        return (data, dict(x=x, y=y), style)
 
     def _hover_opts(self, element):
         if self.batched:
@@ -283,16 +280,15 @@ class CurvePlot(ElementPlot):
             line_policy = 'nearest'
         return dims, dict(line_policy=line_policy)
 
-    def get_batched_data(self, overlay, ranges=None):
+    def get_batched_data(self, overlay, ranges):
         data = defaultdict(list)
 
         zorders = self._updated_zorders(overlay)
-        styles = self.lookup_options(overlay.last, 'style')
-        styles = styles.max_cycles(len(self.ordering))
-
         for (key, el), zorder in zip(overlay.data.items(), zorders):
             self.set_param(**self.lookup_options(el, 'plot').options)
-            eldata, elmapping = self.get_data(el, ranges)
+            style = self.lookup_options(el, 'style')
+            style = style.max_cycles(len(self.ordering))[zorder]
+            eldata, elmapping, style = self.get_data(el, ranges, style)
 
             # Skip if data empty
             if not eldata:
@@ -302,7 +298,6 @@ class CurvePlot(ElementPlot):
                 data[k].append(eld)
 
             # Apply static styles
-            style = styles[zorder]
             sdata, smapping = expand_batched_style(style, self._batched_style_opts,
                                                    elmapping, nvals=1)
             elmapping.update(smapping)
@@ -316,7 +311,7 @@ class CurvePlot(ElementPlot):
                 if not any(v is None for v in vals)}
         mapping = {{'x': 'xs', 'y': 'ys'}.get(k, k): v
                    for k, v in elmapping.items()}
-        return data, mapping
+        return data, mapping, style
 
 
 
@@ -325,7 +320,7 @@ class HistogramPlot(ElementPlot):
     style_opts = line_properties + fill_properties
     _plot_methods = dict(single='quad')
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if self.invert_axes:
             mapping = dict(top='left', bottom='right', left=0, right='top')
         else:
@@ -336,7 +331,7 @@ class HistogramPlot(ElementPlot):
             data = dict(top=element.values, left=element.edges[:-1],
                         right=element.edges[1:])
         self._get_hover_data(data, element)
-        return (data, mapping)
+        return (data, mapping, style)
 
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
@@ -369,7 +364,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
     main_source.trigger('change')
     """
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if self.invert_axes:
             mapping = dict(top='right', bottom='left', left=0, right='top')
         else:
@@ -389,7 +384,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
             mapping['fill_color'] = {'field': dim.name,
                                      'transform': cmapper}
         self._get_hover_data(data, element)
-        return (data, mapping)
+        return (data, mapping, style)
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -428,10 +423,10 @@ class ErrorPlot(ElementPlot):
 
     _plot_methods = dict(single=Whisker)
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
         if self.static_source:
-            return {}, mapping
+            return {}, mapping, style
 
         base = element.dimension_values(0)
         ys = element.dimension_values(1)
@@ -448,7 +443,7 @@ class ErrorPlot(ElementPlot):
         else:
             mapping['dimension'] = 'height'
         self._categorize_data(data, ('base',), element.dimensions())
-        return (data, mapping)
+        return (data, mapping, style)
 
 
     def _init_glyph(self, plot, mapping, properties):
@@ -493,10 +488,10 @@ class AreaPlot(SpreadPlot):
             ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
         return super(AreaPlot, self).get_extents(element, ranges)
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         mapping = dict(self._mapping)
         if self.static_source:
-            return {}, mapping
+            return {}, mapping, style
 
         xs = element.dimension_values(0)
         if len(element.vdims) > 1:
@@ -510,7 +505,7 @@ class AreaPlot(SpreadPlot):
             mapping['dimension'] = 'width'
         else:
             mapping['dimension'] = 'height'
-        return data, mapping
+        return data, mapping, style
 
 
 
@@ -554,8 +549,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             t = np.nanmax([0, t])
         return l, b, r, t
 
-    def get_data(self, element, ranges=None):
-        style = self.style[self.cyclic_index]
+    def get_data(self, element, ranges, style):
         dims = element.dimensions(label=True)
 
         pos = self.position
@@ -583,7 +577,7 @@ class SpikesPlot(PathPlot, ColorbarPlot):
             for d in dims:
                 data[dimension_sanitizer(d)] = element.dimension_values(d)
 
-        return data, mapping
+        return data, mapping, style
 
 
 class SideSpikesPlot(SpikesPlot):
@@ -639,7 +633,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
 
     style_opts = line_properties + fill_properties + ['width', 'cmap']
 
-    _plot_methods = dict(single=('vbar', 'hbar'), batched=('vbar', 'hbar'))
+    _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded
     _y_range_type = DataRange1d
@@ -769,7 +763,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         del props['width']
         return props
 
-    def get_data(self, element, ranges):
+    def get_data(self, element, ranges, style):
         # Get x, y, group, stack and color dimensions
         grouping = None
         group_dim = element.get_dimension(self.group_index)
@@ -793,7 +787,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
             self.color_index = color_dim.name
 
         # Define style information
-        style = self.style[self.cyclic_index]
         width = style.get('width', 1)
         cmap = style.get('cmap')
         hover = any(t == 'hover' or isinstance(t, HoverTool)
@@ -946,13 +939,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             mapping.update({'y': mapping.pop('x'), 'left': mapping.pop('bottom'),
                             'right': mapping.pop('top'), 'height': mapping.pop('width')})
 
-        return sanitized_data, mapping
-
-    def get_batched_data(self, element, ranges):
-        el = element.last
-        collapsed = Bars(element.table(), kdims=el.kdims+element.kdims,
-                            vdims=el.vdims)
-        return self.get_data(collapsed, ranges)
+        return sanitized_data, mapping, style
 
 
 
@@ -1001,8 +988,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         ylabel = element.vdims[0].pprint_label
         return xlabel, ylabel, None
 
-    def _glyph_properties(self, plot, element, source, ranges):
-        properties = dict(self.style[self.cyclic_index], source=source)
+    def _glyph_properties(self, plot, element, source, ranges, style):
+        properties = dict(style, source=source)
         if self.show_legend and not element.kdims:
             properties['legend'] = element.label
         return properties
@@ -1025,12 +1012,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             xfactors, yfactors = factors, []
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         if element.kdims:
             groups = element.groupby(element.kdims).data
         else:
             groups = dict([(element.label, element)])
-        style = self.style[self.cyclic_index]
         vdim = dimension_sanitizer(element.vdims[0].name)
 
         # Define CDS data
@@ -1131,7 +1117,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         # Return if not grouped
         if not element.kdims:
-            return data, mapping
+            return data, mapping, style
 
         # Define color dimension and data
         if cidx is None or cidx>=element.ndims:
@@ -1156,5 +1142,5 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         vbar2_map['fill_color'] = {'field': cname, 'transform': mapper}
         vbar_map['legend'] = cdim.name
 
-        return data, mapping
+        return data, mapping, style
 

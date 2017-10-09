@@ -45,13 +45,13 @@ class TablePlot(BokehPlot, GenericElementPlot):
                 self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
 
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         dims = element.dimensions()
         mapping = {d.name: d.name for d in dims}
         data = {d: element.dimension_values(d) for d in dims}
         data = {d.name: values if values.dtype.kind in "if" else list(map(d.pprint_value, values))
                 for d, values in data.items()}
-        return data, mapping
+        return data, mapping, style
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -64,18 +64,18 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.current_frame = element
         self.current_key = key
 
-        data, _ = self.get_data(element, ranges)
+        style = self.lookup_options(element, 'style')[self.cyclic_index]
+        data, _, style = self.get_data(element, ranges, style)
         if source is None:
             source = self._init_datasource(data)
         self.handles['source'] = source
 
         dims = element.dimensions()
         columns = [TableColumn(field=d.name, title=d.pprint_label) for d in dims]
-        properties = self.lookup_options(element, 'style')[self.cyclic_index]
         if bokeh_version > '0.12.7':
-            properties['reorderable'] = False
+            style['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
-                          width=self.width, **properties)
+                          width=self.width, **style)
         self.handles['plot'] = table
         self.handles['glyph_renderer'] = table
         self._execute_hooks(element)
@@ -118,5 +118,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         if self.static_source:
             return
         source = self.handles['source']
-        data, _ = self.get_data(element, ranges)
+        style = self.lookup_options(element, 'style')[self.cyclic_index]
+        data, _, style = self.get_data(element, ranges, style)
         self._update_datasource(source, data)

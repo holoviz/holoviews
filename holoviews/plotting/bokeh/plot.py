@@ -94,7 +94,7 @@ class BokehPlot(DimensionedPlot):
         self.root = None
 
 
-    def get_data(self, element, ranges=None):
+    def get_data(self, element, ranges, style):
         """
         Returns the data from an element in the appropriate format for
         initializing or updating a ColumnDataSource and a dictionary
