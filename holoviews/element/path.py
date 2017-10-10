@@ -129,6 +129,9 @@ class Contours(Path):
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
         if params.get('level') is not None:
+            self.warning("The level parameter on %s elements is deprecated, "
+                         "supply the value dimension(s) as columns in the data.",
+                         type(self).__name__)
             vdims = vdims or [self._level_vdim]
             params['vdims'] = []
         else:
