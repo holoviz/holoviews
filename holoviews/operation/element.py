@@ -441,24 +441,23 @@ class contours(Operation):
                     element.dimension_values(1, False),
                     element.data[2])
 
-        zmin, zmax = element.range(2)
         if isinstance(self.p.levels, int):
+            zmin, zmax = element.range(2)
             levels = np.linspace(zmin, zmax, self.p.levels)
         else:
             levels = self.p.levels
-
+            
         xdim, ydim = element.dimensions('key', label=True)
-        contour_set = contour_fn(*data, extent=extent,
-                                 levels=levels)
+        vdims = [element.vdims[0].clone(range=(min(levels), max(levels)))]
+        contour_set = contour_fn(*data, extent=extent, levels=levels)
         paths = []
-        for level, cset in zip(levels, contour_set.collections):
+        for level, cset in zip(contour_set.get_array(), contour_set.collections):
             for path in cset.get_paths():
                 subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
                 for p in subpaths:
                     xs, ys = p[:, 0], p[:, 1]
                     paths.append({xdim: xs, ydim: ys, element.vdims[0].name: level})
-        contours = contour_type(paths, label=element.label, kdims=element.kdims,
-                                vdims=element.vdims)
+        contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         plt.close(figure_handle)
         if self.p.overlaid:
             contours = element * contours
