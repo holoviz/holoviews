@@ -208,19 +208,20 @@ class MultiInterface(Interface):
         didx = dataset.get_dimension_index(dimension)
         for d in dataset.data:
             ds.data = d
-            expand = expanded if didx>1 and dimension in dataset.kdims else True
-            dvals = ds.interface.values(ds, dimension, expand, flat)
-            values.append(dvals)
-            if expanded:
+            dvals = ds.interface.values(ds, dimension, expanded, flat)
+            if not len(dvals):
+                continue
+            elif expanded:
+                values.append(dvals)
                 values.append([np.NaN])
-            elif not expand and len(dvals):
-                values[-1] = dvals[0]
+            else:
+                values.append(dvals)
         if not values:
             return np.array()
         elif expanded:
             return np.concatenate(values[:-1])
         else:
-            return np.array(values)
+            return np.concatenate(values)
 
     @classmethod
     def split(cls, dataset, start, end):
