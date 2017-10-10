@@ -12,7 +12,7 @@ from .util import expand_batched_style
 
 class PathPlot(ColorbarPlot):
 
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
@@ -64,8 +64,6 @@ class PathPlot(ColorbarPlot):
         
         paths, cvals = [], []
         for path in element.split(datatype='array'):
-            if not cdim:
-                paths.append(path)
             splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
             for (s1, s2) in zip(splits[:-1], splits[1:]):
                 cvals.append(path[s1, cidx])
@@ -108,6 +106,10 @@ class PathPlot(ColorbarPlot):
 
     
 class ContourPlot(PathPlot):
+
+    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
 
     _color_style = 'line_color'
     
