@@ -98,7 +98,7 @@ class Path(Dataset, Element2D):
             raise Exception("Path types are not uniformly sampled and"
                             "therefore cannot be collapsed with a function.")
 
-    def split(self, start=None, end=None, paths=None):
+    def split(self, start=None, end=None, datatype=None, **kwargs):
         """
         The split method allows splitting a Path type into a list of
         subpaths of the same type. A start and/or end may be supplied
@@ -106,7 +106,7 @@ class Path(Dataset, Element2D):
         """
         if not issubclass(self.interface, MultiInterface):
             return [self]
-        return self.interface.split(self, start, end)
+        return self.interface.split(self, start, end, datatype, **kwargs)
 
 
 class Contours(Path):

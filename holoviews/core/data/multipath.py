@@ -224,14 +224,28 @@ class MultiInterface(Interface):
             return np.concatenate(values)
 
     @classmethod
-    def split(cls, dataset, start, end):
+    def split(cls, dataset, start, end, datatype, **kwargs):
         """
         Splits a multi-interface Dataset into regular Datasets using
         regular tabular interfaces.
         """
         objs = []
-        for d in dataset.data[start: end]:
-            objs.append(dataset.clone(d, datatype=cls.subtypes))
+        if datatype is None:
+            for d in dataset.data[start: end]:
+                objs.append(dataset.clone(d, datatype=cls.subtypes))
+            return objs
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            if datatype == 'array':
+                obj = ds.array(**kwargs)
+            elif datatype == 'dataframe':
+                obj = ds.dframe(**kwargs)
+            elif datatype == 'columns':
+                obj = ds.columns(**kwargs)
+            else:
+                raise ValueError("%s datatype not support" % datatype)
+            objs.append(obj)
         return objs
 
 
