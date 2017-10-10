@@ -406,7 +406,7 @@ class contours(Operation):
 
     output_type = Overlay
 
-    levels = param.NumericTuple(default=(0.5,), doc="""
+    levels = param.ClassSelector(default=10, class_=(list, int), doc="""
         A list of scalar values used to specify the contour levels.""")
 
     group = param.String(default='Level', doc="""
@@ -415,7 +415,7 @@ class contours(Operation):
     filled = param.Boolean(default=False, doc="""
         Whether to generate filled contours""")
 
-    overlaid = param.Boolean(default=True, doc="""
+    overlaid = param.Boolean(default=False, doc="""
         Whether to overlay the contour on the supplied Element.""")
 
     def _process(self, element, key=None):
@@ -440,18 +440,25 @@ class contours(Operation):
             data = (element.dimension_values(0, False),
                     element.dimension_values(1, False),
                     element.data[2])
+
+        zmin, zmax = element.range(2)
+        if isinstance(self.p.levels, int):
+            levels = np.linspace(zmin, zmax, self.p.levels)
+        else:
+            levels = self.p.levels
+
+        xdim, ydim = element.dimensions('key', label=True)
         contour_set = contour_fn(*data, extent=extent,
-                                 levels=self.p.levels)
-
-        contours = NdOverlay(None, kdims=['Levels'])
-        for level, cset in zip(self.p.levels, contour_set.collections):
-            paths = []
+                                 levels=levels)
+        paths = []
+        for level, cset in zip(levels, contour_set.collections):
             for path in cset.get_paths():
-                paths.extend(np.split(path.vertices, np.where(path.codes==1)[0][1:]))
-            contours[level] = contour_type(paths, level=level, group=self.p.group,
-                                           label=element.label, kdims=element.kdims,
-                                           vdims=element.vdims)
-
+                subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
+                for p in subpaths:
+                    xs, ys = p[:, 0], p[:, 1]
+                    paths.append({xdim: xs, ydim: ys, element.vdims[0].name: level})
+        contours = contour_type(paths, label=element.label, kdims=element.kdims,
+                                vdims=element.vdims)
         plt.close(figure_handle)
         if self.p.overlaid:
             contours = element * contours
