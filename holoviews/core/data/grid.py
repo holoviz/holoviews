@@ -82,6 +82,11 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def isscalar(cls, dataset, dim):
+        return np.unique(cls.values(dataset, dim, expanded=False)) == 1
+
+
+    @classmethod
     def validate(cls, dataset):
         Interface.validate(dataset)
 

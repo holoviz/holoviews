@@ -137,6 +137,10 @@ class Contours(Path):
         if params.get('level') is not None:
             self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
                           for d in vdims]
+        else:
+            all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
+            if not all_scalar:
+                raise ValueError("All value dimensions on a Contours element must be scalar")
 
     def dimension_values(self, dim, expanded=True, flat=True):
         dimension = self.get_dimension(dim, strict=True)

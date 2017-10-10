@@ -183,6 +183,11 @@ class Interface(param.Parameterized):
 
 
     @classmethod
+    def isscalar(cls, dataset, dim):
+        return cls.values(dataset, dim, expanded=False) == 1
+
+
+    @classmethod
     def select_mask(cls, dataset, selection):
         """
         Given a Dataset object and a dictionary with dimension keys and

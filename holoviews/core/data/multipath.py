@@ -100,6 +100,20 @@ class MultiInterface(Interface):
             ranges.append(ds.interface.range(ds, dim))
         return max_range(ranges)
 
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        """
+        Tests if dimension is scalar in each subpath.
+        """
+        ds = cls._inner_dataset_template(dataset)
+        isscalar = []
+        for d in dataset.data:
+            ds.data = d
+            isscalar.append(ds.interface.isscalar(ds, dim))
+        return all(isscalar)
+
+
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         """

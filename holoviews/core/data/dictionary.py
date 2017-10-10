@@ -30,7 +30,9 @@ class DictInterface(Interface):
     @classmethod
     def dimension_type(cls, dataset, dim):
         name = dataset.get_dimension(dim, strict=True).name
-        return dataset.data[name].dtype.type
+        values = dataset.data[name]
+        return type(values) if np.isscalar(values) else values.dtype.type
+
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -110,6 +112,12 @@ class DictInterface(Interface):
 
         if len(data[key]) == 1 and key in dataset.vdims:
             return data[key][0]
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        name = dataset.get_dimension(dim, strict=True).name
+        values = dataset.data[name]
+        return np.isscalar(values) or len(np.unique(values)) == 1
 
     @classmethod
     def shape(cls, dataset):
