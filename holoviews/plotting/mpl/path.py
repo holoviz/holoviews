@@ -47,7 +47,7 @@ class PathPlot(ColorbarPlot):
         artist = self.handles['artist']
         data, style, axis_kwargs = self.get_data(element, ranges, style)
         artist.set_paths(data[0])
-        if 'colors' in style:
+        if 'array' in style:
             artist.set_array(style['array'])
             artist.set_clim(style['clim'])
         if 'norm' in style:
@@ -74,7 +74,7 @@ class ContourPlot(PathPlot):
 
         if cdim is None:
             return (paths,), style, {}
-                
+
         if element.level is not None:
             style['array'] = np.full(len(paths), value)
         else:

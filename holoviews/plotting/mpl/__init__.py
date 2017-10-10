@@ -238,9 +238,9 @@ else:
 options.Text = Options('style', fontsize=13)
 options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
-options.Contours = Options('style', color=Cycle())
+options.Contours = Options('style', color=Cycle(), cmap='viridis')
 options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle())
+options.Path = Options('style', color=Cycle(), cmap='viridis')
 
 if config.style_17:
     options.Box = Options('style', color=Cycle())
@@ -250,7 +250,8 @@ else:
     options.Box = Options('style', color='black')
     options.Bounds = Options('style', color='black')
     options.Ellipse = Options('style', color='black')
-    options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black')
+    options.Polygons = Options('style', facecolor=Cycle(), edgecolor='black',
+                               cmap='viridis')
 
 # Interface
 options.TimeSeries = Options('style', color=Cycle())
