@@ -149,14 +149,15 @@ options.Area = Options('style', color=Cycle(), alpha=1, line_color='black')
 options.VectorField = Options('style', color='black')
 
 # Paths
-options.Contours = Options('style', color=Cycle())
 if not config.style_17:
     options.Contours = Options('plot', show_legend=True)
-options.Path = Options('style', color=Cycle())
+options.Contours = Options('style', color=Cycle(), cmap='viridis')
+options.Path = Options('style', color=Cycle(), cmap='viridis')
 options.Box = Options('style', color='black')
 options.Bounds = Options('style', color='black')
 options.Ellipse = Options('style', color='black')
-options.Polygons = Options('style', color=Cycle(), line_color='black')
+options.Polygons = Options('style', color=Cycle(), line_color='black',
+                           cmap='viridis')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)
