@@ -13,11 +13,15 @@ class PathPlot(ColorbarPlot):
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
     
-    color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
+    color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
     style_opts = ['alpha', 'color', 'linestyle', 'linewidth', 'visible', 'cmap']
+
+    def _finalize_artist(self, element):
+        if self.colorbar:
+            self._draw_colorbar(element.get_dimension(self.color_index))
 
     def get_data(self, element, ranges, style):
         cdim = element.get_dimension(self.color_index)
@@ -55,12 +59,18 @@ class PathPlot(ColorbarPlot):
         artist.set_visible(style.get('visible', True))
         return axis_kwargs
 
+
 class ContourPlot(PathPlot):
 
     color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
+    def _finalize_artist(self, element):
+        if self.colorbar:
+            cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
+            cdim = element.get_dimension(cidx)
+            self._draw_colorbar(cdim)
 
     def get_data(self, element, ranges, style):
         if None not in [element.level, self.color_index]:
@@ -82,7 +92,7 @@ class ContourPlot(PathPlot):
         self._norm_kwargs(element, ranges, style, cdim)
         style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
-    
+
     
 class PolygonPlot(ContourPlot):
     """
