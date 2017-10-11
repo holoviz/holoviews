@@ -555,7 +555,7 @@ class histogram(Operation):
         if view.group != view.__class__.__name__:
             params['group'] = view.group
 
-        return Histogram(hist, edges, kdims=[view.get_dimension(selected_dim)],
+        return Histogram((hist, edges), kdims=[view.get_dimension(selected_dim)],
                          label=view.label, **params)
 
 
