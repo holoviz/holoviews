@@ -45,15 +45,15 @@ class Path(Dataset, Element2D):
     datatype = param.ObjectSelector(default=['multitabular'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, tuple):
+        if isinstance(data, tuple) and len(data) == 2:
             x, y = map(np.asarray, data)
             if y.ndim == 1:
                 y = np.atleast_2d(y).T
             if len(x) != y.shape[0]:
                 raise ValueError("Path x and y values must be the same length.")
             data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
-        elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
-            data = [np.column_stack(path) for path in data]
+        elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
+            data = [p for path in data for p in path.data]
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def __setstate__(self, state):
