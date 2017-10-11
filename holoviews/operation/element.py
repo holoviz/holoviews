@@ -453,7 +453,10 @@ class contours(Operation):
         paths = []
         for level, cset in zip(contour_set.get_array(), contour_set.collections):
             for path in cset.get_paths():
-                subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
+                if path.codes is None:
+                    subpaths = [path.vertices]
+                else:
+                    subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
                 for p in subpaths:
                     xs, ys = p[:, 0], p[:, 1]
                     paths.append({xdim: xs, ydim: ys, element.vdims[0].name: level})
