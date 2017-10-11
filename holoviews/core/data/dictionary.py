@@ -69,7 +69,7 @@ class DictInterface(Interface):
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
-        elif isinstance(data, dict) and not all(d in data for d in dimensions):
+        elif isinstance(data, dict) and not all(d in data or any(d in k for k in data) for d in dimensions):
             dict_data = sorted(data.items())
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                               for k, v in dict_data))
@@ -78,8 +78,17 @@ class DictInterface(Interface):
         if not isinstance(data, cls.types):
             raise ValueError("DictInterface interface couldn't convert data.""")
         elif isinstance(data, dict):
-            unpacked = [(d, vals if np.isscalar(vals) else np.asarray(vals))
-                        for d, vals in data.items()]
+            unpacked = []
+            for d, vals in data.items():
+                if isinstance(d, tuple):
+                    vals = np.asarray(vals)
+                    if not vals.ndim == 2 and vals.shape[1] == len(d):
+                        raise ValueError("Values for %s dimensions did not have "
+                                         "the expected shape.")
+                    for i, sd in enumerate(d):
+                        unpacked.append((sd, vals[:, i]))
+                else:
+                    unpacked.append((d, vals if np.isscalar(vals) else np.asarray(vals)))
             if not cls.expanded([d[1] for d in unpacked if not np.isscalar(d[1])]):
                 raise ValueError('DictInterface expects data to be of uniform shape.')
             if isinstance(data, odict_types):
