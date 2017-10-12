@@ -40,8 +40,11 @@ class TextPlot(ElementPlot):
 
     def get_batched_data(self, element, ranges=None):
         data = defaultdict(list)
-        for key, el in element.data.items():
-            eldata, elmapping, style = self.get_data(el, ranges)
+        zorders = self._updated_zorders(element)
+        for (key, el), zorder in zip(element.data.items(), zorders):
+            style = self.lookup_options(element.last, 'style')
+            style = style.max_cycles(len(self.ordering))[zorder]
+            eldata, elmapping, style = self.get_data(el, ranges, style)
             for k, eld in eldata.items():
                 data[k].extend(eld)
         return data, elmapping, style
