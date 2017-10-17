@@ -320,13 +320,18 @@ class Graph(Dataset, Element2D):
         to the layout function.
         """
         positions = layout_function(G, **kwargs)
+        edges = G.edges()
         if nodes:
+            idx_dim = nodes.kdims[-1].name
             xs, ys = zip(*[v for k, v in sorted(positions.items())])
+            indices = list(nodes.dimension_values(idx_dim))
+            edges = [(src, tgt) for (src, tgt) in edges if src in indices and tgt in indices]
+            nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
             nodes = nodes.add_dimension('x', 0, xs)
             nodes = nodes.add_dimension('y', 1, ys).clone(new_type=Nodes)
         else:
             nodes = Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
-        return cls((G.edges(), nodes))
+        return cls((edges, nodes))
 
 
 class Nodes(Points):
