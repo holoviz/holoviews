@@ -420,17 +420,12 @@ class contours(Operation):
 
     def _process(self, element, key=None):
         try:
-            from matplotlib import pyplot as plt
+            from matplotlib.contour import QuadContourSet
+            from matplotlib.axes import Axes
+            from matplotlib.figure import Figure
         except ImportError:
             raise ImportError("contours operation requires matplotlib.")
-        figure_handle = plt.figure()
         extent = element.range(0) + element.range(1)[::-1]
-        if self.p.filled:
-            contour_fn = plt.contourf
-            contour_type = Polygons
-        else:
-            contour_fn = plt.contour
-            contour_type = Contours
 
         if type(element) is Raster:
             data = [np.flipud(element.data)]
@@ -442,26 +437,29 @@ class contours(Operation):
                     element.data[2])
 
         if isinstance(self.p.levels, int):
+            levels = self.p.levels+1 if self.p.filled else self.p.levels
             zmin, zmax = element.range(2)
-            levels = np.linspace(zmin, zmax, self.p.levels)
+            levels = np.linspace(zmin, zmax, levels)
         else:
             levels = self.p.levels
             
         xdim, ydim = element.dimensions('key', label=True)
         vdims = [element.vdims[0].clone(range=(min(levels), max(levels)))]
-        contour_set = contour_fn(*data, extent=extent, levels=levels)
+        fig = Figure()
+        ax = Axes(fig, [0, 0, 1, 1])
+        contour_set = QuadContourSet(ax, *data, filled=self.p.filled, extent=extent, levels=levels)
+        if self.p.filled:
+            contour_type = Polygons
+            levels = np.convolve(levels, np.ones((2,))/2, mode='valid')
+        else:
+            contour_type = Contours
         paths = []
-        for level, cset in zip(contour_set.get_array(), contour_set.collections):
-            for path in cset.get_paths():
-                if path.codes is None:
-                    subpaths = [path.vertices]
-                else:
-                    subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
+        for level, cset, kind in zip(levels, contour_set.allsegs, contour_set.allkinds):
+            for path, k in zip(cset, kind):
+                subpaths = np.split(path, np.where(k==1)[0][1:])
                 for p in subpaths:
-                    xs, ys = p[:, 0], p[:, 1]
-                    paths.append({xdim: xs, ydim: ys, element.vdims[0].name: level})
+                    paths.append({(xdim, ydim): p, element.vdims[0].name: level})
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
-        plt.close(figure_handle)
         if self.p.overlaid:
             contours = element * contours
         return contours
