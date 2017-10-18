@@ -12,11 +12,11 @@ except:
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core.util import basestring, dimension_sanitizer
 from .chart import ColorbarPlot, PointPlot
-from .element import CompositeElementPlot, line_properties, fill_properties, property_prefixes
+from .element import CompositeElementPlot, LegendPlot, line_properties, fill_properties, property_prefixes
 from .util import mpl_to_bokeh, bokeh_version
 
 
-class GraphPlot(CompositeElementPlot, ColorbarPlot):
+class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     color_index = param.ClassSelector(default=None, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -115,10 +115,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot):
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
         if element._edgepaths and not self.static_source:
-            edges = element._split_edgepaths.split()
+            edges = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
             if len(edges) == len(start):
-                path_data['xs'] = [path.dimension_values(xidx) for path in edges]
-                path_data['ys'] = [path.dimension_values(yidx) for path in edges]
+                path_data['xs'] = [path[:, 0] for path in edges]
+                path_data['ys'] = [path[:, 1] for path in edges]
             else:
                 self.warning('Graph edge paths do not match the number of abstract edges '
                              'and will be skipped')
