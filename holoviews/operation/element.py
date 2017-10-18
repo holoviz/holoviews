@@ -449,11 +449,10 @@ class contours(Operation):
         contour_set = QuadContourSet(ax, *data, filled=self.p.filled, extent=extent, levels=levels)
         if self.p.filled:
             contour_type = Polygons
-            vdims = [element.vdims[0].clone(range=(min(levels), max(levels)))]
             levels = np.convolve(levels, np.ones((2,))/2, mode='valid')
         else:
             contour_type = Contours
-            vdims = element.vdims[:1]
+        vdims = element.vdims[:1]
 
         paths = []
         for level, cset in zip(levels, contour_set.collections):
