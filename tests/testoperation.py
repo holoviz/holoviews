@@ -69,7 +69,7 @@ class OperationTests(ComparisonTestCase):
         op_contours = contours(img, filled=True, levels=[2, 2.5])
         data = [[(0., 0.333333, 2.25), (0.5, 0.3, 2.25), (0.5, 0.25, 2.25), (0., 0.25, 2.25),
                  (-0.5, 0.08333333, 2.25), (-0.5, 0.16666667, 2.25), (0., 0.33333333, 2.25)]]
-        polys = Polygons(data, vdims=img.vdims).redim.range(z=(2, 2.5))
+        polys = Polygons(data, vdims=img.vdims)
         self.assertEqual(op_contours, polys)
 
     def test_points_histogram(self):

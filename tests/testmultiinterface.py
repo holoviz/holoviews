@@ -101,15 +101,6 @@ class MultiInterfaceTest(ComparisonTestCase):
     def test_multi_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
-        error = "None of the available storage backends were able to support the supplied data format."
+        error = "Following dimensions not found in data: \['y'\]"
         with self.assertRaisesRegexp(ValueError, error):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
-
-    def test_multi_nonconstant_kdims_raises(self):
-        arrays = [{'x': range(10), 'y': range(10), 'z': range(10)}
-                  for i in range(2)]
-        error = ("z' key dimension value must have a constant value on each subpath, "
-                 "for paths with value for each coordinate of the array declare a "
-                 "value dimension instead.")
-        with self.assertRaisesRegexp(ValueError, error):
-            mds = Path(arrays, kdims=['x', 'y', 'z'], datatype=['multitabular'])
