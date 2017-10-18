@@ -56,21 +56,21 @@ class OperationTests(ComparisonTestCase):
     @attr(optional=1) # Requires matplotlib
     def test_image_contours(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
-        op_contours = contours(img)
-        ndoverlay = NdOverlay(None, kdims=['Levels'])
-        ndoverlay[0.5] = Contours([[(-0.5,  0.416667), (-0.25, 0.5)], [(0.25, 0.5), (0.5, 0.45)]],
-                                  group='Level', level=0.5, vdims=img.vdims)
-        self.assertEqual(op_contours, img*ndoverlay)
+        op_contours = contours(img, levels=[0.5])
+        contour = Contours([[(-0.5,  0.416667, 0.5), (-0.25, 0.5, 0.5)],
+                             [(0.25, 0.5, 0.5), (0.5, 0.45, 0.5)]],
+                            vdims=img.vdims)
+        print(contour.range(2))
+        self.assertEqual(op_contours, contour)
 
     @attr(optional=1) # Requires matplotlib
     def test_image_contours_filled(self):
         img = Image(np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]]))
         op_contours = contours(img, filled=True, levels=[2, 2.5])
-        ndoverlay = NdOverlay(None, kdims=['Levels'])
-        data = [[(0., 0.333333), (0.5, 0.3), (0.5, 0.25), (0., 0.25),
-                 (-0.5, 0.08333333), (-0.5, 0.16666667), (0., 0.33333333)]]
-        ndoverlay[0.5] = Polygons(data, group='Level', level=2, vdims=img.vdims)
-        self.assertEqual(op_contours, img*ndoverlay)
+        data = [[(0., 0.333333, 2.25), (0.5, 0.3, 2.25), (0.5, 0.25, 2.25), (0., 0.25, 2.25),
+                 (-0.5, 0.08333333, 2.25), (-0.5, 0.16666667, 2.25), (0., 0.33333333, 2.25)]]
+        polys = Polygons(data, vdims=img.vdims).redim.range(z=(2, 2.5))
+        self.assertEqual(op_contours, polys)
 
     def test_points_histogram(self):
         points = Points([float(i) for i in range(10)])
