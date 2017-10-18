@@ -40,7 +40,7 @@ class PathComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.path1, self.path2)
         except AssertionError as e:
-            if not str(e).startswith("Path data not almost equal to 6 decimals"):
+            if not str(e).startswith("Path not almost equal to 6 decimals"):
                 raise self.failureException("Path mismatch error not raised.")
 
     def test_contours_equal(self):
@@ -50,14 +50,14 @@ class PathComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.contours1, self.contours2)
         except AssertionError as e:
-            if not str(e).startswith("Contours data not almost equal to 6 decimals"):
+            if not str(e).startswith("Contours not almost equal to 6 decimals"):
                 raise self.failureException("Contours mismatch error not raised.")
 
     def test_contour_levels_unequal(self):
         try:
             self.assertEqual(self.contours1, self.contours3)
         except AssertionError as e:
-            if not str(e).startswith("Contour levels are mismatched"):
+            if not str(e).startswith("Contours not almost equal to 6 decimals"):
                 raise self.failureException("Contour level are mismatch error not raised.")
 
 
@@ -68,7 +68,7 @@ class PathComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.bounds1, self.bounds2)
         except AssertionError as e:
-            if not str(e).startswith("Bounds data not almost equal to 6 decimals"):
+            if not str(e).startswith("Bounds not almost equal to 6 decimals"):
                 raise self.failureException("Bounds mismatch error not raised.")
 
     def test_boxs_equal(self):
@@ -78,7 +78,7 @@ class PathComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.box1, self.box2)
         except AssertionError as e:
-            if not str(e).startswith("Box data not almost equal to 6 decimals"):
+            if not str(e).startswith("Box not almost equal to 6 decimals"):
                 raise self.failureException("Box mismatch error not raised.")
 
     def test_ellipses_equal(self):
@@ -88,5 +88,5 @@ class PathComparisonTest(ComparisonTestCase):
         try:
             self.assertEqual(self.ellipse1, self.ellipse2)
         except AssertionError as e:
-            if not str(e).startswith("Ellipse data not almost equal to 6 decimals"):
+            if not str(e).startswith("Ellipse not almost equal to 6 decimals"):
                 raise self.failureException("Ellipse mismatch error not raised.")
