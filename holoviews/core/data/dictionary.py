@@ -69,7 +69,8 @@ class DictInterface(Interface):
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
-        elif isinstance(data, dict) and not all(d in data or any(d in k for k in data) for d in dimensions):
+        elif (isinstance(data, dict) and not all(d in data or any(d in k for k in data
+            if isinstance(k, tuple)) for d in dimensions)):
             dict_data = sorted(data.items())
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                               for k, v in dict_data))
@@ -134,7 +135,8 @@ class DictInterface(Interface):
 
     @classmethod
     def length(cls, dataset):
-        return max([len(vals) for vals in dataset.data.values() if not np.isscalar(vals)])
+        lengths = [len(vals) for vals in dataset.data.values() if not np.isscalar(vals)]
+        return max(lengths) if lengths else 1
 
     @classmethod
     def array(cls, dataset, dimensions):
