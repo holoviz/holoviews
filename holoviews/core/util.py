@@ -10,6 +10,7 @@ import datetime as dt
 from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
+from distutils.version import LooseVersion
 
 from threading import Thread, Event
 import numpy as np
@@ -30,8 +31,12 @@ except:
 datetime_types = (np.datetime64, dt.datetime)
 
 try:
-    import pandas as pd # noqa (optional import)
-    datetime_types = datetime_types + (pd.Timestamp,)
+    import pandas as pd
+    if LooseVersion(pd.__version__) > '0.20.0':
+        from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
+    else:
+        from pandas.types.dtypes import DatetimeTZDtypeType
+    datetime_types = datetime_types + (pd.Timestamp, DatetimeTZDtypeType)
 except ImportError:
     pd = None
 
