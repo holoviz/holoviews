@@ -20,7 +20,7 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['dataframe', 'dictionary', 'array', 'dask']
+    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
