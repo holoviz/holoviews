@@ -50,16 +50,11 @@ class MultiInterface(Interface):
     @classmethod
     def validate(cls, dataset):
         # Ensure that auxilliary key dimensions on each subpaths are scalar
-        if dataset.ndims <= 2:
-            return
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
-            for dim in dataset.kdims[2:]:
-                if len(ds.dimension_values(dim, expanded=False)) > 1:
-                    raise ValueError("'%s' key dimension value must have a constant value on each subpath, "
-                                     "for paths with value for each coordinate of the array declare a "
-                                     "value dimension instead." % dim)
+            ds.interface.validate(ds)
+
 
     @classmethod
     def _inner_dataset_template(cls, dataset):
