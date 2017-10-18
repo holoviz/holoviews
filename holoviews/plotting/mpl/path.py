@@ -86,7 +86,7 @@ class ContourPlot(PathPlot):
             return (paths,), style, {}
 
         if element.level is not None:
-            style['array'] = np.full(len(paths), value)
+            style['array'] = np.full(len(paths), element.level)
         else:
             style['array'] = element.dimension_values(cdim, expanded=False)
         self._norm_kwargs(element, ranges, style, cdim)
