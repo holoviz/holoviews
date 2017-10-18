@@ -30,7 +30,7 @@ class PathPlot(ColorbarPlot):
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
         else:
             dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
-        if cdim not in dims:
+        if cdim not in dims and cdim is not None:
             dims.append(cdim)
         return dims, {}
 
