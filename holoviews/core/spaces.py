@@ -460,6 +460,7 @@ class Callable(param.Parameterized):
         self._is_overlay = False
         self.args = None
         self.kwargs = None
+        self._memoize = self.memoize
 
     @property
     def argspec(self):
@@ -493,12 +494,12 @@ class Callable(param.Parameterized):
         for stream in [s for i in inputs for s in get_nested_streams(i)]:
             if stream not in streams: streams.append(stream)
 
-        memoize = self.memoize and not any(s.transient and s._triggering for s in streams)
+        memoize = self._memoize and not any(s.transient and s._triggering for s in streams)
         values = tuple(tuple(sorted(s.contents.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
-        hashed_key = util.deephash(key)
-        if memoize and hashed_key in self._memoized:
+        hashed_key = util.deephash(key) if self.memoize else None
+        if hashed_key is not None and memoize and hashed_key in self._memoized:
             return self._memoized[hashed_key]
 
         if self.argspec.varargs is not None:
@@ -591,14 +592,14 @@ def dynamicmap_memoization(callable_obj, streams):
     DynamicMap). Memoization is disabled if any of the streams require
     it it and are currently in a triggered state.
     """
-    memoization_state = bool(callable_obj.memoize)
-    callable_obj.memoize &= not any(s.transient and s._triggering for s in streams)
+    memoization_state = bool(callable_obj._memoize)
+    callable_obj._memoize &= not any(s.transient and s._triggering for s in streams)
     try:
         yield
     except:
         raise
     finally:
-        callable_obj.memoize = memoization_state
+        callable_obj._memoize = memoization_state
 
 
 
