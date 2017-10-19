@@ -49,7 +49,8 @@ class MultiInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        # Ensure that auxilliary key dimensions on each subpaths are scalar
+        if not dataset.data:
+            return
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
