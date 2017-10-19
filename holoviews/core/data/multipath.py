@@ -22,6 +22,8 @@ class MultiInterface(Interface):
 
     subtypes = ['dictionary', 'dataframe', 'array', 'dask']
 
+    multi = True
+
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         new_data = []

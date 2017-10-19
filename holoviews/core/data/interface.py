@@ -86,7 +86,11 @@ class Interface(param.Parameterized):
 
     datatype = None
 
+    # Denotes whether the interface expects gridded data
     gridded = False
+
+    # Denotes whether the interface expects multiple ragged arrays
+    multi = False
 
     @classmethod
     def register(cls, interface):
