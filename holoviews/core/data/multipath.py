@@ -240,7 +240,10 @@ class MultiInterface(Interface):
             elif datatype == 'dataframe':
                 obj = ds.dframe(**kwargs)
             elif datatype == 'columns':
-                obj = ds.columns(**kwargs)
+                if ds.interface.datatype == 'dictionary':
+                    obj = dict(d)
+                else:
+                    obj = ds.columns(**kwargs)
             else:
                 raise ValueError("%s datatype not support" % datatype)
             objs.append(obj)
