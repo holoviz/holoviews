@@ -487,6 +487,7 @@ class Callable(param.Parameterized):
 
     def __call__(self, *args, **kwargs):
         # Nothing to do for callbacks that accept no arguments
+        kwarg_hash = kwargs.pop('memoization_hash', [])
         (self.args, self.kwargs) = (args, kwargs)
         if not args and not kwargs: return self.callable()
         inputs = [i for i in self.inputs if isinstance(i, DynamicMap)]
@@ -496,7 +497,7 @@ class Callable(param.Parameterized):
 
         memoize = self._memoize and not any(s.transient and s._triggering for s in streams)
         values = tuple(tuple(sorted(s.hashkey.items())) for s in streams)
-        key = args + tuple(sorted(kwargs.items())) + values
+        key = args + tuple(sorted(kwarg_hash)) + values
 
         hashed_key = util.deephash(key) if self.memoize else None
         if hashed_key is not None and memoize and hashed_key in self._memoized:
@@ -838,6 +839,7 @@ class DynamicMap(HoloMap):
         # Additional validation needed to ensure kwargs don't clash
         kdims = [kdim.name for kdim in self.kdims]
         kwarg_items = [s.contents.items() for s in self.streams]
+        hash_items = [s.hashkey.items() for s in self.streams]
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
 
@@ -846,6 +848,7 @@ class DynamicMap(HoloMap):
             args = ()
         else:
             kwargs = dict(flattened)
+        kwargs['memoization_hash'] = hash_items
 
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)
