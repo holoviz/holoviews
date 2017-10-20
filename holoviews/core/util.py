@@ -101,7 +101,7 @@ class HashableJSON(json.JSONEncoder):
         elif isinstance(obj, np.ndarray):
             return obj.tolist()
         if pd and isinstance(obj, (pd.Series, pd.DataFrame)):
-            return repr(sorted(list(obj.to_dict().items())))
+            return obj.to_csv().encode('utf-8')
         elif isinstance(obj, self.string_hashable):
             return str(obj)
         elif isinstance(obj, self.repr_hashable):
