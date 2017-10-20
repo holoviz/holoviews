@@ -104,8 +104,18 @@ class Path(Dataset, Element2D):
         subpaths of the same type. A start and/or end may be supplied
         to select a subset of paths.
         """
-        if not issubclass(self.interface, MultiInterface):
-            return [self]
+        if not self.interface.multi:
+            if datatype == 'array':
+                obj = self.array(**kwargs)
+            elif datatype == 'dataframe':
+                obj = self.dframe(**kwargs)
+            elif datatype == 'columns':
+                obj = self.columns(**kwargs)
+            elif datatype is None:
+                obj = self
+            else:
+                raise ValueError("%s datatype not support" % datatype)
+            return [obj]
         return self.interface.split(self, start, end, datatype, **kwargs)
 
 
