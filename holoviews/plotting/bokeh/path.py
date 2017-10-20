@@ -61,16 +61,17 @@ class PathPlot(ColorbarPlot):
                 xs, ys = ([path[:, idx] for path in paths] for idx in inds)
                 data = dict(xs=xs, ys=ys)
             return data, mapping, style
-        
-        paths, cvals = [], []
-        for path in element.split(datatype='array'):
-            splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
-            for (s1, s2) in zip(splits[:-1], splits[1:]):
-                cvals.append(path[s1, cidx])
-                paths.append(path[s1:s2+1, :2])           
-        xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+
+        if not self.static_source:
+            paths, cvals = [], []
+            for path in element.split(datatype='array'):
+                splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
+                for (s1, s2) in zip(splits[:-1], splits[1:]):
+                    cvals.append(path[s1, cidx])
+                    paths.append(path[s1:s2+1, :2])           
+            xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+            data = dict(xs=xs, ys=ys, **{dim_name: np.array(cvals)})
         dim_name = util.dimension_sanitizer(cdim.name)
-        data = dict(xs=xs, ys=ys, **{dim_name: np.array(cvals)})
         cmapper = self._get_colormapper(cdim, element, ranges, style)
         mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
         self._get_hover_data(data, element)
@@ -141,13 +142,16 @@ class ContourPlot(PathPlot):
                 data[dim] = [v for _ in range(len(list(data.values())[0]))]
 
     def get_data(self, element, ranges, style):
-        inds = (1, 0) if self.invert_axes else (0, 1)
         paths = element.split(datatype='array', dimensions=element.kdims)
-        xs, ys = ([path[:, idx] for path in paths] for idx in inds)
-        data = dict(xs=xs, ys=ys)
+        if self.static_source:
+            data = dict()
+        else:
+            inds = (1, 0) if self.invert_axes else (0, 1)
+            xs, ys = ([path[:, idx] for path in paths] for idx in inds)
+            data = dict(xs=xs, ys=ys)
         mapping = dict(self._mapping)
-        
-        if None not in [element.level, self.color_index]:
+
+        if None not in [element.level, self.color_index] and element.vdims:
             cdim = element.vdims[0]
         else:
             cidx = self.color_index+2 if isinstance(self.color_index, int) else self.color_index
@@ -155,7 +159,7 @@ class ContourPlot(PathPlot):
         if cdim is None:
             return data, mapping, style
 
-        ncontours = len(list(data.values())[0])
+        ncontours = len(paths)
         dim_name = util.dimension_sanitizer(cdim.name)
         if element.level is not None:
             values = np.full(ncontours, float(element.level))
