@@ -495,7 +495,7 @@ class Callable(param.Parameterized):
             if stream not in streams: streams.append(stream)
 
         memoize = self._memoize and not any(s.transient and s._triggering for s in streams)
-        values = tuple(tuple(sorted(s.contents.items())) for s in streams)
+        values = tuple(tuple(sorted(s.hashkey.items())) for s in streams)
         key = args + tuple(sorted(kwargs.items())) + values
 
         hashed_key = util.deephash(key) if self.memoize else None

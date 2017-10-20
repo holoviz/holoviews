@@ -296,6 +296,15 @@ class Stream(param.Parameterized):
         return {self._rename.get(k,k):v for (k,v) in filtered.items()
                 if (self._rename.get(k,True) is not None)}
 
+    @property
+    def hashkey(self):
+        """
+        The object the memoization hash is computed from. By default
+        returns the stream contents but can be overridden to provide
+        a custom hash key.
+        """
+        return self.contents
+
 
     def _set_stream_parameters(self, **kwargs):
         """
