@@ -66,6 +66,8 @@ class Annotation(Element2D):
         pos_args = getattr(self, '_' + type(self).__name__ + '__pos_params', [])
         settings = {k: v for k, v in dict(self.get_param_values(), **overrides).items()
                     if k not in pos_args[:len(args)]}
+        if 'id' not in settings:
+            settings['id'] = self.id
         return self.__class__(*args, **settings)
 
 
