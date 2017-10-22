@@ -763,7 +763,7 @@ class UniformNdMapping(NdMapping):
             settings = {k: v for k, v in settings.items()
                       if k in new_params}
         settings = dict(settings, **overrides)
-        if 'id' not in settings:
+        if 'id' not in settings and new_type in [type(self), None]:
             settings['id'] = self.id
 
         if data is None and shared_data:
