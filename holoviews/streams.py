@@ -370,7 +370,8 @@ class StreamData(Stream):
     StreamData stream (and is disabled by default).
     """
 
-    data = param.Parameter(default=None)
+    data = param.Parameter(default=None, constant=True, doc="""
+        Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, memoize=False, **params):
         super(StreamData, self).__init__(**params)
