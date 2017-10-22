@@ -62,6 +62,7 @@ class PathPlot(ColorbarPlot):
                 data = dict(xs=xs, ys=ys)
             return data, mapping, style
 
+        dim_name = util.dimension_sanitizer(cdim.name)
         if not self.static_source:
             paths, cvals = [], []
             for path in element.split(datatype='array'):
@@ -71,7 +72,6 @@ class PathPlot(ColorbarPlot):
                     paths.append(path[s1:s2+1, :2])           
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             data = dict(xs=xs, ys=ys, **{dim_name: np.array(cvals)})
-        dim_name = util.dimension_sanitizer(cdim.name)
         cmapper = self._get_colormapper(cdim, element, ranges, style)
         mapping['line_color'] = {'field': dim_name, 'transform': cmapper}
         self._get_hover_data(data, element)

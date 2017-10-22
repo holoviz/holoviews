@@ -60,7 +60,6 @@ class OperationTests(ComparisonTestCase):
         contour = Contours([[(-0.5,  0.416667, 0.5), (-0.25, 0.5, 0.5)],
                              [(0.25, 0.5, 0.5), (0.5, 0.45, 0.5)]],
                             vdims=img.vdims)
-        print(contour.range(2))
         self.assertEqual(op_contours, contour)
 
     @attr(optional=1) # Requires matplotlib

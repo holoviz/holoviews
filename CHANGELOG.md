@@ -1,3 +1,14 @@
+Version 1.9.0
+=============
+
+Changes affecting backwards compatibility:
+
+-   The contours operation no longer overlays the contours on top of
+    the supplied Image by default and returns a single
+    Contours/Polygons rather than an NdOverlay of them
+    ([\#1991](https://github.com/ioam/holoviews/pull/1991))
+
+
 Version 1.8.4
 =============
 

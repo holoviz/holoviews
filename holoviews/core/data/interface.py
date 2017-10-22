@@ -89,7 +89,7 @@ class Interface(param.Parameterized):
     # Denotes whether the interface expects gridded data
     gridded = False
 
-    # Denotes whether the interface expects multiple ragged arrays
+    # Denotes whether the interface expects ragged data
     multi = False
 
     @classmethod
