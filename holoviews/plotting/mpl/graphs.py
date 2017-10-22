@@ -45,7 +45,7 @@ class GraphPlot(ColorbarPlot):
         dims = element.nodes.dimensions()
         self._compute_styles(element.nodes, ranges, style)
 
-        paths = element.edgepaths.data
+        paths = element.edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
         if self.invert_axes:
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}

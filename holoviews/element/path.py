@@ -45,15 +45,15 @@ class Path(Dataset, Element2D):
     datatype = param.ObjectSelector(default=['multitabular'])
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        if isinstance(data, tuple):
+        if isinstance(data, tuple) and len(data) == 2:
             x, y = map(np.asarray, data)
             if y.ndim == 1:
                 y = np.atleast_2d(y).T
             if len(x) != y.shape[0]:
                 raise ValueError("Path x and y values must be the same length.")
             data = [np.column_stack((x, y[:, i])) for i in range(y.shape[1])]
-        elif isinstance(data, list) and all(isinstance(path, tuple) for path in data):
-            data = [np.column_stack(path) for path in data]
+        elif isinstance(data, list) and all(isinstance(path, Path) for path in data):
+            data = [p for path in data for p in path.data]
         super(Path, self).__init__(data, kdims=kdims, vdims=vdims, **params)
 
     def __setstate__(self, state):
@@ -98,15 +98,25 @@ class Path(Dataset, Element2D):
             raise Exception("Path types are not uniformly sampled and"
                             "therefore cannot be collapsed with a function.")
 
-    def split(self, start=None, end=None, paths=None):
+    def split(self, start=None, end=None, datatype=None, **kwargs):
         """
         The split method allows splitting a Path type into a list of
         subpaths of the same type. A start and/or end may be supplied
         to select a subset of paths.
         """
-        if not issubclass(self.interface, MultiInterface):
-            return [self]
-        return self.interface.split(self, start, end)
+        if not self.interface.multi:
+            if datatype == 'array':
+                obj = self.array(**kwargs)
+            elif datatype == 'dataframe':
+                obj = self.dframe(**kwargs)
+            elif datatype == 'columns':
+                obj = self.columns(**kwargs)
+            elif datatype is None:
+                obj = self
+            else:
+                raise ValueError("%s datatype not support" % datatype)
+            return [obj]
+        return self.interface.split(self, start, end, datatype, **kwargs)
 
 
 class Contours(Path):
@@ -129,6 +139,9 @@ class Contours(Path):
     def __init__(self, data, kdims=None, vdims=None, **params):
         data = [] if data is None else data
         if params.get('level') is not None:
+            self.warning("The level parameter on %s elements is deprecated, "
+                         "supply the value dimension(s) as columns in the data.",
+                         type(self).__name__)
             vdims = vdims or [self._level_vdim]
             params['vdims'] = []
         else:
@@ -137,6 +150,10 @@ class Contours(Path):
         if params.get('level') is not None:
             self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
                           for d in vdims]
+        else:
+            all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
+            if not all_scalar:
+                raise ValueError("All value dimensions on a Contours element must be scalar")
 
     def dimension_values(self, dim, expanded=True, flat=True):
         dimension = self.get_dimension(dim, strict=True)

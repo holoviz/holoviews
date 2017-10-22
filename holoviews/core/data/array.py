@@ -78,6 +78,13 @@ class ArrayInterface(Interface):
             raise ValueError("Supplied data does not match specified "
                              "dimensions, expected at least %s columns." % ndims)
 
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        idx = dataset.get_dimension_index(dim)
+        return len(np.unique(dataset.data[:, idx])) == 1
+
+
     @classmethod
     def array(cls, dataset, dimensions):
         if dimensions:

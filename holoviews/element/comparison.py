@@ -464,7 +464,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_paths(cls, el1, el2, msg='Path'):
-        cls.compare_dimensioned(el1, el2)
+        cls.compare_dataset(el1, el2, msg)
 
         paths1 = el1.split()
         paths2 = el2.split()
@@ -475,14 +475,10 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_contours(cls, el1, el2, msg='Contours'):
-        if el1.level != el2.level:
-            raise cls.failureException("Contour levels are mismatched")
         cls.compare_paths(el1, el2, msg=msg)
 
     @classmethod
     def compare_polygons(cls, el1, el2, msg='Polygons'):
-        if el1.level != el2.level:
-            raise cls.failureException("Polygon levels are mismatched")
         cls.compare_paths(el1, el2, msg=msg)
 
     @classmethod

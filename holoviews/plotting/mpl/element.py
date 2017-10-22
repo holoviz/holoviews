@@ -205,7 +205,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
                 self._set_aspect(axis, self.aspect)
 
         if not subplots and not self.drawn:
-            self._finalize_artist(key)
+            self._finalize_artist(element)
 
         for hook in self.finalize_hooks:
             try:
@@ -590,7 +590,7 @@ class ColorbarPlot(ElementPlot):
             cbar.set_ticklabels(labels)
 
 
-    def _finalize_artist(self, key):
+    def _finalize_artist(self, element):
         artist = self.handles.get('artist', None)
         if artist and self.colorbar:
             self._draw_colorbar()
@@ -781,9 +781,9 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         super(OverlayPlot, self).__init__(overlay, ranges=ranges, **params)
 
 
-    def _finalize_artist(self, key):
+    def _finalize_artist(self, element):
         for subplot in self.subplots.values():
-            subplot._finalize_artist(key)
+            subplot._finalize_artist(element)
 
     def _adjust_legend(self, overlay, axis):
         """

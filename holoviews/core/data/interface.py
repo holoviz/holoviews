@@ -86,7 +86,11 @@ class Interface(param.Parameterized):
 
     datatype = None
 
+    # Denotes whether the interface expects gridded data
     gridded = False
+
+    # Denotes whether the interface expects ragged data
+    multi = False
 
     @classmethod
     def register(cls, interface):
@@ -180,6 +184,11 @@ class Interface(param.Parameterized):
     @classmethod
     def expanded(cls, arrays):
         return not any(array.shape not in [arrays[0].shape, (1,)] for array in arrays[1:])
+
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        return cls.values(dataset, dim, expanded=False) == 1
 
 
     @classmethod

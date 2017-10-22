@@ -20,7 +20,9 @@ class MultiInterface(Interface):
 
     datatype = 'multitabular'
 
-    subtypes = ['dataframe', 'dictionary', 'array', 'dask']
+    subtypes = ['dictionary', 'dataframe', 'array', 'dask']
+
+    multi = True
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
@@ -49,17 +51,13 @@ class MultiInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        # Ensure that auxilliary key dimensions on each subpaths are scalar
-        if dataset.ndims <= 2:
+        if not dataset.data:
             return
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
-            for dim in dataset.kdims[2:]:
-                if len(ds.dimension_values(dim, expanded=False)) > 1:
-                    raise ValueError("'%s' key dimension value must have a constant value on each subpath, "
-                                     "for paths with value for each coordinate of the array declare a "
-                                     "value dimension instead." % dim)
+            ds.interface.validate(ds)
+
 
     @classmethod
     def _inner_dataset_template(cls, dataset):
@@ -99,6 +97,20 @@ class MultiInterface(Interface):
             ds.data = d
             ranges.append(ds.interface.range(ds, dim))
         return max_range(ranges)
+
+
+    @classmethod
+    def isscalar(cls, dataset, dim):
+        """
+        Tests if dimension is scalar in each subpath.
+        """
+        ds = cls._inner_dataset_template(dataset)
+        isscalar = []
+        for d in dataset.data:
+            ds.data = d
+            isscalar.append(ds.interface.isscalar(ds, dim))
+        return all(isscalar)
+
 
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
@@ -194,29 +206,47 @@ class MultiInterface(Interface):
         didx = dataset.get_dimension_index(dimension)
         for d in dataset.data:
             ds.data = d
-            expand = expanded if didx>1 and dimension in dataset.kdims else True
-            dvals = ds.interface.values(ds, dimension, expand, flat)
-            values.append(dvals)
-            if expanded:
+            dvals = ds.interface.values(ds, dimension, expanded, flat)
+            if not len(dvals):
+                continue
+            elif expanded:
+                values.append(dvals)
                 values.append([np.NaN])
-            elif not expand and len(dvals):
-                values[-1] = dvals[0]
+            else:
+                values.append(dvals)
         if not values:
             return np.array()
         elif expanded:
             return np.concatenate(values[:-1])
         else:
-            return np.array(values)
+            return np.concatenate(values)
 
     @classmethod
-    def split(cls, dataset, start, end):
+    def split(cls, dataset, start, end, datatype, **kwargs):
         """
         Splits a multi-interface Dataset into regular Datasets using
         regular tabular interfaces.
         """
         objs = []
-        for d in dataset.data[start: end]:
-            objs.append(dataset.clone(d, datatype=cls.subtypes))
+        if datatype is None:
+            for d in dataset.data[start: end]:
+                objs.append(dataset.clone(d, datatype=cls.subtypes))
+            return objs
+        ds = cls._inner_dataset_template(dataset)
+        for d in dataset.data:
+            ds.data = d
+            if datatype == 'array':
+                obj = ds.array(**kwargs)
+            elif datatype == 'dataframe':
+                obj = ds.dframe(**kwargs)
+            elif datatype == 'columns':
+                if ds.interface.datatype == 'dictionary':
+                    obj = dict(d)
+                else:
+                    obj = ds.columns(**kwargs)
+            else:
+                raise ValueError("%s datatype not support" % datatype)
+            objs.append(obj)
         return objs
 
 
