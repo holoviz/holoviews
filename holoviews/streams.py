@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+import math
 
 import param
 import numpy as np
@@ -397,9 +398,13 @@ class DataFrameStream(DataStream):
     StreamingDataFrame to a HoloViews stream. The stream will accumulate
     a DataFrame up to the specified ``backlog`` of rows. The accumulated
     dataframe is then made available via the ``data`` parameter.
+
+    Optionally a chunksize may be supplied which will split received
+    data into smaller chunks resulting in smoother plot updates when
+    large numbers of samples are received.
     """
 
-    def __init__(self, sdf, backlog=1000, **params):
+    def __init__(self, sdf, backlog=1000, chunksize=None, **params):
         try:
             from streamz.dataframe import StreamingDataFrame, StreamingSeries
         except ImportError:
@@ -417,7 +422,23 @@ class DataFrameStream(DataStream):
         self.backlog = backlog
         self._chunk_length = 0
         self._count = 0
+        self._chunksize = chunksize
         sdf.stream.sink(self.send)
+
+
+    def event(self, **kwargs):
+        """
+        Update the stream parameters and trigger an event.
+        """
+        data = kwargs.get('data')
+        if data is not None and self._chunksize is not None:
+            for i in range(math.ceil(len(data)/self._chunksize)):
+                chunk = data.iloc[i*self._chunksize:(i+1)*self._chunksize]
+                self.update(data=chunk)
+                self.trigger([self])
+        else:
+            self.update(**kwargs)
+            self.trigger([self])
 
 
     def update(self, **kwargs):
