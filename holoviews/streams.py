@@ -4,6 +4,8 @@ generate and respond to events, originating either in Python on the
 server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
+import uuid
+
 import param
 import numpy as np
 from numbers import Number
@@ -296,6 +298,15 @@ class Stream(param.Parameterized):
         return {self._rename.get(k,k):v for (k,v) in filtered.items()
                 if (self._rename.get(k,True) is not None)}
 
+    @property
+    def hashkey(self):
+        """
+        The object the memoization hash is computed from. By default
+        returns the stream contents but can be overridden to provide
+        a custom hash key.
+        """
+        return self.contents
+
 
     def _set_stream_parameters(self, **kwargs):
         """
@@ -352,6 +363,34 @@ class Counter(Stream):
         return {'counter': self.counter + 1}
 
 
+class StreamData(Stream):
+    """
+    A Stream used to pipe arbitrary data to a callback.
+    Unlike other streams memoization can be disabled for a
+    StreamData stream (and is disabled by default).
+    """
+
+    data = param.Parameter(default=None, constant=True, doc="""
+        Arbitrary data being streamed to a DynamicMap callback.""")
+
+    def __init__(self, memoize=False, **params):
+        super(StreamData, self).__init__(**params)
+        self._memoize = memoize
+
+    def send(self, data):
+        """
+        A convenience method to send an event with data without
+        supplying a keyword.
+        """
+        self.event(data=data)
+
+    @property
+    def hashkey(self):
+        if self._memoize:
+            return self.contents
+        return {'hash': uuid.uuid4().hex}
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
@@ -404,11 +443,11 @@ class PointerXY(LinkedStream):
     the plot bounds, the position values are set to None.
     """
 
-    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
+    x = param.ClassSelector(class_=(Number, util.basestring, tuple), default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
+    y = param.ClassSelector(class_=(Number, util.basestring, tuple), default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 

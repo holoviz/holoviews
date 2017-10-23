@@ -1,3 +1,4 @@
+import uuid
 from collections import deque
 import time
 
@@ -571,6 +572,35 @@ class DynamicStreamReset(ComparisonTestCase):
 
         self.assertEqual(xresets, 2)
         self.assertEqual(yresets, 2)
+
+    def test_dynamic_callable_stream_hashkey(self):
+        # Enable transient stream meaning memoization only happens when
+        # stream is inactive, should have sample for each call to
+        # stream.update
+        def history_callback(x, history=deque(maxlen=10)):
+            if x is not None:
+                history.append(x)
+            return Curve(list(history))
+
+        class NoMemoize(PointerX):
+            @property
+            def hashkey(self): return {'hash': uuid.uuid4().hex}
+
+        x = NoMemoize()
+        dmap = DynamicMap(history_callback, kdims=[], streams=[x])
+
+        # Add stream subscriber mocking plot
+        x.add_subscriber(lambda **kwargs: dmap[()])
+
+        for i in range(2):
+            x.event(x=1)
+        self.assertEqual(dmap[()], Curve([1, 1, 1]))
+
+        for i in range(2):
+            x.event(x=2)
+
+        self.assertEqual(dmap[()], Curve([1, 1, 1, 2, 2, 2]))
+
 
 
 class TestPeriodicStreamUpdate(ComparisonTestCase):
