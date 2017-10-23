@@ -104,6 +104,8 @@ class MultiInterface(Interface):
         """
         Tests if dimension is scalar in each subpath.
         """
+        if not dataset.data:
+            return True
         ds = cls._inner_dataset_template(dataset)
         isscalar = []
         for d in dataset.data:
@@ -117,6 +119,8 @@ class MultiInterface(Interface):
         """
         Applies selectiong on all the subpaths.
         """
+        if not self.dataset.data:
+            return []
         ds = cls._inner_dataset_template(dataset)
         data = []
         for d in dataset.data:
@@ -231,6 +235,8 @@ class MultiInterface(Interface):
         if datatype is None:
             for d in dataset.data[start: end]:
                 objs.append(dataset.clone(d, datatype=cls.subtypes))
+            return objs
+        elif not dataset.data:
             return objs
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:

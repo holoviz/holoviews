@@ -60,20 +60,38 @@ class MultiInterfaceTest(ComparisonTestCase):
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(len(mds), 5)
 
+    def test_multi_empty_length(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(len(mds), 0)
+
     def test_multi_array_range(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.range(0), (0, 2))
+
+    def test_multi_empty_range(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        low, high = mds.range(0)
+        self.assertFalse(np.isfinite(np.NaN))
+        self.assertFalse(np.isfinite(np.NaN))
 
     def test_multi_array_shape(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.shape, (5, 2))
 
+    def test_multi_empty_shape(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(mds.shape, (0, 2))
+
     def test_multi_array_values(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
         mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
         self.assertEqual(mds.dimension_values(0), np.array([0., 1, np.NaN, 1, 2]))
+
+    def test_multi_empty_array_values(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(mds.dimension_values(0), np.array([]))
 
     def test_multi_array_values_coordinates_nonexpanded(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
@@ -104,3 +122,13 @@ class MultiInterfaceTest(ComparisonTestCase):
         error = "Following dimensions not found in data: \['y'\]"
         with self.assertRaisesRegexp(ValueError, error):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+
+    def test_multi_split(self):
+        arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]
+        mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+        for arr1, arr2 in zip(mds.split(datatype='array'), arrays):
+            self.assertEqual(arr1, arr2)
+
+    def test_multi_split_empty(self):
+        mds = Path([], kdims=['x', 'y'], datatype=['multitabular'])
+        self.assertEqual(len(mds.split()), 0)
