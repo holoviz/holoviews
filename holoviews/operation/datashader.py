@@ -30,7 +30,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
-from ..core.util import get_param_values, basestring
+from ..core.util import get_param_values, basestring, datetime_types
 from ..element import Image, Path, Curve, Contours, RGB, Graph
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
@@ -123,13 +123,17 @@ class ResamplingOperation(Operation):
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
-        if not np.isfinite(xstart) and not np.isfinite(xend):
+        if isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
+            xstart, xend = int(xstart) / 1000000., int(xend) / 1000000.
+        elif not np.isfinite(xstart) and not np.isfinite(xend):
             xstart, xend = 0, 1
         elif xstart == xend:
             xstart, xend = (xstart-0.5, xend+0.5)
         x_range = (xstart, xend)
 
-        if not np.isfinite(ystart) and not np.isfinite(yend):
+        if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
+            ystart, yend = int(ystart) / 1000000., int(yend) / 1000000.
+        elif not np.isfinite(ystart) and not np.isfinite(yend):
             ystart, yend = 0, 1
         elif ystart == yend:
             ystart, yend = (ystart-0.5, yend+0.5)
@@ -234,10 +238,12 @@ class aggregate(ResamplingOperation):
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
+        if any(df[d.name].dtype.kind == 'M' for d in (x, y)):
+            df = df.copy()
         for d in (x, y):
             if df[d.name].dtype.kind == 'M':
-                param.main.warning('Casting %s dimension data to integer; '
-                                   'datashader cannot process datetime data', d)
+                #param.main.warning('Casting %s dimension data to integer; '
+                #                   'datashader cannot process datetime data', d)
                 df[d.name] = df[d.name].astype('int64') / 1000000.
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
