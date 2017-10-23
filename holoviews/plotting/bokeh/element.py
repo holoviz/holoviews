@@ -22,7 +22,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...streams import Stream
+from ...streams import Stream, StreamDataFrame
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
@@ -164,6 +164,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _x_range_type = Range1d
     _y_range_type = Range1d
 
+    # Whether the plot supports streaming data
+    _stream_data = True
+
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
@@ -171,6 +174,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
         self.static_source = False
+        dfstream = [s for s in self.streams if isinstance(s, StreamDataFrame)]
+        self.streaming = dfstream[0] if any(dfstream) else None
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
@@ -552,9 +557,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
-        if not self.drawn or (not self.model_changed(x_range) and framewise) or xfactors:
+        if not self.drawn or (not self.model_changed(x_range) and framewise or self.streaming) or xfactors:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
-        if not self.drawn or (not self.model_changed(y_range) and framewise) or yfactors:
+        if not self.drawn or (not self.model_changed(y_range) and framewise or self.streaming) or yfactors:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
 
 
@@ -832,7 +837,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if hasattr(renderer, 'visible'):
             renderer.visible = bool(element)
 
-        if (self.batched and not element) or element is None or (not self.dynamic and self.static):
+        if ((self.batched and not element) or element is None or (not self.dynamic and self.static) or
+            (self.streaming and self.streaming.data is self.current_frame.data
+             and not self.streaming._triggering)):
             return
 
         if self.batched:

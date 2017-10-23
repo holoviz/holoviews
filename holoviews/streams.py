@@ -391,6 +391,57 @@ class StreamData(Stream):
         return {'hash': uuid.uuid4().hex}
 
 
+class StreamDataFrame(StreamData):
+    """
+    StreamDataFrame provides an adaptor to attach streamz
+    StreamingDataFrame to a HoloViews stream. The stream will accumulate
+    a DataFrame up to the specified ``backlog`` of rows. The accumulated
+    dataframe is then made available via the ``data`` parameter.
+    """
+
+    def __init__(self, sdf, backlog=1000, **params):
+        try:
+            from streamz.dataframe import StreamingDataFrame, StreamingSeries
+        except ImportError:
+            raise ImportError("StreamDataFrame requires streamz library to be available")
+        if isinstance(sdf, StreamingSeries):
+            sdf = sdf.to_frame()
+        elif not isinstance(sdf, StreamingDataFrame):
+            raise ValueError("StreamDataFrame must be instantiated with a "
+                             "streamz.StreamingDataFrame or streamz.StreamingSeries")
+
+        if 'data' not in params:
+            params['data'] = sdf.example.reset_index()
+        super(StreamDataFrame, self).__init__(**params)
+        self.sdf = sdf
+        self.backlog = backlog
+        self._chunk_length = 0
+        self._count = 0
+        sdf.stream.sink(self.send)
+
+
+    def update(self, **kwargs):
+        """
+        Overrides update to concatenate streamed data up to backlog.
+        """
+        data = kwargs.get('data')
+        if data is not None:
+            data_length = len(data)
+            data = data.reset_index()
+            if data_length < self.backlog:
+                prev_chunk = self.data.iloc[-(self.backlog-data_length):]
+                data = util.pd.concat([prev_chunk, data])
+            self._chunk_length = data_length
+            kwargs['data'] = data
+            self._count += 1
+        super(StreamDataFrame, self).update(**kwargs)
+
+
+    @property
+    def hashkey(self):
+        return {'hash': self._count}
+
+
 class LinkedStream(Stream):
     """
     A LinkedStream indicates is automatically linked to plot interactions
