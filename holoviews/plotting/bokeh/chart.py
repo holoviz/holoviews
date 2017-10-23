@@ -1068,12 +1068,15 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
-            qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
-            iqr = q3 - q1
-            upper = min(q3 + 1.5*iqr, vals.max())
-            lower = max(q1 - 1.5*iqr, vals.min())
+            if len(vals):
+                qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
+                iqr = q3 - q1
+                upper = min(q3 + 1.5*iqr, vals.max())
+                lower = max(q1 - 1.5*iqr, vals.min())
+            else:
+                qmin, q1, q2, q3, qmax = 0, 0, 0, 0, 0
+                lower, upper = 0, 0
             outliers = vals[(vals>upper) | (vals<lower)]
-
             # Add to CDS data
             for data in [r1_data, r2_data, w1_data, w2_data]:
                 data['index'].append(label)
