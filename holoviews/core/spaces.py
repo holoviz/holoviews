@@ -839,7 +839,7 @@ class DynamicMap(HoloMap):
         # Additional validation needed to ensure kwargs don't clash
         kdims = [kdim.name for kdim in self.kdims]
         kwarg_items = [s.contents.items() for s in self.streams]
-        hash_items = [s.hashkey.items() for s in self.streams]
+        hash_items = tuple(tuple(sorted(s.hashkey.items())) for s in self.streams)
         flattened = [(k,v) for kws in kwarg_items for (k,v) in kws
                      if k not in kdims]
 
