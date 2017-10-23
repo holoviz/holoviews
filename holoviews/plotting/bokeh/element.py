@@ -22,7 +22,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...streams import Stream, StreamDataFrame
+from ...streams import Stream, DataFrameStream
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
@@ -174,7 +174,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
         self.static_source = False
-        dfstream = [s for s in self.streams if isinstance(s, StreamDataFrame)]
+        dfstream = [s for s in self.streams if isinstance(s, DataFrameStream)]
         self.streaming = dfstream[0] if any(dfstream) else None
 
         # Whether axes are shared between plots
@@ -1235,7 +1235,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
-                          'title_format', 'legend_position', 'legend_offset']
+                          'title_format', 'legend_position', 'legend_offset',
+                          'legend_cols']
 
     def _process_legend(self):
         plot = self.handles['plot']

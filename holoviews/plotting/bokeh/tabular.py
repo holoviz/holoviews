@@ -5,7 +5,7 @@ import param
 import numpy as np
 from ...core import Dataset
 from ...element import ItemTable
-from ...streams import StreamDataFrame
+from ...streams import DataFrameStream
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 
@@ -24,13 +24,15 @@ class TablePlot(BokehPlot, GenericElementPlot):
         The hook is passed the plot object and the displayed
         object, and other plotting handles can be accessed via plot.handles.""")
 
+    _stream_data = True
+
     def __init__(self, element, plot=None, **params):
         super(TablePlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = [] # Callback support on tables not implemented
-        dfstream = [s for s in self.streams if isinstance(s, StreamDataFrame)]
+        dfstream = [s for s in self.streams if isinstance(s, DataFrameStream)]
         self.streaming = dfstream[0] if any(dfstream) else None
 
 

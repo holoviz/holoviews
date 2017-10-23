@@ -363,18 +363,18 @@ class Counter(Stream):
         return {'counter': self.counter + 1}
 
 
-class StreamData(Stream):
+class DataStream(Stream):
     """
     A Stream used to pipe arbitrary data to a callback.
     Unlike other streams memoization can be disabled for a
-    StreamData stream (and is disabled by default).
+    DataStream stream (and is disabled by default).
     """
 
     data = param.Parameter(default=None, constant=True, doc="""
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, memoize=False, **params):
-        super(StreamData, self).__init__(**params)
+        super(DataStream, self).__init__(**params)
         self._memoize = memoize
 
     def send(self, data):
@@ -391,9 +391,9 @@ class StreamData(Stream):
         return {'hash': uuid.uuid4().hex}
 
 
-class StreamDataFrame(StreamData):
+class DataFrameStream(DataStream):
     """
-    StreamDataFrame provides an adaptor to attach streamz
+    DataFrameStream provides an adaptor to attach streamz
     StreamingDataFrame to a HoloViews stream. The stream will accumulate
     a DataFrame up to the specified ``backlog`` of rows. The accumulated
     dataframe is then made available via the ``data`` parameter.
@@ -403,16 +403,16 @@ class StreamDataFrame(StreamData):
         try:
             from streamz.dataframe import StreamingDataFrame, StreamingSeries
         except ImportError:
-            raise ImportError("StreamDataFrame requires streamz library to be available")
+            raise ImportError("DataFrameStream requires streamz library to be available")
         if isinstance(sdf, StreamingSeries):
             sdf = sdf.to_frame()
         elif not isinstance(sdf, StreamingDataFrame):
-            raise ValueError("StreamDataFrame must be instantiated with a "
+            raise ValueError("DataFrameStream must be instantiated with a "
                              "streamz.StreamingDataFrame or streamz.StreamingSeries")
 
         if 'data' not in params:
             params['data'] = sdf.example.reset_index()
-        super(StreamDataFrame, self).__init__(**params)
+        super(DataFrameStream, self).__init__(**params)
         self.sdf = sdf
         self.backlog = backlog
         self._chunk_length = 0
@@ -434,7 +434,7 @@ class StreamDataFrame(StreamData):
             self._chunk_length = data_length
             kwargs['data'] = data
             self._count += 1
-        super(StreamDataFrame, self).update(**kwargs)
+        super(DataFrameStream, self).update(**kwargs)
 
 
     @property
