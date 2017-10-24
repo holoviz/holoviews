@@ -599,11 +599,11 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    border = param.Integer(default=30, doc="Default borders on plot")
+    border = param.Integer(default=5, doc="Default borders on plot")
 
-    height = param.Integer(default=100, doc="Height of plot")
+    height = param.Integer(default=50, doc="Height of plot")
 
-    width = param.Integer(default=100, doc="Width of plot")
+    width = param.Integer(default=50, doc="Width of plot")
 
 
 
