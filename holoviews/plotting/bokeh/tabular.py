@@ -24,8 +24,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         The hook is passed the plot object and the displayed
         object, and other plotting handles can be accessed via plot.handles.""")
 
-    _update_handles = ['source', 'glyph']
-
     def __init__(self, element, plot=None, **params):
         super(TablePlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
@@ -82,24 +80,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.drawn = True
 
         return table
-
-
-    @property
-    def current_handles(self):
-        """
-        Returns a list of the plot objects to update.
-        """
-        handles = []
-        if self.static and not self.dynamic:
-            return handles
-
-        element = self.current_frame
-        for handle in self._update_handles:
-            if (handle == 'source' and self.static_source):
-                continue
-            if handle in self.handles:
-                handles.append(self.handles[handle])
-        return handles
 
 
     def update_frame(self, key, ranges=None, plot=None):
