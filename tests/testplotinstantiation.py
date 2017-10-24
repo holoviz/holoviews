@@ -423,23 +423,6 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertFalse(subplot1.handles['glyph_renderer'].visible)
         self.assertTrue(subplot2.handles['glyph_renderer'].visible)
 
-    def test_static_source_optimization_not_skipping_new_element(self):
-        global data
-        data = np.ones((5, 5))
-        def get_img(test):
-            global data
-            data *= test
-            return Image(data)
-        stream = Stream.define(str('Test'), test=1)()
-        dmap = DynamicMap(get_img, streams=[stream])
-        plot = bokeh_renderer.get_plot(dmap, doc=Document())
-        source = plot.handles['source']
-        self.assertEqual(source.data['image'][0].mean(), 1)
-        stream.event(test=2)
-        self.assertFalse(plot.static_source)
-        self.assertEqual(source.data['image'][0].mean(), 2)
-        self.assertIn(source, plot.current_handles)
-
     def test_static_source_optimization(self):
         global data
         data = np.ones((5, 5))
