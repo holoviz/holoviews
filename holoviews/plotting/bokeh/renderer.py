@@ -23,8 +23,7 @@ from .util import attach_periodic, compute_plot_size
 from bokeh.io.notebook import (load_notebook, publish_display_data,
                                JS_MIME_TYPE, LOAD_MIME_TYPE, EXEC_MIME_TYPE)
 from bokeh.protocol import Protocol
-from bokeh.embed import notebook_content
-from bokeh.embed.notebook import encode_utf8
+from bokeh.embed.notebook import encode_utf8, notebook_content
 
 NOTEBOOK_DIV = """
 {plot_div}
