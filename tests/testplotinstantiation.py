@@ -19,7 +19,7 @@ from holoviews.core.util import pd
 from holoviews.element import (Curve, Scatter, Image, VLine, Points,
                                HeatMap, QuadMesh, Spikes, ErrorBars,
                                Scatter3D, Path, Polygons, Bars, Text,
-                               BoxWhisker, HLine, RGB, Raster)
+                               BoxWhisker, HLine, RGB, Raster, Contours)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Stream, PointerXY, PointerX
 from holoviews.operation import gridmatrix
@@ -872,6 +872,30 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         source = plot.handles['source']
         self.assertEqual(len(source.data['xs']), 0)
         self.assertEqual(len(source.data['ys']), 0)
+
+    def test_empty_path_plot(self):
+        path = Path([], vdims=['Intensity']).opts(plot=dict(color_index=2))
+        plot = bokeh_renderer.get_plot(path)
+        source = plot.handles['source']
+        self.assertEqual(len(source.data['xs']), 0)
+        self.assertEqual(len(source.data['ys']), 0)
+        self.assertEqual(len(source.data['Intensity']), 0)
+
+    def test_empty_contours_plot(self):
+        contours = Contours([], vdims=['Intensity'])
+        plot = bokeh_renderer.get_plot(contours)
+        source = plot.handles['source']
+        self.assertEqual(len(source.data['xs']), 0)
+        self.assertEqual(len(source.data['ys']), 0)
+        self.assertEqual(len(source.data['Intensity']), 0)
+
+    def test_empty_polygons_plot(self):
+        poly = Polygons([], vdims=['Intensity'])
+        plot = bokeh_renderer.get_plot(poly)
+        source = plot.handles['source']
+        self.assertEqual(len(source.data['xs']), 0)
+        self.assertEqual(len(source.data['ys']), 0)
+        self.assertEqual(len(source.data['Intensity']), 0)
 
     def test_side_histogram_no_cmapper(self):
         points = Points(np.random.rand(100, 2))
