@@ -1279,7 +1279,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
-    style_opts = legend_dimensions + line_properties + text_properties
+    style_opts = legend_dimensions + ['border_'+p for p in line_properties] + text_properties
 
     _update_handles = ['source']
 
@@ -1298,9 +1298,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         options = {}
         properties = self.lookup_options(self.hmap.last, 'style')[self.cyclic_index]
         for k, v in properties.items():
-            if k in line_properties:
-                k = 'border_' + k
-            elif k in text_properties:
+            if k in line_properties and 'line' not in k:
+                ksplit = k.split('_')
+                k = '_'.join(ksplit[:1]+'line'+ksplit[1:])
+            if k in text_properties:
                 k = 'label_' + k
             options[k] = v
 
