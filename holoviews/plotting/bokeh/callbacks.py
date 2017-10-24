@@ -8,7 +8,6 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
-from .util import bokeh_version
 
 
 
@@ -307,7 +306,7 @@ class CustomJSCallback(MessageCallback):
         code and gathering all plotting handles and installs it on
         the requested callback handle.
         """
-        if self.on_events and bokeh_version >= '0.12.5':
+        if self.on_events:
             for event in self.on_events:
                 handle.js_on_event(event, js_callback)
         elif self.on_changes:

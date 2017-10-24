@@ -7,7 +7,6 @@ from ...core import Dataset
 from ...element import ItemTable
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
-from .util import bokeh_version
 
 
 class TablePlot(BokehPlot, GenericElementPlot):
@@ -70,8 +69,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
         dims = element.dimensions()
         columns = [TableColumn(field=d.name, title=d.pprint_label) for d in dims]
-        if bokeh_version > '0.12.7':
-            style['reorderable'] = False
+        style['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **style)
         self.handles['plot'] = table

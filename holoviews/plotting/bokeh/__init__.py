@@ -198,12 +198,11 @@ options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
                              xaxis=None, yaxis=None)
 
-if bokeh_version >= '0.12.5':
-    options.Overlay = Options('style', click_policy='mute')
-    options.NdOverlay = Options('style', click_policy='mute')
-    options.Curve = Options('style', muted_alpha=0.2)
-    options.Path = Options('style', muted_alpha=0.2)
-    options.Scatter = Options('style', muted_alpha=0.2)
-    options.Points = Options('style', muted_alpha=0.2)
-    options.Polygons = Options('style', muted_alpha=0.2)
+options.Overlay = Options('style', click_policy='mute')
+options.NdOverlay = Options('style', click_policy='mute')
+options.Curve = Options('style', muted_alpha=0.2)
+options.Path = Options('style', muted_alpha=0.2)
+options.Scatter = Options('style', muted_alpha=0.2)
+options.Points = Options('style', muted_alpha=0.2)
+options.Polygons = Options('style', muted_alpha=0.2)
 

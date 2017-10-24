@@ -15,14 +15,10 @@ from ...element import Histogram
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot)
 from ..util import attach_streams
-from .util import (bokeh_version, layout_padding, pad_plots,
-                   filter_toolboxes, make_axis, update_shared_sources,
-                   empty_plot)
+from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
+                   update_shared_sources, empty_plot)
 
-if bokeh_version >= '0.12':
-    from bokeh.layouts import gridplot
-else:
-    from bokeh.models import GridPlot as BokehGridPlot
+from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
@@ -113,19 +109,15 @@ class BokehPlot(DimensionedPlot):
         if self.comm is None:
             raise Exception('Renderer does not have a comm.')
 
-        if bokeh_version > '0.12.9':
-            msg = self.renderer.diff(self, binary=True)
-            if msg is None:
-                return
-            self.comm.send(msg.header_json)
-            self.comm.send(msg.metadata_json)
-            self.comm.send(msg.content_json)
-            for header, payload in msg.buffers:
-                self.comm.send(json.dumps(header))
-                self.comm.send(buffers=[payload])
-        else:
-            diff = self.renderer.diff(self)
-            self.comm.send(diff)
+        msg = self.renderer.diff(self, binary=True)
+        if msg is None:
+            return
+        self.comm.send(msg.header_json)
+        self.comm.send(msg.metadata_json)
+        self.comm.send(msg.content_json)
+        for header, payload in msg.buffers:
+            self.comm.send(json.dumps(header))
+            self.comm.send(buffers=[payload])
 
 
     def set_root(self, root):
@@ -425,11 +417,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 passed_plots.append(None)
 
-        if bokeh_version < '0.12':
-            plot = BokehGridPlot(children=plots[::-1])
-        else:
-            plot = gridplot(plots[::-1])
-
+        plot = gridplot(plots[::-1])
         plot = self._make_axes(plot)
 
         title = self._get_title(self.keys[-1])
@@ -724,16 +712,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                       for c, child in enumerate(row)
                       if child is not None]
             layout_plot = Tabs(tabs=panels)
-        elif bokeh_version >= '0.12':
+        else:
             plots = filter_toolboxes(plots)
             plots, width = pad_plots(plots)
             layout_plot = gridplot(children=plots, width=width, **kwargs)
-        elif len(plots) == 1 and not adjoined:
-            layout_plot = Column(children=[Row(children=plots[0])], **kwargs)
-        elif len(plots[0]) == 1:
-            layout_plot = Column(children=[p[0] for p in plots], **kwargs)
-        else:
-            layout_plot = BokehGridPlot(children=plots, **kwargs)
 
         title = self._get_title(self.keys[-1])
         if title:
