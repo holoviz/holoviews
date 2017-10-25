@@ -224,21 +224,23 @@ class extension(param.ParameterizedFunction):
         selected_backend = None
         for backend, imp in imports:
             try:
+                module = __import__(backend)
+            except:
+                self.warning("%s is not available, ensure %s is installed "
+                             "to activate %s extension." % (backend, backend))
+            try:
                 __import__('holoviews.plotting.%s' % imp)
                 if selected_backend is None:
                     selected_backend = backend
+            except util.VersionError as e:
+                self.warning("HoloViews %s extension could not be loaded. "
+                             "The installed %s version %s is less than "
+                             "the required version %s." %
+                             (backend, backend, e.version, e.min_version))
             except Exception as e:
-                if backend in args:
-                    args.pop(args.index(backend))
-                if backend in params:
-                    params.pop(backend)
-                if isinstance(e, ImportError):
-                    self.warning("HoloViews %s backend could not be imported, "
-                                 "ensure %s is installed." % (backend, backend))
-                else:
-                    self.warning("Holoviews %s backend could not be imported, "
-                                 "it raised the following exception: %s('%s')" %
-                                 (backend, type(e).__name__, e))
+                self.warning("Holoviews %s extension could not be imported, "
+                             "it raised the following exception: %s('%s')" %
+                             (backend, type(e).__name__, e))
             finally:
                 Store.output_settings.allowed['backend'] = list_backends()
                 Store.output_settings.allowed['fig'] = list_formats('fig', backend)

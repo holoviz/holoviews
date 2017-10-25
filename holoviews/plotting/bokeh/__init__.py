@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
+from distutils.version import LooseVersion
+
 import numpy as np
+import bokeh
 from bokeh.palettes import all_palettes
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
@@ -12,6 +15,12 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths)
 from ...core.options import Options, Cycle, Palette
+from ...core.util import VersionError
+
+if LooseVersion(bokeh.__version__) < '0.12.10':
+    raise VersionError("The bokeh extension requires a bokeh version >=0.12.10, "
+                       "please upgrade from bokeh %s to a more recent version."
+                       % bokeh.__version__, bokeh.__version__, '0.12.10')
 
 try:
     from ...interface import DFrame
