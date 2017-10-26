@@ -13,7 +13,7 @@ from ...core.options import abbreviated_exception, SkipRendering
 from ...core.util import basestring, dimension_sanitizer
 from .chart import ColorbarPlot, PointPlot
 from .element import CompositeElementPlot, LegendPlot, line_properties, fill_properties, property_prefixes
-from .util import mpl_to_bokeh, bokeh_version
+from .util import mpl_to_bokeh
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
@@ -44,11 +44,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     style_opts = (['edge_'+p for p in line_properties] +\
                   ['node_'+p for p in fill_properties+line_properties]+['node_size', 'cmap'])
-
-    def initialize_plot(self, ranges=None, plot=None, plots=None):
-        if bokeh_version < '0.12.7':
-            raise SkipRendering('Graph rendering requires bokeh version >=0.12.7.')
-        return super(GraphPlot, self).initialize_plot(ranges, plot, plots)
 
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':

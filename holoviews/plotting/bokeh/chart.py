@@ -16,7 +16,7 @@ from ..util import compute_sizes, get_min_distance, dim_axis_label
 from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
                       line_properties, fill_properties)
 from .path import PathPlot, PolygonPlot
-from .util import bokeh_version, expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
+from .util import expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
 
 
 class PointPlot(LegendPlot, ColorbarPlot):
@@ -599,14 +599,11 @@ class SideSpikesPlot(SpikesPlot):
         all axis labels including ticks and ylabel. Valid options are 'left',
         'right', 'bare' 'left-bare' and 'right-bare'.""")
 
-    border = param.Integer(default=30 if bokeh_version < '0.12' else 5,
-                           doc="Default borders on plot")
+    border = param.Integer(default=5, doc="Default borders on plot")
 
-    height = param.Integer(default=100 if bokeh_version < '0.12' else 50,
-                           doc="Height of plot")
+    height = param.Integer(default=50, doc="Height of plot")
 
-    width = param.Integer(default=100 if bokeh_version < '0.12' else 50,
-                          doc="Width of plot")
+    width = param.Integer(default=50, doc="Width of plot")
 
 
 
@@ -694,15 +691,12 @@ class BarPlot(ColorbarPlot, LegendPlot):
         xvals = element.dimension_values(0, False)
         xvals = [x if xvals.dtype.kind in 'SU' else xdim.pprint_value(x)
                  for x in xvals]
-        if bokeh_version >= '0.12.7':
-            if gdim and not sdim:
-                gvals = element.dimension_values(gdim, False)
-                gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
-                coords = ([(x, g) for x in xvals for g in gvals], [])
-            else:
-                coords = (xvals, [])
+        if gdim and not sdim:
+            gvals = element.dimension_values(gdim, False)
+            gvals = [g if gvals.dtype.kind in 'SU' else gdim.pprint_value(g) for g in gvals]
+            coords = ([(x, g) for x in xvals for g in gvals], [])
         else:
-            coords = ([x.replace(':', ';') for x in xvals], [])
+            coords = (xvals, [])
         if self.invert_axes: coords = coords[::-1]
         return coords
 
@@ -716,27 +710,9 @@ class BarPlot(ColorbarPlot, LegendPlot):
             element = element.last
         xlabel = dim_axis_label(element.kdims[0])
         gdim = element.get_dimension(self.group_index)
-        if bokeh_version >= '0.12.7' and gdim and gdim in element.kdims:
+        if gdim and gdim in element.kdims:
             xlabel = ', '.join([xlabel, dim_axis_label(gdim)])
         return (xlabel, dim_axis_label(element.vdims[0]), None)
-
-    def get_group(self, xvals, nshift, ngroups, width, xdim):
-        """
-        Adjust x-value positions on categorical axes to stop
-        x-axis overlapping. Currently bokeh uses a suffix
-        of the format ':%f' with a floating value to set up
-        offsets within a single category.
-
-        Needed for bokeh version <0.12.7
-        """
-        adjusted_xvals = []
-        gwidth = float(width)/ngroups
-        offset = (1.-width)/2. + gwidth/2.
-        for x in xvals:
-            adjustment = (offset+nshift/float(ngroups)*width)
-            xcat = xdim.pprint_value(x).replace(':',';')
-            adjusted_xvals.append(xcat+':%.4f' % adjustment)
-        return adjusted_xvals
 
     def get_stack(self, xvals, yvals, baselines, sign='positive'):
         """
@@ -810,12 +786,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             mapping = {'x': xdim.name, 'top': 'top',
                        'bottom': 'bottom', 'width': width}
         elif grouping == 'grouped':
-            if len(grouped) and bokeh_version < '0.12.7':
-                gwidth = width / float(len(grouped))
-            else:
-                gwidth = width
             mapping = {'x': 'xoffsets', 'top': ydim.name, 'bottom': bottom,
-                       'width': gwidth}
+                       'width': width}
         else:
             mapping = {'x': xdim.name, 'top': ydim.name, 'bottom': bottom, 'width': width}
 
@@ -845,8 +817,6 @@ class BarPlot(ColorbarPlot, LegendPlot):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
-                if bokeh_version < '0.12.7':
-                    gval = gval.replace(':', ';')
 
             # Apply stacking or grouping
             if grouping == 'stacked':
@@ -863,11 +833,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
-                if bokeh_version >= '0.12.7':
-                    xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
-                                for x in xs]
-                else:
-                    xoffsets = self.get_group(xs, i, len(grouped), width, xdim)
+                xoffsets = [(x if xs.dtype.kind in 'SU' else xdim.pprint_value(x), gval)
+                            for x in xs]
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
@@ -995,14 +962,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if not element.kdims:
             xfactors, yfactors =  [element.label], []
         else:
-            if bokeh_version < '0.12.7':
-                factors = [', '.join([d.pprint_value(v).replace(':', ';')
-                                      for d, v in zip(element.kdims, key)])
-                           for key in element.groupby(element.kdims).data.keys()]
-            else:
-                factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
-                           for key in element.groupby(element.kdims).data.keys()]
-                factors = [f[0] if len(f) == 1 else f for f in factors]
+            factors = [tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
+                       for key in element.groupby(element.kdims).data.keys()]
+            factors = [f[0] if len(f) == 1 else f for f in factors]
             xfactors, yfactors = factors, []
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
@@ -1044,13 +1006,9 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         for key, g in groups.items():
             # Compute group label
             if element.kdims:
-                if bokeh_version < '0.12.7':
-                    label = ', '.join([d.pprint_value(v).replace(':', ';')
-                                       for d, v in zip(element.kdims, key)])
-                else:
-                    label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
-                    if len(label) == 1:
-                        label = label[0]
+                label = tuple(d.pprint_value(v) for d, v in zip(element.kdims, key))
+                if len(label) == 1:
+                    label = label[0]
             else:
                 label = key
 

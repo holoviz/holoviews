@@ -13,7 +13,9 @@ except ImportError:
 
 import param
 import bokeh
-bokeh_version = LooseVersion(bokeh.__version__)
+
+bokeh_version = LooseVersion(bokeh.__version__)  # noqa
+
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
@@ -24,10 +26,7 @@ from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 
 try:
-    if bokeh_version > '0.12.5':
-        from bkcharts import Chart
-    else:
-        from bokeh.charts import Chart
+    from bkcharts import Chart
 except:
     Chart = type(None) # Create stub for isinstance check
 
@@ -518,10 +517,7 @@ def categorize_array(array, dim):
     (i.e. string) values and applies escaping for colons, which bokeh
     treats as a categorical suffix.
     """
-    categories = [dim.pprint_value(x) for x in array]
-    if bokeh_version < '0.12.7':
-        categories = [cat.replace(':', ';') for cat in categories]
-    return np.array(categories)
+    return np.array([dim.pprint_value(x) for x in array])
 
 
 class periodic(object):

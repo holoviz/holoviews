@@ -1,6 +1,9 @@
 from __future__ import absolute_import
 
+from distutils.version import LooseVersion
+
 import numpy as np
+import bokeh
 from bokeh.palettes import all_palettes
 
 from ...core import (Store, Overlay, NdOverlay, Layout, AdjointLayout,
@@ -12,6 +15,12 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths)
 from ...core.options import Options, Cycle, Palette
+from ...core.util import VersionError
+
+if LooseVersion(bokeh.__version__) < '0.12.10':
+    raise VersionError("The bokeh extension requires a bokeh version >=0.12.10, "
+                       "please upgrade from bokeh %s to a more recent version."
+                       % bokeh.__version__, bokeh.__version__, '0.12.10')
 
 try:
     from ...interface import DFrame
@@ -198,12 +207,11 @@ options.EdgePaths = Options('plot', tools=['hover', 'tap'])
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
                              xaxis=None, yaxis=None)
 
-if bokeh_version >= '0.12.5':
-    options.Overlay = Options('style', click_policy='mute')
-    options.NdOverlay = Options('style', click_policy='mute')
-    options.Curve = Options('style', muted_alpha=0.2)
-    options.Path = Options('style', muted_alpha=0.2)
-    options.Scatter = Options('style', muted_alpha=0.2)
-    options.Points = Options('style', muted_alpha=0.2)
-    options.Polygons = Options('style', muted_alpha=0.2)
+options.Overlay = Options('style', click_policy='mute')
+options.NdOverlay = Options('style', click_policy='mute')
+options.Curve = Options('style', muted_alpha=0.2)
+options.Path = Options('style', muted_alpha=0.2)
+options.Scatter = Options('style', muted_alpha=0.2)
+options.Points = Options('style', muted_alpha=0.2)
+options.Polygons = Options('style', muted_alpha=0.2)
 

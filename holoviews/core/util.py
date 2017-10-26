@@ -46,6 +46,13 @@ except ImportError:
     dd = None
 
 
+class VersionError(Exception):
+    "Raised when there is a library version mismatch."
+    def __init__(self, msg, version=None, min_version=None, **kwargs):
+        self.version = version
+        self.min_version = min_version
+        super(VersionError, self).__init__(msg, **kwargs)
+
 
 class Config(param.ParameterizedFunction):
     """

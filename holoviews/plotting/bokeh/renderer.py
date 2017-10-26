@@ -18,17 +18,12 @@ from ..comms import JupyterComm, Comm
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import attach_periodic, bokeh_version, compute_plot_size
+from .util import attach_periodic, compute_plot_size
 
-if bokeh_version > '0.12.9':
-    from bokeh.io.notebook import (load_notebook, publish_display_data,
-                                   JS_MIME_TYPE, LOAD_MIME_TYPE, EXEC_MIME_TYPE)
-    from bokeh.protocol import Protocol
-    from bokeh.embed import notebook_content
-    from bokeh.embed.notebook import encode_utf8
-else:
-    from bokeh.io import load_notebook
-    from bokeh.embed import notebook_div
+from bokeh.io.notebook import (load_notebook, publish_display_data,
+                               JS_MIME_TYPE, LOAD_MIME_TYPE, EXEC_MIME_TYPE)
+from bokeh.protocol import Protocol
+from bokeh.embed.notebook import encode_utf8, notebook_content
 
 NOTEBOOK_DIV = """
 {plot_div}
@@ -93,16 +88,8 @@ class BokehRenderer(Renderer):
         elif isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
         elif fmt == 'png':
-            if bokeh_version < '0.12.6':
-                raise RuntimeError('Bokeh png export only supported by versions >=0.12.6.')
-            elif bokeh_version > '0.12.9':
-                from bokeh.io.export import get_screenshot_as_png
-            else:
-                from bokeh.io import _get_screenshot_as_png as get_screenshot_as_png
-            if bokeh_version > '0.12.6':
-                img = get_screenshot_as_png(plot.state, None)
-            else:
-                img = get_screenshot_as_png(plot.state)
+            from bokeh.io.export import get_screenshot_as_png
+            img = get_screenshot_as_png(plot.state, None)
             imgByteArr = BytesIO()
             img.save(imgByteArr, format='PNG')
             return imgByteArr.getvalue(), info
@@ -184,7 +171,7 @@ class BokehRenderer(Renderer):
         from tornado.ioloop import IOLoop
         loop = IOLoop.current()
         opts = dict(allow_websocket_origin=[websocket_origin]) if websocket_origin else {}
-        opts['io_loop' if bokeh_version > '0.12.7' else 'loop'] = loop
+        opts['io_loop'] = loop
         server = Server({'/': app}, port=0, **opts)
         def show_callback():
             server.show('/')
@@ -232,13 +219,10 @@ class BokehRenderer(Renderer):
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
         try:
-            if bokeh_version > '0.12.9':
-                js, div, _ = notebook_content(model, comm_id)
-                html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-                div = encode_utf8(html)
-                doc.hold()
-            else:
-                div = notebook_div(model, comm_id)
+            js, div, _ = notebook_content(model, comm_id)
+            html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
+            div = encode_utf8(html)
+            doc.hold()
         except:
             logger.disabled = False
             raise
@@ -307,11 +291,6 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        kwargs = {'notebook_type': 'jupyter'} if '0.12.9' >= bokeh_version > '0.12.5' else {}
-        load_notebook(hide_banner=True, resources=INLINE if inline else CDN, **kwargs)
-        if bokeh_version <= '0.12.9':
-            from bokeh.io import _state
-            _state.output_notebook()
-        else:
-            from bokeh.io.notebook import curstate
-            curstate().output_notebook()
+        from bokeh.io.notebook import curstate
+        load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
+        curstate().output_notebook()

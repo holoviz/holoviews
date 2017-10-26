@@ -7,7 +7,7 @@ import bokeh
 import bokeh.plotting
 from bokeh import palettes
 from bokeh.core.properties import value
-from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange
+from bokeh.models import  HoverTool, Renderer, Range1d, DataRange1d, FactorRange, FuncTickFormatter
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -25,14 +25,8 @@ from ...streams import Stream
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
-from .util import (mpl_to_bokeh, get_tab_title, bokeh_version,
-                   mplcmap_to_palette, py2js_tickformatter, rgba_tuple,
-                   recursive_model_update)
-
-if bokeh_version >= '0.12':
-    from bokeh.models import FuncTickFormatter
-else:
-    FuncTickFormatter = None
+from .util import (mpl_to_bokeh, get_tab_title, mplcmap_to_palette,
+                   py2js_tickformatter, rgba_tuple, recursive_model_update)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -391,10 +385,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             properties['tools'] = tools
         properties['toolbar_location'] = self.toolbar
 
-        if bokeh_version < '0.12.6':
-            properties['webgl'] = self.renderer.webgl
-        elif self.renderer.webgl:
-            properties['output_backend'] =  'webgl'
+        if self.renderer.webgl:
+            properties['output_backend'] = 'webgl'
 
         with warnings.catch_warnings():
             # Bokeh raises warnings about duplicate tools but these
@@ -413,8 +405,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         plot_props = dict(plot_height=int(self.height*size_multiplier),
                           plot_width=int(self.width*size_multiplier),
                           sizing_mode=self.sizing_mode)
-        if bokeh_version < '0.12':
-            plot_props.update(self._title_properties(key, plot, element))
         if self.bgcolor:
             plot_props['background_fill_color'] = self.bgcolor
         if self.border is not None:
@@ -432,15 +422,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         else:
             title = ''
 
-        if bokeh_version < '0.12':
-            title_font = self._fontsize('title', 'title_text_font_size')
-            return dict(title=title, title_text_color='black', **title_font)
-        else:
-            opts = dict(text=title, text_color='black')
-            title_font = self._fontsize('title').get('fontsize')
-            if title_font:
-                opts['text_font_size'] = value(title_font)
-            return opts
+        opts = dict(text=title, text_color='black')
+        title_font = self._fontsize('title').get('fontsize')
+        if title_font:
+            opts['text_font_size'] = value(title_font)
+        return opts
 
     def _init_axes(self, plot):
         if self.xaxis is None:
@@ -496,11 +482,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                     labels = [l if isinstance(l, util.basestring) else str(l)
                               for l in labels]
                     axis_props['ticker'] = FixedTicker(ticks=ticks)
-                    if bokeh_version > '0.12.5':
-                        axis_props['major_label_overrides'] = dict(zip(ticks, labels))
-                    else:
-                        self.warning('Explicit tick labels not supported until'
-                                     'bokeh 0.12.6, please upgrade')
+                    axis_props['major_label_overrides'] = dict(zip(ticks, labels))
                 else:
                     axis_props['ticker'] = FixedTicker(ticks=ticker)
 
@@ -539,7 +521,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
-        if bokeh_version >= '0.12' and not self.overlaid:
+        if not self.overlaid:
             plot.title.update(**self._title_properties(key, plot, element))
 
         if not self.show_grid:
@@ -620,8 +602,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                         for i in range(2)]
         coords = tuple([v if vals.dtype.kind in 'SU' else dim.pprint_value(v) for v in vals]
                   for dim, vals in [(xdim, xvals), (ydim, yvals)])
-        if bokeh_version < '0.12.7':
-            coords = tuple([v.replace(':', ';') for v in vals] for vals in coords)
         if self.invert_axes: coords = coords[::-1]
         return coords
 
@@ -631,10 +611,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Disables legends if show_legend is disabled.
         """
         for l in self.handles['plot'].legend:
-            if bokeh_version > '0.12.2':
-                l.items[:] = []
-            else:
-                l.legends[:] = []
+            l.items[:] = []
             l.border_line_alpha = 0
             l.background_fill_alpha = 0
 
@@ -1263,22 +1240,13 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             plot.legend.location = self.legend_position
         plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
         new_legends = []
-        if bokeh_version > '0.12.2':
-            legends = plot.legend[0].items
-            for item in legends:
-                if item.label in legend_labels:
-                    continue
-                legend_labels.append(item.label)
-                new_legends.append(item)
-            plot.legend[0].items[:] = new_legends
-        else:
-            legends = plot.legend[0].legends
-            for label, l in legends:
-                if label in legend_labels:
-                    continue
-                legend_labels.append(label)
-                new_legends.append((label, l))
-            plot.legend[0].legends[:] = new_legends
+        legends = plot.legend[0].items
+        for item in legends:
+            if item.label in legend_labels:
+                continue
+            legend_labels.append(item.label)
+            new_legends.append(item)
+        plot.legend[0].items[:] = new_legends
         if self.legend_position in self.legend_specs:
             legend = plot.legend[0]
             plot.legend[:] = []
