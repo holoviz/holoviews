@@ -424,7 +424,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
             if isinstance(low, datetime_types):
-                halfd = np.timedelta64(int(halfd), self._time_unit)
+                halfd = np.timedelta64(int(round(halfd)), self._time_unit)
             return (low-halfd, high+halfd)
         else:
             return super(Image, self).range(dim, data_range)
