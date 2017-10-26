@@ -34,8 +34,8 @@ class ImageInterface(GridInterface):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
             xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
-            l, r, xdensity, invertx = util.bound_range(xs, None)
-            b, t, ydensity, inverty = util.bound_range(ys, None)
+            l, r, xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
+            b, t, ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
             if len(vdims) == 1:
                 data = np.flipud(np.asarray(data[vdims[0].name]))

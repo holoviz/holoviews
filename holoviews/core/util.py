@@ -1497,7 +1497,7 @@ def is_nan(x):
         return False
 
 
-def bound_range(vals, density):
+def bound_range(vals, density, time_unit='us'):
     """
     Computes a bounding range and density from a number of samples
     assumed to be evenly spaced. Density is rounded to machine precision
@@ -1510,13 +1510,15 @@ def bound_range(vals, density):
     if not density:
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in double_scalars')
-            full_precision_density = 1./((high-low)/(len(vals)-1))
+            full_precision_density = compute_density(low, high, len(vals)-1)
             density = round(full_precision_density, sys.float_info.dig)
         if density == 0:
             density = full_precision_density
     if density == 0:
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
+    if isinstance(low, datetime_types):
+        halfd = np.timedelta64(int(halfd), time_unit)
     return low-halfd, high+halfd, density, invert
 
 
@@ -1531,7 +1533,7 @@ def compute_density(start, end, length, time_unit='us'):
     diff = end-start
     if isinstance(diff, timedelta_types):
         if isinstance(diff, np.timedelta64):
-            diff = diff.tolist()
+            diff = np.timedelta64(diff, 'us').tolist()
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
         return (length/(diff.total_seconds()*tscale))
     else:
@@ -1559,4 +1561,6 @@ def dt_to_int(value, time_unit='us'):
         value = value.to_pydatetime()
     elif isinstance(value, np.datetime64):
         value = value.tolist()
-    return int(value.timestamp() * tscale)
+    if isinstance(value, int):
+        return value * 10e-4
+    return int(value.timestamp()) * tscale

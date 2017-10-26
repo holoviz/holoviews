@@ -236,9 +236,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
             xvals = self.dimension_values(0, False)
-            l, r, xdensity, _ = util.bound_range(xvals, xdensity)
+            l, r, xdensity, _ = util.bound_range(xvals, xdensity, self._time_unit)
             yvals = self.dimension_values(1, False)
-            b, t, ydensity, _ = util.bound_range(yvals, ydensity)
+            b, t, ydensity, _ = util.bound_range(yvals, ydensity, self._time_unit)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
