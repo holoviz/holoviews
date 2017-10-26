@@ -30,7 +30,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
-from ..core.util import get_param_values, basestring, datetime_types
+from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
 from ..element import Image, Path, Curve, Contours, RGB, Graph
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
@@ -123,16 +123,20 @@ class ResamplingOperation(Operation):
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
+        xtype = 'numeric'
         if isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
-            xstart, xend = int(xstart) / 1000000., int(xend) / 1000000.
+            xstart, xend = dt_to_int(xstart), dt_to_int(xend)
+            xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
             xstart, xend = 0, 1
         elif xstart == xend:
             xstart, xend = (xstart-0.5, xend+0.5)
         x_range = (xstart, xend)
 
+        ytype = 'numeric'
         if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
-            ystart, yend = int(ystart) / 1000000., int(yend) / 1000000.
+            ystart, yend = dt_to_int(ystart), dt_to_int(yend)
+            ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             ystart, yend = 0, 1
         elif ystart == yend:
@@ -150,7 +154,7 @@ class ResamplingOperation(Operation):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        return (x_range, y_range), (xs, ys), (width, height)
+        return (x_range, y_range), (xs, ys), (width, height), (xtype, ytype)
 
 
 
@@ -242,9 +246,7 @@ class aggregate(ResamplingOperation):
             df = df.copy()
         for d in (x, y):
             if df[d.name].dtype.kind == 'M':
-                #param.main.warning('Casting %s dimension data to integer; '
-                #                   'datashader cannot process datetime data', d)
-                df[d.name] = df[d.name].astype('int64') / 1000000.
+                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
@@ -261,7 +263,7 @@ class aggregate(ResamplingOperation):
         """
         # Compute overall bounds
         x, y = element.last.dimensions()[0:2]
-        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
         agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
 
@@ -330,7 +332,7 @@ class aggregate(ResamplingOperation):
             return self._aggregate_ndoverlay(element, agg_fn)
 
         x, y, data, glyph = self.get_agg_data(element, category)
-        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         if x is None or y is None:
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
@@ -354,6 +356,10 @@ class aggregate(ResamplingOperation):
         agg = getattr(cvs, glyph)(dfdata, x.name, y.name, self.p.aggregator)
         if 'x_axis' in agg and 'y_axis' in agg:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
+        if xtype == 'datetime':
+            agg[x.name] = agg[x.name].astype('datetime64[us]')
+        if ytype == 'datetime':
+            agg[y.name] = agg[y.name].astype('datetime64[us]')
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
@@ -413,7 +419,7 @@ class regrid(ResamplingOperation):
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
         x, y = element.kdims
-        (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), _, (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         coords = tuple(element.dimension_values(d, expanded=False)
                        for d in [x, y])
@@ -571,6 +577,10 @@ class shade(Operation):
             shade_opts['span'] = self.p.clims
         elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
+
+        for d in kdims:
+            if array[d.name].dtype.kind == 'M':
+                array[d.name] = array[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')
