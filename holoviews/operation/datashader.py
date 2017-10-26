@@ -110,7 +110,7 @@ class ResamplingOperation(Operation):
                 else:
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
-                    x_range = max([x0, ex0]), min([x1, ex1])
+                    x_range = np.max([x0, ex0]), np.min([x1, ex1])
                 if x_range[0] == x_range[1]:
                     x_range = (x_range[0]-0.5, x_range[0]+0.5)
                     
@@ -119,7 +119,7 @@ class ResamplingOperation(Operation):
                 else:
                     y0, y1 = self.p.y_range
                     ey0, ey1 = element.range(y)
-                    y_range = max([y0, ey0]), min([y1, ey1])
+                    y_range = np.max([y0, ey0]), np.min([y1, ey1])
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
@@ -429,9 +429,15 @@ class regrid(ResamplingOperation):
         for vd in element.vdims:
             if element.interface is XArrayInterface:
                 xarr = element.data[vd.name]
+                if 'datetime' in (xtype, ytype):
+                    xarr = xarr.copy()
             else:
                 arr = element.dimension_values(vd, flat=False)
                 xarr = xr.DataArray(arr, coords=coord_dict, dims=dims)
+            if xtype == "datetime":
+                xarr[x.name] = [dt_to_int(v) for v in xarr[x.name].values]
+            if ytype == "datetime":
+                xarr[y.name] = [dt_to_int(v) for v in xarr[y.name].values]
             arrays.append(xarr)
 
         # Disable upsampling if requested
@@ -439,6 +445,10 @@ class regrid(ResamplingOperation):
         xspan, yspan = (xend-xstart), (yend-ystart)
         if not self.p.upsample and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
+            if isinstance(x0, datetime_types):
+                x0, x1 = dt_to_int(x0), dt_to_int(x1)
+            if isinstance(y0, datetime_types):
+                y0, y1 = dt_to_int(y0), dt_to_int(y1)
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
             height = min([int((yspan/eyspan) * len(coords[1])), height])
@@ -450,14 +460,14 @@ class regrid(ResamplingOperation):
         for xarr in arrays:
             rarray = cvs.raster(xarr, upsample_method=self.p.interpolation,
                                 downsample_method=self.p.aggregator)
+            if xtype == "datetime":
+                rarray[x.name] = rarray[x.name].astype('datetime64[us]')
+            if ytype == "datetime":
+                rarray[y.name] = rarray[y.name].astype('datetime64[us]')
             regridded.append(rarray)
 
         regridded = xr.Dataset({vd.name: xarr for vd, xarr in zip(element.vdims, regridded)})
-        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
-        xd = float(width) / xspan
-        yd = float(height) / yspan
-        return element.clone(regridded, datatype=['xarray'], bounds=bbox,
-                             xdensity=xd, ydensity=yd)
+        return element.clone(regridded, datatype=['xarray'])
 
 
 
