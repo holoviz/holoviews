@@ -10,7 +10,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS
-
+from .util import convert_timestamp
 
 
 class MessageCallback(object):
@@ -549,9 +549,9 @@ class PointerXYCallback(Callback):
         xaxis = self.plot.handles.get('xaxis')
         yaxis = self.plot.handles.get('yaxis')
         if 'x' in msg and isinstance(xaxis, DatetimeAxis):
-            msg['x'] = dt.datetime.fromtimestamp(msg['x']/1000.)
+            msg['x'] = convert_timestamp(msg['x'])
         if 'y' in msg and isinstance(yaxis, DatetimeAxis):
-            msg['y'] = dt.datetime.fromtimestamp(msg['y']/1000.)
+            msg['y'] = convert_timestamp(msg['y'])
         return msg
 
 
@@ -665,16 +665,16 @@ class RangeXYCallback(Callback):
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
             if isinstance(self.plot.handles['xaxis'], DatetimeAxis):
-                x0 = dt.datetime.fromtimestamp(x0/1000.)
-                x1 = dt.datetime.fromtimestamp(x1/1000.)
+                x0 = convert_timestamp(x0)
+                x1 = convert_timestamp(x1)
             if self.plot.invert_xaxis:
                 x0, x1 = x1, x0
             data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
             y0, y1 = msg['y0'], msg['y1']
             if isinstance(self.plot.handles['yaxis'], DatetimeAxis):
-                y0 = dt.datetime.fromtimestamp(y0/1000.)
-                y1 = dt.datetime.fromtimestamp(y1/1000.)
+                y0 = convert_timestamp(y0)
+                y1 = convert_timestamp(y1)
             if self.plot.invert_yaxis:
                 y0, y1 = y1, y0
             data['y_range'] = (y0, y1)
