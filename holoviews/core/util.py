@@ -1516,3 +1516,14 @@ def bound_range(vals, density):
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
     return low-halfd, high+halfd, density, invert
+
+
+def compute_density(start, end, length, time_unit='us'):
+    if isinstance(start, int): start = float(start)
+    if isinstance(end, int): end = float(end)
+    diff = end-start
+    if isinstance(diff, np.timedelta64):
+        tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
+        return (length/(diff.tolist().total_seconds()*tscale))
+    else:
+        return length/diff

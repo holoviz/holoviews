@@ -104,12 +104,12 @@ class ImageInterface(GridInterface):
             if dim_idx:
                 halfd = (1./obj.ydensity)/2.
                 if isinstance(b, np.datetime64):
-                    halfd = np.timedelta(halfd, obj._time_unit)
+                    halfd = np.timedelta64(int(halfd), obj._time_unit)
                 drange = (b+halfd, t-halfd)
             else:
                 halfd = (1./obj.xdensity)/2.
                 if isinstance(l, np.datetime64):
-                    halfd = np.timedelta(halfd, obj._time_unit)
+                    halfd = np.timedelta64(int(halfd), obj._time_unit)
                 drange = (l+halfd, r-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
@@ -129,13 +129,13 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1]:
             l, b, r, t = dataset.bounds.lbrt()
             dim2, dim1 = dataset.data.shape[:2]
-            xstep = (1./dataset.xdensity)
+            xstep = (1./util.compute_density(l, r, dim1, dataset._time_unit))
             if isinstance(l, np.datetime64):
                 xstep = np.timedelta64(int(xstep), dataset._time_unit)
                 xlin = l+np.arange(dim1)*xstep
             else:
                 xlin = np.linspace(l+(xstep/2.), r-(xstep/2.), dim1)
-            ystep = 1./dataset.ydensity
+            ystep = (1./util.compute_density(b, t, dim2, dataset._time_unit))
             if isinstance(b, np.datetime64):
                 ystep = np.timedelta64(int(ystep), dataset._time_unit)
                 ylin = b+np.arange(dim2)*ystep

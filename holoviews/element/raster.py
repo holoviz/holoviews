@@ -8,10 +8,10 @@ from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import max_range, dimension_range
+from ..core.util import max_range, dimension_range, compute_density
 from .chart import Curve
 from .tabular import Table
-from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d, compute_density
+from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
 
 
 class Raster(Element2D):
@@ -423,6 +423,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 return (b, t) if idx else (l, r)
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
+            if isinstance(low, np.datetime64):
+                halfd = np.timedelta64(int(halfd), self._time_unit)
             return (low-halfd, high+halfd)
         else:
             return super(Image, self).range(dim, data_range)

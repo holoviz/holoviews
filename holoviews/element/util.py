@@ -27,17 +27,6 @@ except:
     xr = None
 
 
-def compute_density(start, end, length, time_unit='us'):
-    if isinstance(start, int): start = float(start)
-    if isinstance(end, int): end = float(end)
-    diff = end-start
-    if isinstance(diff, np.timedelta64):
-        tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
-        return (length/(diff.tolist().total_seconds()*tscale))
-    else:
-        return length/diff
-
-
 def compute_edges(edges):
     """
     Computes edges from a number of bin centers,
