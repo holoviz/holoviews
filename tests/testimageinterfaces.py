@@ -1,9 +1,11 @@
+import datetime as dt
 from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset, Table
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.core.util import date_range
 
 from .testdataset import DatatypeContext
 
@@ -25,12 +27,52 @@ class ImageInterfaceTest(ComparisonTestCase):
     def tearDown(self):
         self.eltype.datatype = self.restore_datatype
 
+    def test_init_data_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        image = Image(np.flipud(self.array), bounds=(start, 0, end, 10))
+
+    def test_init_data_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        image = Image(np.flipud(self.array), bounds=(-10, start, 10, end))
+
     def test_init_bounds(self):
         self.assertEqual(self.image.bounds.lbrt(), (-10, 0, 10, 10))
+
+    def test_init_bounds_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (start, 0, end, 10)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.bounds.lbrt(), bounds)
+
+    def test_init_bounds_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (-10, start, 10, end)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.bounds.lbrt(), bounds)
 
     def test_init_densities(self):
         self.assertEqual(self.image.xdensity, 0.5)
         self.assertEqual(self.image.ydensity, 1)
+
+    def test_init_densities_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (start, 0, end, 10)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.xdensity, 1e-5)
+        self.assertEqual(image.ydensity, 1)
+
+    def test_init_densities_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (-10, start, 10, end)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.xdensity, 0.5)
+        self.assertEqual(image.ydensity, 1e-5)
 
     def test_dimension_values_xs(self):
         self.assertEqual(self.image.dimension_values(0, expanded=False),
@@ -55,11 +97,29 @@ class ImageInterfaceTest(ComparisonTestCase):
         self.assertEqual(sliced.dimension_values(2, flat=False),
                          self.array[:, 5:8])
 
+    def test_slice_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (start, 0, end, 10)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[:, 5:8])
+
     def test_slice_yaxis(self):
         sliced = self.image[:, 1.2:5.2]
         self.assertEqual(sliced.bounds.lbrt(), (-10, 1., 10, 5))
         self.assertEqual(sliced.xdensity, 0.5)
         self.assertEqual(sliced.ydensity, 1)
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[1:5, :])
+
+    def test_slice_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (-10, start, 10, end)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
         self.assertEqual(sliced.dimension_values(2, flat=False),
                          self.array[1:5, :])
 
@@ -90,8 +150,22 @@ class ImageInterfaceTest(ComparisonTestCase):
     def test_range_xdim(self):
         self.assertEqual(self.image.range(0), (-10, 10))
 
+    def test_range_datetime_xdim(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (start, 0, end, 10)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.range(0), (start, end))
+
     def test_range_ydim(self):
         self.assertEqual(self.image.range(1), (0, 10))
+
+    def test_range_datetime_ydim(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (-10, start, 10, end)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.range(1), (start, end))
 
     def test_range_vdim(self):
         self.assertEqual(self.image.range(2), (0, 81))
@@ -99,6 +173,14 @@ class ImageInterfaceTest(ComparisonTestCase):
     def test_dimension_values_xcoords(self):
         self.assertEqual(self.image.dimension_values(0, expanded=False),
                          np.linspace(-9, 9, 10))
+
+    def test_dimension_values_datetime_xcoords(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        bounds = (start, 0, end, 10)
+        image = Image(np.flipud(self.array), bounds=bounds)
+        self.assertEqual(image.dimension_values(0, expanded=False),
+                         date_range(start, end, 10))
 
     def test_dimension_values_ycoords(self):
         self.assertEqual(self.image.dimension_values(1, expanded=False),
@@ -183,6 +265,93 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.image = Image((self.xs, self.ys, self.array))
         self.image_inv = Image((self.xs[::-1], self.ys[::-1], self.array[::-1, ::-1]))
 
+    def test_init_data_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+
+    def test_init_data_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+
+    def test_init_bounds_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        self.assertEqual(image.bounds.lbrt(), (start, 0, end, 10))
+
+    def test_init_bounds_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        self.assertEqual(image.bounds.lbrt(), (-10, start, 10, end))
+
+    def test_init_densities_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        self.assertEqual(image.xdensity, 1e-5)
+        self.assertEqual(image.ydensity, 1)
+
+    def test_init_densities_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        self.assertEqual(image.xdensity, 0.5)
+        self.assertEqual(image.ydensity, 1e-5)
+
+    def test_range_datetime_xdim(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        self.assertEqual(image.range(0), (start, end))
+
+    def test_range_datetime_ydim(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        self.assertEqual(image.range(1), (start, end))
+
+    def test_dimension_values_datetime_xcoords(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        self.assertEqual(image.dimension_values(0, expanded=False), xs)
+
+    def test_dimension_values_datetime_ycoords(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        self.assertEqual(image.dimension_values(1, expanded=False), ys)
+
+    def test_slice_datetime_xaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        sliced = image[start+np.timedelta64(530, 'ms'): start+np.timedelta64(770, 'ms')]
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[:, 5:8])
+
+    def test_slice_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
+        self.assertEqual(sliced.dimension_values(2, flat=False),
+                         self.array[1:5, :])
 
     def test_slice_xaxis_inv(self):
         sliced = self.image_inv[0.3:5.2]
@@ -239,9 +408,47 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
     def init_data(self):
         xs = np.linspace(-9, 9, 10)
         ys = np.linspace(0.5, 9.5, 10)
+        self.xs = xs
+        self.ys = ys
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
         self.image = Image((xs, ys, self.array))
         self.image_inv = Image((xs[::-1], ys[::-1], self.array[::-1, ::-1]))
+
+    def test_init_data_datetime_xaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_init_data_datetime_yaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_init_bounds_datetime_xaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_init_bounds_datetime_yaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_init_densities_datetime_xaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_init_densities_datetime_yaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_range_datetime_xdim(self):
+        raise SkipTest("Not supported")
+
+    def test_range_datetime_ydim(self):
+        raise SkipTest("Not supported")
+
+    def test_dimension_values_datetime_xcoords(self):
+        raise SkipTest("Not supported")
+
+    def test_dimension_values_datetime_ycoords(self):
+        raise SkipTest("Not supported")
+
+    def test_slice_datetime_xaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_slice_datetime_yaxis(self):
+        raise SkipTest("Not supported")
 
     def test_reduce_to_scalar(self):
         raise SkipTest("Not supported")
