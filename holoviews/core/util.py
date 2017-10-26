@@ -29,6 +29,7 @@ except:
    import builtins as builtins   # noqa (compatibility)
 
 datetime_types = (np.datetime64, dt.datetime)
+timedelta_types = (np.timedelta64, dt.timedelta,)
 
 try:
     import pandas as pd
@@ -37,6 +38,7 @@ try:
     else:
         from pandas.types.dtypes import DatetimeTZDtypeType
     datetime_types = datetime_types + (pd.Timestamp, DatetimeTZDtypeType)
+    timedelta_types = timedelta_types + (pd.Timedelta,)
 except ImportError:
     pd = None
 
@@ -1519,11 +1521,42 @@ def bound_range(vals, density):
 
 
 def compute_density(start, end, length, time_unit='us'):
+    """
+    Computes a grid density given the edges and number of samples.
+    Handles datetime grids correctly by computing timedeltas and
+    computing a density for the given time_unit.
+    """
     if isinstance(start, int): start = float(start)
     if isinstance(end, int): end = float(end)
     diff = end-start
-    if isinstance(diff, np.timedelta64):
+    if isinstance(diff, timedelta_types):
+        if isinstance(diff, np.timedelta64):
+            diff = diff.tolist()
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
-        return (length/(diff.tolist().total_seconds()*tscale))
+        return (length/(diff.total_seconds()*tscale))
     else:
         return length/diff
+
+
+def date_range(start, end, length, time_unit='us'):
+    """
+    Computes a date range given a start date, end date and the number
+    of samples.
+    """
+    step = (1./compute_density(start, end, length, time_unit))
+    if pd and isinstance(start, pd.Timestamp):
+        start = start.to_datetime64()
+    step = np.timedelta64(int(step), time_unit)
+    return start+step/2.+np.arange(length)*step
+
+
+def dt_to_int(value, time_unit='us'):
+    """
+    Converts a datetime type to an integer with the supplied time unit.
+    """
+    tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
+    if pd and isinstance(value, pd.Timestamp):
+        value = value.to_pydatetime()
+    elif isinstance(value, np.datetime64):
+        value = value.tolist()
+    return int(value.timestamp() * tscale)

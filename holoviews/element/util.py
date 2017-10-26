@@ -8,7 +8,7 @@ from ..core.boundingregion import BoundingBox
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (is_nan, sort_topologically, one_to_one,
-                         cartesian_product, is_cyclic)
+                         cartesian_product, is_cyclic, datetime_types)
 
 try:
     import pandas as pd
@@ -75,9 +75,9 @@ def compute_slice_bounds(slices, scs, shape):
     xdensity, ydensity = scs.xdensity, scs.ydensity
     xunit = (1./xdensity)
     yunit = (1./ydensity)
-    if isinstance(l, np.datetime64):
+    if isinstance(l, datetime_types):
         xunit = np.timedelta64(int(xunit), scs._time_unit)
-    if isinstance(b, np.datetime64):
+    if isinstance(b, datetime_types):
         yunit = np.timedelta64(int(yunit), scs._time_unit)
     if isinstance(xidx, slice):
         l = l if xidx.start is None else max(l, xidx.start)

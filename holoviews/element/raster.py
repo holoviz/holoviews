@@ -8,7 +8,7 @@ from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import max_range, dimension_range, compute_density
+from ..core.util import max_range, dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
@@ -423,7 +423,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 return (b, t) if idx else (l, r)
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
-            if isinstance(low, np.datetime64):
+            if isinstance(low, datetime_types):
                 halfd = np.timedelta64(int(halfd), self._time_unit)
             return (low-halfd, high+halfd)
         else:

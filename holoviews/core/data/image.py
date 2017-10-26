@@ -102,15 +102,15 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1] and obj.bounds:
             l, b, r, t = obj.bounds.lbrt()
             if dim_idx:
-                halfd = (1./obj.ydensity)/2.
-                if isinstance(b, np.datetime64):
-                    halfd = np.timedelta64(int(halfd), obj._time_unit)
-                drange = (b+halfd, t-halfd)
+                (low, high) = (b, t)
+                density = obj.ydensity
             else:
-                halfd = (1./obj.xdensity)/2.
-                if isinstance(l, np.datetime64):
-                    halfd = np.timedelta64(int(halfd), obj._time_unit)
-                drange = (l+halfd, r-halfd)
+                low, high = (l, r)
+                density = obj.xdensity
+            halfd = (1./density)/2.
+            if isinstance(low, util.datetime_types):
+                halfd = np.timedelta64(int(halfd), obj._time_unit)
+            drange = (low+halfd, high-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
             data = np.atleast_3d(obj.data)[:, :, dim_idx]
@@ -129,17 +129,15 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1]:
             l, b, r, t = dataset.bounds.lbrt()
             dim2, dim1 = dataset.data.shape[:2]
-            xstep = (1./util.compute_density(l, r, dim1, dataset._time_unit))
-            if isinstance(l, np.datetime64):
-                xstep = np.timedelta64(int(xstep), dataset._time_unit)
-                xlin = l+np.arange(dim1)*xstep
+            if isinstance(l, util.datetime_types):
+                xlin = util.date_range(l, r, dim1, dataset._time_unit)
             else:
+                xstep = float(r - l)/dim1
                 xlin = np.linspace(l+(xstep/2.), r-(xstep/2.), dim1)
-            ystep = (1./util.compute_density(b, t, dim2, dataset._time_unit))
-            if isinstance(b, np.datetime64):
-                ystep = np.timedelta64(int(ystep), dataset._time_unit)
-                ylin = b+np.arange(dim2)*ystep
+            if isinstance(b, util.datetime_types):
+                ylin = util.date_range(b, t, dim2, dataset._time_unit)
             else:
+                ystep = float(t - b)/dim2
                 ylin = np.linspace(b+(ystep/2.), t-(ystep/2.), dim2)
             if expanded:
                 values = np.meshgrid(ylin, xlin)[abs(dim_idx-1)]

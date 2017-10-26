@@ -77,6 +77,7 @@ outside of the actual matrix.
 
 import numpy as np
 from .boundingregion import BoundingBox
+from .util import datetime_types
 
 
 # Note about the 'bounds-master' approach we have adopted
@@ -221,12 +222,12 @@ class SheetCoordinateSystem(object):
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
         xdensity = 1./self.__xdensity
-        if isinstance(x, np.datetime64):
+        if isinstance(x, datetime_types):
             xdensity = np.timedelta64(int(xdensity), self._time_unit)
         float_col = (x-self.lbrt[0]) / xdensity
 
         ydensity = 1./self.__ydensity
-        if isinstance(y, np.datetime64):
+        if isinstance(y, datetime_types):
             ydensity = np.timedelta64(int(ydensity), self._time_unit)
         float_row = (self.lbrt[3]-y) / ydensity
 
@@ -267,11 +268,11 @@ class SheetCoordinateSystem(object):
         Inverse of sheet2matrix().
         """
         xoffset = float_col*self.__xstep
-        if isinstance(self.lbrt[0], np.datetime64):
+        if isinstance(self.lbrt[0], datetime_types):
             xoffset = np.timedelta64(int(xoffset), self._time_unit)
-        x = xoffset + self.lbrt[0]
+        x = self.lbrt[0] + xoffset
         yoffset = float_row*self.__ystep
-        if isinstance(self.lbrt[3], np.datetime64):
+        if isinstance(self.lbrt[3], datetime_types):
             yoffset = np.timedelta64(int(yoffset), self._time_unit)
         y = self.lbrt[3] - yoffset
         return x, y
@@ -293,9 +294,9 @@ class SheetCoordinateSystem(object):
         x,y = self.matrix2sheet((row+0.5), (col+0.5))
 
         # Rounding allows easier comparison with user specified values
-        if not isinstance(x, np.datetime64):
+        if not isinstance(x, datetime_types):
             x = np.around(x,10)
-        if not isinstance(y, np.datetime64):
+        if not isinstance(y, datetime_types):
             y = np.around(y,10)
         return x, y
 
