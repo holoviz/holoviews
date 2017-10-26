@@ -1565,4 +1565,9 @@ def dt_to_int(value, time_unit='us'):
         # Handle special case of nanosecond precision which cannot be
         # represented by python datetime
         return value * 10**-(np.log10(tscale)-3)
-    return int(value.timestamp()) * tscale
+    try:
+        # Handle python3
+        return int(value.timestamp() * tscale)
+    except:
+        # Handle python2
+        return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
