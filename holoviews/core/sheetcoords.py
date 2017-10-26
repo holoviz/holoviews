@@ -221,15 +221,19 @@ class SheetCoordinateSystem(object):
         # then scale to the size of the matrix. The y coordinate needs
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
-        xdensity = 1./self.__xdensity
+        xdensity = self.__xdensity
         if isinstance(x, datetime_types):
-            xdensity = np.timedelta64(int(xdensity), self._time_unit)
-        float_col = (x-self.lbrt[0]) / xdensity
+            xdensity = np.timedelta64(int(1./xdensity), self._time_unit)
+            float_col = (x-self.lbrt[0]) / xdensity
+        else:
+            float_col = (x-self.lbrt[0]) * xdensity
 
-        ydensity = 1./self.__ydensity
+        ydensity = self.__ydensity
         if isinstance(y, datetime_types):
-            ydensity = np.timedelta64(int(ydensity), self._time_unit)
-        float_row = (self.lbrt[3]-y) / ydensity
+            ydensity = np.timedelta64(int(1./ydensity), self._time_unit)
+            float_row = (self.lbrt[3]-y) / ydensity
+        else:
+            float_row = (self.lbrt[3]-y) * ydensity
 
         return float_row, float_col
 
