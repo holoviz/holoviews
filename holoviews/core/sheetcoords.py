@@ -137,6 +137,8 @@ class SheetCoordinateSystem(object):
 
     shape = property(__get_shape)
 
+    # Determines the unit of time densities are defined relative to
+    # when one or both axes are datetime types
     _time_unit = 'us'
 
     def __init__(self,bounds,xdensity,ydensity=None):

@@ -1518,7 +1518,7 @@ def bound_range(vals, density, time_unit='us'):
         raise ValueError('Could not determine Image density, ensure it has a non-zero range.')
     halfd = 0.5/density
     if isinstance(low, datetime_types):
-        halfd = np.timedelta64(round(halfd), time_unit)
+        halfd = np.timedelta64(int(round(halfd)), time_unit)
     return low-halfd, high+halfd, density, invert
 
 
@@ -1533,7 +1533,7 @@ def compute_density(start, end, length, time_unit='us'):
     diff = end-start
     if isinstance(diff, timedelta_types):
         if isinstance(diff, np.timedelta64):
-            diff = np.timedelta64(diff, 'us').tolist()
+            diff = np.timedelta64(diff, time_unit).tolist()
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
         return (length/(diff.total_seconds()*tscale))
     else:
