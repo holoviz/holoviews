@@ -516,10 +516,10 @@ class RangeXY(LinkedStream):
     Axis ranges along x- and y-axis in data coordinates.
     """
 
-    x_range = param.NumericTuple(default=None, length=2, constant=True, doc="""
+    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
-    y_range = param.NumericTuple(default=None, length=2, constant=True, doc="""
+    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
 
 
@@ -528,7 +528,7 @@ class RangeX(LinkedStream):
     Axis range along x-axis in data coordinates.
     """
 
-    x_range = param.NumericTuple(default=None, length=2, constant=True, doc="""
+    x_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the x-axis of a plot in data coordinates""")
 
 
@@ -537,7 +537,7 @@ class RangeY(LinkedStream):
     Axis range along y-axis in data coordinates.
     """
 
-    y_range = param.NumericTuple(default=None, length=2, constant=True, doc="""
+    y_range = param.Tuple(default=None, length=2, constant=True, doc="""
       Range of the y-axis of a plot in data coordinates""")
 
 

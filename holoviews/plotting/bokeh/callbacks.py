@@ -1,5 +1,7 @@
+import datetime as dt
 from collections import defaultdict
-from bokeh.models import CustomJS, FactorRange
+
+from bokeh.models import CustomJS, FactorRange, DatetimeAxis
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
@@ -542,7 +544,14 @@ class PointerXYCallback(Callback):
         if isinstance(x_range, FactorRange) and isinstance(msg.get('x'), (int, float)):
             msg['x'] = x_range.factors[int(msg['x'])]
         if isinstance(y_range, FactorRange) and isinstance(msg.get('y'), (int, float)):
-            msg['y'] = y_range.factors[int(msg['y'])]    
+            msg['y'] = y_range.factors[int(msg['y'])]
+
+        xaxis = self.plot.handles.get('xaxis')
+        yaxis = self.plot.handles.get('yaxis')
+        if 'x' in msg and isinstance(xaxis, DatetimeAxis):
+            msg['x'] = dt.datetime.fromtimestamp(msg['x']/1000.)
+        if 'y' in msg and isinstance(yaxis, DatetimeAxis):
+            msg['y'] = dt.datetime.fromtimestamp(msg['y']/1000.)
         return msg
 
 
@@ -654,9 +663,21 @@ class RangeXYCallback(Callback):
     def _process_msg(self, msg):
         data = {}
         if 'x0' in msg and 'x1' in msg:
-            data['x_range'] = (msg['x0'], msg['x1'])
+            x0, x1 = msg['x0'], msg['x1']
+            if isinstance(self.plot.handles['xaxis'], DatetimeAxis):
+                x0 = dt.datetime.fromtimestamp(x0/1000.)
+                x1 = dt.datetime.fromtimestamp(x1/1000.)
+            if self.plot.invert_xaxis:
+                x0, x1 = x1, x0
+            data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
-            data['y_range'] = (msg['y0'], msg['y1'])
+            y0, y1 = msg['y0'], msg['y1']
+            if isinstance(self.plot.handles['yaxis'], DatetimeAxis):
+                y0 = dt.datetime.fromtimestamp(y0/1000.)
+                y1 = dt.datetime.fromtimestamp(y1/1000.)
+            if self.plot.invert_yaxis:
+                y0, y1 = y1, y0
+            data['y_range'] = (y0, y1)
         return data
 
 
@@ -669,12 +690,6 @@ class RangeXCallback(RangeXYCallback):
                   'x1': 'x_range.attributes.end'}
     models = ['x_range']
 
-    def _process_msg(self, msg):
-        if 'x0' in msg and 'x1' in msg:
-            return {'x_range': (msg['x0'], msg['x1'])}
-        else:
-            return {}
-
 
 class RangeYCallback(RangeXYCallback):
     """
@@ -685,11 +700,6 @@ class RangeYCallback(RangeXYCallback):
                   'y1': 'y_range.attributes.end'}
     models = ['y_range']
 
-    def _process_msg(self, msg):
-        if 'y0' in msg and 'y1' in msg:
-            return {'y_range': (msg['y0'], msg['y1'])}
-        else:
-            return {}
 
 
 class PlotSizeCallback(Callback):
