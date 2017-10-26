@@ -27,6 +27,16 @@ except:
     xr = None
 
 
+def compute_density(start, end, length, time_unit='us'):
+    if isinstance(start, int): start = float(start)
+    if isinstance(end, int): end = float(end)
+    diff = end-start
+    if isinstance(diff, np.timedelta64):
+        tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
+        return (length/(diff.tolist().total_seconds()*tscale))
+    else:
+        return length/diff
+
 
 def compute_edges(edges):
     """
@@ -76,6 +86,10 @@ def compute_slice_bounds(slices, scs, shape):
     xdensity, ydensity = scs.xdensity, scs.ydensity
     xunit = (1./xdensity)
     yunit = (1./ydensity)
+    if isinstance(l, np.datetime64):
+        xunit = np.timedelta64(int(xunit), scs._time_unit)
+    if isinstance(b, np.datetime64):
+        yunit = np.timedelta64(int(yunit), scs._time_unit)
     if isinstance(xidx, slice):
         l = l if xidx.start is None else max(l, xidx.start)
         r = r if xidx.stop is None else min(r, xidx.stop)

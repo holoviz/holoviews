@@ -136,6 +136,7 @@ class SheetCoordinateSystem(object):
 
     shape = property(__get_shape)
 
+    _time_unit = 'us'
 
     def __init__(self,bounds,xdensity,ydensity=None):
         """
@@ -219,8 +220,16 @@ class SheetCoordinateSystem(object):
         # then scale to the size of the matrix. The y coordinate needs
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
-        float_col = (x-self.lbrt[0]) * self.__xdensity
-        float_row = (self.lbrt[3]-y) * self.__ydensity
+        xdensity = 1./self.__xdensity
+        if isinstance(x, np.datetime64):
+            xdensity = np.timedelta64(int(xdensity), self._time_unit)
+        float_col = (x-self.lbrt[0]) / xdensity
+
+        ydensity = 1./self.__ydensity
+        if isinstance(y, np.datetime64):
+            ydensity = np.timedelta64(int(ydensity), self._time_unit)
+        float_row = (self.lbrt[3]-y) / ydensity
+
         return float_row, float_col
 
 
@@ -257,8 +266,14 @@ class SheetCoordinateSystem(object):
 
         Inverse of sheet2matrix().
         """
-        x = float_col*self.__xstep + self.lbrt[0]
-        y = self.lbrt[3] - float_row*self.__ystep
+        xoffset = float_col*self.__xstep
+        if isinstance(self.lbrt[0], np.datetime64):
+            xoffset = np.timedelta64(int(xoffset), self._time_unit)
+        x = xoffset + self.lbrt[0]
+        yoffset = float_row*self.__ystep
+        if isinstance(self.lbrt[3], np.datetime64):
+            yoffset = np.timedelta64(int(yoffset), self._time_unit)
+        y = self.lbrt[3] - yoffset
         return x, y
 
 
@@ -278,7 +293,11 @@ class SheetCoordinateSystem(object):
         x,y = self.matrix2sheet((row+0.5), (col+0.5))
 
         # Rounding allows easier comparison with user specified values
-        return np.around(x,10), np.around(y,10)
+        if not isinstance(x, np.datetime64):
+            x = np.around(x,10)
+        if not isinstance(y, np.datetime64):
+            y = np.around(y,10)
+        return x, y
 
 
     def closest_cell_center(self,x,y):

@@ -103,9 +103,13 @@ class ImageInterface(GridInterface):
             l, b, r, t = obj.bounds.lbrt()
             if dim_idx:
                 halfd = (1./obj.ydensity)/2.
+                if isinstance(b, np.datetime64):
+                    halfd = np.timedelta(halfd, obj._time_unit)
                 drange = (b+halfd, t-halfd)
             else:
                 halfd = (1./obj.xdensity)/2.
+                if isinstance(l, np.datetime64):
+                    halfd = np.timedelta(halfd, obj._time_unit)
                 drange = (l+halfd, r-halfd)
         elif 1 < dim_idx < len(obj.vdims) + 2:
             dim_idx -= 2
@@ -125,15 +129,23 @@ class ImageInterface(GridInterface):
         if dim_idx in [0, 1]:
             l, b, r, t = dataset.bounds.lbrt()
             dim2, dim1 = dataset.data.shape[:2]
-            d1_half_unit = float(r - l)/dim1/2.
-            d2_half_unit = float(t - b)/dim2/2.
-            d1lin = np.linspace(l+d1_half_unit, r-d1_half_unit, dim1)
-            d2lin = np.linspace(b+d2_half_unit, t-d2_half_unit, dim2)
+            xstep = (1./dataset.xdensity)
+            if isinstance(l, np.datetime64):
+                xstep = np.timedelta64(int(xstep), dataset._time_unit)
+                xlin = l+np.arange(dim1)*xstep
+            else:
+                xlin = np.linspace(l+(xstep/2.), r-(xstep/2.), dim1)
+            ystep = 1./dataset.ydensity
+            if isinstance(b, np.datetime64):
+                ystep = np.timedelta64(int(ystep), dataset._time_unit)
+                ylin = b+np.arange(dim2)*ystep
+            else:
+                ylin = np.linspace(b+(ystep/2.), t-(ystep/2.), dim2)
             if expanded:
-                values = np.meshgrid(d2lin, d1lin)[abs(dim_idx-1)]
+                values = np.meshgrid(ylin, xlin)[abs(dim_idx-1)]
                 return values.flatten() if flat else values
             else:
-                return d2lin if dim_idx else d1lin
+                return ylin if dim_idx else xlin
         elif dataset.ndims <= dim_idx < len(dataset.dimensions()):
             # Raster arrays are stored with different orientation
             # than expanded column format, reorient before expanding
