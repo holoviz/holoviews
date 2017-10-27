@@ -938,7 +938,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Extents are set to '' and None because x-axis is categorical and
         y-axis auto-ranges.
         """
-        return ('', None, '', None)
+        yrange = element.range(element.vdims[0], data_range=False)
+        return ('', yrange[0], '', yrange[1])
 
     def _get_axis_labels(self, *args, **kwargs):
         """
