@@ -77,6 +77,7 @@ outside of the actual matrix.
 
 import numpy as np
 from .boundingregion import BoundingBox
+from .util import datetime_types
 
 
 # Note about the 'bounds-master' approach we have adopted
@@ -136,6 +137,9 @@ class SheetCoordinateSystem(object):
 
     shape = property(__get_shape)
 
+    # Determines the unit of time densities are defined relative to
+    # when one or both axes are datetime types
+    _time_unit = 'us'
 
     def __init__(self,bounds,xdensity,ydensity=None):
         """
@@ -219,8 +223,20 @@ class SheetCoordinateSystem(object):
         # then scale to the size of the matrix. The y coordinate needs
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
-        float_col = (x-self.lbrt[0]) * self.__xdensity
-        float_row = (self.lbrt[3]-y) * self.__ydensity
+        xdensity = self.__xdensity
+        if isinstance(x, datetime_types):
+            xdensity = np.timedelta64(int(round(1./xdensity)), self._time_unit)
+            float_col = (x-self.lbrt[0]) / xdensity
+        else:
+            float_col = (x-self.lbrt[0]) * xdensity
+
+        ydensity = self.__ydensity
+        if isinstance(y, datetime_types):
+            ydensity = np.timedelta64(int(round(1./ydensity)), self._time_unit)
+            float_row = (self.lbrt[3]-y) / ydensity
+        else:
+            float_row = (self.lbrt[3]-y) * ydensity
+
         return float_row, float_col
 
 
@@ -257,8 +273,14 @@ class SheetCoordinateSystem(object):
 
         Inverse of sheet2matrix().
         """
-        x = float_col*self.__xstep + self.lbrt[0]
-        y = self.lbrt[3] - float_row*self.__ystep
+        xoffset = float_col*self.__xstep
+        if isinstance(self.lbrt[0], datetime_types):
+            xoffset = np.timedelta64(int(round(xoffset)), self._time_unit)
+        x = self.lbrt[0] + xoffset
+        yoffset = float_row*self.__ystep
+        if isinstance(self.lbrt[3], datetime_types):
+            yoffset = np.timedelta64(int(round(yoffset)), self._time_unit)
+        y = self.lbrt[3] - yoffset
         return x, y
 
 
@@ -278,7 +300,11 @@ class SheetCoordinateSystem(object):
         x,y = self.matrix2sheet((row+0.5), (col+0.5))
 
         # Rounding allows easier comparison with user specified values
-        return np.around(x,10), np.around(y,10)
+        if not isinstance(x, datetime_types):
+            x = np.around(x,10)
+        if not isinstance(y, datetime_types):
+            y = np.around(y,10)
+        return x, y
 
 
     def closest_cell_center(self,x,y):

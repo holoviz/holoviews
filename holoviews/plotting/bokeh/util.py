@@ -50,6 +50,13 @@ markers = {'s': {'marker': 'square'},
            '4': {'marker': 'triangle', 'angle': np.pi/2}}
 
 
+def convert_timestamp(timestamp):
+    """
+    Converts bokehJS timestamp to datetime64.
+    """
+    return np.datetime64(dt.datetime.fromtimestamp(timestamp/1000.))
+
+
 def rgba_tuple(rgba):
     """
     Ensures RGB(A) tuples in the range 0-1 are scaled to 0-255.

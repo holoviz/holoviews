@@ -30,7 +30,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
 from ..core.data import PandasInterface, DaskInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
-from ..core.util import get_param_values, basestring, datetime_types
+from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
 from ..element import Image, Path, Curve, Contours, RGB, Graph
 from ..streams import RangeXY, PlotSize
 from ..plotting.util import fire
@@ -110,7 +110,7 @@ class ResamplingOperation(Operation):
                 else:
                     x0, x1 = self.p.x_range
                     ex0, ex1 = element.range(x)
-                    x_range = max([x0, ex0]), min([x1, ex1])
+                    x_range = np.max([x0, ex0]), np.min([x1, ex1])
                 if x_range[0] == x_range[1]:
                     x_range = (x_range[0]-0.5, x_range[0]+0.5)
                     
@@ -119,20 +119,24 @@ class ResamplingOperation(Operation):
                 else:
                     y0, y1 = self.p.y_range
                     ey0, ey1 = element.range(y)
-                    y_range = max([y0, ey0]), min([y1, ey1])
+                    y_range = np.max([y0, ey0]), np.min([y1, ey1])
             width, height = self.p.width, self.p.height
         (xstart, xend), (ystart, yend) = x_range, y_range
 
+        xtype = 'numeric'
         if isinstance(xstart, datetime_types) or isinstance(xend, datetime_types):
-            xstart, xend = int(xstart) / 1000000., int(xend) / 1000000.
+            xstart, xend = dt_to_int(xstart), dt_to_int(xend)
+            xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
             xstart, xend = 0, 1
         elif xstart == xend:
             xstart, xend = (xstart-0.5, xend+0.5)
         x_range = (xstart, xend)
 
+        ytype = 'numeric'
         if isinstance(ystart, datetime_types) or isinstance(yend, datetime_types):
-            ystart, yend = int(ystart) / 1000000., int(yend) / 1000000.
+            ystart, yend = dt_to_int(ystart), dt_to_int(yend)
+            ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             ystart, yend = 0, 1
         elif ystart == yend:
@@ -150,7 +154,7 @@ class ResamplingOperation(Operation):
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
 
-        return (x_range, y_range), (xs, ys), (width, height)
+        return (x_range, y_range), (xs, ys), (width, height), (xtype, ytype)
 
 
 
@@ -242,9 +246,7 @@ class aggregate(ResamplingOperation):
             df = df.copy()
         for d in (x, y):
             if df[d.name].dtype.kind == 'M':
-                #param.main.warning('Casting %s dimension data to integer; '
-                #                   'datashader cannot process datetime data', d)
-                df[d.name] = df[d.name].astype('int64') / 1000000.
+                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
 
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
@@ -261,7 +263,7 @@ class aggregate(ResamplingOperation):
         """
         # Compute overall bounds
         x, y = element.last.dimensions()[0:2]
-        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
         agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
 
@@ -330,7 +332,7 @@ class aggregate(ResamplingOperation):
             return self._aggregate_ndoverlay(element, agg_fn)
 
         x, y, data, glyph = self.get_agg_data(element, category)
-        (x_range, y_range), (xs, ys), (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         if x is None or y is None:
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
@@ -354,6 +356,10 @@ class aggregate(ResamplingOperation):
         agg = getattr(cvs, glyph)(dfdata, x.name, y.name, self.p.aggregator)
         if 'x_axis' in agg and 'y_axis' in agg:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
+        if xtype == 'datetime':
+            agg[x.name] = agg[x.name].astype('datetime64[us]')
+        if ytype == 'datetime':
+            agg[y.name] = agg[y.name].astype('datetime64[us]')
 
         if agg.ndim == 2:
             # Replacing x and y coordinates to avoid numerical precision issues
@@ -413,7 +419,7 @@ class regrid(ResamplingOperation):
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
         x, y = element.kdims
-        (x_range, y_range), _, (width, height) = self._get_sampling(element, x, y)
+        (x_range, y_range), _, (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         coords = tuple(element.dimension_values(d, expanded=False)
                        for d in [x, y])
@@ -423,9 +429,15 @@ class regrid(ResamplingOperation):
         for vd in element.vdims:
             if element.interface is XArrayInterface:
                 xarr = element.data[vd.name]
+                if 'datetime' in (xtype, ytype):
+                    xarr = xarr.copy()
             else:
                 arr = element.dimension_values(vd, flat=False)
                 xarr = xr.DataArray(arr, coords=coord_dict, dims=dims)
+            if xtype == "datetime":
+                xarr[x.name] = [dt_to_int(v) for v in xarr[x.name].values]
+            if ytype == "datetime":
+                xarr[y.name] = [dt_to_int(v) for v in xarr[y.name].values]
             arrays.append(xarr)
 
         # Disable upsampling if requested
@@ -433,6 +445,10 @@ class regrid(ResamplingOperation):
         xspan, yspan = (xend-xstart), (yend-ystart)
         if not self.p.upsample and self.p.target is None:
             (x0, x1), (y0, y1) = element.range(0), element.range(1)
+            if isinstance(x0, datetime_types):
+                x0, x1 = dt_to_int(x0), dt_to_int(x1)
+            if isinstance(y0, datetime_types):
+                y0, y1 = dt_to_int(y0), dt_to_int(y1)
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
             height = min([int((yspan/eyspan) * len(coords[1])), height])
@@ -444,14 +460,14 @@ class regrid(ResamplingOperation):
         for xarr in arrays:
             rarray = cvs.raster(xarr, upsample_method=self.p.interpolation,
                                 downsample_method=self.p.aggregator)
+            if xtype == "datetime":
+                rarray[x.name] = rarray[x.name].astype('datetime64[us]')
+            if ytype == "datetime":
+                rarray[y.name] = rarray[y.name].astype('datetime64[us]')
             regridded.append(rarray)
 
         regridded = xr.Dataset({vd.name: xarr for vd, xarr in zip(element.vdims, regridded)})
-        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
-        xd = float(width) / xspan
-        yd = float(height) / yspan
-        return element.clone(regridded, datatype=['xarray'], bounds=bbox,
-                             xdensity=xd, ydensity=yd)
+        return element.clone(regridded, datatype=['xarray'])
 
 
 
@@ -571,6 +587,10 @@ class shade(Operation):
             shade_opts['span'] = self.p.clims
         elif ds_version > '0.5.0' and self.p.normalization != 'eq_hist':
             shade_opts['span'] = element.range(vdim)
+
+        for d in kdims:
+            if array[d.name].dtype.kind == 'M':
+                array[d.name] = array[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
 
         with warnings.catch_warnings():
             warnings.filterwarnings('ignore', r'invalid value encountered in true_divide')

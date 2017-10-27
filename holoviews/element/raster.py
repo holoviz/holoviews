@@ -8,7 +8,7 @@ from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import max_range, dimension_range
+from ..core.util import max_range, dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
@@ -236,9 +236,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
         if bounds is None:
             xvals = self.dimension_values(0, False)
-            l, r, xdensity, _ = util.bound_range(xvals, xdensity)
+            l, r, xdensity, _ = util.bound_range(xvals, xdensity, self._time_unit)
             yvals = self.dimension_values(1, False)
-            b, t, ydensity, _ = util.bound_range(yvals, ydensity)
+            b, t, ydensity, _ = util.bound_range(yvals, ydensity, self._time_unit)
             bounds = BoundingBox(points=((l, b), (r, t)))
         elif np.isscalar(bounds):
             bounds = BoundingBox(radius=bounds)
@@ -247,8 +247,8 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = BoundingBox(points=((l, b), (r, t)))
 
         l, b, r, t = bounds.lbrt()
-        xdensity = xdensity if xdensity else dim1/float(r-l)
-        ydensity = ydensity if ydensity else dim2/float(t-b)
+        xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
+        ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
 
         if len(self.shape) == 3:
@@ -418,10 +418,16 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         dimension = self.get_dimension(dim)
         low, high = super(Image, self).range(dim, data_range)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
+            if self.interface.datatype == 'image':
+                l, b, r, t = self.bounds.lbrt()
+                return (b, t) if idx else (l, r)
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
+            if isinstance(low, datetime_types):
+                halfd = np.timedelta64(int(round(halfd)), self._time_unit)
             return (low-halfd, high+halfd)
-        return low, high
+        else:
+            return super(Image, self).range(dim, data_range)
 
 
     def table(self, datatype=None):

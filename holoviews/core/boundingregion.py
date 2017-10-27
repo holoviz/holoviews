@@ -9,6 +9,7 @@ File originally part of the Topographica project.
 ###
 import param
 from param.parameterized import get_occupied_slots
+from .util import datetime_types
 
 
 class BoundingRegion(object):
@@ -90,7 +91,8 @@ class BoundingBox(BoundingRegion):
         will display the bounds.
         """
         l, b, r, t = self._aarect.lbrt()
-        if r == -l and t == -b and r == t:
+        if (not isinstance(r, datetime_types) and r == -l and
+            not isinstance(b, datetime_types) and t == -b and r == t):
             return 'BoundingBox(radius=%s)' % (r)
         else:
             return 'BoundingBox(points=((%s,%s),(%s,%s)))' % (l, b, r, t)

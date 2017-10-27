@@ -8,7 +8,7 @@ from ..core.boundingregion import BoundingBox
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (is_nan, sort_topologically, one_to_one,
-                         cartesian_product, is_cyclic)
+                         cartesian_product, is_cyclic, datetime_types)
 
 try:
     import pandas as pd
@@ -25,7 +25,6 @@ try:
     import xarray as xr
 except:
     xr = None
-
 
 
 def compute_edges(edges):
@@ -76,6 +75,10 @@ def compute_slice_bounds(slices, scs, shape):
     xdensity, ydensity = scs.xdensity, scs.ydensity
     xunit = (1./xdensity)
     yunit = (1./ydensity)
+    if isinstance(l, datetime_types):
+        xunit = np.timedelta64(int(round(xunit)), scs._time_unit)
+    if isinstance(b, datetime_types):
+        yunit = np.timedelta64(int(round(yunit)), scs._time_unit)
     if isinstance(xidx, slice):
         l = l if xidx.start is None else max(l, xidx.start)
         r = r if xidx.stop is None else min(r, xidx.stop)

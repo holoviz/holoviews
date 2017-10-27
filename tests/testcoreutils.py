@@ -16,7 +16,8 @@ except:
 
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
-    deephash, merge_dimensions, get_path, make_path_unique
+    deephash, merge_dimensions, get_path, make_path_unique, compute_density,
+    date_range, dt_to_int
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -526,3 +527,67 @@ class TestTreePathUtils(unittest.TestCase):
         path = ('Element', 'A')
         new_path = make_path_unique(path, {path: 1}, False)
         self.assertEqual(new_path, path[:-1]+('I',))
+
+
+class TestDatetimeUtils(unittest.TestCase):
+
+    def test_compute_density_float(self):
+        self.assertEqual(compute_density(0, 1, 10), 10)
+
+    def test_compute_us_density_1s_datetime(self):
+        start = np.datetime64(datetime.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        self.assertEqual(compute_density(start, end, 10), 1e-5)
+
+    def test_compute_us_density_10s_datetime(self):
+        start = np.datetime64(datetime.datetime.today())
+        end = start+np.timedelta64(10, 's')
+        self.assertEqual(compute_density(start, end, 10), 1e-6)
+
+    def test_compute_s_density_1s_datetime(self):
+        start = np.datetime64(datetime.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        self.assertEqual(compute_density(start, end, 10, 's'), 10)
+
+    def test_compute_s_density_10s_datetime(self):
+        start = np.datetime64(datetime.datetime.today())
+        end = start+np.timedelta64(10, 's')
+        self.assertEqual(compute_density(start, end, 10, 's'), 1)
+
+    def test_datetime_to_us_int(self):
+        dt = datetime.datetime(2017, 1, 1)
+        self.assertEqual(dt_to_int(dt), 1483228800000000.0)
+
+    def test_datetime64_to_us_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt), 1483228800000000.0)
+
+    def test_timestamp_to_us_int(self):
+        dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt), 1483228800000000.0)
+    
+    def test_datetime_to_s_int(self):
+        dt = datetime.datetime(2017, 1, 1)
+        self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
+
+    def test_datetime64_to_s_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
+
+    def test_timestamp_to_s_int(self):
+        dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
+
+    def test_date_range_1_hour(self):
+        start = np.datetime64(datetime.datetime(2017, 1, 1))
+        end = start+np.timedelta64(1, 'h')
+        drange = date_range(start, end, 6)
+        self.assertEqual(drange[0], start+np.timedelta64(5, 'm'))
+        self.assertEqual(drange[-1], end-np.timedelta64(5, 'm'))
+
+    def test_date_range_1_sec(self):
+        start = np.datetime64(datetime.datetime(2017, 1, 1))
+        end = start+np.timedelta64(1, 's')
+        drange = date_range(start, end, 10)
+        self.assertEqual(drange[0], start+np.timedelta64(50, 'ms'))
+        self.assertEqual(drange[-1], end-np.timedelta64(50, 'ms'))
