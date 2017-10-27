@@ -8,7 +8,7 @@ import matplotlib as mpl
 from matplotlib import cm
 from matplotlib.collections import LineCollection
 from matplotlib.path import Path as MPLPath
-from matplotlib.dates import DateFormatter
+from matplotlib.dates import DateFormatter, date2num
 
 mpl_version = LooseVersion(mpl.__version__)
 
@@ -957,12 +957,26 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         if self.invert_axes:
             data = [(line[0][::-1], line[1][::-1]) for line in data]
 
+        dims = element.dimensions()
+        clean_spikes = []
+        for spike in data:
+            xs, ys = zip(*spike)
+            cols = []
+            for i, vs in enumerate((xs, ys)):
+                vs = np.array(vs)
+                if vs.dtype.kind == 'M' and i < len(dims):
+                    dt_format = Dimension.type_formatters[np.datetime64]
+                    dims[i] = dims[i](value_format=DateFormatter(dt_format))
+                    vs = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in vs])
+                cols.append(vs)
+            clean_spikes.append(np.column_stack(cols))
+
         cdim = element.get_dimension(self.color_index)
         if cdim:
             style['array'] = element.dimension_values(cdim)
             self._norm_kwargs(element, ranges, style, cdim)
             style['clim'] = style.pop('vmin'), style.pop('vmax')
-        return (np.array(data),), style, {}
+        return (clean_spikes,), style, {'dimensions': dims}
 
 
     def update_handles(self, key, axis, element, ranges, style):
