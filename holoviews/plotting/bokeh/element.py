@@ -565,11 +565,15 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
-            if (low == high and low is not None and
-                not isinstance(high, util.datetime_types)):
-                offset = abs(low*0.1 if low else 0.5)
-                low -= offset
-                high += offset
+            if (low == high and low is not None):
+                if isinstance(low, util.datetime_types):
+                    offset = np.timedelta64(500, 'ms')
+                    low -= offset
+                    high += offset
+                else:
+                    offset = abs(low*0.1 if low else 0.5)
+                    low -= offset
+                    high += offset
             if invert: low, high = high, low
             if shared:
                 shared = (axis_range.start, axis_range.end)
