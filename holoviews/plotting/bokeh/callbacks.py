@@ -664,7 +664,7 @@ class RangeXYCallback(Callback):
         data = {}
         if 'x0' in msg and 'x1' in msg:
             x0, x1 = msg['x0'], msg['x1']
-            if isinstance(self.plot.handles['xaxis'], DatetimeAxis):
+            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
                 x0 = convert_timestamp(x0)
                 x1 = convert_timestamp(x1)
             if self.plot.invert_xaxis:
@@ -672,7 +672,7 @@ class RangeXYCallback(Callback):
             data['x_range'] = (x0, x1)
         if 'y0' in msg and 'y1' in msg:
             y0, y1 = msg['y0'], msg['y1']
-            if isinstance(self.plot.handles['yaxis'], DatetimeAxis):
+            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
                 y0 = convert_timestamp(y0)
                 y1 = convert_timestamp(y1)
             if self.plot.invert_yaxis:
@@ -735,6 +735,12 @@ class BoundsCallback(Callback):
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
+            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
+                msg['x0'] = convert_timestamp(msg['x0'])
+                msg['x1'] = convert_timestamp(msg['x1'])
+            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
+                msg['y0'] = convert_timestamp(msg['y0'])
+                msg['y1'] = convert_timestamp(msg['y1'])
             return {'bounds': (msg['x0'], msg['y0'], msg['x1'], msg['y1'])}
         else:
             return {}
@@ -753,6 +759,9 @@ class BoundsXCallback(Callback):
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'x1']):
+            if isinstance(self.plot.handles.get('xaxis'), DatetimeAxis):
+                msg['x0'] = convert_timestamp(msg['x0'])
+                msg['x1'] = convert_timestamp(msg['x1'])
             return {'boundsx': (msg['x0'], msg['x1'])}
         else:
             return {}
@@ -771,6 +780,9 @@ class BoundsYCallback(Callback):
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['y0', 'y1']):
+            if isinstance(self.plot.handles.get('yaxis'), DatetimeAxis):
+                msg['y0'] = convert_timestamp(msg['y0'])
+                msg['y1'] = convert_timestamp(msg['y1'])
             return {'boundsy': (msg['y0'], msg['y1'])}
         else:
             return {}
