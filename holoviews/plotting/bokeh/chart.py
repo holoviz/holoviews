@@ -726,10 +726,12 @@ class BarPlot(ColorbarPlot, LegendPlot):
             if sign == 'positive':
                 bottom = baseline
                 top = bottom+y
+                baseline = top
             else:
                 top = baseline
                 bottom = top+y
-            baselines[x][sign] = top
+                baseline = bottom
+            baselines[x][sign] = baseline
             bottoms.append(bottom)
             tops.append(top)
         return bottoms, tops
@@ -738,6 +740,31 @@ class BarPlot(ColorbarPlot, LegendPlot):
         props = super(BarPlot, self)._glyph_properties(*args)
         del props['width']
         return props
+
+
+    def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
+        # Get colormapper
+        cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
+                                               factors=factors, colors=colors)
+        if 'color' not in cmapping:
+            return
+
+        # Enable legend if colormapper is categorical
+        cmapper = cmapping['color']['transform']
+        if ('color' in cmapping and self.show_legend and
+            isinstance(cmapper, CategoricalColorMapper)):
+            mapping['legend'] = cdim.name
+
+        # Merge data and mappings
+        mapping.update(cmapping)
+        for k, cd in cdata.items():
+            if self.color_index is None and cd.dtype.kind in 'if':
+                cd = categorize_array(cd, color_dim)
+            if k not in data or len(data[k]) != [len(data[key]) for key in data if key != k][0]:
+                data[k].append(cd)
+            else:
+                data[k][-1] = cd
+
 
     def get_data(self, element, ranges, style):
         # Get x, y, group, stack and color dimensions
@@ -817,10 +844,8 @@ class BarPlot(ColorbarPlot, LegendPlot):
             k = k[0] if isinstance(k, tuple) else k
             if group_dim:
                 gval = k if isinstance(k, basestring) else group_dim.pprint_value(k)
-
             # Apply stacking or grouping
             if grouping == 'stacked':
-                ds = ds.sort(ds.vdims[0])
                 for sign, slc in [('negative', (None, 0)), ('positive', (0, None))]:
                     slc_ds = ds.select(**{ds.vdims[0].name: slc})
                     xs = slc_ds.dimension_values(xdim)
@@ -829,7 +854,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
                     data['bottom'].append(bs)
                     data['top'].append(ts)
                     data[xdim.name].append(xs)
+                    data[stack_dim.name].append(slc_ds.dimension_values(stack_dim))
                     if hover: data[ydim.name].append(ys)
+                    self._add_color_data(slc_ds, ranges, style, cdim, data,
+                                         mapping, factors, colors)
             elif grouping == 'grouped':
                 xs = ds.dimension_values(xdim)
                 ys = ds.dimension_values(ydim)
@@ -838,44 +866,20 @@ class BarPlot(ColorbarPlot, LegendPlot):
                 data['xoffsets'].append(xoffsets)
                 data[ydim.name].append(ys)
                 if hover: data[xdim.name].append(xs)
+                if group_dim not in ds.dimensions():
+                    ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
+                data[group_dim.name].append(ds.dimension_values(group_dim))
             else:
                 data[xdim.name].append(ds.dimension_values(xdim))
                 data[ydim.name].append(ds.dimension_values(ydim))
 
-            # Add group dimension to data
-            if group_dim and group_dim not in ds.dimensions():
-                ds = ds.add_dimension(group_dim.name, ds.ndims, gval)
-
             if hover:
-                # Fill in missing hover data if dimension other than group_dim is colormapped
-                if group_dim and cdim != group_dim:
-                    data[group_dim.name].append(ds.dimension_values(group_dim))
-                # Add other hover info
                 for vd in ds.vdims[1:]:
                     data[vd.name].append(ds.dimension_values(vd))
 
-            # Get colormapper
-            cdata, cmapping = self._get_color_data(ds, ranges, dict(style),
-                                                   factors=factors, colors=colors)
-
-            # Skip if no colormapper applied
-            if 'color' not in cmapping:
-                continue
-
-            # Enable legend if colormapper is categorical
-            cmapper = cmapping['color']['transform']
-            if ('color' in cmapping and self.show_legend and
-                isinstance(cmapper, CategoricalColorMapper)):
-                mapping['legend'] = cdim.name
-
-            # Merge data and mappings
-            mapping.update(cmapping)
-            for k, cd in cdata.items():
-                # If values have already been added, skip
-                if no_cidx and cd.dtype.kind in 'if':
-                    cd = categorize_array(cd, color_dim)
-                if not len(data[k]) == i+1:
-                    data[k].append(cd)
+            if not grouping == 'stacked':
+                self._add_color_data(ds, ranges, style, cdim, data,
+                                     mapping, factors, colors)
 
         # Concatenate the stacks or groups
         sanitized_data = {}
