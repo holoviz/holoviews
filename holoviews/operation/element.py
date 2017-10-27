@@ -548,16 +548,17 @@ class histogram(Operation):
         else:
             edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
-        try:
-            hist, edges = np.histogram(data[np.isfinite(data)], normed=normed,
-                                       range=hist_range, weights=weights, bins=edges)
+
+        data = data[np.isfinite(data)]
+        if len(data):
+            hist, edges = np.histogram(data, normed=normed, range=hist_range,
+                                       weights=weights, bins=edges)
             if not normed and self.p.weight_dimension and self.p.mean_weighted:
-                hist_mean, _ = np.histogram(data[np.isfinite(data)], normed=normed,
+                hist_mean, _ = np.histogram(data, normed=normed,
                                             range=hist_range, bins=self.p.num_bins)
                 hist /= hist_mean
-        except:
+        else:
             hist = np.zeros(self.p.num_bins)
-
         hist[np.isnan(hist)] = 0
 
         params = {}
