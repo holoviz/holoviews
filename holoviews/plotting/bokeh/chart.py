@@ -1014,7 +1014,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Add color factor
             if cidx is not None and cidx<element.ndims:
-                factors.append(wrap_tuple(key)[cidx])
+                factors.append(cdim.pprint_value(wrap_tuple(key)[cidx]))
             else:
                 factors.append(label)
 
