@@ -547,8 +547,8 @@ class BoundsXY(LinkedStream):
     tuple of the left, bottom, right and top coordinates.
     """
 
-    bounds = param.NumericTuple(default=None, constant=True, length=4,
-                                allow_None=True, doc="""
+    bounds = param.Tuple(default=None, constant=True, length=4,
+                         allow_None=True, doc="""
         Bounds defined as (left, bottom, right, top) tuple.""")
 
 
@@ -558,14 +558,15 @@ class Bounds(BoundsXY):
         self.warning('Bounds is deprecated use BoundsXY instead.')
         super(Bounds, self).__init__(*args, **kwargs)
 
+
 class BoundsX(LinkedStream):
     """
     A stream representing the bounds of a box selection as an
     tuple of the left and right coordinates.
     """
 
-    boundsx = param.NumericTuple(default=None, constant=True, length=2,
-                                 allow_None=True, doc="""
+    boundsx = param.Tuple(default=None, constant=True, length=2,
+                          allow_None=True, doc="""
         Bounds defined as (left, right) tuple.""")
 
 
@@ -575,8 +576,8 @@ class BoundsY(LinkedStream):
     tuple of the bottom and top coordinates.
     """
 
-    boundsy = param.NumericTuple(default=None, constant=True, length=2,
-                                 allow_None=True, doc="""
+    boundsy = param.Tuple(default=None, constant=True, length=2,
+                          allow_None=True, doc="""
         Bounds defined as (bottom, top) tuple.""")
 
 
