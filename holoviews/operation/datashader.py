@@ -128,7 +128,11 @@ class ResamplingOperation(Operation):
             xstart, xend = dt_to_int(xstart), dt_to_int(xend)
             xtype = 'datetime'
         elif not np.isfinite(xstart) and not np.isfinite(xend):
-            xstart, xend = 0, 1
+            if element.get_dimension_type(x) in datetime_types:
+                xstart, xend = 0, 10000
+                xtype = 'datetime'
+            else:
+                xstart, xend = 0, 1
         elif xstart == xend:
             xstart, xend = (xstart-0.5, xend+0.5)
         x_range = (xstart, xend)
@@ -138,7 +142,11 @@ class ResamplingOperation(Operation):
             ystart, yend = dt_to_int(ystart), dt_to_int(yend)
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
-            ystart, yend = 0, 1
+            if element.get_dimension_type(y) in datetime_types:
+                xstart, xend = 0, 10000
+                xtype = 'datetime'
+            else:
+                ystart, yend = 0, 1
         elif ystart == yend:
             ystart, yend = (ystart-0.5, yend+0.5)
         y_range = (ystart, yend)
