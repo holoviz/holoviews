@@ -429,6 +429,22 @@ class DynamicTestOverlay(ComparisonTestCase):
 
 class DynamicCallableMemoize(ComparisonTestCase):
 
+    def test_dynamic_keydim_not_memoize(self):
+        dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
+        self.assertEqual(dmap[0], Curve([(0, 0)]))
+        self.assertEqual(dmap[1], Curve([(0, 1)]))
+
+    def test_dynamic_keydim_memoize(self):
+        dmap = DynamicMap(lambda x: Curve([(0, x)]), kdims=['x'])
+        self.assertIs(dmap[0], dmap[0])
+
+    def test_dynamic_keydim_memoize_disable(self):
+        dmap = DynamicMap(Callable(lambda x: Curve([(0, x)]), memoize=False), kdims=['x'])
+        first = dmap[0]
+        del dmap.data[(0,)]
+        second = dmap[0]
+        self.assertIsNot(first, second)
+        
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
         def history_callback(x, history=deque(maxlen=10)):
