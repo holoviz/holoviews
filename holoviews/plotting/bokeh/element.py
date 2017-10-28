@@ -7,8 +7,8 @@ import bokeh
 import bokeh.plotting
 from bokeh import palettes
 from bokeh.core.properties import value
-from bokeh.models import  (HoverTool, Renderer, Range1d, DataRange1d,
-                           FactorRange, FuncTickFormatter, value)
+from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d,
+                          FactorRange, FuncTickFormatter, Legend, value)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -1167,13 +1167,15 @@ class LegendPlot(ElementPlot):
         options. The predefined options may be customized in the
         legend_specs class attribute.""")
 
+    legend_offset = param.NumericTuple(default=(0, 0), doc="""
+        If legend is placed outside the axis, this determines the
+        (width, height) offset in pixels from the original position.""")
+
     legend_cols = param.Integer(default=False, doc="""
        Whether to lay out the legend as columns.""")
 
-    legend_specs = {'right': dict(pos='right', loc=(5, -40)),
-                    'left': dict(pos='left', loc=(0, -40)),
-                    'top': dict(pos='above', loc=(120, 5)),
-                    'bottom': dict(pos='below', loc=(60, 0))}
+    legend_specs = {'right': 'right', 'left': 'left', 'top': 'above',
+                    'bottom': 'below'}
 
     def _process_legend(self, plot=None):
         plot = plot or self.handles['plot']
@@ -1185,17 +1187,19 @@ class LegendPlot(ElementPlot):
             categorical = isinstance(cmapper, CategoricalColorMapper)
         else:
             categorical = False
+
         if (not categorical and  not self.overlaid and len(legend.items) == 1) or not self.show_legend:
             legend.items[:] = []
         else:
             plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
             pos = self.legend_position
             if pos in self.legend_specs:
-                opts = self.legend_specs[pos]
                 plot.legend[:] = []
                 legend.plot = None
-                legend.location = opts['loc']
-                plot.add_layout(legend, opts['pos'])
+                legend.location = self.legend_offset
+                if pos in ['top', 'bottom']:
+                    plot.legend.orientation = 'horizontal'
+                plot.add_layout(legend, self.legend_specs[pos])
             else:
                 legend.location = pos
 
@@ -1205,14 +1209,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
     tabs = param.Boolean(default=False, doc="""
         Whether to display overlaid plots in separate panes""")
 
-    style_opts = legend_dimensions + ['border_'+p for p in line_properties] + text_properties
+    style_opts = (legend_dimensions + ['border_'+p for p in line_properties] +
+                  text_properties + ['background_fill_color', 'background_fill_alpha'])
+
+    multiple_legends = param.Boolean(default=False, doc="""
+        Whether to split the legend for subplots into multiple legends.""")
 
     _propagate_options = ['width', 'height', 'xaxis', 'yaxis', 'labelled',
                           'bgcolor', 'fontsize', 'invert_axes', 'show_frame',
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
-                          'title_format']
+                          'title_format', 'legend_position', 'legend_offset']
 
     def _process_legend(self):
         plot = self.handles['plot']
@@ -1227,34 +1235,69 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 k = '_'.join(ksplit[:1]+'line'+ksplit[1:])
             if k in text_properties:
                 k = 'label_' + k
+            if k.startswith('legend_'):
+                k = k[7:]
             options[k] = v
 
-        legend_labels = []
         if not plot.legend:
             return
-        plot.legend[0].update(**options)
-        legend_fontsize = self._fontsize('legend', 'size').get('size',False)
-        if legend_fontsize:
-            plot.legend[0].label_text_font_size = value(legend_fontsize)
 
-        if self.legend_position not in self.legend_specs:
-            plot.legend.location = self.legend_position
-        plot.legend.orientation = 'horizontal' if self.legend_cols else 'vertical'
-        new_legends = []
-        legends = plot.legend[0].items
-        for item in legends:
-            if item.label in legend_labels:
+        pos = self.legend_position
+        orientation = 'horizontal' if self.legend_cols else 'vertical'
+        if pos in ['top', 'bottom']:
+            orientation = 'horizontal'
+
+        legend_fontsize = self._fontsize('legend', 'size').get('size',False)
+        legend = plot.legend[0]
+        legend.update(**options)
+        if legend_fontsize:
+            legend.label_text_font_size = value(legend_fontsize)
+
+        if pos in self.legend_specs:
+            pos = self.legend_specs[pos]
+        else:
+            legend.location = pos
+            leg_opts = 'right'
+
+        legend.orientation = orientation
+
+        legend_items = []
+        legend_labels = {}
+        for item in legend.items:
+            label = tuple(item.label.items()) if isinstance(item.label, dict) else item.label
+            if not label or (isinstance(item.label, dict) and not item.label.get('value', True)):
                 continue
-            legend_labels.append(item.label)
-            new_legends.append(item)
-        plot.legend[0].items[:] = new_legends
-        if self.legend_position in self.legend_specs:
-            legend = plot.legend[0]
-            plot.legend[:] = []
+            if label in legend_labels:
+                prev_item = legend_labels[label]
+                prev_item.renderers += item.renderers
+            else:
+                legend_labels[label] = item
+                legend_items.append(item)
+        legend.items[:] = legend_items
+
+        if self.multiple_legends:
+            plot.legend.pop(plot.legend.index(legend))
             legend.plot = None
-            leg_opts = self.legend_specs[self.legend_position]
-            legend.location = leg_opts['loc']
-            plot.add_layout(plot.legend[0], leg_opts['pos'])
+            legends = []
+            properties = legend.properties_with_values(include_defaults=False)
+            legend_group = []
+            for item in legend.items:
+                if not isinstance(item.label, dict) or 'value'  in item.label:
+                    legend_group.append(item)
+                    continue
+                new_legend = Legend(**dict(properties, items=[item]))
+                new_legend.location = self.legend_offset
+                plot.add_layout(new_legend, pos)
+            if legend_group:
+                new_legend = Legend(**dict(properties, items=legend_group))
+                new_legend.location = self.legend_offset
+                plot.add_layout(new_legend, pos)
+            legend.items[:] = []
+        elif pos in ['above', 'below', 'right', 'left']:
+            plot.legend.pop(plot.legend.index(legend))
+            legend.plot = None
+            legend.location = self.legend_offset
+            plot.add_layout(legend, pos)
 
 
     def _init_tools(self, element, callbacks=[]):

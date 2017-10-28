@@ -1101,7 +1101,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         mapper = self._get_colormapper(cdim, element, ranges, style, factors, colors)
         vbar_map['fill_color'] = {'field': cname, 'transform': mapper}
         vbar2_map['fill_color'] = {'field': cname, 'transform': mapper}
-        vbar_map['legend'] = cdim.name
+        if self.show_legend:
+            vbar_map['legend'] = cdim.name
 
         return data, mapping, style
 
