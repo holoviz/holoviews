@@ -74,10 +74,11 @@ class GridInterface(DictInterface):
         expected = tuple([len(data[kd]) for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
+            error = DataError if len(shape) > 1 else ValueError
             if shape != expected[::-1] and not (not expected and shape == (1,)):
-                raise DataError('Key dimension values and value array %s '
-                                'shapes do not match. Expected shape %s, '
-                                'actual shape: %s' % (vdim, expected[::-1], shape), cls)
+                raise error('Key dimension values and value array %s '
+                            'shapes do not match. Expected shape %s, '
+                            'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
