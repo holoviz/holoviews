@@ -9,6 +9,11 @@ from .. import util
 class DataError(ValueError):
     "DataError is raised when the data cannot be interpreted"
 
+    def __init__(self, msg, interface=None):
+        if interface is not None:
+            msg = '\n\n'.join([msg, interface.error()])
+        super(DataError, self).__init__(msg)
+
 
 class iloc(object):
     """
@@ -126,6 +131,24 @@ class Interface(param.Parameterized):
 
 
     @classmethod
+    def error(cls):
+        info = dict(interface=cls.__name__)
+        url = "http://holoviews.org/user_guide/%s_Datasets.html"
+        if cls.multi:
+            datatype = 'a list of tabular'
+            info['url'] = url % 'Tabular'
+        else:
+            if cls.gridded:
+                datatype = 'gridded'
+            else:
+                datatype = 'tabular'
+            info['url'] = url % datatype.capitalize()
+        info['datatype'] = datatype
+        return ("{interface} expects {datatype} data, for more information "
+                "on supported datatypes see {url}".format(**info))
+
+
+    @classmethod
     def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
         if isinstance(data, Element):
@@ -184,7 +207,7 @@ class Interface(param.Parameterized):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found))
+                            "not found: %s" % repr(not_found), cls)
 
 
     @classmethod

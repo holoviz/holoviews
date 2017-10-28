@@ -45,8 +45,8 @@ class XArrayInterface(GridInterface):
 
         if isinstance (data, xr.DataArray):
             if data.name is None:
-                raise DataError("xarray DataArray must define a name to "
-                                "be wrapped by a HoloViews %s" % eltype.__name__)
+                raise DataError("xarray DataArray must define a name."
+                                % eltype.__name__, cls)
             if data.name:
                 vdim = Dimension(data.name)
             elif vdims:

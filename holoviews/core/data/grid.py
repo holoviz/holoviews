@@ -77,7 +77,7 @@ class GridInterface(DictInterface):
             if shape != expected[::-1] and not (not expected and shape == (1,)):
                 raise DataError('Key dimension values and value array %s '
                                 'shapes do not match. Expected shape %s, '
-                                'actual shape: %s' % (vdim, expected[::-1], shape))
+                                'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 

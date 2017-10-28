@@ -129,7 +129,7 @@ class CubeInterface(GridInterface):
     @classmethod
     def validate(cls, dataset):
         if len(dataset.vdims) > 1:
-            raise DataError("Iris cubes do not support more than one value dimension")
+            raise DataError("Iris cubes do not support more than one value dimension", cls)
 
 
     @classmethod

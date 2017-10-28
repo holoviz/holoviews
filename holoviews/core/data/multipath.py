@@ -1,7 +1,8 @@
 import numpy as np
 
 from ..util import max_range
-from .interface import Interface
+from .interface import Interface, DataError
+
 
 class MultiInterface(Interface):
     """
@@ -40,11 +41,11 @@ class MultiInterface(Interface):
                                                          datatype=cls.subtypes)
             if prev_interface:
                 if prev_interface != interface:
-                    raise ValueError('MultiInterface subpaths must all have matching datatype.')
+                    raise DataError('MultiInterface subpaths must all have matching datatype.', cls)
                 if dims['kdims'] != prev_dims['kdims']:
-                    raise ValueError('MultiInterface subpaths must all have matching kdims.')
+                    raise DataError('MultiInterface subpaths must all have matching kdims.', cls)
                 if dims['vdims'] != prev_dims['vdims']:
-                    raise ValueError('MultiInterface subpaths must all have matching vdims.')
+                    raise DataError('MultiInterface subpaths must all have matching vdims.', cls)
             new_data.append(d)
             prev_interface, prev_dims = interface, dims
         return new_data, dims, {}

@@ -46,7 +46,7 @@ class PandasInterface(Interface):
                 vdims = [] if ndim is None else list(data.columns[ndim:])
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 raise DataError("pandas DataFrame column names used as dimensions "
-                                "must be strings not integers.")
+                                "must be strings not integers.", cls)
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
@@ -97,7 +97,7 @@ class PandasInterface(Interface):
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "
-                            "not found: %s" % repr(not_found))
+                            "not found: %s" % repr(not_found), cls)
 
 
     @classmethod
