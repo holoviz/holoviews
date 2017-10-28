@@ -784,12 +784,12 @@ class DynamicMap(HoloMap):
             low, high = util.max_range([kdim.range, kdim.soft_range])
             if low is not np.NaN:
                 if val < low:
-                    raise StopIteration("Key value %s below lower bound %s"
-                                        % (val, low))
+                    raise KeyError("Key value %s below lower bound %s"
+                                   % (val, low))
             if high is not np.NaN:
                 if val > high:
-                    raise StopIteration("Key value %s above upper bound %s"
-                                        % (val, high))
+                    raise KeyError("Key value %s above upper bound %s"
+                                   % (val, high))
 
     def event(self, **kwargs):
         """
