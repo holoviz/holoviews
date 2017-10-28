@@ -1091,7 +1091,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         cname = dimension_sanitizer(cdim.name)
         cmap = style.get('cmap')
         if cmap is None:
-            styles = self.style.max_cycles(len(factors))
+            cycle_style = self.lookup_options(element, 'style')
+            styles = cycle_style.max_cycles(len(factors))
             colors = [styles[i].get('box_color', styles[i]['box_fill_color'])
                       for i in range(len(factors))]
             colors = [rgb2hex(c) if isinstance(c, tuple) else c for c in colors]
