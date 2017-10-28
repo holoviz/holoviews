@@ -9,7 +9,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
                         PlotSize, Draw, BoundsXY)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
-from ..comms import JupyterCommJS
+from ..comms import JupyterCommJS, Comm
 from .util import convert_timestamp
 
 
@@ -52,7 +52,10 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
-            self.comm = self._comm_type(plot, on_msg=self.on_msg)
+            try:
+                self.comm = self._comm_type(plot, on_msg=self.on_msg)
+            except AttributeError:
+                self.comm = Comm(plot)
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.callbacks = []
