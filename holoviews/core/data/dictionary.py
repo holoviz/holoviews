@@ -8,7 +8,7 @@ except ImportError:
 
 import numpy as np
 
-from .interface import Interface
+from .interface import Interface, DataError
 from ..dimension import Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
@@ -104,10 +104,10 @@ class DictInterface(Interface):
         dimensions = dataset.dimensions(label='name')
         not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
-            raise ValueError('Following dimensions not found in data: %s' % not_found)
+            raise DataError('Following dimensions not found in data: %s' % not_found)
         lengths = [len(dataset.data[dim]) for dim in dimensions if not np.isscalar(dataset.data[dim])]
         if len({l for l in lengths if l > 1}) > 1:
-            raise ValueError('Length of columns do not match')
+            raise DataError('Length of columns do not match')
 
 
     @classmethod

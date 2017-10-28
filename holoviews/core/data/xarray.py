@@ -16,7 +16,7 @@ from ..dimension import Dimension
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
-from .interface import Interface
+from .interface import Interface, DataError
 
 
 class XArrayInterface(GridInterface):
@@ -44,6 +44,9 @@ class XArrayInterface(GridInterface):
         vdim_param = element_params['vdims']
 
         if isinstance (data, xr.DataArray):
+            if data.name is None:
+                raise DataError("xarray DataArray must define a name to "
+                                "be wrapped by a HoloViews %s" % eltype.__name__)
             if data.name:
                 vdim = Dimension(data.name)
             elif vdims:

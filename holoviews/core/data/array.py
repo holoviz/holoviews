@@ -5,7 +5,7 @@ except ImportError:
 
 import numpy as np
 
-from .interface import Interface
+from .interface import Interface, DataError
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check
@@ -75,8 +75,8 @@ class ArrayInterface(Interface):
         ndims = len(dataset.dimensions())
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
-            raise ValueError("Supplied data does not match specified "
-                             "dimensions, expected at least %s columns." % ndims)
+            raise DataError("Supplied data does not match specified "
+                            "dimensions, expected at least %s columns." % ndims)
 
 
     @classmethod

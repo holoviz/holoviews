@@ -6,6 +6,10 @@ from ..ndmapping import OrderedDict
 from .. import util
 
 
+class DataError(ValueError):
+    "DataError is raised when the data cannot be interpreted"
+
+
 class iloc(object):
     """
     iloc is small wrapper object that allows row, column based
@@ -162,6 +166,8 @@ class Interface(param.Parameterized):
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
+            except DataError:
+                raise
             except Exception:
                 pass
         else:
@@ -176,9 +182,9 @@ class Interface(param.Parameterized):
         not_found = [d for d in dataset.dimensions(label='name')
                      if d not in dataset.data]
         if not_found:
-            raise ValueError("Supplied data does not contain specified "
-                             "dimensions, the following dimensions were "
-                             "not found: %s" % repr(not_found))
+            raise DataError("Supplied data does not contain specified "
+                            "dimensions, the following dimensions were "
+                            "not found: %s" % repr(not_found))
 
 
     @classmethod
