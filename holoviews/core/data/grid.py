@@ -8,7 +8,7 @@ except ImportError:
 import numpy as np
 
 from .dictionary import DictInterface
-from .interface import Interface
+from .interface import Interface, DataError
 from ..dimension import Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
@@ -74,10 +74,11 @@ class GridInterface(DictInterface):
         expected = tuple([len(data[kd]) for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
+            error = DataError if len(shape) > 1 else ValueError
             if shape != expected[::-1] and not (not expected and shape == (1,)):
-                raise ValueError('Key dimension values and value array %s '
-                                 'shape do not match. Expected shape %s, '
-                                 'actual shape: %s' % (vdim, expected[::-1], shape))
+                raise error('Key dimension values and value array %s '
+                            'shapes do not match. Expected shape %s, '
+                            'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 

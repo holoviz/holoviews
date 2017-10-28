@@ -10,7 +10,7 @@ except ImportError:
 import numpy as np
 import pandas as pd
 
-from .interface import Interface
+from .interface import Interface, DataError
 from ..dimension import Dimension
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
@@ -44,6 +44,9 @@ class PandasInterface(Interface):
             elif kdims is None and vdims is None:
                 kdims = list(data.columns[:ndim])
                 vdims = [] if ndim is None else list(data.columns[ndim:])
+            if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
+                raise DataError("pandas DataFrame column names used as dimensions "
+                                "must be strings not integers.", cls)
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
@@ -92,9 +95,9 @@ class PandasInterface(Interface):
         not_found = [d for d in dataset.dimensions(label='name')
                      if d not in dataset.data.columns]
         if not_found:
-            raise ValueError("Supplied data does not contain specified "
-                             "dimensions, the following dimensions were "
-                             "not found: %s" % repr(not_found))
+            raise DataError("Supplied data does not contain specified "
+                            "dimensions, the following dimensions were "
+                            "not found: %s" % repr(not_found), cls)
 
 
     @classmethod

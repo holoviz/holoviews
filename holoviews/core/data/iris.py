@@ -8,7 +8,7 @@ from iris.util import guess_coord_axis
 
 import numpy as np
 
-from .interface import Interface
+from .interface import Interface, DataError
 from .grid import GridInterface
 from ..dimension import Dimension
 from ..element import Element
@@ -129,7 +129,7 @@ class CubeInterface(GridInterface):
     @classmethod
     def validate(cls, dataset):
         if len(dataset.vdims) > 1:
-            raise ValueError("Iris cubes do not support more than one value dimension")
+            raise DataError("Iris cubes do not support more than one value dimension", cls)
 
 
     @classmethod

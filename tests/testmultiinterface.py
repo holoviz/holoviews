@@ -6,6 +6,7 @@ from unittest import SkipTest
 
 import numpy as np
 from holoviews import Dataset
+from holoviews.core.data.interface import DataError
 from holoviews.element import Path
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -112,15 +113,13 @@ class MultiInterfaceTest(ComparisonTestCase):
     def test_multi_mixed_interface_raises(self):
         arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}
                   for i in range(2) for j in range(2)]
-        error = "None of the available storage backends were able to support the supplied data format."
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaises(DataError):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
 
     def test_multi_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
-        error = "Following dimensions not found in data: \['y'\]"
-        with self.assertRaisesRegexp(ValueError, error):
+        with self.assertRaises(DataError):
             mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
 
     def test_multi_split(self):
