@@ -912,6 +912,7 @@ class GenericOverlayPlot(GenericElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
+                            fontsize=self.fontsize,
                             renderer=self.renderer, stream_sources=stream_sources,
                             zorder=zorder, adjoined=self.adjoined, **passed_handles)
 
