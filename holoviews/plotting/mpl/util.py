@@ -110,7 +110,7 @@ def fix_aspect(fig, nrows, ncols, title=None, extra_artists=[],
     widths = [[] for i in range(rs)]
     for r, row in enumerate(rows):
         for c, ax in enumerate(row):
-            bbox = ax.get_tightbbox(fig.canvas.renderer)
+            bbox = ax.get_tightbbox(fig.canvas.get_renderer())
             heights[c].append(bbox.height)
             widths[r].append(bbox.width)
     height = (max([sum(c) for c in heights])) + nrows*vspace*fig.dpi
@@ -138,7 +138,7 @@ def get_tight_bbox(fig, bbox_extra_artists=[], pad=None):
     """
     Compute a tight bounding box around all the artists in the figure.
     """
-    renderer = fig._cachedRenderer
+    renderer = fig.canvas.get_renderer()
     bbox_inches = fig.get_tightbbox(renderer)
     bbox_artists = bbox_extra_artists[:]
     bbox_artists += fig.get_default_bbox_extra_artists()
