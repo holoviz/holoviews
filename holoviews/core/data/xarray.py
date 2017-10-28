@@ -51,7 +51,7 @@ class XArrayInterface(GridInterface):
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
             else:
-                raise DataError("If xarray DataArray does not define a name"
+                raise DataError("If xarray DataArray does not define a name "
                                 "an explicit vdim must be supplied.", cls)
             vdims = [vdim]
             if not kdims:
@@ -91,8 +91,13 @@ class XArrayInterface(GridInterface):
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
 
+        not_found = [d for d in kdims if d.name not in data.coords]
         if not isinstance(data, xr.Dataset):
             raise TypeError('Data must be be an xarray Dataset type.')
+        elif not_found:
+            raise DataError("xarray Dataset must define coordinates "
+                            "for all defined kdims, %s coordinates not found."
+                            % not_found, cls)
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
