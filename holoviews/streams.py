@@ -417,10 +417,11 @@ class DataFrameStream(DataStream):
         else:
             try:
                 from streamz.dataframe import StreamingDataFrame, StreamingSeries
-                loaded =True
+                loaded = True
             except ImportError:
                 loaded = False
-            if not loaded or isinstance(sdf, (StreamingDataFrame, StreamingSeries)):
+            print(sdf, loaded)
+            if not loaded or not isinstance(sdf, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("DataFrameStream must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
             elif isinstance(sdf, StreamingSeries):
