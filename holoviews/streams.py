@@ -394,36 +394,64 @@ class DataStream(Stream):
 
 class DataFrameStream(DataStream):
     """
-    DataFrameStream provides an adaptor to attach streamz
-    StreamingDataFrame to a HoloViews stream. The stream will accumulate
-    a DataFrame up to the specified ``backlog`` of rows. The accumulated
-    dataframe is then made available via the ``data`` parameter.
+    DataFrameStream provides a means stream pandas DataFrames. The
+    stream will accumulate a DataFrame up to the specified ``backlog``
+    of rows. The accumulated dataframe is then made available via the
+    ``data`` parameter.
 
-    Optionally a chunksize may be supplied which will split received
-    data into smaller chunks resulting in smoother plot updates when
-    large numbers of samples are received.
+    The DataFrameStream can be instantiated with a pandas DataFrame,
+    a streamz.StreamingDataFrame or a streamz.StreamingSeries. When
+    supplied with a streamz object it will automatically subscribe
+    to events emitted by it.
+
+    By default the DataFrameStream will use the DataFrame index, this
+    may be disabled by setting index=False. Optionally a chunksize may
+    be supplied which will split received data into smaller chunks
+    resulting in smoother plot updates when large numbers of samples
+    are received.
     """
 
-    def __init__(self, sdf, backlog=1000, chunksize=None, **params):
-        try:
-            from streamz.dataframe import StreamingDataFrame, StreamingSeries
-        except ImportError:
-            raise ImportError("DataFrameStream requires streamz library to be available")
-        if isinstance(sdf, StreamingSeries):
-            sdf = sdf.to_frame()
-        elif not isinstance(sdf, StreamingDataFrame):
-            raise ValueError("DataFrameStream must be instantiated with a "
-                             "streamz.StreamingDataFrame or streamz.StreamingSeries")
+    def __init__(self, sdf, backlog=1000, index=True, chunksize=None, **params):
+        if util.pd and isinstance(sdf, util.pd.DataFrame):
+            example = sdf
+        else:
+            try:
+                from streamz.dataframe import StreamingDataFrame, StreamingSeries
+                loaded =True
+            except ImportError:
+                loaded = False
+            if not loaded or isinstance(sdf, (StreamingDataFrame, StreamingSeries)):
+                raise ValueError("DataFrameStream must be initialized with pandas DataFrame, "
+                                 "streamz.StreamingDataFrame or streamz.StreamingSeries.")
+            elif isinstance(sdf, StreamingSeries):
+                sdf = sdf.to_frame()
+            example = sdf.example
+            sdf.stream.sink(self.send)
+            self.sdf = sdf
 
+        if index:
+            example = example.reset_index()
         if 'data' not in params:
-            params['data'] = sdf.example.reset_index()
+            params['data'] = example
         super(DataFrameStream, self).__init__(**params)
-        self.sdf = sdf
         self.backlog = backlog
         self._chunk_length = 0
         self._count = 0
         self._chunksize = chunksize
-        sdf.stream.sink(self.send)
+        self._index = index
+
+
+    def verify(self, x):
+        """ Verify consistency of dataframes that pass through this stream """
+        if list(x.columns) != list(self.data.columns):
+            raise IndexError("Input expected to have columns %s, got %s" %
+                             (self.data.columns, x.columns))
+
+    def clear(self):
+        "Clears the data in the stream"
+        with util.disable_constant(self):
+            self.data = self.data.iloc[:0]
+        self.send(self.data.iloc[:0])
 
 
     def event(self, **kwargs):
@@ -448,7 +476,9 @@ class DataFrameStream(DataStream):
         data = kwargs.get('data')
         if data is not None:
             data_length = len(data)
-            data = data.reset_index()
+            if self._index:
+                data = data.reset_index()
+            self.verify(data)
             if data_length < self.backlog:
                 prev_chunk = self.data.iloc[-(self.backlog-data_length):]
                 data = util.pd.concat([prev_chunk, data])
