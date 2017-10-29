@@ -6,7 +6,7 @@ import numpy as np
 from bokeh.models import HoverTool, FactorRange
 
 from ...core import util
-from .element import ColorbarPlot, line_properties, fill_properties
+from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .util import expand_batched_style
 
 
@@ -106,14 +106,17 @@ class PathPlot(ColorbarPlot):
         return data, elmapping, style
 
     
-class ContourPlot(PathPlot):
+class ContourPlot(LegendPlot, PathPlot):
 
     color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     _color_style = 'line_color'
-    
+
     def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)+self.hmap.last.last.vdims
@@ -170,6 +173,8 @@ class ContourPlot(PathPlot):
         cmapper = self._get_colormapper(cdim, element, ranges, style, factors)
         mapping[self._color_style] = {'field': dim_name, 'transform': cmapper}
         self._get_hover_data(data, element)
+        if self.show_legend:
+            mapping['legend'] = dim_name
         return data, mapping, style
 
 
