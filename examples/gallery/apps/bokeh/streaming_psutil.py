@@ -19,7 +19,8 @@ def get_mem_data():
 
 def get_cpu_data():
     cpu_percent = psutil.cpu_percent(percpu=True)
-    df = pd.DataFrame(list(enumerate(cpu_percent)), columns=['CPU', 'Utilization'])
+    df = pd.DataFrame(list(enumerate(cpu_percent)),
+                      columns=['CPU', 'Utilization'])
     df['time'] = pd.Timestamp.now()
     return df
 
@@ -35,13 +36,12 @@ def mem_stack(data):
 def cpu_box(data):
     return hv.BoxWhisker(data, 'CPU', 'Utilization').relabel('CPU Usage')
 
-
 ####################################################
 # Set up StreamingDataFrame and add async callback #
 ####################################################
 
-cpu_stream = hv.streams.DataFrameStream(get_cpu_data(), 800)
-mem_stream = hv.streams.DataFrameStream(get_mem_data(), 800)
+cpu_stream = hv.streams.DataFrameStream(get_cpu_data(), 800, index=False)
+mem_stream = hv.streams.DataFrameStream(get_mem_data())
 
 def cb():
     cpu_stream.send(get_cpu_data())
