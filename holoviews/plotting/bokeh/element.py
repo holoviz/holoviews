@@ -1408,6 +1408,12 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             self._process_legend()
         self.drawn = True
 
+        if 'plot' in self.handles and not self.tabs:
+            plot = self.handles['plot']
+            self.handles['xaxis'] = plot.xaxis[0]
+            self.handles['yaxis'] = plot.yaxis[0]
+            self.handles['x_range'] = plot.x_range
+            self.handles['y_range'] = plot.y_range
         for cb in self.callbacks:
             cb.initialize()
 
