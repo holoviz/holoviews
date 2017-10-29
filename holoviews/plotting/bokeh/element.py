@@ -8,7 +8,7 @@ import bokeh.plotting
 from bokeh import palettes
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d,
-                          FactorRange, FuncTickFormatter, Legend, value)
+                          FactorRange, FuncTickFormatter, Tool, Legend)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.models.mappers import LinearColorMapper
@@ -244,15 +244,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         tools = [t for t in cb_tools + self.default_tools + self.tools
                  if t not in tool_names]
-        hover_tools = [t for t in tools if isinstance(t, HoverTool)]
-        if 'hover' in tools:
+
+        copied_tools = []
+        for tool in tools:
+            if isinstance(tool, Tool):
+                properties = tool.properties_with_values(include_defaults=False)
+                tool = type(tool)(**properties)
+            copied_tools.append(tool)
+
+        hover_tools = [t for t in copied_tools if isinstance(t, HoverTool)]
+        if 'hover' in copied_tools:
             hover = HoverTool(tooltips=tooltips, **hover_opts)
-            tools[tools.index('hover')] = hover
+            copied_tools[copied_tools.index('hover')] = hover
         elif any(hover_tools):
             hover = hover_tools[0]
         if hover:
             self.handles['hover'] = hover
-        return tools
+        return copied_tools
 
 
     def _get_hover_data(self, data, element):
