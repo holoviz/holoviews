@@ -445,7 +445,10 @@ def get_min_distance(element):
     m, n = np.meshgrid(xys, xys)
     distances = np.abs(m-n)
     np.fill_diagonal(distances, np.inf)
-    return distances[distances>0].min()
+    distances = distances[distances>0]
+    if len(distances):
+        return distances.min()
+    return 0
 
 
 def rgb2hex(rgb):
