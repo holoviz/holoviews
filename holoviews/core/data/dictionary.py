@@ -101,7 +101,10 @@ class DictInterface(Interface):
 
     @classmethod
     def validate(cls, dataset):
-        dimensions = dataset.dimensions(label='name')
+        if dataset._virtual_vdims:
+            dimensions = dataset.dimensions('key', label='name')
+        else:
+            dimensions = dataset.dimensions(label='name')
         not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
             raise DataError('Following columns specified as dimensions '

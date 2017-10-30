@@ -164,6 +164,10 @@ class Dataset(Element):
     # to supplied data
     _auto_indexable_1d = True
 
+    # Determines whether value dimensions are in data or should be emulated
+    # Useful for elements which compute statistics from the data
+    _virtual_vdims = False
+
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
