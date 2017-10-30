@@ -164,10 +164,6 @@ class Dataset(Element):
     # to supplied data
     _auto_indexable_1d = True
 
-    # Determines whether value dimensions are in data or should be emulated
-    # Useful for elements which compute statistics from the data
-    _virtual_vdims = False
-
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
@@ -196,8 +192,9 @@ class Dataset(Element):
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
+        validate_vdims = kwargs.pop('_validate_vdims', True)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
-        self.interface.validate(self)
+        self.interface.validate(self, validate_vdims)
 
         self.redim = redim(self, mode='dataset')
 

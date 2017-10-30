@@ -13,19 +13,16 @@ class _StatisticsElement(Chart):
     of the value dimensions.
     """
 
-    _virtual_vdims = True
-
     def __init__(self, data, kdims=None, vdims=None, **params):
+        params['_validate_vdims'] = False
         super(_StatisticsElement, self).__init__(data, kdims, vdims, **params)
         if not self.vdims:
             self.vdims = [Dimension('Density')]
 
 
     def range(self, dim, data_range=True):
-        dim = self.get_dimension(dim)
-        if dim in self.vdims:
-            return Dimensioned.range(self, dim, data_range=True)
-        return super(_StatisticsElement, self).range(dim, data_range)
+        iskdim = self.get_dimension(dim) not in self.vdims
+        return super(_StatisticsElement, self).range(dim, data_range=iskdim)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):

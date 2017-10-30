@@ -6,7 +6,7 @@ from ..core.dimension import Dimension
 from ..core.operation import Operation
 from ..core.options import Compositor, Store, Options, StoreOptions
 from ..core.util import basestring, find_minmax, cartesian_product
-from ..element import Curve, Area, Image, Polygons
+from ..element import Curve, Area, Image, Polygons, Distribution, Bivariate
 
 from .element import contours
 
@@ -47,13 +47,18 @@ class univariate_kde(Operation):
         except ImportError:
             raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
 
-        if self.p.dimension:
-            selected_dim = self.p.dimension
-        elif element._virtual_vdims:
+        params = {}
+        dim_template = Dimension
+        if isinstance(element, Distribution):
             selected_dim = element.kdims[0]
+            if element.group != type(element).__name__:
+                params['group'] = element.group
+            params['label'] = element.label
+            dim_template = element.vdims[0]
+        elif self.p.dimension:
+            selected_dim = self.p.dimension
         else:
             selected_dim = [d.name for d in element.vdims + element.kdims][0]
-        dim_template = element.vdims[0] if element._virtual_vdims else Dimension
         vdims = [dim_template('{}_density'.format(selected_dim),
                               label='{} Density'.format(selected_dim))]
 
@@ -127,9 +132,16 @@ class bivariate_kde(Operation):
         positions = np.vstack([xx.ravel(), yy.ravel()])
         f = np.reshape(kde(positions).T, xx.shape)
 
-        vdim = element.vdims[0] if element._virtual_vdims else 'Density'
-        img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=[vdim])
+        params = {}
+        if isinstance(element, Bivariate):
+            if element.group != type(element).__name__:
+                params['group'] = element.group
+            params['label'] = element.label
+            vdim = element.vdims[0]
+        else:
+            vdim = 'Density'
+        img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=[vdim], **params)
         if self.p.contours:
             cntr = contours(img, filled=self.p.filled)
-            return cntr.clone(cntr.data[1:])
+            return cntr.clone(cntr.data[1:], **params)
         return img

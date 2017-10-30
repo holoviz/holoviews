@@ -71,8 +71,8 @@ class ArrayInterface(Interface):
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
     @classmethod
-    def validate(cls, dataset):
-        ndims = dataset.ndims if dataset._virtual_vdims else len(dataset.dimensions())
+    def validate(cls, dataset, vdims=True):
+        ndims = len(dataset.dimensions()) if vdims else dataset.ndims
         ncols = dataset.data.shape[1] if dataset.data.ndim > 1 else 1
         if ncols < ndims:
             raise DataError("Supplied data does not match specified "
