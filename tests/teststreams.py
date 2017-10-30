@@ -374,13 +374,13 @@ class TestBufferStream(ComparisonTestCase):
         buff.send(np.array([[1, 2]]))
         self.assertEqual(buff.data, np.array([[0, 1], [1, 2]]))
 
-    def test_buffer_array_larger_than_backlog(self):
-        buff = Buffer(np.array([[0, 1]]), backlog=1)
+    def test_buffer_array_larger_than_length(self):
+        buff = Buffer(np.array([[0, 1]]), length=1)
         buff.send(np.array([[1, 2]]))
         self.assertEqual(buff.data, np.array([[1, 2]]))
 
-    def test_buffer_array_patch_larger_than_backlog(self):
-        buff = Buffer(np.array([[0, 1]]), backlog=1)
+    def test_buffer_array_patch_larger_than_length(self):
+        buff = Buffer(np.array([[0, 1]]), length=1)
         buff.send(np.array([[1, 2], [2, 3]]))
         self.assertEqual(buff.data, np.array([[2, 3]]))
 
@@ -415,16 +415,16 @@ class TestBufferStream(ComparisonTestCase):
         buff.send({'x': np.array([1]), 'y': np.array([2])})
         self.assertEqual(buff.data, {'x': np.array([0, 1]), 'y': np.array([1, 2])})
 
-    def test_buffer_array_larger_than_backlog(self):
+    def test_buffer_array_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
-        buff = Buffer(data, backlog=1)
+        buff = Buffer(data, length=1)
         chunk = {'x': np.array([1]), 'y': np.array([2])}
         buff.send(chunk)
         self.assertEqual(buff.data, chunk)
 
-    def test_buffer_array_patch_larger_than_backlog(self):
+    def test_buffer_array_patch_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
-        buff = Buffer(data, backlog=1)
+        buff = Buffer(data, length=1)
         chunk = {'x': np.array([1, 2]), 'y': np.array([2, 3])}
         buff.send(chunk)
         self.assertEqual(buff.data, {'x': np.array([2]), 'y': np.array([3])})
@@ -469,16 +469,16 @@ class TestBufferStream(ComparisonTestCase):
         dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
         self.assertEqual(buff.data.values, dframe.reset_index().values)
         
-    def test_buffer_dframe_larger_than_backlog(self):
+    def test_buffer_dframe_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
-        buff = Buffer(data, backlog=1, index=False)
+        buff = Buffer(data, length=1, index=False)
         chunk = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
         buff.send(chunk)
         self.assertEqual(buff.data.values, chunk.values)
 
-    def test_buffer_dframe_patch_larger_than_backlog(self):
+    def test_buffer_dframe_patch_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
-        buff = Buffer(data, backlog=1, index=False)
+        buff = Buffer(data, length=1, index=False)
         chunk = pd.DataFrame({'x': np.array([1, 2]), 'y': np.array([2, 3])})
         buff.send(chunk)
         dframe = pd.DataFrame({'x': np.array([2]), 'y': np.array([3])})

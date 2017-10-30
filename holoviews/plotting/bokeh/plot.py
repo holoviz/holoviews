@@ -141,7 +141,7 @@ class BokehPlot(DimensionedPlot):
         """
         if self.streaming and self.streaming.data is self.current_frame.data and self._stream_data:
             data = {k: v[-self.streaming._chunk_length:] for k, v in data.items()}
-            source.stream(data, self.streaming.backlog)
+            source.stream(data, self.streaming.length)
         else:
             source.data.update(data)
 

@@ -398,7 +398,7 @@ class Buffer(Pipe):
     from tabular datasets. The data may be in the form of a pandas
     DataFrame, 2D arrays of rows and columns or dictionaries of column
     arrays. Buffer will accumulate the last N rows, where N is defined
-    by the specified ``backlog``. The accumulated data is then made
+    by the specified ``length``. The accumulated data is then made
     available via the ``data`` parameter.
 
     A Buffer may also be instantiated with a streamz.StreamingDataFrame
@@ -409,7 +409,7 @@ class Buffer(Pipe):
     default, this may be disabled by setting index=False.
     """
 
-    def __init__(self, columns, backlog=1000, index=True, **params):
+    def __init__(self, columns, length=1000, index=True, **params):
         if (util.pd and isinstance(columns, util.pd.DataFrame)):
             example = columns
         elif isinstance(columns, np.ndarray):
@@ -441,7 +441,7 @@ class Buffer(Pipe):
             example = example.reset_index()
         params['data'] = example
         super(Buffer, self).__init__(**params)
-        self.backlog = backlog
+        self.length = length
         self._chunk_length = 0
         self._count = 0
         self._index = index
@@ -486,31 +486,31 @@ class Buffer(Pipe):
     def _concat(self, data):
         """
         Concatenate and slice the accepted data types to the defined
-        backlog size.
+        length.
         """
         if isinstance(data, np.ndarray):
             data_length = len(data)
-            if data_length < self.backlog:
-                prev_chunk = self.data[-(self.backlog-data_length):]
+            if data_length < self.length:
+                prev_chunk = self.data[-(self.length-data_length):]
                 data = np.concatenate([prev_chunk, data])
-            elif data_length > self.backlog:
-                data = data[-self.backlog:]
+            elif data_length > self.length:
+                data = data[-self.length:]
         elif util.pd and isinstance(data, util.pd.DataFrame):
             data_length = len(data)
-            if data_length < self.backlog:
-                prev_chunk = self.data.iloc[-(self.backlog-data_length):]
+            if data_length < self.length:
+                prev_chunk = self.data.iloc[-(self.length-data_length):]
                 data = util.pd.concat([prev_chunk, data])
-            elif data_length > self.backlog:
-                data = data.iloc[-self.backlog:]
+            elif data_length > self.length:
+                data = data.iloc[-self.length:]
         elif isinstance(data, dict) and data:
             data_length = len(list(data.values())[0])
             new_data = {}
             for k, v in data.items():
-                if data_length < self.backlog:
-                    prev_chunk = self.data[k][-(self.backlog-data_length):]
+                if data_length < self.length:
+                    prev_chunk = self.data[k][-(self.length-data_length):]
                     new_data[k] = np.concatenate([prev_chunk, v])
-                elif data_length > self.backlog:
-                    new_data[k] = v[-self.backlog:]
+                elif data_length > self.length:
+                    new_data[k] = v[-self.length:]
                 else:
                     new_data[k] = v
             data = new_data
@@ -520,7 +520,7 @@ class Buffer(Pipe):
 
     def update(self, **kwargs):
         """
-        Overrides update to concatenate streamed data up to backlog.
+        Overrides update to concatenate streamed data up to defined length.
         """
         data = kwargs.get('data')
         if data is not None:
