@@ -1511,7 +1511,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def update_backends(cls, id_mapping, custom_trees):
+    def update_backends(cls, id_mapping, custom_trees, backend=None):
         """
         Given the id_mapping from previous ids to new ids and the new
         custom tree dictionary, update the current backend with the
@@ -1519,7 +1519,7 @@ class StoreOptions(object):
         stay linked with the current object.
         """
         # Update the custom option entries for the current backend
-        Store.custom_options().update(custom_trees)
+        Store.custom_options(backend=backend).update(custom_trees)
         # Update the entries in other backends so the ids match correctly
         for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
             for (old_id, new_id) in id_mapping:
@@ -1529,7 +1529,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def set_options(cls, obj, options=None, **kwargs):
+    def set_options(cls, obj, options=None, backend=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
         their style, plot and normalization options.
@@ -1572,7 +1572,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
+        options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees)
