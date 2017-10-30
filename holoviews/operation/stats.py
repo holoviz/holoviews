@@ -133,31 +133,3 @@ class bivariate_kde(Operation):
             cntr = contours(img, filled=self.p.filled)
             return cntr.clone(cntr.data[1:])
         return img
-
-
-class univariate_composite(Operation):
-
-    output_type = Area
-
-    def _process(self, element, key=None):
-        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
-        bw = plot_opts.pop('bw', univariate_kde.bandwidth)
-        transformed = univariate_kde(element, bandwidth=bw)
-        Store.transfer_options(element, transformed, ['bw'])
-        return transformed
-
-
-class bivariate_composite(Operation):
-
-    output_type = Polygons
-
-    def _process(self, element, key=None):
-        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
-        bw = plot_opts.pop('bw', bivariate_kde.bandwidth)
-        filled = plot_opts.pop('filled', bivariate_kde.filled)
-        transformed = bivariate_kde(element, bandwidth=bw, filled=filled)
-        Store.transfer_options(element, transformed, ['bw', 'filled'])
-        return transformed
-
-Compositor.register(Compositor("Distribution", univariate_composite, 'Area', 'data'))
-Compositor.register(Compositor("Bivariate", bivariate_composite, 'Polygons', 'data'))

@@ -6,9 +6,13 @@ This file defines the HTML tags used to wrap rendered output for
 display in the IPython Notebook (optional).
 """
 
-from ..core.options import Cycle
+from ..core.options import Cycle, Compositor
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
+from .util import univariate_composite, bivariate_composite
+
+Compositor.register(Compositor("Distribution", univariate_composite, 'Area', 'data'))
+Compositor.register(Compositor("Bivariate", bivariate_composite, 'Polygons', 'data'))
 
 def public(obj):
     if not isinstance(obj, type): return False

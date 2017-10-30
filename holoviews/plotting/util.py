@@ -10,6 +10,8 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
+from ..element import Area, Polygons
+from ..operation.stats import univariate_kde, bivariate_kde, Operation
 from ..streams import LinkedStream
 
 def displayable(obj):
@@ -449,6 +451,31 @@ def get_min_distance(element):
     if len(distances):
         return distances.min()
     return 0
+
+
+class univariate_composite(Operation):
+
+    output_type = Area
+
+    def _process(self, element, key=None):
+        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
+        bw = plot_opts.pop('bw', univariate_kde.bandwidth)
+        transformed = univariate_kde(element, bandwidth=bw)
+        Store.transfer_options(element, transformed, ['bw'])
+        return transformed
+
+
+class bivariate_composite(Operation):
+
+    output_type = Polygons
+
+    def _process(self, element, key=None):
+        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
+        bw = plot_opts.pop('bw', bivariate_kde.bandwidth)
+        filled = plot_opts.pop('filled', bivariate_kde.filled)
+        transformed = bivariate_kde(element, bandwidth=bw, filled=filled)
+        Store.transfer_options(element, transformed, ['bw', 'filled'])
+        return transformed
 
 
 def rgb2hex(rgb):
