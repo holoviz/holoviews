@@ -811,16 +811,24 @@ class Compositor(param.Parameterized):
         Finds any applicable compositor and applies it.
         """
         from .overlay import Overlay
-        match = cls.strongest_match(overlay, mode)
-        if match is None: return overlay
-        (_, applicable_op, (start, stop)) = match
-        values = overlay.values()
-        sliced = Overlay.from_values(values[start:stop])
-        result = applicable_op.apply(sliced, ranges, key=key)
-        result = result.relabel(group=applicable_op.group)
-        output = Overlay.from_values(values[:start]+[result]+values[stop:])
-        output.id = overlay.id
-        return output
+        while True:
+            match = cls.strongest_match(overlay, mode)
+            if match is None: return overlay
+            (_, applicable_op, (start, stop)) = match
+            if isinstance(overlay, Overlay):
+                values = overlay.values()
+                sliced = Overlay.from_values(values[start:stop])
+                result = applicable_op.apply(sliced, ranges, key=key)
+                result = result.relabel(group=applicable_op.group)
+                overlay = Overlay.from_values(values[:start]+[result]+values[stop:])
+                overlay.id = overlay.id
+            else:
+                values = overlay.items()
+                sliced = overlay.clone(values[start:stop])
+                result = applicable_op.apply(sliced, ranges, key=key)
+                result = result.relabel(group=applicable_op.group)
+                result = list(zip(sliced.keys(), [result]))
+                overlay = overlay.clone(values[:start]+result+values[stop:])
 
 
     @classmethod
