@@ -4,6 +4,7 @@ Unit test of the streams system
 from collections import defaultdict
 
 import param
+from holoviews.core.util import pd
 from holoviews.element import Points
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import * # noqa (Test all available streams)
@@ -324,3 +325,168 @@ class TestPlotSizeTransform(ComparisonTestCase):
         plotsize.event(width=600, height=100)
         self.assertEqual(plotsize.contents, {'width':1200, 'height':200, 'scale':2})
 
+
+class TestPipeStream(ComparisonTestCase):
+
+    def test_pipe_send(self):
+        test = None
+        def subscriber(data):
+            global test
+            test = data
+        pipe = Pipe()
+        pipe.add_subscriber(subscriber)
+        pipe.send('Test')
+        self.assertEqual(pipe.data, 'Test')
+
+    def test_pipe_event(self):
+        test = None
+        def subscriber(data):
+            global test
+            test = data
+        pipe = Pipe()
+        pipe.add_subscriber(subscriber)
+        pipe.event(data='Test')
+        self.assertEqual(pipe.data, 'Test')
+
+    def test_pipe_update(self):
+        pipe = Pipe()
+        pipe.event(data='Test')
+        self.assertEqual(pipe.data, 'Test')
+
+
+
+class TestBufferStream(ComparisonTestCase):
+
+    # Arrays
+
+    def test_init_buffer_array(self):
+        arr = np.array([[0, 1]])
+        buff = Buffer(arr)
+        self.assertEqual(buff.data, arr)
+
+    def test_buffer_array_ndim_exception(self):
+        error = "Only 2D array data may be streamed by Buffer."
+        with self.assertRaisesRegexp(ValueError, error):
+            buff = Buffer(np.array([0, 1]))
+
+    def test_buffer_array_send(self):
+        buff = Buffer(np.array([[0, 1]]))
+        buff.send(np.array([[1, 2]]))
+        self.assertEqual(buff.data, np.array([[0, 1], [1, 2]]))
+
+    def test_buffer_array_larger_than_backlog(self):
+        buff = Buffer(np.array([[0, 1]]), backlog=1)
+        buff.send(np.array([[1, 2]]))
+        self.assertEqual(buff.data, np.array([[1, 2]]))
+
+    def test_buffer_array_patch_larger_than_backlog(self):
+        buff = Buffer(np.array([[0, 1]]), backlog=1)
+        buff.send(np.array([[1, 2], [2, 3]]))
+        self.assertEqual(buff.data, np.array([[2, 3]]))
+
+    def test_buffer_array_send_verify_ndim_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = 'Streamed array data must be two-dimensional'
+        with self.assertRaisesRegexp(ValueError, error):
+            buff.send(np.array([1]))
+
+    def test_buffer_array_send_verify_shape_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = "Streamed array data expeced to have 2 columns, got 3."
+        with self.assertRaisesRegexp(ValueError, error):
+            buff.send(np.array([[1, 2, 3]]))
+
+    def test_buffer_array_send_verify_type_fail(self):
+        buff = Buffer(np.array([[0, 1]]))
+        error = "Input expected to be of type ndarray, got list."
+        with self.assertRaisesRegexp(TypeError, error):
+            buff.send([1])
+
+    # Dictionaries
+
+    def test_init_buffer_dict(self):
+        data = {'x': np.array([1]), 'y': np.array([2])}
+        buff = Buffer(data)
+        self.assertEqual(buff.data, data)
+    
+    def test_buffer_dict_send(self):
+        data = {'x': np.array([0]), 'y': np.array([1])}
+        buff = Buffer(data)
+        buff.send({'x': np.array([1]), 'y': np.array([2])})
+        self.assertEqual(buff.data, {'x': np.array([0, 1]), 'y': np.array([1, 2])})
+
+    def test_buffer_array_larger_than_backlog(self):
+        data = {'x': np.array([0]), 'y': np.array([1])}
+        buff = Buffer(data, backlog=1)
+        chunk = {'x': np.array([1]), 'y': np.array([2])}
+        buff.send(chunk)
+        self.assertEqual(buff.data, chunk)
+
+    def test_buffer_array_patch_larger_than_backlog(self):
+        data = {'x': np.array([0]), 'y': np.array([1])}
+        buff = Buffer(data, backlog=1)
+        chunk = {'x': np.array([1, 2]), 'y': np.array([2, 3])}
+        buff.send(chunk)
+        self.assertEqual(buff.data, {'x': np.array([2]), 'y': np.array([3])})
+
+    def test_buffer_dict_send_verify_column_fail(self):
+        data = {'x': np.array([0]), 'y': np.array([1])}
+        buff = Buffer(data)
+        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        with self.assertRaisesRegexp(IndexError, error):
+            buff.send({'x': np.array([2])})
+
+    def test_buffer_dict_send_verify_shape_fail(self):
+        data = {'x': np.array([0]), 'y': np.array([1])}
+        buff = Buffer(data)
+        error = "Input columns expected to have the same number of rows."
+        with self.assertRaisesRegexp(ValueError, error):
+            buff.send({'x': np.array([2]), 'y': np.array([3, 4])})
+
+    # DataFrames
+
+    def test_init_buffer_dframe(self):
+        data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        buff = Buffer(data, index=False)
+        self.assertEqual(buff.data, data)
+
+    def test_init_buffer_dframe_with_index(self):
+        data = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        buff = Buffer(data)
+        self.assertEqual(buff.data, data.reset_index())
+
+    def test_buffer_dframe_send(self):
+        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        buff = Buffer(data, index=False)
+        buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
+        dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])})
+        self.assertEqual(buff.data.values, dframe.values)
+
+    def test_buffer_dframe_send_with_index(self):
+        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        buff = Buffer(data)
+        buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
+        dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
+        self.assertEqual(buff.data.values, dframe.reset_index().values)
+        
+    def test_buffer_dframe_larger_than_backlog(self):
+        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        buff = Buffer(data, backlog=1, index=False)
+        chunk = pd.DataFrame({'x': np.array([1]), 'y': np.array([2])})
+        buff.send(chunk)
+        self.assertEqual(buff.data.values, chunk.values)
+
+    def test_buffer_dframe_patch_larger_than_backlog(self):
+        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        buff = Buffer(data, backlog=1, index=False)
+        chunk = pd.DataFrame({'x': np.array([1, 2]), 'y': np.array([2, 3])})
+        buff.send(chunk)
+        dframe = pd.DataFrame({'x': np.array([2]), 'y': np.array([3])})
+        self.assertEqual(buff.data.values, dframe.values)
+
+    def test_buffer_dframe_send_verify_column_fail(self):
+        data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
+        buff = Buffer(data, index=False)
+        error = "Input expected to have columns \['x', 'y'\], got \['x'\]"
+        with self.assertRaisesRegexp(IndexError, error):
+            buff.send(pd.DataFrame({'x': np.array([2])}))

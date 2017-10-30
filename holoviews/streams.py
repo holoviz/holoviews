@@ -450,23 +450,23 @@ class Buffer(Pipe):
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
         if type(x) != type(self.data):
-            raise TypeError("Input expected to be of type %s, got %s."
+            raise TypeError("Input expected to be of type %s, got %s." %
                             (type(self.data).__name__, type(x).__name__))
         elif isinstance(x, np.ndarray):
             if x.ndim != 2:
                 raise ValueError('Streamed array data must be two-dimensional')
             elif x.shape[1] != self.data.shape[1]:
-                raise ValueError("Streamed array data expeced to have %d columns "
-                                 "got %d" % (self.data.shape[1], x.shape[1]))
+                raise ValueError("Streamed array data expeced to have %d columns, "
+                                 "got %d." % (self.data.shape[1], x.shape[1]))
         elif util.pd and isinstance(x, util.pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError("Input expected to have columns %s, got %s" %
-                             (self.data.columns, x.columns))
+                             (list(self.data.columns), list(x.columns)))
         elif isinstance(x, dict):
             if any(c not in x for c in self.data):
                 raise IndexError("Input expected to have columns %s, got %s" %
-                                 (list(self.data.keys()), list(x.keys())))
+                                 (sorted(self.data.keys()), sorted(x.keys())))
             elif len(set(len(v) for v in x.values())) > 1:
-                raise IndexError("Input columns expected to have the "
+                raise ValueError("Input columns expected to have the "
                                  "same number of rows.")
 
 
@@ -511,6 +511,8 @@ class Buffer(Pipe):
                     new_data[k] = np.concatenate([prev_chunk, v])
                 elif data_length > self.backlog:
                     new_data[k] = v[-self.backlog:]
+                else:
+                    new_data[k] = v
             data = new_data
         self._chunk_length = data_length
         return data
