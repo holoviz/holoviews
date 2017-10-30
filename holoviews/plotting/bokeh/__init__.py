@@ -220,3 +220,6 @@ options.Scatter = Options('style', muted_alpha=0.2)
 options.Points = Options('style', muted_alpha=0.2)
 options.Polygons = Options('style', muted_alpha=0.2)
 
+# Statistics
+options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
+                               fill_alpha=0.5)

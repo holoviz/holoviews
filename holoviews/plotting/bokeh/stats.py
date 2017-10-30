@@ -3,8 +3,6 @@ from functools import partial
 import param
 import numpy as np
 
-from bokeh.models.ranges import DataRange1d
-
 from ...element import Polygons, Contours, Distribution, Bivariate
 from ...operation.stats import univariate_kde, bivariate_kde
 
@@ -26,7 +24,8 @@ class DistributionPlot(AreaPlot):
     def _convert_element(self, element):
         plot_opts = self.lookup_options(element, 'plot').options
         style_opts = self.lookup_options(element, 'style').kwargs
-        return univariate_kde(element, bandwidth=plot_opts.get('bw')).opts(plot=plot_opts, style=style_opts)
+        bw = plot_opts.pop('bw', univariate_kde.bandwidth)
+        return univariate_kde(element, bandwidth=bw).opts(plot=plot_opts, style=style_opts)
 
 
 
@@ -44,13 +43,14 @@ class BivariatePlot(PolygonPlot):
 
     def __init__(self, element, plot=None, **params):
         element = element.map(self._convert_element, Bivariate)
-        super(BivariatePlot, self).__init__(element, plot, batched=True, **params)
+        super(BivariatePlot, self).__init__(element, plot, **params)
 
     def _convert_element(self, element):
         plot_opts = self.lookup_options(element, 'plot').options
         style_opts = self.lookup_options(element, 'style').kwargs
-        return bivariate_kde(element, contours=True, filled=plot_opts.get('filled', self.filled),
-                             bandwidth=plot_opts.get('bw')).opts(plot=plot_opts, style=style_opts)
+        bw = plot_opts.pop('bw', univariate_kde.bandwidth)
+        return bivariate_kde(element, contours=True, filled=True,
+                             bandwidth=bw).opts(plot=plot_opts, style=style_opts)
 
     def get_data(self, element, ranges, style):
         data, mapping, style = super(BivariatePlot, self).get_data(element, ranges, style)
