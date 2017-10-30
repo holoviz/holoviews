@@ -13,6 +13,8 @@ class _StatisticsElement(Chart):
     of the value dimensions.
     """
 
+    _virtual_vdims = True
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         super(_StatisticsElement, self).__init__(data, kdims, vdims, **params)
         if not self.vdims:
