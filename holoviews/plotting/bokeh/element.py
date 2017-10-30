@@ -22,7 +22,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...streams import Stream
+from ...streams import Stream, Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
@@ -164,6 +164,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     _x_range_type = Range1d
     _y_range_type = Range1d
 
+    # Whether the plot supports streaming data
+    _stream_data = True
+
     def __init__(self, element, plot=None, **params):
         self.current_ranges = None
         super(ElementPlot, self).__init__(element, **params)
@@ -171,6 +174,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
         self.static_source = False
+        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
+        self.streaming = dfstream[0] if any(dfstream) else None
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
@@ -552,19 +557,23 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
-        if not self.drawn or (not self.model_changed(x_range) and framewise) or xfactors:
+        if not self.drawn or (not self.model_changed(x_range) and framewise or self.streaming) or xfactors:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
-        if not self.drawn or (not self.model_changed(y_range) and framewise) or yfactors:
+        if not self.drawn or (not self.model_changed(y_range) and framewise or self.streaming) or yfactors:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
-            if (low == high and low is not None and
-                not isinstance(high, util.datetime_types)):
-                offset = abs(low*0.1 if low else 0.5)
-                low -= offset
-                high += offset
+            if (low == high and low is not None):
+                if isinstance(low, util.datetime_types):
+                    offset = np.timedelta64(500, 'ms')
+                    low -= offset
+                    high += offset
+                else:
+                    offset = abs(low*0.1 if low else 0.5)
+                    low -= offset
+                    high += offset
             if invert: low, high = high, low
             if shared:
                 shared = (axis_range.start, axis_range.end)
@@ -832,7 +841,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if hasattr(renderer, 'visible'):
             renderer.visible = bool(element)
 
-        if (self.batched and not element) or element is None or (not self.dynamic and self.static):
+        if ((self.batched and not element) or element is None or (not self.dynamic and self.static) or
+            (self.streaming and self.streaming.data is self.current_frame.data
+             and not self.streaming._triggering)):
             return
 
         if self.batched:
@@ -951,7 +962,7 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
-        for key in dict(mapping, **data):
+        for key in sorted(dict(mapping, **data)):
             gdata = data[key]
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
@@ -1228,7 +1239,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'show_grid', 'logx', 'logy', 'xticks', 'toolbar',
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
-                          'title_format', 'legend_position', 'legend_offset']
+                          'title_format', 'legend_position', 'legend_offset',
+                          'legend_cols']
 
     def _process_legend(self):
         plot = self.handles['plot']

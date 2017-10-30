@@ -5,6 +5,7 @@ import param
 import numpy as np
 from ...core import Dataset
 from ...element import ItemTable
+from ...streams import Buffer
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 
@@ -23,12 +24,16 @@ class TablePlot(BokehPlot, GenericElementPlot):
         The hook is passed the plot object and the displayed
         object, and other plotting handles can be accessed via plot.handles.""")
 
+    _stream_data = True
+
     def __init__(self, element, plot=None, **params):
         super(TablePlot, self).__init__(element, **params)
         self.handles = {} if plot is None else self.handles['plot']
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = [] # Callback support on tables not implemented
+        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
+        self.streaming = dfstream[0] if any(dfstream) else None
 
 
     def _execute_hooks(self, element):
@@ -92,8 +97,9 @@ class TablePlot(BokehPlot, GenericElementPlot):
         current_id = element._plot_id
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
-
-        if self.static_source:
+        if (element is None or (not self.dynamic and self.static) or
+            (self.streaming and self.streaming.data is self.current_frame.data
+             and not self.streaming._triggering) or self.static_source):
             return
         source = self.handles['source']
         style = self.lookup_options(element, 'style')[self.cyclic_index]
