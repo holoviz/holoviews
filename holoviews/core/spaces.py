@@ -848,7 +848,8 @@ class DynamicMap(HoloMap):
             args = ()
         else:
             kwargs = dict(flattened)
-        kwargs['memoization_hash'] = hash_items
+        if not isinstance(self.callback, Generator):
+            kwargs['memoization_hash'] = hash_items
 
         with dynamicmap_memoization(self.callback, self.streams):
             retval = self.callback(*args, **kwargs)
