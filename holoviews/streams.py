@@ -394,12 +394,12 @@ class Pipe(Stream):
 
 class Buffer(Pipe):
     """
-    Buffer provides a means stream and accumulate tabular datasets.
-    The data may be in the form of a pandas DataFrame, 2D arrays of
-    rows and columns or dictionaries of column arrays. Buffer will
-    accumulate the last N rows, where N is defined by the specified
-    ``backlog``. The accumulated data is then made available via the
-    ``data`` parameter.
+    Buffer allows streaming and accumulating incoming chunks of rows
+    from tabular datasets. The data may be in the form of a pandas
+    DataFrame, 2D arrays of rows and columns or dictionaries of column
+    arrays. Buffer will accumulate the last N rows, where N is defined
+    by the specified ``backlog``. The accumulated data is then made
+    available via the ``data`` parameter.
 
     A Buffer may also be instantiated with a streamz.StreamingDataFrame
     or a streamz.StreamingSeries, it will automatically subscribe to
@@ -416,7 +416,7 @@ class Buffer(Pipe):
             if columns.ndim != 2:
                 raise ValueError("Only 2D array data may be streamed by Buffer.")
             example = columns
-        elif isinstance(column, dict):
+        elif isinstance(columns, dict):
             if not all(isinstance(v, np.ndarray) for v in columns.values()):
                 raise ValueError("Columns in dictionary must be of array types.")
             elif len(set(len(v) for v in columns.values())) > 1:
@@ -458,7 +458,7 @@ class Buffer(Pipe):
             elif x.shape[1] != self.data.shape[1]:
                 raise ValueError("Streamed array data expeced to have %d columns "
                                  "got %d" % (self.data.shape[1], x.shape[1]))
-        elif pd and isinstance(x, pd.DataFrame) and list(x.columns) != list(self.data.columns):
+        elif util.pd and isinstance(x, util.pd.DataFrame) and list(x.columns) != list(self.data.columns):
             raise IndexError("Input expected to have columns %s, got %s" %
                              (self.data.columns, x.columns))
         elif isinstance(x, dict):
@@ -474,7 +474,7 @@ class Buffer(Pipe):
         "Clears the data in the stream"
         if isinstance(self.data, np.ndarray):
             data = self.data[:, :0]
-        elif pd and isinstance(self.data, pd.DataFrame):
+        elif util.pd and isinstance(self.data, util.pd.DataFrame):
             data = self.data.iloc[:0]
         elif isinstance(self.data, dict):
             data = {k: v[:0] for k, v in self.data.items()}
@@ -495,12 +495,10 @@ class Buffer(Pipe):
                 data = np.concatenate([prev_chunk, data])
             elif data_length > self.backlog:
                 data = data[-self.backlog:]
-        elif pd and isinstance(data, util.pd.DataFrame):
+        elif util.pd and isinstance(data, util.pd.DataFrame):
             data_length = len(data)
-            if self._index:
-                data = data.reset_index()
             if data_length < self.backlog:
-                prev_chunk = self.data.iloc[-(self.backlog-data_length)]
+                prev_chunk = self.data.iloc[-(self.backlog-data_length):]
                 data = util.pd.concat([prev_chunk, data])
             elif data_length > self.backlog:
                 data = data.iloc[-self.backlog:]
@@ -509,7 +507,7 @@ class Buffer(Pipe):
             new_data = {}
             for k, v in data.items():
                 if data_length < self.backlog:
-                    prev_chunk = self.data[k][-(self.backlog-data_length)]
+                    prev_chunk = self.data[k][-(self.backlog-data_length):]
                     new_data[k] = np.concatenate([prev_chunk, v])
                 elif data_length > self.backlog:
                     new_data[k] = v[-self.backlog:]
@@ -524,6 +522,8 @@ class Buffer(Pipe):
         """
         data = kwargs.get('data')
         if data is not None:
+            if util.pd and isinstance(data, util.pd.DataFrame) and self._index:
+                data = data.reset_index()
             self.verify(data)
             kwargs['data'] = self._concat(data)
             self._count += 1
