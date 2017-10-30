@@ -1114,6 +1114,25 @@ class Store(object):
 
 
     @classmethod
+    def transfer_options(cls, obj, new_obj, drop=[]):
+        """
+        Transfers options for all backends from one object to another.
+        Drops any options defined in the supplied drop list.
+        """
+        type_name = type(new_obj).__name__
+        group = type_name if obj.group == type(obj).__name__ else obj.group
+        spec = '.'.join([s for s in (type_name, group, obj.label) if s])
+        for backend in cls.renderers:
+            options = []
+            for group in ['plot', 'style', 'norm']:
+                opts = cls.lookup_options(backend, obj, group).kwargs
+                opts = {k: v for k, v in opts.items() if k not in drop}
+                if opts:
+                    options.append(Options(group, **opts))
+        StoreOptions.set_options(new_obj, {spec: options}, backend)
+
+
+    @classmethod
     def add_style_opts(cls, component, new_options, backend=None):
         """
         Given a component such as an Element (e.g. Image, Curve) or a
