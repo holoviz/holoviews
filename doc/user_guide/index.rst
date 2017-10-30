@@ -57,6 +57,9 @@ concepts in HoloViews:
 * `Working with large data <Large_Data.html>`_
    Leverage Datashader to interactively explore millions or billions of datapoints.
 
+* `Working with Streaming Data <Streaming_Data.html>`_
+   Demonstrates how to leverage the streamz library with HoloViews to work with streaming datasets.
+
 * `Creating interactive dashboards <Dashboards.html>`_
    Use external widget libraries to build custom, interactive dashboards.
 
@@ -111,6 +114,7 @@ These guides provide detail about specific additional features in HoloViews:
     Custom Interactivity <Custom_Interactivity>
     Data Processing Pipelines <Data_Pipelines>
     Working with large data <Large_Data>
+    Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>

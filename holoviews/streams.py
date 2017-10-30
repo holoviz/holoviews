@@ -5,6 +5,7 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+import math
 
 import param
 import numpy as np
@@ -363,18 +364,18 @@ class Counter(Stream):
         return {'counter': self.counter + 1}
 
 
-class StreamData(Stream):
+class Pipe(Stream):
     """
     A Stream used to pipe arbitrary data to a callback.
     Unlike other streams memoization can be disabled for a
-    StreamData stream (and is disabled by default).
+    Pipe stream (and is disabled by default).
     """
 
     data = param.Parameter(default=None, constant=True, doc="""
         Arbitrary data being streamed to a DynamicMap callback.""")
 
     def __init__(self, memoize=False, **params):
-        super(StreamData, self).__init__(**params)
+        super(Pipe, self).__init__(**params)
         self._memoize = memoize
 
     def send(self, data):
@@ -389,6 +390,153 @@ class StreamData(Stream):
         if self._memoize:
             return self.contents
         return {'hash': uuid.uuid4().hex}
+
+
+class Buffer(Pipe):
+    """
+    Buffer allows streaming and accumulating incoming chunks of rows
+    from tabular datasets. The data may be in the form of a pandas
+    DataFrame, 2D arrays of rows and columns or dictionaries of column
+    arrays. Buffer will accumulate the last N rows, where N is defined
+    by the specified ``length``. The accumulated data is then made
+    available via the ``data`` parameter.
+
+    A Buffer may also be instantiated with a streamz.StreamingDataFrame
+    or a streamz.StreamingSeries, it will automatically subscribe to
+    events emitted by a streamz object.
+
+    When streaming a DataFrame will reset the DataFrame index by
+    default making it available to HoloViews elements as dimensions,
+    this may be disabled by setting index=False.
+    """
+
+    def __init__(self, columns, length=1000, index=True, **params):
+        if (util.pd and isinstance(columns, util.pd.DataFrame)):
+            example = columns
+        elif isinstance(columns, np.ndarray):
+            if columns.ndim != 2:
+                raise ValueError("Only 2D array data may be streamed by Buffer.")
+            example = columns
+        elif isinstance(columns, dict):
+            if not all(isinstance(v, np.ndarray) for v in columns.values()):
+                raise ValueError("Columns in dictionary must be of array types.")
+            elif len(set(len(v) for v in columns.values())) > 1:
+                raise ValueError("Columns in dictionary must all be the same length.")
+            example = columns
+        else:
+            try:
+                from streamz.dataframe import StreamingDataFrame, StreamingSeries
+                loaded = True
+            except ImportError:
+                loaded = False
+            if not loaded or not isinstance(columns, (StreamingDataFrame, StreamingSeries)):
+                raise ValueError("Buffer must be initialized with pandas DataFrame, "
+                                 "streamz.StreamingDataFrame or streamz.StreamingSeries.")
+            elif isinstance(columns, StreamingSeries):
+                columns = columns.to_frame()
+            example = columns.example
+            columns.stream.sink(self.send)
+            self.sdf = columns
+
+        if index and (util.pd and isinstance(example, util.pd.DataFrame)):
+            example = example.reset_index()
+        params['data'] = example
+        super(Buffer, self).__init__(**params)
+        self.length = length
+        self._chunk_length = 0
+        self._count = 0
+        self._index = index
+
+
+    def verify(self, x):
+        """ Verify consistency of dataframes that pass through this stream """
+        if type(x) != type(self.data):
+            raise TypeError("Input expected to be of type %s, got %s." %
+                            (type(self.data).__name__, type(x).__name__))
+        elif isinstance(x, np.ndarray):
+            if x.ndim != 2:
+                raise ValueError('Streamed array data must be two-dimensional')
+            elif x.shape[1] != self.data.shape[1]:
+                raise ValueError("Streamed array data expeced to have %d columns, "
+                                 "got %d." % (self.data.shape[1], x.shape[1]))
+        elif util.pd and isinstance(x, util.pd.DataFrame) and list(x.columns) != list(self.data.columns):
+            raise IndexError("Input expected to have columns %s, got %s" %
+                             (list(self.data.columns), list(x.columns)))
+        elif isinstance(x, dict):
+            if any(c not in x for c in self.data):
+                raise IndexError("Input expected to have columns %s, got %s" %
+                                 (sorted(self.data.keys()), sorted(x.keys())))
+            elif len(set(len(v) for v in x.values())) > 1:
+                raise ValueError("Input columns expected to have the "
+                                 "same number of rows.")
+
+
+    def clear(self):
+        "Clears the data in the stream"
+        if isinstance(self.data, np.ndarray):
+            data = self.data[:, :0]
+        elif util.pd and isinstance(self.data, util.pd.DataFrame):
+            data = self.data.iloc[:0]
+        elif isinstance(self.data, dict):
+            data = {k: v[:0] for k, v in self.data.items()}
+        with util.disable_constant(self):
+            self.data = data
+        self.send(data)
+
+
+    def _concat(self, data):
+        """
+        Concatenate and slice the accepted data types to the defined
+        length.
+        """
+        if isinstance(data, np.ndarray):
+            data_length = len(data)
+            if data_length < self.length:
+                prev_chunk = self.data[-(self.length-data_length):]
+                data = np.concatenate([prev_chunk, data])
+            elif data_length > self.length:
+                data = data[-self.length:]
+        elif util.pd and isinstance(data, util.pd.DataFrame):
+            data_length = len(data)
+            if data_length < self.length:
+                prev_chunk = self.data.iloc[-(self.length-data_length):]
+                data = util.pd.concat([prev_chunk, data])
+            elif data_length > self.length:
+                data = data.iloc[-self.length:]
+        elif isinstance(data, dict) and data:
+            data_length = len(list(data.values())[0])
+            new_data = {}
+            for k, v in data.items():
+                if data_length < self.length:
+                    prev_chunk = self.data[k][-(self.length-data_length):]
+                    new_data[k] = np.concatenate([prev_chunk, v])
+                elif data_length > self.length:
+                    new_data[k] = v[-self.length:]
+                else:
+                    new_data[k] = v
+            data = new_data
+        self._chunk_length = data_length
+        return data
+
+
+    def update(self, **kwargs):
+        """
+        Overrides update to concatenate streamed data up to defined length.
+        """
+        data = kwargs.get('data')
+        if data is not None:
+            if util.pd and isinstance(data, util.pd.DataFrame) and self._index:
+                data = data.reset_index()
+            self.verify(data)
+            kwargs['data'] = self._concat(data)
+            self._count += 1
+        super(Buffer, self).update(**kwargs)
+
+
+    @property
+    def hashkey(self):
+        return {'hash': self._count}
+
 
 
 class LinkedStream(Stream):

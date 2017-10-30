@@ -937,6 +937,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                   ['box_'+p for p in fill_properties+line_properties] +\
                   ['outlier_'+p for p in fill_properties+line_properties] + ['width', 'cmap'])
 
+    _stream_data = False # Plot does not support streaming data
+
     def get_extents(self, element, ranges):
         """
         Extents are set to '' and None because x-axis is categorical and
