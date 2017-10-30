@@ -16,7 +16,6 @@ from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
 from .plot import * # noqa (API import)
 from .raster import * # noqa (API import)
-from .stats import * # noqa (API import)
 from .tabular import * # noqa (API import)
 
 from .renderer import MPLRenderer
@@ -164,11 +163,7 @@ Store.register({Curve: CurvePlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
-                Polygons: PolygonPlot,
-
-                # Statistics elements
-                Distribution: DistributionPlot,
-                Bivariate: BivariatePlot}, 'matplotlib', style_aliases=style_aliases)
+                Polygons: PolygonPlot}, 'matplotlib', style_aliases=style_aliases)
 
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
