@@ -405,8 +405,9 @@ class Buffer(Pipe):
     or a streamz.StreamingSeries, it will automatically subscribe to
     events emitted by a streamz object.
 
-    When streaming a DataFrame will use the DataFrame index by
-    default, this may be disabled by setting index=False.
+    When streaming a DataFrame will reset the DataFrame index by
+    default making it available to HoloViews elements as dimensions,
+    this may be disabled by setting index=False.
     """
 
     def __init__(self, columns, length=1000, index=True, **params):
