@@ -48,17 +48,27 @@ class univariate_kde(Operation):
 
         if self.p.dimension:
             selected_dim = self.p.dimension
+        elif element._virtual_vdims:
+            selected_dim = element.kdims[0]
         else:
             selected_dim = [d.name for d in element.vdims + element.kdims][0]
+        dim_template = element.vdims[0] if element._virtual_vdims else Dimension
+        vdims = [dim_template('{}_density'.format(selected_dim),
+                              label='{} Density'.format(selected_dim))]
+
         data = element.dimension_values(selected_dim)
         bin_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
         xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
-        kde = stats.gaussian_kde(data)
-        if self.p.bandwidth:
-            kde.set_bandwidth(self.p.bandwidth)
-        ys = kde.evaluate(xs)
+        data = data[np.isfinite(data)]
+        if len(data):
+            kde = stats.gaussian_kde(data)
+            if self.p.bandwidth:
+                kde.set_bandwidth(self.p.bandwidth)
+            ys = kde.evaluate(xs)
+        else:
+            ys = np.full_like(xs, 0)
 
         vdims = [Dimension('{}_density'.format(selected_dim), 
                            label='{} Density'.format(selected_dim))]
@@ -70,7 +80,7 @@ class univariate_kde(Operation):
     
 class bivariate_kde(Operation):
 
-    contours = param.Boolean(default=False)
+    contours = param.Boolean(default=True)
 
     bw_method = param.ObjectSelector(default='scott', objects=['scott', 'silverman'], doc="""
         Method of automatically determining KDE bandwidth""")
@@ -116,7 +126,9 @@ class bivariate_kde(Operation):
         positions = np.vstack([xx.ravel(), yy.ravel()])
         f = np.reshape(kde(positions).T, xx.shape)
 
-        img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=['Density'])
+        vdim = element.vdims[0] if element._virtual_vdims else 'Density'
+        img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=[vdim])
         if self.p.contours:
-            return contours(img, filled=self.p.filled, )
+            cntr = contours(img, filled=self.p.filled)
+            return cntr.clone(cntr.data[1:])
         return img
