@@ -22,7 +22,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...streams import Stream, DataFrameStream
+from ...streams import Stream, Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update
 from .plot import BokehPlot, TOOLS
@@ -174,7 +174,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
         self.static_source = False
-        dfstream = [s for s in self.streams if isinstance(s, DataFrameStream)]
+        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
         self.streaming = dfstream[0] if any(dfstream) else None
 
         # Whether axes are shared between plots
@@ -962,7 +962,7 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
-        for key in dict(mapping, **data):
+        for key in sorted(dict(mapping, **data)):
             gdata = data[key]
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')

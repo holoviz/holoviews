@@ -5,7 +5,7 @@ import param
 import numpy as np
 from ...core import Dataset
 from ...element import ItemTable
-from ...streams import DataFrameStream
+from ...streams import Buffer
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 
@@ -32,7 +32,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = [] # Callback support on tables not implemented
-        dfstream = [s for s in self.streams if isinstance(s, DataFrameStream)]
+        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
         self.streaming = dfstream[0] if any(dfstream) else None
 
 
