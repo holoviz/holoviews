@@ -810,7 +810,9 @@ class Compositor(param.Parameterized):
         """
         Finds any applicable compositor and applies it.
         """
-        from .overlay import Overlay
+        from .overlay import Overlay, CompositeOverlay
+        if not isinstance(overlay, CompositeOverlay):
+            overlay = Overlay([overlay])
         while True:
             match = cls.strongest_match(overlay, mode)
             if match is None: return overlay
