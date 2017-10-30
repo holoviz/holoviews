@@ -47,7 +47,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
-            dims = element.nodes.dimensions()[2:]
+            dims = element.nodes.dimensions()
+            dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
         elif self.inspection_policy == 'edges':
             kdims = [(kd.pprint_label, '@{%s}' % ref)
                      for kd, ref in zip(element.kdims, ['start', 'end'])]
@@ -81,14 +82,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         nodes = element.nodes.dimension_values(2)
         node_positions = element.nodes.array([0, 1, 2])
         # Map node indices to integers
-        if nodes.dtype.kind not in 'if':
+        if nodes.dtype.kind != 'i':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {node_indices[z]: (y, x) if self.invert_axes else (x, y)
                       for x, y, z in node_positions}
         else:
             index = nodes.astype(np.int32)
-            layout = {int(z): (y, x) if self.invert_axes else (x, y)
+            layout = {z: (y, x) if self.invert_axes else (x, y)
                       for x, y, z in node_positions}
         point_data = {'index': index}
         cdata, cmapping = self._get_color_data(element.nodes, ranges, style, 'node_fill_color')
@@ -116,7 +117,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Get hover data
         if any(isinstance(t, HoverTool) for t in self.state.tools):
             if self.inspection_policy == 'nodes':
-                for d in element.nodes.dimensions()[2:]:
+                index_dim = element.nodes.get_dimension(2)
+                point_data['index_hover'] = [index_dim.pprint_value(v) for v in element.nodes.dimension_values(2)]
+                for d in element.nodes.dimensions()[3:]:
                     point_data[dimension_sanitizer(d.name)] = element.nodes.dimension_values(d)
             elif self.inspection_policy == 'edges':
                 for d in element.vdims:
@@ -134,7 +137,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         if isinstance(source, ColumnDataSource):
             source.data.update(data)
         else:
-            source.graph_layout.update(data)
+            source.graph_layout = data
 
 
     def _init_glyphs(self, plot, element, ranges, source):

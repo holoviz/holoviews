@@ -73,7 +73,7 @@ class BokehGraphPlotTests(ComparisonTestCase):
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
         self.assertIsInstance(renderer.inspection_policy, NodesAndLinkedEdges)
-        self.assertEqual(hover.tooltips, [('index', '@{index}')])
+        self.assertEqual(hover.tooltips, [('index', '@{index_hover}')])
         self.assertIn(renderer, hover.renderers)
 
     def test_graph_inspection_policy_edges(self):
