@@ -63,7 +63,7 @@ class univariate_kde(Operation):
                               label='{} Density'.format(selected_dim))]
 
         data = element.dimension_values(selected_dim)
-        bin_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
+        bin_range = find_minmax(element.range(selected_dim), (0, -float('inf')))\
             if self.p.bin_range is None else self.p.bin_range
 
         xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
@@ -80,7 +80,7 @@ class univariate_kde(Operation):
                            label='{} Density'.format(selected_dim))]
 
         element_type = Area if self.p.filled else Curve
-        return Area((xs, ys), kdims=[selected_dim], vdims=vdims)
+        return element_type((xs, ys), kdims=[selected_dim], vdims=vdims, **params)
 
 
     
