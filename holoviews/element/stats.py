@@ -7,7 +7,7 @@ from ..core.util import get_param_values
 from .chart import Chart, Scatter
 
 
-class _StatisticsElement(Chart):
+class StatisticsElement(Chart):
     """
     StatisticsElement provides a baseclass for Element types that
     compute statistics based on the input data. The baseclass
@@ -15,13 +15,15 @@ class _StatisticsElement(Chart):
     of the value dimensions.
     """
 
+    __abstract = True
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, Element):
             params.update(get_param_values(data))
             kdims = kdims or data.dimensions()[:len(self.kdims)]
             data = tuple(data.dimension_values(d) for d in kdims)
         params.update(dict(kdims=kdims, vdims=[], _validate_vdims=False))
-        super(_StatisticsElement, self).__init__(data, **params)
+        super(StatisticsElement, self).__init__(data, **params)
         if not vdims:
             self.vdims = [Dimension('Density')]
         elif len(vdims) > 1:
@@ -33,7 +35,7 @@ class _StatisticsElement(Chart):
 
     def range(self, dim, data_range=True):
         iskdim = self.get_dimension(dim) not in self.vdims
-        return super(_StatisticsElement, self).range(dim, data_range=iskdim)
+        return super(StatisticsElement, self).range(dim, data_range=iskdim)
 
 
     def dimension_values(self, dim, expanded=True, flat=True):
@@ -87,7 +89,7 @@ class _StatisticsElement(Chart):
 
 
 
-class Bivariate(_StatisticsElement):
+class Bivariate(StatisticsElement):
     """
     Bivariate Views are containers for two dimensional data,
     which is to be visualized as a kernel density estimate. The
@@ -104,7 +106,7 @@ class Bivariate(_StatisticsElement):
 
 
 
-class Distribution(_StatisticsElement):
+class Distribution(StatisticsElement):
     """
     Distribution Views provide a container for data to be
     visualized as a one-dimensional distribution. The data should

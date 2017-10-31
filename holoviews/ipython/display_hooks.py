@@ -12,7 +12,7 @@ from IPython import get_ipython
 import holoviews
 from holoviews.plotting import Plot
 from ..core.options import (Store, StoreOptions, SkipRendering,
-                            AbbreviatedException, Compositor)
+                            AbbreviatedException)
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -168,9 +168,7 @@ def element_display(element, max_frames):
         return
 
     backend = Store.current_backend
-    eltype = type(element)
-    if (eltype not in Store.registry[backend] and
-        all(eltype.__name__ != d.pattern for d in Compositor.definitions)):
+    if type(element) not in Store.registry[backend]:
         return None
 
     # Drop back to png if pdf selected, notebook PDF rendering is buggy

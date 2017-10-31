@@ -97,7 +97,8 @@ Dataset._conversion_interface = ElementConversion
 
 
 def public(obj):
-    if not isinstance(obj, type): return False
+    if not isinstance(obj, type) or getattr(obj, 'abstract', False):
+        return False
     return issubclass(obj, Element)
 
 __all__ = list(set([_k for _k, _v in locals().items() if public(_v)]))
