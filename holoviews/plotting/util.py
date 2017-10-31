@@ -453,24 +453,31 @@ def get_min_distance(element):
     return 0
 
 
-class univariate_composite(Operation):
+class univariate_compositor(Operation):
 
     output_type = Area
 
     def _process(self, element, key=None):
-        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
+        backend = Store.current_backend
+        if self.output_type not in Store.registry[backend]:
+            return element
+        plot_opts = Store.lookup_options(backend, element, 'plot').kwargs
         bw = plot_opts.pop('bandwidth', univariate_kde.bandwidth)
-        transformed = univariate_kde(element, bandwidth=bw)
+        filled = plot_opts.pop('filled', univariate_kde.filled)
+        transformed = univariate_kde(element, bandwidth=bw, filled=filled)
         Store.transfer_options(element, transformed, ['bw'])
         return transformed
 
 
-class bivariate_composite(Operation):
+class bivariate_compositor(Operation):
 
     output_type = Polygons
 
     def _process(self, element, key=None):
-        plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
+        backend = Store.current_backend
+        if self.output_type not in Store.registry[backend]:
+            return element
+        plot_opts = Store.lookup_options(backend, element, 'plot').kwargs
         bw = plot_opts.pop('bandwidth', bivariate_kde.bandwidth)
         filled = plot_opts.pop('filled', bivariate_kde.filled)
         transformed = bivariate_kde(element, bandwidth=bw, filled=filled)
