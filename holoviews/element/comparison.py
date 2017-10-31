@@ -180,7 +180,6 @@ class Comparison(ComparisonInterface):
         # Seaborn Views
         cls.equality_type_funcs[Bivariate] =    cls.compare_bivariate
         cls.equality_type_funcs[Distribution] = cls.compare_distribution
-        cls.equality_type_funcs[Regression] =   cls.compare_regression
 
         # NdMappings
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
@@ -670,10 +669,6 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg='Bivariate'):
-        cls.compare_dataset(el1, el2, msg)
-
-    @classmethod
-    def compare_regression(cls, el1, el2, msg='Regression'):
         cls.compare_dataset(el1, el2, msg)
 
     #=======#
