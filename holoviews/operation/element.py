@@ -782,9 +782,10 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
-        types = (str, basestring)+datetime_types
+        types = (str, basestring, np.str_, np.object_)+datetime_types
         dims = [d for d in element.dimensions()
-                if not isinstance(element.range(d)[0], types)]
+                if _is_number(element.range(d)[0]) and
+                not issubclass(element.get_dimension_type(d), types)]
         permuted_dims = [(d1, d2) for d1 in dims
                          for d2 in dims[::-1]]
 
