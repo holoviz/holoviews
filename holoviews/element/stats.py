@@ -1,7 +1,9 @@
 import param
 import numpy as np
 
-from ..core.dimension import Dimension, Dimensioned
+from ..core.dimension import Dimension, process_dimensions
+from ..core.element import Element
+from ..core.util import get_param_values
 from .chart import Chart, Scatter
 
 
@@ -14,10 +16,19 @@ class _StatisticsElement(Chart):
     """
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        params['_validate_vdims'] = False
-        super(_StatisticsElement, self).__init__(data, kdims, vdims, **params)
-        if not self.vdims:
+        if isinstance(data, Element):
+            params.update(get_param_values(data))
+            kdims = kdims or data.dimensions()[:len(self.kdims)]
+            data = tuple(data.dimension_values(d) for d in kdims)
+        params.update(dict(kdims=kdims, vdims=[], _validate_vdims=False))
+        super(_StatisticsElement, self).__init__(data, **params)
+        if not vdims:
             self.vdims = [Dimension('Density')]
+        elif len(vdims) > 1:
+            raise ValueError("%s expects at most one vdim." %
+                             type(self).__name__)
+        else:
+            self.vdims = process_dimensions(None, vdims)['vdims']
 
 
     def range(self, dim, data_range=True):
@@ -84,7 +95,8 @@ class Bivariate(_StatisticsElement):
     and y-data.
     """
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
 
     vdims = param.List(default=[Dimension('Density')], bounds=(1,1))
 
@@ -100,23 +112,12 @@ class Distribution(_StatisticsElement):
     list. Internally it uses Seaborn to make all the conversions.
     """
 
-    kdims = param.List(default=[Dimension('Value')])
+    kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
 
     group = param.String(default='Distribution', constant=True)
 
-    vdims = param.List(default=[Dimension('Density')])
+    vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
+    # Ensure Interface does not add an index
     _auto_indexable_1d = False
-
-
-class Regression(Scatter):
-    """
-    Regression is identical to a Scatter plot but is visualized
-    using the Seaborn regplot interface. This allows it to
-    implement linear regressions, confidence intervals and a lot
-    more.
-    """
-
-    group = param.String(default='Regression', constant=True)
-
 

@@ -41,6 +41,25 @@ def param_aliases(d):
     return d
 
 
+def process_dimensions(kdims, vdims):
+    """
+    Processes kdims and vdims specifications into a dictionary
+    of dimensions which can be passed to params.
+    """
+    dimensions = {}
+    for group, dims in [('kdims', kdims), ('vdims', vdims)]:
+        if dims is None:
+            continue
+        elif isinstance(dims, (tuple, basestring, Dimension)):
+            dims = [dims]
+        elif not isinstance(dims, list):
+            raise ValueError("%s must be a Dimension or list of dimensions, "
+                             "specified as tuples, string or Dimension instances, "
+                             "not %s." % (group, dims))
+        dimensions[group] = [d if isinstance(d, Dimension) else Dimension(d) for d in dims]
+    return dimensions
+
+
 class redim(object):
     """
     Utility that supports re-dimensioning any HoloViews object via the
@@ -787,17 +806,7 @@ class Dimensioned(LabelledData):
                         constant_dimensions='cdims', deep_dimensions='ddims')
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        for group, dims in [('kdims', kdims), ('vdims', vdims)]:
-            if dims is None:
-                continue
-            elif isinstance(dims, (tuple, basestring, Dimension)):
-                dims = [dims]
-            elif not isinstance(dims, list):
-                raise ValueError("%s must be a Dimension or list of dimensions, "
-                                 "specified as tuples, string or Dimension instances, "
-                                 "not %s." % (group, dims))
-            params[group] = [d if isinstance(d, Dimension) else Dimension(d)
-                             for d in dims]
+        params.update(process_dimensions(kdims, vdims))
         if 'cdims' in params:
             params['cdims'] = {d if isinstance(d, Dimension) else Dimension(d): val
                                for d, val in params['cdims'].items()}

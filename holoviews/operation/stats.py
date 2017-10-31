@@ -76,9 +76,6 @@ class univariate_kde(Operation):
         else:
             ys = np.full_like(xs, 0)
 
-        vdims = [Dimension('{}_density'.format(selected_dim), 
-                           label='{} Density'.format(selected_dim))]
-
         element_type = Area if self.p.filled else Curve
         return element_type((xs, ys), kdims=[selected_dim], vdims=vdims, **params)
 
