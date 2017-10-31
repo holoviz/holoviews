@@ -265,3 +265,7 @@ options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(
 options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
                         marker='o', s=20**2)
 options.EdgePaths = Options('style', color='black')
+
+# Statistics
+options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
+                               alpha=0.5)

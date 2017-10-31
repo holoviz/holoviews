@@ -25,7 +25,7 @@ class univariate_kde(Operation):
     dimension = param.String(default=None, doc="""
         Along which dimension of the Element to compute the KDE.""")
 
-    filled = param.Boolean(default=False, doc="""
+    filled = param.Boolean(default=True, doc="""
         Controls whether to return filled or unfilled KDE.""")
 
     n_samples = param.Integer(default=100, doc="""
