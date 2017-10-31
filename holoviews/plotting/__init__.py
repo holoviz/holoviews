@@ -14,9 +14,11 @@ from ..operation.stats import univariate_kde, bivariate_kde
 
 Compositor.register(Compositor("Distribution", univariate_kde, None,
                                'data', transfer_options=True,
+                               transfer_parameters=True,
                                output_type=Area))
 Compositor.register(Compositor("Bivariate", bivariate_kde, None,
                                'data', transfer_options=True,
+                               transfer_parameters=True,
                                output_type=Polygons))
 
 def public(obj):

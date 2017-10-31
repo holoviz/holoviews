@@ -787,6 +787,9 @@ class Compositor(param.Parameterized):
     transfer_options = param.Boolean(default=False, doc="""
        Whether to transfer the options from the input to the output.""")
 
+    transfer_parameters = param.Boolean(default=False, doc="""
+       Whether to transfer plot options which match to the operation.""")
+
     operations = []  # The operations that can be used to define compositors.
     definitions = [] # The set of all the compositor instances
 
@@ -866,6 +869,24 @@ class Compositor(param.Parameterized):
 
 
     @classmethod
+    def map(cls, obj, mode='data', backend=None):
+        """
+        Applies compositor operations to any HoloViews element or container
+        using the map method.
+        """
+        from .overlay import Overlay, CompositeOverlay
+        element_compositors = [c for c in cls.definitions if len(c._pattern_spec) == 1]
+        overlay_compositors = [c for c in cls.definitions if len(c._pattern_spec) > 1]
+        if overlay_compositors:
+            obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
+                          [CompositeOverlay])
+        if element_compositors:
+            obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
+                          [c.pattern for c in element_compositors])
+        return obj
+
+
+    @classmethod
     def register(cls, compositor):
         defined_patterns = [op.pattern for op in cls.definitions]
         if compositor.pattern in defined_patterns:
@@ -876,7 +897,7 @@ class Compositor(param.Parameterized):
 
 
     def __init__(self, pattern, operation, group, mode, transfer_options=False,
-                 output_type=None, **kwargs):
+                 transfer_parameters=False, output_type=None, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -899,7 +920,8 @@ class Compositor(param.Parameterized):
                                          operation=operation,
                                          mode=mode,
                                          kwargs=kwargs,
-                                         transfer_options=transfer_options)
+                                         transfer_options=transfer_options,
+                                         transfer_parameters=transfer_parameters)
 
 
     @property
@@ -970,7 +992,7 @@ class Compositor(param.Parameterized):
         kwargs = {k: v for k, v in self.kwargs.items() if k != 'output_type'}
         if isinstance(value, CompositeOverlay) and len(value) == 1:
             value = value.values()[0]
-            if self.transfer_options:
+            if self.transfer_parameters:
                 plot_opts = Store.lookup_options(backend, value, 'plot').kwargs
                 kwargs.update({k: v for k, v in plot_opts.items()
                                if k in self.operation.params()})
