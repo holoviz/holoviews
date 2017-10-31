@@ -170,7 +170,9 @@ class Renderer(Exporter):
                 obj = collate(obj)
                 initialize_dynamic(obj)
             obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data'),
-                          [Element, CompositeOverlay])
+                          [CompositeOverlay])
+            obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data'),
+                          [Element])
 
         if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):

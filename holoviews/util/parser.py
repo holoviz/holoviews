@@ -184,7 +184,7 @@ class OptsSpec(Parser):
     norm_options = (norm_options_short | norm_options_long)
 
     compositor_ops = pp.MatchFirst(
-        [pp.Literal(el.group) for el in Compositor.definitions])
+        [pp.Literal(el.group) for el in Compositor.definitions if el.group])
 
     dotted_path = pp.Combine( pp.Word(ascii_uppercase, exact=1)
                               + pp.Word(pp.alphanums+'._'))

@@ -11,8 +11,8 @@ from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
 from .util import univariate_composite, bivariate_composite
 
-Compositor.register(Compositor("Distribution", univariate_composite, 'Area', 'data'))
-Compositor.register(Compositor("Bivariate", bivariate_composite, 'Polygons', 'data'))
+Compositor.register(Compositor("Distribution", univariate_composite, None, 'data'))
+Compositor.register(Compositor("Bivariate", bivariate_composite, None, 'data'))
 
 def public(obj):
     if not isinstance(obj, type): return False

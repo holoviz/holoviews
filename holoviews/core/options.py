@@ -778,7 +778,7 @@ class Compositor(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
-    group = param.String(doc="""
+    group = param.String(allow_None=True, doc="""
        The group identifier for the output of this particular compositor""")
 
     kwargs = param.Dict(doc="""
@@ -811,26 +811,32 @@ class Compositor(param.Parameterized):
         Finds any applicable compositor and applies it.
         """
         from .overlay import Overlay, CompositeOverlay
+        unpack = False
         if not isinstance(overlay, CompositeOverlay):
             overlay = Overlay([overlay])
+            unpack = True
+
         while True:
             match = cls.strongest_match(overlay, mode)
-            if match is None: return overlay
+            if match is None:
+                if unpack and len(overlay) == 1:
+                    return overlay.values()[0]
+                return overlay
             (_, applicable_op, (start, stop)) = match
             if isinstance(overlay, Overlay):
                 values = overlay.values()
-                sliced = Overlay.from_values(values[start:stop])
-                result = applicable_op.apply(sliced, ranges, key=key)
-                result = result.relabel(group=applicable_op.group)
-                overlay = Overlay.from_values(values[:start]+[result]+values[stop:])
-                overlay.id = overlay.id
+                sliced = Overlay(values[start:stop])
             else:
                 values = overlay.items()
                 sliced = overlay.clone(values[start:stop])
-                result = applicable_op.apply(sliced, ranges, key=key)
+            result = applicable_op.apply(sliced, ranges, key=key)
+            if applicable_op.group:
                 result = result.relabel(group=applicable_op.group)
+            if isinstance(overlay, Overlay):
+                result = [result]
+            else:
                 result = list(zip(sliced.keys(), [result]))
-                overlay = overlay.clone(values[:start]+result+values[stop:])
+            overlay = overlay.clone(values[:start]+result+values[stop:])
 
 
     @classmethod
@@ -849,11 +855,12 @@ class Compositor(param.Parameterized):
             clone[key] = cls.collapse_element(overlay, key, ranges, mode)
         return clone
 
+
     @classmethod
     def register(cls, compositor):
-        defined_groups = [op.group for op in cls.definitions]
-        if compositor.group in defined_groups:
-            cls.definitions.pop(defined_groups.index(compositor.group))
+        defined_patterns = [op.pattern for op in cls.definitions]
+        if compositor.group in defined_patterns:
+            cls.definitions.pop(defined_patterns.index(compositor.pattern))
         cls.definitions.append(compositor)
         if compositor.operation not in cls.operations:
             cls.operations.append(compositor.operation)
