@@ -816,6 +816,7 @@ class Compositor(param.Parameterized):
             overlay = Overlay([overlay])
             unpack = True
 
+        prev_ids = tuple()
         while True:
             match = cls.strongest_match(overlay, mode)
             if match is None:
@@ -837,6 +838,13 @@ class Compositor(param.Parameterized):
             else:
                 result = list(zip(sliced.keys(), [result]))
             overlay = overlay.clone(values[:start]+result+values[stop:])
+
+            # Guard against infinite recursion for no-ops
+            spec_fn = lambda x: not isinstance(x, CompositeOverlay)
+            new_ids = tuple(overlay.traverse(lambda x: id(x), [spec_fn]))
+            if new_ids == prev_ids:
+                return overlay
+            prev_ids = new_ids
 
 
     @classmethod
