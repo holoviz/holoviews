@@ -493,6 +493,15 @@ class TestStoreInheritance(ComparisonTestCase):
         # Check plot options works as expected
         self.assertEqual(self.lookup_options(hist2, 'plot').options, self.default_plot)
 
+    def test_style_transfer(self):
+        hist = self.hist.opts(style={'style1':'style_child'})
+        hist2 = self.hist.opts()
+        opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
+        self.assertEqual(opts, {'style1': 'style1', 'style2': 'style2'})
+        Store.transfer_options(hist, hist2, 'matplotlib')
+        opts = Store.lookup_options('matplotlib', hist2, 'style').kwargs
+        self.assertEqual(opts, {'style1': 'style_child', 'style2': 'style2'})
+
 
 @attr(optional=1) # Needs matplotlib
 class TestOptionTreeFind(ComparisonTestCase):

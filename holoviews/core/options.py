@@ -1150,8 +1150,8 @@ class Store(object):
         spec = '.'.join([s for s in (type_name, group, obj.label) if s])
         options = []
         for group in ['plot', 'style', 'norm']:
-            opts = cls.lookup_options(backend, obj, group).kwargs
-            if opts: options.append(Options(group, **opts))
+            opts = cls.lookup_options(backend, obj, group)
+            if opts and opts.kwargs: options.append(Options(group, **opts.kwargs))
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 
