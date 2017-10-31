@@ -15,6 +15,9 @@ class DistributionPlot(AreaPlot):
     cut = param.Number(default=3, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
 
+    filled = param.Boolean(default=True, doc="""
+        Whether the bivariate contours should be filled.""")
+
 
 class BivariatePlot(PolygonPlot):
     """
