@@ -285,6 +285,8 @@ def get_sideplot_ranges(plot, element, main, ranges):
 
 def within_range(range1, range2):
     """Checks whether range1 is within the range specified by range2."""
+    range1 = [r if np.isfinite(r) else None for r in range1]
+    range2 = [r if np.isfinite(r) else None for r in range2]
     return ((range1[0] is None or range2[0] is None or range1[0] >= range2[0]) and
             (range1[1] is None or range2[1] is None or range1[1] <= range2[1]))
 
