@@ -859,7 +859,7 @@ class Compositor(param.Parameterized):
     @classmethod
     def register(cls, compositor):
         defined_patterns = [op.pattern for op in cls.definitions]
-        if compositor.group in defined_patterns:
+        if compositor.pattern in defined_patterns:
             cls.definitions.pop(defined_patterns.index(compositor.pattern))
         cls.definitions.append(compositor)
         if compositor.operation not in cls.operations:
