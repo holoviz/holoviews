@@ -12,7 +12,8 @@ from param import _is_number
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface
-from ..core.util import find_minmax, group_sanitizer, label_sanitizer, pd, basestring
+from ..core.util import (find_minmax, group_sanitizer, label_sanitizer, pd,
+                         basestring, datetime_types)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
@@ -498,13 +499,13 @@ class histogram(Operation):
     mean_weighted = param.Boolean(default=False, doc="""
       Whether the weighted frequencies are averaged.""")
 
-    normed = param.ObjectSelector(default=True, 
+    normed = param.ObjectSelector(default=True,
                                   objects=[True, False, 'integral', 'height'],
                                   doc="""
-      Controls normalization behavior.  If `True` or `'integral'`, then 
+      Controls normalization behavior.  If `True` or `'integral'`, then
       `density=True` is passed to np.histogram, and the distribution
-      is normalized such that the integral is unity.  If `False`, 
-      then the frequencies will be raw counts. If `'height'`, then the 
+      is normalized such that the integral is unity.  If `False`,
+      then the frequencies will be raw counts. If `'height'`, then the
       frequencies are normalized such that the max bin height is unity.""")
 
     nonzero = param.Boolean(default=False, doc="""
@@ -541,16 +542,12 @@ class histogram(Operation):
                 weights = weights[mask]
         else:
             weights = None
-        try:
-            hist_range = find_minmax((np.nanmin(data), np.nanmax(data)), (0, -float('inf')))\
-                         if self.p.bin_range is None else self.p.bin_range
-        except ValueError:
-            hist_range = (0, 1)
 
+        data = data[np.isfinite(data)]
+        hist_range = self.p.bin_range or view.range(selected_dim)
         # Avoids range issues including zero bin range and empty bins
-        if hist_range == (0, 0):
+        if hist_range == (0, 0) or any(not np.isfinite(r) for r in hist_range):
             hist_range = (0, 1)
-        data = data[np.invert(np.isnan(data))]
         if self.p.log:
             bin_min = max([abs(hist_range[0]), data[data>0].min()])
             edges = np.logspace(np.log10(bin_min), np.log10(hist_range[1]),
@@ -559,12 +556,11 @@ class histogram(Operation):
             edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
 
-        data = data[np.isfinite(data)]
         if len(data):
-            if normed: 
+            if normed:
                 # This covers True, 'height', 'integral'
-                hist, edges = np.histogram(data[np.isfinite(data)], density=True,
-                                           range=hist_range, weights=weights, bins=edges)
+                hist, edges = np.histogram(data, density=True, range=hist_range,
+                                           weights=weights, bins=edges)
                 if normed=='height':
                     hist /= hist.max()
             else:
@@ -786,8 +782,9 @@ class gridmatrix(param.ParameterizedFunction):
             el_data = element.data
 
         # Get dimensions to plot against each other
+        types = (str, basestring)+datetime_types
         dims = [d for d in element.dimensions()
-                if _is_number(element.range(d)[0])]
+                if not isinstance(element.range(d)[0], types)]
         permuted_dims = [(d1, d2) for d1 in dims
                          for d2 in dims[::-1]]
 
