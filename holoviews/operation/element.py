@@ -784,7 +784,7 @@ class gridmatrix(param.ParameterizedFunction):
                                              datatype=['dataframe', 'dictionary'])
                     else:
                         values = element.dimension_values(d1)
-                        el = p.diagonal_type(values, vdims=[d1])
+                        el = p.diagonal_type(values, kdims=[d1])
                 elif p.diagonal_operation is histogram or isinstance(p.diagonal_operation, histogram):
                     bin_range = ranges.get(d1.name, element.range(d1))
                     opts = dict(axiswise=True, framewise=True)
@@ -794,8 +794,9 @@ class gridmatrix(param.ParameterizedFunction):
                 else:
                     el = p.diagonal_operation(element, dimension=d1.name)
             else:
-                el = p.chart_type(el_data, kdims=[d1],
-                                  vdims=[d2], datatype=['dataframe', 'dictionary'])
+                kdims, vdims = ([d1, d2], []) if len(p.chart_type.kdims) == 2 else (d1, d2)
+                el = p.chart_type(el_data, kdims=kdims, vdims=vdims,
+                                  datatype=['dataframe', 'dictionary'])
             data[(d1.name, d2.name)] = el
         return data
 
