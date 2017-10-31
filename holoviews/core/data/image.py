@@ -65,7 +65,7 @@ class ImageInterface(GridInterface):
 
 
     @classmethod
-    def validate(cls, dataset):
+    def validate(cls, dataset, vdims=True):
         pass
 
     @classmethod

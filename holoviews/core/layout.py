@@ -210,7 +210,7 @@ class AdjointLayout(Dimensioned):
 
     def __setitem__(self, key, value):
         if key in ['main', 'right', 'top']:
-            if isinstance(value, (ViewableElement, UniformNdMapping)):
+            if isinstance(value, (ViewableElement, UniformNdMapping, Empty)):
                 self.data[key] = value
             else:
                 raise ValueError('AdjointLayout only accepts Element types.')

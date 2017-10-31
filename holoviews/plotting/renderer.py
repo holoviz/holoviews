@@ -10,9 +10,9 @@ from contextlib import contextmanager
 
 import param
 from ..core.io import Exporter
-from ..core.options import Store, StoreOptions, SkipRendering
+from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import find_file, unicode, unbound_dimensions, basestring
-from .. import Layout, HoloMap, AdjointLayout
+from .. import Layout, HoloMap, AdjointLayout, Element, CompositeOverlay
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
@@ -164,10 +164,13 @@ class Renderer(Exporter):
         """
         # Initialize DynamicMaps with first data item
         initialize_dynamic(obj)
+        backend = self_or_cls.backend
 
-        if not isinstance(obj, Plot) and not displayable(obj):
-            obj = collate(obj)
-            initialize_dynamic(obj)
+        if not isinstance(obj, Plot):
+            if not displayable(obj):
+                obj = collate(obj)
+                initialize_dynamic(obj)
+            obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
 
         if not renderer: renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):

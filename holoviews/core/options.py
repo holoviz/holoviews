@@ -778,16 +778,20 @@ class Compositor(param.Parameterized):
       This pattern specification could then be associated with the RGB
       operation that returns a single RGB matrix for display.""")
 
-    group = param.String(doc="""
+    group = param.String(allow_None=True, doc="""
        The group identifier for the output of this particular compositor""")
 
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
 
+    transfer_options = param.Boolean(default=False, doc="""
+       Whether to transfer the options from the input to the output.""")
+
+    transfer_parameters = param.Boolean(default=False, doc="""
+       Whether to transfer plot options which match to the operation.""")
 
     operations = []  # The operations that can be used to define compositors.
     definitions = [] # The set of all the compositor instances
-
 
     @classmethod
     def strongest_match(cls, overlay, mode):
@@ -806,21 +810,45 @@ class Compositor(param.Parameterized):
 
 
     @classmethod
-    def collapse_element(cls, overlay, key=None, ranges=None, mode='data'):
+    def collapse_element(cls, overlay, ranges=None, mode='data', backend=None):
         """
         Finds any applicable compositor and applies it.
         """
-        from .overlay import Overlay
-        match = cls.strongest_match(overlay, mode)
-        if match is None: return overlay
-        (_, applicable_op, (start, stop)) = match
-        values = overlay.values()
-        sliced = Overlay.from_values(values[start:stop])
-        result = applicable_op.apply(sliced, ranges, key=key)
-        result = result.relabel(group=applicable_op.group)
-        output = Overlay.from_values(values[:start]+[result]+values[stop:])
-        output.id = overlay.id
-        return output
+        from .overlay import Overlay, CompositeOverlay
+        unpack = False
+        if not isinstance(overlay, CompositeOverlay):
+            overlay = Overlay([overlay])
+            unpack = True
+
+        prev_ids = tuple()
+        while True:
+            match = cls.strongest_match(overlay, mode)
+            if match is None:
+                if unpack and len(overlay) == 1:
+                    return overlay.values()[0]
+                return overlay
+            (_, applicable_op, (start, stop)) = match
+            if isinstance(overlay, Overlay):
+                values = overlay.values()
+                sliced = Overlay(values[start:stop])
+            else:
+                values = overlay.items()
+                sliced = overlay.clone(values[start:stop])
+            result = applicable_op.apply(sliced, ranges, backend)
+            if applicable_op.group:
+                result = result.relabel(group=applicable_op.group)
+            if isinstance(overlay, Overlay):
+                result = [result]
+            else:
+                result = list(zip(sliced.keys(), [result]))
+            overlay = overlay.clone(values[:start]+result+values[stop:])
+
+            # Guard against infinite recursion for no-ops
+            spec_fn = lambda x: not isinstance(x, CompositeOverlay)
+            new_ids = tuple(overlay.traverse(lambda x: id(x), [spec_fn]))
+            if new_ids == prev_ids:
+                return overlay
+            prev_ids = new_ids
 
 
     @classmethod
@@ -836,20 +864,40 @@ class Compositor(param.Parameterized):
         clone = holomap.clone(shared_data=False)
         data = zip(ranges[1], holomap.data.values()) if ranges else holomap.data.items()
         for key, overlay in data:
-            clone[key] = cls.collapse_element(overlay, key, ranges, mode)
+            clone[key] = cls.collapse_element(overlay, ranges, mode)
         return clone
+
+
+    @classmethod
+    def map(cls, obj, mode='data', backend=None):
+        """
+        Applies compositor operations to any HoloViews element or container
+        using the map method.
+        """
+        from .overlay import Overlay, CompositeOverlay
+        element_compositors = [c for c in cls.definitions if len(c._pattern_spec) == 1]
+        overlay_compositors = [c for c in cls.definitions if len(c._pattern_spec) > 1]
+        if overlay_compositors:
+            obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
+                          [CompositeOverlay])
+        if element_compositors:
+            obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
+                          [c.pattern for c in element_compositors])
+        return obj
+
 
     @classmethod
     def register(cls, compositor):
-        defined_groups = [op.group for op in cls.definitions]
-        if compositor.group in defined_groups:
-            cls.definitions.pop(defined_groups.index(compositor.group))
+        defined_patterns = [op.pattern for op in cls.definitions]
+        if compositor.pattern in defined_patterns:
+            cls.definitions.pop(defined_patterns.index(compositor.pattern))
         cls.definitions.append(compositor)
         if compositor.operation not in cls.operations:
             cls.operations.append(compositor.operation)
 
 
-    def __init__(self, pattern, operation, group, mode, **kwargs):
+    def __init__(self, pattern, operation, group, mode, transfer_options=False,
+                 transfer_parameters=False, output_type=None, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -866,11 +914,14 @@ class Compositor(param.Parameterized):
         else:
             self.label = ''
 
+        self._output_type = output_type
         super(Compositor, self).__init__(group=group,
                                          pattern=pattern,
                                          operation=operation,
                                          mode=mode,
-                                         kwargs=kwargs)
+                                         kwargs=kwargs,
+                                         transfer_options=transfer_options,
+                                         transfer_parameters=transfer_parameters)
 
 
     @property
@@ -879,10 +930,7 @@ class Compositor(param.Parameterized):
         Returns the operation output_type unless explicitly overridden
         in the kwargs.
         """
-        if 'output_type' in self.kwargs:
-            return self.kwargs['output_type']
-        else:
-            return self.operation.output_type
+        return self._output_type or self.operation.output_type
 
 
     def _slice_match_level(self, overlay_items):
@@ -935,17 +983,24 @@ class Compositor(param.Parameterized):
         return (best_lvl, match_slice) if best_lvl != 0 else None
 
 
-    def apply(self, value, input_ranges, key=None):
+    def apply(self, value, input_ranges, backend=None):
         """
         Apply the compositor on the input with the given input ranges.
         """
         from .overlay import CompositeOverlay
+        if backend is None: backend = Store.current_backend
+        kwargs = {k: v for k, v in self.kwargs.items() if k != 'output_type'}
         if isinstance(value, CompositeOverlay) and len(value) == 1:
             value = value.values()[0]
-        if key is None:
-            return self.operation(value, input_ranges=input_ranges, **self.kwargs)
-        return self.operation.instance(input_ranges=input_ranges, **self.kwargs).process_element(value, key)
+            if self.transfer_parameters:
+                plot_opts = Store.lookup_options(backend, value, 'plot').kwargs
+                kwargs.update({k: v for k, v in plot_opts.items()
+                               if k in self.operation.params()})
 
+        transformed = self.operation(value, input_ranges=input_ranges, **kwargs)
+        if self.transfer_options:
+            Store.transfer_options(value, transformed, backend)
+        return transformed
 
 
 class Store(object):
@@ -1103,6 +1158,24 @@ class Store(object):
             raise Exception("Object contains elements combined across "
                             "multiple custom trees (ids %s)" % idlist)
         return cls._custom_options[backend][list(ids)[0]]
+
+
+    @classmethod
+    def transfer_options(cls, obj, new_obj, backend=None):
+        """
+        Transfers options for all backends from one object to another.
+        Drops any options defined in the supplied drop list.
+        """
+        backend = cls.current_backend if backend is None else backend
+        type_name = type(new_obj).__name__
+        group = type_name if obj.group == type(obj).__name__ else obj.group
+        spec = '.'.join([s for s in (type_name, group, obj.label) if s])
+        options = []
+        for group in ['plot', 'style', 'norm']:
+            opts = cls.lookup_options(backend, obj, group)
+            if opts and opts.kwargs: options.append(Options(group, **opts.kwargs))
+        if options:
+            StoreOptions.set_options(new_obj, {spec: options}, backend)
 
 
     @classmethod
@@ -1511,7 +1584,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def update_backends(cls, id_mapping, custom_trees):
+    def update_backends(cls, id_mapping, custom_trees, backend=None):
         """
         Given the id_mapping from previous ids to new ids and the new
         custom tree dictionary, update the current backend with the
@@ -1519,7 +1592,7 @@ class StoreOptions(object):
         stay linked with the current object.
         """
         # Update the custom option entries for the current backend
-        Store.custom_options().update(custom_trees)
+        Store.custom_options(backend=backend).update(custom_trees)
         # Update the entries in other backends so the ids match correctly
         for backend in [k for k in Store.renderers.keys() if k != Store.current_backend]:
             for (old_id, new_id) in id_mapping:
@@ -1529,7 +1602,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def set_options(cls, obj, options=None, **kwargs):
+    def set_options(cls, obj, options=None, backend=None, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
         their style, plot and normalization options.
@@ -1572,7 +1645,7 @@ class StoreOptions(object):
 
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
-        options = cls.merge_options(Store.options().groups.keys(), options, **kwargs)
+        options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees)

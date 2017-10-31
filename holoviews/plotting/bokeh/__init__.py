@@ -13,7 +13,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
-                        Graph, Nodes, EdgePaths)
+                        Graph, Nodes, EdgePaths, Distribution, Bivariate)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -38,6 +38,7 @@ from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
+from .stats import DistributionPlot, BivariatePlot
 from .tabular import TablePlot
 from .util import bokeh_version
 
@@ -99,7 +100,11 @@ associations = {Overlay: OverlayPlot,
 
                 # Tabular
                 Table: TablePlot,
-                ItemTable: TablePlot}
+                ItemTable: TablePlot,
+
+                # Statistics
+                Distribution: DistributionPlot,
+                Bivariate: BivariatePlot}
 
 if DFrame is not None:
     associations[DFrame] = TablePlot
@@ -215,3 +220,6 @@ options.Scatter = Options('style', muted_alpha=0.2)
 options.Points = Options('style', muted_alpha=0.2)
 options.Polygons = Options('style', muted_alpha=0.2)
 
+# Statistics
+options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
+                               fill_alpha=0.5)

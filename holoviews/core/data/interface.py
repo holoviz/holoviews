@@ -201,9 +201,10 @@ class Interface(param.Parameterized):
 
 
     @classmethod
-    def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label='name')
-                     if d not in dataset.data]
+    def validate(cls, dataset, vdims=True):
+        dim_types = 'key' if vdims else 'all'
+        dimensions = dataset.dimensions(dim_types, label='name')
+        not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "

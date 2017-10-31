@@ -88,8 +88,8 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def validate(cls, dataset):
-        Interface.validate(dataset)
+    def validate(cls, dataset, vdims=True):
+        Interface.validate(dataset, vdims)
 
 
     @classmethod

@@ -16,9 +16,8 @@ from .graphs import * # noqa (API import)
 from .path import * # noqa (API import)
 from .plot import * # noqa (API import)
 from .raster import * # noqa (API import)
+from .stats import * # noqa (API import)
 from .tabular import * # noqa (API import)
-from . import pandas # noqa (API import)
-from . import seaborn # noqa (API import)
 
 from .renderer import MPLRenderer
 
@@ -165,7 +164,11 @@ Store.register({Curve: CurvePlot,
                 Box:      PathPlot,
                 Bounds:   PathPlot,
                 Ellipse:  PathPlot,
-                Polygons: PolygonPlot}, 'matplotlib', style_aliases=style_aliases)
+                Polygons: PolygonPlot,
+
+                # Statistics elements
+                Distribution: DistributionPlot,
+                Bivariate: BivariatePlot}, 'matplotlib', style_aliases=style_aliases)
 
 
 MPLPlot.sideplots.update({Histogram: SideHistogramPlot,
@@ -262,3 +265,7 @@ options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(
 options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
                         marker='o', s=20**2)
 options.EdgePaths = Options('style', color='black')
+
+# Statistics
+options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
+                               alpha=0.5)

@@ -355,8 +355,6 @@ class GridPlot(CompositePlot):
 
 
     def _create_subplots(self, layout, axis, ranges, create_axes):
-        layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
-                            clone=False)
         norm_opts = self._traverse_options(layout, 'norm', ['axiswise'], [Element])
         axiswise = all(norm_opts['axiswise'])
         if not ranges:

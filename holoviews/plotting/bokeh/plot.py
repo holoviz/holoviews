@@ -331,9 +331,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
 
 
     def _create_subplots(self, layout, ranges):
-        layout = layout.map(Compositor.collapse_element, [CompositeOverlay],
-                            clone=False)
-
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))

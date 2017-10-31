@@ -41,7 +41,7 @@ class PandasInterface(Interface):
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and kdims is None:
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
-            elif kdims is None and vdims is None:
+            elif kdims is None and (vdims is None or vdims == []):
                 kdims = list(data.columns[:ndim])
                 vdims = [] if ndim is None else list(data.columns[ndim:])
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
@@ -91,9 +91,10 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def validate(cls, dataset):
-        not_found = [d for d in dataset.dimensions(label='name')
-                     if d not in dataset.data.columns]
+    def validate(cls, dataset, vdims=True):
+        dim_types = 'key' if vdims else 'all'
+        dimensions = dataset.dimensions(dim_types, label='name')
+        not_found = [d for d in dimensions if d not in dataset.data.columns]
         if not_found:
             raise DataError("Supplied data does not contain specified "
                             "dimensions, the following dimensions were "

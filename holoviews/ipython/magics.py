@@ -212,7 +212,7 @@ class OptsCompleter(object):
         line = v.text_until_cursor
         completions = cls.setup_completer()
         compositor_defs = {el.group:el.output_type.__name__
-                           for el in Compositor.definitions}
+                           for el in Compositor.definitions if el.group}
         return cls.line_completer(line, completions, compositor_defs)
 
     @classmethod

@@ -51,13 +51,13 @@ class MultiInterface(Interface):
         return new_data, dims, {}
 
     @classmethod
-    def validate(cls, dataset):
+    def validate(cls, dataset, vdims=True):
         if not dataset.data:
             return
         ds = cls._inner_dataset_template(dataset)
         for d in dataset.data:
             ds.data = d
-            ds.interface.validate(ds)
+            ds.interface.validate(ds, vdims)
 
 
     @classmethod

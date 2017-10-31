@@ -11,7 +11,8 @@ from IPython import get_ipython
 
 import holoviews
 from holoviews.plotting import Plot
-from ..core.options import Store, StoreOptions, SkipRendering, AbbreviatedException
+from ..core.options import (Store, StoreOptions, SkipRendering,
+                            AbbreviatedException)
 from ..core import (ViewableElement, UniformNdMapping,
                     HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
                     CompositeOverlay, DynamicMap)
@@ -165,7 +166,6 @@ def element_display(element, max_frames):
     if info:
         IPython.display.display(IPython.display.HTML(info))
         return
-
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:

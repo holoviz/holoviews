@@ -53,7 +53,7 @@ try:
 except ImportError:
     pass
 
-from ..dimension import Dimension
+from ..dimension import Dimension, process_dimensions
 from ..element import Element
 from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
@@ -175,25 +175,15 @@ class Dataset(Element):
             pvals = util.get_param_values(data)
             kwargs.update([(l, pvals[l]) for l in ['group', 'label']
                            if l in pvals and l not in kwargs])
-
-        for group, dims in [('kdims', kdims), ('vdims', vdims)]:
-            if dims is None:
-                continue
-            elif isinstance(dims, (tuple, basestring, Dimension)):
-                dims = [dims]
-            elif not isinstance(dims, list):
-                raise ValueError("%s must be a Dimension or list of dimensions, "
-                                 "specified as tuples, string or Dimension instances, "
-                                 "not %s." % (group, dims))
-            kwargs[group] = [d if isinstance(d, Dimension) else Dimension(d)
-                             for d in dims]
+        kwargs.update(process_dimensions(kdims, vdims))
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
+        validate_vdims = kwargs.pop('_validate_vdims', True)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
-        self.interface.validate(self)
+        self.interface.validate(self, validate_vdims)
 
         self.redim = redim(self, mode='dataset')
 

@@ -37,7 +37,7 @@ class Operation(param.ParameterizedFunction):
        'default' the mode will be determined based on the input type,
        i.e. if the data is a DynamicMap it will stay dynamic.""")
 
-    input_ranges = param.ClassSelector(default={},
+    input_ranges = param.ClassSelector(default={}, allow_None=True,
                                        class_=(dict, tuple), doc="""
        Ranges to be used for input normalization (if applicable) in a
        format appropriate for the Normalization.ranges parameter.

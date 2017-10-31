@@ -10,6 +10,8 @@ from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
+from ..element import Area, Polygons
+from ..operation.stats import univariate_kde, bivariate_kde, Operation
 from ..streams import LinkedStream
 
 def displayable(obj):

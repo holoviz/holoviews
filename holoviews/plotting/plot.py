@@ -797,7 +797,6 @@ class GenericOverlayPlot(GenericElementPlot):
                                                  batched=batched, **params)
 
         # Apply data collapse
-        self.hmap = Compositor.collapse(self.hmap, None, mode='data')
         self.hmap = self._apply_compositor(self.hmap, ranges, self.keys)
         self.subplots = self._create_subplots(ranges)
         self.traverse(lambda x: setattr(x, 'comm', self.comm))
