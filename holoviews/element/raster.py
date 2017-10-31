@@ -549,6 +549,11 @@ class RGB(Image):
             vdims = list(self.vdims)
         else:
             vdims = list(vdims) if isinstance(vdims, list) else [vdims]
+        if hasattr(data,'alpha_composite'):
+            try: # Possible PIL image; try converting to Numpy array
+                data = np.array(data)
+            except:
+                pass
         if isinstance(data, np.ndarray):
             if data.shape[-1] == 4 and len(vdims) == 3:
                 vdims.append(self.alpha_dimension)
