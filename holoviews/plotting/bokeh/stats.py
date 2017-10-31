@@ -12,6 +12,9 @@ class DistributionPlot(AreaPlot):
     bandwidth = param.Number(default=None, doc="""
         The bandwidth of the kernel for the density estimate.""")
 
+    cut = param.Number(default=3, doc="""
+        Draw the estimate to cut * bw from the extreme data points.""")
+
 
 class BivariatePlot(PolygonPlot):
     """
@@ -23,6 +26,9 @@ class BivariatePlot(PolygonPlot):
 
     bandwidth = param.Number(default=None, doc="""
         The bandwidth of the kernel for the density estimate.""")
+
+    cut = param.Number(default=3, doc="""
+        Draw the estimate to cut * bw from the extreme data points.""")
 
     filled = param.Boolean(default=False, doc="""
         Whether the bivariate contours should be filled.""")
