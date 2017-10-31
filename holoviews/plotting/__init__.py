@@ -7,12 +7,17 @@ display in the IPython Notebook (optional).
 """
 
 from ..core.options import Cycle, Compositor
+from ..element import Area, Polygons
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
-from .util import univariate_compositor, bivariate_compositor
+from ..operation.stats import univariate_kde, bivariate_kde
 
-Compositor.register(Compositor("Distribution", univariate_compositor, None, 'data'))
-Compositor.register(Compositor("Bivariate", bivariate_compositor, None, 'data'))
+Compositor.register(Compositor("Distribution", univariate_kde, None,
+                               'data', transfer_options=True,
+                               output_type=Area))
+Compositor.register(Compositor("Bivariate", bivariate_kde, None,
+                               'data', transfer_options=True,
+                               output_type=Polygons))
 
 def public(obj):
     if not isinstance(obj, type): return False

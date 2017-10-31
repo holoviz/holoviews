@@ -784,10 +784,11 @@ class Compositor(param.Parameterized):
     kwargs = param.Dict(doc="""
        Optional set of parameters to pass to the operation.""")
 
+    transfer_options = param.Boolean(default=False, doc="""
+       Whether to transfer the options from the input to the output.""")
 
     operations = []  # The operations that can be used to define compositors.
     definitions = [] # The set of all the compositor instances
-
 
     @classmethod
     def strongest_match(cls, overlay, mode):
@@ -806,7 +807,7 @@ class Compositor(param.Parameterized):
 
 
     @classmethod
-    def collapse_element(cls, overlay, key=None, ranges=None, mode='data'):
+    def collapse_element(cls, overlay, ranges=None, mode='data', backend=None):
         """
         Finds any applicable compositor and applies it.
         """
@@ -830,7 +831,7 @@ class Compositor(param.Parameterized):
             else:
                 values = overlay.items()
                 sliced = overlay.clone(values[start:stop])
-            result = applicable_op.apply(sliced, ranges, key=key)
+            result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
                 result = result.relabel(group=applicable_op.group)
             if isinstance(overlay, Overlay):
@@ -860,7 +861,7 @@ class Compositor(param.Parameterized):
         clone = holomap.clone(shared_data=False)
         data = zip(ranges[1], holomap.data.values()) if ranges else holomap.data.items()
         for key, overlay in data:
-            clone[key] = cls.collapse_element(overlay, key, ranges, mode)
+            clone[key] = cls.collapse_element(overlay, ranges, mode)
         return clone
 
 
@@ -874,7 +875,8 @@ class Compositor(param.Parameterized):
             cls.operations.append(compositor.operation)
 
 
-    def __init__(self, pattern, operation, group, mode, **kwargs):
+    def __init__(self, pattern, operation, group, mode, transfer_options=False,
+                 output_type=None, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -891,11 +893,13 @@ class Compositor(param.Parameterized):
         else:
             self.label = ''
 
+        self._output_type = output_type
         super(Compositor, self).__init__(group=group,
                                          pattern=pattern,
                                          operation=operation,
                                          mode=mode,
-                                         kwargs=kwargs)
+                                         kwargs=kwargs,
+                                         transfer_options=transfer_options)
 
 
     @property
@@ -904,10 +908,7 @@ class Compositor(param.Parameterized):
         Returns the operation output_type unless explicitly overridden
         in the kwargs.
         """
-        if 'output_type' in self.kwargs:
-            return self.kwargs['output_type']
-        else:
-            return self.operation.output_type
+        return self._output_type or self.operation.output_type
 
 
     def _slice_match_level(self, overlay_items):
@@ -960,17 +961,24 @@ class Compositor(param.Parameterized):
         return (best_lvl, match_slice) if best_lvl != 0 else None
 
 
-    def apply(self, value, input_ranges, key=None):
+    def apply(self, value, input_ranges, backend=None):
         """
         Apply the compositor on the input with the given input ranges.
         """
         from .overlay import CompositeOverlay
+        if backend is None: backend = Store.current_backend
+        kwargs = {k: v for k, v in self.kwargs.items() if k != 'output_type'}
         if isinstance(value, CompositeOverlay) and len(value) == 1:
             value = value.values()[0]
-        if key is None:
-            return self.operation(value, input_ranges=input_ranges, **self.kwargs)
-        return self.operation.instance(input_ranges=input_ranges, **self.kwargs).process_element(value, key)
+            if self.transfer_options:
+                plot_opts = Store.lookup_options(backend, value, 'plot').kwargs
+                kwargs.update({k: v for k, v in plot_opts.items()
+                               if k in self.operation.params()})
 
+        transformed = self.operation(value, input_ranges=input_ranges, **kwargs)
+        if self.transfer_options:
+            Store.transfer_options(value, transformed, backend)
+        return transformed
 
 
 class Store(object):
@@ -1131,11 +1139,12 @@ class Store(object):
 
 
     @classmethod
-    def transfer_options(cls, obj, new_obj, drop=[]):
+    def transfer_options(cls, obj, new_obj, backend=None):
         """
         Transfers options for all backends from one object to another.
         Drops any options defined in the supplied drop list.
         """
+        backend = cls.current_backend if backend is None else backend
         type_name = type(new_obj).__name__
         group = type_name if obj.group == type(obj).__name__ else obj.group
         spec = '.'.join([s for s in (type_name, group, obj.label) if s])
@@ -1143,10 +1152,9 @@ class Store(object):
             options = []
             for group in ['plot', 'style', 'norm']:
                 opts = cls.lookup_options(backend, obj, group).kwargs
-                opts = {k: v for k, v in opts.items() if k not in drop}
-                if opts:
-                    options.append(Options(group, **opts))
-        StoreOptions.set_options(new_obj, {spec: options}, backend)
+                if opts: options.append(Options(group, **opts))
+        if options:
+            StoreOptions.set_options(new_obj, {spec: options}, backend)
 
 
     @classmethod
