@@ -98,7 +98,7 @@ class Bivariate(_StatisticsElement):
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2))
 
-    vdims = param.List(default=[Dimension('Density')], bounds=(1,1))
+    vdims = param.List(default=[Dimension('Density')], bounds=(0,1))
 
     group = param.String(default="Bivariate", constant=True)
 

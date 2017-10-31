@@ -1148,11 +1148,10 @@ class Store(object):
         type_name = type(new_obj).__name__
         group = type_name if obj.group == type(obj).__name__ else obj.group
         spec = '.'.join([s for s in (type_name, group, obj.label) if s])
-        for backend in cls.renderers:
-            options = []
-            for group in ['plot', 'style', 'norm']:
-                opts = cls.lookup_options(backend, obj, group).kwargs
-                if opts: options.append(Options(group, **opts))
+        options = []
+        for group in ['plot', 'style', 'norm']:
+            opts = cls.lookup_options(backend, obj, group).kwargs
+            if opts: options.append(Options(group, **opts))
         if options:
             StoreOptions.set_options(new_obj, {spec: options}, backend)
 

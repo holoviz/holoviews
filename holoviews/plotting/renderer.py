@@ -164,16 +164,19 @@ class Renderer(Exporter):
         """
         # Initialize DynamicMaps with first data item
         initialize_dynamic(obj)
+        backend = self_or_cls.backend
 
         if not isinstance(obj, Plot):
             if not displayable(obj):
                 obj = collate(obj)
                 initialize_dynamic(obj)
             if any(len(c._pattern_spec) > 1 for c in Compositor.definitions):
-                obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data'),
+                obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data',
+                                                                      backend=backend),
                               [CompositeOverlay])
             if any(len(c._pattern_spec) == 1 for c in Compositor.definitions):
-                obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data'),
+                obj = obj.map(lambda obj: Compositor.collapse_element(obj, mode='data',
+                                                                      backend=backend),
                               [Element])
 
         if not renderer: renderer = self_or_cls.instance()
