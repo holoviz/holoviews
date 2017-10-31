@@ -755,7 +755,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.current_ranges = ranges
         self.current_frame = element
         self.current_key = key
-        
         style_element = element.last if self.batched else element
         ranges = util.match_spec(style_element, ranges)
 

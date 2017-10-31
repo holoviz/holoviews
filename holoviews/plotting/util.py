@@ -459,7 +459,7 @@ class univariate_composite(Operation):
 
     def _process(self, element, key=None):
         plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
-        bw = plot_opts.pop('bw', univariate_kde.bandwidth)
+        bw = plot_opts.pop('bandwidth', univariate_kde.bandwidth)
         transformed = univariate_kde(element, bandwidth=bw)
         Store.transfer_options(element, transformed, ['bw'])
         return transformed
@@ -471,7 +471,7 @@ class bivariate_composite(Operation):
 
     def _process(self, element, key=None):
         plot_opts = Store.lookup_options(Store.current_backend, element, 'plot').kwargs
-        bw = plot_opts.pop('bw', bivariate_kde.bandwidth)
+        bw = plot_opts.pop('bandwidth', bivariate_kde.bandwidth)
         filled = plot_opts.pop('filled', bivariate_kde.filled)
         transformed = bivariate_kde(element, bandwidth=bw, filled=filled)
         Store.transfer_options(element, transformed, ['bw', 'filled'])
