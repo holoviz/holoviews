@@ -863,8 +863,11 @@ class DynamicMap(HoloMap):
         all ids are reset.
         """
         from ..util import Dynamic
-        return Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, **kwargs),
-                       streams=self.streams, shared_data=True, link_inputs=True)
+        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, **kwargs),
+                       streams=self.streams, link_inputs=True)
+        dmap.data = OrderedDict([(k, v.opts(options, **kwargs))
+                                 for k, v in self.data.items()])
+        return dmap
 
 
     def clone(self, data=None, shared_data=True, new_type=None, link_inputs=True,
@@ -935,8 +938,10 @@ class DynamicMap(HoloMap):
 
         if data_slice:
             from ..util import Dynamic
-            return Dynamic(product, operation=lambda obj, **dynkwargs: obj[data_slice],
-                           streams=self.streams, shared_data=True)
+            dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj[data_slice],
+                           streams=self.streams)
+            dmap.data = product.data
+            return dmap
         return product
 
 
@@ -970,8 +975,10 @@ class DynamicMap(HoloMap):
                 if len(self):
                     slices = [slice(None) for _ in range(self.ndims)] + list(data_slice)
                     sliced = super(DynamicMap, sliced).__getitem__(tuple(slices))
-                return Dynamic(sliced, operation=lambda obj, **dynkwargs: obj[data_slice],
-                               streams=self.streams, shared_data=True)
+                dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj[data_slice],
+                               streams=self.streams)
+                dmap.data = sliced.data
+                return dmap
         return sliced
 
 
@@ -1051,8 +1058,10 @@ class DynamicMap(HoloMap):
             return dynamic_select(selection)
         else:
             from ..util import Dynamic
-            return Dynamic(selection, operation=dynamic_select,
-                           streams=self.streams, shared_data=True)
+            dmap = Dynamic(self, operation=dynamic_select, streams=self.streams)
+            dmap.data = selection.data
+            return dmap
+            
 
 
     def _cache(self, key, val):
@@ -1080,9 +1089,9 @@ class DynamicMap(HoloMap):
             from ..util import Dynamic
             def apply_map(obj, **dynkwargs):
                 return obj.map(map_fn, specs, clone)
-            dmap = Dynamic(deep_mapped, operation=apply_map,
-                           streams=self.streams, shared_data=True,
+            dmap = Dynamic(self, operation=apply_map, streams=self.streams,
                            link_inputs=link_inputs)
+            dmap.data = deep_mapped.data
             return dmap
         return deep_mapped
 
@@ -1097,8 +1106,12 @@ class DynamicMap(HoloMap):
             from ..util import Dynamic
             def dynamic_relabel(obj, **dynkwargs):
                 return obj.relabel(group=group, label=label, depth=depth-1)
-            return Dynamic(relabelled, streams=self.streams, shared_data=True,
-                           operation=dynamic_relabel)
+            dmap = Dynamic(self, streams=self.streams, operation=dynamic_relabel)
+            dmap.data = relabelled.data
+            with util.disable_constant(dmap):
+                dmap.group = relabelled.group
+                dmap.label = relabelled.label
+            return dmap
         return relabelled
 
 
