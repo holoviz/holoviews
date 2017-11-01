@@ -95,6 +95,9 @@ And then you can launch Jupyter Notebook to explore them::
 .. |Coveralls| image:: https://img.shields.io/coveralls/ioam/holoviews.svg
 .. _Coveralls: https://coveralls.io/r/ioam/holoviews
 
+.. raw:: html
+  :file: latest_news.html
+
 .. toctree::
    :titlesonly:
    :hidden:
