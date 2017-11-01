@@ -475,7 +475,12 @@ class regrid(ResamplingOperation):
             regridded.append(rarray)
 
         regridded = xr.Dataset({vd.name: xarr for vd, xarr in zip(element.vdims, regridded)})
-        return element.clone(regridded, datatype=['xarray'])
+        if xtype == 'datetime':
+            xstart, xend = np.array([xstart, xend]).astype('datetime64[us]')
+        if ytype == 'datetime':
+            ystart, yend = np.array([ystart, yend]).astype('datetime64[us]')  
+        bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
+        return element.clone(regridded, bounds=bbox, datatype=['xarray'])
 
 
 
