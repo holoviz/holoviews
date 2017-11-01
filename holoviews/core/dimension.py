@@ -15,7 +15,7 @@ from ..core.util import (basestring, sanitize_identifier,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins, config, dimension_range)
+                         builtins, config, dimension_range, disable_constant)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
 
@@ -155,13 +155,15 @@ class redim(object):
         if self.mode != 'dynamic':
             return redimmed.clone(kdims=kdims, vdims=vdims)
 
-        redimmed = redimmed.clone(kdims=kdims, vdims=vdims,
-                                  data= self._filter_cache(redimmed, kdims))
         from ..util import Dynamic
         def dynamic_redim(obj, **dynkwargs):
             return obj.redim(specs, **dimensions)
-        return Dynamic(redimmed, shared_data=True, streams=parent.streams,
-                       operation=dynamic_redim)
+        dmap = Dynamic(parent, streams=parent.streams, operation=dynamic_redim)
+        dmap.data = OrderedDict(self._filter_cache(redimmed, kdims))
+        with disable_constant(dmap):
+            dmap.kdims = kdims
+            dmap.vdims = vdims
+        return dmap
 
 
     def _redim(self, name, specs, **dims):

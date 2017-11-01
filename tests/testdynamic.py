@@ -186,6 +186,14 @@ class DynamicMapMethods(ComparisonTestCase):
         curve = fn(10)
         self.assertEqual(mapped[10], curve.clone(curve.data*2))
 
+    def test_deep_map_transform_element_type(self):
+        fn = lambda i: Curve(np.arange(i))
+        dmap = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
+        dmap[10]
+        mapped = dmap.map(lambda x: Scatter(x), Curve)
+        area = mapped[11]
+        self.assertEqual(area, Scatter(fn(11)))
+
     def test_deep_map_apply_dmap_function(self):
         fn = lambda i: Curve(np.arange(i))
         dmap1 = DynamicMap(fn, kdims=[Dimension('Test', range=(10, 20))])
