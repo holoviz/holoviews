@@ -18,6 +18,10 @@ The `API <Reference_Manual>`_ is the definitive guide to each HoloViews object, 
 If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to `contribute code <https://help.github.com/articles/about-pull-requests>`_, you can visit our `GitHub site <https://github.com/ioam/holoviews>`_ or chat with the developers on `gitter <https://gitter.im/ioam/holoviews>`_.
 
 .. raw:: html
+  :file: latest_news.html
+
+
+.. raw:: html
 
    <div>
    <div >
