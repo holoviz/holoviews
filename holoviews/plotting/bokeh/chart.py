@@ -558,7 +558,7 @@ class SpikesPlot(ColorbarPlot):
         data = {}
         pos = self.position
         if len(element) == 0 or self.static_source:
-            pass
+            data = {'x': [], 'y0': [], 'y1': []}
         else:
             data['x'] = element.dimension_values(0)
             data['y0'] = np.full(len(element), pos)
