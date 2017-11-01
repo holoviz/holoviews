@@ -10,7 +10,6 @@ from IPython.display import HTML
 from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
-from ..interface.collector import Collector
 from ..util import extension
 from ..plotting.renderer import Renderer
 from .magics import load_magics
@@ -19,7 +18,6 @@ from .display_hooks import set_display_hooks
 from .widgets import RunProgress
 
 
-Collector.interval_hook = RunProgress
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
 
 def show_traceback():
