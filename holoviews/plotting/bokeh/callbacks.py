@@ -155,7 +155,7 @@ class CustomJSCallback(MessageCallback):
             var unique_events = [];
             for (var i=0; i<events.length; i++) {{
                 [event, data] = events[i];
-                if (!unique_events.includes(event)) {{
+                if (unique_events.indexOf(event)===-1) {{
                     unique.unshift(data);
                     unique_events.push(event);
                 }}
