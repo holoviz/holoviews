@@ -56,7 +56,6 @@ setup_args.update(dict(
                 "holoviews.core",
                 "holoviews.core.data",
                 "holoviews.element",
-                "holoviews.interface",
                 "holoviews.ipython",
                 "holoviews.util",
                 "holoviews.operation",
