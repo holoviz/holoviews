@@ -838,8 +838,9 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         spikes = Spikes([], vdims=['Intensity'])
         plot = bokeh_renderer.get_plot(spikes)
         source = plot.handles['source']
-        self.assertEqual(len(source.data['xs']), 0)
-        self.assertEqual(len(source.data['ys']), 0)
+        self.assertEqual(len(source.data['x']), 0)
+        self.assertEqual(len(source.data['y0']), 0)
+        self.assertEqual(len(source.data['y1']), 0)
 
     def test_empty_path_plot(self):
         path = Path([], vdims=['Intensity']).opts(plot=dict(color_index=2))

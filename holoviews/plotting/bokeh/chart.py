@@ -510,7 +510,7 @@ class AreaPlot(SpreadPlot):
 
 
 
-class SpikesPlot(PathPlot, ColorbarPlot):
+class SpikesPlot(ColorbarPlot):
 
     color_index = param.ClassSelector(default=None, allow_None=True,
                                       class_=(basestring, int), doc="""
@@ -526,6 +526,8 @@ class SpikesPlot(PathPlot, ColorbarPlot):
         Whether to show legend for the plot.""")
 
     style_opts = (['color', 'cmap', 'palette'] + line_properties)
+
+    _plot_methods = dict(single='segment')
 
     def get_extents(self, element, ranges):
         l, b, r, t = super(SpikesPlot, self).get_extents(element, ranges)
@@ -553,20 +555,22 @@ class SpikesPlot(PathPlot, ColorbarPlot):
     def get_data(self, element, ranges, style):
         dims = element.dimensions(label=True)
 
+        data = {}
         pos = self.position
-        mapping = dict(xs='xs', ys='ys')
         if len(element) == 0 or self.static_source:
-            xs, ys = [], []
-        elif len(dims) > 1:
-            xs, ys = zip(*((np.array([x, x]), np.array([pos+y, pos]))
-                           for x, y in element.array(dims[:2])))
+            data = {'x': [], 'y0': [], 'y1': []}
         else:
-            height = self.spike_length
-            xs, ys = zip(*((np.array([x[0], x[0]]), np.array([pos+height, pos]))
-                           for x in element.array(dims[:1])))
+            data['x'] = element.dimension_values(0)
+            data['y0'] = np.full(len(element), pos)
+            if len(dims) > 1:
+                data['y1'] = element.dimension_values(1)+pos
+            else:
+                data['y1'] = data['y0']+self.spike_length
 
-        if self.invert_axes: xs, ys = ys, xs
-        data = dict(zip(('xs', 'ys'), (xs, ys)))
+        if self.invert_axes:
+            mapping = {'x0': 'y0', 'x1': 'y1', 'y0': 'x', 'y1': 'x'}
+        else:
+            mapping = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
         cdim = element.get_dimension(self.color_index)
         if cdim:
             cmapper = self._get_colormapper(cdim, element, ranges, style)
