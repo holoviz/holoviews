@@ -7,7 +7,7 @@ import bokeh
 import bokeh.plotting
 from bokeh import palettes
 from bokeh.core.properties import value
-from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d,
+from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend)
 from bokeh.models.tickers import Ticker, BasicTicker, FixedTicker, LogTicker
 from bokeh.models.widgets import Panel, Tabs
@@ -536,8 +536,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
         if not self.overlaid:
-            plot.title.update(**self._title_properties(key, plot, element))
-
+            if plot.title:
+                plot.title.update(**self._title_properties(key, plot, element))
+            else:
+                plot.title = Title(**self._title_properties(key, plot, element))
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
@@ -838,8 +840,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             self.current_frame = element
 
         renderer = self.handles.get('glyph_renderer', None)
+        glyph = self.handles.get('glyph', None)
+        visible = bool(element)
         if hasattr(renderer, 'visible'):
-            renderer.visible = bool(element)
+            renderer.visible = visible
+        if hasattr(glyph, 'visible'):
+            glyph.visible = visible
 
         if ((self.batched and not element) or element is None or (not self.dynamic and self.static) or
             (self.streaming and self.streaming.data is self.current_frame.data

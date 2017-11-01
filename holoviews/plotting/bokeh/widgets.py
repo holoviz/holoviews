@@ -252,6 +252,16 @@ class BokehWidget(NdWidget):
             frames = json.dumps(frames).replace('</', r'<\/')
         return frames
 
+    def get_frames(self):
+        nframes = len(self.plot)
+        if self.embed:
+            self.plot.update(nframes-1)
+            frames = OrderedDict([(idx, self._plot_figure(idx))
+                                  for idx in range(nframes)])
+        else:
+            frames = {}
+        return self.encode_frames(frames)
+
     def _plot_figure(self, idx, fig_format='json'):
         """
         Returns the figure in html format on the
