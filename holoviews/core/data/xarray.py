@@ -91,6 +91,7 @@ class XArrayInterface(GridInterface):
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
 
+        kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
         not_found = [d for d in kdims if d.name not in data.coords]
         if not isinstance(data, xr.Dataset):
             raise TypeError('Data must be be an xarray Dataset type.')
