@@ -734,7 +734,7 @@ class BoundsCallback(Callback):
     models = ['plot']
     extra_models = ['box_select']
     on_events = ['selectiongeometry']
-    skip = ["!box_select || !box_select.active"]
+    skip = ["cb_obj.geometry.type != 'rect'"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'y0', 'x1', 'y1']):
@@ -758,7 +758,7 @@ class BoundsXCallback(Callback):
     models = ['plot']
     extra_models = ['xbox_select']
     on_events = ['selectiongeometry']
-    skip = ["!xbox_select || !xbox_select.active"]
+    skip = ["cb_obj.geometry.type != 'rect'"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['x0', 'x1']):
@@ -779,7 +779,7 @@ class BoundsYCallback(Callback):
     models = ['plot']
     extra_models = ['ybox_select']
     on_events = ['selectiongeometry']
-    skip = ["!ybox_select || !ybox_select.active"]
+    skip = ["cb_obj.geometry.type != 'rect'"]
 
     def _process_msg(self, msg):
         if all(c in msg for c in ['y0', 'y1']):
