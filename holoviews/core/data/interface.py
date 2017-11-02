@@ -185,17 +185,25 @@ class Interface(param.Parameterized):
             prioritized = head + [el for el in prioritized if el != head[0]]
 
         # Iterate over interfaces until one can interpret the input
+        priority_errors = []
         for interface in prioritized:
             try:
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
             except DataError:
                 raise
-            except Exception:
-                pass
+            except Exception as e:
+                if interface in head:
+                    priority_errors.append((interface, e))
         else:
-            raise ValueError("None of the available storage backends "
-                             "were able to support the supplied data format.")
+            error = ("None of the available storage backends were able "
+                     "to support the supplied data format.")
+            if priority_errors:
+                intfc, e = priority_errors[0]
+                priority_error = ("%s raised following error:\n\n %s"
+                                  % (intfc.__name__, e))
+                error = ' '.join([error, priority_error])
+            raise DataError(error)
 
         return data, interface, dims, extra_kws
 

@@ -69,9 +69,16 @@ class DictInterface(Interface):
         elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
                      for interface in cls.interfaces.values()):
             data = {k: v for k, v in zip(dimensions, zip(*data))}
-        elif (isinstance(data, dict) and not any(d in data or any(d in k for k in data
-            if isinstance(k, tuple)) for d in dimensions)):
+        elif (isinstance(data, dict) and not any(isinstance(v, np.ndarray) for v in data.values()) and not
+              any(d in data or any(d in k for k in data if isinstance(k, tuple)) for d in dimensions)):
+            # For data where both keys and values are dimension values
+            # e.g. {('A', 'B'): (1, 2)} (should consider deprecating)
             dict_data = sorted(data.items())
+            k, v = dict_data[0]
+            if len(util.wrap_tuple(k)) != len(kdims) or len(util.wrap_tuple(v)) != len(vdims):
+                raise ValueError("Dictionary data not understood, should contain a column "
+                                 "per dimension or a mapping between key and value dimension "
+                                 "values.")
             dict_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                               for k, v in dict_data))
             data = {k: np.array(v) for k, v in zip(dimensions, dict_data)}
