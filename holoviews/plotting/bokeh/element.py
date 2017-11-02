@@ -865,13 +865,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.set_param(**self.lookup_options(style_element, 'plot').options)
         ranges = util.match_spec(style_element, ranges)
         self.current_ranges = ranges
-        self._update_glyphs(element, ranges)
-
         plot = self.handles['plot']
         if not self.overlaid:
             self._update_ranges(style_element, ranges)
             self._update_plot(key, plot, style_element)
 
+        self._update_glyphs(element, ranges)
         self._execute_hooks(element)
 
 
@@ -1114,7 +1113,7 @@ class ColorbarPlot(ElementPlot):
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
-        if 'color_mapper' in self.handles:
+        if 'color_mapper' in self.handles and isinstance(self.handles['color_mapper'], colormapper):
             cmapper = self.handles['color_mapper']
             if cmapper.palette != palette:
                 cmapper.palette = palette
@@ -1469,6 +1468,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if element is not None:
             ranges = self.compute_ranges(range_obj, key, ranges)
+
+        if element and not self.overlaid and not self.tabs and not self.batched:
+            self._update_ranges(element, ranges)
+            
         for k, subplot in self.subplots.items():
             el = None
             # If in Dynamic mode propagate elements to subplots
@@ -1489,7 +1492,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                          "rendered.")
 
         if element and not self.overlaid and not self.tabs and not self.batched:
-            self._update_ranges(element, ranges)
             self._update_plot(key, self.handles['plot'], element)
 
         self._execute_hooks(element)
