@@ -184,7 +184,7 @@ class MultiInterface(Interface):
 
     @classmethod
     def nonzero(cls, dataset):
-        return bool(cls.length(dataset))
+        return bool(dataset.data)
 
     @classmethod
     def redim(cls, dataset, dimensions):
