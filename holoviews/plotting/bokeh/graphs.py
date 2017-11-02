@@ -96,6 +96,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         point_data.update(cdata)
         point_mapping = cmapping
         if 'node_fill_color' in point_mapping:
+            style = {k: v for k, v in style.items() if k not in
+                     ['node_fill_color', 'node_nonselection_fill_color']}
             point_mapping['node_nonselection_fill_color'] = point_mapping['node_fill_color']
 
         # Get edge data
