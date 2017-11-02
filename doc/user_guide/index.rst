@@ -54,6 +54,9 @@ concepts in HoloViews:
 * `Data Processing Pipelines <Data_Pipelines.html>`_
    Chain operations to build sophisticated, interactive and lazy data analysis pipelines.
 
+* `Creating interactive network graphs <Network_Graphs.html>`_
+   Using the Graph element to display small and large networks interactively.
+
 * `Working with large data <Large_Data.html>`_
    Leverage Datashader to interactively explore millions or billions of datapoints.
 
@@ -90,7 +93,6 @@ These guides provide detail about specific additional features in HoloViews:
 * `Exporting and Archiving <Exporting_and_Archiving.html>`_
    Archive both your data and visualization in scripts and notebooks.
 
-
 * `Continuous Coordinates <Continuous_Coordinates.html>`_
    How continuous coordinates are handled, specifically focusing on ``Image`` and ``Raster`` types.
 
@@ -113,6 +115,7 @@ These guides provide detail about specific additional features in HoloViews:
     Responding to Events <Responding_to_Events>
     Custom Interactivity <Custom_Interactivity>
     Data Processing Pipelines <Data_Pipelines>
+    Creating interactive network graphs <Network_Graphs>
     Working with large data <Large_Data>
     Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
