@@ -1,0 +1,15 @@
+include README.rst
+include LICENSE.txt
+include CHANGELOG.md
+
+recursive-include tests *
+
+recursive-exclude * __pycache__
+recursive-exclude * *.py[co]
+
+recursive-include doc Makefile make.bat *.conf *.css *.html *.ico *.ipynb *.js *.json *.npy *.png *.py *.rst *.svg
+prune doc/builder
+prune doc/nbpublisher
+recursive-include doc/test_data README.rst
+
+recursive-include examples *.csv *.gz *.ipynb *.md *.npz *.png
