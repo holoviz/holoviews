@@ -9,7 +9,7 @@ from itertools import product
 import numpy as np
 from holoviews import Dataset, HoloMap, Dimension, Image
 from holoviews.core.data.interface import DataError
-from holoviews.element import Distribution, Points
+from holoviews.element import Distribution, Points, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -882,10 +882,24 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
         self.assertEqual(ds.vdims, [Dimension('z')])
 
+    def test_dataset_element_allowing_two_kdims_with_one_default_kdim(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Scatter(df)
+        self.assertEqual(ds.kdims, [Dimension('x')])
+        self.assertEqual(ds.vdims, [Dimension('y'), Dimension('z')])
+
     def test_dataset_extract_kdims_with_vdims_defined(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])
         ds = Points(df, vdims=['x'])
+        self.assertEqual(ds.kdims, [Dimension('y'), Dimension('z')])
+        self.assertEqual(ds.vdims, [Dimension('x')])
+
+    def test_dataset_extract_all_kdims_with_vdims_defined(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Dataset(df, vdims=['x'])
         self.assertEqual(ds.kdims, [Dimension('y'), Dimension('z')])
         self.assertEqual(ds.vdims, [Dimension('x')])
 
@@ -902,7 +916,7 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         ds = Dataset(df, kdims=[])
         self.assertEqual(ds.kdims, [])
         self.assertEqual(ds.vdims, [Dimension('x'), Dimension('y'), Dimension('z')])
-        
+
     def test_dataset_extract_vdims_with_kdims_defined(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])
@@ -917,7 +931,6 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         grouped = ds.groupby(['x', 'y'])
         self.assertEqual(grouped.keys(), keys)
         group = Dataset({'z': [5, 11, 17]}, vdims=['z'])
-        print(grouped.last.kdims, grouped.last.vdims)
         self.assertEqual(grouped.last, group)
 
     def test_dataset_simple_dict_sorted(self):
