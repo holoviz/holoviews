@@ -37,13 +37,15 @@ class PandasInterface(Interface):
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
             ndim = len(kdim_param.default) if kdim_param.default else None
+            nvdim = len(vdim_param.default) if vdim_param.default else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and kdims is None:
                 kdims = [c for c in data.columns if c not in vdims][:ndim]
-            elif kdims is None and (vdims is None or vdims == []):
+            elif kdims is None:
                 kdims = list(data.columns[:ndim])
-                vdims = [] if ndim is None else list(data.columns[ndim:])
+                if vdims is None:
+                    vdims = [] if None in [ndim, nvdim] else list(data.columns[ndim:ndim+nvdim])
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 raise DataError("pandas DataFrame column names used as dimensions "
                                 "must be strings not integers.", cls)
@@ -57,8 +59,16 @@ class PandasInterface(Interface):
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
-            elif isinstance(data, dict) and not all(d in data for d in columns):
+            elif isinstance(data, (list, dict)) and data in ([], {}):
+                data = None
+            elif (isinstance(data, dict) and not all(d in data for d in columns) and
+                  not any(isinstance(v, np.ndarray) for v in data.values())):
                 column_data = sorted(data.items())
+                k, v = column_data[0]
+                if len(util.wrap_tuple(k)) != len(kdims) or len(util.wrap_tuple(v)) != len(vdims):
+                    raise ValueError("Dictionary data not understood, should contain a column "
+                                    "per dimension or a mapping between key and value dimension "
+                                    "values.")
                 column_data = zip(*((util.wrap_tuple(k)+util.wrap_tuple(v))
                                     for k, v in column_data))
                 data = cyODict(((c, col) for c, col in zip(columns, column_data)))
@@ -70,8 +80,6 @@ class PandasInterface(Interface):
                         data = np.atleast_2d(data).T
                 else:
                     data = tuple(data[:, i] for i in range(data.shape[1]))
-            elif isinstance(data, list) and data == []:
-                data = None
 
             if isinstance(data, tuple):
                 data = [np.array(d) if not isinstance(d, np.ndarray) else d for d in data]
@@ -79,6 +87,8 @@ class PandasInterface(Interface):
                     raise ValueError('PandasInterface expects data to be of uniform shape.')
                 data = pd.DataFrame.from_items([(c, d) for c, d in
                                                 zip(columns, data)])
+            elif isinstance(data, dict) and any(c not in data for c in columns):
+                raise ValueError('PandasInterface could not find specified dimensions in the data.')
             else:
                 data = pd.DataFrame(data, columns=columns)
         return data, {'kdims':kdims, 'vdims':vdims}, {}

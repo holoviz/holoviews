@@ -8,6 +8,7 @@ from itertools import product
 
 import numpy as np
 from holoviews import Dataset, HoloMap, Dimension, Image
+from holoviews.core.data.interface import DataError
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -100,6 +101,14 @@ class HomogeneousColumnTypes(object):
         dataset = Dataset([], kdims=['x'], vdims=['y'])
         for d in 'xy':
             self.assertEqual(dataset.dimension_values(d), np.array([]))
+
+    def test_dataset_dict_dim_not_found_raises_on_array(self):
+        with self.assertRaises(ValueError):
+            dataset = Dataset({'x': np.zeros(5)}, kdims=['Test'], vdims=[])
+
+    def test_dataset_dict_dim_not_found_raises_on_scalar(self):
+        with self.assertRaises(ValueError):
+            dataset = Dataset({'x': 1}, kdims=['Test'], vdims=[])
 
     # Properties and information
 
