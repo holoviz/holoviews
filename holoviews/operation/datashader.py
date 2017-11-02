@@ -497,10 +497,13 @@ class shade(Operation):
     Iterable or a Callable.
     """
 
-    cmap = param.ClassSelector(default=["deepskyblue","black"], class_=(Iterable, Callable, dict), doc="""
-        Iterable or callable which returns colors as hex colors, to
-        be used for the colormap of single-layer datashader output. 
-        Callable type must allow mapping colors between 0 and 1.""")
+    cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
+        Iterable or callable which returns colors as hex colors
+        or web color names (as defined by datashader), to be used
+        for the colormap of single-layer datashader output. 
+        Callable type must allow mapping colors between 0 and 1.
+        The default value of None reverts to Datashader's default
+        colormap.""")
 
     color_key = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
         Iterable or callable which returns colors as hex colors, to
