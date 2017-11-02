@@ -852,7 +852,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
                 frame = element.get(k, None)
                 subplot.current_frame = frame
 
-        if self.show_legend:
+        if self.show_legend and element is not None:
             self._adjust_legend(element, axis)
 
         return self._finalize_axis(key, element=element, ranges=ranges,
