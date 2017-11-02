@@ -36,8 +36,8 @@ class PandasInterface(Interface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
-            ndim = len(kdim_param.default) if kdim_param.default else None
-            nvdim = len(vdim_param.default) if vdim_param.default else None
+            ndim = len(kdim_param.default) if kdim_param.default else 0
+            nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
             elif vdims and kdims is None:
@@ -45,7 +45,9 @@ class PandasInterface(Interface):
             elif kdims is None:
                 kdims = list(data.columns[:ndim])
                 if vdims is None:
-                    vdims = [] if None in [ndim, nvdim] else list(data.columns[ndim:ndim+nvdim])
+                    vdims = list(data.columns[ndim:((ndim+nvdim) if nvdim else None)])
+            elif kdims == [] and vdims is None:
+                vdims = list(data.columns[:nvdim if nvdim else None])
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 raise DataError("pandas DataFrame column names used as dimensions "
                                 "must be strings not integers.", cls)
