@@ -182,7 +182,7 @@ class SurfacePlot(Plot3D):
         rn, cn = mat.shape
         l, b, _, r, t, _ = self.get_extents(element, ranges)
         r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
-        if self.plot_type != 'wireframe':
+        if self.plot_type != 'wireframe' and 'cmap' in style:
             self._norm_kwargs(element, ranges, style, element.vdims[0])
         return (r, c, mat), style, {}
             
