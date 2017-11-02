@@ -7,7 +7,6 @@ import numpy as np
 import matplotlib as mpl
 from matplotlib import cm
 from matplotlib.collections import LineCollection
-from matplotlib.path import Path as MPLPath
 from matplotlib.dates import DateFormatter, date2num
 
 mpl_version = LooseVersion(mpl.__version__)
@@ -143,12 +142,10 @@ class ErrorPlot(ChartPlot):
         bottoms = self.handles['bottoms']
         tops = self.handles['tops']
         verts = self.handles['verts']
-        paths = verts.get_paths()
 
         _, style, axis_kwargs = self.get_data(element, ranges, style)
         xs, ys, neg_error = (element.dimension_values(i) for i in range(3))
         samples = len(xs)
-        npaths = len(paths)
         pos_error = element.dimension_values(3) if len(element.dimensions()) > 3 else neg_error
         if self.invert_axes:
             bxs, bys = ys - neg_error, xs
@@ -160,15 +157,7 @@ class ErrorPlot(ChartPlot):
             txs, tys = xs, ys + pos_error
             new_arrays = [np.array([[xs[i], bys[i]], [xs[i], tys[i]]])
                           for i in range(samples)]
-
-        new_paths = []
-        for i, arr in enumerate(new_arrays):
-            if i < npaths:
-                paths[i].vertices = arr
-                new_paths.append(paths[i])
-            else:
-                new_paths.append(MPLPath(arr))
-        verts.set_paths(new_paths)
+        verts.set_paths(new_arrays)
 
         if bottoms:
             bottoms.set_xdata(bxs)
