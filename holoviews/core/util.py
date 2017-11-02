@@ -900,7 +900,7 @@ def merge_dimensions(dimensions_list):
     return [d(values=dvalues.get(d.name, [])) for d in dimensions]
 
 
-def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
+def dimension_sort(odict, kdims, vdims, key_index):
     """
     Sorts data by key using usual Python tuple sorting semantics
     or sorts in categorical order for any categorical Dimensions.
@@ -911,16 +911,14 @@ def dimension_sort(odict, kdims, vdims, categorical, key_index, cached_values):
     indexes = [(dimensions[i], int(i not in range(ndims)),
                     i if i in range(ndims) else i-ndims)
                 for i in key_index]
-    cached_values = {d: [None]+vals for d, vals in cached_values.items()}
+    cached_values = {d.name: [None]+list(d.values) for d in dimensions}
 
     if len(set(key_index)) != len(key_index):
         raise ValueError("Cannot sort on duplicated dimensions")
-    elif categorical:
+    else:
        sortkws['key'] = lambda x: tuple(cached_values[dim.name].index(x[t][d])
                                         if dim.values else x[t][d]
                                         for i, (dim, t, d) in enumerate(indexes))
-    elif key_index != list(range(len(kdims+vdims))):
-        sortkws['key'] = lambda x: tuple(x[t][d] for _, t, d in indexes)
     if sys.version_info.major == 3:
         return python2sort(odict.items(), **sortkws)
     else:

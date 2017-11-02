@@ -109,9 +109,6 @@ class MultiDimensionalMapping(Dimensioned):
 
         self._next_ind = 0
         self._check_key_type = True
-        self._cached_index_types = [d.type for d in self.kdims]
-        self._cached_index_values = {d.name:d.values for d in self.kdims}
-        self._cached_categorical = any(d.values for d in self.kdims)
 
         if initial_items is None: initial_items = []
         if isinstance(initial_items, tuple):
@@ -160,18 +157,12 @@ class MultiDimensionalMapping(Dimensioned):
         self._item_check(dim_vals, data)
 
         # Apply dimension types
-        dim_types = zip(self._cached_index_types, dim_vals)
+        dim_types = zip([kd.type for kd in self.kdims], dim_vals)
         dim_vals = tuple(v if None in [t, v] else t(v) for t, v in dim_types)
-
-        # Check and validate for categorical dimensions
-        if self._cached_categorical:
-            valid_vals = zip(self.kdims, dim_vals)
-        else:
-            valid_vals = []
+        valid_vals = zip(self.kdims, dim_vals)
 
         for dim, val in valid_vals:
-            vals = self._cached_index_values[dim.name]
-            if vals and val is not None and val not in vals:
+            if dim.values and val is not None and val not in dim.values:
                 raise KeyError('%s dimension value %s not in'
                                ' specified dimension values.' % (dim, repr(val)))
 
@@ -251,11 +242,8 @@ class MultiDimensionalMapping(Dimensioned):
 
 
     def _resort(self):
-        resorted = dimension_sort(self.data, self.kdims, self.vdims,
-                                  self._cached_categorical,
-                                  range(self.ndims),
-                                  self._cached_index_values)
-        self.data = OrderedDict(resorted)
+        self.data = OrderedDict(dimension_sort(self.data, self.kdims, self.vdims,
+                                               range(self.ndims)))
 
 
     def clone(self, data=None, shared_data=True, *args, **overrides):
@@ -595,7 +583,7 @@ class NdMapping(MultiDimensionalMapping):
             conditions = self._generate_conditions(map_slice)
             items = self.data.items()
             for cidx, (condition, dim) in enumerate(zip(conditions, self.kdims)):
-                values = self._cached_index_values.get(dim.name, None)
+                values = dim.values
                 items = [(k, v) for k, v in items
                          if condition(values.index(k[cidx])
                                       if values else k[cidx])]
@@ -651,7 +639,7 @@ class NdMapping(MultiDimensionalMapping):
             if isinstance(dim_slice, slice):
                 start, stop = dim_slice.start, dim_slice.stop
                 if dim.values:
-                    values = self._cached_index_values[dim.name]
+                    values = dim.values
                     dim_slice = slice(None if start is None else values.index(start),
                                       None if stop is None else values.index(stop))
                 if dim_slice == slice(None):
@@ -664,7 +652,7 @@ class NdMapping(MultiDimensionalMapping):
                     conditions.append(self._range_condition(dim_slice))
             elif isinstance(dim_slice, (set, list)):
                 if dim.values:
-                    dim_slice = [self._cached_index_values[dim.name].index(dim_val)
+                    dim_slice = [dim.values.index(dim_val)
                                  for dim_val in dim_slice]
                 conditions.append(self._values_condition(dim_slice))
             elif dim_slice is Ellipsis:
@@ -675,7 +663,7 @@ class NdMapping(MultiDimensionalMapping):
                 raise IndexError("Keys may only be selected with sets or lists, not tuples.")
             else:
                 if dim.values:
-                    dim_slice = self._cached_index_values[dim.name].index(dim_slice)
+                    dim_slice = dim.values.index(dim_slice)
                 conditions.append(self._value_condition(dim_slice))
         return conditions
 
