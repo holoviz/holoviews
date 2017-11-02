@@ -9,6 +9,7 @@ from itertools import product
 import numpy as np
 from holoviews import Dataset, HoloMap, Dimension, Image
 from holoviews.core.data.interface import DataError
+from holoviews.element import Distribution, Points
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -862,6 +863,53 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = pd.DataFrame
         self.init_column_data()
 
+    def test_dataset_extract_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Dataset(df, kdims=['x'])
+        self.assertEqual(ds.vdims, [Dimension('y'), Dimension('z')])
+
+    def test_dataset_extract_kdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Distribution(df)
+        self.assertEqual(ds.kdims, [Dimension('x')])
+
+    def test_dataset_extract_kdims_and_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Points(df)
+        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.vdims, [Dimension('z')])
+
+    def test_dataset_extract_kdims_with_vdims_defined(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Points(df, vdims=['x'])
+        self.assertEqual(ds.kdims, [Dimension('y'), Dimension('z')])
+        self.assertEqual(ds.vdims, [Dimension('x')])
+
+    def test_dataset_extract_kdims_declare_no_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Points(df, vdims=[])
+        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(ds.vdims, [])
+
+    def test_dataset_extract_kdims_declare_no_vdims(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Dataset(df, kdims=[])
+        self.assertEqual(ds.kdims, [])
+        self.assertEqual(ds.vdims, [Dimension('x'), Dimension('y'), Dimension('z')])
+        
+    def test_dataset_extract_vdims_with_kdims_defined(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Points(df, kdims=['x', 'z'])
+        self.assertEqual(ds.kdims, [Dimension('x'), Dimension('z')])
+        self.assertEqual(ds.vdims, [Dimension('y')])
+
     def test_multi_dimension_groupby(self):
         x, y, z = list('AB'*10), np.arange(20)%3, np.arange(20)
         ds = Dataset((x, y, z), kdims=['x', 'y'], vdims=['z'],  datatype=[self.datatype])
@@ -869,6 +917,7 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         grouped = ds.groupby(['x', 'y'])
         self.assertEqual(grouped.keys(), keys)
         group = Dataset({'z': [5, 11, 17]}, vdims=['z'])
+        print(grouped.last.kdims, grouped.last.vdims)
         self.assertEqual(grouped.last, group)
 
     def test_dataset_simple_dict_sorted(self):
