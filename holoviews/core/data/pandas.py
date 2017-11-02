@@ -36,7 +36,10 @@ class PandasInterface(Interface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
         if util.is_dataframe(data):
-            ndim = len(kdim_param.default) if kdim_param.default else 0
+            if isinstance(kdim_param.bounds[1], int):
+                ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
+            else:
+                ndim = None
             nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
             if kdims and vdims is None:
                 vdims = [c for c in data.columns if c not in kdims]
