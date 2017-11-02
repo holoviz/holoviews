@@ -374,8 +374,8 @@ class Pipe(Stream):
     data = param.Parameter(default=None, constant=True, doc="""
         Arbitrary data being streamed to a DynamicMap callback.""")
 
-    def __init__(self, memoize=False, **params):
-        super(Pipe, self).__init__(**params)
+    def __init__(self, data=None, memoize=False, **params):
+        super(Pipe, self).__init__(data=data, **params)
         self._memoize = memoize
 
     def send(self, data):
@@ -410,33 +410,33 @@ class Buffer(Pipe):
     this may be disabled by setting index=False.
     """
 
-    def __init__(self, columns, length=1000, index=True, **params):
-        if (util.pd and isinstance(columns, util.pd.DataFrame)):
-            example = columns
-        elif isinstance(columns, np.ndarray):
-            if columns.ndim != 2:
+    def __init__(self, data, length=1000, index=True, **params):
+        if (util.pd and isinstance(data, util.pd.DataFrame)):
+            example = data
+        elif isinstance(data, np.ndarray):
+            if data.ndim != 2:
                 raise ValueError("Only 2D array data may be streamed by Buffer.")
-            example = columns
-        elif isinstance(columns, dict):
-            if not all(isinstance(v, np.ndarray) for v in columns.values()):
-                raise ValueError("Columns in dictionary must be of array types.")
-            elif len(set(len(v) for v in columns.values())) > 1:
+            example = data
+        elif isinstance(data, dict):
+            if not all(isinstance(v, np.ndarray) for v in data.values()):
+                raise ValueError("Data in dictionary must be of array types.")
+            elif len(set(len(v) for v in data.values())) > 1:
                 raise ValueError("Columns in dictionary must all be the same length.")
-            example = columns
+            example = data
         else:
             try:
                 from streamz.dataframe import StreamingDataFrame, StreamingSeries
                 loaded = True
             except ImportError:
                 loaded = False
-            if not loaded or not isinstance(columns, (StreamingDataFrame, StreamingSeries)):
+            if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("Buffer must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
-            elif isinstance(columns, StreamingSeries):
-                columns = columns.to_frame()
-            example = columns.example
-            columns.stream.sink(self.send)
-            self.sdf = columns
+            elif isinstance(data, StreamingSeries):
+                data = data.to_frame()
+            example = data.example
+            data.stream.sink(self.send)
+            self.sdf = data
 
         if index and (util.pd and isinstance(example, util.pd.DataFrame)):
             example = example.reset_index()
