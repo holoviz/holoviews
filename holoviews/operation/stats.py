@@ -6,7 +6,8 @@ from ..core.dimension import Dimension
 from ..core.operation import Operation
 from ..core.options import Compositor, Store, Options, StoreOptions
 from ..core.util import basestring, find_minmax, cartesian_product
-from ..element import Curve, Area, Image, Polygons, Distribution, Bivariate
+from ..element import (Curve, Area, Image, Distribution, Bivariate,
+                       Contours, Polygons)
 
 from .element import contours
 
@@ -159,11 +160,23 @@ class bivariate_kde(Operation):
             raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
 
         xdim, ydim = element.dimensions()[:2]
-        data = element.array([0, 1]).T
+        params = {}
+        if isinstance(element, Bivariate):
+            if element.group != type(element).__name__:
+                params['group'] = element.group
+            params['label'] = element.label
+            vdim = element.vdims[0]
+        else:
+            vdim = 'Density'
 
+        data = element.array([0, 1]).T
         xmin, xmax = self.p.x_range or element.range(0)
         ymin, ymax = self.p.y_range or element.range(1)
-        if len(data):
+        if any(not np.isfinite(v) for v in (xmin, xmax)):
+            xmin, xmax = -0.5, 0.5
+        if any(not np.isfinite(v) for v in (ymin, ymax)):
+            ymin, ymax = -0.5, 0.5
+        if len(element) > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
@@ -173,19 +186,14 @@ class bivariate_kde(Operation):
             xx, yy = cartesian_product([xs, ys], False)
             positions = np.vstack([xx.ravel(), yy.ravel()])
             f = np.reshape(kde(positions).T, xx.shape)
+        elif self.p.contours:
+            eltype = Polygons if self.p.filled else Contours
+            return eltype([], kdims=[xdim, ydim], vdims=[vdim])
         else:
             xs = np.linspace(xmin, xmax, self.p.n_samples)
             ys = np.linspace(ymin, ymax, self.p.n_samples)
-            f = np.zeros((self.p.nsamples, self.p.nsamples))
+            f = np.zeros((self.p.n_samples, self.p.n_samples))
 
-        params = {}
-        if isinstance(element, Bivariate):
-            if element.group != type(element).__name__:
-                params['group'] = element.group
-            params['label'] = element.label
-            vdim = element.vdims[0]
-        else:
-            vdim = 'Density'
         img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=[vdim], **params)
         if self.p.contours:
             cntr = contours(img, filled=self.p.filled)
