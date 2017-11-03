@@ -75,7 +75,7 @@ Changes affecting backwards compatibility:
 -   Since kdims and vdims can now be passed as positional arguments
     the bounds argument on Image is no longer positional
     ([\#1946](https://github.com/ioam/holoviews/pull/1946)).
--   The datashade and shade cmap was reverted to be blue due to issues
+-   The datashade and shade cmap was reverted back to blue due to issues
     with the fire cmap against a white background.
 -   Dropped all support for bokeh versions older than 0.12.10
 -   histogram operation now returns Histogram elements with less
