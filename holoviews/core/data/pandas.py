@@ -48,7 +48,8 @@ class PandasInterface(Interface):
             elif kdims is None:
                 kdims = list(data.columns[:ndim])
                 if vdims is None:
-                    vdims = list(data.columns[ndim:((ndim+nvdim) if nvdim else None)])
+                    vdims = [d for d in data.columns[ndim:((ndim+nvdim) if nvdim else None)]
+                             if d not in kdims]
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):

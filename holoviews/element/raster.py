@@ -615,7 +615,8 @@ class QuadMesh(Raster):
 
     group = param.String(default="QuadMesh", constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True)
 
     vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
@@ -777,9 +778,10 @@ class HeatMap(Dataset, Element2D):
 
     group = param.String(default='HeatMap', constant=True)
 
-    kdims = param.List(default=[Dimension('x'), Dimension('y')])
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True)
 
-    vdims = param.List(default=[Dimension('z')])
+    vdims = param.List(default=[Dimension('z')], constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         super(HeatMap, self).__init__(data, kdims=kdims, vdims=vdims, **params)

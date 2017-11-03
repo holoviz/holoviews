@@ -101,7 +101,7 @@ class MultiInterfaceTest(ComparisonTestCase):
 
     def test_multi_array_values_coordinates_nonexpanded_constant_kdim(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2), np.ones(2)*i]) for i in range(2)]
-        mds = Path(arrays, kdims=['x', 'y', 'z'], datatype=['multitabular'])
+        mds = Path(arrays, kdims=['x', 'y'], vdims=['z'], datatype=['multitabular'])
         self.assertEqual(mds.dimension_values(2, expanded=False), np.array([0, 1]))
 
     def test_multi_array_redim(self):

@@ -16,6 +16,7 @@ import numpy as np
 import param
 from ..core import Dimension, Element2D, Dataset
 from ..core.data import MultiInterface, ArrayInterface
+from ..core.util import disable_constant
 
 
 class Path(Dataset, Element2D):
@@ -36,7 +37,7 @@ class Path(Dataset, Element2D):
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       constant=True, bounds=(2, None), doc="""
+                       constant=True, bounds=(2, 2), doc="""
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
@@ -128,7 +129,7 @@ class Contours(Path):
     level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(default=[], constant=True, doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""")
 
@@ -148,8 +149,9 @@ class Contours(Path):
             params['vdims'] = vdims
         super(Contours, self).__init__(data, kdims=kdims, **params)
         if params.get('level') is not None:
-            self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
-                          for d in vdims]
+            with disable_constant(self):
+                self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
+                              for d in vdims]
         else:
             all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
             if not all_scalar:
