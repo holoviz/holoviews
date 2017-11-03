@@ -91,10 +91,9 @@ class StatisticsElement(Chart):
 
 class Bivariate(StatisticsElement):
     """
-    Bivariate Views are containers for two dimensional data,
+    Bivariate elements are containers for two dimensional data,
     which is to be visualized as a kernel density estimate. The
-    data should be supplied as an Nx2 array, containing the x-
-    and y-data.
+    data should be supplied in a tabular format of x- and y-columns.
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -108,10 +107,10 @@ class Bivariate(StatisticsElement):
 
 class Distribution(StatisticsElement):
     """
-    Distribution Views provide a container for data to be
-    visualized as a one-dimensional distribution. The data should
-    be supplied as a simple one-dimensional array or
-    list. Internally it uses Seaborn to make all the conversions.
+    Distribution elements provides a representation for a
+    one-dimensional distribution which can be visualized as a kernel
+    density estimate. The data should be supplied in a tabular format
+    and will use the first column.
     """
 
     kdims = param.List(default=[Dimension('Value')], bounds=(1, 1))
