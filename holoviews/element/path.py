@@ -36,7 +36,7 @@ class Path(Dataset, Element2D):
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       constant=True, bounds=(2, None), doc="""
+                       constant=True, bounds=(2, 2), doc="""
         The label of the x- and y-dimension of the Image in form
         of a string or dimension object.""")
 
@@ -128,7 +128,7 @@ class Contours(Path):
     level = param.Number(default=None, doc="""
         Optional level associated with the set of Contours.""")
 
-    vdims = param.List(default=[], doc="""
+    vdims = param.List(default=[], constant=True, doc="""
         Contours optionally accept a value dimension, corresponding
         to the supplied values.""")
 
