@@ -90,14 +90,22 @@ class DataConversion(object):
                                       "after version 1.7.")
                 groupby = kwargs.pop('mdims')
 
+        element_params = new_type.params()
+        kdim_param = element_params['kdims']
+        vdim_param = element_params['vdims']
+        if isinstance(kdim_param.bounds[1], int):
+            ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
+        else:
+            ndim = None
+        nvdim = vdim_param.bounds[1] if isinstance(vdim_param.bounds[1], int) else None
         if kdims is None:
             kd_filter = groupby or []
             if not isinstance(kd_filter, list):
                 kd_filter = [groupby]
-            kdims = [kd for kd in self._element.kdims if kd not in kd_filter]
+            kdims = [kd for kd in self._element.kdims if kd not in kd_filter][:ndim]
         elif kdims and not isinstance(kdims, list): kdims = [kdims]
         if vdims is None:
-            vdims = self._element.vdims
+            vdims = [d for d in self._element.vdims if d not in kdims][:nvdim]
         if vdims and not isinstance(vdims, list): vdims = [vdims]
 
         # Checks Element type supports dimensionality
