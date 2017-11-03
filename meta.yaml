@@ -5,6 +5,10 @@ package:
 source:
   path: .
 
+extra:
+  channels:
+    - conda-forge
+    
 requirements:
   build:
     - python
