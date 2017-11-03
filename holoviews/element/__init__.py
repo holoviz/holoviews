@@ -24,7 +24,6 @@ class ElementConversion(DataConversion):
         return self(BoxWhisker, kdims, vdims, groupby, **kwargs)
 
     def bivariate(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        from ..interface.seaborn import Bivariate
         return self(Bivariate, kdims, vdims, groupby, **kwargs)
 
     def curve(self, kdims=None, vdims=None, groupby=None, **kwargs):
@@ -34,7 +33,6 @@ class ElementConversion(DataConversion):
         return self(ErrorBars, kdims, vdims, groupby, sort=True, **kwargs)
 
     def distribution(self, dim=None, groupby=[], **kwargs):
-        from ..interface.seaborn import Distribution
         if dim is None:
             if self._element.vdims:
                 dim = self._element.vdims[0]
@@ -46,7 +44,7 @@ class ElementConversion(DataConversion):
             return reindexed.groupby(groupby, HoloMap, Distribution, **kwargs)
         else:
             element = self._element
-            params = dict(vdims=[element.get_dimension(dim)],
+            params = dict(kdims=[element.get_dimension(dim)],
                           label=element.label)
             if element.group != element.params()['group'].default:
                 params['group'] = element.group
