@@ -77,6 +77,7 @@ Changes affecting backwards compatibility:
     ([\#1946](https://github.com/ioam/holoviews/pull/1946)).
 -   The datashade and shade cmap was reverted back to blue due to issues
     with the fire cmap against a white background.
+    ([\#2078](https://github.com/ioam/holoviews/pull/2078))
 -   Dropped all support for bokeh versions older than 0.12.10
 -   histogram operation now returns Histogram elements with less
     generic value dimension and customizable label
