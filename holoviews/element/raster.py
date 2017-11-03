@@ -230,7 +230,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, **params):
         extents = extents if extents else (None, None, None, None)
-        if data is None: data = np.array([[0]])
+        if (data is None
+            or (isinstance(data, (list, tuple)) and not data)
+            or (isinstance(data, np.ndarray) and data.size == 0)):
+            data = np.zeros((2, 2))
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
 
         dim2, dim1 = self.interface.shape(self, gridded=True)[:2]
