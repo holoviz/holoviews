@@ -50,3 +50,9 @@ class TestRaster(ComparisonTestCase):
         arr = np.ma.masked_where(arr<=0, arr)
         rrange = Image(arr).range(2)
         self.assertEqual(rrange, (np.min(arr), np.max(arr)))
+
+    def test_empty_image(self):
+        Image([])
+        Image(None)
+        Image(np.array([]))
+        Image(np.zeros((0, 0)))
