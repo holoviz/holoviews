@@ -1,12 +1,87 @@
 Version 1.9.0
 =============
 
+This release includes a large number of long awaited features,
+improvements and bug fixes, including streaming and graph support,
+binary transfer of bokeh data, fast Image/RGB regridding, first-class
+statistics elements and a complete overhaul of the geometry elements.
+
+Particular thanks to all users and contributers who have reported
+issues and submitted pull requests.
+
+Features:
+
+-   The kdim and vdim keyword arguments are now positional making the
+    declaration of elements less verbose (e.g. Scatter(data, 'x',
+    'y')) ([\#1946](https://github.com/ioam/holoviews/pull/1946))
+-   Added Graph, Nodes, and EdgePaths elements adding support for
+    plotting network graphs
+    ([\#1829](https://github.com/ioam/holoviews/pull/1829))
+-   Added datashader based regrid operation for fast Image and RGB
+    regridding ([\#1773](https://github.com/ioam/holoviews/pull/1773))
+-   Added support for binary transport when plotting with bokeh,
+    providing huge speedups for dynamic plots
+    ([\#1894](https://github.com/ioam/holoviews/pull/1894),
+    [\#1896](https://github.com/ioam/holoviews/pull/1896))
+-   Added Pipe and Buffer streams for streaming data support
+    ([\#2011](https://github.com/ioam/holoviews/pull/2011))
+-   Add support for datetime axes on Image, RGB and when applying
+    datashading and regridding operations
+    ([\#2023](https://github.com/ioam/holoviews/pull/2023))
+-   Added Distribution and Bivariate as first class elements which can
+    be plotted with matplotlib and bokeh without depending on seaborn
+    ([\#1985](https://github.com/ioam/holoviews/pull/1985))
+-   Completely overhauled support for plotting geometries with Path,
+    Contours and Polygons elements including support for coloring
+    individual segments and paths by value
+    ([\#1991](https://github.com/ioam/holoviews/pull/1991))
+
+Enhancements:
+
+-   Add support for adjoining all elements on matplotlib plots
+    ([\#1033](https://github.com/ioam/holoviews/pull/1033))
+-   Improved exception handling for data interfaces
+    ([\#2041](https://github.com/ioam/holoviews/pull/2041))
+-   Add groupby argument to histogram operation
+    ([\#1725](https://github.com/ioam/holoviews/pull/1725))
+-   Add support for reverse sort on Dataset elements
+    ([\#1843](https://github.com/ioam/holoviews/pull/1843))
+-   Added support for invert_x/yaxis on all elements
+    ([\#1872](https://github.com/ioam/holoviews/pull/1872),
+    [\#1919](https://github.com/ioam/holoviews/pull/1919))
+
+Fixes:
+
+-   Fixed a bug in matplotlib causing the first frame in gif and mp4
+    getting stuck
+    ([\#1922](https://github.com/ioam/holoviews/pull/1922))
+-   Fixed various issues with support for new nested categorical axes
+    in bokeh ([\#1933](https://github.com/ioam/holoviews/pull/1933))
+-   A large range of other bug fixes too long to list here.
+
 Changes affecting backwards compatibility:
 
 -   The contours operation no longer overlays the contours on top of
     the supplied Image by default and returns a single
     Contours/Polygons rather than an NdOverlay of them
     ([\#1991](https://github.com/ioam/holoviews/pull/1991))
+-   The values of the Distribution element should now be defined as a
+    key dimension
+    ([\#1985](https://github.com/ioam/holoviews/pull/1985))
+-   The seaborn interface was removed in its entirety being replaced
+    by first class support for statistics elements such as
+    Distribution and Bivariate
+    ([\#1985](https://github.com/ioam/holoviews/pull/1985))
+-   Since kdims and vdims can now be passed as positional arguments
+    the bounds argument on Image is no longer positional
+    ([\#1946](https://github.com/ioam/holoviews/pull/1946)).
+-   The datashade and shade cmap was reverted back to blue due to issues
+    with the fire cmap against a white background.
+    ([\#2078](https://github.com/ioam/holoviews/pull/2078))
+-   Dropped all support for bokeh versions older than 0.12.10
+-   histogram operation now returns Histogram elements with less
+    generic value dimension and customizable label
+    ([\#1836](https://github.com/ioam/holoviews/pull/1836))
 
 
 Version 1.8.4
