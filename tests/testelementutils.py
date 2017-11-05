@@ -22,5 +22,5 @@ class TestComputeEdges(ComparisonTestCase):
                          np.array([0.25, 0.75, 1.25, 1.75]))
 
     def test_uneven_edges(self):
-        with self.assertRaisesRegexp(ValueError, "Centered bins"):
-            compute_edges(self.array3)
+        self.assertEqual(compute_edges(self.array3),
+                         np.array([0.5, 1.5, 3.0, 5.0]))
