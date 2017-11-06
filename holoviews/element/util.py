@@ -29,20 +29,16 @@ except:
 
 def compute_edges(edges):
     """
-    Computes edges from a number of bin centers,
-    throwing an exception if the edges are not
-    evenly spaced.
+    Computes edges as midpoints of the bin centers.
+    The first and last boundaries are equidistant from the first and last
+    midpoints respectively.
     """
     edges = np.asarray(edges)
     if edges.dtype.kind == 'i':
         edges = edges.astype('f')
-    widths = np.diff(edges)
-    if np.allclose(widths, widths[0]):
-        width = widths[0]
-    else:
-        raise ValueError('Centered bins have to be of equal width.')
-    edges -= width/2.
-    return np.concatenate([edges, [edges[-1]+width]])
+    midpoints = (edges[:-1] + edges[1:])/2.0
+    boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
+    return np.concatenate([boundaries[:1], midpoints, boundaries[-1:]])
 
 
 def split_path(path):
