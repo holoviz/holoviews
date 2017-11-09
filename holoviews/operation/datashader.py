@@ -530,6 +530,12 @@ class shade(Operation):
         Disable when you do not want the resulting plot to be interactive,
         e.g. when trying to display an interactive plot a second time.""")
 
+    min_alpha = param.Number(default=40, doc="""
+        The minimum alpha value to use for non-empty pixels when doing
+        colormapping, in [0, 255].  Use a higher value to avoid
+        undersaturation, i.e. poorly visible low-value datapoints, at
+        the expense of the overall dynamic range..""")
+
     @classmethod
     def concatenate(cls, overlay):
         """
@@ -577,7 +583,7 @@ class shade(Operation):
 
         # Compute shading options depending on whether
         # it is a categorical or regular aggregate
-        shade_opts = dict(how=self.p.normalization)
+        shade_opts = dict(how=self.p.normalization, min_alpha=self.p.min_alpha)
         if element.ndims > 2:
             kdims = element.kdims[1:]
             categories = array.shape[-1]
