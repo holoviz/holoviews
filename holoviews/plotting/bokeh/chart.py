@@ -3,7 +3,7 @@ from collections import defaultdict
 import numpy as np
 import param
 from bokeh.models import (DataRange1d, CategoricalColorMapper, CustomJS,
-                          HoverTool, FactorRange, Whisker, Band)
+                          HoverTool, FactorRange, Whisker, Band, Range1d)
 from bokeh.models.tools import BoxSelectTool
 
 from ...core import Dataset, OrderedDict
@@ -638,7 +638,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
     _plot_methods = dict(single=('vbar', 'hbar'))
 
     # Declare that y-range should auto-range if not bounded
-    _y_range_type = DataRange1d
+    _y_range_type = Range1d
 
     def get_extents(self, element, ranges):
         """
@@ -932,7 +932,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _x_range_type = FactorRange
 
     # Declare that y-range should auto-range if not bounded
-    _y_range_type = DataRange1d
+    _y_range_type = Range1d
 
     # Map each glyph to a style group
     _style_groups = {'rect': 'whisker', 'segment': 'whisker',
