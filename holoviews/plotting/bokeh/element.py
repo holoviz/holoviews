@@ -974,10 +974,10 @@ class CompositeElementPlot(ElementPlot):
         data, mapping, style = self.get_data(element, ranges, style)
 
         for key in sorted(dict(mapping, **data)):
-            gdata = data[key]
+            gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
-            if not self.static_source:
+            if not self.static_source and gdata is not None:
                 self._update_datasource(source, gdata)
 
             if glyph:
