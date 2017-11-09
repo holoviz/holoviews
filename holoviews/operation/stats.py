@@ -191,7 +191,8 @@ class bivariate_kde(Operation):
         elif ymin == ymax:
             ymin, ymax = ymin-0.5, ymax+0.5
 
-        if len(element) > 1:
+        data = data[:, np.isfinite(data).min(axis=0)]
+        if len(data) > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
