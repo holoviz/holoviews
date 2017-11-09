@@ -919,10 +919,16 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
+        source_cache = {}
         current_id = element._plot_id
         self.handles['previous_id'] = current_id
         for key in dict(mapping, **data):
-            source = self._init_datasource(data.get(key, {}))
+            ds_data = data.get(key, {})
+            if id(ds_data) in source_cache:
+                source = source_cache[id(ds_data)]
+            else:
+                source = self._init_datasource(ds_data)
+                source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
             properties = self._glyph_properties(plot, element, source, ranges, style)
             properties = self._process_properties(key, properties)
