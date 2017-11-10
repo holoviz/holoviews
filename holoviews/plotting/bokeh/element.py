@@ -559,9 +559,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
-        if not self.drawn or (not self.model_changed(x_range) and framewise or self.streaming) or xfactors:
+        xupdate = (not self.model_changed(x_range) and framewise or self.streaming or xfactors is not None)
+        yupdate = (not self.model_changed(y_range) and framewise or self.streaming or yfactors is not None)
+        if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
-        if not self.drawn or (not self.model_changed(y_range) and framewise or self.streaming) or yfactors:
+        if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
 
 
