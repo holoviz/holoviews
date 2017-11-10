@@ -10,7 +10,7 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
-from .util import convert_timestamp
+from .util import convert_timestamp, bokeh_version
 
 
 class MessageCallback(object):
