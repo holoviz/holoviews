@@ -77,6 +77,7 @@ class BokehServerWidgets(param.Parameterized):
             self.attach_callbacks()
         self.state = self.init_layout()
         self._queue = []
+        self._active = False
 
 
     @classmethod
@@ -184,8 +185,9 @@ class BokehServerWidgets(param.Parameterized):
 
     def on_change(self, dim, widget_type, attr, old, new):
         self._queue.append((dim, widget_type, attr, old, new))
-        if self.update not in self.plot.document._session_callbacks:
+        if not self._active:
             self.plot.document.add_timeout_callback(self.update, 50)
+            self._active = True
 
 
     def update(self):
@@ -193,7 +195,10 @@ class BokehServerWidgets(param.Parameterized):
         Handle update events on bokeh server.
         """
         if not self._queue:
+            self._active = False
             return
+        self._queue = []
+
         dim, widget_type, attr, old, new = self._queue[-1]
         dim_label = dim.pprint_label
 

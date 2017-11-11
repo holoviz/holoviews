@@ -330,6 +330,11 @@ class ServerCallback(MessageCallback):
     Stream(s) attached to the callback.
     """
 
+    def __init__(self, plot, streams, source, **params):
+        super(ServerCallback, self).__init__(plot, streams, source, **params)
+        self._active = False
+
+
     @classmethod
     def resolve_attr_spec(cls, spec, cb_obj, model=None):
         """
@@ -360,8 +365,9 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((attr, old, new))
-        if self.process_on_change not in self.plot.document._session_callbacks:
+        if not self._active:
             self.plot.document.add_timeout_callback(self.process_on_change, 50)
+            self._active = True
 
 
     def on_event(self, event):
@@ -370,16 +376,18 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((event))
-        if self.process_on_event not in self.plot.document._session_callbacks:
+        if not self._active:
             self.plot.document.add_timeout_callback(self.process_on_event, 50)
-
+            self._active = True
 
     def process_on_event(self):
         """
         Trigger callback change event and triggering corresponding streams.
         """
         if not self._queue:
+            self._active = False
             return
+        self._queue = []
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
                                    for event in self._queue]).values())
@@ -397,6 +405,7 @@ class ServerCallback(MessageCallback):
 
     def process_on_change(self):
         if not self._queue:
+            self._active = False
             return
         self._queue = []
 
@@ -419,7 +428,7 @@ class ServerCallback(MessageCallback):
         """
         Set up on_change events for bokeh server interactions.
         """
-        if self.on_events and bokeh_version >= '0.12.5':
+        if self.on_events:
             for event in self.on_events:
                 handle.on_event(event, self.on_event)
         elif self.on_changes:
