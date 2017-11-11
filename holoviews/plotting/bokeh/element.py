@@ -559,9 +559,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
-        if not self.drawn or (not self.model_changed(x_range) and framewise or self.streaming) or xfactors:
+        xupdate = ((not self.model_changed(x_range) and (framewise or self.streaming))
+                   or xfactors is not None)
+        yupdate = ((not self.model_changed(y_range) and (framewise or self.streaming))
+                   or yfactors is not None)
+        if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
-        if not self.drawn or (not self.model_changed(y_range) and framewise or self.streaming) or yfactors:
+        if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
 
 
@@ -919,10 +923,16 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
+        source_cache = {}
         current_id = element._plot_id
         self.handles['previous_id'] = current_id
         for key in dict(mapping, **data):
-            source = self._init_datasource(data.get(key, {}))
+            ds_data = data.get(key, {})
+            if id(ds_data) in source_cache:
+                source = source_cache[id(ds_data)]
+            else:
+                source = self._init_datasource(ds_data)
+                source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
             properties = self._glyph_properties(plot, element, source, ranges, style)
             properties = self._process_properties(key, properties)
@@ -968,10 +978,10 @@ class CompositeElementPlot(ElementPlot):
         data, mapping, style = self.get_data(element, ranges, style)
 
         for key in sorted(dict(mapping, **data)):
-            gdata = data[key]
+            gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
-            if not self.static_source:
+            if not self.static_source and gdata is not None:
                 self._update_datasource(source, gdata)
 
             if glyph:
