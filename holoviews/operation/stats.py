@@ -108,7 +108,10 @@ class univariate_kde(Operation):
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
             bw = kde.scotts_factor() * data.std(ddof=1)
-            xs = _kde_support(bin_range, bw, self.p.n_samples, self.p.cut, selected_dim.range)
+            if self.p.bin_range:
+                xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
+            else:
+                xs = _kde_support(bin_range, bw, self.p.n_samples, self.p.cut, selected_dim.range)
             ys = kde.evaluate(xs)
         else:
             xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
@@ -192,13 +195,19 @@ class bivariate_kde(Operation):
             ymin, ymax = ymin-0.5, ymax+0.5
 
         data = data[:, np.isfinite(data).min(axis=0)]
-        if len(data) > 1:
+        if data.shape[1] > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
             bw = kde.scotts_factor() * data.std(ddof=1)
-            xs = _kde_support((xmin, xmax), bw, self.p.n_samples, self.p.cut, xdim.range)
-            ys = _kde_support((ymin, ymax), bw, self.p.n_samples, self.p.cut, ydim.range)
+            if self.p.x_range:
+                xs = np.linspace(xmin, xmax, self.p.n_samples)
+            else:
+                xs = _kde_support((xmin, xmax), bw, self.p.n_samples, self.p.cut, xdim.range)
+            if self.p.y_range:
+                ys = np.linspace(ymin, ymax, self.p.n_samples)
+            else:
+                ys = _kde_support((ymin, ymax), bw, self.p.n_samples, self.p.cut, ydim.range)
             xx, yy = cartesian_product([xs, ys], False)
             positions = np.vstack([xx.ravel(), yy.ravel()])
             f = np.reshape(kde(positions).T, xx.shape)
