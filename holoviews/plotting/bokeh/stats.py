@@ -60,9 +60,6 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # X-axis is categorical
     _x_range_type = FactorRange
 
-    # Declare that y-range should auto-range if not bounded
-    _y_range_type = DataRange1d
-
     # Map each glyph to a style group
     _style_groups = {'rect': 'whisker', 'segment': 'whisker',
                      'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
@@ -78,7 +75,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Extents are set to '' and None because x-axis is categorical and
         y-axis auto-ranges.
         """
-        yrange = element.range(element.vdims[0], data_range=False)
+        yrange = ranges.get(element.vdims[0].name)
         return ('', yrange[0], '', yrange[1])
 
     def _get_axis_labels(self, *args, **kwargs):
