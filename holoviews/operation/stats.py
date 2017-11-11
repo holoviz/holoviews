@@ -85,23 +85,33 @@ class univariate_kde(Operation):
             if self.p.dimension:
                 selected_dim = element.get_dimension(self.p.dimension)
             else:
-                selected_dim = [d.name for d in element.vdims + element.kdims][0]
+                dimensions = element.vdims+element.kdims
+                if not dimensions:
+                    raise ValueError("%s element does not declare any dimensions "
+                                     "to compute the kernel density estimate on." %
+                                     type(element).__name__)
+                selected_dim = dimensions[0]
             vdim_name = '{}_density'.format(selected_dim.name)
             vdim_label = '{} Density'.format(selected_dim.label)
-            vdims = [Dimension(vdim_nam, label=vdim_label)]
+            vdims = [Dimension(vdim_name, label=vdim_label)]
 
         data = element.dimension_values(selected_dim)
         bin_range = self.p.bin_range or element.range(selected_dim)
         if bin_range == (0, 0) or any(not np.isfinite(r) for r in bin_range):
             bin_range = (0, 1)
+        elif bin_range[0] == bin_range[1]:
+            bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
 
         data = data[np.isfinite(data)]
-        if len(data):
+        if len(data) > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
             bw = kde.scotts_factor() * data.std(ddof=1)
-            xs = _kde_support(bin_range, bw, self.p.n_samples, self.p.cut, selected_dim.range)
+            if self.p.bin_range:
+                xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
+            else:
+                xs = _kde_support(bin_range, bw, self.p.n_samples, self.p.cut, selected_dim.range)
             ys = kde.evaluate(xs)
         else:
             xs = np.linspace(bin_range[0], bin_range[1], self.p.n_samples)
@@ -159,6 +169,9 @@ class bivariate_kde(Operation):
         except ImportError:
             raise ImportError('%s operation requires SciPy to be installed.' % type(self).__name__)
 
+        if len(element.dimensions()) < 2:
+            raise ValueError("bivariate_kde can only be computed on elements "
+                             "declaring at least two dimensions.")
         xdim, ydim = element.dimensions()[:2]
         params = {}
         if isinstance(element, Bivariate):
@@ -174,15 +187,27 @@ class bivariate_kde(Operation):
         ymin, ymax = self.p.y_range or element.range(1)
         if any(not np.isfinite(v) for v in (xmin, xmax)):
             xmin, xmax = -0.5, 0.5
+        elif xmin == xmax:
+            xmin, xmax = xmin-0.5, xmax+0.5
         if any(not np.isfinite(v) for v in (ymin, ymax)):
             ymin, ymax = -0.5, 0.5
-        if len(element) > 1:
+        elif ymin == ymax:
+            ymin, ymax = ymin-0.5, ymax+0.5
+
+        data = data[:, np.isfinite(data).min(axis=0)]
+        if data.shape[1] > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
                 kde.set_bandwidth(self.p.bandwidth)
             bw = kde.scotts_factor() * data.std(ddof=1)
-            xs = _kde_support((xmin, xmax), bw, self.p.n_samples, self.p.cut, xdim.range)
-            ys = _kde_support((ymin, ymax), bw, self.p.n_samples, self.p.cut, ydim.range)
+            if self.p.x_range:
+                xs = np.linspace(xmin, xmax, self.p.n_samples)
+            else:
+                xs = _kde_support((xmin, xmax), bw, self.p.n_samples, self.p.cut, xdim.range)
+            if self.p.y_range:
+                ys = np.linspace(ymin, ymax, self.p.n_samples)
+            else:
+                ys = _kde_support((ymin, ymax), bw, self.p.n_samples, self.p.cut, ydim.range)
             xx, yy = cartesian_product([xs, ys], False)
             positions = np.vstack([xx.ravel(), yy.ravel()])
             f = np.reshape(kde(positions).T, xx.shape)
