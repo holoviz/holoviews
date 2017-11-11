@@ -152,7 +152,6 @@ class ViolinPlot(BoxPlot):
 
         groups = groups.data.items() if element.kdims else [(element.label, element)]
         for i, (key, group) in enumerate(groups):
-
             if element.kdims:
                 label = ','.join([d.pprint_value(v) for d, v in zip(element.kdims, key)])
             else:
@@ -166,6 +165,5 @@ class ViolinPlot(BoxPlot):
                  if k not in ['zorder', 'label']}
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]
-        return (data,), style, {'dimensions': [format_kdims,
-                                               element.vdims[0]],
-                                'xticks': list(enumerate(labels))}
+        ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
+        return (data,), style, {'dimensions': [format_kdims, element.vdims[0]], **ticks}

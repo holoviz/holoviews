@@ -237,4 +237,5 @@ options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
                                fill_alpha=0.5, muted_alpha=0.2)
 options.Violin = Options('style', violin_fill_color=Cycle(),
                          violin_line_color='black', violin_fill_alpha=0.5,
-                         stats_color='black')
+                         stats_color='black', box_color='black',
+                         median_color='white')

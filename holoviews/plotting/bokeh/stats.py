@@ -253,13 +253,21 @@ class ViolinPlot(BoxWhiskerPlot):
     cut = param.Number(default=5, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
 
+    inner = param.ObjectSelector(objects=['box', 'quartiles', 'stick', None],
+                                 default='box', doc="""
+        The  """)
+
     # Map each glyph to a style group
-    _style_groups = {'patch': 'violin', 'segment': 'stats'}
+    _style_groups = {'patch': 'violin', 'segment': 'stats', 'vbar': 'box',
+                     'scatter': 'median', 'hbar': 'box'}
 
-    style_opts = (['violin_'+p for p in fill_properties+line_properties] +
-                 ['stats_'+p for p in line_properties]+['stats_color', 'violin_color'])
+    style_opts = ([glyph+p for p in fill_properties+line_properties
+                   for glyph in ('violin_', 'box_')] +
+                  ['stats_'+p for p in line_properties] +
+                  ['_'.join([glyph, p]) for p in ('color', 'alpha')
+                   for glyph in ('box', 'violin', 'stats', 'median')])
 
-    _stat_fns = [partial(np.percentile, q=25), np.median, partial(np.percentile, q=75)]
+    _stat_fns = [partial(np.percentile, q=q) for q in [25, 50, 75]]
 
     def _kde_data(self, el, key, **kwargs):
         vdim = el.vdims[0]
@@ -273,16 +281,40 @@ class ViolinPlot(BoxWhiskerPlot):
         ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
         kde =  {'x': np.concatenate([xs, xs[::-1]]), 'y': ys}
 
+        bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
-        segments = defaultdict(list)
-        for stat_fn in self._stat_fns:
-            stat = stat_fn(values)
-            sidx = np.argmin(np.abs(xs-stat))
-            sx, sy = xs[sidx], ys[sidx]
-            segments['x'].append(sx)
-            segments['y0'].append(key+(-sy[-1],))
-            segments['y1'].append(sy)
-        return kde, segments
+        if self.inner == 'quartiles':
+            for stat_fn in self._stat_fns:
+                stat = stat_fn(values)
+                sidx = np.argmin(np.abs(xs-stat))
+                sx, sy = xs[sidx], ys[sidx]
+                segments['x'].append(sx)
+                segments['y0'].append(key+(-sy[-1],))
+                segments['y1'].append(sy)
+        elif self.inner == 'stick':
+            for value in values:
+                sidx = np.argmin(np.abs(xs-value))
+                sx, sy = xs[sidx], ys[sidx]
+                segments['x'].append(sx)
+                segments['y0'].append(key+(-sy[-1],))
+                segments['y1'].append(sy)
+        elif self.inner == 'box':
+            xpos = key+(0,)
+            qmin, q1, q2, q3, qmax = (np.percentile(values, q=q)
+                                      for q in range(0,125,25))
+            iqr = q3 - q1
+            upper = min(q3 + 1.5*iqr, np.nanmax(values))
+            lower = max(q1 - 1.5*iqr, np.nanmin(values))
+            segments['x'].append(xpos)
+            segments['y0'].append(lower)
+            segments['y1'].append(upper)
+            bars['x'].append(xpos)
+            bars['bottom'].append(q1)
+            bars['top'].append(q3)
+            scatter['x'] = xpos
+            scatter['y'] = q2
+        return kde, segments, bars, scatter
+
 
     def get_data(self, element, ranges, style):
         if element.kdims:
@@ -292,11 +324,25 @@ class ViolinPlot(BoxWhiskerPlot):
 
         # Define glyph-data mapping
         if self.invert_axes:
+            bar_map = {'y': 'x', 'left': 'bottom',
+                       'right': 'top', 'height': 0.1}
             kde_map = {'x': 'x', 'y': 'y'}
-            median_map = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
+            if self.inner == 'box':
+                seg_map = {'x0': 'y0', 'x1': 'y1', 'y0': 'x', 'y1': 'x'}
+            else:
+                seg_map = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
+            scatter_map = {'x': 'y', 'y': 'x'}
+            bar_glyph = 'hbar'
         else:
+            bar_map = {'x': 'x', 'bottom': 'bottom',
+                       'top': 'top', 'width': 0.1}
             kde_map = {'x': 'y', 'y': 'x'}
-            median_map = {'y0': 'x', 'y1': 'x', 'x0': 'y0', 'x1': 'y1'}
+            if self.inner == 'box':
+                seg_map = {'x0': 'x', 'x1': 'x', 'y0': 'y0', 'y1': 'y1'}
+            else:
+                seg_map = {'y0': 'x', 'y1': 'x', 'x0': 'y0', 'x1': 'y1'}
+            scatter_map = {'x': 'x', 'y': 'y'}
+            bar_glyph = 'vbar'
 
         # Get color values
         if self.color_index is not None:
@@ -309,18 +355,32 @@ class ViolinPlot(BoxWhiskerPlot):
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
 
         factors = []
-        patch_data, patch_map = {}, {}
-        median_data = defaultdict(list)
+        data, mapping = {}, {}
+        seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(3))
         for i, (key, g) in enumerate(groups.items()):
             gkey = 'patch_%d'%i
-            kde, median = self._kde_data(g, key, **kwargs)
-            for k, v in median.items():
-                median_data[k] += v
-            patch_data[gkey] = kde
+            kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
+            for k, v in segs.items():
+                seg_data[k] += v
+            for k, v in bars.items():
+                bar_data[k] += v
+            for k, v in scatter.items():
+                scatter_data[k].append(v)
+            data[gkey] = kde
             patch_style = {k[7:]: v for k, v in elstyle[i].items()
                            if k.startswith('violin')}
-            patch_map[gkey] = dict(kde_map, **patch_style)
-        patch_data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
-                                   for k, v in median_data.items()}
-        patch_map['segment_1'] = median_map
-        return patch_data, patch_map, style
+            mapping[gkey] = dict(kde_map, **patch_style)
+
+        if seg_data:
+            data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
+                                       for k, v in seg_data.items()}
+            mapping['segment_1'] = seg_map
+        if bar_data:
+            data[bar_glyph+'_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
+                                    for k, v in bar_data.items()}
+            mapping[bar_glyph+'_1'] = bar_map
+        if scatter_data:
+            data['scatter_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
+                              for k, v in scatter_data.items()}
+            mapping['scatter_1'] = scatter_map
+        return data, mapping, style
