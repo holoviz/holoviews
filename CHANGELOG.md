@@ -1,3 +1,28 @@
+Version 1.9.1
+=============
+
+This release is a minor bug fix release patching various issues
+which were found in the 1.9.0 release.
+
+Enhancements:
+
+-   Exposed min_alpha parameter on datashader shade and datashade
+    operations ([\#2109](https://github.com/ioam/holoviews/pull/2109))
+
+Fixes:
+
+-   Fixed broken bokeh server linked stream throttling
+    ([\#2112](https://github.com/ioam/holoviews/pull/2112))
+-   Fixed bug in bokeh callbacks preventing linked streams using
+    bokeh's on_event callbacks from working
+    ([\#2112](https://github.com/ioam/holoviews/pull/2112))
+-   Fixed insufficient validation issue for Image and bugs when
+    applying regrid operation to xarray based Images
+    ([\2117](https://github.com/ioam/holoviews/pull/2117))
+-   Fixed handling of dimensions and empty elements in univariate_kde
+    and bivariate_kde operations
+    ([\#2103](https://github.com/ioam/holoviews/pull/2103))
+	
 Version 1.9.0
 =============
 
