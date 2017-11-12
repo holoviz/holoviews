@@ -6,6 +6,7 @@ import numpy as np
 from holoviews import Dimension, Image, Curve, RGB, HSV, Dataset, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.util import date_range
+from holoviews.core.data.interface import DataError
 
 from .testdataset import DatatypeContext
 
@@ -23,9 +24,22 @@ class ImageInterfaceTest(ComparisonTestCase):
     def init_data(self):
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
         self.image = Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
-
+        
     def tearDown(self):
         self.eltype.datatype = self.restore_datatype
+
+    def test_init_data_tuple(self):
+        xs = np.arange(5)
+        ys = np.arange(10)
+        array = xs * ys[:, np.newaxis]
+        image = Image((xs, ys, array))
+
+    def test_init_data_tuple_error(self):
+        xs = np.arange(5)
+        ys = np.arange(10)
+        array = xs * ys[:, np.newaxis]
+        with self.assertRaises(DataError):
+            Image((ys, xs, array))
 
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
