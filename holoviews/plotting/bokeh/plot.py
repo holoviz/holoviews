@@ -139,9 +139,12 @@ class BokehPlot(DimensionedPlot):
         """
         Update datasource with data for a new frame.
         """
-        if self.streaming and self.streaming.data is self.current_frame.data and self._stream_data:
-            data = {k: v[-self.streaming._chunk_length:] for k, v in data.items()}
-            source.stream(data, self.streaming.length)
+        if (self.streaming and self.streaming[0].data is self.current_frame.data
+            and self._stream_data):
+            stream = self.streaming[0]
+            if stream._triggering:
+                data = {k: v[-stream._chunk_length:] for k, v in data.items()}
+                source.stream(data, stream.length)
         else:
             source.data.update(data)
 

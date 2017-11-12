@@ -32,8 +32,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
         element_ids = self.hmap.traverse(lambda x: id(x), [Dataset, ItemTable])
         self.static = len(set(element_ids)) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = [] # Callback support on tables not implemented
-        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
-        self.streaming = dfstream[0] if any(dfstream) else None
+        self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
 
 
     def _execute_hooks(self, element):
@@ -98,8 +97,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.handles['previous_id'] = current_id
         self.static_source = (self.dynamic and (current_id == previous_id))
         if (element is None or (not self.dynamic and self.static) or
-            (self.streaming and self.streaming.data is self.current_frame.data
-             and not self.streaming._triggering) or self.static_source):
+            (self.streaming and self.streaming[0].data is self.current_frame.data
+             and not self.streaming[0]._triggering) or self.static_source):
             return
         source = self.handles['source']
         style = self.lookup_options(element, 'style')[self.cyclic_index]
