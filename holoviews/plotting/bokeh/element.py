@@ -565,13 +565,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                    or yfactors is not None)
         if not self.drawn or xupdate:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
-                               self._shared['x'], self.logx)
+                               self._shared['x'], self.logx, streaming)
         if not self.drawn or yupdate:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
-                               self._shared['y'], self.logy)
+                               self._shared['y'], self.logy, streaming)
 
 
-    def _update_range(self, axis_range, low, high, factors, invert, shared, log):
+    def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
@@ -590,12 +590,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
+            updates = {}
             if low is not None and (isinstance(low, util.datetime_types)
                                     or np.isfinite(low)):
-                axis_range.start = low
+                updates['start'] = (axis_range.start, low)
             if high is not None and (isinstance(high, util.datetime_types)
                                      or np.isfinite(high)):
-                axis_range.end = high
+                updates['end'] = (axis_range.end, high)
+            for k, (old, new) in updates.items():
+                axis_range.update(**{k:new})
+                if streaming:
+                    axis_range.trigger(k, old, new)
         elif isinstance(axis_range, FactorRange):
             factors = list(factors)
             if invert: factors = factors[::-1]
