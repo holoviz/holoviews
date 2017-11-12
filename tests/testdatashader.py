@@ -93,7 +93,15 @@ class DatashaderRegridTests(ComparisonTestCase):
         regridded = regrid(img, width=2, height=2, dynamic=False)
         expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
         self.assertEqual(regridded, expected)
-    
+
+    def test_regrid_mean_xarray_transposed(self):
+        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T),
+                    datatype=['xarray'])
+        img.data = img.data.T
+        regridded = regrid(img, width=2, height=2, dynamic=False)
+        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        self.assertEqual(regridded, expected)
+
     def test_regrid_rgb_mean(self):
         arr = (np.arange(10) * np.arange(5)[np.newaxis].T).astype('f')
         rgb = RGB((range(10), range(5), arr, arr*2, arr*2))

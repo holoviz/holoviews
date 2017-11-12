@@ -439,6 +439,8 @@ class regrid(ResamplingOperation):
                 xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
                     xarr = xarr.copy()
+                if dims != xarr.dims:
+                    xarr = xarr.transpose(*dims)
             else:
                 arr = element.dimension_values(vd, flat=False)
                 xarr = xr.DataArray(arr, coords=coord_dict, dims=dims)
