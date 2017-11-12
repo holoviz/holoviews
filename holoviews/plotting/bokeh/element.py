@@ -174,8 +174,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self.static = len(self.hmap) == 1 and len(self.keys) == len(self.hmap)
         self.callbacks = self._construct_callbacks()
         self.static_source = False
-        dfstream = [s for s in self.streams if isinstance(s, Buffer)]
-        self.streaming = dfstream[0] if any(dfstream) else None
+        self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
 
         # Whether axes are shared between plots
         self._shared = {'x': False, 'y': False}
@@ -559,17 +558,20 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if any(isinstance(ax_range, FactorRange) for ax_range in [x_range, y_range]):
             xfactors, yfactors = self._get_factors(element)
         framewise = self.framewise
-        xupdate = ((not self.model_changed(x_range) and (framewise or self.streaming))
+        streaming = (self.streaming and any(stream._triggering for stream in self.streaming))
+        xupdate = ((not self.model_changed(x_range) and (framewise or streaming))
                    or xfactors is not None)
-        yupdate = ((not self.model_changed(y_range) and (framewise or self.streaming))
+        yupdate = ((not self.model_changed(y_range) and (framewise or streaming))
                    or yfactors is not None)
         if not self.drawn or xupdate:
-            self._update_range(x_range, l, r, xfactors, self.invert_xaxis, self._shared['x'], self.logx)
+            self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
+                               self._shared['x'], self.logx, streaming)
         if not self.drawn or yupdate:
-            self._update_range(y_range, b, t, yfactors, self.invert_yaxis, self._shared['y'], self.logy)
+            self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
+                               self._shared['y'], self.logy, streaming)
 
 
-    def _update_range(self, axis_range, low, high, factors, invert, shared, log):
+    def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
@@ -588,12 +590,17 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 low = 0.01 if high < 0.01 else 10**(np.log10(high)-2)
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
+            updates = {}
             if low is not None and (isinstance(low, util.datetime_types)
                                     or np.isfinite(low)):
-                axis_range.start = low
+                updates['start'] = (axis_range.start, low)
             if high is not None and (isinstance(high, util.datetime_types)
                                      or np.isfinite(high)):
-                axis_range.end = high
+                updates['end'] = (axis_range.end, high)
+            for k, (old, new) in updates.items():
+                axis_range.update(**{k:new})
+                if streaming:
+                    axis_range.trigger(k, old, new)
         elif isinstance(axis_range, FactorRange):
             factors = list(factors)
             if invert: factors = factors[::-1]
@@ -852,8 +859,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             glyph.visible = visible
 
         if ((self.batched and not element) or element is None or (not self.dynamic and self.static) or
-            (self.streaming and self.streaming.data is self.current_frame.data
-             and not self.streaming._triggering)):
+            (self.streaming and self.streaming[0].data is self.current_frame.data and not self.streaming[0]._triggering)):
             return
 
         if self.batched:
