@@ -15,7 +15,7 @@ import numpy as np
 
 import param
 from ..core import Dimension, Element2D, Dataset
-from ..core.data import MultiInterface, ArrayInterface
+from ..core.data import MultiInterface
 from ..core.util import disable_constant
 
 

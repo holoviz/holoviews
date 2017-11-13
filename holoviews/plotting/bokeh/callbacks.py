@@ -1,4 +1,3 @@
-import datetime as dt
 from collections import defaultdict
 
 from bokeh.models import CustomJS, FactorRange, DatetimeAxis

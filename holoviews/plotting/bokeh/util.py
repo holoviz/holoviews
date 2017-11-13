@@ -1,4 +1,4 @@
-import itertools, inspect, re, time
+import inspect, re, time
 from distutils.version import LooseVersion
 from collections import defaultdict
 import datetime as dt
@@ -19,9 +19,8 @@ bokeh_version = LooseVersion(bokeh.__version__)  # noqa
 from bokeh.core.enums import Palette
 from bokeh.core.json_encoder import serialize_json # noqa (API import)
 from bokeh.core.properties import value
-from bokeh.document import Document
 from bokeh.layouts import WidgetBox, Row, Column
-from bokeh.models import Model, HasProps, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
+from bokeh.models import Model, ToolbarBox, FactorRange, Range1d, Plot, Spacer, CustomJS
 from bokeh.models.widgets import DataTable, Tabs, Div
 from bokeh.plotting import Figure
 

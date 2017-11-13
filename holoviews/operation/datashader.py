@@ -14,12 +14,6 @@ import dask.dataframe as dd
 
 ds_version = LooseVersion(ds.__version__)
 
-from datashader.core import bypixel
-from datashader.pandas import pandas_pipeline
-from datashader.dask import dask_pipeline
-from datashape.dispatch import dispatch
-from datashape import discover as dsdiscover
-
 try:
     from datashader.bundling import (directly_connect_edges as connect_edges,
                                      hammer_bundle)
@@ -28,12 +22,11 @@ except:
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
                     CompositeOverlay, Dataset)
-from ..core.data import PandasInterface, DaskInterface, XArrayInterface
+from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import Image, Path, Curve, Contours, RGB, Graph
+from ..element import Image, Path, Curve, RGB, Graph
 from ..streams import RangeXY, PlotSize
-from ..plotting.util import fire
 
 
 class ResamplingOperation(Operation):

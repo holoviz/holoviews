@@ -12,7 +12,7 @@ from param import _is_number
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface
-from ..core.util import (find_minmax, group_sanitizer, label_sanitizer, pd,
+from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh

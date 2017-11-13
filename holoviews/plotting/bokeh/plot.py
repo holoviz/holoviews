@@ -7,9 +7,8 @@ import param
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, CompositeOverlay, Store, GridMatrix,
-                     AdjointLayout, NdLayout, Empty, GridSpace, HoloMap, Element)
-from ...core.options import Compositor
+from ...core import (OrderedDict, Store, GridMatrix, AdjointLayout,
+                     NdLayout, Empty, GridSpace, HoloMap, Element)
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
@@ -652,7 +651,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         plots = [[] for _ in range(self.rows)]
         tab_titles = {}
         insert_rows, insert_cols = [], []
-        adjoined = False
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
@@ -663,7 +661,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 # number of adjoined plots
                 offset = sum(r >= ir for ir in insert_rows)
                 if len(subplots) > 2:
-                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     if r not in insert_rows:
@@ -678,7 +675,6 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                     # Add top marginal
                     plots[r+offset-1] += [subplots.pop(-1), None]
                 elif len(subplots) > 1:
-                    adjoined = True
                     # Add pad column in this position
                     insert_cols.append(c)
                     # Pad previous rows

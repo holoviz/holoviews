@@ -8,7 +8,7 @@ from ..core.data import ImageInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
-from ..core.util import max_range, dimension_range, compute_density, datetime_types
+from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .tabular import Table
 from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d

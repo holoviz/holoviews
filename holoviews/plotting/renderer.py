@@ -12,7 +12,7 @@ import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import find_file, unicode, unbound_dimensions, basestring
-from .. import Layout, HoloMap, AdjointLayout, Element, CompositeOverlay
+from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
@@ -164,7 +164,6 @@ class Renderer(Exporter):
         """
         # Initialize DynamicMaps with first data item
         initialize_dynamic(obj)
-        backend = self_or_cls.backend
 
         if not isinstance(obj, Plot):
             if not displayable(obj):

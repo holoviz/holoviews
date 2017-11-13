@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from ..util import dimension_range, basestring
+from ..util import dimension_range
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface

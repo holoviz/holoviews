@@ -15,7 +15,7 @@ import param
 
 from ...core import OrderedDict, Dimension, Store
 from ...core.util import match_spec, unique_iterator, basestring, max_range
-from ...element import Points, Raster, Polygons, HeatMap
+from ...element import Raster
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot

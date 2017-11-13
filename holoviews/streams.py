@@ -5,7 +5,6 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
-import math
 
 import param
 import numpy as np

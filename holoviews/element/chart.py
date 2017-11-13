@@ -391,7 +391,7 @@ class Area(Curve):
         method.
         """
         if not len(areas):
-            return stacked
+            return areas
         baseline = np.zeros(len(areas.values()[0]))
         stacked = areas.clone(shared_data=False)
         vdims = [areas.values()[0].vdims[0], 'Baseline']

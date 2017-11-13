@@ -224,7 +224,7 @@ class extension(param.ParameterizedFunction):
         selected_backend = None
         for backend, imp in imports:
             try:
-                module = __import__(backend)
+                __import__(backend)
             except:
                 self.warning("%s is not available, ensure %s is installed "
                              "to activate %s extension." % (backend, backend))

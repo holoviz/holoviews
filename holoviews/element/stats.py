@@ -3,8 +3,8 @@ import numpy as np
 
 from ..core.dimension import Dimension, process_dimensions
 from ..core.element import Element
-from ..core.util import get_param_values
-from .chart import Chart, Scatter
+from ..core.util import get_param_values, OrderedDict
+from .chart import Chart
 
 
 class StatisticsElement(Chart):
@@ -72,10 +72,10 @@ class StatisticsElement(Chart):
         a DataFrame a copy is returned.
         """
         if dimensions:
-            dimensions = [self.get_dimension(d, strict=True) for d in dimensions]
+            dimensions = [self.get_dimension(d, strict=True) for d in dimensions
+                          if d in dimensions.kdims]
         else:
             dimensions = dimensions.kdims
-        dim = [dim.name for dim in dims if dim in dimensions.kdims]
         return self.interface.dframe(self, dimensions)
 
 

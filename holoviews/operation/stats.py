@@ -2,10 +2,8 @@ import param
 import numpy as np
 
 from ..core import Dimension, Dataset, NdOverlay
-from ..core.dimension import Dimension
 from ..core.operation import Operation
-from ..core.options import Compositor, Store, Options, StoreOptions
-from ..core.util import basestring, find_minmax, cartesian_product
+from ..core.util import basestring, cartesian_product
 from ..element import (Curve, Area, Image, Distribution, Bivariate,
                        Contours, Polygons)
 

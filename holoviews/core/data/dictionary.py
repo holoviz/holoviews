@@ -1,5 +1,4 @@
 from collections import OrderedDict
-from itertools import compress
 
 try:
     import itertools.izip as zip

@@ -40,7 +40,7 @@ from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .stats import DistributionPlot, BivariatePlot
 from .tabular import TablePlot
-from .util import bokeh_version
+from .util import bokeh_version # noqa (API import)
 
 
 Store.renderers['bokeh'] = BokehRenderer.instance()

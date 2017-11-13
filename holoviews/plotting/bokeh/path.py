@@ -3,7 +3,7 @@ from collections import defaultdict
 import param
 import numpy as np
 
-from bokeh.models import HoverTool, FactorRange
+from bokeh.models import HoverTool
 
 from ...core import util
 from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties

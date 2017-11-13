@@ -12,7 +12,7 @@ import param
 from ...core import (OrderedDict, HoloMap, AdjointLayout, NdLayout,
                      GridSpace, Element, CompositeOverlay, Empty,
                      Collator, GridMatrix, Layout)
-from ...core.options import Store, Compositor, SkipRendering
+from ...core.options import Store, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot)

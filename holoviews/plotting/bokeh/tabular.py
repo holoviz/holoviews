@@ -2,7 +2,6 @@ from bokeh.models.widgets import DataTable, TableColumn
 
 import param
 
-import numpy as np
 from ...core import Dataset
 from ...element import ItemTable
 from ...streams import Buffer

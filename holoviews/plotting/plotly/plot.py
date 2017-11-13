@@ -2,9 +2,9 @@ import param
 from plotly import tools
 
 from ...core import (OrderedDict, NdLayout, AdjointLayout, Empty,
-                     HoloMap, GridSpace, CompositeOverlay, GridMatrix)
+                     HoloMap, GridSpace, GridMatrix)
 from ...element import Histogram
-from ...core.options import Store, Compositor
+from ...core.options import Store
 from ...core.util import wrap_tuple
 from ..plot import DimensionedPlot, GenericLayoutPlot, GenericCompositePlot
 from .util import add_figure

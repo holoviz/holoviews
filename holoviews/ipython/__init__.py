@@ -15,7 +15,6 @@ from ..plotting.renderer import Renderer
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks
-from .widgets import RunProgress
 
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']

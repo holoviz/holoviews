@@ -19,7 +19,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension
+from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Stream, Buffer
@@ -1298,7 +1298,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             pos = self.legend_specs[pos]
         else:
             legend.location = pos
-            leg_opts = 'right'
 
         legend.orientation = orientation
 
@@ -1319,7 +1318,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if self.multiple_legends:
             plot.legend.pop(plot.legend.index(legend))
             legend.plot = None
-            legends = []
             properties = legend.properties_with_values(include_defaults=False)
             legend_group = []
             for item in legend.items:

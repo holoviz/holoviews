@@ -120,7 +120,7 @@ class MultiInterface(Interface):
         """
         Applies selectiong on all the subpaths.
         """
-        if not self.dataset.data:
+        if not dataset.data:
             return []
         ds = cls._inner_dataset_template(dataset)
         data = []
@@ -208,7 +208,6 @@ class MultiInterface(Interface):
             return np.array([])
         values = []
         ds = cls._inner_dataset_template(dataset)
-        didx = dataset.get_dimension_index(dimension)
         for d in dataset.data:
             ds.data = d
             dvals = ds.interface.values(ds, dimension, expanded, flat)

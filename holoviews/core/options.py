@@ -874,7 +874,7 @@ class Compositor(param.Parameterized):
         Applies compositor operations to any HoloViews element or container
         using the map method.
         """
-        from .overlay import Overlay, CompositeOverlay
+        from .overlay import CompositeOverlay
         element_compositors = [c for c in cls.definitions if len(c._pattern_spec) == 1]
         overlay_compositors = [c for c in cls.definitions if len(c._pattern_spec) > 1]
         if overlay_compositors:

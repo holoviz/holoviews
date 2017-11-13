@@ -1,19 +1,17 @@
 import param
 import numpy as np
 
-from bokeh.models import Range1d, Circle, MultiLine, HoverTool, ColumnDataSource
+from bokeh.models import Range1d, HoverTool, ColumnDataSource
 
 try:
-    from bokeh.models import (StaticLayoutProvider, GraphRenderer, NodesAndLinkedEdges,
+    from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
                               EdgesAndLinkedNodes)
 except:
     pass
 
-from ...core.options import abbreviated_exception, SkipRendering
 from ...core.util import basestring, dimension_sanitizer
 from .chart import ColorbarPlot, PointPlot
-from .element import CompositeElementPlot, LegendPlot, line_properties, fill_properties, property_prefixes
-from .util import mpl_to_bokeh
+from .element import CompositeElementPlot, LegendPlot, line_properties, fill_properties
 
 
 class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):

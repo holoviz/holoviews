@@ -20,8 +20,7 @@ from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size
 
-from bokeh.io.notebook import (load_notebook, publish_display_data,
-                               JS_MIME_TYPE, LOAD_MIME_TYPE, EXEC_MIME_TYPE)
+from bokeh.io.notebook import load_notebook
 from bokeh.protocol import Protocol
 from bokeh.embed.notebook import encode_utf8, notebook_content
 

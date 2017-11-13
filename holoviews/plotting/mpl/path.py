@@ -1,10 +1,9 @@
-from matplotlib.patches import Polygon
 from matplotlib.collections import PolyCollection, LineCollection
 import numpy as np
 import param
 
 from ...core import util
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot
 
 
 class PathPlot(ColorbarPlot):
