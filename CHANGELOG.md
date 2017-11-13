@@ -18,7 +18,7 @@ Fixes:
     ([\#2112](https://github.com/ioam/holoviews/pull/2112))
 -   Fixed insufficient validation issue for Image and bugs when
     applying regrid operation to xarray based Images
-    ([\2117](https://github.com/ioam/holoviews/pull/2117))
+    ([\#2117](https://github.com/ioam/holoviews/pull/2117))
 -   Fixed handling of dimensions and empty elements in univariate_kde
     and bivariate_kde operations
     ([\#2103](https://github.com/ioam/holoviews/pull/2103))
