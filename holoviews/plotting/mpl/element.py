@@ -771,7 +771,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
     _propagate_options = ['aspect', 'fig_size', 'xaxis', 'yaxis', 'zaxis',
                           'labelled', 'bgcolor', 'fontsize', 'invert_axes',
                           'show_frame', 'show_grid', 'logx', 'logy', 'logz',
-                          'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation'
+                          'xticks', 'yticks', 'zticks', 'xrotation', 'yrotation',
                           'zrotation', 'invert_xaxis', 'invert_yaxis',
                           'invert_zaxis', 'title_format']
 
