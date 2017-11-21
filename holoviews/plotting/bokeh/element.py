@@ -668,7 +668,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                                     self.overlay_dims.items()])
             else:
                 legend = element.label
-            properties['legend'] = value(legend)
+            if legend:
+                properties['legend'] = value(legend)
         return properties
 
     def _update_glyph(self, renderer, properties, mapping, glyph):
@@ -921,8 +922,11 @@ class CompositeElementPlot(ElementPlot):
     drawing of multiple glyphs.
     """
 
-    # Mapping between glyph name and style groups
+    # Mapping between style groups and glyph names
     _style_groups = {}
+
+    # Defines the order in which glyphs are drawn, defined by glyph name
+    _draw_order = []
 
     def _init_glyphs(self, plot, element, ranges, source):
         # Get data and initialize data source
@@ -983,7 +987,13 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
-        for key in sorted(dict(mapping, **data)):
+        # Order glyphs by supplied draw order
+        keys = sorted(dict(mapping, **data))
+        def order_fn(glyph):
+            matches = [item for item in self._draw_order if glyph.startswith(item)]
+            if matches: return self._draw_order.index(matches[0])
+            return 1e6+keys.index(glyph)
+        for key in sorted(keys, key=order_fn):
             gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
@@ -1003,7 +1013,7 @@ class CompositeElementPlot(ElementPlot):
         Returns a Bokeh glyph object.
         """
         properties = mpl_to_bokeh(properties)
-        plot_method = key.split('_')[0]
+        plot_method = '_'.join(key.split('_')[:-1])
         renderer = getattr(plot, plot_method)(**dict(properties, **mapping))
         return renderer, renderer.glyph
 

@@ -1068,12 +1068,12 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         data = {
             bar_glyph+'_1': r1_data, bar_glyph+'_2': r2_data, 'segment_1': s1_data,
             'segment_2': s2_data, 'rect_1': w1_data, 'rect_2': w2_data,
-            'circle': out_data
+            'circle_1': out_data
         }
         mapping = {
             bar_glyph+'_1': vbar_map, bar_glyph+'_2': vbar2_map, 'segment_1': seg_map,
             'segment_2': seg_map, 'rect_1': whisk_map, 'rect_2': whisk_map,
-            'circle': out_map
+            'circle_1': out_map
         }
 
         # Cast data to arrays to take advantage of base64 encoding
