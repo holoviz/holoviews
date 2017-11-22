@@ -453,9 +453,9 @@ class TriMesh(Graph):
         pts = self.nodes.array([0, 1])
         empty = np.array([np.NaN, np.NaN])
         for tri in pts[simplices]:
-            paths.append(np.vstack([tri[0, :], tri[1, :], empty,
-                                    tri[1, :], tri[2, :], empty,
-                                    tri[2, :], tri[0, :]]))
+            paths.append(np.vstack([tri[[0, 1], :], empty,
+                                    tri[[1, 2], :], empty,
+                                    tri[[2, 1], :]]))
         edgepaths = EdgePaths(paths, kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
