@@ -407,7 +407,7 @@ class TriMesh(Graph):
 
     kdims = param.List(default=['node1', 'node2', 'node3'])
 
-    group = param.String(default='TriMesh')
+    group = param.String(default='TriMesh', constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
