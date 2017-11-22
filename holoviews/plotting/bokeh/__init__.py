@@ -13,7 +13,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
-                        Graph, Nodes, EdgePaths, Distribution, Bivariate)
+                        Graph, Nodes, EdgePaths, Distribution, Bivariate,
+                        TriMesh)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -33,7 +34,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
-from .graphs import GraphPlot, NodePlot
+from .graphs import GraphPlot, NodePlot, TriMeshPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -97,6 +98,7 @@ associations = {Overlay: OverlayPlot,
                 Graph: GraphPlot,
                 Nodes: NodePlot,
                 EdgePaths: PathPlot,
+                TriMesh: TriMeshPlot,
 
                 # Tabular
                 Table: TablePlot,

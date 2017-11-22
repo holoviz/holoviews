@@ -148,6 +148,7 @@ Store.register({Curve: CurvePlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
+                TriMesh: GraphPlot,
                 Nodes: PointPlot,
                 EdgePaths: PathPlot,
 

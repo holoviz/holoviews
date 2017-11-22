@@ -392,3 +392,70 @@ class EdgePaths(Path):
     """
 
     group = param.String(default='EdgePaths', constant=True)
+
+
+class TriMesh(Graph):
+    """
+    A TriMesh represents a mesh of triangles represented as the
+    simplices and nodes. The simplices represent a indices into the
+    nodes array. The mesh therefore follows a datastructure very
+    similar to a graph, with the abstract connectivity between nodes
+    stored on the TriMesh element itself, the node positions stored on
+    a Nodes element and the concrete paths making up each triangle
+    generated when required by accessing the edgepaths.
+    """
+
+    kdims = param.List(default=['node1', 'node2', 'node3'])
+
+    group = param.String(default='TriMesh')
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        if isinstance(data, tuple):
+            data = data + (None,)* (3-len(data))
+            edges, nodes, edgepaths = data
+        else:
+            edges, nodes, edgepaths = data, None, None
+        if nodes is None:
+            raise ValueError("TriMesh expects both simplices and nodes "
+                             "to be supplied.")
+
+        if isinstance(nodes, Nodes):
+            pass
+        elif isinstance(nodes, Points):
+            nodes = Nodes(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
+        elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
+            try:
+                nodes = Nodes(nodes)
+            except:
+                points = Dataset(Points(nodes)).add_dimension('index', 2, np.arange(len(nodes)))
+                nodes = Nodes(points)
+        if not isinstance(nodes, Nodes):
+            raise  ValueError("Nodes argument could not be interpreted, expected "
+                              "data with two or three columns representing the "
+                              "x/y positions and optionally the node indices.")
+        if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
+            edgepaths = EdgePaths(edgepaths)
+        super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+        self._nodes = nodes
+        self._edgepaths = edgepaths
+
+
+    @property
+    def edgepaths(self):
+        """
+        Returns the EdgePaths by generating a triangle for each simplex.
+        """
+        if self._edgepaths:
+            return self._edgepaths
+
+        paths = []
+        simplices = self.array([0, 1, 2])
+        pts = self.nodes.array([0, 1])
+        empty = np.array([np.NaN, np.NaN])
+        for tri in pts[simplices]:
+            paths.append(np.vstack([tri[0, :], tri[1, :], empty,
+                                    tri[1, :], tri[2, :], empty,
+                                    tri[2, :], tri[0, :]]))
+        edgepaths = EdgePaths(paths, kdims=self.nodes.kdims[:2])
+        self._edgepaths = edgepaths
+        return edgepaths

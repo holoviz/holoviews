@@ -249,3 +249,11 @@ class NodePlot(PointPlot):
     def _hover_opts(self, element):
         return element.dimensions()[2:], {}
 
+
+
+class TriMeshPlot(GraphPlot):
+
+    def get_data(self, element, ranges, style):
+        # Ensure the edgepaths for the triangles are generated
+        element.edgepaths
+        return super(TriMeshPlot, self).get_data(element, ranges, style)
