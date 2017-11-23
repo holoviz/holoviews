@@ -654,7 +654,7 @@ class Chord(Graph):
     their weight.
     """
 
-    group = param.String(default='Chord')
+    group = param.String(default='Chord', constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, compute=True, **params):
         if isinstance(data, tuple):
