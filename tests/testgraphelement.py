@@ -2,8 +2,11 @@
 Unit tests of Graph Element.
 """
 import numpy as np
-from holoviews.element.graphs import Graph, Nodes, circular_layout
+from holoviews.core.data import Dataset
+from holoviews.element.graphs import (
+    Graph, Nodes, circular_layout, connect_edges, connect_edges_pd)                                  
 from holoviews.element.comparison import ComparisonTestCase
+
 
 
 class GraphTests(ComparisonTestCase):
@@ -11,8 +14,8 @@ class GraphTests(ComparisonTestCase):
     def setUp(self):
         N = 8
         self.nodes = circular_layout(np.arange(N))
-        self.source = np.arange(N)
-        self.target = np.zeros(N)
+        self.source = np.arange(N, dtype=np.int32)
+        self.target = np.zeros(N, dtype=np.int32)
         self.edge_info = np.arange(N)
         self.graph = Graph(((self.source, self.target),))
 
@@ -25,6 +28,45 @@ class GraphTests(ComparisonTestCase):
         graph = Graph(((self.source, self.target), self.nodes))
         nodes = Nodes(self.nodes)
         self.assertEqual(graph.nodes, nodes)
+
+    def test_graph_edge_segments(self):
+        segments = connect_edges(self.graph)
+        paths = []
+        nodes = np.column_stack(self.nodes)
+        for start, end in zip(nodes[self.source], nodes[self.target]):
+            paths.append(np.array([start[:2], end[:2]]))
+        self.assertEqual(segments, paths)
+
+    def test_graph_node_info_no_index(self):
+        node_info = Dataset(np.arange(8), vdims=['Label'])
+        graph = Graph(((self.source, self.target), node_info))
+        self.assertEqual(graph.nodes.dimension_values(3),
+                         node_info.dimension_values(0))
+
+    def test_graph_node_info_no_index_mismatch(self):
+        node_info = Dataset(np.arange(6), vdims=['Label'])
+        with self.assertRaises(ValueError):
+            Graph(((self.source, self.target), node_info))
+
+    def test_graph_node_info_merge_on_index(self):
+        node_info = Dataset((np.arange(8), np.arange(1,9)), 'index', 'label')
+        graph = Graph(((self.source, self.target), node_info))
+        self.assertEqual(graph.nodes.dimension_values(3),
+                         node_info.dimension_values(1))
+
+    def test_graph_node_info_merge_on_index_partial(self):
+        node_info = Dataset((np.arange(5), np.arange(1,6)), 'index', 'label')
+        graph = Graph(((self.source, self.target), node_info))
+        expected = np.array([1., 2., 3., 4., 5., np.NaN, np.NaN, np.NaN])
+        self.assertEqual(graph.nodes.dimension_values(3), expected)
+
+    def test_graph_edge_segments_pd(self):
+        segments = connect_edges_pd(self.graph)
+        paths = []
+        nodes = np.column_stack(self.nodes)
+        for start, end in zip(nodes[self.source], nodes[self.target]):
+            paths.append(np.array([start[:2], end[:2]]))
+        self.assertEqual(segments, paths)
 
     def test_constructor_with_nodes_and_paths(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
