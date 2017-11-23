@@ -3,8 +3,9 @@ import numpy as np
 
 from matplotlib.collections import LineCollection, PolyCollection
 
+from ...core.data import Dataset
 from ...core.options import Cycle
-from ...core.util import basestring, unique_array, search_indices
+from ...core.util import basestring, unique_array, search_indices, max_range
 from ..util import process_cmap
 from .element import ColorbarPlot
 
@@ -194,3 +195,84 @@ class TriMeshPlot(GraphPlot):
         element.edgepaths
         return super(TriMeshPlot, self).get_data(element, ranges, style)
 
+
+
+class ChordPlot(GraphPlot):
+
+    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the node labels will be drawn""")
+
+    style_opts = GraphPlot.style_opts + ['text_font_size', 'label_offset']
+
+    _style_groups = ['edge', 'node', 'arc']
+
+    def get_extents(self, element, ranges):
+        """
+        A Chord plot is always drawn on a unit circle.
+        """
+        xdim, ydim = element.nodes.kdims[:2]
+        rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
+        x0, x1 = max_range([xdim.range, (-rng, rng)])
+        y0, y1 = max_range([ydim.range, (-rng, rng)])
+        return (x0, y0, x1, y1)
+
+
+    def get_data(self, element, ranges, style):
+        data, style, plot_kwargs = super(ChordPlot, self).get_data(element, ranges, style)
+        if isinstance(style.get('node_facecolors'), list):
+            angles = element._angles
+            paths = []
+            for i in range(len(element.nodes)):
+                start, end = angles[i:i+2]
+                vals = np.linspace(start, end, 20)
+                paths.append(np.column_stack([np.cos(vals), np.sin(vals)]))
+            data['arcs'] = paths
+            style['arc_colors'] = style['node_facecolors']
+            style['arc_linewidth'] = 10
+
+        lidx = element.nodes.get_dimension(self.label_index)
+        if lidx is None:
+            if self.label_index is not None:
+                dims = element.nodes.dimensions()[2:]
+                self.warning("label_index supplied to Chord not found, "
+                             "expected one of %s, got %s." %
+                             (dims, self.label_index))
+            return data, style, plot_kwargs
+        if element.vdims:
+            edges = Dataset(element)[element[element.vdims[0].name]>0]
+            nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
+            nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
+        else:
+            nodes = element
+        offset = style.get('label_offset', 1.05)
+        xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
+        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
+        angles = np.rad2deg(np.arctan2(ys, xs))
+        data['text'] = (xs, ys, labels, angles)
+        return data, style, plot_kwargs
+
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        artists = {}
+        if 'arcs' in plot_args:
+            color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm']
+            groups = [g for g in self._style_groups if g != 'arc']
+            edge_opts = {k[4:] if 'arc_' in k else k: v
+                         for k, v in plot_kwargs.items()
+                         if not any(k.startswith(p) for p in groups)
+                         and k not in color_opts}
+            paths = plot_args['arcs']
+            edges = LineCollection(paths, **edge_opts)
+            ax.add_collection(edges)
+            artists['arcs'] = edges
+
+        artists.update(super(ChordPlot, self).init_artists(ax, plot_args, plot_kwargs))
+        if 'text' in plot_args:
+            fontsize = plot_kwargs.get('text_font_size', 8)
+            for (x, y, l, a) in zip(*plot_args['text']):
+                ax.annotate(l, xy=(x, y), xycoords='data', rotation=a,
+                            horizontalalignment='left', fontsize=fontsize,
+                            verticalalignment='center', rotation_mode='anchor')
+
+        return artists

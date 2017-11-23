@@ -5,11 +5,12 @@ import numpy as np
 
 from ..core import Dimension, Dataset, Element2D
 from ..core.dimension import redim
-from ..core.util import max_range
+from ..core.util import max_range, search_indices
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
-from .util import split_path, pd, circular_layout, connect_edges, connect_edges_pd
+from .util import (split_path, pd, circular_layout, connect_edges,
+                   connect_edges_pd, quadratic_bezier)
 
 try:
     from datashader.layout import LayoutAlgorithm as ds_layout
@@ -31,6 +32,7 @@ class redim_graph(redim):
         if self.parent._edgepaths:
             new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
+
 
 
 class layout_nodes(Operation):
@@ -516,3 +518,184 @@ class TriMesh(Graph):
         return super(TriMesh, self).select(selection_specs=None,
                                            selection_mode='nodes',
                                            **selection)
+
+
+
+class layout_chords(Operation):
+    """
+    layout_chords computes the locations of each node on a circle and
+    the chords connecting them. The amount of radial angle devoted to
+    each node and the number of chords are scaled by the value
+    dimension of the Chord element. If the values are integers then
+    the number of chords is directly scaled by the value, if the
+    values are floats then the number of chords are apportioned such
+    that the lowest value edge is given one chord and all other nodes
+    are given nodes proportional to their weight. The max_chords
+    parameter scales the number of chords to be assigned to an edge.
+
+    The chords are computed by interpolating a cubic spline from the
+    source to the target node in the graph, the number of samples to
+    interpolate the spline with is given by the chord_samples
+    parameter.
+    """
+
+    chord_samples = param.Integer(default=50, bounds=(0, None), doc="""
+        Number of samples per chord for the spline interpolation.""")
+
+    max_chords = param.Integer(default=500, doc="""
+        Maximum number of chords to render.""")
+
+    def _process(self, element, key=None):
+        nodes_el = element._nodes
+        if nodes_el:
+            idx_dim = nodes_el.kdims[-1]
+            nodes = nodes_el.dimension_values(idx_dim, expanded=False)
+        else:
+            source = element.dimension_values(0, expanded=False)
+            target = element.dimension_values(1, expanded=False)
+            nodes = np.unique(np.concatenate([source, target]))
+
+        # Compute indices and values for connectivity matrix
+        max_chords = self.p.max_chords
+        src, tgt = (element.dimension_values(i) for i in range(2))
+        src_idx = search_indices(src, nodes)
+        tgt_idx = search_indices(tgt, nodes)
+        if element.vdims:
+            values = element.dimension_values(2)
+            if values.dtype.kind not in 'if':
+                values = np.ones(len(element), dtype='int')
+            else:
+                if values.dtype.kind == 'f':
+                    values = np.ceil(values*(1./values.min()))
+                if values.sum() > max_chords:
+                    values = np.ceil((values/float(values.sum()))*max_chords)
+                    values = values.astype('int64')
+        else:
+            values = np.ones(len(element), dtype='int')
+
+        # Compute connectivity matrix
+        matrix = np.zeros((len(nodes), len(nodes)))
+        for s, t, v in zip(src_idx, tgt_idx, values):
+            matrix[s, t] += v
+
+        # Compute weighted angular slice for each connection
+        weights_of_areas = (matrix.sum(axis=0) + matrix.sum(axis=1)) - matrix.diagonal()
+        areas_in_radians = (weights_of_areas / weights_of_areas.sum()) * (2 * np.pi)
+
+        # We add a zero in the begging for the cumulative sum
+        points = np.zeros((areas_in_radians.shape[0] + 1))
+        points[1:] = areas_in_radians
+        points = points.cumsum()
+
+        # Compute edge points
+        xs = np.cos(points)
+        ys = np.sin(points)
+
+        # Compute mid-points for node positions
+        midpoints = np.convolve(points, [0.5, 0.5], mode='valid')
+        mxs = np.cos(midpoints)
+        mys = np.sin(midpoints)
+
+        # Compute angles of chords in each edge
+        all_areas = []
+        for i in range(areas_in_radians.shape[0]):
+            n_conn = weights_of_areas[i]
+            p0, p1 = points[i], points[i+1]
+            angles = np.linspace(p0, p1, n_conn)
+            coords = list(zip(np.cos(angles), np.sin(angles)))
+            all_areas.append(coords)
+
+        # Draw each chord by interpolating quadratic splines
+        # Separate chords in each edge by NaNs
+        empty = np.array([[np.NaN, np.NaN]])
+        paths = []
+        for i in range(len(element)):
+            src_area, tgt_area = all_areas[src_idx[i]], all_areas[tgt_idx[i]]
+            subpaths = []
+            for _ in range(int(values[i])):
+                x0, y0 = src_area.pop()
+                x1, y1 = tgt_area.pop()
+                b = quadratic_bezier((x0, y0), (x1, y1), (x0/2., y0/2.),
+                                     (x1/2., y1/2.), steps=self.p.chord_samples)
+                subpaths.append(b)
+                subpaths.append(empty)
+            if subpaths:
+                paths.append(np.concatenate(subpaths[:-1]))
+
+        # Construct Chord element from components
+        if nodes_el:
+            if isinstance(nodes_el, Nodes):
+                kdims = nodes_el.kdims
+            else:
+                kdims = Nodes.kdims[:2]+[idx_dim]
+            vdims = [vd for vd in nodes_el.vdims if vd not in kdims]
+            values = tuple(nodes_el.dimension_values(vd) for vd in vdims)
+        else:
+            kdims = Nodes.kdims
+            values, vdims = (), []
+        nodes = Nodes((mxs, mys, nodes)+values, kdims=kdims, vdims=vdims)
+        edges = EdgePaths(paths)
+        chord = Chord((element.data, nodes, edges), compute=False)
+        chord._angles = points
+        return chord
+
+
+class Chord(Graph):
+    """
+    Chord is a special type of Graph which computes the locations of
+    each node on a circle and the chords connecting them. The amount
+    of radial angle devoted to each node and the number of chords are
+    scaled by a weight supplied as a value dimension.
+
+    If the values are integers then the number of chords is directly
+    scaled by the value, if the values are floats then the number of
+    chords are apportioned such that the lowest value edge is given
+    one chord and all other nodes are given nodes proportional to
+    their weight.
+    """
+
+    group = param.String(default='Chord')
+
+    def __init__(self, data, kdims=None, vdims=None, compute=True, **params):
+        if isinstance(data, tuple):
+            data = data + (None,)* (3-len(data))
+            edges, nodes, edgepaths = data
+        else:
+            edges, nodes, edgepaths = data, None, None
+        if nodes is not None:
+            if not isinstance(nodes, Dataset):
+                if nodes.ndims == 3:
+                    nodes = Nodes(nodes)
+                else:
+                    nodes = Dataset(nodes)
+                    nodes = nodes.clone(kdims=nodes.kdims[0],
+                                        vdims=nodes.kdims[1:])
+        node_info = nodes
+        super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+        if compute:
+            self._nodes = nodes
+            chord = layout_chords(self)
+            self._nodes = chord.nodes
+            self._edgepaths = chord.edgepaths
+            self._angles = chord._angles
+        else:
+            if not isinstance(nodes, Nodes):
+                raise TypeError("Expected Nodes object in data, found %s."
+                                % type(nodes))
+            self._nodes = nodes
+            if not isinstance(edgepaths, EdgePaths):
+                raise TypeError("Expected EdgePaths object in data, found %s."
+                                % type(edgepaths))
+            self._edgepaths = edgepaths
+        self._validate()
+        self.redim = redim_graph(self, mode='dataset')
+
+
+    @property
+    def edgepaths(self):
+        return self._edgepaths
+
+
+    @property
+    def nodes(self):
+        return self._nodes

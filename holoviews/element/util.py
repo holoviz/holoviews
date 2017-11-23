@@ -235,6 +235,23 @@ def circular_layout(nodes):
     return (x, y, nodes)
 
 
+def quadratic_bezier(start, end, c0=(0, 0), c1=(0, 0), steps=50):
+    """
+    Compute quadratic bezier spline given start and end coordinate and
+    two control points.
+    """
+    steps = np.linspace(0, 1, steps)
+    sx, sy = start
+    ex, ey = end
+    cx0, cy0 = c0
+    cx1, cy1 = c1
+    xs = ((1-steps)**3*sx + 3*((1-steps)**2)*steps*cx0 +
+          3*(1-steps)*steps**2*cx1 + steps**3*ex)
+    ys = ((1-steps)**3*sy + 3*((1-steps)**2)*steps*cy0 +
+          3*(1-steps)*steps**2*cy1 + steps**3*ey)
+    return np.column_stack([xs, ys])
+
+
 def connect_edges_pd(graph):
     """
     Given a Graph element containing abstract edges compute edge

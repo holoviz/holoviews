@@ -1,13 +1,17 @@
+from collections import defaultdict
+
 import param
 import numpy as np
 from bokeh.models import HoverTool, ColumnDataSource
 from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
                           EdgesAndLinkedNodes, Patches, Bezier)
 
-from ...core.util import basestring, dimension_sanitizer, unique_array
+from ...core.data import Dataset
+from ...core.util import basestring, dimension_sanitizer, unique_array, max_range
 from ...core.options import Cycle
 from .chart import ColorbarPlot, PointPlot
-from .element import CompositeElementPlot, LegendPlot, line_properties, fill_properties
+from .element import (CompositeElementPlot, LegendPlot, line_properties,
+                      fill_properties, text_properties)
 from ..util import process_cmap
 
 
@@ -287,6 +291,75 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             self.handles['hover'].renderers.append(renderer)
+
+
+
+class ChordPlot(GraphPlot):
+
+    label_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the node labels will be drawn""")
+
+    show_frame = param.Boolean(default=False, doc="""
+        Whether or not to show a complete frame around the plot.""")
+
+    # Map each glyph to a style group
+    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'text': 'label',
+                     'arc': 'arc'}
+
+    style_opts = (GraphPlot.style_opts + ['label_'+p for p in text_properties])
+
+    _draw_order = ['scatter', 'multi_line', 'layout']
+
+    def get_extents(self, element, ranges):
+        """
+        A Chord plot is always drawn on a unit circle.
+        """
+        xdim, ydim = element.nodes.kdims[:2]
+        rng = 1.1 if element.nodes.get_dimension(self.label_index) is None else 1.4
+        x0, x1 = max_range([xdim.range, (-rng, rng)])
+        y0, y1 = max_range([ydim.range, (-rng, rng)])
+        return (x0, y0, x1, y1)
+
+    def get_data(self, element, ranges, style):
+        offset = style.pop('label_offset', 1.05)
+        data, mapping, style = super(ChordPlot, self).get_data(element, ranges, style)
+        if 'node_fill_color' in mapping['scatter_1']:
+            angles = element._angles
+            arcs = defaultdict(list)
+            for i in range(len(element.nodes)):
+                start, end = angles[i:i+2]
+                vals = np.linspace(start, end, 20)
+                xs, ys = np.cos(vals), np.sin(vals)
+                arcs['arc_xs'].append(xs)
+                arcs['arc_ys'].append(ys)
+            data['scatter_1'].update(arcs)
+            data['multi_line_2'] = data['scatter_1']
+            mapping['multi_line_2'] = {'xs': 'arc_xs', 'ys': 'arc_ys', 'line_width': 10}
+            mapping['multi_line_2']['line_color'] = mapping['scatter_1']['node_fill_color']
+            mapping['multi_line_2']['nonselection_line_color'] = mapping['scatter_1']['node_fill_color']
+            mapping['multi_line_2']['selection_line_color'] = mapping['scatter_1']['node_fill_color']
+
+        lidx = element.nodes.get_dimension(self.label_index)
+        if lidx is None:
+            if self.label_index is not None:
+                dims = element.nodes.dimensions()[2:]
+                self.warning("label_index supplied to Chord not found, "
+                             "expected one of %s, got %s." %
+                             (dims, self.label_index))
+            return data, mapping, style
+        if element.vdims:
+            edges = Dataset(element)[element[element.vdims[0].name]>0]
+            nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
+            nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
+        else:
+            nodes = element
+        xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
+        labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
+        angles = np.arctan2(ys, xs)
+        data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in labels], angle=angles)
+        mapping['text_1'] = dict(text='text', x='x', y='y', angle='angle', text_baseline='middle')
+        return data, mapping, style
 
 
 
