@@ -697,7 +697,7 @@ class ColorbarPlot(ElementPlot):
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
-        cmap = opts.get('cmap')
+        cmap = opts.get(prefix+'cmap')
         if isinstance(cmap, list):
             cmap = mpl_colors.ListedColormap(cmap)
         elif isinstance(cmap, util.basestring):

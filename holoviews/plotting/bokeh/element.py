@@ -5,7 +5,6 @@ import param
 import numpy as np
 import bokeh
 import bokeh.plotting
-from bokeh import palettes
 from bokeh.core.properties import value
 from bokeh.models import (HoverTool, Renderer, Range1d, DataRange1d, Title,
                           FactorRange, FuncTickFormatter, Tool, Legend)
@@ -20,7 +19,7 @@ except ImportError:
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
-from ...core.options import abbreviated_exception, SkipRendering, Cycle
+from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Stream, Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
@@ -1102,7 +1101,7 @@ class ColorbarPlot(ElementPlot):
 
 
     def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
-                         cycle=None, name='color_mapper'):
+                         name='color_mapper'):
         # The initial colormapper instance is cached the first time
         # and then only updated
         if dim is None and colors is None:
@@ -1124,7 +1123,7 @@ class ColorbarPlot(ElementPlot):
         else:
             low, high = None, None
 
-        cmap = colors or cycle or style.pop('cmap', 'viridis')
+        cmap = colors or style.pop('cmap', 'viridis')
         palette = process_cmap(cmap, ncolors)
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
@@ -1145,7 +1144,7 @@ class ColorbarPlot(ElementPlot):
 
 
     def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None,
-                        cycle=None, int_categories=False):
+                        int_categories=False):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         if not cdim:
@@ -1162,7 +1161,7 @@ class ColorbarPlot(ElementPlot):
             factors = [str(f) for f in factors]
 
         mapper = self._get_colormapper(cdim, element, ranges, style,
-                                       factors, colors, cycle)
+                                       factors, colors)
         data[field] = cdata
         if factors is not None:
             mapping['legend'] = {'field': field}
