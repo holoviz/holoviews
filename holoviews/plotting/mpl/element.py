@@ -645,12 +645,12 @@ class ColorbarPlot(ElementPlot):
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
 
 
-    def _norm_kwargs(self, element, ranges, opts, vdim):
+    def _norm_kwargs(self, element, ranges, opts, vdim, prefix=''):
         """
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
-        clim = opts.pop('clims', None)
+        clim = opts.pop(prefix+'clims', None)
         if clim is None:
             cs = element.dimension_values(vdim)
             if not isinstance(cs, np.ndarray):
@@ -674,9 +674,9 @@ class ColorbarPlot(ElementPlot):
                                              linthresh=clim[1]/np.e)
             else:
                 norm = mpl_colors.LogNorm(vmin=clim[0], vmax=clim[1])
-            opts['norm'] = norm
-        opts['vmin'] = clim[0]
-        opts['vmax'] = clim[1]
+            opts[prefix+'norm'] = norm
+        opts[prefix+'vmin'] = clim[0]
+        opts[prefix+'vmax'] = clim[1]
 
         # Check whether the colorbar should indicate clipping
         values = np.asarray(element.dimension_values(vdim))
@@ -687,8 +687,8 @@ class ColorbarPlot(ElementPlot):
                 el_min, el_max = -np.inf, np.inf
         else:
             el_min, el_max = -np.inf, np.inf
-        vmin = -np.inf if opts['vmin'] is None else opts['vmin']
-        vmax = np.inf if opts['vmax'] is None else opts['vmax']
+        vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
+        vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
         if el_min < vmin and el_max > vmax:
             self._cbar_extend = 'both'
         elif el_min < vmin:
@@ -719,7 +719,7 @@ class ColorbarPlot(ElementPlot):
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
-        opts['cmap'] = cmap
+        opts[prefix+'cmap'] = cmap
 
 
 

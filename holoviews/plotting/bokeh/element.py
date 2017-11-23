@@ -20,14 +20,14 @@ except ImportError:
 from bokeh.plotting.helpers import _known_tools as known_tools
 
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
-from ...core.options import abbreviated_exception, SkipRendering
+from ...core.options import abbreviated_exception, SkipRendering, Cycle
 from ...core import util
 from ...streams import Stream, Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update
+from ..util import dynamic_update, process_cmap
 from .plot import BokehPlot, TOOLS
-from .util import (mpl_to_bokeh, get_tab_title, mplcmap_to_palette,
-                   py2js_tickformatter, rgba_tuple, recursive_model_update)
+from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
+                   rgba_tuple, recursive_model_update)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -922,16 +922,17 @@ class CompositeElementPlot(ElementPlot):
     drawing of multiple glyphs.
     """
 
-    # Mapping between style groups and glyph names
+    # Mapping between glyph names and style groups
     _style_groups = {}
 
     # Defines the order in which glyphs are drawn, defined by glyph name
     _draw_order = []
 
-    def _init_glyphs(self, plot, element, ranges, source):
+    def _init_glyphs(self, plot, element, ranges, source, data=None, mapping=None, style=None):
         # Get data and initialize data source
-        style = self.style[self.cyclic_index]
-        data, mapping, style = self.get_data(element, ranges, style)
+        if None in (data, mapping):
+            style = self.style[self.cyclic_index]
+            data, mapping, style = self.get_data(element, ranges, style)
 
         source_cache = {}
         current_id = element._plot_id
@@ -1100,14 +1101,15 @@ class ColorbarPlot(ElementPlot):
         self.handles['colorbar'] = color_bar
 
 
-    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None):
+    def _get_colormapper(self, dim, element, ranges, style, factors=None, colors=None,
+                         cycle=None, name='color_mapper'):
         # The initial colormapper instance is cached the first time
         # and then only updated
-        if dim is None:
+        if dim is None and colors is None:
             return None
         if self.adjoined:
             cmappers = self.adjoined.traverse(lambda x: (x.handles.get('color_dim'),
-                                                         x.handles.get('color_mapper')))
+                                                         x.handles.get(name)))
             cmappers = [cmap for cdim, cmap in cmappers if cdim == dim]
             if cmappers:
                 cmapper = cmappers[0]
@@ -1117,30 +1119,18 @@ class ColorbarPlot(ElementPlot):
                 return None
 
         ncolors = None if factors is None else len(factors)
-        low, high = ranges.get(dim.name, element.range(dim.name))
-        if colors:
-            palette = colors
+        if dim:
+            low, high = ranges.get(dim.name, element.range(dim.name))
         else:
-            cmap = style.pop('cmap', 'viridis')
-            if isinstance(cmap, list):
-                palette = cmap
-            else:
-                try:
-                    # Process as matplotlib colormap
-                    palette = mplcmap_to_palette(cmap, ncolors)
-                except ValueError:
-                    # Process as bokeh palette
-                    palette = getattr(palettes, cmap, None)
-                    if isinstance(palette, dict):
-                        if ncolors in palette:
-                            palette = palette[ncolors]
-                        else:
-                            palette = sorted(palette.items())[-1][1]
+            low, high = None, None
+
+        cmap = colors or cycle or style.pop('cmap', 'viridis')
+        palette = process_cmap(cmap, ncolors)
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
-        if 'color_mapper' in self.handles and isinstance(self.handles['color_mapper'], colormapper):
-            cmapper = self.handles['color_mapper']
+        cmapper = self.handles.get(name)
+        if cmapper is not None:
             if cmapper.palette != palette:
                 cmapper.palette = palette
             opts = {k: opt for k, opt in opts.items()
@@ -1149,27 +1139,34 @@ class ColorbarPlot(ElementPlot):
                 cmapper.update(**opts)
         else:
             cmapper = colormapper(palette=palette, **opts)
-            self.handles['color_mapper'] = cmapper
+            self.handles[name] = cmapper
             self.handles['color_dim'] = dim
         return cmapper
 
 
-    def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None):
+    def _get_color_data(self, element, ranges, style, name='color', factors=None, colors=None,
+                        cycle=None, int_categories=False):
         data, mapping = {}, {}
         cdim = element.get_dimension(self.color_index)
         if not cdim:
             return data, mapping
 
         cdata = element.dimension_values(cdim)
-        if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in 'OSU'):
-            factors = list(np.unique(cdata))
+        field = util.dimension_sanitizer(cdim.name)
+        dtypes = 'iOSU' if int_categories else 'OSU'
+        if factors is None and (isinstance(cdata, list) or cdata.dtype.kind in dtypes):
+            factors = list(util.unique_array(cdata))
+        if factors and int_categories and cdata.dtype.kind == 'i':
+            field += '_str'
+            cdata = [str(f) for f in cdata]
+            factors = [str(f) for f in factors]
+
         mapper = self._get_colormapper(cdim, element, ranges, style,
-                                       factors, colors)
-        data[cdim.name] = cdata
+                                       factors, colors, cycle)
+        data[field] = cdata
         if factors is not None:
-            mapping['legend'] = {'field': cdim.name}
-        mapping[name] = {'field': cdim.name,
-                         'transform': mapper}
+            mapping['legend'] = {'field': field}
+        mapping[name] = {'field': field, 'transform': mapper}
         return data, mapping
 
 

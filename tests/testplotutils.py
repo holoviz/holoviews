@@ -5,10 +5,11 @@ import numpy as np
 
 from holoviews import NdOverlay, Overlay
 from holoviews.core.spaces import DynamicMap
-from holoviews.core.options import Store
+from holoviews.core.options import Store, Cycle
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Curve, Area, Points
-from holoviews.plotting.util import compute_overlayable_zorders, get_min_distance
+from holoviews.plotting.util import (
+    compute_overlayable_zorders, get_min_distance, process_cmap)
 from holoviews.streams import PointerX
 
 try:
@@ -301,6 +302,35 @@ class TestOverlayableZorders(ComparisonTestCase):
         self.assertNotIn(area2, sources[0])
         self.assertNotIn(curve_redim, sources[2])
         self.assertNotIn(curve, sources[2])
+
+
+
+
+class TestPlotColorUtils(ComparisonTestCase):
+
+    def test_process_cmap_mpl(self):
+        colors = process_cmap('Greys', 3)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+
+    def test_process_cmap_bokeh(self):
+        colors = process_cmap('Category20', 3)
+        self.assertEqual(colors, ['#1f77b4', '#aec7e8', '#ff7f0e'])
+
+    def test_process_cmap_list_cycle(self):
+        colors = process_cmap(['#ffffff', '#959595', '#000000'], 4)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000', '#ffffff'])
+
+    def test_process_cmap_cycle(self):
+        colors = process_cmap(Cycle(values=['#ffffff', '#959595', '#000000']), 4)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000', '#ffffff'])
+
+    def test_process_cmap_invalid_str(self):
+        with self.assertRaises(ValueError):
+            colors = process_cmap('NonexistentColorMap', 3)
+
+    def test_process_cmap_invalid_type(self):
+        with self.assertRaises(TypeError):
+            colors = process_cmap({'A', 'B', 'C'}, 3)
 
 
 class TestPlotUtils(ComparisonTestCase):
