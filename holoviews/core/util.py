@@ -1569,3 +1569,12 @@ def dt_to_int(value, time_unit='us'):
     except:
         # Handle python2
         return (time.mktime(value.timetuple()) + value.microsecond / 1e6) * tscale
+
+
+def search_indices(values, source):
+    """
+    Given a set of values returns the indices of each of those values
+    in the source array.
+    """
+    orig_indices = source.argsort()
+    return orig_indices[np.searchsorted(source[orig_indices], values)]

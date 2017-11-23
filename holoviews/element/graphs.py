@@ -9,7 +9,7 @@ from ..core.util import max_range
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
-from .util import split_path, pd
+from .util import split_path, pd, circular_layout, connect_edges, connect_edges_pd
 
 try:
     from datashader.layout import LayoutAlgorithm as ds_layout
@@ -31,14 +31,6 @@ class redim_graph(redim):
         if self.parent._edgepaths:
             new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
-
-
-def circular_layout(nodes):
-    N = len(nodes)
-    circ = np.pi/N*np.arange(N)*2
-    x = np.cos(circ)
-    y = np.sin(circ)
-    return (x, y, nodes)
 
 
 class layout_nodes(Operation):
@@ -75,10 +67,15 @@ class layout_nodes(Operation):
                 nodes = nodes[['x', 'y', 'index']]
             else:
                 nodes = circular_layout(nodes)
+        nodes = Nodes(nodes)
+        if element._nodes:
+            for d in element.nodes.vdims:
+                vals = element.nodes.dimension_values(d)
+                nodes = nodes.add_dimension(d, len(nodes.vdims), vals, vdim=True)
         if self.p.only_nodes:
-            return Nodes(nodes)
+            return nodes
         return element.clone((element.data, nodes))
-        
+
 
 
 class Graph(Dataset, Element2D):
@@ -123,15 +120,61 @@ class Graph(Dataset, Element2D):
         self._nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
-        if self._nodes is None and node_info:
-            nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
-            for d in node_info.dimensions():
+        if node_info is not None:
+            self._add_node_info(node_info)
+        self._validate()
+        self.redim = redim_graph(self, mode='dataset')
+
+
+    def _add_node_info(self, node_info):
+        nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
+        if isinstance(node_info, Nodes):
+            nodes = nodes.redim(**dict(zip(nodes.dimensions('key', label=True),
+                                           node_info.kdims)))
+
+        if not node_info.kdims and len(node_info) != len(nodes):
+            raise ValueError("The supplied node data does not match "
+                             "the number of nodes defined by the edges. "
+                             "Ensure that the number of nodes match"
+                             "or supply an index as the sole key "
+                             "dimension to allow the Graph to merge "
+                             "the data.")
+
+        if pd is None:
+            if node_info.kdims and len(node_info) != len(nodes):
+                raise ValueError("Graph cannot merge node data on index "
+                                 "dimension without pandas. Either ensure "
+                                 "the node data matches the order of nodes "
+                                 "as they appear in the edge data or install "
+                                 "pandas.")
+            dimensions = nodes.dimensions()
+            for d in node_info.vdims:
+                if d in dimensions:
+                    continue
                 nodes = nodes.add_dimension(d, len(nodes.vdims),
                                             node_info.dimension_values(d),
                                             vdim=True)
-            self._nodes = nodes
-        self._validate()
-        self.redim = redim_graph(self, mode='dataset')
+        else:
+            left_on = nodes.kdims[-1].name
+            node_info_df = node_info.dframe()
+            node_df = nodes.dframe()
+            if node_info.kdims:
+                idx = node_info.kdims[-1]
+            else:
+                idx = Dimension('index')
+                node_info_df = node_info_df.reset_index()
+            if 'index' in node_info_df.columns and not idx.name == 'index':
+                node_df = node_df.rename(columns={'index': '__index'})
+                left_on = '__index'
+            cols = [c for c in node_info_df.columns if c not in
+                    node_df.columns or c == idx.name]
+            node_info_df = node_info_df[cols]
+            node_df = pd.merge(node_df, node_info_df, left_on=left_on,
+                               right_on=idx.name, how='left')
+            nodes = nodes.clone(node_df, kdims=nodes.kdims[:2]+[idx],
+                                vdims=node_info.vdims)
+
+        self._nodes = nodes
 
 
     def _validate(self):
@@ -300,15 +343,10 @@ class Graph(Dataset, Element2D):
         """
         if self._edgepaths:
             return self._edgepaths
-        paths = []
-        for start, end in self.array(self.kdims):
-            start_ds = self.nodes[:, :, start]
-            end_ds = self.nodes[:, :, end]
-            if not len(start_ds) or not len(end_ds):
-                raise ValueError('Could not find node positions for all edges')
-            sx, sy = start_ds.array(start_ds.kdims[:2]).T
-            ex, ey = end_ds.array(end_ds.kdims[:2]).T
-            paths.append([(sx[0], sy[0]), (ex[0], ey[0])])
+        if pd is None:
+            paths = connect_edges(self)
+        else:
+            paths = connect_edges_pd(self)
         return EdgePaths(paths, kdims=self.nodes.kdims[:2])
 
 
@@ -354,4 +392,3 @@ class EdgePaths(Path):
     """
 
     group = param.String(default='EdgePaths', constant=True)
-

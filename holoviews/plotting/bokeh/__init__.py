@@ -186,18 +186,17 @@ options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
 
 # Graphs
-options.Graph = Options('style', node_size=20, node_fill_color=Cycle(),
+options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
                         node_line_color='black',
-                        node_selection_fill_color='limegreen',
                         node_nonselection_fill_color=Cycle(),
                         node_hover_line_color='black',
-                        node_hover_fill_color='indianred',
+                        node_hover_fill_color='limegreen',
                         node_nonselection_alpha=0.2,
                         edge_nonselection_alpha=0.2,
+                        node_nonselection_line_color='black',
                         edge_line_color='black', edge_line_width=2,
                         edge_nonselection_line_color='black',
-                        edge_hover_line_color='indianred',
-                        edge_selection_line_color='limegreen')
+                        edge_hover_line_color='limegreen')
 options.Nodes = Options('style', line_color='black', color=Cycle(),
                         size=20, nonselection_fill_color=Cycle(),
                         selection_fill_color='limegreen',

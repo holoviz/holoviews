@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, absolute_import
 from collections import defaultdict
 import traceback
 
@@ -7,6 +7,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store)
+from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
@@ -409,6 +410,59 @@ def map_colors(arr, crange, cmap, hex=True):
                 for c in arr]
     else:
         return arr
+
+
+def mplcmap_to_palette(cmap, ncolors=None):
+    """
+    Converts a matplotlib colormap to palette of RGB hex strings."
+    """
+    import matplotlib.cm as cm
+    colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+    if ncolors:
+        return [rgb2hex(colormap(i)) for i in np.linspace(0, 1, ncolors)]
+    return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
+
+
+def bokeh_palette_to_palette(cmap, ncolors=None):
+    from bokeh import palettes
+    # Process as bokeh palette
+    palette = getattr(palettes, cmap, None)
+    if palette is None:
+        raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
+    elif isinstance(palette, dict):
+         if ncolors in palette:
+             palette = palette[ncolors]
+         else:
+             palette = sorted(palette.items())[-1][1]
+    if ncolors:
+        return [palette[i%len(palette)] for i in range(ncolors)]
+    return palette
+
+
+def process_cmap(cmap, ncolors=None):
+    """
+    Convert valid colormap specifications to a list of colors.
+    """
+    if isinstance(cmap, Cycle):
+        palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
+    elif isinstance(cmap, list):
+        palette = cmap
+    elif isinstance(cmap, basestring):
+        try:
+            # Process as matplotlib colormap
+            palette = mplcmap_to_palette(cmap, ncolors)
+        except:
+            try:
+                palette = bokeh_palette_to_palette(cmap, ncolors)
+            except:
+                raise ValueError("Supplied cmap %s not found among "
+                                 "matplotlib or bokeh colormaps.")
+    else:
+        raise TypeError("cmap argument expects a list, Cycle or valid matplotlib "
+                        "colormap or bokeh palette, found %s." % cmap)
+    if ncolors:
+        return [palette[i%len(palette)] for i in range(ncolors)]
+    return palette
 
 
 def dim_axis_label(dimensions, separator=', '):
