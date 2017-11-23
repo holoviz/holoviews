@@ -161,7 +161,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
         g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = bokeh_renderer.get_plot(g)
-        print(plot.handles)
         cmapper = plot.handles['edge_colormapper']
         edge_source = plot.handles['multi_line_1_source']
         glyph = plot.handles['multi_line_1_glyph']

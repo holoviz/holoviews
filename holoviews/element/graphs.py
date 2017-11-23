@@ -9,7 +9,7 @@ from ..core.util import max_range
 from ..core.operation import Operation
 from .chart import Points
 from .path import Path
-from .util import split_path, pd
+from .util import split_path, pd, circular_layout, connect_edges, connect_edges_pd
 
 try:
     from datashader.layout import LayoutAlgorithm as ds_layout
@@ -31,66 +31,6 @@ class redim_graph(redim):
         if self.parent._edgepaths:
             new_data = new_data + (self.parent.edgepaths.redim(specs, **dimensions),)
         return redimmed.clone(new_data)
-
-
-def circular_layout(nodes):
-    """
-    Lay out nodes on a circle and add node index.
-    """
-    N = len(nodes)
-    circ = np.pi/N*np.arange(N)*2
-    x = np.cos(circ)
-    y = np.sin(circ)
-    return (x, y, nodes)
-
-
-def connect_edges_pd(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
-    segments directly connecting the source and target nodes. This
-    operation depends on pandas and is a lot faster than the pure
-    NumPy equivalent.
-    """
-    edges = graph.dframe()
-    edges.index.name = 'graph_edge_index'
-    edges = edges.reset_index()
-    nodes = graph.nodes.dframe()
-    src, tgt = graph.kdims
-    x, y, idx = graph.nodes.kdims[:3]
-
-    df = pd.merge(edges, nodes, left_on=[src.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'src_x', y.name: 'src_y'})
-
-    df = pd.merge(df, nodes, left_on=[tgt.name], right_on=[idx.name])
-    df = df.rename(columns={x.name: 'dst_x', y.name: 'dst_y'})
-    df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
-
-    edge_segments = []
-    N = len(nodes)
-    for i, edge in df.iterrows():
-        start = edge['src_x'], edge['src_y']
-        end = edge['dst_x'], edge['dst_y']
-        edge_segments.append(np.array([start, end]))
-    return edge_segments
-
-
-def connect_edges(graph):
-    """
-    Given a Graph element containing abstract edges compute edge
-    segments directly connecting the source and target nodes.  This
-    operation just uses internal HoloViews operations and will be a
-    lot slower than the pandas equivalent.
-    """
-    paths = []
-    for start, end in graph.array(graph.kdims):
-        start_ds = graph.nodes[:, :, start]
-        end_ds = graph.nodes[:, :, end]
-        if not len(start_ds) or not len(end_ds):
-            raise ValueError('Could not find node positions for all edges')
-        start = start_ds.array(start_ds.kdims[:2])
-        end = end_ds.array(end_ds.kdims[:2])
-        paths.append(np.array([start[0], end[0]]))
-    return paths
 
 
 class layout_nodes(Operation):

@@ -7,7 +7,7 @@ import param
 
 from ..core import (HoloMap, DynamicMap, CompositeOverlay, Layout,
                     Overlay, GridSpace, NdLayout, Store)
-from ..core.options import Cycle, abbreviated_exception
+from ..core.options import Cycle
 from ..core.spaces import get_nested_streams
 from ..core.util import (match_spec, is_number, wrap_tuple, basestring,
                          get_overlay_spec, unique_iterator)
