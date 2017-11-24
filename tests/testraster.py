@@ -3,7 +3,7 @@ Unit tests of Raster elements
 """
 
 import numpy as np
-from holoviews.element import Raster, Image, Curve
+from holoviews.element import Raster, Image, Curve, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase
 
 class TestRaster(ComparisonTestCase):
@@ -56,3 +56,22 @@ class TestRaster(ComparisonTestCase):
         Image(None)
         Image(np.array([]))
         Image(np.zeros((0, 0)))
+
+
+
+class TestQuadMesh(ComparisonTestCase):
+
+    def setUp(self):
+        self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
+
+    def test_cast_image_to_quadmesh(self):
+        img = Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
+        qmesh = QuadMesh(img)
+        self.assertEqual(qmesh.data[0], np.array([-0.5, -0.166667, 0.166667, 0.5]))
+        self.assertEqual(qmesh.data[1], np.array([-0.5, 0, 0.5]))
+        self.assertEqual(qmesh.data[2], self.array1[::-1])
+        self.assertEqual(qmesh.kdims, img.kdims)
+        self.assertEqual(qmesh.vdims, img.vdims)
+        self.assertEqual(qmesh.group, img.group)
+        self.assertEqual(qmesh.label, img.label)
+        
