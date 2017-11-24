@@ -403,15 +403,20 @@ class TriMesh(Graph):
     stored on the TriMesh element itself, the node positions stored on
     a Nodes element and the concrete paths making up each triangle
     generated when required by accessing the edgepaths.
+
+    Unlike a Graph each simplex is represented as the node indices of
+    the three corners of each triangle.
     """
 
-    kdims = param.List(default=['node1', 'node2', 'node3'])
+    kdims = param.List(default=['node1', 'node2', 'node3'],
+                       bounds=(3, 3), doc="""
+        Dimensions declaring the node indices of each triangle.""")
 
     group = param.String(default='TriMesh', constant=True)
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
-            data = data + (None,)* (3-len(data))
+            data = data + (None,)*(3-len(data))
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
@@ -422,17 +427,21 @@ class TriMesh(Graph):
         if isinstance(nodes, Nodes):
             pass
         elif isinstance(nodes, Points):
+            # Add index to make it a valid Nodes object
             nodes = Nodes(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
             try:
+                # Try assuming data contains indices (3 columns)
                 nodes = Nodes(nodes)
             except:
-                points = Dataset(Points(nodes)).add_dimension('index', 2, np.arange(len(nodes)))
-                nodes = Nodes(points)
-        if not isinstance(nodes, Nodes):
-            raise  ValueError("Nodes argument could not be interpreted, expected "
-                              "data with two or three columns representing the "
-                              "x/y positions and optionally the node indices.")
+                # Try assuming data contains just coordinates (2 columns)
+                try:
+                    points = Points(nodes)
+                    nodes = Nodes(Dataset(points).add_dimension('index', 2, np.arange(len(nodes))))
+                except:
+                    raise ValueError("Nodes argument could not be interpreted, expected "
+                                     "data with two or three columns representing the "
+                                     "x/y positions and optionally the node indices.")
         if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
             edgepaths = EdgePaths(edgepaths)
         super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
@@ -454,3 +463,22 @@ class TriMesh(Graph):
         edgepaths = EdgePaths(paths, kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
+
+    def select(self, selection_specs=None, selection_mode='edges', **selection):
+        """
+        Allows selecting data by the slices, sets and scalar values
+        along a particular dimension. The indices should be supplied as
+        keywords mapping between the selected dimension and
+        value. Additionally selection_specs (taking the form of a list
+        of type.group.label strings, types or functions) may be
+        supplied, which will ensure the selection is only applied if the
+        specs match the selected object.
+
+        Selecting by a node dimensions selects all edges and nodes that are
+        connected to the selected nodes. To select only edges between the
+        selected nodes set the selection_mode to 'nodes'.
+        """
+        self.edgepaths
+        return super(TriMesh, self).select(selection_specs=None,
+                                           selection_mode='edges',
+                                           **selection)
