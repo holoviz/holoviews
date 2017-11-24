@@ -270,9 +270,46 @@ class ChordPlot(GraphPlot):
         artists.update(super(ChordPlot, self).init_artists(ax, plot_args, plot_kwargs))
         if 'text' in plot_args:
             fontsize = plot_kwargs.get('text_font_size', 8)
+            labels = []
             for (x, y, l, a) in zip(*plot_args['text']):
-                ax.annotate(l, xy=(x, y), xycoords='data', rotation=a,
-                            horizontalalignment='left', fontsize=fontsize,
-                            verticalalignment='center', rotation_mode='anchor')
-
+                label = ax.annotate(l, xy=(x, y), xycoords='data', rotation=a,
+                                    horizontalalignment='left', fontsize=fontsize,
+                                    verticalalignment='center', rotation_mode='anchor')
+                labels.append(label)
+            artists['labels'] = labels
         return artists
+
+    def _update_arcs(self, element, data, style):
+        edges = self.handles['arcs']
+        paths = data['arcs']
+        edges.set_paths(paths)
+        edges.set_visible(style.get('visible', True))
+
+
+    def _update_labels(self, ax, element, data, style):
+        labels = self.handles.get('labels', [])
+        for label in labels:
+            try:
+                label.remove()
+            except:
+                pass
+        if 'text' not in data:
+            self.handles['labels'] = []
+            return
+        labels = []
+        fontsize = style.get('text_font_size', 8)
+        for (x, y, l, a) in zip(*data['text']):
+            label = ax.annotate(l, xy=(x, y), xycoords='data', rotation=a,
+                                horizontalalignment='left', fontsize=fontsize,
+                                verticalalignment='center', rotation_mode='anchor')
+            labels.append(label)
+        self.handles['labels'] = labels
+
+
+    def update_handles(self, key, axis, element, ranges, style):
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        self._update_nodes(element, data, style)
+        self._update_edges(element, data, style)
+        self._update_arcs(element, data, style)
+        self._update_labels(axis, element, data, style)
+        return axis_kwargs

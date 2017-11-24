@@ -7,7 +7,8 @@ from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
                           EdgesAndLinkedNodes, Patches, Bezier)
 
 from ...core.data import Dataset
-from ...core.util import basestring, dimension_sanitizer, unique_array, max_range
+from ...core.util import (basestring, dimension_sanitizer, unique_array,
+                          max_range)
 from ...core.options import Cycle
 from .chart import ColorbarPlot, PointPlot
 from .element import (CompositeElementPlot, LegendPlot, line_properties,
@@ -117,7 +118,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 factors = (str(f) for f in factors)
             factors = list(factors)
             colors = process_cmap(cycle or cmap, len(factors))
-
         if field not in edge_data:
             edge_data[field] = cvals
         edge_style = dict(style, cmap=cmap)
