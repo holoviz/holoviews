@@ -457,7 +457,7 @@ class TriMesh(Graph):
         if self._edgepaths:
             return self._edgepaths
 
-        simplices = self.array([0, 1, 2])
+        simplices = self.array([0, 1, 2]).astype(np.int32)
         pts = self.nodes.array([0, 1])
         paths = [tri[[0, 1, 2, 0], :] for tri in pts[simplices]]
         edgepaths = EdgePaths(paths, kdims=self.nodes.kdims[:2])
