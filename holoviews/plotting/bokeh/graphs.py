@@ -2,7 +2,7 @@ import param
 import numpy as np
 from bokeh.models import HoverTool, ColumnDataSource
 from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
-                          EdgesAndLinkedNodes)
+                          EdgesAndLinkedNodes, Patches)
 
 from ...core.util import basestring, dimension_sanitizer, unique_array
 from ...core.options import Cycle
@@ -33,10 +33,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         A list of plugin tools to use on the plot.""")
 
     # Map each glyph to a style group
-    _style_groups = {'scatter': 'node', 'multi_line': 'edge'}
+    _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge'}
 
-    style_opts = (['edge_'+p for p in line_properties] +\
-                  ['node_'+p for p in fill_properties+line_properties]+['node_size', 'cmap', 'edge_cmap'])
+    style_opts = (['edge_'+p for p in line_properties] +
+                  ['node_'+p for p in fill_properties+line_properties] +
+                  ['node_size', 'cmap', 'edge_cmap'])
+
+    # Filled is only supported for subclasses
+    filled = False
 
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
@@ -101,9 +105,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         mapper = self._get_colormapper(cdim, element, ranges, edge_style,
                                        factors, colors, 'edge_colormapper')
         transform = {'field': field, 'transform': mapper}
-        edge_mapping['edge_line_color'] = transform
-        edge_mapping['edge_nonselection_line_color'] = transform
-        edge_mapping['edge_selection_line_color'] = transform
+        color_type = 'fill_color' if self.filled else 'line_color'
+        edge_mapping['edge_'+color_type] = transform
+        edge_mapping['edge_nonselection_'+color_type] = transform
+        edge_mapping['edge_selection_'+color_type] = transform
 
 
     def get_data(self, element, ranges, style):
@@ -170,8 +175,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             elif self.inspection_policy == 'edges':
                 for d in element.dimensions():
                     path_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
-        data = {'scatter_1': point_data, 'multi_line_1': path_data, 'layout': layout}
-        mapping = {'scatter_1': point_mapping, 'multi_line_1': edge_mapping}
+        edge_glyph = 'patches_1' if self.filled else 'multi_line_1'
+        data = {'scatter_1': point_data, edge_glyph: path_data, 'layout': layout}
+        mapping = {'scatter_1': point_mapping, edge_glyph: edge_mapping}
         return data, mapping, style
 
 
@@ -190,11 +196,12 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
         self.handles['previous_id'] = element._plot_id
+        edge_glyph = 'patches_1' if self.filled else 'multi_line_1'
 
         properties = {}
         mappings = {}
         for key in list(mapping):
-            if not any(glyph in key for glyph in ('scatter_1', 'multi_line_1')):
+            if not any(glyph in key for glyph in ('scatter_1', edge_glyph)):
                 continue
             source = self._init_datasource(data.pop(key, {}))
             self.handles[key+'_source'] = source
@@ -212,7 +219,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         # Define static layout
         layout = StaticLayoutProvider(graph_layout=layout)
         node_source = self.handles['scatter_1_source']
-        edge_source = self.handles['multi_line_1_source']
+        edge_source = self.handles[edge_glyph+'_source']
         renderer = plot.graph(node_source, edge_source, layout, **properties)
 
         # Initialize GraphRenderer
@@ -233,9 +240,19 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         self.handles['layout_source'] = layout
         self.handles['glyph_renderer'] = renderer
         self.handles['scatter_1_glyph_renderer'] = renderer.node_renderer
-        self.handles['multi_line_1_glyph_renderer'] = renderer.edge_renderer
+        self.handles[edge_glyph+'_glyph_renderer'] = renderer.edge_renderer
         self.handles['scatter_1_glyph'] = renderer.node_renderer.glyph
-        self.handles['multi_line_1_glyph'] = renderer.edge_renderer.glyph
+        if self.filled:
+            allowed_properties = Patches.properties()
+            for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
+                glyph = getattr(renderer.edge_renderer, glyph_type+'glyph', None)
+                if glyph is None:
+                    continue
+                props = self._process_properties(edge_glyph, properties, mappings)
+                filtered = self._filter_properties(props, glyph_type, allowed_properties)
+                patches = Patches(**dict(filtered, xs='xs', ys='ys'))
+                glyph = setattr(renderer.edge_renderer, glyph_type+'glyph', patches)
+        self.handles[edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
             self.handles['hover'].renderers.append(renderer)
 
@@ -252,6 +269,13 @@ class NodePlot(PointPlot):
 
 
 class TriMeshPlot(GraphPlot):
+
+    filled = param.Boolean(default=False, doc="""
+        Whether the triangles should be drawn as filled.""")
+
+    style_opts = (['edge_'+p for p in line_properties+fill_properties] +
+                  ['node_'+p for p in fill_properties+line_properties] +
+                  ['node_size', 'cmap', 'edge_cmap'])
 
     def get_data(self, element, ranges, style):
         # Ensure the edgepaths for the triangles are generated

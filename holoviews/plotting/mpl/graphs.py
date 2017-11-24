@@ -1,7 +1,7 @@
 import param
 import numpy as np
 
-from matplotlib.collections import LineCollection
+from matplotlib.collections import LineCollection, PolyCollection
 
 from ...core.options import Cycle
 from ...core.util import basestring, unique_array, search_indices
@@ -25,6 +25,8 @@ class GraphPlot(ColorbarPlot):
                   'edge_cmap']
 
     _style_groups = ['node', 'edge']
+
+    filled = False
 
     def _compute_styles(self, element, ranges, style):
         elstyle = self.lookup_options(element, 'style')
@@ -81,6 +83,7 @@ class GraphPlot(ColorbarPlot):
             style['edge_clim'] = (style.pop('edge_vmin'), style.pop('edge_vmax'))
         return style
 
+
     def get_data(self, element, ranges, style):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         pxs, pys = (element.nodes.dimension_values(i) for i in range(2))
@@ -92,6 +95,7 @@ class GraphPlot(ColorbarPlot):
             paths = [p[:, ::-1] for p in paths]
         return {'nodes': (pxs, pys), 'edges': paths}, style, {'dimensions': dims}
 
+
     def get_extents(self, element, ranges):
         """
         Extents are set to '' and None because x-axis is categorical and
@@ -100,6 +104,7 @@ class GraphPlot(ColorbarPlot):
         x0, x1 = element.nodes.range(0)
         y0, y1 = element.nodes.range(1)
         return (x0, y0, x1, y1)
+
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         # Draw edges
@@ -110,7 +115,13 @@ class GraphPlot(ColorbarPlot):
                      if not any(k.startswith(p) for p in groups)
                      and k not in color_opts}
         paths = plot_args['edges']
-        edges = LineCollection(paths, **edge_opts)
+        if self.filled:
+            coll = PolyCollection
+            if 'colors' in edge_opts:
+                edge_opts['facecolors'] = edge_opts.pop('colors')
+        else:
+            coll = LineCollection
+        edges = coll(paths, **edge_opts)
         ax.add_collection(edges)
 
         # Draw nodes
@@ -150,7 +161,10 @@ class GraphPlot(ColorbarPlot):
                 if 'norm' in style:
                     edges.norm = style['edge_norm']
             elif 'edge_colors' in style:
-                edges.set_edgecolors(style['edge_colors'])
+                if self.filled:
+                    edges.set_facecolors(style['edge_colors'])
+                else:
+                    edges.set_edgecolors(style['edge_colors'])
 
 
     def update_handles(self, key, axis, element, ranges, style):
@@ -158,3 +172,12 @@ class GraphPlot(ColorbarPlot):
         self._update_nodes(element, data, style)
         self._update_edges(element, data, style)
         return axis_kwargs
+
+
+
+class TriMeshPlot(GraphPlot):
+
+    filled = param.Boolean(default=False, doc="""
+        Whether the triangles should be drawn as filled.""")
+
+    style_opts = GraphPlot.style_opts + ['edge_facecolors']
