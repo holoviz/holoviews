@@ -671,6 +671,26 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 properties['legend'] = value(legend)
         return properties
 
+
+    def _filter_properties(self, properties, glyph_type, allowed):
+        glyph_props = dict(properties)
+        for gtype in ((glyph_type, '') if glyph_type else ('',)):
+            for prop in ('color', 'alpha'):
+                glyph_prop = properties.get(gtype+prop)
+                if glyph_prop and ('line_'+prop not in glyph_props or gtype):
+                    glyph_props['line_'+prop] = glyph_prop
+                if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
+                    glyph_props['fill_'+prop] = glyph_prop
+
+            props = {k[len(gtype):]: v for k, v in glyph_props.items()
+                     if k.startswith(gtype)}
+            if self.batched:
+                glyph_props = dict(props, **glyph_props)
+            else:
+                glyph_props.update(props)
+        return {k: v for k, v in glyph_props.items() if k in allowed}
+
+
     def _update_glyph(self, renderer, properties, mapping, glyph):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
@@ -680,24 +700,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 glyph = getattr(renderer, glyph_type+'glyph', None)
             if not glyph or (not renderer and glyph_type):
                 continue
-            glyph_props = dict(merged)
-
-            for gtype in ((glyph_type, '') if glyph_type else ('',)):
-                for prop in ('color', 'alpha'):
-                    glyph_prop = merged.get(gtype+prop)
-                    if glyph_prop and ('line_'+prop not in glyph_props or gtype):
-                        glyph_props['line_'+prop] = glyph_prop
-                    if glyph_prop and ('fill_'+prop not in glyph_props or gtype):
-                        glyph_props['fill_'+prop] = glyph_prop
-
-                props = {k[len(gtype):]: v for k, v in glyph_props.items()
-                         if k.startswith(gtype)}
-                if self.batched:
-                    glyph_props = dict(props, **glyph_props)
-                else:
-                    glyph_props.update(props)
-            filtered = {k: v for k, v in glyph_props.items()
-                        if k in allowed_properties}
+            filtered = self._filter_properties(merged, glyph_type, allowed_properties)
             glyph.update(**filtered)
 
 
@@ -945,7 +948,7 @@ class CompositeElementPlot(ElementPlot):
                 source_cache[id(ds_data)] = source
             self.handles[key+'_source'] = source
             properties = self._glyph_properties(plot, element, source, ranges, style)
-            properties = self._process_properties(key, properties)
+            properties = self._process_properties(key, properties, mapping.get(key, {}))
             with abbreviated_exception():
                 renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
             self.handles[key+'_glyph'] = glyph
@@ -959,13 +962,16 @@ class CompositeElementPlot(ElementPlot):
                 self._update_glyph(renderer, properties, mapping.get(key, {}), glyph)
 
 
-    def _process_properties(self, key, properties):
+    def _process_properties(self, key, properties, mapping):
         key = '_'.join(key.split('_')[:-1]) if '_' in key else key
         style_group = self._style_groups[key]
         group_props = {}
         for k, v in properties.items():
             if k in self.style_opts:
-                if k.split('_')[0] == style_group:
+                group = k.split('_')[0]
+                if group == style_group:
+                    if k in mapping:
+                        v = mapping[k]
                     k = '_'.join(k.split('_')[1:])
                 else:
                     continue
@@ -1002,7 +1008,7 @@ class CompositeElementPlot(ElementPlot):
 
             if glyph:
                 properties = self._glyph_properties(plot, element, source, ranges, style)
-                properties = self._process_properties(key, properties)
+                properties = self._process_properties(key, properties, mapping[key])
                 renderer = self.handles.get(key+'_glyph_renderer')
                 with abbreviated_exception():
                     self._update_glyph(renderer, properties, mapping[key], glyph)
