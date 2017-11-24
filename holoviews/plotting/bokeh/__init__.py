@@ -199,6 +199,15 @@ options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
                         edge_line_color='black', edge_line_width=2,
                         edge_nonselection_line_color='black',
                         edge_hover_line_color='limegreen')
+options.TriMesh = Options('style', node_size=5, node_line_color='black',
+                          node_fill_color='white', edge_line_color='black',
+                          node_hover_fill_color='limegreen',
+                          edge_hover_line_color='limegreen',
+                          edge_nonselection_alpha=0.2,
+                          edge_nonselection_line_color='black',
+                          node_nonselection_alpha=0.2,
+                          edge_line_width=1)
+options.TriMesh = Options('plot', tools=[])
 options.Nodes = Options('style', line_color='black', color=Cycle(),
                         size=20, nonselection_fill_color=Cycle(),
                         selection_fill_color='limegreen',
