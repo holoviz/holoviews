@@ -124,20 +124,24 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                       for k, (x, y) in zip(index, node_positions)}
         point_data = {'index': index}
         cycle = self.lookup_options(element, 'style').kwargs.get('node_color')
-        colors = cycle if isinstance(cycle, Cycle) else None
+        if isinstance(cycle, Cycle):
+            style.pop('node_color', None)
+            colors = cycle
+        else:
+            colors = None
         cdata, cmapping = self._get_color_data(
             element.nodes, ranges, style, name='node_fill_color',
             colors=colors, int_categories=True
         )
         point_data.update(cdata)
         point_mapping = cmapping
-        edge_mapping = {}
         if 'node_fill_color' in point_mapping:
             style = {k: v for k, v in style.items() if k not in
                      ['node_fill_color', 'node_nonselection_fill_color']}
             point_mapping['node_nonselection_fill_color'] = point_mapping['node_fill_color']
 
         # Get edge data
+        edge_mapping = {}
         nan_node = index.max()+1
         start, end = (element.dimension_values(i) for i in range(2))
         if nodes.dtype.kind == 'f':

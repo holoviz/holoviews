@@ -124,26 +124,37 @@ class GraphPlot(ColorbarPlot):
 
         return {'nodes': nodes, 'edges': edges}
 
-    def update_handles(self, key, axis, element, ranges, style):
+
+    def _update_nodes(self, element, data, style):
         nodes = self.handles['nodes']
-        data, style, axis_kwargs = self.get_data(element, ranges, style)
         xs, ys = data['nodes']
         nodes.set_offsets(np.column_stack([xs, ys]))
         cdim = element.nodes.get_dimension(self.color_index)
-        if cdim:
+        if cdim and 'c' in style:
             nodes.set_clim((style['vmin'], style['vmax']))
             nodes.set_array(style['c'])
             if 'norm' in style:
                 nodes.norm = style['norm']
 
+
+    def _update_edges(self, element, data, style):
         edges = self.handles['edges']
         paths = data['edges']
         edges.set_paths(paths)
         edges.set_visible(style.get('visible', True))
         cdim = element.get_dimension(self.edge_color_index)
-        if cdim and 'edge_c' in edges:
-            edges.set_clim((style['edge_vmin'], style['edge_vmax']))
-            edges.set_array(style['edge_c'])
-            if 'norm' in style:
-                edges.norm = style['edge_norm']
+        if cdim:
+            if 'edge_array' in style:
+                edges.set_clim(style['edge_clim'])
+                edges.set_array(style['edge_array'])
+                if 'norm' in style:
+                    edges.norm = style['edge_norm']
+            elif 'edge_colors' in style:
+                edges.set_edgecolors(style['edge_colors'])
+
+
+    def update_handles(self, key, axis, element, ranges, style):
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        self._update_nodes(element, data, style)
+        self._update_edges(element, data, style)
         return axis_kwargs
