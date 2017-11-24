@@ -4,8 +4,8 @@ from unittest import SkipTest
 
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.core.options import Store
-from holoviews.element import Graph, circular_layout
+from holoviews.core.options import Store, Cycle
+from holoviews.element import Graph, TriMesh, circular_layout
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import comms
 
@@ -14,6 +14,7 @@ try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
     from holoviews.plotting.mpl import OverlayPlot
+    from matplotlib.collections import LineCollection, PolyCollection
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None
@@ -97,3 +98,69 @@ class MplGraphPlotTests(ComparisonTestCase):
         edges = plot.handles['edges']
         self.assertEqual(edges.get_array(), self.weights)
         self.assertEqual(edges.get_clim(), (self.weights.min(), self.weights.max()))
+
+
+
+class TestMplTriMeshPlots(ComparisonTestCase):
+
+    def setUp(self):
+        if not mpl_renderer:
+            raise SkipTest('Matplotlib tests require matplotlib to be available')
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'matplotlib'
+        self.default_comm = mpl_renderer.comms['default']
+        mpl_renderer.comms['default'] = (comms.Comm, '')
+
+        self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
+        self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
+        self.trimesh = TriMesh((self.simplices, self.nodes))
+        self.trimesh_weighted = TriMesh((self.simplices, self.nodes), vdims='weight')
+
+    def tearDown(self):
+        mpl_renderer.comms['default'] = self.default_comm
+        Store.current_backend = self.previous_backend
+
+    def test_plot_simple_trimesh(self):
+        plot = mpl_renderer.get_plot(self.trimesh)
+        nodes = plot.handles['nodes']
+        edges = plot.handles['edges']
+        self.assertIsInstance(edges, LineCollection)
+        self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
+        self.assertEqual([p.vertices for p in edges.get_paths()],
+                         [p.array() for p in self.trimesh.edgepaths.split()])
+
+    def test_plot_simple_trimesh_filled(self):
+        plot = mpl_renderer.get_plot(self.trimesh.opts(plot=dict(filled=True)))
+        nodes = plot.handles['nodes']
+        edges = plot.handles['edges']
+        self.assertIsInstance(edges, PolyCollection)
+        self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
+        self.assertEqual([p.vertices for p in edges.get_paths()],
+                         [p.array()[[0, 1, 2, 3, 3]]
+                          for p in self.trimesh.edgepaths.split()])
+
+    def test_plot_trimesh_colored_edges(self):
+        opts = dict(plot=dict(edge_color_index='weight'), style=dict(edge_cmap='Greys'))
+        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
+        edges = plot.handles['edges']
+        colors = np.array([[ 1.,  1.,  1.,  1.],
+                           [ 0.,  0.,  0.,  1.]])
+        self.assertEqual(edges.get_edgecolors(), colors)
+
+    def test_plot_trimesh_categorically_colored_edges(self):
+        opts = dict(plot=dict(edge_color_index='node1'), style=dict(edge_color=Cycle('Set1')))
+        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
+        edges = plot.handles['edges']
+        colors = np.array([[0.894118, 0.101961, 0.109804, 1.],
+                           [0.215686, 0.494118, 0.721569, 1.]])
+        self.assertEqual(edges.get_edgecolors(), colors)
+
+    def test_plot_trimesh_categorically_colored_edges_filled(self):
+        opts = dict(plot=dict(edge_color_index='node1', filled=True),
+                    style=dict(edge_color=Cycle('Set1')))
+        plot = mpl_renderer.get_plot(self.trimesh_weighted.opts(**opts))
+        edges = plot.handles['edges']
+        colors = np.array([[0.894118, 0.101961, 0.109804, 1.],
+                           [0.215686, 0.494118, 0.721569, 1.]])
+        self.assertEqual(edges.get_facecolors(), colors)
+

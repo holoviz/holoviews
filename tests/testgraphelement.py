@@ -3,8 +3,10 @@ Unit tests of Graph Element.
 """
 import numpy as np
 from holoviews.core.data import Dataset
+from holoviews.element.chart import Points
 from holoviews.element.graphs import (
-    Graph, Nodes, circular_layout, connect_edges, connect_edges_pd)                                  
+    Graph, Nodes, EdgePaths, TriMesh, circular_layout, connect_edges,
+    connect_edges_pd)
 from holoviews.element.comparison import ComparisonTestCase
 
 
@@ -123,3 +125,37 @@ class GraphTests(ComparisonTestCase):
         redimmed = graph.redim(x='x2', y='y2')
         self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
         self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
+
+
+class TriMeshTests(ComparisonTestCase):
+
+    def setUp(self):
+        self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
+        self.simplices = [(0, 1, 2), (1, 2, 3)]
+
+    def test_trimesh_constructor(self):
+        trimesh = TriMesh((self.simplices, self.nodes))
+        self.assertEqual(trimesh.array(), np.array(self.simplices))
+        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+
+    def test_trimesh_constructor_tuple_nodes(self):
+        nodes = tuple(zip(*self.nodes))[:2]
+        trimesh = TriMesh((self.simplices, nodes))
+        self.assertEqual(trimesh.array(), np.array(self.simplices))
+        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+
+    def test_trimesh_constructor_point_nodes(self):
+        trimesh = TriMesh((self.simplices, Points([n[:2] for n in self.nodes])))
+        self.assertEqual(trimesh.array(), np.array(self.simplices))
+        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+
+    def test_trimesh_edgepaths(self):
+        trimesh = TriMesh((self.simplices, self.nodes))
+        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0)]),
+                 np.array([(0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
+        for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths):
+            self.assertEqual(p1, p2)
+
+    def test_trimesh_select(self):
+        trimesh = TriMesh((self.simplices, self.nodes)).select(x=(0.1, None))
+        self.assertEqual(trimesh.array(), np.array(self.simplices[1:]))

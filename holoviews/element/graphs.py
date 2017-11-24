@@ -437,7 +437,7 @@ class TriMesh(Graph):
                 # Try assuming data contains just coordinates (2 columns)
                 try:
                     points = Points(nodes)
-                    nodes = Nodes(Dataset(points).add_dimension('index', 2, np.arange(len(nodes))))
+                    nodes = Nodes(Dataset(points).add_dimension('index', 2, np.arange(len(points))))
                 except:
                     raise ValueError("Nodes argument could not be interpreted, expected "
                                      "data with two or three columns representing the "
@@ -464,7 +464,7 @@ class TriMesh(Graph):
         self._edgepaths = edgepaths
         return edgepaths
 
-    def select(self, selection_specs=None, selection_mode='edges', **selection):
+    def select(self, selection_specs=None, **selection):
         """
         Allows selecting data by the slices, sets and scalar values
         along a particular dimension. The indices should be supplied as
@@ -473,12 +473,8 @@ class TriMesh(Graph):
         of type.group.label strings, types or functions) may be
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
-
-        Selecting by a node dimensions selects all edges and nodes that are
-        connected to the selected nodes. To select only edges between the
-        selected nodes set the selection_mode to 'nodes'.
         """
         self.edgepaths
         return super(TriMesh, self).select(selection_specs=None,
-                                           selection_mode='edges',
+                                           selection_mode='nodes',
                                            **selection)

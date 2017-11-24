@@ -42,6 +42,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Filled is only supported for subclasses
     filled = False
 
+    # Declares which columns in the data refer to node indices
+    _node_indices = [0, 1]
+
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
             dims = element.nodes.dimensions()
@@ -77,7 +80,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         idx = element.get_dimension_index(cdim)
         field = dimension_sanitizer(cdim.name)
         cvals = element.dimension_values(cdim)
-        if idx in [0, 1]:
+        if idx in self._node_indices:
             factors = element.nodes.dimension_values(2, expanded=False)
         elif idx == 2 and cvals.dtype.kind in 'if':
             factors = None
@@ -86,7 +89,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
-        if factors is None or (factors.dtype.kind == 'f' and idx not in [0, 1]):
+        if factors is None or (factors.dtype.kind in 'if' and idx not in self._node_indices):
             colors, factors = None, None
         else:
             if factors.dtype.kind == 'f':
@@ -276,6 +279,9 @@ class TriMeshPlot(GraphPlot):
     style_opts = (['edge_'+p for p in line_properties+fill_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
                   ['node_size', 'cmap', 'edge_cmap'])
+
+    # Declares that three columns in TriMesh refer to edges
+    _node_indices = [0, 1, 2]
 
     def get_data(self, element, ranges, style):
         # Ensure the edgepaths for the triangles are generated
