@@ -613,14 +613,21 @@ class layout_chords(Operation):
             src_area, tgt_area = all_areas[src_idx[i]], all_areas[tgt_idx[i]]
             subpaths = []
             for _ in range(int(values[i])):
+                if not src_area or not tgt_area:
+                    continue
                 x0, y0 = src_area.pop()
+                if not tgt_area:
+                    continue
                 x1, y1 = tgt_area.pop()
                 b = quadratic_bezier((x0, y0), (x1, y1), (x0/2., y0/2.),
                                      (x1/2., y1/2.), steps=self.p.chord_samples)
                 subpaths.append(b)
                 subpaths.append(empty)
+            subpaths = [p for p in subpaths[:-1] if len(p)]
             if subpaths:
-                paths.append(np.concatenate(subpaths[:-1]))
+                paths.append(np.concatenate(subpaths))
+            else:
+                paths.append(np.array([]))
 
         # Construct Chord element from components
         if nodes_el:
