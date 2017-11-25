@@ -624,8 +624,13 @@ class QuadMesh(Raster):
     vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
     def __init__(self, data, kdims=None, vdims=None, **params):
-        data = self._process_data(data)
-        Element2D.__init__(self, data, kdims=kdims, vdims=vdims, **params)
+        data, kwargs = self._process_data(data)
+        params = dict(kwargs, **params)
+        if kdims is not None:
+            params['kdims'] = kdims
+        if vdims is not None:
+            params['vdims'] = vdims
+        Element2D.__init__(self, data, **params)
         self.data = self._validate_data(self.data)
         self._grid = self.data[0].ndim == 1
 
@@ -639,15 +644,17 @@ class QuadMesh(Raster):
             x = data.dimension_values(0, expanded=False)
             y = data.dimension_values(1, expanded=False)
             zarray = data.dimension_values(2, flat=False)
+            params = util.get_param_values(data)
         else:
-            data = tuple(np.array(el) for el in data)
+            data = tuple(np.asarray(el) for el in data)
             x, y, zarray = data
+            params = {}
         ys, xs = zarray.shape
         if x.ndim == 1 and len(x) == xs:
             x = compute_edges(x)
         if y.ndim == 1 and len(y) == ys:
             y = compute_edges(y)
-        return (x, y, zarray)
+        return (x, y, zarray), params
 
 
     @property
