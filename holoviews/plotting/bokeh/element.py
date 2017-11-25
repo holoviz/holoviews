@@ -668,8 +668,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         for k, v in style.items():
             if not isinstance(v, op):
                 continue
-            source.data[k] = v.eval(element)
-            style[k] = k
+            val = v.eval(element)
+            if np.isscalar(val):
+                key = val
+            else:
+                key = k
+                source.data[k] = val
+            style[k] = key
 
         properties = dict(style, source=source)
         if self.show_legend:
