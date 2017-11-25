@@ -52,6 +52,19 @@ class op(object):
     def __rsub__(self, other):      return op(self, operator.sub, other, True)
     def __rtruediv__(self, other):  return op(self, operator.truediv, other, True)
 
+    ## NumPy operations
+    def __array_ufunc__(self, *args, **kwargs):
+        ufunc = getattr(args[0], args[1])
+        kwargs = {k: v for k, v in kwargs.items() if v is not None}
+        return op(self, ufunc, **kwargs)
+    def max(self, **kwargs): return op(self, np.max, **kwargs)
+    def mean(self, **kwargs): return op(self, np.mean, **kwargs)
+    def min(self, **kwargs): return op(self, np.min, **kwargs)
+    def sum(self, **kwargs): return op(self, np.sum, **kwargs)
+    def std(self, **kwargs): return op(self, np.std, **kwargs)
+    def std(self, **kwargs): return op(self, np.std, **kwargs)
+    def var(self, **kwargs): return op(self, np.var, **kwargs)
+
     def eval(self, dataset):
         expanded = not (dataset.interface.gridded and self.dimension in dataset.kdims)
         data = dataset.dimension_values(self.dimension, expanded=expanded, flat=False)
