@@ -26,6 +26,7 @@ from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...element import Graph
 from ...streams import Buffer
+from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
@@ -664,6 +665,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _glyph_properties(self, plot, element, source, ranges, style):
+        for k, v in style.items():
+            if not isinstance(v, op):
+                continue
+            source.data[k] = v.eval(element)
+            style[k] = k
+
         properties = dict(style, source=source)
         if self.show_legend:
             if self.overlay_dims:
