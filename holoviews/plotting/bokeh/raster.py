@@ -114,12 +114,12 @@ class HSVPlot(RGBPlot):
 class HeatMapPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
-        Dictionary to specify colors for clipped values, allows
-        setting color for NaN values and for values above and below
-        the min and max value. The min, max or NaN color may specify
-        an RGB(A) color as a color hex string of the form #FFFFFF or
-        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
-        the range 0-1 or a named HTML color.""")
+        Dictionary to specify colors for clipped values. 
+        Allows setting color for NaN values and for values above and below
+        the min and max value. The min, max, or NaN color may specify
+        an RGB(A) color as a either (1) a color hex string of the form 
+        #FFFFFF or #FFFFFFFF, (2) a length-3 or length-4 tuple specifying
+        values in the range 0-1, or (3) a named HTML color.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
@@ -169,8 +169,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
 
     start_angle = param.Number(default=np.pi/2, doc="""
-        Define starting angle of the first annulars. By default, beings at 
-        12 o clock.""")
+        Define starting angle of the first annulus segment. By default, begins at 
+        12 o'clock.""")
 
     padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
         Define the radius fraction of inner, empty space.""")
@@ -204,9 +204,9 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _extract_implicit_order(array):
-        """Iterate given `array` and extract unique values in
+        """
+        Iterate given `array` and extract unique values in
         existing order.
-
         """
 
         order = []
@@ -222,7 +222,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _map_order_to_bins(start, end, order, reverse=False):
-        """Map elements from given `order` array to bins ranging from `start`
+        """
+        Map elements from given `order` array to bins ranging from `start`
         to `end`.
         """
 
@@ -240,8 +241,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _get_bounds(mapper, values):
-        """Extract first and second value from tuples of mapped bins.
-
+        """
+        Extract first and second value from tuples of mapped bins.
         """
 
         array = np.array([mapper.get(x) for x in values])
@@ -251,8 +252,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _extract_labels(mapper):
-        """Extracts text label and radiant for segment texts.
-
+        """
+        Extracts text label and radiant for segment texts.
         """
 
         values = [(text, ((end - start) / 2) + start)
@@ -265,8 +266,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     @staticmethod
     def _compute_separations(inner, outer, angles):
-        """Compute x and y positions for separation lines for given angles.
-
+        """
+        Compute x and y positions for separation lines for given angles.
         """
 
         y_start = np.sin(angles) * inner + 0.5
@@ -279,8 +280,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
 
     def _postprocess_hover(self, renderer, source):
-        """Limit hover tool to annular wedges only.
-
+        """
+        Limit hover tool to annular wedges only.
         """
 
         if isinstance(renderer.glyph, AnnularWedge):
