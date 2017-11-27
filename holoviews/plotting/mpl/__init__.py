@@ -152,6 +152,7 @@ Store.register({Curve: CurvePlot,
                 QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
                 HeatMap: HeatMapPlot,
+                RadialHeatMap: RadialHeatMapPlot,
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
@@ -239,6 +240,9 @@ options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.QuadMesh = Options('style', cmap=dflt_cmap)
 options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
 options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
+options.RadialHeatMap = Options('style',
+    annular_edgecolors='white', annular_linewidth=0.5,
+    separator_edgecolor='white', separator_linewidth=3)
 options.RGB = Options('style', interpolation='nearest')
 # Composites
 options.Layout = Options('plot', sublabel_format='{Alpha}')

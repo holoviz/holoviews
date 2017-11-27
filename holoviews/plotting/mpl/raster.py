@@ -3,13 +3,20 @@ from itertools import product
 import numpy as np
 import param
 
+from matplotlib.patches import Wedge
+from matplotlib.collections import LineCollection, PatchCollection
+
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator, unique_array, is_nan
+from ...core.util import (
+    dimension_sanitizer, match_spec, max_range, unique_iterator,
+    unique_array, is_nan
+)
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array
+
 
 
 class RasterPlot(ColorbarPlot):
@@ -204,6 +211,146 @@ class HeatMapPlot(RasterPlot):
             annotations = self._annotate_plot(axis, style['annotations'])
             self.handles['annotations'] = annotations
         return axis_kwargs
+
+
+class RadialHeatMapPlot(ColorbarPlot):
+
+    start_angle = param.Number(default=np.pi/2, doc="""
+        Define starting angle of the first annulars. By default, beings
+        at 12 o clock.""")
+
+    padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
+        Define the radius fraction of inner, empty space.""")
+
+    padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
+        Define the radius fraction of outer space including the labels.""")
+
+    separate_nth_segment = param.Number(default=0, doc="""
+        Add separation lines between segments for better readability. By
+        default, does not show any separation lines.""")
+
+    projection = param.ObjectSelector(default='polar', objects=['polar'])
+
+    _style_groups = ['annular', 'separator']
+
+    style_opts = ['annular_edgecolors', 'annular_linewidth',
+                 'separator_linewidth', 'separator_edgecolor', 'cmap']
+
+    @staticmethod
+    def _map_order_to_ticks(start, end, order, reverse=False):
+        """Map elements from given `order` array to bins ranging from `start`
+        to `end`.
+        """
+        size = len(order)
+        bounds = np.linspace(start, end, size + 1)
+        bins = np.column_stack([bounds[:-1], bounds[1:]])
+
+        if reverse:
+            bounds = bounds[::-1]
+        mapping = list(zip(bounds[:-1]%(np.pi*2), order))
+        return mapping
+
+    @staticmethod
+    def _compute_separations(inner, outer, angles):
+        """Compute x and y positions for separation lines for given angles.
+
+        """
+        return [np.array([[a, inner], [a, outer]]) for a in angles]
+
+
+    def get_extents(self, view, ranges):
+        return (0, 0, np.pi*2, 0.5)
+
+
+    def get_data(self, element, ranges, style):
+
+        # dimension labels
+        dim_labels = element.dimensions(label=True)[:3]
+        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+
+        if self.invert_axes: x, y = y, x
+
+        # get raw values
+        aggregate = element.gridded
+        xvals = aggregate.dimension_values(x, expanded=False)
+        yvals = aggregate.dimension_values(y, expanded=False)
+        zvals = aggregate.dimension_values(2, flat=False)
+
+        # pretty print x and y dimension values if necessary
+        def _pprint(dim_label, vals):
+            if vals.dtype.kind not in 'SU':
+                dim = aggregate.get_dimension(dim_label)
+                return [dim.pprint_value(v) for v in vals]
+
+            return vals
+
+        xvals = _pprint(x, xvals)
+        yvals = _pprint(y, yvals)
+
+        # annular wedges
+        start_angle = self.start_angle
+        end_angle = self.start_angle + 2 * np.pi
+        bins_segment = np.linspace(start_angle, end_angle, len(xvals)+1)
+        segment_ticks = self._map_order_to_ticks(start_angle, end_angle,
+                                                 xvals, True)
+
+        radius_max = 0.5
+        radius_min = radius_max * self.padding_inner
+        bins_annular = np.linspace(radius_min, radius_max, len(yvals)+1)
+        radius_ticks = self._map_order_to_ticks(radius_min, radius_max,
+                                                yvals)
+
+        patches = []
+        for j in range(len(yvals)):
+            ybin = bins_annular[j:j+2]
+            for i in range(len(xvals))[::-1]:
+                xbin = np.rad2deg(bins_segment[i:i+2])
+                r = ybin.mean()
+                width = ybin[1]-ybin[0]
+                wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
+                patches.append(wedge)
+
+        # multi_lines for separation
+        if self.separate_nth_segment > 1:
+            angles = bins_segment[::self.separate_nth_segment]
+            paths = self._compute_separations(radius_min, radius_max, angles)
+        else:
+            paths = []
+
+        style['array'] = zvals.flatten()
+        self._norm_kwargs(element, ranges, style, element.vdims[0])
+        if 'vmin' in style:
+            style['clim'] = style.pop('vmin'), style.pop('vmax')
+
+        data = {'annular': patches, 'separator': paths}
+        xstep = max([len(segment_ticks)//self.xticks, 1]) if self.xticks else 1
+        ystep = max([len(radius_ticks)//self.yticks, 1]) if self.yticks else 1
+        ticks = {'xticks': segment_ticks[::xstep],  'yticks': radius_ticks[::ystep]}
+        return data, style, ticks
+
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        # Draw edges
+        color_opts = ['c', 'cmap', 'vmin', 'vmax', 'norm', 'array']
+        groups = [g for g in self._style_groups if g != 'annular']
+        edge_opts = {k[8:] if 'annular_' in k else k: v
+                     for k, v in plot_kwargs.items()
+                     if not any(k.startswith(p) for p in groups)}
+        annuli = plot_args['annular']
+        annuli = PatchCollection(annuli, transform=ax.transAxes, **edge_opts)
+        ax.add_collection(annuli)
+
+        groups = [g for g in self._style_groups if g != 'separator']
+        edge_opts = {k[10:] if 'separator_' in k else k: v
+                     for k, v in plot_kwargs.items()
+                     if not any(k.startswith(p) for p in groups)
+                     and k not in color_opts}
+        paths = plot_args['separator']
+        separators = LineCollection(paths, **edge_opts)
+        ax.add_collection(separators)
+
+        return {'artist': annuli, 'separator': separators}
+
 
 
 class QuadMeshPlot(ColorbarPlot):
