@@ -382,10 +382,6 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if not self.shared_yaxis:
                 kwargs['yaxis'] = None
 
-            if isinstance(layout, GridMatrix):
-                if view.traverse(lambda x: x, [Histogram]):
-                    kwargs['shared_axes'] = False
-
             # Create subplot
             plotting_class = Store.registry[self.renderer.backend].get(vtype, None)
             if plotting_class is None:
