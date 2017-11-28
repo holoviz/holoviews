@@ -231,14 +231,15 @@ class QuadMeshPlot(ColorbarPlot):
     _plot_methods = dict(single='pcolormesh')
 
     def get_data(self, element, ranges, style):
-        data = np.ma.array(element.data[2],
-                           mask=np.logical_not(np.isfinite(element.data[2])))
-        coords = list(element.data[:2])
+        zdata = element.dimension_values(2, flat=False)
+        data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
+        coords = [element.interface.coords(element, d, edges=True)
+                  for d in element.kdims]
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
         cmesh_data = coords + [data]
-        style['locs'] = np.concatenate(element.data[:2])
+        style['locs'] = np.concatenate(coords)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}

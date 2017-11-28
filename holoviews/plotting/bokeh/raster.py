@@ -170,27 +170,26 @@ class QuadMeshPlot(ColorbarPlot):
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def get_data(self, element, ranges, style):
-        x, y, z = element.dimensions(label=True)
+        x, y, z = element.dimensions()[:3]
         if self.invert_axes: x, y = y, x
-        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
+        cmapper = self._get_colormapper(z, element, ranges, style)
+        cmapper = {'field': z.name, 'transform': cmapper}
+        mapping = {'x': x.name, 'y': y.name, 'fill_color': cmapper,
+                   'width': 'widths', 'height': 'heights'}
         if self.static_source:
-            return {}, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper}}, style
+            return {}, mapping, style
 
-        if len(set(v.shape for v in element.data)) == 1:
-            raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
-        zdata = element.data[2]
-        xvals = element.dimension_values(0, False)
-        yvals = element.dimension_values(1, False)
-        widths = np.diff(element.data[0])
-        heights = np.diff(element.data[1])
+        xvals = element.dimension_values(x, expanded=True, flat=False)
+        yvals = element.dimension_values(y, expanded=True, flat=False)
+        zdata = element.dimension_values(z, flat=False)
+        widths = np.diff(element.interface.coords(element, x, edges=True))
+        heights = np.diff(element.interface.coords(element, y, edges=True))
         if self.invert_axes:
-            zvals = zdata.flatten()
+            xvals, yvals, zvals = xvals.T.flatten(), yvals.T.flatten(), zdata.flatten()
             xvals, yvals, widths, heights = yvals, xvals, heights, widths
         else:
-            zvals = zdata.T.flatten()
-        xs, ys = cartesian_product([xvals, yvals], copy=True)
+            xs, ys, zvals = xvals.flatten(), yvals.flatten(), zdata.T.flatten()
         ws, hs = cartesian_product([widths, heights], copy=True)
-        data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
-        return (data, {'x': x, 'y': y,
-                       'fill_color': {'field': z, 'transform': cmapper},
-                       'height': 'heights', 'width': 'widths'}, style)
+        data = {x.name: xs, y.name: ys, z.name: zvals,
+                'widths': ws, 'heights': hs}
+        return data, mapping, style

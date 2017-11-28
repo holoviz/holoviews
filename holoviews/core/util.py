@@ -1578,3 +1578,17 @@ def search_indices(values, source):
     """
     orig_indices = source.argsort()
     return orig_indices[np.searchsorted(source[orig_indices], values)]
+
+
+def compute_edges(edges):
+    """
+    Computes edges as midpoints of the bin centers.  The first and
+    last boundaries are equidistant from the first and last midpoints
+    respectively.
+    """
+    edges = np.asarray(edges)
+    if edges.dtype.kind == 'i':
+        edges = edges.astype('f')
+    midpoints = (edges[:-1] + edges[1:])/2.0
+    boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
+    return np.concatenate([boundaries[:1], midpoints, boundaries[-1:]])

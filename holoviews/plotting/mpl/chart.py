@@ -282,11 +282,13 @@ class HistogramPlot(ChartPlot):
         Get data from histogram, including bin_ranges and values.
         """
         self.cyclic = hist.get_dimension(0).cyclic
-        edges = hist.edges[:-1]
-        hist_vals = np.array(hist.values)
-        widths = np.diff(hist.edges)
+        x = hist.kdims[0]
+        edges = hist.interface.coords(hist, x, edges=True)
+        values = hist.dimension_values(1)
+        hist_vals = np.array(values)
+        widths = np.diff(edges)
         lims = hist.range(0) + hist.range(1)
-        return edges, hist_vals, widths, lims
+        return edges[:-1], hist_vals, widths, lims
 
 
     def _compute_ticks(self, element, edges, widths, lims):

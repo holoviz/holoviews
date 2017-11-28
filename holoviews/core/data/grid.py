@@ -75,7 +75,8 @@ class GridInterface(DictInterface):
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
-            if shape != expected[::-1] and not (not expected and shape == (1,)):
+            if (all((s!=e and (s+1)!=e) for s, e in zip(shape, expected[::-1])) and
+                not (not expected and shape == (1,))):
                 raise error('Key dimension values and value array %s '
                             'shapes do not match. Expected shape %s, '
                             'actual shape: %s' % (vdim, expected[::-1], shape), cls)
@@ -115,18 +116,23 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         """
         Returns the coordinates along a dimension.  Ordered ensures
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
         dim = dataset.get_dimension(dim, strict=True)
+        idx = dataset.get_dimension_index(dim)
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim.name]
-        if ordered and np.all(data[1:] < data[:-1]):
-            data = data[::-1]
+        shape = cls.shape(dataset, True)
+        isedges = dim in dataset.kdims and len(data) == (shape[dataset.ndims-idx-1]+1)
+        if edges and not isedges:
+            data = util.compute_edges(data)
+        elif not edges and isedges:
+            data = np.convolve(data, [0.5, 0.5], 'valid')
         return data
 
 
@@ -222,7 +228,7 @@ class GridInterface(DictInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims:
-            data = dataset.data.get(dim.name)
+            data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
@@ -249,7 +255,7 @@ class GridInterface(DictInterface):
         drop_dim = any(d not in group_kwargs['kdims'] for d in kdims)
 
         # Find all the keys along supplied dimensions
-        keys = [dataset.data[d.name] for d in dimensions]
+        keys = [cls.coords(dataset, d.name) for d in dimensions]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -464,6 +470,23 @@ class GridInterface(DictInterface):
         if scalar:
             return new_data[0][0]
         return tuple(new_data)
+
+    @classmethod
+    def range(cls, dataset, dimension):
+        if dataset._binned and dimension in dataset.kdims:
+            column = cls.coords(dataset, dimension, edges=True)
+        else:
+            column = dataset.dimension_values(dimension)
+        if dataset.get_dimension_type(dimension) is np.datetime64:
+            return column.min(), column.max()
+        elif len(column) == 0:
+            return np.NaN, np.NaN
+        else:
+            try:
+                return (np.nanmin(column), np.nanmax(column))
+            except TypeError:
+                column.sort()
+                return column[0], column[-1]
 
 
 Interface.register(GridInterface)

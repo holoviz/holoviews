@@ -283,6 +283,8 @@ class Interface(param.Parameterized):
         column = dataset.dimension_values(dimension)
         if dataset.get_dimension_type(dimension) is np.datetime64:
             return column.min(), column.max()
+        elif len(column) == 0:
+            return np.NaN, np.NaN
         else:
             try:
                 return (np.nanmin(column), np.nanmax(column))

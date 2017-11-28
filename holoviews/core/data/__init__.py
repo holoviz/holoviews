@@ -175,6 +175,9 @@ class Dataset(Element):
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
+    # Whether the key dimensions are specified as bins
+    _binned = False
+
     _vdim_reductions = {}
     _kdim_reductions = {}
 

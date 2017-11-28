@@ -47,7 +47,7 @@ class ImageInterface(GridInterface):
                 data = data[::-1, :]
             expected = (len(ys), len(xs))
             shape = data.shape[:2]
-            error = DataError if len(shape) > 1 else ValueError
+            error = DataError if len(shape) > 1 and not eltype._binned else ValueError
             if shape != expected and not (not expected and shape == (1,)):
                 raise error('Key dimension values and value array %s '
                             'shapes do not match. Expected shape %s, '
