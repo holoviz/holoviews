@@ -414,6 +414,10 @@ class TriMesh(Graph):
 
     group = param.String(default='TriMesh', constant=True)
 
+    _node_type = Nodes
+
+    _edge_type = EdgePaths
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
@@ -424,30 +428,46 @@ class TriMesh(Graph):
             raise ValueError("TriMesh expects both simplices and nodes "
                              "to be supplied.")
 
-        if isinstance(nodes, Nodes):
+        if isinstance(nodes, self._node_type):
             pass
         elif isinstance(nodes, Points):
             # Add index to make it a valid Nodes object
-            nodes = Nodes(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
+            nodes = self._node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
             try:
                 # Try assuming data contains indices (3 columns)
-                nodes = Nodes(nodes)
+                nodes = self._node_type(nodes)
             except:
                 # Try assuming data contains just coordinates (2 columns)
                 try:
                     points = Points(nodes)
-                    nodes = Nodes(Dataset(points).add_dimension('index', 2, np.arange(len(points))))
+                    ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
+                    nodes = self._node_type(ds)
                 except:
                     raise ValueError("Nodes argument could not be interpreted, expected "
                                      "data with two or three columns representing the "
                                      "x/y positions and optionally the node indices.")
-        if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
-            edgepaths = EdgePaths(edgepaths)
+        if edgepaths is not None and not isinstance(edgepaths, self._edge_type):
+            edgepaths = self._edge_type(edgepaths)
         super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         self._nodes = nodes
         self._edgepaths = edgepaths
 
+    @classmethod
+    def from_points(cls, points):
+        """
+        Uses Delauney triangulation to compute triangle simplices for
+        each point.
+        """
+        try:
+            from scipy.spatial import Delaunay
+        except:
+            raise ImportError("Generating triangles from points requires, "
+                              "SciPy to be installed.")
+        if not isinstance(points, Points):
+            points = Points(points)
+        tris = Delaunay(points.array([0, 1]))
+        return cls((tris.simplices, points))
 
     @property
     def edgepaths(self):
@@ -459,8 +479,9 @@ class TriMesh(Graph):
 
         simplices = self.array([0, 1, 2]).astype(np.int32)
         pts = self.nodes.array([0, 1])
-        paths = [tri[[0, 1, 2, 0], :] for tri in pts[simplices]]
-        edgepaths = EdgePaths(paths, kdims=self.nodes.kdims[:2])
+        empty = np.array([[np.NaN, np.NaN]])
+        paths = [arr for tri in pts[simplices] for arr in (tri[[0, 1, 2, 0], :], empty)][:-1]
+        edgepaths = self._edge_type([np.concatenate(paths)], kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
 
