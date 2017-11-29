@@ -9,58 +9,76 @@ from holoviews.element.comparison import ComparisonTestCase
 class HistogramIndexingTest(ComparisonTestCase):
 
     def setUp(self):
-        self.values = [i for i in range(10)]
-        self.edges =  [i for i in range(11)]
-        self.hist=Histogram(self.values, self.edges)
+        self.values = np.arange(10)
+        self.edges =  np.arange(11)
+        self.hist=Histogram((self.edges, self.values))
 
     def test_slice_all(self):
         sliced = self.hist[:]
-        self.assertEqual(np.all(sliced.values == self.values), True)
-        self.assertEqual(np.all(sliced.edges == self.edges), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, self.values)
+        self.assertEqual(edges, self.edges)
 
     def test_slice_exclusive_upper(self):
         "Exclusive upper boundary semantics for bin centers"
         sliced = self.hist[:6.5]
-        self.assertEqual(np.all(sliced.values == [0, 1, 2, 3, 4, 5]), True)
-        self.assertEqual(np.all(sliced.edges == [0, 1, 2, 3, 4, 5, 6]), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(6))
+        self.assertEqual(edges, np.arange(7))
 
     def test_slice_exclusive_upper_exceeded(self):
         "Slightly above the boundary in the previous test"
         sliced = self.hist[:6.55]
-        self.assertEqual(np.all(sliced.values == [0, 1, 2, 3, 4, 5, 6]), True)
-        self.assertEqual(np.all(sliced.edges == [0, 1, 2, 3, 4, 5, 6, 7]), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(7))
+        self.assertEqual(edges, np.arange(8))
 
     def test_slice_inclusive_lower(self):
         "Inclusive lower boundary semantics for bin centers"
         sliced = self.hist[3.5:]
-        self.assertEqual(np.all(sliced.values == [3, 4, 5, 6, 7, 8, 9]), True)
-        self.assertEqual(np.all(sliced.edges == [3, 4, 5, 6, 7, 8, 9, 10]), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(3, 10))
+        self.assertEqual(edges, np.arange(3, 11))
 
     def test_slice_inclusive_lower_undershot(self):
         "Inclusive lower boundary semantics for bin centers"
         sliced = self.hist[3.45:]
-        self.assertEqual(np.all(sliced.values == [3, 4, 5, 6, 7, 8, 9]), True)
-        self.assertEqual(np.all(sliced.edges == [3, 4, 5, 6, 7, 8, 9, 10]), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(3, 10))
+        self.assertEqual(edges, np.arange(3, 11))
 
     def test_slice_bounded(self):
         sliced = self.hist[3.5:6.5]
-        self.assertEqual(np.all(sliced.values == [3, 4, 5]), True)
-        self.assertEqual(np.all(sliced.edges == [3, 4, 5, 6]), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(3, 6))
+        self.assertEqual(edges, np.arange(3, 7))
 
     def test_slice_lower_out_of_bounds(self):
         sliced = self.hist[-3:]
-        self.assertEqual(np.all(sliced.values == self.values), True)
-        self.assertEqual(np.all(sliced.edges == self.edges), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, self.values)
+        self.assertEqual(edges, self.edges)
 
     def test_slice_upper_out_of_bounds(self):
         sliced = self.hist[:12]
-        self.assertEqual(np.all(sliced.values == self.values), True)
-        self.assertEqual(np.all(sliced.edges == self.edges), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, self.values)
+        self.assertEqual(edges, self.edges)
 
     def test_slice_both_out_of_bounds(self):
         sliced = self.hist[-3:13]
-        self.assertEqual(np.all(sliced.values == self.values), True)
-        self.assertEqual(np.all(sliced.edges == self.edges), True)
+        values = sliced.dimension_values(1)
+        edges = sliced.interface.coords(sliced, sliced.kdims[0], edges=True)
+        self.assertEqual(values, self.values)
+        self.assertEqual(edges, self.edges)
 
     def test_scalar_index(self):
         self.assertEqual(self.hist[4.5], 4)
@@ -79,19 +97,12 @@ class HistogramIndexingTest(ComparisonTestCase):
         self.assertEqual(self.hist[0], 0)
 
     def test_scalar_lowest_index_out_of_bounds(self):
-        try:
-            self.hist[-0.1]
-        except Exception as e:
-            if not str(e).startswith("'Key value -0.1 is out of the histogram bounds"):
-                raise AssertionError("Out of bound exception not generated")
+        with self.assertRaises(IndexError):
+            self.hist[-1]
 
     def test_scalar_highest_index_out_of_bounds(self):
-        try:
+        with self.assertRaises(IndexError):
             self.hist[10]
-        except Exception as e:
-            if not str(e).startswith("'Key value 10 is out of the histogram bounds"):
-                raise AssertionError("Out of bound exception not generated")
-
 
 class QuadMeshIndexingTest(ComparisonTestCase):
 
@@ -104,7 +115,7 @@ class QuadMeshIndexingTest(ComparisonTestCase):
         self.qmesh = QuadMesh((self.xs, self.ys, self.zs))
 
     def test_qmesh_index_lower_left(self):
-        self.assertEqual(self.qmesh[0, 0], 0)
+        self.assertEqual(self.qmesh[10, 1], 0)
 
     def test_qmesh_index_lower_right(self):
         self.assertEqual(self.qmesh[800, 3.9], 2)

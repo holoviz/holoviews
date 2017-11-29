@@ -184,11 +184,8 @@ class QuadMeshPlot(ColorbarPlot):
         zdata = element.dimension_values(z, flat=False)
         widths = np.diff(element.interface.coords(element, x, edges=True))
         heights = np.diff(element.interface.coords(element, y, edges=True))
-        if self.invert_axes:
-            xvals, yvals, zvals = xvals.T.flatten(), yvals.T.flatten(), zdata.flatten()
-            xvals, yvals, widths, heights = yvals, xvals, heights, widths
-        else:
-            xs, ys, zvals = xvals.flatten(), yvals.flatten(), zdata.T.flatten()
+        xs, ys = xvals.flatten(), yvals.flatten()
+        zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
         ws, hs = cartesian_product([widths, heights], copy=True)
         data = {x.name: xs, y.name: ys, z.name: zvals,
                 'widths': ws, 'heights': hs}

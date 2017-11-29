@@ -38,23 +38,18 @@ class TestEllipsisCharts(ComparisonTestCase):
     def test_histogram_ellipsis_slice_value(self):
         frequencies, edges = np.histogram(range(20), 20)
         sliced = hv.Histogram(frequencies, edges)[..., 'Frequency']
-        self.assertEqual(len(sliced.data[0]), 20)
+        self.assertEqual(len(sliced.dimension_values(0)), 20)
 
     def test_histogram_ellipsis_slice_range(self):
         frequencies, edges = np.histogram(range(20), 20)
         sliced = hv.Histogram(frequencies, edges)[0:5, ...]
-        self.assertEqual(len(sliced.data[0]), 5)
+        self.assertEqual(len(sliced.dimension_values(0)), 5)
 
 
     def test_histogram_ellipsis_slice_value_missing(self):
         frequencies, edges = np.histogram(range(20), 20)
-        try:
+        with self.assertRaises(IndexError):
             hv.Histogram(frequencies, edges)[..., 'Non-existent']
-            raise AssertionError("No assertion raised")
-        except Exception as e:
-            if str(e) != repr("'Frequency' is the only selectable value dimension"):
-                raise AssertionError("Incorrect exception raised.")
-
 
 
 class TestEllipsisTable(ComparisonTestCase):

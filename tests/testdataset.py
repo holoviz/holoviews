@@ -1264,14 +1264,6 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         self.init_grid_data()
         self.init_column_data()
 
-    def test_dataset_array_init_hm(self):
-        "Tests support for arrays (homogeneous)"
-        exception = "None of the available storage backends "\
-         "were able to support the supplied data format."
-        with self.assertRaisesRegexp(Exception, exception):
-            Dataset(np.column_stack([self.xs, self.xs_2]),
-                    kdims=['x'], vdims=['x2'])
-
     def test_dataset_dataframe_init_hm(self):
         "Tests support for homogeneous DataFrames"
         if pd is None:
@@ -1458,6 +1450,10 @@ class IrisDatasetTest(GridDatasetTest):
         self.init_column_data()
         self.init_grid_data()
 
+    def test_dataset_array_init_hm(self):
+        "Tests support for arrays (homogeneous)"
+        raise SkipTest("Not supported")
+
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):
         raise SkipTest("Not supported")
@@ -1543,6 +1539,10 @@ class XArrayDatasetTest(GridDatasetTest):
         self.assertEqual(canonical.ndim, 2)
         expected = np.array([[0, 1], [2, 3], [4, 5]])
         self.assertEqual(canonical, expected)
+
+    def test_dataset_array_init_hm(self):
+        "Tests support for arrays (homogeneous)"
+        raise SkipTest("Not supported")
 
     # Disabled tests for NotImplemented methods
     def test_dataset_add_dimensions_values_hm(self):

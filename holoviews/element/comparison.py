@@ -541,9 +541,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_histogram(cls, el1, el2, msg='Histogram'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.edges, el2.edges, ' '.join([msg, 'edges']))
-        cls.compare_arrays(el1.values, el2.values, ' '.join([msg, 'values']))
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_points(cls, el1, el2, msg='Points'):
@@ -598,10 +596,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_quadmesh(cls, el1, el2, msg='QuadMesh'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data[0], el2.data[0], ' '.join([msg, 'x-data']))
-        cls.compare_arrays(el1.data[1], el2.data[1], ' '.join([msg, 'y-data']))
-        cls.compare_arrays(el1.data[2], el2.data[2], ' '.join([msg, 'z-data']))
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_heatmap(cls, el1, el2, msg='HeatMap'):

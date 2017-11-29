@@ -67,9 +67,9 @@ class TestQuadMesh(ComparisonTestCase):
     def test_cast_image_to_quadmesh(self):
         img = Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
         qmesh = QuadMesh(img)
-        self.assertEqual(qmesh.data[0], np.array([-0.5, -0.166667, 0.166667, 0.5]))
-        self.assertEqual(qmesh.data[1], np.array([-0.5, 0, 0.5]))
-        self.assertEqual(qmesh.data[2], self.array1[::-1])
+        self.assertEqual(qmesh.dimension_values(0, False), np.array([-0.333333, 0., 0.333333]))
+        self.assertEqual(qmesh.dimension_values(1, False), np.array([-0.25, 0.25]))
+        self.assertEqual(qmesh.dimension_values(2, flat=False), self.array1[::-1])
         self.assertEqual(qmesh.kdims, img.kdims)
         self.assertEqual(qmesh.vdims, img.vdims)
         self.assertEqual(qmesh.group, img.group)

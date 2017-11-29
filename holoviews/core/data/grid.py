@@ -56,6 +56,18 @@ class GridInterface(DictInterface):
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif isinstance(data, list) and data == []:
+            data = OrderedDict([(d, []) for d in dimensions])
+        elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
+                     for interface in cls.interfaces.values()):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                    data = np.column_stack([np.arange(len(data)), data])
+                else:
+                    data = np.atleast_2d(data).T
+            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+        elif isinstance(data, list) and data == []:
             data = {d: np.array([]) for d in dimensions[:ndims]}
             data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
         elif not isinstance(data, dict):
@@ -75,8 +87,14 @@ class GridInterface(DictInterface):
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
-            if (all((s!=e and (s+1)!=e) for s, e in zip(shape, expected[::-1])) and
-                not (not expected and shape == (1,))):
+            if (not expected and shape == (1,)):
+                pass
+            elif len(shape) != len(expected):
+                raise error('The shape of the %s value array does not '
+                            'match the expected dimensionality indicated '
+                            'by the key dimensions. Expected %d-D array, '
+                            'found %d-D array.' % (vdim, len(expected), len(shape)))
+            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, expected[::-1])):
                 raise error('Key dimension values and value array %s '
                             'shapes do not match. Expected shape %s, '
                             'actual shape: %s' % (vdim, expected[::-1], shape), cls)
@@ -104,15 +122,16 @@ class GridInterface(DictInterface):
 
     @classmethod
     def shape(cls, dataset, gridded=False):
+        shape = dataset.data[dataset.vdims[0].name].shape
         if gridded:
-            return dataset.data[dataset.vdims[0].name].shape
+            return shape
         else:
-            return (cls.length(dataset), len(dataset.dimensions()))
+            return (np.product(shape), len(dataset.dimensions()))
 
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims])
+        return cls.shape(dataset)[0]
 
 
     @classmethod
@@ -127,8 +146,11 @@ class GridInterface(DictInterface):
         if expanded:
             return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim.name]
+        if ordered and np.all(data[1:] < data[:-1]):
+            data = data[::-1]
         shape = cls.shape(dataset, True)
-        isedges = dim in dataset.kdims and len(data) == (shape[dataset.ndims-idx-1]+1)
+        isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
+                   and len(data) == (shape[dataset.ndims-idx-1]+1))
         if edges and not isedges:
             data = util.compute_edges(data)
         elif not edges and isedges:
@@ -309,9 +331,9 @@ class GridInterface(DictInterface):
             mask = None
         else:
             index_mask = values == ind
-            if dataset.ndims == 1 and np.sum(index_mask) == 0:
+            if (dataset.ndims == 1 or dataset._binned) and np.sum(index_mask) == 0:
                 data_index = np.argmin(np.abs(values - ind))
-                mask = np.zeros(len(dataset), dtype=np.bool)
+                mask = np.zeros(len(values), dtype=np.bool)
                 mask[data_index] = True
             else:
                 mask = index_mask
@@ -331,11 +353,36 @@ class GridInterface(DictInterface):
                       for d in dimensions]
         data = {}
         value_select = []
-        for dim, ind in selection:
-            values = cls.values(dataset, dim, False)
+        for (dim, ind) in selection:
+            values = cls.coords(dataset, dim, False)
             mask = cls.key_select_mask(dataset, values, ind)
             if mask is None:
                 mask = np.ones(values.shape, dtype=bool)
+            if dataset._binned:
+                edges = cls.coords(dataset, dim, False, edges=True)
+                inds = np.argwhere(mask)
+                if np.isscalar(ind):
+                    emin, emax = edges.min(), edges.max()
+                    if ind < emin:
+                        raise IndexError("Index %s less than lower bound "
+                                         "of %s for %s dimension." % (ind, emin, dim))
+                    elif ind >= emax:
+                        raise IndexError("Index %s more than or equal to upper bound "
+                                         "of %s for %s dimension." % (ind, emax, dim))
+                    idx = max([np.digitize([ind], edges)[0]-1, 0])
+                    mask = np.zeros(len(values), dtype=np.bool)
+                    if np.sum(ind == values):
+                        mask[idx] = True
+                        values = edges[idx:idx+2]
+                    elif len(inds):
+                        mask[idx] = True
+                        values = edges[idx: idx+2]
+                    else:
+                        values = edges[:0]
+                elif len(inds):
+                    values = edges[inds.min(): inds.max()+2]
+                else:
+                    values = edges[0:0]
             else:
                 values = values[mask]
             value_select.append(mask)
