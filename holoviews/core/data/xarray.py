@@ -101,7 +101,11 @@ class XArrayInterface(GridInterface):
                          if isinstance(data[name].data, np.ndarray)]
 
         kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
-        not_found = [d for d in kdims if d.name not in data.coords]
+        not_found = []
+        for d in kdims:
+            if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+                       for k, v in data.coords.items()):
+                not_found.append(d)
         if not isinstance(data, xr.Dataset):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
@@ -114,16 +118,18 @@ class XArrayInterface(GridInterface):
     @classmethod
     def range(cls, dataset, dimension):
         dim = dataset.get_dimension(dimension, strict=True).name
-        if dim in dataset.data:
+        if dataset._binned and dimension in dataset.kdims:
+            expanded = cls.irregular(dataset)
+            data = cls.coords(dataset, dim, expanded=expanded, edges=True)
+            dmin, dmax = np.nanmin(data), np.nanmax(data)
+        else:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
             if dask and isinstance(dmin, dask.array.Array):
                 dmin, dmax = dmin.compute(), dmax.compute()
-            dmin = dmin if np.isscalar(dmin) else dmin.item()
-            dmax = dmax if np.isscalar(dmax) else dmax.item()
-            return dmin, dmax
-        else:
-            return np.NaN, np.NaN
+        dmin = dmin if np.isscalar(dmin) else dmin.item()
+        dmax = dmax if np.isscalar(dmax) else dmax.item()
+        return dmin, dmax
 
 
     @classmethod
@@ -167,10 +173,18 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
+        dim = dataset.get_dimension(dim, strict=True)
         if expanded:
-            return util.expand_grid_coords(dataset, dim)
-        data = np.atleast_1d(dataset.data[dim].data)
+            if cls.irregular(dataset):
+                data = dataset.data[dim.name]
+            else:
+                data = util.expand_grid_coords(dataset, dim)
+            if edges:
+                data = cls._infer_interval_breaks(data, axis=1)
+                data = cls._infer_interval_breaks(data, axis=0)
+            return data
+        data = np.atleast_1d(dataset.data[dim.name].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -180,11 +194,13 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
-        if dim in dataset.vdims:
+        irregular = cls.irregular(dataset)
+        if dim in dataset.vdims or irregular:
             coord_dims = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
-            data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
+            if not irregular:
+                data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)

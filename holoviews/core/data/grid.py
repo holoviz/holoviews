@@ -84,10 +84,12 @@ class GridInterface(DictInterface):
         kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
         vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
         expected = tuple([len(data[kd]) for kd in kdim_names])
+        shapes = tuple([data[kd].shape for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
-            if (not expected and shape == (1,)):
+            if (not expected and shape == (1,)) or len(set((shape,)+shapes)) == 1:
+                # If empty or an irregular mesh
                 pass
             elif len(shape) != len(expected):
                 raise error('The shape of the %s value array does not '
@@ -99,6 +101,11 @@ class GridInterface(DictInterface):
                             'shapes do not match. Expected shape %s, '
                             'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
+
+    @classmethod
+    def irregular(cls, dataset):
+        dim = dataset.kdims[0].name
+        return dataset.data[dim].ndim > 1
 
 
     @classmethod
@@ -135,6 +142,24 @@ class GridInterface(DictInterface):
 
 
     @classmethod
+    def _infer_interval_breaks(cls, coord, axis=0):
+        """
+        >>> _infer_interval_breaks(np.arange(5))
+        array([-0.5,  0.5,  1.5,  2.5,  3.5,  4.5])
+        >>> _infer_interval_breaks([[0, 1], [3, 4]], axis=1)
+        array([[-0.5,  0.5,  1.5],
+           [ 2.5,  3.5,  4.5]])
+        """
+        coord = np.asarray(coord)
+        deltas = 0.5 * np.diff(coord, axis=axis)
+        first = np.take(coord, [0], axis=axis) - np.take(deltas, [0], axis=axis)
+        last = np.take(coord, [-1], axis=axis) + np.take(deltas, [-1], axis=axis)
+        trim_last = tuple(slice(None, -1) if n == axis else slice(None)
+                          for n in range(coord.ndim))
+        return np.concatenate([first, coord[trim_last] + deltas, last], axis=axis)
+
+
+    @classmethod
     def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         """
         Returns the coordinates along a dimension.  Ordered ensures
@@ -144,6 +169,12 @@ class GridInterface(DictInterface):
         dim = dataset.get_dimension(dim, strict=True)
         idx = dataset.get_dimension_index(dim)
         if expanded:
+            if cls.irregular(dataset):
+                data = dataset.data[dim.name]
+                if edges:
+                    data = cls._infer_interval_breaks(data, axis=1)
+                    data = cls._infer_interval_breaks(data, axis=0)
+                return data
             return util.expand_grid_coords(dataset, dim)
         data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
@@ -521,7 +552,8 @@ class GridInterface(DictInterface):
     @classmethod
     def range(cls, dataset, dimension):
         if dataset._binned and dimension in dataset.kdims:
-            column = cls.coords(dataset, dimension, edges=True)
+            expanded = cls.irregular(dataset)
+            column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
             column = dataset.dimension_values(dimension)
         if dataset.get_dimension_type(dimension) is np.datetime64:

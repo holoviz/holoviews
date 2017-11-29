@@ -622,3 +622,20 @@ def glyph_order(keys, draw_order=[]):
         return ((draw_order.index(matches[0]), glyph) if matches else
                 (1e9+keys.index(glyph), glyph))
     return sorted(keys, key=order_fn)
+
+
+def colormesh(X, Y):
+    """
+    Generates line paths for a quadmesh given 2D arrays of X and Y
+    coordinates.
+    """
+    Y1 = Y[0:-1, 0:-1].ravel()
+    X2 = X[1:, 0:-1].ravel()
+    Y2 = Y[1:, 0:-1].ravel()
+    X3 = X[1:, 1:].ravel()
+    Y3 = Y[1:, 1:].ravel()
+    X4 = X[0:-1, 1:].ravel()
+    Y4 = Y[0:-1, 1:].ravel()
+    X = np.column_stack([X1, X2, X3, X4, X1])
+    Y = np.column_stack([Y1, Y2, Y3, Y4, Y1])
+    return X, Y

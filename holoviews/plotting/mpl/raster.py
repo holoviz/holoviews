@@ -233,7 +233,8 @@ class QuadMeshPlot(ColorbarPlot):
     def get_data(self, element, ranges, style):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
-        coords = [element.interface.coords(element, d, edges=True)
+        expanded = element.interface.irregular(element)
+        coords = [element.interface.coords(element, d, expanded=expanded, edges=True)
                   for d in element.kdims]
         if self.invert_axes:
             coords = coords[::-1]
