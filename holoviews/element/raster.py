@@ -616,6 +616,8 @@ class QuadMesh(Dataset, Element2D):
     2D arrays for the x-/y-coordinates and grid values.
     """
 
+    datatype = param.List(default=['grid'])
+
     group = param.String(default="QuadMesh", constant=True)
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
