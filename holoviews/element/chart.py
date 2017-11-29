@@ -185,6 +185,18 @@ class Histogram(Chart):
         super(Histogram, self).__init__(data, **params)
 
 
+    @property
+    def values(self):
+        "Property to access the Histogram values provided for backward compatibility"
+        return self.dimension_values(1)
+
+
+    @property
+    def edges(self):
+        "Property to access the Histogram edges provided for backward compatibility"
+        return self.interface.coords(self, self.kdims[0], edges=True)
+
+
 class Points(Chart):
     """
     Allows sets of points to be positioned over a sheet coordinate
