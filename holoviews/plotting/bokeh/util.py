@@ -636,6 +636,7 @@ def colormesh(X, Y):
     Y3 = Y[1:, 1:].ravel()
     X4 = X[0:-1, 1:].ravel()
     Y4 = Y[0:-1, 1:].ravel()
+
     X = np.column_stack([X1, X2, X3, X4, X1])
     Y = np.column_stack([Y1, Y2, Y3, Y4, Y1])
     return X, Y
