@@ -4,7 +4,7 @@ import colorsys
 import param
 
 from ..core import util
-from ..core.data import ImageInterface
+from ..core.data import ImageInterface, GridInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
@@ -626,6 +626,21 @@ class QuadMesh(Dataset, Element2D):
     vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
     _binned = True
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style QuadMesh types without an interface can be unpickled.
+
+        Note: Deprecate as part of 2.0
+        """
+        if 'interface' not in state:
+            self.interface = GridInterface
+            x, y = state['_kdims_param_value']
+            z = state['_vdims_param_value'][0]
+            data = state['data']
+            state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
+        super(Dataset, self).__setstate__(state)
+
 
 
 

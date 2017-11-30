@@ -144,9 +144,9 @@ class GridInterface(DictInterface):
     @classmethod
     def _infer_interval_breaks(cls, coord, axis=0):
         """
-        >>> _infer_interval_breaks(np.arange(5))
+        >>> GridInterface._infer_interval_breaks(np.arange(5))
         array([-0.5,  0.5,  1.5,  2.5,  3.5,  4.5])
-        >>> _infer_interval_breaks([[0, 1], [3, 4]], axis=1)
+        >>> GridInterface._infer_interval_breaks([[0, 1], [3, 4]], axis=1)
         array([[-0.5,  0.5,  1.5],
            [ 2.5,  3.5,  4.5]])
         """

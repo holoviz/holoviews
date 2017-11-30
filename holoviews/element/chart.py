@@ -4,6 +4,7 @@ import param
 
 from ..core import util
 from ..core import Dimension, Dataset, Element2D
+from ..core.data import GridInterface
 
 
 class Chart(Dataset, Element2D):
@@ -183,6 +184,19 @@ class Histogram(Chart):
         elif isinstance(data, tuple) and len(data) == 2 and len(data[0])+1 == len(data[1]):
             data = data[::-1]
         super(Histogram, self).__init__(data, **params)
+
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style Histogram types without an interface can be unpickled.
+
+        Note: Deprecate as part of 2.0
+        """
+        if 'interface' not in state:
+            self.interface = GridInterface
+            x, y = state['_kdims_param_value'][0], state['_vdims_param_value'][0]
+            state['data'] = {x.name: state['data'][1], y.name: state['data'][0]}
+        super(Dataset, self).__setstate__(state)
 
 
     @property
