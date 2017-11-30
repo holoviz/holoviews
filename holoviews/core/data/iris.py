@@ -133,6 +133,12 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
+    def irregular(cls, dataset, dim):
+        "CubeInterface does not support irregular data"
+        return False
+
+
+    @classmethod
     def shape(cls, dataset, gridded=False):
         if gridded:
             return dataset.data.shape

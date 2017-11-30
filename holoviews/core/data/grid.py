@@ -88,7 +88,7 @@ class GridInterface(DictInterface):
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
-            if (not expected and shape == (1,)) or len(set((shape,)+shapes)) == 1:
+            if (not expected and shape == (1,)) or (len(set((shape,)+shapes)) == 1 and len(shape) > 1):
                 # If empty or an irregular mesh
                 pass
             elif len(shape) != len(expected):
@@ -105,7 +105,7 @@ class GridInterface(DictInterface):
 
     @classmethod
     def irregular(cls, dataset, dim):
-        return dataset.data[dim.name].ndim > 1
+        return dataset.data[dim.name if isinstance(dim, Dimension) else dim].ndim > 1
 
 
     @classmethod
@@ -273,7 +273,7 @@ class GridInterface(DictInterface):
                 selected[kd.name] = coords
                 all_scalar = False
         for d in dataset.dimensions():
-            if d in dataset.kdims and cls.irregular(dataset, d):
+            if d in dataset.kdims and not cls.irregular(dataset, d):
                 continue
             arr = dataset.dimension_values(d, flat=False)
             if all_scalar and len(dataset.vdims) == 1:
@@ -392,7 +392,7 @@ class GridInterface(DictInterface):
 
         indexed = cls.indexed(dataset, selection)
         full_selection = [(d, selection.get(d.name, selection.get(d.label)))
-                      for d in dimensions]
+                          for d in dimensions]
         data = {}
         value_select = []
         for (dim, ind) in full_selection:

@@ -178,19 +178,20 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
-        dim = dataset.get_dimension(dim, strict=True)
+    def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+        dim = dataset.get_dimension(dimension)
+        dim = dimension if dim is None else dim.name
         irregular = cls.irregular(dataset, dim)
         if irregular or expanded:
             if irregular:
-                data = dataset.data[dim.name]
+                data = dataset.data[dim]
             else:
                 data = util.expand_grid_coords(dataset, dim)
             if edges:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
             return data
-        data = np.atleast_1d(dataset.data[dim.name].data)
+        data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         return data
@@ -200,12 +201,12 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
-        irregular = cls.irregular(dataset, dim)
+        irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
         if dim in dataset.vdims or irregular:
             coord_dims = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
-            if not irregular:
+            if not irregular and not any(cls.irregular(dataset, d) for d in dataset.kdims):
                 data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
@@ -235,18 +236,18 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def ndloc(cls, dataset, indices):
-        kdims = [d.name for d in dataset.kdims[::-1]]
+        kdims = [d for d in dataset.kdims[::-1]]
         adjusted_indices = []
         slice_dims = []
         for kd, ind in zip(kdims, indices):
-            if dataset.data[kd].ndim > 1:
+            if cls.irregular(dataset, kd):
                 coords = [c for c in dataset.data.coords if c not in dataset.data.dims]
-                dim = dataset.data[kd].dims[coords.index(kd)]
-                shape = dataset.data[kd].shape[coords.index(kd)]
+                dim = dataset.data[kd.name].dims[coords.index(kd.name)]
+                shape = dataset.data[kd.name].shape[coords.index(kd.name)]
                 coords = np.arange(shape)
             else:
                 coords = cls.coords(dataset, kd, False)
-                dim = kd
+                dim = kd.name
             slice_dims.append(dim)
             ncoords = len(coords)
             if np.all(coords[1:] < coords[:-1]):
