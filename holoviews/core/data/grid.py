@@ -174,7 +174,7 @@ class GridInterface(DictInterface):
                 data = dataset.data[dim.name]
             else:
                 data = util.expand_grid_coords(dataset, dim)
-            if edges:
+            if edges and data.shape == dataset.data[dataset.vdims[0].name].shape:
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
             return data
@@ -186,7 +186,7 @@ class GridInterface(DictInterface):
         isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
                    and len(data) == (shape[dataset.ndims-idx-1]+1))
         if edges and not isedges:
-            data = util.compute_edges(data)
+            data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
             data = np.convolve(data, [0.5, 0.5], 'valid')
         return data
@@ -273,10 +273,12 @@ class GridInterface(DictInterface):
                 selected[kd.name] = coords
                 all_scalar = False
         for d in dataset.dimensions():
-            arr = dataset.dimension_values(vd, flat=False)
+            if d in dataset.kdims and cls.irregular(dataset, d):
+                continue
+            arr = dataset.dimension_values(d, flat=False)
             if all_scalar and len(dataset.vdims) == 1:
                 return arr[tuple(ind[0] for ind in adjusted_inds)]
-            selected[vd.name] = arr[tuple(adjusted_inds)]
+            selected[d.name] = arr[tuple(adjusted_inds)]
         return tuple(selected[d.name] for d in dataset.dimensions())
 
 

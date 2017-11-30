@@ -58,6 +58,10 @@ class ImageInterface(GridInterface):
 
         return data, {'kdims':kdims, 'vdims':vdims}, kwargs
 
+    @classmethod
+    def irregular(cls, dataset, dim):
+        "ImageInterface does not support irregular data"
+        return False
 
     @classmethod
     def shape(cls, dataset, gridded=False):

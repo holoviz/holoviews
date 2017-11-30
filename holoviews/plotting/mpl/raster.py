@@ -234,38 +234,39 @@ class QuadMeshPlot(ColorbarPlot):
         zdata = element.dimension_values(2, flat=False)
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
         expanded = element.interface.irregular(element, element.kdims[0])
-        coords = [element.interface.coords(element, d, expanded=expanded, edges=True)
+        edges = style.get('shading') != 'gouraud'
+        coords = [element.interface.coords(element, d, expanded=expanded, edges=edges)
                   for d in element.kdims]
         if self.invert_axes:
             coords = coords[::-1]
             data = data.T
         cmesh_data = coords + [data]
-        style['locs'] = np.concatenate(coords)
+        if expanded:
+            style['locs'] = np.concatenate(coords)
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         return tuple(cmesh_data), style, {}
 
 
     def init_artists(self, ax, plot_args, plot_kwargs):
-        locs = plot_kwargs.pop('locs')
+        locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
         return {'artist': artist, 'locs': locs}
 
 
     def update_handles(self, key, axis, element, ranges, style):
         cmesh = self.handles['artist']
-        locs = np.concatenate(element.data[:2])
-
-        if (locs != self.handles['locs']).any():
-            return super(QuadMeshPlot, self).update_handles(key, axis, element,
-                                                            ranges, style)
-        else:
-            data, style, axis_kwargs = self.get_data(element, ranges, style)
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        locs = style.get('locs')
+        old_locs = self.handles.get('locs')
+        if None in (locs, old_locs) or (locs == old_locs).all():
             cmesh.set_array(data[-1])
             cmesh.set_clim((style['vmin'], style['vmax']))
             if 'norm' in style:
                 cmesh.norm = style['norm']
             return axis_kwargs
+        return super(QuadMeshPlot, self).update_handles(key, axis, element,
+                                                        ranges, style)
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
