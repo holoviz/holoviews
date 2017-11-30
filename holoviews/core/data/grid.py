@@ -148,7 +148,7 @@ class GridInterface(DictInterface):
         array([-0.5,  0.5,  1.5,  2.5,  3.5,  4.5])
         >>> GridInterface._infer_interval_breaks([[0, 1], [3, 4]], axis=1)
         array([[-0.5,  0.5,  1.5],
-           [ 2.5,  3.5,  4.5]])
+               [ 2.5,  3.5,  4.5]])
         """
         coord = np.asarray(coord)
         deltas = 0.5 * np.diff(coord, axis=axis)
