@@ -133,10 +133,10 @@ def compute_plot_size(plot):
     Computes the size of bokeh models that make up a layout such as
     figures, rows, columns, widgetboxes and Plot.
     """
-    if isinstance(plot, Div):
-        # Cannot compute size for Div
+    if isinstance(plot, (Div, ToolbarBox)):
+        # Cannot compute size for Div or ToolbarBox
         return 0, 0
-    elif isinstance(plot, (Row, Column, ToolbarBox, WidgetBox, Tabs)):
+    elif isinstance(plot, (Row, Column, WidgetBox, Tabs)):
         if not plot.children: return 0, 0
         if isinstance(plot, Row) or (isinstance(plot, ToolbarBox) and plot.toolbar_location not in ['right', 'left']):
             w_agg, h_agg = (np.sum, np.max)
