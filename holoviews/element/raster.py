@@ -627,27 +627,6 @@ class QuadMesh(Dataset, Element2D):
 
     _binned = True
 
-    def select(self, selection_specs=None, **selection):
-        """
-        Allows selecting data by the slices, sets and scalar values
-        along a particular dimension. The indices should be supplied as
-        keywords mapping between the selected dimension and
-        value. Additionally selection_specs (taking the form of a list
-        of type.group.label strings, types or functions) may be
-        supplied, which will ensure the selection is only applied if the
-        specs match the selected object.
-        """
-        selection = {dim: sel for dim, sel in selection.items()
-                     if dim in self.dimensions()+['selection_mask']}
-        if (selection_specs and not any(self.matches(sp) for sp in selection_specs)
-            or not selection):
-            return self
-        if self.interface.irregular(self):
-            self.warning("Cannot apply selection to QuadMesh with "
-                         "irregularly gridded data, skipping.")
-            return self
-        return super(QuadMesh, self).select(selection_specs, **selection)
-
 
 
 class HeatMap(Dataset, Element2D):

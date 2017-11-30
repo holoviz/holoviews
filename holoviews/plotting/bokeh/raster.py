@@ -175,7 +175,7 @@ class QuadMeshPlot(ColorbarPlot):
         cmapper = self._get_colormapper(z, element, ranges, style)
         cmapper = {'field': z.name, 'transform': cmapper}
 
-        irregular = element.interface.irregular(element)
+        irregular = element.interface.irregular(element, x)
         if irregular:
             mapping = dict(xs='xs', ys='ys', fill_color=cmapper)
         else:

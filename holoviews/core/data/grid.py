@@ -102,10 +102,10 @@ class GridInterface(DictInterface):
                             'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
+
     @classmethod
-    def irregular(cls, dataset):
-        dim = dataset.kdims[0].name
-        return dataset.data[dim].ndim > 1
+    def irregular(cls, dataset, dim):
+        return dataset.data[dim.name].ndim > 1
 
 
     @classmethod
@@ -168,14 +168,17 @@ class GridInterface(DictInterface):
         """
         dim = dataset.get_dimension(dim, strict=True)
         idx = dataset.get_dimension_index(dim)
-        if expanded:
-            if cls.irregular(dataset):
+        irregular = cls.irregular(dataset, dim)
+        if irregular or expanded:
+            if irregular:
                 data = dataset.data[dim.name]
-                if edges:
-                    data = cls._infer_interval_breaks(data, axis=1)
-                    data = cls._infer_interval_breaks(data, axis=0)
-                return data
-            return util.expand_grid_coords(dataset, dim)
+            else:
+                data = util.expand_grid_coords(dataset, dim)
+            if edges:
+                data = cls._infer_interval_breaks(data, axis=1)
+                data = cls._infer_interval_breaks(data, axis=0)
+            return data
+
         data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
@@ -256,7 +259,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for kd, ind in zip(dataset.kdims[::-1], indices):
+        for i, (kd, ind) in enumerate(zip(dataset.kdims[::-1], indices)):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
@@ -269,7 +272,7 @@ class GridInterface(DictInterface):
                 coords = cls.coords(dataset, kd.name)
                 selected[kd.name] = coords
                 all_scalar = False
-        for vd in dataset.vdims:
+        for d in dataset.dimensions():
             arr = dataset.dimension_values(vd, flat=False)
             if all_scalar and len(dataset.vdims) == 1:
                 return arr[tuple(ind[0] for ind in adjusted_inds)]
@@ -280,7 +283,7 @@ class GridInterface(DictInterface):
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
-        if dim in dataset.vdims:
+        if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
@@ -296,6 +299,12 @@ class GridInterface(DictInterface):
         # Get dimensions information
         dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+
+        invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
+        if invalid:
+            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
+                             % invalid)
 
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
@@ -380,11 +389,16 @@ class GridInterface(DictInterface):
                              'convert to expanded format before slicing.')
 
         indexed = cls.indexed(dataset, selection)
-        selection = [(d, selection.get(d.name, selection.get(d.label)))
+        full_selection = [(d, selection.get(d.name, selection.get(d.label)))
                       for d in dimensions]
         data = {}
         value_select = []
-        for (dim, ind) in selection:
+        for (dim, ind) in full_selection:
+            if dim in list(selection) and cls.irregular(dataset, dim):
+                raise IndexError("Cannot index along irregularly sampled "
+                                 "dimension '%s'. Use .ndloc to slice by "
+                                 "integer or ensure dimension is regularly "
+                                 "sampled." % dim)
             values = cls.coords(dataset, dim, False)
             mask = cls.key_select_mask(dataset, values, ind)
             if mask is None:
@@ -402,14 +416,8 @@ class GridInterface(DictInterface):
                                          "of %s for %s dimension." % (ind, emax, dim))
                     idx = max([np.digitize([ind], edges)[0]-1, 0])
                     mask = np.zeros(len(values), dtype=np.bool)
-                    if np.sum(ind == values):
-                        mask[idx] = True
-                        values = edges[idx:idx+2]
-                    elif len(inds):
-                        mask[idx] = True
-                        values = edges[idx: idx+2]
-                    else:
-                        values = edges[:0]
+                    mask[idx] = True
+                    values = edges[idx:idx+2]
                 elif len(inds):
                     values = edges[inds.min(): inds.max()+2]
                 else:
@@ -552,7 +560,7 @@ class GridInterface(DictInterface):
     @classmethod
     def range(cls, dataset, dimension):
         if dataset._binned and dimension in dataset.kdims:
-            expanded = cls.irregular(dataset)
+            expanded = cls.irregular(dataset, dimension)
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
             column = dataset.dimension_values(dimension)
