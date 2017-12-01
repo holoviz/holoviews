@@ -863,6 +863,14 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = pd.DataFrame
         self.init_column_data()
 
+    def test_dataset_series_construct(self):
+        ds = Dataset(pd.Series([1, 2, 3], name='A'))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+
+    def test_dataset_single_column_construct(self):
+        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A']))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+
     def test_dataset_extract_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])

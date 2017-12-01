@@ -1134,10 +1134,18 @@ def find_file(folder, filename):
 
 def is_dataframe(data):
     """
-    Checks whether the supplied data is DataFrame type.
+    Checks whether the supplied data is of DataFrame type.
     """
     return((pd is not None and isinstance(data, pd.DataFrame)) or
           (dd is not None and isinstance(data, dd.DataFrame)))
+
+
+def is_series(data):
+    """
+    Checks whether the supplied data is of Series type.
+    """
+    return((pd is not None and isinstance(data, pd.Series)) or
+          (dd is not None and isinstance(data, dd.Series)))
 
 
 def get_param_values(data):
