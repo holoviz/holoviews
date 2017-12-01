@@ -191,9 +191,18 @@ class XArrayInterface(GridInterface):
                 data = cls._infer_interval_breaks(data, axis=1)
                 data = cls._infer_interval_breaks(data, axis=0)
             return data
+
+        idx = dataset.get_dimension_index(dim)
         data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
+        shape = cls.shape(dataset, True)
+        isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
+                   and len(data) == (shape[dataset.ndims-idx-1]+1))
+        if edges and not isedges:
+            data = cls._infer_interval_breaks(data)
+        elif not edges and isedges:
+            data = np.convolve(data, [0.5, 0.5], 'valid')
         return data
 
 

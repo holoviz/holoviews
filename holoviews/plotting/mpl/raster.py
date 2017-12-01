@@ -235,7 +235,8 @@ class QuadMeshPlot(ColorbarPlot):
         data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
         expanded = element.interface.irregular(element, element.kdims[0])
         edges = style.get('shading') != 'gouraud'
-        coords = [element.interface.coords(element, d, expanded=expanded, edges=edges)
+        coords = [element.interface.coords(element, d, ordered=True,
+                                           expanded=expanded, edges=edges)
                   for d in element.kdims]
         if self.invert_axes:
             coords = coords[::-1]
@@ -260,7 +261,7 @@ class QuadMeshPlot(ColorbarPlot):
         locs = style.get('locs')
         old_locs = self.handles.get('locs')
         if None in (locs, old_locs) or (locs == old_locs).all():
-            cmesh.set_array(data[-1])
+            cmesh.set_array(data[-1].flatten())
             cmesh.set_clim((style['vmin'], style['vmax']))
             if 'norm' in style:
                 cmesh.norm = style['norm']

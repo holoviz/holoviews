@@ -167,7 +167,6 @@ class GridInterface(DictInterface):
         ND-array matching the dimensionality of the dataset.
         """
         dim = dataset.get_dimension(dim, strict=True)
-        idx = dataset.get_dimension_index(dim)
         irregular = cls.irregular(dataset, dim)
         if irregular or expanded:
             if irregular:
@@ -179,6 +178,7 @@ class GridInterface(DictInterface):
                 data = cls._infer_interval_breaks(data, axis=0)
             return data
 
+        idx = dataset.get_dimension_index(dim)
         data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
