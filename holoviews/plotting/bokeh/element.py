@@ -26,7 +26,7 @@ from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
-                   rgba_tuple, recursive_model_update)
+                   rgba_tuple, recursive_model_update, glyph_order)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -936,10 +936,12 @@ class CompositeElementPlot(ElementPlot):
             style = self.style[self.cyclic_index]
             data, mapping, style = self.get_data(element, ranges, style)
 
+        keys = glyph_order(dict(data, **mapping), self._draw_order)
+
         source_cache = {}
         current_id = element._plot_id
         self.handles['previous_id'] = current_id
-        for key in dict(mapping, **data):
+        for key in keys:
             ds_data = data.get(key, {})
             if id(ds_data) in source_cache:
                 source = source_cache[id(ds_data)]
@@ -993,13 +995,8 @@ class CompositeElementPlot(ElementPlot):
         style = self.style[self.cyclic_index]
         data, mapping, style = self.get_data(element, ranges, style)
 
-        # Order glyphs by supplied draw order
-        keys = sorted(dict(mapping, **data))
-        def order_fn(glyph):
-            matches = [item for item in self._draw_order if glyph.startswith(item)]
-            if matches: return self._draw_order.index(matches[0])
-            return 1e6+keys.index(glyph)
-        for key in sorted(keys, key=order_fn):
+        keys = glyph_order(dict(data, **mapping), self._draw_order)
+        for key in keys:
             gdata = data.get(key)
             source = self.handles[key+'_source']
             glyph = self.handles.get(key+'_glyph')
