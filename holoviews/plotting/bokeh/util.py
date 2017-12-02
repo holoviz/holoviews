@@ -602,3 +602,23 @@ def date_to_integer(date):
     else:
         raise ValueError('Datetime type not recognized')
     return dt_int
+
+
+def glyph_order(keys, draw_order=[]):
+    """
+    Orders a set of glyph handles using regular sort and an explicit
+    sort order. The explicit draw order must take the form of a list
+    of glyph names while the keys should be glyph names with a custom
+    suffix. The draw order may only match subset of the keys and any
+    matched items will take precedence over other entries.
+
+    >>> glyph_order(['scatter_1', 'patch_1', 'rect_1'], \
+                    ['scatter', 'patch'])
+    ['scatter_1', 'patch_1', 'rect_1']
+    """
+    keys = sorted(keys)
+    def order_fn(glyph):
+        matches = [item for item in draw_order if glyph.startswith(item)]
+        return ((draw_order.index(matches[0]), glyph) if matches else
+                (1e9+keys.index(glyph), glyph))
+    return sorted(keys, key=order_fn)
