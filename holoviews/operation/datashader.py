@@ -185,7 +185,7 @@ class aggregate(ResamplingOperation):
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=None)
+                                     default=ds.count())
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
