@@ -164,7 +164,6 @@ class HeatMapPlot(ColorbarPlot):
                        'height': 1, 'width': 1}, style)
 
 
-
 class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
 
@@ -178,13 +177,21 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
-    show_nth_label = param.Number(default=1, doc="""
-        Define every nth label to be plotted. By default, every label is
-        shown.""")
-
     separate_nth_segment = param.Number(default=0, doc="""
         Add separation lines between segments for better readability. By
         default, does not show any separation lines.""")
+
+    max_radius = param.Number(default=0.5, doc="""
+        Define the maximum radius which is used for the x and y range extents.
+        """)
+
+    xticks = param.Parameter(default=4, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
+
+    yticks = param.Parameter(default=4, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
 
     # Force x and y ranges to be numerical
     _y_range_type = Range1d
@@ -192,51 +199,37 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     # Map each glyph to a style group
     _style_groups = {'annular_wedge': 'annular',
-                     'text': 'label',
+                     'text': 'ticks',
                      'multi_line': 'separator'}
 
     _draw_order = ["annular_wedge", "multi_line", "text"]
 
     style_opts = (['separator_' + p for p in line_properties] + \
                   ['annular_' + p for p in fill_properties + line_properties] + \
-                  ['label_' + p for p in text_properties] + ['width', 'cmap'])
+                  ['ticks_' + p for p in text_properties] + ['width', 'cmap'])
 
 
-    @staticmethod
-    def _extract_implicit_order(array):
+    def _get_bins(self, kind, order, reverse=False):
         """
-        Iterate given `array` and extract unique values in
-        existing order.
-        """
-
-        order = []
-        contained = set()
-
-        for element in array:
-            if element not in contained:
-                order.append(element)
-                contained.update([element])
-
-        return order
-
-
-    @staticmethod
-    def _map_order_to_bins(start, end, order, reverse=False):
-        """
-        Map elements from given `order` array to bins ranging from `start`
-        to `end`.
+        Map elements from given `order` array to bins of start and end values
+        for radius or angle dimension.
         """
 
-        size = len(order)
-        bounds = np.linspace(start, end, size + 1)
+        if kind == "radius":
+            start = self.max_radius * self.padding_inner
+            end = self.max_radius
+
+        elif kind == "angle":
+            start = self.start_angle
+            end = self.start_angle + 2 * np.pi
+
+        bounds = np.linspace(start, end, len(order) + 1)
         bins = np.vstack([bounds[:-1], bounds[1:]]).T
 
         if reverse:
             bins = bins[::-1]
 
-        mapping = dict(zip(order, bins))
-
-        return mapping
+        return dict(zip(order, bins))
 
 
     @staticmethod
@@ -263,22 +256,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
         return text, np.array(radiants)
 
-
-    @staticmethod
-    def _compute_separations(inner, outer, angles):
-        """
-        Compute x and y positions for separation lines for given angles.
-        """
-
-        y_start = np.sin(angles) * inner + 0.5
-        y_end = np.sin(angles) * outer + 0.5
-
-        x_start = np.cos(angles) * inner + 0.5
-        x_end = np.cos(angles) * outer + 0.5
-
-        return zip(x_start, x_end), zip(y_start, y_end)
-
-
     def _postprocess_hover(self, renderer, source):
         """
         Limit hover tool to annular wedges only.
@@ -289,21 +266,34 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
 
     def get_extents(self, view, ranges):
+        """Supply custom, static extents because radial heatmaps always have
+        the same boundaries.
+
+        """
+
         lower = -self.padding_outer
         upper = 1 + self.padding_outer
         return (lower, lower, upper, upper)
 
 
-    def get_data(self, element, ranges, style):
+    def _axis_properties(self, *args, **kwargs):
+        """Overwrite default axis properties handling due to clashing
+        categorical input and numerical output axes.
 
-        # dimension labels
-        dim_labels = element.dimensions(label=True)[:3]
-        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+        Axis properties are handled separately for radial heatmaps because of
+        missing radial axes in bokeh.
 
-        if self.invert_axes: x, y = y, x
-        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
+        """
 
-        # define default CDS data mappings
+        return {}
+
+
+    def get_default_mapping(self, z, cmapper):
+        """Create dictionary containing default ColumnDataSource glyph to data
+        mappings.
+
+        """
+
         map_annular = dict(x=0.5, y=0.5,
                            inner_radius="inner_radius",
                            outer_radius="outer_radius",
@@ -311,15 +301,145 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                            end_angle="end_angle",
                            fill_color={'field': z, 'transform': cmapper})
 
-        map_text = dict(x="x", y="y", text="text",
-                        angle="angle", text_align="center")
+        map_seg_label = dict(x="x", y="y", text="text",
+                             angle="angle", text_align="center")
+
+        map_ann_label = dict(x="x", y="y", text="text",
+                             angle="angle", text_align="center",
+                             text_baseline="bottom")
 
         map_multi_line = dict(xs="xs", ys="ys")
 
-        mapping = {'annular_wedge_1': map_annular,
-                   'text_1': map_text,
-                   'multi_line_1': map_multi_line}
+        return {'annular_wedge_1': map_annular,
+                'text_1': map_seg_label,
+                'text_2': map_ann_label,
+                'multi_line_1': map_multi_line}
 
+
+    def _pprint(self, element, dim_label, vals):
+        """Helper function to convert values to corresponding dimension type.
+
+        """
+
+        if vals.dtype.kind not in 'SU':
+            dim = element.gridded.get_dimension(dim_label)
+            return [dim.pprint_value(v) for v in vals]
+
+        return vals
+
+
+    def _compute_tick_mapping(self, kind, order_default, bin_default):
+        """Helper function to compute tick mappings based on `ticks` and
+        default orders and bins.
+
+        """
+
+        if kind == "angle":
+            ticks = self.xticks
+            reverse = True
+        elif kind == "radius":
+            ticks = self.yticks
+            reverse = False
+
+        nth_label = 1
+        order = order_default
+        bins = bin_default
+
+        if isinstance(ticks, (tuple, list)):
+            order = ticks
+            bins = self._get_bins(kind, ticks, reverse)
+        elif self.xticks:
+            nth_label = np.ceil(len(order_default) / ticks).astype(int)
+
+        text_nth = order[::nth_label]
+        return {x: bins[x] for x in text_nth}
+
+
+    def _get_seg_labels_data(self, order_seg, bins_seg):
+        """Generate ColumnDataSource dictionary for segment labels.
+
+        """
+
+        if self.xticks is None:
+            return dict(x=[], y=[], text=[], angle=[])
+
+        mapping = self._compute_tick_mapping("angle", order_seg, bins_seg)
+
+        values = [(text, ((end - start) / 2) + start)
+                  for text, (start, end) in mapping.items()]
+
+        labels, radiant = zip(*values)
+        radiant = np.array(radiant)
+
+        y_coord = np.sin(radiant) * self.max_radius * 1.01 + self.max_radius
+        x_coord = np.cos(radiant) * self.max_radius * 1.01 + self.max_radius
+
+        return dict(x=x_coord,
+                    y=y_coord,
+                    text=labels,
+                    angle=1.5 * np.pi + radiant)
+
+    def _get_ann_labels_data(self, order_ann, bins_ann):
+        """Generate ColumnDataSource dictionary for annular labels.
+
+        """
+
+        if self.yticks is None:
+            return dict(x=[], y=[], text=[], angle=[])
+
+        mapping = self._compute_tick_mapping("radius", order_ann, bins_ann)
+        values = [(label, radius[0]) for label, radius in mapping.items()]
+
+        labels, radius = zip(*values)
+        radius = np.array(radius)
+
+        y_coord = np.sin(np.pi/2) * radius + 0.5
+        x_coord = np.cos(np.pi/2) * radius + 0.5
+
+        return dict(x=x_coord,
+                    y=y_coord,
+                    text=labels,
+                    angle=[0]*len(labels))
+
+    def _get_multiline_data(self, order_seg, bins_seg):
+        """Generate ColumnDataSource dictionary for segment separation lines.
+
+        """
+
+        if self.separate_nth_segment > 1:
+            separate_nth = order_seg[::self.separate_nth_segment]
+            angles = np.array([bins_seg[x][1] for x in separate_nth])
+
+            inner = self.max_radius * self.padding_inner
+            outer = self.max_radius
+
+            y_start = np.sin(angles) * inner + self.max_radius
+            y_end = np.sin(angles) * outer + self.max_radius
+
+            x_start = np.cos(angles) * inner + self.max_radius
+            x_end = np.cos(angles) * outer + self.max_radius
+
+            xs = zip(x_start, x_end)
+            ys = zip(y_start, y_end)
+
+        else:
+            xs, ys = [], []
+
+        return dict(xs=list(xs), ys=list(ys))
+
+
+    def get_data(self, element, ranges, style):
+
+        # dimension labels
+        dim_labels = element.dimensions(label=True)[:3]
+        x, y, z = [dimension_sanitizer(d) for d in dim_labels]
+        if self.invert_axes: x, y = y, x
+
+        # color mapper
+        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
+
+        # default CDS data mapping
+        mapping = self.get_default_mapping(z, cmapper)
         if self.static_source:
             return {}, mapping, style
 
@@ -329,69 +449,45 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         yvals = aggregate.dimension_values(y)
         zvals = aggregate.dimension_values(2, flat=True)
 
-        # pretty print x and y dimension values if necessary
-        def _pprint(dim_label, vals):
-            if vals.dtype.kind not in 'SU':
-                dim = aggregate.get_dimension(dim_label)
-                return [dim.pprint_value(v) for v in vals]
-
-            return vals
-
-        xvals = _pprint(x, xvals)
-        yvals = _pprint(y, yvals)
-
-
         # get orders
-        order_segment = self._extract_implicit_order(xvals)
-        order_annular = self._extract_implicit_order(yvals)
+        order_seg = aggregate.dimension_values(x, expanded=False)
+        order_ann = aggregate.dimension_values(y, expanded=False)
+
+        # pretty print if necessary
+        xvals = self._pprint(element, x, xvals)
+        yvals = self._pprint(element, y, yvals)
+        order_seg = self._pprint(element, x, order_seg)
+        order_ann = self._pprint(element, y, order_ann)
 
         # annular wedges
-        radius_max = 0.5
+        bins_ann = self._get_bins("radius", order_ann)
+        inner_radius, outer_radius = self._get_bounds(bins_ann, yvals)
 
-        bins_annular = self._map_order_to_bins(radius_max * self.padding_inner,
-                                               radius_max,
-                                               order_annular)
+        bins_seg = self._get_bins("angle", order_seg, True)
+        start_angle, end_angle = self._get_bounds(bins_seg, xvals)
 
-        bins_segment = self._map_order_to_bins(self.start_angle,
-                                               self.start_angle + 2 * np.pi,
-                                               order_segment, True)
+        # create ColumnDataSources
+        data_annular = {"start_angle": start_angle,
+                        "end_angle": end_angle,
+                        "inner_radius": inner_radius,
+                        "outer_radius": outer_radius,
+                        z: zvals, x: xvals, y: yvals}
 
-        start_angle, end_angle = self._get_bounds(bins_segment, xvals)
-        inner_radius, outer_radius = self._get_bounds(bins_annular, yvals)
+        if any(isinstance(t, HoverTool) for t in self.state.tools):
+            for vdim in element.vdims:
+                sanitized = dimension_sanitizer(vdim.name)
+                values = ['-' if is_nan(v) else vdim.pprint_value(v)
+                          for v in aggregate.dimension_values(vdim)]
+                data_annular[sanitized] = values
 
-        data_annular = {"start_angle":start_angle,
-                        "end_angle":end_angle,
-                        "inner_radius":inner_radius,
-                        "outer_radius":outer_radius,
-                        z:zvals, x:xvals, y: yvals}
+        data_text_seg_labels = self._get_seg_labels_data(order_seg, bins_seg)
+        data_text_ann_labels = self._get_ann_labels_data(order_ann, bins_ann)
 
-        # text for labels
-        text_nth = order_segment[::self.show_nth_label]
-        text_mapping = {x: bins_segment[x] for x in text_nth}
-        text_labels, text_radiant = self._extract_labels(text_mapping)
-        text_y_coord = np.sin(text_radiant) * radius_max * 1.01 + 0.5
-        text_x_coord = np.cos(text_radiant) * radius_max * 1.01 + 0.5
+        data_multi_line = self._get_multiline_data(order_seg, bins_seg)
 
-        data_text = dict(x=text_x_coord,
-                         y=text_y_coord,
-                         text=text_labels,
-                         angle=1.5 * np.pi + text_radiant)
-
-        # multi_lines for separation
-        if self.separate_nth_segment > 1:
-            separate_nth = order_segment[::self.separate_nth_segment]
-            angles = np.array([bins_segment[x][1] for x in separate_nth])
-            xs, ys = self._compute_separations(radius_max * self.padding_inner,
-                                               radius_max,
-                                               angles)
-        else:
-            xs, ys = [], []
-
-        data_multi_line = dict(xs=list(xs), ys=list(ys))
-
-        # create data dict
         data = {'annular_wedge_1': data_annular,
-                'text_1': data_text,
+                'text_1': data_text_seg_labels,
+                'text_2': data_text_ann_labels,
                 'multi_line_1': data_multi_line}
 
 
