@@ -115,6 +115,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def get_data(self, element, ranges, style):
+        # Force static source to False
+        static = self.static_source
+        self.handles['static_source'] = static
+        self.static_source = False
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
 
         # Get node data
@@ -159,7 +163,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             end = np.array([node_indices.get(y, nan_node) for y in end], dtype=np.int32)
         path_data = dict(start=start, end=end)
         self._get_edge_colors(element, ranges, path_data, edge_mapping, style)
-        if element._edgepaths and not self.static_source:
+        if element._edgepaths and not static:
             edges = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
             if len(edges) == len(start):
                 path_data['xs'] = [path[:, 0] for path in edges]
@@ -189,7 +193,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         Update datasource with data for a new frame.
         """
         if isinstance(source, ColumnDataSource):
-            source.data.update(data)
+            if self.handles['static_source']:
+                source.trigger('data')
+            else:
+                source.data.update(data)
         else:
             source.graph_layout = data
 
