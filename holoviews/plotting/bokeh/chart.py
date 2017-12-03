@@ -5,6 +5,7 @@ import param
 from bokeh.models import (CategoricalColorMapper, CustomJS, HoverTool,
                           FactorRange, Whisker, Band, Range1d)
 from bokeh.models.tools import BoxSelectTool
+from bokeh.transform import jitter
 
 from ...core import Dataset, OrderedDict
 from ...core.dimension import Dimension
@@ -33,6 +34,9 @@ class PointPlot(LegendPlot, ColorbarPlot):
                                           doc="""
       Determines whether the `scaling_factor` should be applied to
       the width or area of each point (default: "area").""")
+
+    jitter = param.Number(default=None, bounds=(0, None), doc="""
+      The amount of jitter to apply to offset the points along the x-axis.""")
 
     scaling_factor = param.Number(default=1, bounds=(0, None), doc="""
       Scaling factor which is applied to either the width or area
@@ -90,6 +94,11 @@ class PointPlot(LegendPlot, ColorbarPlot):
         sdata, smapping = self._get_size_data(element, ranges, style)
         data.update(sdata)
         mapping.update(smapping)
+
+        if self.jitter:
+            axrange = 'y_range' if self.invert_axes else 'x_range'
+            mapping['x'] = jitter(dims[xidx], self.jitter,
+                                  range=self.handles[axrange])
 
         self._get_hover_data(data, element)
         return data, mapping, style
