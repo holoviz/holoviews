@@ -151,8 +151,8 @@ class TriMeshTests(ComparisonTestCase):
 
     def test_trimesh_edgepaths(self):
         trimesh = TriMesh((self.simplices, self.nodes))
-        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0)]),
-                 np.array([(0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
+        paths = [np.array([(0, 0), (0.5, 1), (1, 0), (0, 0), (np.NaN, np.NaN),
+                 (0.5, 1), (1, 0), (1.5, 1), (0.5, 1)])]
         for p1, p2 in zip(trimesh.edgepaths.split(datatype='array'), paths):
             self.assertEqual(p1, p2)
 
