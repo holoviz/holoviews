@@ -49,6 +49,13 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
+    aspect = param.Parameter(default=None, doc="""
+        The aspect ratio mode of the plot. By default the aspect is
+        implicitly controlled by the axis ranges and the width and
+        height of the plot. When an aspect is set, explicit data ranges
+        are ignored and the width/height of *data space* is matched to
+        the (width/height) in pixels of *screen space*.""")
+
     bgcolor = param.Parameter(default='white', doc="""
         Background color of the plot.""")
 
@@ -351,7 +358,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         categorical_x = any(isinstance(x, util.basestring) for x in (l, r))
         categorical_y = any(isinstance(y, util.basestring) for y in (b, t))
 
-        range_types = (self._x_range_type, self._y_range_type)
+        if self.aspect is not None:
+            range_types = DataRange1d, DataRange1d
+        else:
+            range_types = (self._x_range_type, self._y_range_type)
         if self.invert_axes: range_types = range_types[::-1]
         x_range_type, y_range_type = range_types
         if categorical or categorical_x:
@@ -383,6 +393,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         properties = dict(plot_ranges)
         properties['x_axis_label'] = xlabel if 'x' in self.labelled else ' '
         properties['y_axis_label'] = ylabel if 'y' in self.labelled else ' '
+
+        if self.aspect is not None:
+            properties['match_aspect'] = True
+            if isinstance(self.aspect, (int, float)):
+                properties['aspect_scale'] = self.aspect
 
         if not self.show_frame:
             properties['outline_line_alpha'] = 0
@@ -571,6 +586,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
 
     def _update_range(self, axis_range, low, high, factors, invert, shared, log, streaming=False):
+        if self.aspect and not factors:
+            return
         if isinstance(axis_range, (Range1d, DataRange1d)) and self.apply_ranges:
             if (low == high and low is not None):
                 if isinstance(low, util.datetime_types):
