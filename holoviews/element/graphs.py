@@ -293,7 +293,7 @@ class Graph(Dataset, Element2D):
 
     @property
     def _split_edgepaths(self):
-        if len(self) == len(self._edgepaths.data):
+        if len(self) == len(self.edgepaths.data):
             return self._edgepaths
         else:
             return self._edgepaths.clone(split_path(self._edgepaths))
