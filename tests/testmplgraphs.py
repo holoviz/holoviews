@@ -127,7 +127,7 @@ class TestMplTriMeshPlots(ComparisonTestCase):
         self.assertIsInstance(edges, LineCollection)
         self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
         self.assertEqual([p.vertices for p in edges.get_paths()],
-                         [p.array() for p in self.trimesh.edgepaths.split()])
+                         [p.array() for p in self.trimesh._split_edgepaths.split()])
 
     def test_plot_simple_trimesh_filled(self):
         plot = mpl_renderer.get_plot(self.trimesh.opts(plot=dict(filled=True)))
@@ -135,9 +135,9 @@ class TestMplTriMeshPlots(ComparisonTestCase):
         edges = plot.handles['edges']
         self.assertIsInstance(edges, PolyCollection)
         self.assertEqual(nodes.get_offsets(), self.trimesh.nodes.array([0, 1]))
-        self.assertEqual([p.vertices for p in edges.get_paths()],
-                         [p.array()[[0, 1, 2, 3, 3]]
-                          for p in self.trimesh.edgepaths.split()])
+        paths = self.trimesh._split_edgepaths.split(datatype='array')
+        self.assertEqual([p.vertices[:4] for p in edges.get_paths()],
+                         paths)
 
     def test_plot_trimesh_colored_edges(self):
         opts = dict(plot=dict(edge_color_index='weight'), style=dict(edge_cmap='Greys'))

@@ -294,9 +294,9 @@ class Graph(Dataset, Element2D):
     @property
     def _split_edgepaths(self):
         if len(self) == len(self.edgepaths.data):
-            return self._edgepaths
+            return self.edgepaths
         else:
-            return self._edgepaths.clone(split_path(self._edgepaths))
+            return self.edgepaths.clone(split_path(self.edgepaths))
 
 
     def range(self, dimension, data_range=True):
@@ -478,10 +478,12 @@ class TriMesh(Graph):
             return self._edgepaths
 
         simplices = self.array([0, 1, 2]).astype(np.int32)
-        pts = self.nodes.array([0, 1])
+        pts = self.nodes.array([0, 1]).astype(float)
         empty = np.array([[np.NaN, np.NaN]])
-        paths = [arr for tri in pts[simplices] for arr in (tri[[0, 1, 2, 0], :], empty)][:-1]
-        edgepaths = self._edge_type([np.concatenate(paths)], kdims=self.nodes.kdims[:2])
+        paths = [arr for tri in pts[simplices] for arr in
+                 (tri[[0, 1, 2, 0], :], empty)][:-1]
+        edgepaths = self._edge_type([np.concatenate(paths)],
+                                    kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
 
