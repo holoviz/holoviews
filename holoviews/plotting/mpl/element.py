@@ -838,9 +838,17 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             subplot.update_frame(key, ranges, el)
 
         if isinstance(self.hmap, DynamicMap) and items:
-            raise Exception("Some Elements returned by the dynamic callback "
-                            "were not initialized correctly and could not be "
-                            "rendered.")
+            # Compute global ordering
+            length = self.style_grouping
+            group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
+            keys, vmaps = self.hmap.split_overlays()
+            for k, m in items:
+                self.map_lengths[group_fn(vmaps[keys.index(k)])[:length]] += 1
+            for k, obj in items:
+                subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+                self.subplots[k] = subplot
+                subplot.initialize_plot(ranges)
+                subplot.update_frame(key, ranges, element=obj)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

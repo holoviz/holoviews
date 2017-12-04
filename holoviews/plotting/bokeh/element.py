@@ -17,7 +17,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension
+from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension, Overlay
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Buffer
@@ -1395,6 +1395,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
+        self.handles['plots'] = plots
 
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
@@ -1460,9 +1461,20 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
-            self.warning("Some Elements returned by the dynamic callback "
-                         "were not initialized correctly and could not be "
-                         "rendered.")
+            # Compute global ordering
+            length = self.style_grouping
+            group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
+            keys, vmaps = self.hmap.split_overlays()
+            for k, m in items:
+                self.map_lengths[group_fn(vmaps[keys.index(k)])[:length]] += 1
+            for k, obj in items:
+                subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+                self.subplots[k] = subplot
+                subplot.initialize_plot(ranges, self.handles['plot'], self.handles['plots'])
+                subplot.update_frame(key, ranges, element=obj)
+                el_tools = subplot._init_tools(obj, self.callbacks)
+            if not self.overlaid:
+                self._process_legend()
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_plot(key, self.handles['plot'], element)
