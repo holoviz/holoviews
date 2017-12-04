@@ -5,15 +5,18 @@ from bokeh.models import Span, Arrow
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead, '-': None}
+    arrow_end = {'->': NormalHead, '-[': TeeHead, '-|>': NormalHead,
+                 '-': None}
 except:
     from bokeh.models.arrow_heads import OpenHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
-    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead, '-': None}
+    arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
+                 '-': None}
 
 from ...element import HLine
 from ...core.util import datetime_types
-from .element import ElementPlot, CompositeElementPlot, text_properties, line_properties
+from .element import (ElementPlot, CompositeElementPlot,
+                      text_properties, line_properties)
 from .util import date_to_integer
 
 
@@ -33,7 +36,8 @@ class TextPlot(ElementPlot):
         self._categorize_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
         style['text_align'] = element.halign
-        style['text_baseline'] = 'middle' if element.valign == 'center' else element.valign
+        baseline = 'middle' if element.valign == 'center' else element.valign
+        style['text_baseline'] = baseline
         if 'color' in style:
             style['text_color'] = style.pop('color')
         return (data, mapping, style)
@@ -124,8 +128,6 @@ class ArrowPlot(CompositeElementPlot):
 
     _style_groups = {'arrow': 'arrow', 'label': 'text'}
 
-    _plot_methods = dict(single='text')
-
     def get_data(self, element, ranges, style):
         plot = self.state
         label_mapping = dict(x='x', y='y', text='text')
@@ -179,7 +181,8 @@ class ArrowPlot(CompositeElementPlot):
         else:
             properties = {p if p == 'source' else 'text_'+p: v
                           for p, v in properties.items()}
-            glyph, _ = super(ArrowPlot, self)._init_glyph(plot, mapping, properties, 'text')
+            glyph, _ = super(ArrowPlot, self)._init_glyph(
+                plot, mapping, properties, 'text_1')
         plot.renderers.append(glyph)
         return None, glyph
 
