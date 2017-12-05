@@ -178,13 +178,16 @@ class GridInterface(DictInterface):
                 data = cls._infer_interval_breaks(data, axis=0)
             return data
 
-        idx = dataset.get_dimension_index(dim)
         data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
         shape = cls.shape(dataset, True)
-        isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
-                   and len(data) == (shape[dataset.ndims-idx-1]+1))
+        if dim in dataset.kdims:
+            idx = dataset.get_dimension_index(dim)
+            isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
+                       and len(data) == (shape[dataset.ndims-idx-1]+1))
+        else:
+            isedges = False
         if edges and not isedges:
             data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
