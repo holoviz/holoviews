@@ -629,6 +629,7 @@ def colormesh(X, Y):
     Generates line paths for a quadmesh given 2D arrays of X and Y
     coordinates.
     """
+    X1 = X[0:-1, 0:-1].ravel()
     Y1 = Y[0:-1, 0:-1].ravel()
     X2 = X[1:, 0:-1].ravel()
     Y2 = Y[1:, 0:-1].ravel()

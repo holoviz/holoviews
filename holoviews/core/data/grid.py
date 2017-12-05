@@ -382,6 +382,8 @@ class GridInterface(DictInterface):
                 mask[data_index] = True
             else:
                 mask = index_mask
+        if mask is None:
+            mask = np.ones(values.shape, dtype=bool)
         return mask
 
 
@@ -398,17 +400,18 @@ class GridInterface(DictInterface):
                           for d in dimensions]
         data = {}
         value_select = []
-        for (dim, ind) in full_selection:
-            if dim in list(selection) and cls.irregular(dataset, dim):
-                raise IndexError("Cannot index along irregularly sampled "
-                                 "dimension '%s'. Use .ndloc to slice by "
-                                 "integer or ensure dimension is regularly "
-                                 "sampled." % dim)
-            values = cls.coords(dataset, dim, False)
+        for i, (dim, ind) in enumerate(full_selection):
+            irregular = cls.irregular(dataset, dim)
+            values = cls.coords(dataset, dim, irregular)
             mask = cls.key_select_mask(dataset, values, ind)
-            if mask is None:
-                mask = np.ones(values.shape, dtype=bool)
-            if dataset._binned:
+            if irregular:
+                if np.isscalar(ind) or isinstance(ind, (set, list)):
+                    raise IndexError("Indexing not supported for irregularly "
+                                     "sampled data. %s value along %s dimension."
+                                     "must be a slice or 2D boolean mask."
+                                     % (ind, dim))
+                mask = mask.max(axis=i)
+            elif dataset._binned:
                 edges = cls.coords(dataset, dim, False, edges=True)
                 inds = np.argwhere(mask)
                 if np.isscalar(ind):
@@ -429,13 +432,18 @@ class GridInterface(DictInterface):
                     values = edges[0:0]
             else:
                 values = values[mask]
+            values, mask = np.asarray(values), np.asarray(mask)
             value_select.append(mask)
             data[dim.name] = np.array([values]) if np.isscalar(values) else values
+
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
+        for kdim in dataset.kdims:
+            if cls.irregular(dataset, dim):
+                data[kdim.name] = np.asarray(data[kdim.name])[index]
         for vdim in dataset.vdims:
-            data[vdim.name] = dataset.data[vdim.name][index]
+            data[vdim.name] = np.asarray(dataset.data[vdim.name])[index]
 
         if indexed:
             if len(dataset.vdims) == 1:

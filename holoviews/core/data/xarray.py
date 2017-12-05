@@ -328,13 +328,11 @@ class XArrayInterface(GridInterface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
+        irregular = False
         for k, v in selection.items():
             dim = dataset.get_dimension(k, strict=True)
             if cls.irregular(dataset, dim):
-                raise IndexError("Cannot index along irregularly sampled "
-                                 "dimension '%s'. Use .ndloc to slice by "
-                                 "integer or ensure dimension is regularly "
-                                 "sampled." % dim)
+                return GridInterface.select(dataset, selection_mask, **selection)
             dim = dim.name
             if isinstance(v, slice):
                 v = (v.start, v.stop)
