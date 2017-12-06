@@ -189,8 +189,10 @@ options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
 options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
 options.RadialHeatMap = Options('style', cmap='RdBu_r',
-                                separator_line_color="#FFFFFF",
-                                separator_line_width=3,
+                                xmarks_line_color="#FFFFFF",
+                                xmarks_line_width=3,
+                                ymarks_line_color="#FFFFFF",
+                                ymarks_line_width=3,
                                 annular_line_color=None)
 options.RadialHeatMap = Options('plot', xaxis=None, yaxis=None,
                                 show_frame=False,
