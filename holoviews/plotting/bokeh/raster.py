@@ -177,9 +177,25 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
-    separate_nth_segment = param.Number(default=0, doc="""
+    xmarks = param.Parameter(default=None, doc="""
         Add separation lines between segments for better readability. By
-        default, does not show any separation lines.""")
+        default, does not show any separation lines. If parameter is of type 
+        integer, draws the given amount of separations lines spread across 
+        radial heatmap. If parameter is of type list containing integers, show 
+        separation lines at given indices. If parameter is of type tuple, draw 
+        separation lines at given segment values. If parameter is of type 
+        function, draw separation lines where function returns True for passed 
+        segment value.""")
+
+    ymarks = param.Parameter(default=None, doc="""
+        Add separation lines between annulars for better readability. By
+        default, does not show any separation lines. If parameter is of type 
+        integer, draws the given amount of separations lines spread across 
+        radial heatmap. If parameter is of type list containing integers, show 
+        separation lines at given indices. If parameter is of type tuple, draw 
+        separation lines at given annular values. If parameter is of type 
+        function, draw separation lines where function returns True for passed 
+        annular value.""")
 
     max_radius = param.Number(default=0.5, doc="""
         Define the maximum radius which is used for the x and y range extents.
@@ -200,11 +216,13 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     # Map each glyph to a style group
     _style_groups = {'annular_wedge': 'annular',
                      'text': 'ticks',
-                     'multi_line': 'separator'}
+                     'multi_line': 'xmarks',
+                     'arc': 'ymarks'}
 
-    _draw_order = ["annular_wedge", "multi_line", "text"]
+    _draw_order = ['annular_wedge', 'multi_line', 'arc', 'text']
 
-    style_opts = (['separator_' + p for p in line_properties] + \
+    style_opts = (['xmarks_' + p for p in line_properties] + \
+                  ['ymarks_' + p for p in line_properties] + \
                   ['annular_' + p for p in fill_properties + line_properties] + \
                   ['ticks_' + p for p in text_properties] + ['width', 'cmap'])
 
@@ -308,12 +326,16 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                              angle="angle", text_align="center",
                              text_baseline="bottom")
 
-        map_multi_line = dict(xs="xs", ys="ys")
+        map_xmarks = dict(xs="xs", ys="ys")
+
+        map_ymarks = dict(x= self.max_radius, y=self.max_radius,
+                          start_angle=0, end_angle=2*np.pi, radius="radius")
 
         return {'annular_wedge_1': map_annular,
                 'text_1': map_seg_label,
                 'text_2': map_ann_label,
-                'multi_line_1': map_multi_line}
+                'multi_line_1': map_xmarks,
+                'arc_1': map_ymarks}
 
 
     def _pprint(self, element, dim_label, vals):
@@ -341,17 +363,20 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
             ticks = self.yticks
             reverse = False
 
-        nth_label = 1
         order = order_default
         bins = bin_default
 
-        if isinstance(ticks, (tuple, list)):
+        if callable(ticks):
+            text_nth = [x for x in order if ticks(x)]
+
+        elif isinstance(ticks, (tuple, list)):
             order = ticks
             bins = self._get_bins(kind, ticks, reverse)
+            text_nth = order
         elif self.xticks:
             nth_label = np.ceil(len(order_default) / ticks).astype(int)
+            text_nth = order[::nth_label]
 
-        text_nth = order[::nth_label]
         return {x: bins[x] for x in text_nth}
 
 
@@ -401,31 +426,62 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                     text=labels,
                     angle=[0]*len(labels))
 
-    def _get_multiline_data(self, order_seg, bins_seg):
+
+    @staticmethod
+    def _get_markers(marks, order, bins):
+        """Helper function to get marker positions depending on mark type.
+
+        """
+
+        if callable(marks):
+            markers = [x for x in order if marks(x)]
+        elif isinstance(marks, list):
+            markers = [order[x] for x in marks]
+        elif isinstance(marks, tuple):
+            markers = marks
+        else:
+            nth_mark = np.ceil(len(order) / marks).astype(int)
+            markers = order[::nth_mark]
+
+        return np.array([bins[x][1] for x in markers])
+
+
+    def _get_xmarks_data(self, order_seg, bins_seg):
         """Generate ColumnDataSource dictionary for segment separation lines.
 
         """
 
-        if self.separate_nth_segment > 1:
-            separate_nth = order_seg[::self.separate_nth_segment]
-            angles = np.array([bins_seg[x][1] for x in separate_nth])
+        if not self.xmarks:
+            return dict(xs=[], ys=[])
 
-            inner = self.max_radius * self.padding_inner
-            outer = self.max_radius
+        angles = self._get_markers(self.xmarks, order_seg, bins_seg)
 
-            y_start = np.sin(angles) * inner + self.max_radius
-            y_end = np.sin(angles) * outer + self.max_radius
+        inner = self.max_radius * self.padding_inner
+        outer = self.max_radius
 
-            x_start = np.cos(angles) * inner + self.max_radius
-            x_end = np.cos(angles) * outer + self.max_radius
+        y_start = np.sin(angles) * inner + self.max_radius
+        y_end = np.sin(angles) * outer + self.max_radius
 
-            xs = zip(x_start, x_end)
-            ys = zip(y_start, y_end)
+        x_start = np.cos(angles) * inner + self.max_radius
+        x_end = np.cos(angles) * outer + self.max_radius
 
-        else:
-            xs, ys = [], []
+        xs = zip(x_start, x_end)
+        ys = zip(y_start, y_end)
 
         return dict(xs=list(xs), ys=list(ys))
+
+
+    def _get_ymarks_data(self, order_ann, bins_ann):
+        """Generate ColumnDataSource dictionary for segment separation lines.
+
+        """
+
+        if not self.ymarks:
+            return dict(radius=[])
+
+        radius = self._get_markers(self.ymarks, order_ann, bins_ann)
+
+        return dict(radius=radius)
 
 
     def get_data(self, element, ranges, style):
@@ -480,15 +536,17 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                           for v in aggregate.dimension_values(vdim)]
                 data_annular[sanitized] = values
 
-        data_text_seg_labels = self._get_seg_labels_data(order_seg, bins_seg)
-        data_text_ann_labels = self._get_ann_labels_data(order_ann, bins_ann)
+        data_text_seg = self._get_seg_labels_data(order_seg, bins_seg)
+        data_text_ann = self._get_ann_labels_data(order_ann, bins_ann)
 
-        data_multi_line = self._get_multiline_data(order_seg, bins_seg)
+        data_xmarks = self._get_xmarks_data(order_seg, bins_seg)
+        data_ymarks = self._get_ymarks_data(order_ann, bins_ann)
 
         data = {'annular_wedge_1': data_annular,
-                'text_1': data_text_seg_labels,
-                'text_2': data_text_ann_labels,
-                'multi_line_1': data_multi_line}
+                'text_1': data_text_seg,
+                'text_2': data_text_ann,
+                'multi_line_1': data_xmarks,
+                'arc_1': data_ymarks}
 
 
         return data, mapping, style
