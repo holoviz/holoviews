@@ -497,12 +497,18 @@ class trimesh_rasterize(aggregate):
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
                                      default=None)
 
+    interpolation = param.ObjectSelector(default='bilinear',
+                                         objects=['bilinear'], doc="""
+        The interpolation method to apply during rasterization.""")
+
     def _process(self, element, key=None):
         x, y = element.nodes.kdims[:2]
         info = self._get_sampling(element, x, y)
         (x_range, y_range), _, (width, height), (xtype, ytype) = info
+        interpolate = bool(self.p.interpolation)
         cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range)
+                        x_range=x_range, y_range=y_range,
+                        interp=interpolate)
 
         if element.vdims:
             simplices = element.dframe([0, 1, 2, 3])
