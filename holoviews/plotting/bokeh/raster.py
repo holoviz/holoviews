@@ -358,7 +358,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
             text_nth = ticks
 
         elif ticks:
-            nth_label = np.ceil(len(order) / ticks).astype(int)
+            nth_label = np.ceil(len(order) / float(ticks)).astype(int)
             text_nth = order[::nth_label]
 
         return {x: bins[x] for x in text_nth}

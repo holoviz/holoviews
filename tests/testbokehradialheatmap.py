@@ -281,6 +281,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
 
         source_ann = self.plot.handles['annular_wedge_1_source'].data
 
-        self.assertEqual(source_ann["x"], list(self.x))
-        self.assertEqual(source_ann["y"], list(self.y))
+        self.assertEqual(list(source_ann["x"]), list(self.x))
+        self.assertEqual(list(source_ann["y"]), list(self.y))
         self.assertEqual(list(source_ann["z"]), self.z)
