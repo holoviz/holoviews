@@ -155,6 +155,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[QuadMesh] =    cls.compare_quadmesh
         cls.equality_type_funcs[Surface] =     cls.compare_surface
         cls.equality_type_funcs[HeatMap] =     cls.compare_dataset
+        cls.equality_type_funcs[RadialHeatMap] = cls.compare_dataset
 
         # Charts
         cls.equality_type_funcs[Dataset] =      cls.compare_dataset
