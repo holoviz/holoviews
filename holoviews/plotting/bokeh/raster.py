@@ -168,8 +168,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
 
     start_angle = param.Number(default=np.pi/2, doc="""
-        Define starting angle of the first annulus segment. By default, begins at 
-        12 o'clock.""")
+        Define starting angle of the first annulus segment. By default, begins 
+        at 12 o'clock.""")
 
     padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
         Define the radius fraction of inner, empty space.""")
@@ -202,16 +202,16 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """)
 
     xticks = param.Parameter(default=4, doc="""
-        Ticks along x-axis specified as an integer, explicit list of
+        Ticks along x-axis/segments specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
     yticks = param.Parameter(default=4, doc="""
-        Ticks along y-axis specified as an integer, explicit list of
+        Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
-    # Force x and y ranges to be numerical
-    _y_range_type = Range1d
-    _x_range_type = Range1d
+    yticks_angle = param.Number(default=np.pi/2, doc="""
+        Define angle along which yticks/annulars are shown. By default, yticks
+        are drawn like a regular y-axis.""")
 
     # Map each glyph to a style group
     _style_groups = {'annular_wedge': 'annular',
@@ -261,19 +261,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return array[:, 0], array[:, 1]
 
 
-    @staticmethod
-    def _extract_labels(mapper):
-        """
-        Extracts text label and radiant for segment texts.
-        """
-
-        values = [(text, ((end - start) / 2) + start)
-                  for text, (start, end) in mapper.items()]
-
-        text, radiants = zip(*values)
-
-        return text, np.array(radiants)
-
     def _postprocess_hover(self, renderer, source):
         """
         Limit hover tool to annular wedges only.
@@ -290,7 +277,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """
 
         lower = -self.padding_outer
-        upper = 1 + self.padding_outer
+        upper = 2 * self.max_radius + self.padding_outer
         return (lower, lower, upper, upper)
 
 
@@ -312,7 +299,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
         """
 
-        map_annular = dict(x=0.5, y=0.5,
+        map_annular = dict(x=self.max_radius, y=self.max_radius,
                            inner_radius="inner_radius",
                            outer_radius="outer_radius",
                            start_angle="start_angle",
@@ -350,7 +337,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         return vals
 
 
-    def _compute_tick_mapping(self, kind, order_default, bin_default):
+    def _compute_tick_mapping(self, kind, order, bins):
         """Helper function to compute tick mappings based on `ticks` and
         default orders and bins.
 
@@ -363,18 +350,15 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
             ticks = self.yticks
             reverse = False
 
-        order = order_default
-        bins = bin_default
-
         if callable(ticks):
             text_nth = [x for x in order if ticks(x)]
 
         elif isinstance(ticks, (tuple, list)):
-            order = ticks
             bins = self._get_bins(kind, ticks, reverse)
-            text_nth = order
-        elif self.xticks:
-            nth_label = np.ceil(len(order_default) / ticks).astype(int)
+            text_nth = ticks
+
+        elif ticks:
+            nth_label = np.ceil(len(order) / ticks).astype(int)
             text_nth = order[::nth_label]
 
         return {x: bins[x] for x in text_nth}
@@ -396,8 +380,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         labels, radiant = zip(*values)
         radiant = np.array(radiant)
 
-        y_coord = np.sin(radiant) * self.max_radius * 1.01 + self.max_radius
-        x_coord = np.cos(radiant) * self.max_radius * 1.01 + self.max_radius
+        y_coord = np.sin(radiant) * self.max_radius + self.max_radius
+        x_coord = np.cos(radiant) * self.max_radius + self.max_radius
 
         return dict(x=x_coord,
                     y=y_coord,
@@ -418,8 +402,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         labels, radius = zip(*values)
         radius = np.array(radius)
 
-        y_coord = np.sin(np.pi/2) * radius + 0.5
-        x_coord = np.cos(np.pi/2) * radius + 0.5
+        y_coord = np.sin(self.yticks_angle) * radius + self.max_radius
+        x_coord = np.cos(self.yticks_angle) * radius + self.max_radius
 
         return dict(x=x_coord,
                     y=y_coord,
@@ -492,7 +476,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         if self.invert_axes: x, y = y, x
 
         # color mapper
-        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
+        cmapper = self._get_colormapper(element.vdims[0], element,
+                                        ranges, style)
 
         # default CDS data mapping
         mapping = self.get_default_mapping(z, cmapper)
@@ -547,7 +532,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                 'text_2': data_text_ann,
                 'multi_line_1': data_xmarks,
                 'arc_1': data_ymarks}
-
 
         return data, mapping, style
 
