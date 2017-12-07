@@ -225,7 +225,7 @@ class RadialHeatMapPlot(ColorbarPlot):
     padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
-    separate_nth_segment = param.Number(default=0, doc="""
+    xmarks = param.Number(default=0, doc="""
         Add separation lines between segments for better readability. By
         default, does not show any separation lines.""")
 
@@ -311,8 +311,8 @@ class RadialHeatMapPlot(ColorbarPlot):
                 patches.append(wedge)
 
         # multi_lines for separation
-        if self.separate_nth_segment > 1:
-            angles = bins_segment[::self.separate_nth_segment]
+        if self.xmarks > 1:
+            angles = bins_segment[::self.xmarks]
             paths = self._compute_separations(radius_min, radius_max, angles)
         else:
             paths = []
