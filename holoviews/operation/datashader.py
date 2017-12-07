@@ -346,12 +346,17 @@ class aggregate(ResamplingOperation):
                         x_range=x_range, y_range=y_range)
 
         column = agg_fn.column if agg_fn else None
-        if column and isinstance(agg_fn, ds.count_cat):
-            name = '%s Count' % agg_fn.column
+        if column:
+            dims = [d for d in element.dimensions('ranges') if d == column]
+            if not dims:
+                raise ValueError("Aggregation column %s not found on %s element. "
+                                 "Ensure the aggregator references an existing "
+                                 "dimension.")
+            if isinstance(agg_fn, ds.count_cat):
+                name = '%s Count' % agg_fn.column
+            vdims = [dims[0](column)]
         else:
-            name = column
-        vdims = [element.get_dimension(column)(name) if column
-                 else Dimension('Count')]
+            vdims = Dimension('Count')
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=vdims)
 
