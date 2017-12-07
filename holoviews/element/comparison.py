@@ -17,6 +17,7 @@ methods on all objects as comparison operators only return Booleans and
 thus would not supply any information regarding *why* two elements are
 considered different.
 """
+from functools import partial
 import numpy as np
 from unittest.util import safe_repr
 from unittest import TestCase
@@ -91,6 +92,9 @@ class Comparison(ComparisonInterface):
 
     Comparison.assertEqual(matrix1, matrix2)
     """
+
+    # someone might prefer to use a different function, e.g. assert_all_close
+    assert_array_almost_equal_fn = partial(assert_array_almost_equal, decimal=6)
 
     @classmethod
     def register(cls):
@@ -246,7 +250,7 @@ class Comparison(ComparisonInterface):
             assert_array_equal(arr1, arr2)
         except:
             try:
-                assert_array_almost_equal(arr1, arr2)
+                cls.assert_array_almost_equal_fn(arr1, arr2)
             except AssertionError as e:
                 raise cls.failureException(msg + str(e)[11:])
 
