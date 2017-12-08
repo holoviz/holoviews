@@ -312,6 +312,16 @@ class TestPlotColorUtils(ComparisonTestCase):
         colors = process_cmap('Greys', 3)
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
 
+    
+    def test_process_cmap_instance_mpl(self):
+        try:
+            from matplotlib.cm import get_cmap
+        except:
+            raise SkipError("Matplotlib needed to test matplotlib colormap instances")
+        cmap = get_cmap('Greys')
+        colors = process_cmap(cmap, 3)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+
     def test_process_cmap_bokeh(self):
         colors = process_cmap('Category20', 3)
         self.assertEqual(colors, ['#1f77b4', '#aec7e8', '#ff7f0e'])

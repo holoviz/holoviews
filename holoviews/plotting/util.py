@@ -416,11 +416,13 @@ def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
-    import matplotlib.cm as cm
-    colormap = cm.get_cmap(cmap) #choose any matplotlib colormap here
+    from matplotlib.colors import Colormap
+    if not isinstance(cmap, Colormap):
+        import matplotlib.cm as cm
+        cmap = cm.get_cmap(cmap) #choose any matplotlib colormap here
     if ncolors:
-        return [rgb2hex(colormap(i)) for i in np.linspace(0, 1, ncolors)]
-    return [rgb2hex(m) for m in colormap(np.arange(colormap.N))]
+        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
+    return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
 
 
 def bokeh_palette_to_palette(cmap, ncolors=None):
@@ -436,7 +438,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
              palette = sorted(palette.items())[-1][1]
     if ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
-    return palette
+    return list(palette)
 
 
 def process_cmap(cmap, ncolors=None):
@@ -447,7 +449,7 @@ def process_cmap(cmap, ncolors=None):
         palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
     elif isinstance(cmap, list):
         palette = cmap
-    elif isinstance(cmap, basestring):
+    else:
         try:
             # Process as matplotlib colormap
             palette = mplcmap_to_palette(cmap, ncolors)
@@ -455,9 +457,11 @@ def process_cmap(cmap, ncolors=None):
             try:
                 palette = bokeh_palette_to_palette(cmap, ncolors)
             except:
-                raise ValueError("Supplied cmap %s not found among "
-                                 "matplotlib or bokeh colormaps.")
-    else:
+                if isinstance(cmap, basestring):
+                    raise ValueError("Supplied cmap %s not found among "
+                                     "matplotlib or bokeh colormaps." % cmap)
+                palette = None
+    if not isinstance(palette, list):
         raise TypeError("cmap argument expects a list, Cycle or valid matplotlib "
                         "colormap or bokeh palette, found %s." % cmap)
     if ncolors:
