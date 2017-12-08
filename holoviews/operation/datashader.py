@@ -164,9 +164,10 @@ class aggregate(ResamplingOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
-    Element or overlay of Elements into an hImage or an overlay of
-    .Images by rasterizing it, which provides a fixed-sized
-    representation independent of the original dataset size.
+    Element or overlay of Elements into an Image or an overlay of
+    Images by rasterizing it. This allows quickly aggregating large
+    datasets computing a fixed-sized representation independent
+    of the original dataset size.
 
     By default it will simply count the number of values in each bin
     but other aggregators can be supplied implementing mean, max, min
@@ -527,11 +528,13 @@ class trimesh_rasterize(aggregate):
         return Image(agg, **params)
 
 
-class rasterize(trimesh_rasterize):
+
+class rasterize(ResamplingOperation):
     """
     Rasterize is a high-level operation which will rasterize any
-    Element or combination of Elements supplied as an (Nd)Overlay
-    by aggregating with the supplied aggregation function.
+    Element or combination of Elements supplied as an (Nd)Overlay by
+    aggregating with the supplied aggregation it with the declared
+    aggregator and interpolation methods.
 
     By default it will simply count the number of values in each bin
     but other aggregators can be supplied implementing mean, max, min
@@ -552,16 +555,24 @@ class rasterize(trimesh_rasterize):
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
                                      default=None)
 
+    interpolation = param.ObjectSelector(default='bilinear',
+                                         objects=['bilinear', None], doc="""
+        The interpolation method to apply during rasterization.""")
+
     def _process(self, element, key=None):
         # Get input Images to avoid multiple rasterization
         imgs = element.traverse(lambda x: x, [Image])
 
         # Rasterize TriMeshes
-        trirasterize = partial(trimesh_rasterize._process, self)
+        tri_params = dict({k: v for k, v in self.p.items()
+                           if k in aggregate.params()}, dynamic=False)
+        trirasterize = trimesh_rasterize.instance(**tri_params)
         element = element.map(trirasterize, TriMesh)
 
         # Rasterize NdOverlay of objects
-        dsrasterize = partial(aggregate._process, self)
+        agg_params = dict({k: v for k, v in self.p.items()
+                           if k in aggregate.params()}, dynamic=False)
+        dsrasterize = aggregate.instance(**agg_params)
         predicate = lambda x: (isinstance(x, NdOverlay) and
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image))
