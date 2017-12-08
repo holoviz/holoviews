@@ -164,8 +164,8 @@ class aggregate(ResamplingOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
-    Element or overlay of Elements into an hv.Image or an overlay of
-    hv.Images by rasterizing it, which provides a fixed-sized
+    Element or overlay of Elements into an hImage or an overlay of
+    .Images by rasterizing it, which provides a fixed-sized
     representation independent of the original dataset size.
 
     By default it will simply count the number of values in each bin
@@ -498,17 +498,15 @@ class trimesh_rasterize(aggregate):
                                      default=None)
 
     interpolation = param.ObjectSelector(default='bilinear',
-                                         objects=['bilinear'], doc="""
+                                         objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
     def _process(self, element, key=None):
         x, y = element.nodes.kdims[:2]
         info = self._get_sampling(element, x, y)
         (x_range, y_range), _, (width, height), (xtype, ytype) = info
-        interpolate = bool(self.p.interpolation)
         cvs = ds.Canvas(plot_width=width, plot_height=height,
-                        x_range=x_range, y_range=y_range,
-                        interp=interpolate)
+                        x_range=x_range, y_range=y_range)
 
         if element.vdims:
             simplices = element.dframe([0, 1, 2, 3])
@@ -521,7 +519,9 @@ class trimesh_rasterize(aggregate):
         else:
             return aggregate._process(self, element, key)
 
-        agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator)
+        interpolate = bool(self.p.interpolation)
+        agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
+                          interp=interpolate)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
         return Image(agg, **params)
@@ -532,10 +532,25 @@ class rasterize(trimesh_rasterize):
     Rasterize is a high-level operation which will rasterize any
     Element or combination of Elements supplied as an (Nd)Overlay
     by aggregating with the supplied aggregation function.
+
+    By default it will simply count the number of values in each bin
+    but other aggregators can be supplied implementing mean, max, min
+    and other reduction operations.
+
+    The bins of the aggregate are defined by the width and height and
+    the x_range and y_range. If x_sampling or y_sampling are supplied
+    the operation will ensure that a bin is no smaller than the minimum
+    sampling distance by reducing the width and height when zoomed in
+    beyond the minimum sampling distance.
+
+    By default, the PlotSize stream is applied when this operation
+    is used dynamically, which means that the height and width
+    will automatically be set to match the inner dimensions of
+    the linked plot.
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=ds.count())
+                                     default=None)
 
     def _process(self, element, key=None):
         # Get input Images to avoid multiple rasterization
@@ -547,12 +562,14 @@ class rasterize(trimesh_rasterize):
 
         # Rasterize NdOverlay of objects
         dsrasterize = partial(aggregate._process, self)
-        predicate = lambda x: (isinstance(x, NdOverlay) and issubclass(x.type, Dataset)
+        predicate = lambda x: (isinstance(x, NdOverlay) and
+                               issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image))
         element = element.map(dsrasterize, predicate)
 
         # Rasterize other Dataset types
-        predicate = lambda x: isinstance(x, Dataset) and (not isinstance(x, Image) or x in imgs)
+        predicate = lambda x: (isinstance(x, Dataset) and
+                               (not isinstance(x, Image) or x in imgs))
         element = element.map(dsrasterize, predicate)
         return element
 
