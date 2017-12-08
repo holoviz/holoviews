@@ -1,6 +1,15 @@
 Please edit either the 'Bug report' or 'Feature request' template
 below, attempting to fill in as much info as possible (and deleting
-the other). Thanks!
+the other).
+
+If pasting code and or/text output, please enclose it in backticks, as
+shown below:
+
+```
+your code goes here
+```
+
+Thanks!
 
 # Feature request
 
