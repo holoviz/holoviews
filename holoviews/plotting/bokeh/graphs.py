@@ -120,7 +120,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     def _get_edge_paths(self, element):
         path_data = {}
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
-        if element._edgepaths:
+        if element._edgepaths is not None:
             edges = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
             if len(edges) == len(element):
                 path_data['xs'] = [path[:, xidx] for path in edges]
@@ -169,7 +169,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             point_mapping['node_nonselection_fill_color'] = point_mapping['node_fill_color']
 
         edge_mapping = {}
-        nan_node = index.max()+1
+        nan_node = index.max()+1 if len(index) else 0
         start, end = (element.dimension_values(i) for i in range(2))
         if nodes.dtype.kind == 'f':
             start, end = start.astype(np.int32), end.astype(np.int32)

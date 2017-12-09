@@ -425,8 +425,11 @@ class TriMesh(Graph):
         else:
             edges, nodes, edgepaths = data, None, None
         if nodes is None:
-            raise ValueError("TriMesh expects both simplices and nodes "
-                             "to be supplied.")
+            if isinstance(edges, list) and len(edges) == 0:
+                nodes = []
+            else:
+                raise ValueError("TriMesh expects both simplices and nodes "
+                                 "to be supplied.")
 
         if isinstance(nodes, self._node_type):
             pass
@@ -476,6 +479,10 @@ class TriMesh(Graph):
         """
         if self._edgepaths:
             return self._edgepaths
+        elif not len(self):
+            edgepaths = self._edge_type([], kdims=self.nodes.kdims[:2])
+            self._edgepaths = edgepaths
+            return edgepaths
 
         simplices = self.array([0, 1, 2]).astype(np.int32)
         pts = self.nodes.array([0, 1]).astype(float)
