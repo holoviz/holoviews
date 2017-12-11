@@ -50,9 +50,18 @@ class XArrayInterface(GridInterface):
                 vdim = vdims[0]
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
+                if vdim.name in data.dims:
+                    raise DataError("xarray DataArray does not define a name, "
+                                    "and the default of '%s' clashes with a "
+                                    "coordinate dimension. Give the DataArray "
+                                    "a name or supply an explicit value dimension."
+                                    % vdim.name, cls)
             else:
-                raise DataError("If xarray DataArray does not define a name "
-                                "an explicit vdim must be supplied.", cls)
+                raise DataError("xarray DataArray does not define a name "
+                                "and %s does not define a default value "
+                                "dimension. Give the DataArray a name or "
+                                "supply an explicit vdim." % eltype.__name__,
+                                cls)
             vdims = [vdim]
             if not kdims:
                 kdims = [Dimension(d) for d in data.dims[::-1]]
