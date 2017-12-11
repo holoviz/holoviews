@@ -1,3 +1,37 @@
+Version 1.9.2
+=============
+
+This release is a minor bug fix release patching various issues
+which were found in the 1.9.1 release.
+
+Enhancements:
+
+-   Improved the Graph element, optimizing the constructor
+    and adding support for defining a `edge_color_index`
+    ([\#2145](https://github.com/ioam/holoviews/pull/2145))
+-   Added support for adding jitter to bokeh Scatter and Points plots
+    ([e56208](https://github.com/ioam/holoviews/commit/e56208e1eb6e1e4af67b6a3ffbb5a925bfc37e14))
+
+Fixes:
+
+-   Ensure dimensions, group and label are inherited when casting
+    Image to QuadMesh
+    ([\#2144](https://github.com/ioam/holoviews/pull/2144))
+-   Handle compatibility for bokeh version >= 0.12.11
+    ([\#2159](https://github.com/ioam/holoviews/pull/2159))
+-   Fixed broken bokeh ArrowPlot
+    ([\#2172](https://github.com/ioam/holoviews/pull/2172))
+-   Fixed Pointer based streams on datetime axes
+    ([\#2179](https://github.com/ioam/holoviews/pull/2179))
+-   Allow constructing and plotting of empty Distribution and
+    Bivariate elements
+    ([\#2190](https://github.com/ioam/holoviews/pull/2190))
+-   Added support for hover info on bokeh BoxWhisker plots
+    ([\#2187](https://github.com/ioam/holoviews/pull/2187))
+-   Fixed bug attaching streams to (Nd)Overlay types
+    ([\#2194](https://github.com/ioam/holoviews/pull/2194))
+
+
 Version 1.9.1
 =============
 
