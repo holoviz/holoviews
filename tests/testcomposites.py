@@ -152,6 +152,12 @@ class LayoutTestCase(ElementTestCase):
         paths = Layout.from_values([layout, self.el2]).keys()
         self.assertEqual(paths, [('Custom', 'LabelA'), ('Element', 'I')])
 
+    def test_layout_integer_index(self):
+        t = self.el1 + self.el2
+        self.assertEqual(t[0], self.el1)
+        self.assertEqual(t[1], self.el2)
+
+
 
 class OverlayTestCase(ElementTestCase):
     """
@@ -362,7 +368,6 @@ class CompositeTestCase(ElementTestCase):
         expected_keys = [('Overlay', 'I'), ('Overlay', 'II'), ('ValA', 'I')]
         self.assertEqual(t.keys(), expected_keys)
 
-
     def test_deep_composite_indexing(self):
         o1 = (self.el1 * self.el2)
         o2 = (self.el1 * self.el2)
@@ -374,7 +379,6 @@ class CompositeTestCase(ElementTestCase):
         self.assertEqual(t.ValA.I.ValA.LabelA, self.el7)
         self.assertEqual(t.ValA.I.ValA.LabelB, self.el8)
 
-
     def test_deep_composite_getitem(self):
         o1 = (self.el1 * self.el2)
         o2 = (self.el1 * self.el2)
@@ -385,7 +389,6 @@ class CompositeTestCase(ElementTestCase):
         self.assertEqual(t['ValA']['I'], o3)
         self.assertEqual(t['ValA']['I'].get('ValA').get('LabelA'), self.el7)
         self.assertEqual(t['ValA']['I'].get('ValA').get('LabelB'), self.el8)
-
 
     def test_invalid_tree_structure(self):
         try:
