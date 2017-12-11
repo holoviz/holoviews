@@ -137,8 +137,14 @@ class Bars(Chart):
 
 class BoxWhisker(Chart):
     """
-    BoxWhisker represent data as a distributions highlighting
-    the median, mean and various percentiles.
+    BoxWhisker allows representing the distribution of data grouped
+    into one or more groups by summarizing the data using quartiles.
+    The boxes of a BoxWhisker element represent the first, second and
+    third quartiles. The whiskers follow the Tukey boxplot definition
+    representing the lowest datum still within 1.5 IQR of the lower
+    quartile, and the highest datum still within 1.5 IQR of the upper
+    quartile. Any points falling outside this range are shown as
+    distinct outlier points.
     """
 
     group = param.String(default='BoxWhisker', constant=True)
