@@ -6,7 +6,7 @@ which were found in the 1.9.1 release.
 
 Enhancements:
 
--   Improved the Graph element improving, optimizing the constructor
+-   Improved the Graph element, optimizing the constructor
     and adding support for defining a `edge_color_index`
     ([\#2145](https://github.com/ioam/holoviews/pull/2145))
 -   Added support for adding jitter to bokeh Scatter and Points plots
