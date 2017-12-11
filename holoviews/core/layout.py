@@ -526,7 +526,7 @@ class Layout(AttrTree, Dimensioned):
     def __getitem__(self, key):
         if isinstance(key, int):
             if key < len(self):
-                return self.data.values()[key]
+                return list(self.data.values())[key]
             raise KeyError("Element out of range.")
         elif isinstance(key, slice):
             raise KeyError("A Layout may not be sliced, ensure that you "
