@@ -1,12 +1,14 @@
 from unittest import SkipTest
 from nose.plugins.attrib import attr
 
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.core import NdOverlay
 from holoviews.core.options import Store
-
+from holoviews.element import Curve
+from holoviews.element.comparison import ComparisonTestCase
+from holoviews.streams import Selection1D
 
 try:
-    from holoviews.plotting.bokeh.callbacks import Callback
+    from holoviews.plotting.bokeh.callbacks import Callback, Selection1DCallback
     from holoviews.plotting.bokeh.util import bokeh_version
 
     from bokeh.events import Tap
@@ -51,6 +53,15 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
                 'data["y0"] = cb_data["geometry"]["y0"];\n'
                 'data["y1"] = cb_data["geometry"]["y1"];\n')
         self.assertEqual(js_code, code)
+
+
+    def test_callback_on_ndoverlay_is_attached(self):
+        ndoverlay = NdOverlay({i: Curve([i]) for i in range(5)})
+        selection = Selection1D(source=ndoverlay)
+        plot = bokeh_renderer.get_plot(ndoverlay)
+        self.assertEqual(len(plot.callbacks), 1)
+        self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
+        
 
 @attr(optional=1)
 class TestBokehServerJSCallbacks(ComparisonTestCase):
