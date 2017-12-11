@@ -3,7 +3,8 @@ from collections import defaultdict
 import numpy as np
 import param
 from bokeh.models import (CategoricalColorMapper, CustomJS, HoverTool,
-                          FactorRange, Whisker, Band, Range1d)
+                          FactorRange, Whisker, Band, Range1d, Circle,
+                          VBar, HBar)
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -988,6 +989,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             xfactors, yfactors = factors, []
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
+    def _postprocess_hover(self, renderer, source):
+        if not isinstance(renderer.glyph, (Circle, VBar, HBar)):
+            return
+        super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
+
     def get_data(self, element, ranges, style):
         if element.kdims:
             groups = element.groupby(element.kdims).data
@@ -996,7 +1002,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         vdim = dimension_sanitizer(element.vdims[0].name)
 
         # Define CDS data
-        r1_data, r2_data = ({'index': [], 'top': [], 'bottom': []} for i in range(2))
+        r1_data, r2_data = (defaultdict(list, {'index': [], 'top': [], 'bottom': []})
+                            for i in range(2))
         s1_data, s2_data = ({'x0': [], 'y0': [], 'x1': [], 'y1': []} for i in range(2))
         w1_data, w2_data = ({'index': [], vdim: []} for i in range(2))
         out_data = defaultdict(list, {'index': [], vdim: []})
@@ -1021,6 +1028,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             cidx = element.get_dimension_index(self.color_index)
         else:
             cdim, cidx = None, None
+        hover = any(isinstance(t, HoverTool) for t in self.state.tools)
 
         factors = []
         for key, g in groups.items():
@@ -1068,9 +1076,15 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if len(outliers):
                 out_data['index'] += [label]*len(outliers)
                 out_data[vdim] += list(outliers)
-                if any(isinstance(t, HoverTool) for t in self.state.tools):
+                if hover:
                     for kd, k in zip(element.kdims, wrap_tuple(key)):
                         out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
+            if hover:
+                for kd, k in zip(element.kdims, wrap_tuple(key)):
+                    r1_data[dimension_sanitizer(kd.name)].append(k)
+                    r2_data[dimension_sanitizer(kd.name)].append(k)
+                r1_data[vdim].append(q2)
+                r2_data[vdim].append(q2)
 
         # Define combined data and mappings
         bar_glyph = 'hbar' if self.invert_axes else 'vbar'
