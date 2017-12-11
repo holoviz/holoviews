@@ -108,9 +108,15 @@ class StatisticalCompositorTest(ComparisonTestCase):
         area = Compositor.collapse_element(dist)
         self.assertIsInstance(area, Area)
         self.assertEqual(area.vdims, [Dimension('Test')])
-        
+
     def test_distribution_composite_not_filled(self):
         dist = Distribution(np.array([0, 1, 2])).opts(plot=dict(filled=False))
+        curve = Compositor.collapse_element(dist)
+        self.assertIsInstance(curve, Curve)
+        self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
+
+    def test_distribution_composite_empty_not_filled(self):
+        dist = Distribution([]).opts(plot=dict(filled=False))
         curve = Compositor.collapse_element(dist)
         self.assertIsInstance(curve, Curve)
         self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
@@ -144,3 +150,17 @@ class StatisticalCompositorTest(ComparisonTestCase):
         contours = Compositor.collapse_element(dist)
         self.assertIsInstance(contours, Polygons)
         self.assertEqual(contours.vdims, [Dimension('Density')])
+
+    def test_bivariate_composite_empty_filled(self):
+        dist = Bivariate([]).opts(plot=dict(filled=True))
+        contours = Compositor.collapse_element(dist)
+        self.assertIsInstance(contours, Polygons)
+        self.assertEqual(contours.vdims, [Dimension('Density')])
+        self.assertEqual(len(contours), 0)
+
+    def test_bivariate_composite_empty_not_filled(self):
+        dist = Bivariate([]).opts(plot=dict(filled=True))
+        contours = Compositor.collapse_element(dist)
+        self.assertIsInstance(contours, Contours)
+        self.assertEqual(contours.vdims, [Dimension('Density')])
+        self.assertEqual(len(contours), 0)

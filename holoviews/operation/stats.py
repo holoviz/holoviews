@@ -100,7 +100,7 @@ class univariate_kde(Operation):
         elif bin_range[0] == bin_range[1]:
             bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
 
-        data = data[np.isfinite(data)]
+        data = data[np.isfinite(data)] if len(data) else []
         if len(data) > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
@@ -192,7 +192,7 @@ class bivariate_kde(Operation):
         elif ymin == ymax:
             ymin, ymax = ymin-0.5, ymax+0.5
 
-        data = data[:, np.isfinite(data).min(axis=0)]
+        data = data[:, np.isfinite(data).min(axis=0)] if data.shape[1] > 1 else np.empty((2, 0))
         if data.shape[1] > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
