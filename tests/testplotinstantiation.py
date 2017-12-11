@@ -1314,11 +1314,21 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         box = BoxWhisker((times, np.random.rand(len(times))), kdims=['Date'])
         plot = bokeh_renderer.get_plot(box)
         formatted = [box.kdims[0].pprint_value(t) for t in times]
-        if bokeh_version < str('0.12.7'):
-            formatted = [f.replace(':', ';') for f in formatted]
         self.assertTrue(all(cds.data['index'][0] in formatted for cds in
                             plot.state.select(ColumnDataSource)
                             if len(cds.data.get('index', []))))
+
+    def test_box_whisker_hover(self):
+        xs, ys = np.random.randint(0, 5, 100), np.random.randn(100)
+        box = BoxWhisker((xs, ys), 'A').sort().opts(plot=dict(tools=['hover']))
+        plot = bokeh_renderer.get_plot(box)
+        src = plot.handles['vbar_1_source']
+        ys = box.aggregate(function=np.median).dimension_values('y')
+        hover_tool = plot.handles['hover']
+        self.assertEqual(src.data['y'], ys)
+        self.assertIn(plot.handles['vbar_1glyph_renderer'], hover_tool.renderers)
+        self.assertIn(plot.handles['vbar_2glyph_renderer'], hover_tool.renderers)
+        self.assertIn(plot.handles['circle_1glyph_renderer'], hover_tool.renderers)
 
     def test_curve_datetime64(self):
         dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
