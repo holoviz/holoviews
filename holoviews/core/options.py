@@ -880,9 +880,10 @@ class Compositor(param.Parameterized):
         if overlay_compositors:
             obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
                           [CompositeOverlay])
-        if element_compositors:
+        element_patterns = [c.pattern for c in element_compositors]
+        if element_compositors and obj.traverse(lambda x: x, element_patterns):
             obj = obj.map(lambda obj: cls.collapse_element(obj, mode=mode, backend=backend),
-                          [c.pattern for c in element_compositors])
+                          element_patterns)
         return obj
 
 
