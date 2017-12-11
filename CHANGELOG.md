@@ -28,6 +28,8 @@ Fixes:
     ([\#2190](https://github.com/ioam/holoviews/pull/2190))
 -   Added support for hover info on bokeh BoxWhisker plots
     ([\#2187](https://github.com/ioam/holoviews/pull/2187))
+-   Fixed bug attaching streams to (Nd)Overlay types
+    ([\#2194](https://github.com/ioam/holoviews/pull/2194))
 
 
 Version 1.9.1
