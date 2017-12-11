@@ -100,7 +100,7 @@ class univariate_kde(Operation):
         elif bin_range[0] == bin_range[1]:
             bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
 
-        data = data[np.isfinite(data)]
+        data = data[np.isfinite(data)] if len(data) else []
         if len(data) > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
