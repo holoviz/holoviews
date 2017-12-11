@@ -14,6 +14,9 @@ from .core import util
 
 from contextlib import contextmanager
 
+# Types supported by Pointer derived streams
+pointer_types = (Number, util.basestring, tuple)+util.datetime_types
+
 
 @contextmanager
 def triggering_streams(streams):
@@ -559,7 +562,7 @@ class PointerX(LinkedStream):
     plot bounds, the position is set to None.
     """
 
-    x = param.ClassSelector(class_=(Number, util.basestring), default=None,
+    x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
@@ -575,7 +578,7 @@ class PointerY(LinkedStream):
     """
 
 
-    y = param.ClassSelector(class_=(Number, util.basestring), default=None,
+    y = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
@@ -590,11 +593,11 @@ class PointerXY(LinkedStream):
     the plot bounds, the position values are set to None.
     """
 
-    x = param.ClassSelector(class_=(Number, util.basestring, tuple), default=None,
+    x = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the x-axis in data coordinates""")
 
-    y = param.ClassSelector(class_=(Number, util.basestring, tuple), default=None,
+    y = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
 
