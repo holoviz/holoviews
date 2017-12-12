@@ -20,7 +20,7 @@ requirements:
     - param >=1.5.1,<2.0
     - numpy
     - matplotlib
-    - bokeh >=0.12.10,<=0.12.11
+    - bokeh ==0.12.13
     - jupyter
     - notebook
     - ipython
