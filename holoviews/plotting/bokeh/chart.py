@@ -772,7 +772,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if self.color_index is None and cd.dtype.kind in 'if':
+            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'if':
                 cd = categorize_array(cd, cdim)
             if k not in data or len(data[k]) != [len(data[key]) for key in data if key != k][0]:
                 data[k].append(cd)
