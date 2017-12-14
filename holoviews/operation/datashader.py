@@ -1,6 +1,7 @@
 from __future__ import absolute_import, division
 
 from collections import Callable, Iterable
+from functools import partial
 from distutils.version import LooseVersion
 import warnings
 
@@ -25,7 +26,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import Image, Path, Curve, RGB, Graph
+from ..element import Image, Path, Curve, RGB, Graph, TriMesh, Points, Scatter, Dataset
 from ..streams import RangeXY, PlotSize
 
 
@@ -163,9 +164,10 @@ class aggregate(ResamplingOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
-    Element or overlay of Elements into an hv.Image or an overlay of
-    hv.Images by rasterizing it, which provides a fixed-sized
-    representation independent of the original dataset size.
+    Element or overlay of Elements into an Image or an overlay of
+    Images by rasterizing it. This allows quickly aggregating large
+    datasets computing a fixed-sized representation independent
+    of the original dataset size.
 
     By default it will simply count the number of values in each bin
     but other aggregators can be supplied implementing mean, max, min
@@ -264,7 +266,8 @@ class aggregate(ResamplingOperation):
         """
         # Compute overall bounds
         x, y = element.last.dimensions()[0:2]
-        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
+        info = self._get_sampling(element, x, y)
+        (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
         agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
 
@@ -343,13 +346,18 @@ class aggregate(ResamplingOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        column = agg_fn.column
-        if column and isinstance(agg_fn, ds.count_cat):
-            name = '%s Count' % agg_fn.column
+        column = agg_fn.column if agg_fn else None
+        if column:
+            dims = [d for d in element.dimensions('ranges') if d == column]
+            if not dims:
+                raise ValueError("Aggregation column %s not found on %s element. "
+                                 "Ensure the aggregator references an existing "
+                                 "dimension.")
+            if isinstance(agg_fn, ds.count_cat):
+                name = '%s Count' % agg_fn.column
+            vdims = [dims[0](column)]
         else:
-            name = column
-        vdims = [element.get_dimension(column)(name) if column
-                 else Dimension('Count')]
+            vdims = Dimension('Count')
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=vdims)
 
@@ -420,7 +428,8 @@ class regrid(ResamplingOperation):
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
         x, y = element.kdims
-        (x_range, y_range), _, (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
+        info = self._get_sampling(element, x, y)
+        (x_range, y_range), _, (width, height), (xtype, ytype) = info
 
         coords = tuple(element.dimension_values(d, expanded=False)
                        for d in [x, y])
@@ -476,6 +485,104 @@ class regrid(ResamplingOperation):
             ystart, yend = np.array([ystart, yend]).astype('datetime64[us]')  
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
         return element.clone(regridded, bounds=bbox, datatype=['xarray'])
+
+
+class trimesh_rasterize(aggregate):
+    """
+    Rasterize the TriMesh element using the supplied aggregator. If
+    the TriMesh nodes or edges define a value dimension will plot
+    filled and shaded polygons otherwise returns a wiremesh of the
+    data.
+    """
+
+    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
+                                     default=None)
+
+    interpolation = param.ObjectSelector(default='bilinear',
+                                         objects=['bilinear', None], doc="""
+        The interpolation method to apply during rasterization.""")
+
+    def _process(self, element, key=None):
+        x, y = element.nodes.kdims[:2]
+        info = self._get_sampling(element, x, y)
+        (x_range, y_range), _, (width, height), (xtype, ytype) = info
+        cvs = ds.Canvas(plot_width=width, plot_height=height,
+                        x_range=x_range, y_range=y_range)
+
+        if element.vdims:
+            simplices = element.dframe([0, 1, 2, 3])
+            pts = element.nodes.dframe([0, 1])
+            vdim = element.vdims[0]
+        elif element.nodes.vdims:
+            simplices = element.dframe([0, 1, 2])
+            pts = element.nodes.dframe([0, 1, 3])
+            vdim = element.nodes.vdims[0]
+        else:
+            return aggregate._process(self, element, key)
+
+        interpolate = bool(self.p.interpolation)
+        agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
+                          interp=interpolate)
+        params = dict(get_param_values(element), kdims=[x, y],
+                      datatype=['xarray'], vdims=[vdim])
+        return Image(agg, **params)
+
+
+
+class rasterize(ResamplingOperation):
+    """
+    Rasterize is a high-level operation which will rasterize any
+    Element or combination of Elements aggregating it with the supplied
+    aggregator and interpolation method.
+
+    The default aggregation method depends on the type of Element but
+    usually defaults to the count of samples in each bin, other
+    aggregators can be supplied implementing mean, max, min and other
+    reduction operations.
+
+    The bins of the aggregate are defined by the width and height and
+    the x_range and y_range. If x_sampling or y_sampling are supplied
+    the operation will ensure that a bin is no smaller than the minimum
+    sampling distance by reducing the width and height when zoomed in
+    beyond the minimum sampling distance.
+
+    By default, the PlotSize and RangeXY streams are applied when this
+    operation is used dynamically, which means that the width, height,
+    x_range and y_range will automatically be set to match the inner
+    dimensions of the linked plot and the ranges of the axes.
+    """
+
+    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
+                                     default=None)
+
+    interpolation = param.ObjectSelector(default='bilinear',
+                                         objects=['bilinear', None], doc="""
+        The interpolation method to apply during rasterization.""")
+
+    def _process(self, element, key=None):
+        # Get input Images to avoid multiple rasterization
+        imgs = element.traverse(lambda x: x, [Image])
+
+        # Rasterize TriMeshes
+        tri_params = dict({k: v for k, v in self.p.items()
+                           if k in aggregate.params()}, dynamic=False)
+        trirasterize = trimesh_rasterize.instance(**tri_params)
+        element = element.map(trirasterize, TriMesh)
+
+        # Rasterize NdOverlay of objects
+        agg_params = dict({k: v for k, v in self.p.items()
+                           if k in aggregate.params()}, dynamic=False)
+        dsrasterize = aggregate.instance(**agg_params)
+        predicate = lambda x: (isinstance(x, NdOverlay) and
+                               issubclass(x.type, Dataset)
+                               and not issubclass(x.type, Image))
+        element = element.map(dsrasterize, predicate)
+
+        # Rasterize other Dataset types
+        predicate = lambda x: (isinstance(x, Dataset) and
+                               (not isinstance(x, Image) or x in imgs))
+        element = element.map(dsrasterize, predicate)
+        return element
 
 
 
@@ -623,7 +730,7 @@ class shade(Operation):
 
 
 
-class datashade(aggregate, shade):
+class datashade(rasterize, shade):
     """
     Applies the aggregate and shade operations, aggregating all
     elements in the supplied object and then applying normalization
@@ -633,7 +740,7 @@ class datashade(aggregate, shade):
     """
 
     def _process(self, element, key=None):
-        agg = aggregate._process(self, element, key)
+        agg = rasterize._process(self, element, key)
         shaded = shade._process(self, agg, key)
         return shaded
 

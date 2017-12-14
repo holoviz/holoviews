@@ -13,7 +13,8 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         Box, Bounds, Ellipse, Polygons, BoxWhisker, Arrow,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
-                        Graph, Nodes, EdgePaths, Distribution, Bivariate)
+                        Graph, Nodes, EdgePaths, Distribution, Bivariate,
+                        TriMesh)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -33,7 +34,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot, BoxWhiskerPlot)
-from .graphs import GraphPlot, NodePlot
+from .graphs import GraphPlot, NodePlot, TriMeshPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -97,6 +98,7 @@ associations = {Overlay: OverlayPlot,
                 Graph: GraphPlot,
                 Nodes: NodePlot,
                 EdgePaths: PathPlot,
+                TriMesh: TriMeshPlot,
 
                 # Tabular
                 Table: TablePlot,
@@ -197,6 +199,15 @@ options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
                         edge_line_color='black', edge_line_width=2,
                         edge_nonselection_line_color='black',
                         edge_hover_line_color='limegreen')
+options.TriMesh = Options('style', node_size=5, node_line_color='black',
+                          node_fill_color='white', edge_line_color='black',
+                          node_hover_fill_color='limegreen',
+                          edge_hover_line_color='limegreen',
+                          edge_nonselection_alpha=0.2,
+                          edge_nonselection_line_color='black',
+                          node_nonselection_alpha=0.2,
+                          edge_line_width=1)
+options.TriMesh = Options('plot', tools=[])
 options.Nodes = Options('style', line_color='black', color=Cycle(),
                         size=20, nonselection_fill_color=Cycle(),
                         selection_fill_color='limegreen',

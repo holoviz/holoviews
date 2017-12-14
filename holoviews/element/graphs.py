@@ -293,10 +293,10 @@ class Graph(Dataset, Element2D):
 
     @property
     def _split_edgepaths(self):
-        if len(self) == len(self._edgepaths.data):
-            return self._edgepaths
+        if len(self) == len(self.edgepaths.data):
+            return self.edgepaths
         else:
-            return self._edgepaths.clone(split_path(self._edgepaths))
+            return self.edgepaths.clone(split_path(self.edgepaths))
 
 
     def range(self, dimension, data_range=True):
@@ -392,3 +392,120 @@ class EdgePaths(Path):
     """
 
     group = param.String(default='EdgePaths', constant=True)
+
+
+class TriMesh(Graph):
+    """
+    A TriMesh represents a mesh of triangles represented as the
+    simplices and nodes. The simplices represent a indices into the
+    nodes array. The mesh therefore follows a datastructure very
+    similar to a graph, with the abstract connectivity between nodes
+    stored on the TriMesh element itself, the node positions stored on
+    a Nodes element and the concrete paths making up each triangle
+    generated when required by accessing the edgepaths.
+
+    Unlike a Graph each simplex is represented as the node indices of
+    the three corners of each triangle.
+    """
+
+    kdims = param.List(default=['node1', 'node2', 'node3'],
+                       bounds=(3, 3), doc="""
+        Dimensions declaring the node indices of each triangle.""")
+
+    group = param.String(default='TriMesh', constant=True)
+
+    _node_type = Nodes
+
+    _edge_type = EdgePaths
+
+    def __init__(self, data, kdims=None, vdims=None, **params):
+        if isinstance(data, tuple):
+            data = data + (None,)*(3-len(data))
+            edges, nodes, edgepaths = data
+        else:
+            edges, nodes, edgepaths = data, None, None
+        if nodes is None:
+            if isinstance(edges, list) and len(edges) == 0:
+                nodes = []
+            else:
+                raise ValueError("TriMesh expects both simplices and nodes "
+                                 "to be supplied.")
+
+        if isinstance(nodes, self._node_type):
+            pass
+        elif isinstance(nodes, Points):
+            # Add index to make it a valid Nodes object
+            nodes = self._node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
+        elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
+            try:
+                # Try assuming data contains indices (3 columns)
+                nodes = self._node_type(nodes)
+            except:
+                # Try assuming data contains just coordinates (2 columns)
+                try:
+                    points = Points(nodes)
+                    ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
+                    nodes = self._node_type(ds)
+                except:
+                    raise ValueError("Nodes argument could not be interpreted, expected "
+                                     "data with two or three columns representing the "
+                                     "x/y positions and optionally the node indices.")
+        if edgepaths is not None and not isinstance(edgepaths, self._edge_type):
+            edgepaths = self._edge_type(edgepaths)
+        super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+        self._nodes = nodes
+        self._edgepaths = edgepaths
+
+    @classmethod
+    def from_vertices(cls, points):
+        """
+        Uses Delauney triangulation to compute triangle simplices for
+        each point.
+        """
+        try:
+            from scipy.spatial import Delaunay
+        except:
+            raise ImportError("Generating triangles from points requires, "
+                              "SciPy to be installed.")
+        if not isinstance(points, Points):
+            points = Points(points)
+        tris = Delaunay(points.array([0, 1]))
+        return cls((tris.simplices, points))
+
+    @property
+    def edgepaths(self):
+        """
+        Returns the EdgePaths by generating a triangle for each simplex.
+        """
+        if self._edgepaths:
+            return self._edgepaths
+        elif not len(self):
+            edgepaths = self._edge_type([], kdims=self.nodes.kdims[:2])
+            self._edgepaths = edgepaths
+            return edgepaths
+
+        simplices = self.array([0, 1, 2]).astype(np.int32)
+        pts = self.nodes.array([0, 1]).astype(float)
+        empty = np.array([[np.NaN, np.NaN]])
+        paths = [arr for tri in pts[simplices] for arr in
+                 (tri[[0, 1, 2, 0], :], empty)][:-1]
+        edgepaths = self._edge_type([np.concatenate(paths)],
+                                    kdims=self.nodes.kdims[:2])
+        self._edgepaths = edgepaths
+        return edgepaths
+
+    def select(self, selection_specs=None, **selection):
+        """
+        Allows selecting data by the slices, sets and scalar values
+        along a particular dimension. The indices should be supplied as
+        keywords mapping between the selected dimension and
+        value. Additionally selection_specs (taking the form of a list
+        of type.group.label strings, types or functions) may be
+        supplied, which will ensure the selection is only applied if the
+        specs match the selected object.
+        """
+        # Ensure that edgepaths are initialized so they can be selected on
+        self.edgepaths
+        return super(TriMesh, self).select(selection_specs=None,
+                                           selection_mode='nodes',
+                                           **selection)

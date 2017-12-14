@@ -148,6 +148,7 @@ Store.register({Curve: CurvePlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
+                TriMesh: TriMeshPlot,
                 Nodes: PointPlot,
                 EdgePaths: PathPlot,
 
@@ -262,7 +263,9 @@ options.TimeSeries = Options('style', color=Cycle())
 
 # Graphs
 options.Graph = Options('style', node_edgecolors='black', node_facecolors=Cycle(),
-                        edge_color='black', node_size=20)
+                        edge_color='black', node_size=15)
+options.TriMesh = Options('style', node_edgecolors='black', node_facecolors='white',
+                          edge_color='black', node_size=5, edge_linewidth=1)
 options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
                         marker='o', s=20**2)
 options.EdgePaths = Options('style', color='black')
