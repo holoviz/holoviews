@@ -181,3 +181,16 @@ class TriMeshPlot(GraphPlot):
         Whether the triangles should be drawn as filled.""")
 
     style_opts = GraphPlot.style_opts + ['edge_facecolors']
+
+    def get_data(self, element, ranges, style):
+        simplex_dim = element.get_dimension(self.edge_color_index)
+        vertex_dim = element.nodes.get_dimension(self.edge_color_index)
+        if not isinstance(self.edge_color_index, int) and vertex_dim and not simplex_dim:
+            simplices = element.array([0, 1, 2])
+            z = element.nodes.dimension_values(vertex_dim)
+            z = z[simplices].mean(axis=1)
+            element = element.add_dimension(vertex_dim, len(element.vdims), z, vdim=True)
+        # Ensure the edgepaths for the triangles are generated before plotting
+        element.edgepaths
+        return super(TriMeshPlot, self).get_data(element, ranges, style)
+
