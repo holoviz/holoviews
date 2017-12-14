@@ -12,3 +12,4 @@ dependencies:
   - bokeh
   - pandas
   - scipy
+  - xarray
