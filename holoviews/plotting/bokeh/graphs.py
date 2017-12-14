@@ -46,7 +46,16 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     bezier = False
 
     # Declares which columns in the data refer to node indices
-    _node_indices = [0, 1]
+    _node_columns = [0, 1]
+
+    @property
+    def edge_glyph(self):
+        if self.filled:
+            return 'patches_1'
+        elif self.bezier:
+            return 'bezier_1'
+        else:
+            return 'multi_line_1'
 
     def _hover_opts(self, element):
         if self.inspection_policy == 'nodes':
@@ -83,7 +92,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         idx = element.get_dimension_index(cdim)
         field = dimension_sanitizer(cdim.name)
         cvals = element.dimension_values(cdim)
-        if idx in self._node_indices:
+        if idx in self._node_columns:
             factors = element.nodes.dimension_values(2, expanded=False)
         elif idx == 2 and cvals.dtype.kind in 'if':
             factors = None
@@ -92,7 +101,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
-        if factors is None or (factors.dtype.kind in 'if' and idx not in self._node_indices):
+        if factors is None or (factors.dtype.kind in 'if' and idx not in self._node_columns):
             colors, factors = None, None
         else:
             if factors.dtype.kind == 'f':
@@ -126,8 +135,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 path_data['xs'] = [path[:, xidx] for path in edges]
                 path_data['ys'] = [path[:, yidx] for path in edges]
             else:
-                self.warning('Graph edge paths do not match the number of abstract edges '
-                             'and will be skipped')
+                raise ValueError("Edge paths do not match the number of supplied edges."
+                                 "Expected %d, found %d paths." % (len(element), len(edges)))
         return path_data, {'xs': 'xs', 'ys': 'ys'}
 
 
@@ -197,15 +206,6 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         mapping = {'scatter_1': point_mapping, self.edge_glyph: edge_mapping}
         return data, mapping, style
 
-    @property
-    def edge_glyph(self):
-        if self.filled:
-            edge_glyph = 'patches_1'
-        elif self.bezier:
-            edge_glyph = 'bezier_1'
-        else:
-            edge_glyph = 'multi_line_1'
-        return edge_glyph
 
     def _update_datasource(self, source, data):
         """
@@ -309,10 +309,10 @@ class TriMeshPlot(GraphPlot):
                   ['node_size', 'cmap', 'edge_cmap'])
 
     # Declares that three columns in TriMesh refer to edges
-    _node_indices = [0, 1, 2]
+    _node_columns = [0, 1, 2]
 
     def get_data(self, element, ranges, style):
-        # Ensure the edgepaths for the triangles are generated
+        # Ensure the edgepaths for the triangles are generated before plotting
         element.edgepaths
         return super(TriMeshPlot, self).get_data(element, ranges, style)
 

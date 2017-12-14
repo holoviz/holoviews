@@ -457,7 +457,7 @@ class TriMesh(Graph):
         self._edgepaths = edgepaths
 
     @classmethod
-    def from_points(cls, points):
+    def from_vertices(cls, points):
         """
         Uses Delauney triangulation to compute triangle simplices for
         each point.
@@ -504,6 +504,7 @@ class TriMesh(Graph):
         supplied, which will ensure the selection is only applied if the
         specs match the selected object.
         """
+        # Ensure that edgepaths are initialized so they can be selected on
         self.edgepaths
         return super(TriMesh, self).select(selection_specs=None,
                                            selection_mode='nodes',
