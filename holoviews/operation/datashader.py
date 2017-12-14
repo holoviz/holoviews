@@ -532,13 +532,13 @@ class trimesh_rasterize(aggregate):
 class rasterize(ResamplingOperation):
     """
     Rasterize is a high-level operation which will rasterize any
-    Element or combination of Elements supplied as an (Nd)Overlay by
-    aggregating with the supplied aggregation it with the declared
-    aggregator and interpolation methods.
+    Element or combination of Elements aggregating it with the supplied
+    aggregator and interpolation method.
 
-    By default it will simply count the number of values in each bin
-    but other aggregators can be supplied implementing mean, max, min
-    and other reduction operations.
+    The default aggregation method depends on the type of Element but
+    usually defaults to the count of samples in each bin, other
+    aggregators can be supplied implementing mean, max, min and other
+    reduction operations.
 
     The bins of the aggregate are defined by the width and height and
     the x_range and y_range. If x_sampling or y_sampling are supplied
@@ -546,10 +546,10 @@ class rasterize(ResamplingOperation):
     sampling distance by reducing the width and height when zoomed in
     beyond the minimum sampling distance.
 
-    By default, the PlotSize stream is applied when this operation
-    is used dynamically, which means that the height and width
-    will automatically be set to match the inner dimensions of
-    the linked plot.
+    By default, the PlotSize and RangeXY streams are applied when this
+    operation is used dynamically, which means that the width, height,
+    x_range and y_range will automatically be set to match the inner
+    dimensions of the linked plot and the ranges of the axes.
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
@@ -583,6 +583,7 @@ class rasterize(ResamplingOperation):
                                (not isinstance(x, Image) or x in imgs))
         element = element.map(dsrasterize, predicate)
         return element
+
 
 
 class shade(Operation):
