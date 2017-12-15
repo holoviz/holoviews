@@ -89,6 +89,30 @@ class ResamplingOperation(Operation):
         Disable when you do not want the resulting plot to be interactive,
         e.g. when trying to display an interactive plot a second time.""")
 
+    precompute = param.Boolean(default=True, doc="""
+       Whether to apply precomputing operations, if available.
+       Precomputing is in some cases useful to avoid repeating
+       expensive operations on the same inputs.""")
+
+    _precomputed = None
+
+
+    def __call__(self, element, **params):
+        if params.get('precompute', self.precompute):
+            self._precomputed = self._precompute(element)
+        return super(ResamplingOperation, self).__call__(element, **params)
+
+
+    def _precompute(self, obj):
+        """
+        Precompute the input to an operation returning data that will
+        be held on the _precomputeed attribute of the operation instance.
+        Allows pre-computing data for operations that will be executed
+        multiple times, allowing caching of certain results.
+        """
+        return None
+
+
     def _get_sampling(self, element, x, y):
         target = self.p.target
         if target:
@@ -502,6 +526,23 @@ class trimesh_rasterize(aggregate):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
+    def _precompute(self, element):
+        if not isinstance(element, TriMesh):
+            return
+
+        from datashader.utils import mesh
+        if element.vdims:
+            simplices = element.dframe([0, 1, 2, 3])
+            verts = element.nodes.dframe([0, 1])
+        elif element.nodes.vdims:
+            simplices = element.dframe([0, 1, 2])
+            verts = element.nodes.dframe([0, 1, 3])
+        else:
+            return
+        return {'mesh': mesh(verts, simplices), 'simplices': simplices,
+                'vertices': verts}
+
+
     def _process(self, element, key=None):
         x, y = element.nodes.kdims[:2]
         info = self._get_sampling(element, x, y)
@@ -509,20 +550,27 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        if element.vdims:
+        if self._precomputed:
+            simplices = self._precomputed['simplices']
+            pts = self._precomputed['vertices']
+            mesh = self._precomputed['mesh']
+            vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
+        elif element.vdims:
             simplices = element.dframe([0, 1, 2, 3])
             pts = element.nodes.dframe([0, 1])
+            mesh = None
             vdim = element.vdims[0]
         elif element.nodes.vdims:
             simplices = element.dframe([0, 1, 2])
             pts = element.nodes.dframe([0, 1, 3])
+            mesh = None
             vdim = element.nodes.vdims[0]
         else:
             return aggregate._process(self, element, key)
 
         interpolate = bool(self.p.interpolation)
         agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
-                          interp=interpolate)
+                          interp=interpolate, mesh=mesh)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
         return Image(agg, **params)
@@ -559,14 +607,22 @@ class rasterize(ResamplingOperation):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
+    def _precompute(self, element):
+        if not isinstance(element, TriMesh):
+            return
+        trirasterize = trimesh_rasterize.instance()
+        return trirasterize._precompute(element)
+
     def _process(self, element, key=None):
         # Get input Images to avoid multiple rasterization
         imgs = element.traverse(lambda x: x, [Image])
 
         # Rasterize TriMeshes
         tri_params = dict({k: v for k, v in self.p.items()
-                           if k in aggregate.params()}, dynamic=False)
+                           if k in aggregate.params()},
+                          dynamic=False, precompute=False)
         trirasterize = trimesh_rasterize.instance(**tri_params)
+        trirasterize._precomputed = self._precomputed
         element = element.map(trirasterize, TriMesh)
 
         # Rasterize NdOverlay of objects
