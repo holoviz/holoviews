@@ -1,8 +1,10 @@
-import numpy as np
+from unittest import SkipTest
 
-import holoviews
+import numpy as np
+import holoviews as hv
 from holoviews.core.dimension import Dimension
 from holoviews.core.options import Compositor, Store
+from holoviews.core.util import pd
 from holoviews.element import (Distribution, Bivariate, Points, Image,
                                Curve, Area, Contours, Polygons)
 from holoviews.element.comparison import ComparisonTestCase
@@ -15,6 +17,18 @@ class StatisticalElementTest(ComparisonTestCase):
         self.assertEqual(dist.kdims, [Dimension('Value')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
+    def test_distribution_dframe_constructor(self):
+        if pd is None:
+            raise SkipTest("Test requires pandas, skipping.")
+        dist = Distribution(pd.DataFrame({'Value': [0, 1, 2]}))
+        self.assertEqual(dist.kdims, [Dimension('Value')])
+        self.assertEqual(dist.vdims, [Dimension('Density')])
+
+    def test_distribution_dict_constructor(self):
+        dist = Distribution({'Value': [0, 1, 2]})
+        self.assertEqual(dist.kdims, [Dimension('Value')])
+        self.assertEqual(dist.vdims, [Dimension('Density')])
+
     def test_distribution_array_constructor_custom_vdim(self):
         dist = Distribution(np.array([0, 1, 2]), vdims=['Test'])
         self.assertEqual(dist.kdims, [Dimension('Value')])
@@ -22,6 +36,18 @@ class StatisticalElementTest(ComparisonTestCase):
 
     def test_bivariate_array_constructor(self):
         dist = Bivariate(np.array([[0, 1, 2], [0, 1, 2]]))
+        self.assertEqual(dist.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(dist.vdims, [Dimension('Density')])
+
+    def test_bivariate_dframe_constructor(self):
+        if pd is None:
+            raise SkipTest("Test requires pandas, skipping.")
+        dist = Bivariate(pd.DataFrame({'x': [0, 1, 2], 'y': [0, 1, 2]}, columns=['x', 'y']))
+        self.assertEqual(dist.kdims, [Dimension('x'), Dimension('y')])
+        self.assertEqual(dist.vdims, [Dimension('Density')])
+
+    def test_bivariate_dict_constructor(self):
+        dist = Bivariate({'x': [0, 1, 2], 'y': [0, 1, 2]}, ['x', 'y'])
         self.assertEqual(dist.kdims, [Dimension('x'), Dimension('y')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
@@ -82,7 +108,7 @@ class StatisticalElementTest(ComparisonTestCase):
 class StatisticalCompositorTest(ComparisonTestCase):
 
     def setUp(self):
-        self.renderer = holoviews.renderer('matplotlib')
+        self.renderer = hv.renderer('matplotlib')
         np.random.seed(42)
 
     def test_distribution_composite(self):
