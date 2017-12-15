@@ -1,20 +1,17 @@
 name: holoviews
 
+channels:
+  - conda-forge
+
 dependencies:
-  - python=2.7
+  - python=3.6
   - holoviews
   - numpy
-  - pyzmq
-  - jinja2
-  - tornado
-  - jsonschema
-  - pygments
   - notebook
   - matplotlib
-  - pandas
-  - seaborn
-  - mpld3
   - bokeh
-  - nose
-  - pip:
-    -  cyordereddict
+  - pandas
+  - scipy
+  - xarray
+  - datashader
+  - networkx
