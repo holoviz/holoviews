@@ -13,3 +13,5 @@ dependencies:
   - pandas
   - scipy
   - xarray
+  - datashader
+  - networkx
