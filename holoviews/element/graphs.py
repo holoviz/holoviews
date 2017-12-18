@@ -424,8 +424,10 @@ class TriMesh(Graph):
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
+
+        super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if nodes is None:
-            if isinstance(edges, list) and len(edges) == 0:
+            if len(self) == 0:
                 nodes = []
             else:
                 raise ValueError("TriMesh expects both simplices and nodes "
@@ -452,7 +454,7 @@ class TriMesh(Graph):
                                      "x/y positions and optionally the node indices.")
         if edgepaths is not None and not isinstance(edgepaths, self._edge_type):
             edgepaths = self._edge_type(edgepaths)
-        super(TriMesh, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
+
         self._nodes = nodes
         self._edgepaths = edgepaths
 
