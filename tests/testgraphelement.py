@@ -138,6 +138,16 @@ class TriMeshTests(ComparisonTestCase):
         self.assertEqual(trimesh.array(), np.array(self.simplices))
         self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
 
+    def test_trimesh_empty(self):
+        trimesh = TriMesh([])
+        self.assertEqual(trimesh.array(), np.empty((0, 3)))
+        self.assertEqual(trimesh.nodes.array(), np.empty((0, 3)))
+
+    def test_trimesh_empty_clone(self):
+        trimesh = TriMesh([]).clone()
+        self.assertEqual(trimesh.array(), np.empty((0, 3)))
+        self.assertEqual(trimesh.nodes.array(), np.empty((0, 3)))
+
     def test_trimesh_constructor_tuple_nodes(self):
         nodes = tuple(zip(*self.nodes))[:2]
         trimesh = TriMesh((self.simplices, nodes))
