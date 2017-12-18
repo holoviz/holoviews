@@ -12,6 +12,7 @@ import xarray as xr
 import datashader as ds
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
+from param.parameterized import bothmethod
 
 ds_version = LooseVersion(ds.__version__)
 
@@ -22,7 +23,7 @@ except:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset)
+                    CompositeOverlay, Dataset, Overlay)
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
@@ -88,6 +89,20 @@ class ResamplingOperation(Operation):
         update RangeXY streams on the inputs of the shade operation.
         Disable when you do not want the resulting plot to be interactive,
         e.g. when trying to display an interactive plot a second time.""")
+
+    precompute = param.Boolean(default=False, doc="""
+        Whether to apply precomputing operations. Precomputing can
+        speed up resampling operations by avoiding unnecessary
+        recomputation if the supplied element does not change between
+        calls. The cost of enabling this option is that the memory
+        used to represent this internal state is not freed between
+        calls.""")
+
+    @bothmethod
+    def instance(self_or_cls,**params):
+        inst = super(ResamplingOperation, self_or_cls).instance(**params)
+        inst._precomputed = {}
+        return inst
 
     def _get_sampling(self, element, x, y):
         target = self.p.target
@@ -335,7 +350,12 @@ class aggregate(ResamplingOperation):
              (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims))):
             return self._aggregate_ndoverlay(element, agg_fn)
 
-        x, y, data, glyph = self.get_agg_data(element, category)
+        if element._plot_id in self._precomputed:
+            x, y, data, glyph = self._precomputed[element._plot_id]
+        else:
+            x, y, data, glyph = self.get_agg_data(element, category)
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = x, y, data, glyph
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         if x is None or y is None:
@@ -502,6 +522,18 @@ class trimesh_rasterize(aggregate):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
+    def _precompute(self, element):
+        from datashader.utils import mesh
+        if element.vdims:
+            simplices = element.dframe([0, 1, 2, 3])
+            verts = element.nodes.dframe([0, 1])
+        elif element.nodes.vdims:
+            simplices = element.dframe([0, 1, 2])
+            verts = element.nodes.dframe([0, 1, 3])
+        return {'mesh': mesh(verts, simplices), 'simplices': simplices,
+                'vertices': verts}
+
+
     def _process(self, element, key=None):
         x, y = element.nodes.kdims[:2]
         info = self._get_sampling(element, x, y)
@@ -509,20 +541,22 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        if element.vdims:
-            simplices = element.dframe([0, 1, 2, 3])
-            pts = element.nodes.dframe([0, 1])
-            vdim = element.vdims[0]
-        elif element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2])
-            pts = element.nodes.dframe([0, 1, 3])
-            vdim = element.nodes.vdims[0]
-        else:
+        if not (element.vdims or element.nodes.vdims):
             return aggregate._process(self, element, key)
+        elif element._plot_id in self._precomputed:
+            precomputed = self._precomputed[element._plot_id]
+        else:
+            precomputed = self._precompute(element)
+        simplices = precomputed['simplices']
+        pts = precomputed['vertices']
+        mesh = precomputed['mesh']
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = precomputed
 
+        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         interpolate = bool(self.p.interpolation)
         agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
-                          interp=interpolate)
+                          interp=interpolate, mesh=mesh)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
         return Image(agg, **params)
@@ -567,21 +601,27 @@ class rasterize(ResamplingOperation):
         tri_params = dict({k: v for k, v in self.p.items()
                            if k in aggregate.params()}, dynamic=False)
         trirasterize = trimesh_rasterize.instance(**tri_params)
+        trirasterize._precomputed = self._precomputed
         element = element.map(trirasterize, TriMesh)
+        self._precomputed = trirasterize._precomputed
 
         # Rasterize NdOverlay of objects
         agg_params = dict({k: v for k, v in self.p.items()
                            if k in aggregate.params()}, dynamic=False)
         dsrasterize = aggregate.instance(**agg_params)
+        dsrasterize._precomputed = self._precomputed
         predicate = lambda x: (isinstance(x, NdOverlay) and
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image))
         element = element.map(dsrasterize, predicate)
+        self._precomputed = trirasterize._precomputed
 
         # Rasterize other Dataset types
         predicate = lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image) or x in imgs))
         element = element.map(dsrasterize, predicate)
+        self._precomputed = trirasterize._precomputed
+
         return element
 
 
@@ -676,6 +716,8 @@ class shade(Operation):
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
             element = self.concatenate(element)
+        elif isinstance(element, Overlay):
+            return element.map(self._process, [Element])
         else:
             bounds = element.bounds
 
