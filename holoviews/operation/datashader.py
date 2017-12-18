@@ -23,7 +23,7 @@ except:
     hammer_bundle, connect_edges = object, object
 
 from ..core import (Operation, Element, Dimension, NdOverlay,
-                    CompositeOverlay, Dataset)
+                    CompositeOverlay, Dataset, Overlay)
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
@@ -716,6 +716,8 @@ class shade(Operation):
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
             element = self.concatenate(element)
+        elif isinstance(element, Overlay):
+            return element.map(self._process, [Element])
         else:
             bounds = element.bounds
 
