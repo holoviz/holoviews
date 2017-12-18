@@ -7,6 +7,7 @@ from matplotlib.colors import ListedColormap
 from ...core import Layout, Collator, GridMatrix, config
 from ...core.options import Cycle, Palette, Options
 from ...core.overlay import NdOverlay, Overlay
+from ...core.util import pd
 from ...element import * # noqa (API import)
 from ..plot import PlotSelector
 from .annotation import * # noqa (API import)
@@ -23,6 +24,10 @@ from .renderer import MPLRenderer
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
+
+if pd:
+    from pandas.tseries import converter
+    converter.register()
 
 
 def set_style(key):
