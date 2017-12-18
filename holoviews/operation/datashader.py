@@ -12,6 +12,7 @@ import xarray as xr
 import datashader as ds
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
+from param.parameterized import bothmethod
 
 ds_version = LooseVersion(ds.__version__)
 
@@ -89,29 +90,16 @@ class ResamplingOperation(Operation):
         Disable when you do not want the resulting plot to be interactive,
         e.g. when trying to display an interactive plot a second time.""")
 
-    precompute = param.Boolean(default=True, doc="""
+    precompute = param.Boolean(default=False, doc="""
        Whether to apply precomputing operations, if available.
        Precomputing is in some cases useful to avoid repeating
        expensive operations on the same inputs.""")
 
-    _precomputed = None
-
-
-    def __call__(self, element, **params):
-        if params.get('precompute', self.precompute):
-            self._precomputed = self._precompute(element)
-        return super(ResamplingOperation, self).__call__(element, **params)
-
-
-    def _precompute(self, obj):
-        """
-        Precompute the input to an operation returning data that will
-        be held on the _precomputeed attribute of the operation instance.
-        Allows pre-computing data for operations that will be executed
-        multiple times, allowing caching of certain results.
-        """
-        return None
-
+    @bothmethod
+    def instance(self_or_cls,**params):
+        inst = super(ResamplingOperation, self_or_cls).instance(**params)
+        inst._precomputed = {}
+        return inst
 
     def _get_sampling(self, element, x, y):
         target = self.p.target
@@ -359,7 +347,12 @@ class aggregate(ResamplingOperation):
              (isinstance(agg_fn, ds.count_cat) and agg_fn.column in element.kdims))):
             return self._aggregate_ndoverlay(element, agg_fn)
 
-        x, y, data, glyph = self.get_agg_data(element, category)
+        if element._plot_id in self._precomputed:
+            x, y, data, glyph = self._precomputed[element._plot_id]
+        else:
+            x, y, data, glyph = self.get_agg_data(element, category)
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = x, y, data, glyph
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         if x is None or y is None:
@@ -527,9 +520,6 @@ class trimesh_rasterize(aggregate):
         The interpolation method to apply during rasterization.""")
 
     def _precompute(self, element):
-        if not isinstance(element, TriMesh):
-            return
-
         from datashader.utils import mesh
         if element.vdims:
             simplices = element.dframe([0, 1, 2, 3])
@@ -537,8 +527,6 @@ class trimesh_rasterize(aggregate):
         elif element.nodes.vdims:
             simplices = element.dframe([0, 1, 2])
             verts = element.nodes.dframe([0, 1, 3])
-        else:
-            return
         return {'mesh': mesh(verts, simplices), 'simplices': simplices,
                 'vertices': verts}
 
@@ -550,24 +538,19 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        if self._precomputed:
-            simplices = self._precomputed['simplices']
-            pts = self._precomputed['vertices']
-            mesh = self._precomputed['mesh']
-            vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
-        elif element.vdims:
-            simplices = element.dframe([0, 1, 2, 3])
-            pts = element.nodes.dframe([0, 1])
-            mesh = None
-            vdim = element.vdims[0]
-        elif element.nodes.vdims:
-            simplices = element.dframe([0, 1, 2])
-            pts = element.nodes.dframe([0, 1, 3])
-            mesh = None
-            vdim = element.nodes.vdims[0]
-        else:
+        if not (element.vdims or element.nodes.vdims):
             return aggregate._process(self, element, key)
+        elif element._plot_id in self._precomputed:
+            precomputed = self._precomputed[element._plot_id]
+        else:
+            precomputed = self._precompute(element)
+        simplices = precomputed['simplices']
+        pts = precomputed['vertices']
+        mesh = precomputed['mesh']
+        if self.p.precompute:
+            self._precomputed[element._plot_id] = precomputed
 
+        vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         interpolate = bool(self.p.interpolation)
         agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
                           interp=interpolate, mesh=mesh)
@@ -607,37 +590,35 @@ class rasterize(ResamplingOperation):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
-    def _precompute(self, element):
-        if not isinstance(element, TriMesh):
-            return
-        trirasterize = trimesh_rasterize.instance()
-        return trirasterize._precompute(element)
-
     def _process(self, element, key=None):
         # Get input Images to avoid multiple rasterization
         imgs = element.traverse(lambda x: x, [Image])
 
         # Rasterize TriMeshes
         tri_params = dict({k: v for k, v in self.p.items()
-                           if k in aggregate.params()},
-                          dynamic=False, precompute=False)
+                           if k in aggregate.params()}, dynamic=False)
         trirasterize = trimesh_rasterize.instance(**tri_params)
         trirasterize._precomputed = self._precomputed
         element = element.map(trirasterize, TriMesh)
+        self._precomputed = trirasterize._precomputed
 
         # Rasterize NdOverlay of objects
         agg_params = dict({k: v for k, v in self.p.items()
                            if k in aggregate.params()}, dynamic=False)
         dsrasterize = aggregate.instance(**agg_params)
+        dsrasterize._precomputed = self._precomputed
         predicate = lambda x: (isinstance(x, NdOverlay) and
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image))
         element = element.map(dsrasterize, predicate)
+        self._precomputed = trirasterize._precomputed
 
         # Rasterize other Dataset types
         predicate = lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image) or x in imgs))
         element = element.map(dsrasterize, predicate)
+        self._precomputed = trirasterize._precomputed
+
         return element
 
 
