@@ -23,6 +23,7 @@ from .util import attach_periodic, compute_plot_size
 from bokeh.io.notebook import load_notebook
 from bokeh.protocol import Protocol
 from bokeh.embed.notebook import encode_utf8, notebook_content
+from bokeh.themes.theme import Theme
 
 NOTEBOOK_DIV = """
 {plot_div}
@@ -33,6 +34,9 @@ NOTEBOOK_DIV = """
 
 
 class BokehRenderer(Renderer):
+
+    theme = param.ClassSelector(default=None, class_=Theme, allow_None=True, doc="""
+       The applicable Bokeh Theme object (if any).""")
 
     backend = param.String(default='bokeh', doc="The backend name.")
 
@@ -212,6 +216,11 @@ class BokehRenderer(Renderer):
         for m in model.references():
             m._document = None
         doc.add_root(model)
+
+        if self.theme:
+            from bokeh.io import curdoc
+            curdoc().theme = self.theme
+
         comm_id = plot.comm.id if plot.comm else None
         # Bokeh raises warnings about duplicate tools and empty subplots
         # but at the holoviews level these are not issues
