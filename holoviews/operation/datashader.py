@@ -91,9 +91,12 @@ class ResamplingOperation(Operation):
         e.g. when trying to display an interactive plot a second time.""")
 
     precompute = param.Boolean(default=False, doc="""
-       Whether to apply precomputing operations, if available.
-       Precomputing is in some cases useful to avoid repeating
-       expensive operations on the same inputs.""")
+        Whether to apply precomputing operations. Precomputing can
+        speed up resampling operations by avoiding unnecessary
+        recomputation if the supplied element does not change between
+        calls. The cost of enabling this option is that the memory
+        used to represent this internal state is not freed between
+        calls.""")
 
     @bothmethod
     def instance(self_or_cls,**params):
