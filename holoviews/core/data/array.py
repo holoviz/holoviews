@@ -41,7 +41,7 @@ class ArrayInterface(Interface):
                             for k, v in dict_data))
             data = np.column_stack(dataset)
         elif isinstance(data, tuple):
-            data = [d if isinstance(d, np.ndarray) else np.array(d) for d in data]
+            data = [np.asarray(d) for d in data]
             if any(arr.ndim > 1 for arr in data):
                 raise ValueError('ArrayInterface expects data to be of flat shape.')
             if cls.expanded(data):
