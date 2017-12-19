@@ -52,6 +52,15 @@ class TriSurface(Element3D, Scatter):
     def __getitem__(self, slc):
         return Chart.__getitem__(self, slc)
 
+class Trisurface(TriSurface):
+    """
+    Old name for TriSurface. Retaining for backwards compatibility till
+    holoviews 2.0.
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.warning('Please use TriSurface element instead')
+        super(TriSurface, self).__init__(*args, **kwargs)
 
 
 class Scatter3D(Element3D, Scatter):
