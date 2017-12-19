@@ -33,9 +33,9 @@ class Surface(Image, Element3D):
 
 
 
-class Trisurface(Element3D, Scatter):
+class TriSurface(Element3D, Scatter):
     """
-    Trisurface object represents a number of coordinates in 3D-space,
+    TriSurface object represents a number of coordinates in 3D-space,
     represented as a Surface of triangular polygons.
     """
 
@@ -44,10 +44,10 @@ class Trisurface(Element3D, Scatter):
                                 Dimension('z')])
 
     vdims = param.List(default=[], doc="""
-        Trisurface can have optional value dimensions,
+        TriSurface can have optional value dimensions,
         which may be mapped onto color and size.""")
 
-    group = param.String(default='Trisurface', constant=True)
+    group = param.String(default='TriSurface', constant=True)
 
     def __getitem__(self, slc):
         return Chart.__getitem__(self, slc)

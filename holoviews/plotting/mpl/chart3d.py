@@ -188,9 +188,9 @@ class SurfacePlot(Plot3D):
             
 
 
-class TrisurfacePlot(Plot3D):
+class TriSurfacePlot(Plot3D):
     """
-    Plots a trisurface given a Trisurface element, containing
+    Plots a trisurface given a TriSurface element, containing
     X, Y and Z coordinates.
     """
 
