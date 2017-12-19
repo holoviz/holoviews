@@ -95,6 +95,8 @@ class DictInterface(Interface):
                     for i, sd in enumerate(d):
                         unpacked.append((sd, vals[:, i]))
                 else:
+                    if not vals.ndim == 1:
+                        raise ValueError('DictInterface expects data for each column to be flat.')
                     unpacked.append((d, vals if np.isscalar(vals) else np.asarray(vals)))
             if not cls.expanded([d[1] for d in unpacked if not np.isscalar(d[1])]):
                 raise ValueError('DictInterface expects data to be of uniform shape.')
