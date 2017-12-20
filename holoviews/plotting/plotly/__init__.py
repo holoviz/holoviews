@@ -34,7 +34,8 @@ Store.register({Points: PointPlot,
                 # 3D Plot
                 Scatter3D: Scatter3dPlot,
                 Surface: SurfacePlot,
-                Trisurface: TrisurfacePlot,
+                TriSurface: TriSurfacePlot,
+                Trisurface: TriSurfacePlot, # Alias, remove in 2.0
 
                 # Tabular
                 Table: TablePlot,
@@ -62,7 +63,7 @@ options.Curve = Options('style', color=Cycle(), width=2)
 options.ErrorBars = Options('style', color='black')
 options.Scatter = Options('style', color=Cycle())
 options.Points = Options('style', color=Cycle())
-options.Trisurface = Options('style', cmap='viridis')
+options.TriSurface = Options('style', cmap='viridis')
 
 # Rasters
 options.Image = Options('style', cmap=dflt_cmap)

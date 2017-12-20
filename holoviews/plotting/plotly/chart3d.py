@@ -87,7 +87,7 @@ class Scatter3dPlot(ScatterPlot, Chart3DPlot):
                         z=element.dimension_values(2))
 
 
-class TrisurfacePlot(ColorbarPlot, Chart3DPlot):
+class TriSurfacePlot(ColorbarPlot, Chart3DPlot):
 
     style_opts = ['cmap']
 
@@ -95,7 +95,7 @@ class TrisurfacePlot(ColorbarPlot, Chart3DPlot):
         try:
             from scipy.spatial import Delaunay
         except:
-            SkipRendering("SciPy not available, cannot plot Trisurface")
+            SkipRendering("SciPy not available, cannot plot TriSurface")
         x, y, z = (element.dimension_values(i) for i in range(3))
         points2D = np.vstack([x, y]).T
         tri = Delaunay(points2D)
