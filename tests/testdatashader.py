@@ -2,12 +2,13 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Curve, Points, Image, Dataset, RGB, Path, Graph
+from holoviews import Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh, QuadMesh
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
+    import datashader as ds
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges
+        aggregate, regrid, ds_version, stack, directly_connect_edges, rasterize
     )
 except:
     ds_version = None
@@ -149,6 +150,32 @@ class DatashaderRegridTests(ComparisonTestCase):
                            dynamic=False)
         self.assertEqual(regridded, img)
 
+
+@attr(optional=1)
+class DatashaderRasterizeTests(ComparisonTestCase):
+    """
+    Tests for datashader aggregation
+    """
+
+    def setUp(self):
+        if ds_version is None or ds_version <= '0.6.4':
+            raise SkipTest('Regridding operations require datashader>=0.7.0')
+
+    def test_rasterize_trimesh(self):
+        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
+        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
+    def test_rasterize_quadmesh(self):
+        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
+        image = Image(np.array([[2., 3., np.NaN], [0, 1, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(-.5, -.5, 1.5, 1.5))
+        self.assertEqual(img, image)
 
 
 @attr(optional=1)
