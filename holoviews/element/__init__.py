@@ -81,7 +81,7 @@ class ElementConversion(DataConversion):
         return Surface(heatmap.data, **dict(self._table.get_param_values(onlychanged=True)))
 
     def trisurface(self, kdims=None, vdims=None, groupby=None, **kwargs):
-        return self(Trisurface, kdims, vdims, groupby, **kwargs)
+        return self(TriSurface, kdims, vdims, groupby, **kwargs)
 
     def vectorfield(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(VectorField, kdims, vdims, groupby, **kwargs)

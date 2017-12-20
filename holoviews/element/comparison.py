@@ -164,6 +164,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Area] =         cls.compare_area
         cls.equality_type_funcs[Scatter] =      cls.compare_scatter
         cls.equality_type_funcs[Scatter3D] =    cls.compare_scatter3d
+        cls.equality_type_funcs[TriSurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Trisurface] =   cls.compare_trisurface
         cls.equality_type_funcs[Histogram] =    cls.compare_histogram
         cls.equality_type_funcs[Bars] =         cls.compare_bars
@@ -535,7 +536,7 @@ class Comparison(ComparisonInterface):
         cls.compare_dataset(el1, el2, msg)
 
     @classmethod
-    def compare_trisurface(cls, el1, el2, msg='Trisurface'):
+    def compare_trisurface(cls, el1, el2, msg='TriSurface'):
         cls.compare_dataset(el1, el2, msg)
 
     @classmethod
