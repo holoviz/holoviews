@@ -68,7 +68,7 @@ class BokehServerWidgets(param.Parameterized):
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  kdims=self.dimensions)
+                                  kdims=list(self.dimensions))
         self.widgets, self.lookups = self.get_widgets()
         self.reverse_lookups = {d: {v: k for k, v in item.items()}
                                 for d, item in self.lookups.items()}
@@ -195,11 +195,10 @@ class BokehServerWidgets(param.Parameterized):
         Handle update events on bokeh server.
         """
         if not self._queue:
-            self._active = False
             return
-        self._queue = []
 
         dim, widget_type, attr, old, new = self._queue[-1]
+        self._queue = []
         dim_label = dim.pprint_label
 
         label, widget = self.widgets[dim_label]
@@ -232,6 +231,7 @@ class BokehServerWidgets(param.Parameterized):
         key = wrap_tuple_streams(tuple(key), self.plot.dimensions,
                                  self.plot.streams)
         self.plot.update(key)
+        self._active = False
 
 
 
