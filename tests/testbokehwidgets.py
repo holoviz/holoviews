@@ -2,7 +2,9 @@ from unittest import SkipTest
 
 import numpy as np
 
-from holoviews.core import Dimension, NdMapping
+from holoviews import renderer
+from holoviews.core import Dimension, NdMapping, DynamicMap
+from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -17,6 +19,17 @@ class TestBokehServerWidgets(ComparisonTestCase):
     def setUp(self):
         if not BokehServerWidgets:
             raise SkipTest("Bokeh required to test BokehServerWidgets")
+
+    def test_bokeh_widgets_server_mode(self):
+        dmap = DynamicMap(lambda X: Curve([]), kdims=['X']).redim.range(X=(0, 5))
+        widgets = renderer('bokeh').instance(mode='server').get_widget(dmap, None)
+        div, widget = widgets.widgets['X']
+        self.assertIsInstance(widget, Slider)
+        self.assertEqual(widget.value, 0)
+        self.assertEqual(widget.start, 0)
+        self.assertEqual(widget.end, 5)
+        self.assertEqual(widget.step, 1)
+        self.assertEqual(widgets.state.sizing_mode, 'fixed')
 
     def test_bokeh_server_dynamic_range_int(self):
         dim = Dimension('x', range=(3, 11))
