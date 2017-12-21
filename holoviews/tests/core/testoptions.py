@@ -1,8 +1,10 @@
 import os
 import pickle
 import numpy as np
-from holoviews import Store, StoreOptions, Histogram, Image
-from holoviews.core.options import OptionError, Cycle, Options, OptionTree, options_policy
+from holoviews import Store, Histogram, Image
+from holoviews.core.options import (
+    OptionError, Cycle, Options, OptionTree, StoreOptions, options_policy
+)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
 from unittest import SkipTest

@@ -22,6 +22,8 @@ class Element(ViewableElement, Composable, Overlayable):
 
     group = param.String(default='Element', constant=True)
 
+    __abstract = True
+
     def hist(self, dimension=None, num_bins=20, bin_range=None,
              adjoin=True, **kwargs):
         """
@@ -261,12 +263,16 @@ class Element2D(Element):
         Allows overriding the extents of the Element in 2D space defined
         as four-tuple defining the (left, bottom, right and top) edges.""")
 
+    __abstract = True
+
 
 class Element3D(Element2D):
 
     extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
         Allows overriding the extents of the Element in 3D space
         defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
+
+    __abstract = True
 
 
 class Collator(NdMapping):
