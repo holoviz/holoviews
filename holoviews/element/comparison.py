@@ -137,7 +137,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Spline] =      cls.compare_spline
         cls.equality_type_funcs[Arrow] =       cls.compare_arrow
         cls.equality_type_funcs[Text] =        cls.compare_text
-
+        cls.equality_type_funcs[Div] =         cls.compare_div
 
         # Path comparisons
         cls.equality_type_funcs[Path] =        cls.compare_paths
@@ -452,6 +452,9 @@ class Comparison(ComparisonInterface):
     def compare_text(cls, el1, el2, msg='Text'):
         cls.compare_annotation(el1, el2, msg=msg)
 
+    @classmethod
+    def compare_div(cls, el1, el2, msg='Div'):
+        cls.compare_annotation(el1, el2, msg=msg)
 
     #=======#
     # Paths #
