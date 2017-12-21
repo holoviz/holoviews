@@ -657,18 +657,21 @@ class QuadMesh(Dataset, Element2D):
             state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
         super(Dataset, self).__setstate__(state)
 
+
     def trimesh(self):
         """
         Converts a QuadMesh into a TriMesh.
         """
+        # Generate vertices
         xs = self.interface.coords(self, 'x', edges=True)
         ys = self.interface.coords(self, 'y', edges=True)
         if xs.ndim == 1:
             xs, ys = (np.tile(xs[:, np.newaxis], len(ys)).T,
                       np.tile(ys[:, np.newaxis], len(xs)))
-        zarr = self.dimension_values(2, flat=False)
-        s0 = zarr.shape[0]
+        vertices = (xs.T.flatten(), ys.T.flatten())
 
+        # Generate triangle simplexes
+        s0 = self.interface.shape(self, gridded=True)[0]
         t1 = np.arange(len(self))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
@@ -677,7 +680,6 @@ class QuadMesh(Dataset, Element2D):
         t4s = t2s
         t5s = t3s
         t6s = t3s+1
-
         t1 = np.concatenate([t1s, t6s])
         t2 = np.concatenate([t2s, t5s])
         t3 = np.concatenate([t3s, t4s])
@@ -685,10 +687,11 @@ class QuadMesh(Dataset, Element2D):
         for vd in self.vdims:
             zs = self.dimension_values(2)
             ts = ts + (np.concatenate([zs, zs]),)
-        nodes = (xs.T.flatten(), ys.T.flatten())
+
+        # Construct TriMesh
         params = {k: v for k, v in util.get_param_values(self).items()
                   if k != 'kdims'}
-        return TriMesh(((ts,), nodes), **params)
+        return TriMesh(((ts,), vertices), **params)
 
 
 
