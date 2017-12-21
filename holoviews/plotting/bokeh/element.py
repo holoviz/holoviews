@@ -620,17 +620,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             glyph.update(**filtered)
 
 
-    def _execute_hooks(self, element):
-        """
-        Executes finalize hooks
-        """
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
-
-
     def _postprocess_hover(self, renderer, source):
         """
         Attaches renderer to hover tool and processes tooltips to

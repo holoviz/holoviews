@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import numpy as np
-from bokeh.models import Span, Arrow
+from bokeh.models import Span, Arrow, Div as BkDiv
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -15,8 +15,10 @@ except:
 
 from ...element import HLine
 from ...core.util import datetime_types
+from ..plot import GenericElementPlot
 from .element import (ElementPlot, CompositeElementPlot,
                       text_properties, line_properties)
+from .plot import BokehPlot
 from .util import date_to_integer
 
 
@@ -192,3 +194,55 @@ class ArrowPlot(CompositeElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+
+class DivPlot(BokehPlot, GenericElementPlot):
+
+    height = param.Number(default=300)
+
+    width = param.Number(default=300)
+
+    finalize_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a column.
+        The hook is passed the plot object and the displayed
+        object, and other plotting handles can be accessed via plot.handles.""")
+
+    _stream_data = False
+
+    def __init__(self, element, plot=None, **params):
+        super(DivPlot, self).__init__(element, **params)
+        self.callbacks = []
+        self.handles = {} if plot is None else self.handles['plot']
+
+
+    def get_data(self, element, ranges, style):
+        return element.data, {}, style
+
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        """
+        Initializes a new plot object with the last available frame.
+        """
+        # Get element key and ranges for frame
+        element = self.hmap.last
+        key = self.keys[-1]
+        self.current_frame = element
+        self.current_key = key
+
+        data, _, _ = self.get_data(element, ranges, {})
+        div = BkDiv(text=data, width=self.width, height=self.height)
+        self.handles['plot'] = div
+        self._execute_hooks(element)
+        self.drawn = True
+        return div
+
+
+    def update_frame(self, key, ranges=None, plot=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+        element = self._get_frame(key)
+        text, _, _ = self.get_data(element, ranges, {})
+        self.handles['plot'].text = text

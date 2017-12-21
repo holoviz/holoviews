@@ -3,7 +3,7 @@ import numpy as np
 import param
 
 from ..core.util import datetime_types, basestring
-from ..core import Dimension, Element2D
+from ..core import Dimension, Element2D, Element
 
 
 class Annotation(Element2D):
@@ -251,3 +251,18 @@ class Text(Annotation):
         super(Text, self).__init__(info, x=x, y=y, text=text,
                                    fontsize=fontsize, rotation=rotation,
                                    halign=halign, valign=valign, **params)
+
+
+
+class Div(Element):
+    """
+    The Div element represents a div DOM node in an HTML document.
+    """
+
+    group = param.String(default='Div', constant=True)
+
+    def __init__(self, html, **params):
+        if not isinstance(html, basestring):
+            raise ValueError("Div element html data must be a string "
+                             "type, found %s type." % type(html).__name__)
+        super(Div, self).__init__(html, **params)

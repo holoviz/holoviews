@@ -723,6 +723,17 @@ class GenericElementPlot(DimensionedPlot):
         return frame
 
 
+    def _execute_hooks(self, element):
+        """
+        Executes finalize hooks
+        """
+        for hook in self.finalize_hooks:
+            try:
+                hook(self, element)
+            except Exception as e:
+                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+
+
     def get_extents(self, view, ranges):
         """
         Gets the extents for the axes from the current View. The globally
