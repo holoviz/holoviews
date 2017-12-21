@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+import param
 import numpy as np
 from bokeh.models import Span, Arrow, Div as BkDiv
 try:
