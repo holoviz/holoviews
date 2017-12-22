@@ -418,7 +418,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
 
 class ErrorPlot(ElementPlot):
 
-    style_opts = line_properties
+    style_opts = line_properties + ['lower_head', 'upper_head']
 
     _mapping = dict(base="base", upper="upper", lower="lower")
 
