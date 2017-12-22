@@ -101,7 +101,11 @@ class XArrayInterface(GridInterface):
                          if isinstance(data[name].data, np.ndarray)]
 
         kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
-        not_found = [d for d in kdims if d.name not in data.coords]
+        not_found = []
+        for d in kdims:
+            if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
+                       for k, v in data.coords.items()):
+                not_found.append(d)
         if not isinstance(data, xr.Dataset):
             raise TypeError('Data must be be an xarray Dataset type.')
         elif not_found:
@@ -114,16 +118,17 @@ class XArrayInterface(GridInterface):
     @classmethod
     def range(cls, dataset, dimension):
         dim = dataset.get_dimension(dimension, strict=True).name
-        if dim in dataset.data:
+        if dataset._binned and dimension in dataset.kdims:
+            data = cls.coords(dataset, dim, edges=True)
+            dmin, dmax = np.nanmin(data), np.nanmax(data)
+        else:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
             if dask and isinstance(dmin, dask.array.Array):
                 dmin, dmax = dmin.compute(), dmax.compute()
-            dmin = dmin if np.isscalar(dmin) else dmin.item()
-            dmax = dmax if np.isscalar(dmax) else dmax.item()
-            return dmin, dmax
-        else:
-            return np.NaN, np.NaN
+        dmin = dmin if np.isscalar(dmin) else dmin.item()
+        dmax = dmax if np.isscalar(dmax) else dmax.item()
+        return dmin, dmax
 
 
     @classmethod
@@ -131,6 +136,12 @@ class XArrayInterface(GridInterface):
         index_dims = [dataset.get_dimension(d, strict=True) for d in dimensions]
         element_dims = [kdim for kdim in dataset.kdims
                         if kdim not in index_dims]
+
+        invalid = [d for d in index_dims if dataset.data[d.name].ndim > 1]
+        if invalid:
+            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
+                             % invalid)
 
         group_kwargs = {}
         if group_type != 'raw' and issubclass(group_type, Element):
@@ -167,12 +178,35 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False):
-        if expanded:
-            return util.expand_grid_coords(dataset, dim)
+    def coords(cls, dataset, dimension, ordered=False, expanded=False, edges=False):
+        dim = dataset.get_dimension(dimension)
+        dim = dimension if dim is None else dim.name
+        irregular = cls.irregular(dataset, dim)
+        if irregular or expanded:
+            if irregular:
+                data = dataset.data[dim]
+            else:
+                data = util.expand_grid_coords(dataset, dim)
+            if edges:
+                data = cls._infer_interval_breaks(data, axis=1)
+                data = cls._infer_interval_breaks(data, axis=0)
+            return data
+
         data = np.atleast_1d(dataset.data[dim].data)
         if ordered and data.shape and np.all(data[1:] < data[:-1]):
             data = data[::-1]
+        shape = cls.shape(dataset, True)
+
+        if dim in dataset.kdims:
+            idx = dataset.get_dimension_index(dim)
+            isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
+                       and len(data) == (shape[dataset.ndims-idx-1]+1))
+        else:
+            isedges = False
+        if edges and not isedges:
+            data = cls._infer_interval_breaks(data)
+        elif not edges and isedges:
+            data = np.convolve(data, [0.5, 0.5], 'valid')
         return data
 
 
@@ -180,11 +214,13 @@ class XArrayInterface(GridInterface):
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
-        if dim in dataset.vdims:
+        irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
+        if dim in dataset.vdims or irregular:
             coord_dims = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
-            data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
+            if not irregular and not any(cls.irregular(dataset, d) for d in dataset.kdims):
+                data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
@@ -213,10 +249,19 @@ class XArrayInterface(GridInterface):
 
     @classmethod
     def ndloc(cls, dataset, indices):
-        kdims = [d.name for d in dataset.kdims[::-1]]
+        kdims = [d for d in dataset.kdims[::-1]]
         adjusted_indices = []
+        slice_dims = []
         for kd, ind in zip(kdims, indices):
-            coords = cls.coords(dataset, kd, False)
+            if cls.irregular(dataset, kd):
+                coords = [c for c in dataset.data.coords if c not in dataset.data.dims]
+                dim = dataset.data[kd.name].dims[coords.index(kd.name)]
+                shape = dataset.data[kd.name].shape[coords.index(kd.name)]
+                coords = np.arange(shape)
+            else:
+                coords = cls.coords(dataset, kd, False)
+                dim = kd.name
+            slice_dims.append(dim)
             ncoords = len(coords)
             if np.all(coords[1:] < coords[:-1]):
                 if np.isscalar(ind):
@@ -235,7 +280,7 @@ class XArrayInterface(GridInterface):
                 ind = np.where(ind)[0]
             adjusted_indices.append(ind)
 
-        isel = dict(zip(kdims, adjusted_indices))
+        isel = dict(zip(slice_dims, adjusted_indices))
         all_scalar = all(map(np.isscalar, indices))
         if all_scalar and len(dataset.vdims) == 1:
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
@@ -283,8 +328,12 @@ class XArrayInterface(GridInterface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
+        irregular = False
         for k, v in selection.items():
-            dim = dataset.get_dimension(k, strict=True).name
+            dim = dataset.get_dimension(k, strict=True)
+            if cls.irregular(dataset, dim):
+                return GridInterface.select(dataset, selection_mask, **selection)
+            dim = dim.name
             if isinstance(v, slice):
                 v = (v.start, v.stop)
             if isinstance(v, set):

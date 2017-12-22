@@ -89,26 +89,16 @@ class HistogramComparisonTest(ComparisonTestCase):
         self.assertEqual(self.hist2, self.hist2)
 
     def test_histograms_unequal_1(self):
-        try:
+        with self.assertRaises(AssertionError):
             self.assertEqual(self.hist1, self.hist2)
-        except  AssertionError as e:
-            if not str(e).startswith("Histogram edges not almost equal to 6 decimals"):
-                raise self.failureException("Histogram edge data mismatch error not raised.")
 
     def test_histograms_unequal_2(self):
-        try:
+        with self.assertRaises(AssertionError):
             self.assertEqual(self.hist1, self.hist3)
-        except  AssertionError as e:
-            if not str(e).startswith("Histogram edges not almost equal to 6 decimals"):
-                raise self.failureException("Histogram edge data mismatch error not raised.")
 
     def test_histograms_unequal_3(self):
-        try:
+        with self.assertRaises(AssertionError):
             self.assertEqual(self.hist1, self.hist4)
-        except  AssertionError as e:
-            if not str(e).startswith("Histogram values not almost equal to 6 decimals"):
-                raise self.failureException("Histogram value data mismatch error not raised.")
-
 
 
 

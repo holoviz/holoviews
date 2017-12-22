@@ -175,6 +175,9 @@ class Dataset(Element):
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
 
+    # Whether the key dimensions are specified as bins
+    _binned = False
+
     _vdim_reductions = {}
     _kdim_reductions = {}
 
@@ -361,7 +364,7 @@ class Dataset(Element):
             value_select = slices[self.ndims]
         elif len(slices) == self.ndims+1 and isinstance(slices[self.ndims],
                                                         (Dimension,str)):
-            raise Exception("%r is not an available value dimension" % slices[self.ndims])
+            raise IndexError("%r is not an available value dimension" % slices[self.ndims])
         else:
             selection = dict(zip(self.dimensions(label=True), slices))
         data = self.select(**selection)

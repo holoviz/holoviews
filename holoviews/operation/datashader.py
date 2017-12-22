@@ -27,7 +27,8 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import Image, Path, Curve, RGB, Graph, TriMesh, Points, Scatter, Dataset
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, Points,
+                       Scatter, Dataset, QuadMesh)
 from ..streams import RangeXY, PlotSize
 
 
@@ -535,7 +536,10 @@ class trimesh_rasterize(aggregate):
 
 
     def _process(self, element, key=None):
-        x, y = element.nodes.kdims[:2]
+        if isinstance(element, TriMesh):
+            x, y = element.nodes.kdims[:2]
+        else:
+            x, y = element.kdims
         info = self._get_sampling(element, x, y)
         (x_range, y_range), _, (width, height), (xtype, ytype) = info
         cvs = ds.Canvas(plot_width=width, plot_height=height,
@@ -551,7 +555,7 @@ class trimesh_rasterize(aggregate):
         pts = precomputed['vertices']
         mesh = precomputed['mesh']
         if self.p.precompute:
-            self._precomputed[element._plot_id] = precomputed
+            self._precomputed = {element._plot_id: precomputed}
 
         vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         interpolate = bool(self.p.interpolation)
@@ -560,6 +564,18 @@ class trimesh_rasterize(aggregate):
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
         return Image(agg, **params)
+
+
+
+class quadmesh_rasterize(trimesh_rasterize):
+    """
+    Rasterize the QuadMesh element using the supplied aggregator.
+    Simply converts to a TriMesh and let's trimesh_rasterize
+    handle the actual rasterization.
+    """
+
+    def _precompute(self, element):
+        return super(quadmesh_rasterize, self)._precompute(element.trimesh())
 
 
 
@@ -605,6 +621,14 @@ class rasterize(ResamplingOperation):
         element = element.map(trirasterize, TriMesh)
         self._precomputed = trirasterize._precomputed
 
+        # Rasterize QuadMesh
+        quad_params = dict({k: v for k, v in self.p.items()
+                           if k in aggregate.params()}, dynamic=False)
+        quadrasterize = quadmesh_rasterize.instance(**quad_params)
+        quadrasterize._precomputed = self._precomputed
+        element = element.map(quadrasterize, QuadMesh)
+        self._precomputed = quadrasterize._precomputed
+
         # Rasterize NdOverlay of objects
         agg_params = dict({k: v for k, v in self.p.items()
                            if k in aggregate.params()}, dynamic=False)
@@ -614,13 +638,12 @@ class rasterize(ResamplingOperation):
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image))
         element = element.map(dsrasterize, predicate)
-        self._precomputed = trirasterize._precomputed
 
         # Rasterize other Dataset types
         predicate = lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image) or x in imgs))
         element = element.map(dsrasterize, predicate)
-        self._precomputed = trirasterize._precomputed
+        self._precomputed = dsrasterize._precomputed
 
         return element
 

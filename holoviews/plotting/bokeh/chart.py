@@ -337,9 +337,11 @@ class HistogramPlot(ElementPlot):
         if self.static_source:
             data = dict(top=[], left=[], right=[])
         else:
-            data = dict(top=element.values, left=element.edges[:-1],
-                        right=element.edges[1:])
-        self._get_hover_data(data, element)
+            x = element.kdims[0]
+            values = element.dimension_values(1)
+            edges = element.interface.coords(element, x, edges=True)
+            data = dict(top=values, left=edges[:-1], right=edges[1:])
+            self._get_hover_data(data, element)
         return (data, mapping, style)
 
     def get_extents(self, element, ranges):
@@ -374,17 +376,7 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
     """
 
     def get_data(self, element, ranges, style):
-        if self.invert_axes:
-            mapping = dict(top='right', bottom='left', left=0, right='top')
-        else:
-            mapping = dict(top='top', bottom=0, left='left', right='right')
-
-        if self.static_source:
-            data = dict(top=[], left=[], right=[])
-        else:
-            data = dict(top=element.values, left=element.edges[:-1],
-                        right=element.edges[1:])
-
+        data, mapping, style = HistogramPlot.get_data(self, element, ranges, style)
         color_dims = [d for d in self.adjoined.traverse(lambda x: x.handles.get('color_dim'))
                       if d is not None]
         dim = color_dims[0] if color_dims else None
@@ -393,7 +385,6 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
             data[dim.name] = [] if self.static_source else element.dimension_values(dim)
             mapping['fill_color'] = {'field': dim.name,
                                      'transform': cmapper}
-        self._get_hover_data(data, element)
         return (data, mapping, style)
 
 

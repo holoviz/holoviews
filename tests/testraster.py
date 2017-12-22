@@ -3,7 +3,7 @@ Unit tests of Raster elements
 """
 
 import numpy as np
-from holoviews.element import Raster, Image, Curve, QuadMesh
+from holoviews.element import Raster, Image, Curve, QuadMesh, TriMesh
 from holoviews.element.comparison import ComparisonTestCase
 
 class TestRaster(ComparisonTestCase):
@@ -67,11 +67,27 @@ class TestQuadMesh(ComparisonTestCase):
     def test_cast_image_to_quadmesh(self):
         img = Image(self.array1, kdims=['a', 'b'], vdims=['c'], group='A', label='B')
         qmesh = QuadMesh(img)
-        self.assertEqual(qmesh.data[0], np.array([-0.5, -0.166667, 0.166667, 0.5]))
-        self.assertEqual(qmesh.data[1], np.array([-0.5, 0, 0.5]))
-        self.assertEqual(qmesh.data[2], self.array1[::-1])
+        self.assertEqual(qmesh.dimension_values(0, False), np.array([-0.333333, 0., 0.333333]))
+        self.assertEqual(qmesh.dimension_values(1, False), np.array([-0.25, 0.25]))
+        self.assertEqual(qmesh.dimension_values(2, flat=False), self.array1[::-1])
         self.assertEqual(qmesh.kdims, img.kdims)
         self.assertEqual(qmesh.vdims, img.vdims)
         self.assertEqual(qmesh.group, img.group)
         self.assertEqual(qmesh.label, img.label)
         
+    def test_quadmesh_to_trimesh(self):
+        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        trimesh = qmesh.trimesh()
+        simplices = np.array([[0, 1, 3, 0],
+                              [1, 2, 4, 2],
+                              [3, 4, 6, 1],
+                              [4, 5, 7, 3],
+                              [4, 3, 1, 0],
+                              [5, 4, 2, 2],
+                              [7, 6, 4, 1],
+                              [8, 7, 5, 3]])
+        vertices = np.array([(-0.5, -0.5), (-0.5, 0.5), (-0.5, 1.5),
+                             (0.5, -0.5), (0.5, 0.5), (0.5, 1.5),
+                             (1.5, -0.5), (1.5, 0.5), (1.5, 1.5)])
+        self.assertEqual(trimesh.array(), simplices)
+        self.assertEqual(trimesh.nodes.array([0, 1]), vertices)

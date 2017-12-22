@@ -56,6 +56,18 @@ class GridInterface(DictInterface):
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif isinstance(data, list) and data == []:
+            data = OrderedDict([(d, []) for d in dimensions])
+        elif not any(isinstance(data, tuple(t for t in interface.types if t is not None))
+                     for interface in cls.interfaces.values()):
+            data = {k: v for k, v in zip(dimensions, zip(*data))}
+        elif isinstance(data, np.ndarray):
+            if data.ndim == 1:
+                if eltype._auto_indexable_1d and len(kdims)+len(vdims)>1:
+                    data = np.column_stack([np.arange(len(data)), data])
+                else:
+                    data = np.atleast_2d(data).T
+            data = {k: data[:,i] for i,k in enumerate(dimensions)}
+        elif isinstance(data, list) and data == []:
             data = {d: np.array([]) for d in dimensions[:ndims]}
             data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
         elif not isinstance(data, dict):
@@ -72,14 +84,28 @@ class GridInterface(DictInterface):
         kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
         vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
         expected = tuple([len(data[kd]) for kd in kdim_names])
+        shapes = tuple([data[kd].shape for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
             error = DataError if len(shape) > 1 else ValueError
-            if shape != expected[::-1] and not (not expected and shape == (1,)):
+            if (not expected and shape == (1,)) or (len(set((shape,)+shapes)) == 1 and len(shape) > 1):
+                # If empty or an irregular mesh
+                pass
+            elif len(shape) != len(expected):
+                raise error('The shape of the %s value array does not '
+                            'match the expected dimensionality indicated '
+                            'by the key dimensions. Expected %d-D array, '
+                            'found %d-D array.' % (vdim, len(expected), len(shape)))
+            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, expected[::-1])):
                 raise error('Key dimension values and value array %s '
                             'shapes do not match. Expected shape %s, '
                             'actual shape: %s' % (vdim, expected[::-1], shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
+
+
+    @classmethod
+    def irregular(cls, dataset, dim):
+        return dataset.data[dim.name if isinstance(dim, Dimension) else dim].ndim > 1
 
 
     @classmethod
@@ -103,30 +129,69 @@ class GridInterface(DictInterface):
 
     @classmethod
     def shape(cls, dataset, gridded=False):
+        shape = dataset.data[dataset.vdims[0].name].shape
         if gridded:
-            return dataset.data[dataset.vdims[0].name].shape
+            return shape
         else:
-            return (cls.length(dataset), len(dataset.dimensions()))
+            return (np.product(shape), len(dataset.dimensions()))
 
 
     @classmethod
     def length(cls, dataset):
-        return np.product([len(dataset.data[d.name]) for d in dataset.kdims])
+        return cls.shape(dataset)[0]
 
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False):
+    def _infer_interval_breaks(cls, coord, axis=0):
+        """
+        >>> GridInterface._infer_interval_breaks(np.arange(5))
+        array([-0.5,  0.5,  1.5,  2.5,  3.5,  4.5])
+        >>> GridInterface._infer_interval_breaks([[0, 1], [3, 4]], axis=1)
+        array([[-0.5,  0.5,  1.5],
+               [ 2.5,  3.5,  4.5]])
+        """
+        coord = np.asarray(coord)
+        deltas = 0.5 * np.diff(coord, axis=axis)
+        first = np.take(coord, [0], axis=axis) - np.take(deltas, [0], axis=axis)
+        last = np.take(coord, [-1], axis=axis) + np.take(deltas, [-1], axis=axis)
+        trim_last = tuple(slice(None, -1) if n == axis else slice(None)
+                          for n in range(coord.ndim))
+        return np.concatenate([first, coord[trim_last] + deltas, last], axis=axis)
+
+
+    @classmethod
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         """
         Returns the coordinates along a dimension.  Ordered ensures
         coordinates are in ascending order and expanded creates
         ND-array matching the dimensionality of the dataset.
         """
         dim = dataset.get_dimension(dim, strict=True)
-        if expanded:
-            return util.expand_grid_coords(dataset, dim)
+        irregular = cls.irregular(dataset, dim)
+        if irregular or expanded:
+            if irregular:
+                data = dataset.data[dim.name]
+            else:
+                data = util.expand_grid_coords(dataset, dim)
+            if edges and data.shape == dataset.data[dataset.vdims[0].name].shape:
+                data = cls._infer_interval_breaks(data, axis=1)
+                data = cls._infer_interval_breaks(data, axis=0)
+            return data
+
         data = dataset.data[dim.name]
         if ordered and np.all(data[1:] < data[:-1]):
             data = data[::-1]
+        shape = cls.shape(dataset, True)
+        if dim in dataset.kdims:
+            idx = dataset.get_dimension_index(dim)
+            isedges = (dim in dataset.kdims and len(shape) == dataset.ndims
+                       and len(data) == (shape[dataset.ndims-idx-1]+1))
+        else:
+            isedges = False
+        if edges and not isedges:
+            data = cls._infer_interval_breaks(data)
+        elif not edges and isedges:
+            data = np.convolve(data, [0.5, 0.5], 'valid')
         return data
 
 
@@ -197,7 +262,7 @@ class GridInterface(DictInterface):
         selected = {}
         adjusted_inds = []
         all_scalar = True
-        for kd, ind in zip(dataset.kdims[::-1], indices):
+        for i, (kd, ind) in enumerate(zip(dataset.kdims[::-1], indices)):
             coords = cls.coords(dataset, kd.name, True)
             if np.isscalar(ind):
                 ind = [ind]
@@ -210,19 +275,21 @@ class GridInterface(DictInterface):
                 coords = cls.coords(dataset, kd.name)
                 selected[kd.name] = coords
                 all_scalar = False
-        for vd in dataset.vdims:
-            arr = dataset.dimension_values(vd, flat=False)
+        for d in dataset.dimensions():
+            if d in dataset.kdims and not cls.irregular(dataset, d):
+                continue
+            arr = dataset.dimension_values(d, flat=False)
             if all_scalar and len(dataset.vdims) == 1:
                 return arr[tuple(ind[0] for ind in adjusted_inds)]
-            selected[vd.name] = arr[tuple(adjusted_inds)]
+            selected[d.name] = arr[tuple(adjusted_inds)]
         return tuple(selected[d.name] for d in dataset.dimensions())
 
 
     @classmethod
     def values(cls, dataset, dim, expanded=True, flat=True):
         dim = dataset.get_dimension(dim, strict=True)
-        if dim in dataset.vdims:
-            data = dataset.data.get(dim.name)
+        if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
+            data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
             return data.T.flatten() if flat else data
         elif expanded:
@@ -238,6 +305,12 @@ class GridInterface(DictInterface):
         dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
         kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
 
+        invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
+        if invalid:
+            if len(invalid) == 1: invalid = "'%s'" % invalid[0]
+            raise ValueError("Cannot groupby irregularly sampled dimension(s) %s."
+                             % invalid)
+
         # Update the kwargs appropriately for Element group types
         group_kwargs = {}
         group_type = dict if group_type == 'raw' else group_type
@@ -249,7 +322,7 @@ class GridInterface(DictInterface):
         drop_dim = any(d not in group_kwargs['kdims'] for d in kdims)
 
         # Find all the keys along supplied dimensions
-        keys = [dataset.data[d.name] for d in dimensions]
+        keys = [cls.coords(dataset, d.name) for d in dimensions]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -303,12 +376,14 @@ class GridInterface(DictInterface):
             mask = None
         else:
             index_mask = values == ind
-            if dataset.ndims == 1 and np.sum(index_mask) == 0:
+            if (dataset.ndims == 1 or dataset._binned) and np.sum(index_mask) == 0:
                 data_index = np.argmin(np.abs(values - ind))
-                mask = np.zeros(len(dataset), dtype=np.bool)
+                mask = np.zeros(len(values), dtype=np.bool)
                 mask[data_index] = True
             else:
                 mask = index_mask
+        if mask is None:
+            mask = np.ones(values.shape, dtype=bool)
         return mask
 
 
@@ -321,24 +396,54 @@ class GridInterface(DictInterface):
                              'convert to expanded format before slicing.')
 
         indexed = cls.indexed(dataset, selection)
-        selection = [(d, selection.get(d.name, selection.get(d.label)))
-                      for d in dimensions]
+        full_selection = [(d, selection.get(d.name, selection.get(d.label)))
+                          for d in dimensions]
         data = {}
         value_select = []
-        for dim, ind in selection:
-            values = cls.values(dataset, dim, False)
+        for i, (dim, ind) in enumerate(full_selection):
+            irregular = cls.irregular(dataset, dim)
+            values = cls.coords(dataset, dim, irregular)
             mask = cls.key_select_mask(dataset, values, ind)
-            if mask is None:
-                mask = np.ones(values.shape, dtype=bool)
+            if irregular:
+                if np.isscalar(ind) or isinstance(ind, (set, list)):
+                    raise IndexError("Indexing not supported for irregularly "
+                                     "sampled data. %s value along %s dimension."
+                                     "must be a slice or 2D boolean mask."
+                                     % (ind, dim))
+                mask = mask.max(axis=i)
+            elif dataset._binned:
+                edges = cls.coords(dataset, dim, False, edges=True)
+                inds = np.argwhere(mask)
+                if np.isscalar(ind):
+                    emin, emax = edges.min(), edges.max()
+                    if ind < emin:
+                        raise IndexError("Index %s less than lower bound "
+                                         "of %s for %s dimension." % (ind, emin, dim))
+                    elif ind >= emax:
+                        raise IndexError("Index %s more than or equal to upper bound "
+                                         "of %s for %s dimension." % (ind, emax, dim))
+                    idx = max([np.digitize([ind], edges)[0]-1, 0])
+                    mask = np.zeros(len(values), dtype=np.bool)
+                    mask[idx] = True
+                    values = edges[idx:idx+2]
+                elif len(inds):
+                    values = edges[inds.min(): inds.max()+2]
+                else:
+                    values = edges[0:0]
             else:
                 values = values[mask]
+            values, mask = np.asarray(values), np.asarray(mask)
             value_select.append(mask)
             data[dim.name] = np.array([values]) if np.isscalar(values) else values
+
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
+        for kdim in dataset.kdims:
+            if cls.irregular(dataset, dim):
+                data[kdim.name] = np.asarray(data[kdim.name])[index]
         for vdim in dataset.vdims:
-            data[vdim.name] = dataset.data[vdim.name][index]
+            data[vdim.name] = np.asarray(dataset.data[vdim.name])[index]
 
         if indexed:
             if len(dataset.vdims) == 1:
@@ -464,6 +569,24 @@ class GridInterface(DictInterface):
         if scalar:
             return new_data[0][0]
         return tuple(new_data)
+
+    @classmethod
+    def range(cls, dataset, dimension):
+        if dataset._binned and dimension in dataset.kdims:
+            expanded = cls.irregular(dataset, dimension)
+            column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
+        else:
+            column = dataset.dimension_values(dimension)
+        if dataset.get_dimension_type(dimension) is np.datetime64:
+            return column.min(), column.max()
+        elif len(column) == 0:
+            return np.NaN, np.NaN
+        else:
+            try:
+                return (np.nanmin(column), np.nanmax(column))
+            except TypeError:
+                column.sort()
+                return column[0], column[-1]
 
 
 Interface.register(GridInterface)

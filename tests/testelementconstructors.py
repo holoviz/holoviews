@@ -50,13 +50,17 @@ class ElementConstructorTest(ComparisonTestCase):
 
     def test_hist_curve_construct(self):
         hist = Histogram(Curve(([0.1, 0.3, 0.5], [2.1, 2.2, 3.3])))
-        self.assertEqual(hist.data[0], np.array([2.1, 2.2, 3.3]))
-        self.assertEqual(hist.data[1], np.array([0, 0.2, 0.4, 0.6]))
+        values = hist.dimension_values(1)
+        edges = hist.interface.coords(hist, hist.kdims[0], edges=True)
+        self.assertEqual(values, np.array([2.1, 2.2, 3.3]))
+        self.assertEqual(edges, np.array([0, 0.2, 0.4, 0.6]))
 
     def test_hist_curve_int_edges_construct(self):
         hist = Histogram(Curve(range(3)))
-        self.assertEqual(hist.data[0], np.arange(3))
-        self.assertEqual(hist.data[1], np.array([-.5, .5, 1.5, 2.5]))
+        values = hist.dimension_values(1)
+        edges = hist.interface.coords(hist, hist.kdims[0], edges=True)
+        self.assertEqual(values, np.arange(3))
+        self.assertEqual(edges, np.array([-.5, .5, 1.5, 2.5]))
 
     def test_heatmap_construct(self):
         hmap = HeatMap([('A', 'a', 1), ('B', 'b', 2)])

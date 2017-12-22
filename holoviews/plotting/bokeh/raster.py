@@ -6,7 +6,7 @@ from ...core.util import cartesian_product, is_nan, dimension_sanitizer
 from ...element import Raster
 from ..renderer import SkipRendering
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-
+from .util import mpl_to_bokeh, colormesh
 
 class RasterPlot(ColorbarPlot):
 
@@ -170,27 +170,52 @@ class QuadMeshPlot(ColorbarPlot):
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def get_data(self, element, ranges, style):
-        x, y, z = element.dimensions(label=True)
+        x, y, z = element.dimensions()[:3]
         if self.invert_axes: x, y = y, x
-        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if self.static_source:
-            return {}, {'x': x, 'y': y, 'fill_color': {'field': z, 'transform': cmapper}}, style
+        cmapper = self._get_colormapper(z, element, ranges, style)
+        cmapper = {'field': z.name, 'transform': cmapper}
 
-        if len(set(v.shape for v in element.data)) == 1:
-            raise SkipRendering("Bokeh QuadMeshPlot only supports rectangular meshes")
-        zdata = element.data[2]
-        xvals = element.dimension_values(0, False)
-        yvals = element.dimension_values(1, False)
-        widths = np.diff(element.data[0])
-        heights = np.diff(element.data[1])
-        if self.invert_axes:
-            zvals = zdata.flatten()
-            xvals, yvals, widths, heights = yvals, xvals, heights, widths
+        irregular = element.interface.irregular(element, x)
+        if irregular:
+            mapping = dict(xs='xs', ys='ys', fill_color=cmapper)
         else:
-            zvals = zdata.T.flatten()
-        xs, ys = cartesian_product([xvals, yvals], copy=True)
-        ws, hs = cartesian_product([widths, heights], copy=True)
-        data = {x: xs, y: ys, z: zvals, 'widths': ws, 'heights': hs}
-        return (data, {'x': x, 'y': y,
-                       'fill_color': {'field': z, 'transform': cmapper},
-                       'height': 'heights', 'width': 'widths'}, style)
+            mapping = {'x': x.name, 'y': y.name, 'fill_color': cmapper,
+                       'width': 'widths', 'height': 'heights'}
+
+        if self.static_source:
+            return {}, mapping, style
+
+        zdata = element.dimension_values(z, flat=False)
+        if irregular:
+            dims = element.kdims
+            if self.invert_axes: dims = dims[::-1]
+            X, Y = [element.interface.coords(element, d, expanded=True, edges=True)
+                    for d in dims]
+            X, Y = colormesh(X, Y)
+            zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
+            data = {'xs': list(X), 'ys': list(Y), z.name: zvals}
+        else:
+            xvals = element.dimension_values(x, expanded=True, flat=False)
+            yvals = element.dimension_values(y, expanded=True, flat=False)
+            xc, yc = (element.interface.coords(element, x, edges=True),
+                      element.interface.coords(element, y, edges=True))
+            widths, heights = np.diff(xc), np.diff(yc)
+            xs, ys = xvals.flatten(), yvals.flatten()
+            ws, hs = cartesian_product([widths, heights], copy=True)
+            zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
+            data = {x.name: xs, y.name: ys, z.name: zvals,
+                    'widths': ws, 'heights': hs}
+        return data, mapping, style
+
+
+    def _init_glyph(self, plot, mapping, properties):
+        """
+        Returns a Bokeh glyph object.
+        """
+        properties = mpl_to_bokeh(properties)
+        properties = dict(properties, **mapping)
+        if 'xs' in mapping:
+            renderer = plot.patches(**properties)
+        else:
+            renderer = plot.rect(**properties)
+        return renderer, renderer.glyph

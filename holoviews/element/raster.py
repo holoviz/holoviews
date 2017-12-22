@@ -1,17 +1,20 @@
+import sys
 from operator import itemgetter
+
 import numpy as np
 import colorsys
 import param
 
 from ..core import util
-from ..core.data import ImageInterface
+from ..core.data import ImageInterface, GridInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
+from .graphs import TriMesh
 from .tabular import Table
-from .util import compute_edges, compute_slice_bounds, categorical_aggregate2d
+from .util import compute_slice_bounds, categorical_aggregate2d
 
 
 class Raster(Element2D):
@@ -258,6 +261,19 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
+
+        xvals = np.unique(np.diff(self.dimension_values(0, expanded=False)))
+        if len(xvals) > 1 and np.abs(xvals.min()-xvals.max()) > sys.float_info.epsilon*100:
+            raise ValueError("%s dimension %s is not evenly sampled, "
+                             "please use the QuadMesh element for "
+                             "unevenly or irregularly sampled data." %
+                             (type(self).__name__, self.get_dimension(0)))
+        yvals = np.unique(np.diff(self.dimension_values(1, expanded=False)))
+        if len(yvals) > 1 and np.abs(yvals.min()-yvals.max()) > sys.float_info.epsilon*100:
+            raise ValueError("%s dimension %s is not evenly sampled, "
+                             "please use the QuadMesh element for "
+                             "unevenly or irregularly sampled data." %
+                             (type(self).__name__, self.get_dimension(1)))
 
 
     def __setstate__(self, state):
@@ -602,7 +618,7 @@ class HSV(RGB):
                    **params)
 
 
-class QuadMesh(Raster):
+class QuadMesh(Dataset, Element2D):
     """
     QuadMesh is a Raster type to hold x- and y- bin values
     with associated values. The x- and y-values of the QuadMesh
@@ -616,6 +632,8 @@ class QuadMesh(Raster):
     2D arrays for the x-/y-coordinates and grid values.
     """
 
+    datatype = param.List(default=['grid', 'xarray'])
+
     group = param.String(default="QuadMesh", constant=True)
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
@@ -623,156 +641,57 @@ class QuadMesh(Raster):
 
     vdims = param.List(default=[Dimension('z')], bounds=(1,1))
 
-    def __init__(self, data, kdims=None, vdims=None, **params):
-        data, kwargs = self._process_data(data)
-        params = dict(kwargs, **params)
-        if kdims is not None:
-            params['kdims'] = kdims
-        if vdims is not None:
-            params['vdims'] = vdims
-        Element2D.__init__(self, data, **params)
-        self.data = self._validate_data(self.data)
-        self._grid = self.data[0].ndim == 1
+    _binned = True
 
-
-    @property
-    def depth(self): return 1
-
-
-    def _process_data(self, data):
-        if isinstance(data, Image):
-            x = data.dimension_values(0, expanded=False)
-            y = data.dimension_values(1, expanded=False)
-            zarray = data.dimension_values(2, flat=False)
-            params = util.get_param_values(data)
-        else:
-            data = tuple(np.asarray(el) for el in data)
-            x, y, zarray = data
-            params = {}
-        ys, xs = zarray.shape
-        if x.ndim == 1 and len(x) == xs:
-            x = compute_edges(x)
-        if y.ndim == 1 and len(y) == ys:
-            y = compute_edges(y)
-        return (x, y, zarray), params
-
-
-    @property
-    def _zdata(self):
-        return self.data[2]
-
-
-    def _validate_data(self, data):
-        x, y, z = data
-        if not z.ndim == 2:
-            raise ValueError("Z-values must be 2D array")
-
-        ys, xs = z.shape
-        shape_errors = []
-        if x.ndim == 1 and xs+1 != len(x):
-            shape_errors.append('x')
-        if x.ndim == 1 and ys+1 != len(y):
-            shape_errors.append('y')
-        if shape_errors:
-            raise ValueError("%s-edges must match shape of z-array." %
-                             '/'.join(shape_errors))
-        return data
-
-
-    def __getitem__(self, slices):
-        if slices in self.dimensions(): return self.dimension_values(slices)
-        slices = util.process_ellipses(self,slices)
-        if not self._grid:
-            raise KeyError("Indexing of non-grid based QuadMesh"
-                           "currently not supported")
-        slices = util.wrap_tuple(slices)
-        if len(slices) == 1:
-            slices = slices+(slice(None),)
-        if len(slices) > (2 + self.depth):
-            raise KeyError("Can only slice %d dimensions" % (2 + self.depth))
-        elif len(slices) == 3 and slices[-1] not in [self.vdims[0].name, slice(None)]:
-            raise KeyError("%r is the only selectable value dimension" % self.vdims[0].name)
-        slices = slices[:2]
-        if not isinstance(slices, tuple): slices = (slices, slice(None))
-        slc_types = [isinstance(sl, slice) for sl in slices]
-        if not any(slc_types):
-            indices = []
-            for idx, data in zip(slices, self.data[:self.ndims]):
-                dig = np.digitize([idx], data)
-                indices.append(dig-1 if dig else dig)
-            return self.data[2][tuple(indices[::-1])][0]
-        else:
-            sliced_data, indices = [], []
-            for slc, data in zip(slices, self.data[:self.ndims]):
-                if isinstance(slc, slice):
-                    low, high = slc.start, slc.stop
-                    lidx = (None if low is None else
-                            max((np.digitize([low], data)-1, 0))[0])
-                    hidx = (None if high is None else
-                            np.digitize([high], data)[0])
-                    sliced_data.append(data[lidx:hidx])
-                    indices.append(slice(lidx, (hidx if hidx is None else hidx-1)))
-                else:
-                    index = (np.digitize([slc], data)-1)[0]
-                    sliced_data.append(data[index:index+2])
-                    indices.append(index)
-            z = np.atleast_2d(self.data[2][tuple(indices[::-1])])
-            if not all(slc_types) and not slc_types[0]:
-                z = z.T
-            return self.clone(tuple(sliced_data+[z]))
-
-
-    @classmethod
-    def collapse_data(cls, data_list, function, kdims=None, **kwargs):
+    def __setstate__(self, state):
         """
-        Allows collapsing the data of a number of QuadMesh
-        Elements with a function.
+        Ensures old-style QuadMesh types without an interface can be unpickled.
+
+        Note: Deprecate as part of 2.0
         """
-        if not all(data[0].ndim == 1 for data in data_list):
-            raise Exception("Collapsing of non-grid based QuadMesh"
-                            "currently not supported")
-        xs, ys, zs = zip(data_list)
-        if isinstance(function, np.ufunc):
-            z = function.reduce(zs)
-        else:
-            z = function(np.dstack(zs), axis=-1, **kwargs)
-        return xs[0], ys[0], z
+        if 'interface' not in state:
+            self.interface = GridInterface
+            x, y = state['_kdims_param_value']
+            z = state['_vdims_param_value'][0]
+            data = state['data']
+            state['data'] = {x.name: data[0], y.name: data[1], z.name: data[2]}
+        super(Dataset, self).__setstate__(state)
 
 
-    def _coord2matrix(self, coord):
-        return tuple((np.digitize([coord[i]], self.data[i])-1)[0]
-                     for i in [1, 0])
+    def trimesh(self):
+        """
+        Converts a QuadMesh into a TriMesh.
+        """
+        # Generate vertices
+        xs = self.interface.coords(self, 'x', edges=True)
+        ys = self.interface.coords(self, 'y', edges=True)
+        if xs.ndim == 1:
+            xs, ys = (np.tile(xs[:, np.newaxis], len(ys)).T,
+                      np.tile(ys[:, np.newaxis], len(xs)))
+        vertices = (xs.T.flatten(), ys.T.flatten())
 
+        # Generate triangle simplexes
+        s0 = self.interface.shape(self, gridded=True)[0]
+        t1 = np.arange(len(self))
+        js = (t1//s0)
+        t1s = js*(s0+1)+t1%s0
+        t2s = t1s+1
+        t3s = (js+1)*(s0+1)+t1%s0
+        t4s = t2s
+        t5s = t3s
+        t6s = t3s+1
+        t1 = np.concatenate([t1s, t6s])
+        t2 = np.concatenate([t2s, t5s])
+        t3 = np.concatenate([t3s, t4s])
+        ts = (t1, t2, t3)
+        for vd in self.vdims:
+            zs = self.dimension_values(2)
+            ts = ts + (np.concatenate([zs, zs]),)
 
-    def range(self, dimension, data_range=True):
-        idx = self.get_dimension_index(dimension)
-        dim = self.get_dimension(dimension)
-        if idx in [0, 1, 2] and data_range:
-            data = self.data[idx]
-            lower, upper = np.nanmin(data), np.nanmax(data)
-            return dimension_range(lower, upper, dim)
-        return super(QuadMesh, self).range(dimension, data_range)
-
-
-    def dimension_values(self, dimension, expanded=True, flat=True):
-        idx = self.get_dimension_index(dimension)
-        data = self.data[idx]
-        if idx in [0, 1]:
-            # Handle grid
-            if not self._grid:
-                return data.flatten()
-            odim = self.data[2].shape[idx] if expanded else 1
-            vals = np.tile(np.convolve(data, np.ones((2,))/2, mode='valid'), odim)
-            if idx:
-                return np.sort(vals)
-            else:
-                return vals
-        elif idx == 2:
-            # Value dimension
-            return data.flatten() if flat else data
-        else:
-            # Handle constant dimensions
-            return super(QuadMesh, self).dimension_values(idx)
+        # Construct TriMesh
+        params = {k: v for k, v in util.get_param_values(self).items()
+                  if k != 'kdims'}
+        return TriMesh(((ts,), vertices), **params)
 
 
 
