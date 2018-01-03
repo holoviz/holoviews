@@ -14,7 +14,8 @@ from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .graphs import TriMesh
 from .tabular import Table
-from .util import compute_slice_bounds, categorical_aggregate2d
+from .util import (compute_slice_bounds, categorical_aggregate2d,
+                   validate_regular_sampling)
 
 
 class Raster(Element2D):
@@ -262,18 +263,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
 
-        xvals = np.unique(np.diff(self.dimension_values(0, expanded=False)))
-        if len(xvals) > 1 and np.abs(xvals.min()-xvals.max()) > sys.float_info.epsilon*100:
-            raise ValueError("%s dimension %s is not evenly sampled, "
-                             "please use the QuadMesh element for "
-                             "unevenly or irregularly sampled data." %
-                             (type(self).__name__, self.get_dimension(0)))
-        yvals = np.unique(np.diff(self.dimension_values(1, expanded=False)))
-        if len(yvals) > 1 and np.abs(yvals.min()-yvals.max()) > sys.float_info.epsilon*100:
-            raise ValueError("%s dimension %s is not evenly sampled, "
-                             "please use the QuadMesh element for "
-                             "unevenly or irregularly sampled data." %
-                             (type(self).__name__, self.get_dimension(1)))
+        # Ensure coordinates are regularly sampled
+        validate_regular_sampling(self, 0)
+        validate_regular_sampling(self, 1)
 
 
     def __setstate__(self, state):
