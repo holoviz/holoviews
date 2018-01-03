@@ -470,10 +470,28 @@ class ErrorPlot(ElementPlot):
 
 
 
-class SpreadPlot(ErrorPlot):
+class SpreadPlot(ElementPlot):
 
     style_opts = line_properties + fill_properties
-    _plot_methods = dict(single=Band)
+    _plot_methods = dict(single='patch')
+
+    def get_data(self, element, ranges, style):
+         mapping = dict(x='x', y='y')
+         xvals = element.dimension_values(0)
+         mean = element.dimension_values(1)
+         neg_error = element.dimension_values(2)
+         pos_idx = 3 if len(element.dimensions()) > 3 else 2
+         pos_error = element.dimension_values(pos_idx)
+
+         lower = mean - neg_error
+         upper = mean + pos_error
+         band_x = np.append(xvals, xvals[::-1])
+         band_y = np.append(lower, upper[::-1])
+         if self.invert_axes:
+             data = dict(x=band_y, y=band_x)
+         else:
+             data = dict(x=band_x, y=band_y)
+         return data, mapping, style
 
 
 
@@ -489,23 +507,22 @@ class AreaPlot(SpreadPlot):
             ranges[vdim] = (np.nanmin([0, ranges[vdim][0]]), ranges[vdim][1])
         return super(AreaPlot, self).get_extents(element, ranges)
 
-    def get_data(self, element, ranges, style):
-        mapping = dict(self._mapping)
-        if self.static_source:
-            return {}, mapping, style
 
+    def get_data(self, element, ranges, style):
+        mapping = dict(x='x', y='y')
         xs = element.dimension_values(0)
+        x2 = np.hstack((xs[::-1], xs))
+
         if len(element.vdims) > 1:
-            lower = element.dimension_values(2)
+            bottom = element.dimension_values(2)
         else:
-            lower = np.zeros(len(element))
-        upper = element.dimension_values(1)
-        data = dict(base=xs, upper=upper, lower=lower)
+            bottom = np.zeros(len(element))
+        ys = np.hstack((bottom[::-1], element.dimension_values(1)))
 
         if self.invert_axes:
-            mapping['dimension'] = 'width'
+            data = dict(x=ys, y=x2)
         else:
-            mapping['dimension'] = 'height'
+            data = dict(x=x2, y=ys)
         return data, mapping, style
 
 
