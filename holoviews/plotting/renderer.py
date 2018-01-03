@@ -183,14 +183,14 @@ class Renderer(Exporter):
         return plot
 
 
-    def _validate(self, obj, fmt):
+    def _validate(self, obj, fmt, **kwargs):
         """
         Helper method to be used in the __call__ method to get a
         suitable plot or widget object and the appropriate format.
         """
         if isinstance(obj, tuple(self.widgets.values())):
             return obj, 'html'
-        plot = self.get_plot(obj, renderer=self)
+        plot = self.get_plot(obj, renderer=self, **kwargs)
 
         fig_formats = self.mode_formats['fig'][self.mode]
         holomap_formats = self.mode_formats['holomap'][self.mode]

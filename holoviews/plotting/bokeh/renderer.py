@@ -83,7 +83,7 @@ class BokehRenderer(Renderer):
         backend. The output is not a file format but a suitable,
         in-memory byte stream together with any suitable metadata.
         """
-        plot, fmt =  self._validate(obj, fmt)
+        plot, fmt =  self._validate(obj, fmt, doc=doc)
         info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
         if self.mode == 'server':
@@ -110,6 +110,7 @@ class BokehRenderer(Renderer):
             return '\n'.join(self_or_cls.html_assets()).encode('utf8')
         return
 
+
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None):
         """
@@ -117,11 +118,11 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
+        doc = curdoc() if doc is None else doc
+        if self_or_cls.theme:
+            doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
-        if self_or_cls.mode == 'server' and doc is None:
-            doc = curdoc()
-        if doc is not None:
-            plot.document = doc
+        plot.document = doc
         return plot
 
 
@@ -156,6 +157,8 @@ class BokehRenderer(Renderer):
             return doc
 
         def modify_doc(doc):
+            if self_or_cls.theme:
+                doc.theme = self_or_cls.theme
             renderer(plot, doc=doc)
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
@@ -212,14 +215,16 @@ class BokehRenderer(Renderer):
 
     def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
-        doc = Document() if doc is None else doc
+        if plot.document:
+            doc = plot.document
+        else:
+            doc = Document() if doc is None else doc
+
         for m in model.references():
             m._document = None
-        doc.add_root(model)
-
         if self.theme:
-            from bokeh.io import curdoc
-            curdoc().theme = self.theme
+            doc.theme = self.theme
+        doc.add_root(model)
 
         comm_id = plot.comm.id if plot.comm else None
         # Bokeh raises warnings about duplicate tools and empty subplots
