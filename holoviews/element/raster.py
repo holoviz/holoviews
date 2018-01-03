@@ -262,14 +262,17 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
 
-        xvals = np.unique(np.diff(self.dimension_values(0, expanded=False)))
-        if len(xvals) > 1 and np.abs(xvals.min()-xvals.max()) > sys.float_info.epsilon*100:
+        xdiffs = np.diff(self.dimension_values(0, expanded=False))
+        xvals = np.unique(xdiffs)
+        if len(xvals) > 1 and np.abs(xvals.min()-xvals.max()) > xdiffs.min()*10e-9:
             raise ValueError("%s dimension %s is not evenly sampled, "
                              "please use the QuadMesh element for "
                              "unevenly or irregularly sampled data." %
                              (type(self).__name__, self.get_dimension(0)))
-        yvals = np.unique(np.diff(self.dimension_values(1, expanded=False)))
-        if len(yvals) > 1 and np.abs(yvals.min()-yvals.max()) > sys.float_info.epsilon*100:
+
+        ydiffs = np.diff(self.dimension_values(1, expanded=False))
+        yvals = np.unique(ydiffs)
+        if len(yvals) > 1 and np.abs(yvals.min()-yvals.max()) > ydiffs.min()*10e-9:
             raise ValueError("%s dimension %s is not evenly sampled, "
                              "please use the QuadMesh element for "
                              "unevenly or irregularly sampled data." %
