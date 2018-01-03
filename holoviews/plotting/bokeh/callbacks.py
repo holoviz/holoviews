@@ -388,7 +388,6 @@ class ServerCallback(MessageCallback):
         if not self._queue:
             self._active = False
             return
-        self._queue = []
         # Get unique event types in the queue
         events = list(OrderedDict([(event.event_name, event)
                                    for event in self._queue]).values())
