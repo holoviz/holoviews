@@ -179,8 +179,9 @@ class QuadMeshPlot(ColorbarPlot):
         if irregular:
             mapping = dict(xs='xs', ys='ys', fill_color=cmapper)
         else:
-            mapping = {'x': x.name, 'y': y.name, 'fill_color': cmapper,
-                       'width': 'widths', 'height': 'heights'}
+            mapping = {'left': 'left', 'right': 'right',
+                       'fill_color': cmapper,
+                       'top': 'top', 'bottom': 'bottom'}
 
         if self.static_source:
             return {}, mapping, style
@@ -195,16 +196,16 @@ class QuadMeshPlot(ColorbarPlot):
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             data = {'xs': list(X), 'ys': list(Y), z.name: zvals}
         else:
-            xvals = element.dimension_values(x, expanded=True, flat=False)
-            yvals = element.dimension_values(y, expanded=True, flat=False)
             xc, yc = (element.interface.coords(element, x, edges=True),
                       element.interface.coords(element, y, edges=True))
-            widths, heights = np.diff(xc), np.diff(yc)
-            xs, ys = xvals.flatten(), yvals.flatten()
-            ws, hs = cartesian_product([widths, heights], copy=True)
+            x0, y0 = cartesian_product([xc[:-1], yc[:-1]], copy=True)
+            x1, y1 = cartesian_product([xc[1:], yc[1:]], copy=True)
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
-            data = {x.name: xs, y.name: ys, z.name: zvals,
-                    'widths': ws, 'heights': hs}
+            data = {'left': x0, 'right': x1, dimension_sanitizer(z.name): zvals,
+                    'bottom': y0, 'top': y1}
+            if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
+                data[dimension_sanitizer(x.name)] = element.dimension_values(x)
+                data[dimension_sanitizer(y.name)] = element.dimension_values(y)
         return data, mapping, style
 
 
@@ -217,5 +218,5 @@ class QuadMeshPlot(ColorbarPlot):
         if 'xs' in mapping:
             renderer = plot.patches(**properties)
         else:
-            renderer = plot.rect(**properties)
+            renderer = plot.quad(**properties)
         return renderer, renderer.glyph

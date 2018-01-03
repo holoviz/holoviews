@@ -1290,8 +1290,8 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         self.assertEqual(source.data['dh'][0], 1)
 
     def test_quadmesh_invert_axes(self):
-        arr = np.array([[0, 1, 2], [3, 4,  5]])
-        qmesh = QuadMesh(Image(arr)).opts(plot=dict(invert_axes=True))
+        arr = np.array([[0, 1, 2], [3, 4, 5]])
+        qmesh = QuadMesh(Image(arr)).opts(plot=dict(invert_axes=True, tools=['hover']))
         plot = bokeh_renderer.get_plot(qmesh)
         source = plot.handles['source']
         self.assertEqual(source.data['z'], qmesh.dimension_values(2, flat=False).flatten())
