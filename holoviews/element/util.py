@@ -282,3 +282,21 @@ def connect_edges(graph):
         end = end_ds.array(end_ds.kdims[:2])
         paths.append(np.array([start[0], end[0]]))
     return paths
+
+
+def validate_regular_sampling(img, dimension, rtol=10e-9):
+    """
+    Validates regular sampling of Image elements ensuring that
+    coordinates the difference in sampling steps is at most rtol times
+    the smallest sampling step. By default ensures the largest
+    sampling difference is less than one billionth of the smallest
+    sampling step.
+    """
+    dim = img.get_dimension(dimension)
+    diffs = np.diff(img.dimension_values(dim, expanded=False))
+    vals = np.unique(diffs)
+    if len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol:
+        raise ValueError("%s dimension %s is not evenly sampled, "
+                         "please use the QuadMesh element for "
+                         "unevenly or irregularly sampled data." %
+                         (type(img).__name__, dim))
