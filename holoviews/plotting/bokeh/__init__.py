@@ -155,7 +155,7 @@ options.Points = Options('style', color=Cycle(), size=point_size, cmap=dflt_cmap
 if not config.style_17:
     options.Points = Options('plot', show_frame=True)
 
-options.Histogram = Options('style', line_color='black', fill_color=Cycle())
+options.Histogram = Options('style', line_color='black', fill_color=Cycle(), muted_alpha=0.2)
 options.ErrorBars = Options('style', color='black')
 options.Spread = Options('style', color=Cycle(), alpha=0.6, line_color='black')
 options.Bars = Options('style', color=Cycle(), line_color='black', width=0.8)
@@ -232,4 +232,4 @@ options.Polygons = Options('style', muted_alpha=0.2)
 
 # Statistics
 options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
-                               fill_alpha=0.5)
+                               fill_alpha=0.5, muted_alpha=0.2)
