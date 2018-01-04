@@ -418,6 +418,8 @@ class TriMesh(Graph):
 
     group = param.String(default='TriMesh', constant=True)
 
+    _point_type = Points
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
@@ -445,7 +447,7 @@ class TriMesh(Graph):
             except:
                 # Try assuming data contains just coordinates (2 columns)
                 try:
-                    points = Points(nodes)
+                    points = self._point_type(nodes)
                     ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
                     nodes = self._node_type(ds)
                 except:
