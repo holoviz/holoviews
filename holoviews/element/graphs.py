@@ -67,7 +67,7 @@ class layout_nodes(Operation):
                 nodes = nodes[['x', 'y', 'index']]
             else:
                 nodes = circular_layout(nodes)
-        nodes = Nodes(nodes)
+        nodes = element.node_type(nodes)
         if element._nodes:
             for d in element.nodes.vdims:
                 vals = element.nodes.dimension_values(d)
@@ -76,6 +76,27 @@ class layout_nodes(Operation):
             return nodes
         return element.clone((element.data, nodes))
 
+
+class Nodes(Points):
+    """
+    Nodes is a simple Element representing Graph nodes as a set of
+    Points.  Unlike regular Points, Nodes must define a third key
+    dimension corresponding to the node index.
+    """
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y'),
+                                Dimension('index')], bounds=(3, 3))
+
+    group = param.String(default='Nodes', constant=True)
+
+
+class EdgePaths(Path):
+    """
+    EdgePaths is a simple Element representing the paths of edges
+    connecting nodes in a graph.
+    """
+
+    group = param.String(default='EdgePaths', constant=True)
 
 
 class Graph(Dataset, Element2D):
@@ -98,6 +119,10 @@ class Graph(Dataset, Element2D):
     kdims = param.List(default=[Dimension('start'), Dimension('end')],
                        bounds=(2, 2))
 
+    node_type = Nodes
+
+    edge_type = EdgePaths
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)* (3-len(data))
@@ -106,17 +131,17 @@ class Graph(Dataset, Element2D):
             edges, nodes, edgepaths = data, None, None
         if nodes is not None:
             node_info = None
-            if isinstance(nodes, Nodes):
+            if isinstance(nodes, self.node_type):
                 pass
             elif not isinstance(nodes, Dataset) or nodes.ndims == 3:
-                nodes = Nodes(nodes)
+                nodes = self.node_type(nodes)
             else:
                 node_info = nodes
                 nodes = None
         else:
             node_info = None
-        if edgepaths is not None and not isinstance(edgepaths, EdgePaths):
-            edgepaths = EdgePaths(edgepaths)
+        if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
+            edgepaths = self.edge_type(edgepaths)
         self._nodes = nodes
         self._edgepaths = edgepaths
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
@@ -128,7 +153,7 @@ class Graph(Dataset, Element2D):
 
     def _add_node_info(self, node_info):
         nodes = self.nodes.clone(datatype=['pandas', 'dictionary'])
-        if isinstance(node_info, Nodes):
+        if isinstance(node_info, self.node_type):
             nodes = nodes.redim(**dict(zip(nodes.dimensions('key', label=True),
                                            node_info.kdims)))
 
@@ -315,7 +340,7 @@ class Graph(Dataset, Element2D):
             if self._nodes:
                 node_dims = self.nodes.dimensions(selection, label)
             else:
-                node_dims = Nodes.kdims+Nodes.vdims
+                node_dims = self.node_type.kdims+self.node_type.vdims
                 if label in ['name', True, 'short']:
                     node_dims = [d.name for d in node_dims]
                 elif label in ['long', 'label']:
@@ -347,7 +372,7 @@ class Graph(Dataset, Element2D):
             paths = connect_edges(self)
         else:
             paths = connect_edges_pd(self)
-        return EdgePaths(paths, kdims=self.nodes.kdims[:2])
+        return self.edge_type(paths, kdims=self.nodes.kdims[:2])
 
 
     @classmethod
@@ -366,32 +391,11 @@ class Graph(Dataset, Element2D):
             edges = [(src, tgt) for (src, tgt) in edges if src in indices and tgt in indices]
             nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
             nodes = nodes.add_dimension('x', 0, xs)
-            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=Nodes)
+            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=self.node_type)
         else:
-            nodes = Nodes([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+            nodes = self.node_type([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
         return cls((edges, nodes))
 
-
-class Nodes(Points):
-    """
-    Nodes is a simple Element representing Graph nodes as a set of
-    Points.  Unlike regular Points, Nodes must define a third key
-    dimension corresponding to the node index.
-    """
-
-    kdims = param.List(default=[Dimension('x'), Dimension('y'),
-                                Dimension('index')], bounds=(3, 3))
-
-    group = param.String(default='Nodes', constant=True)
-
-
-class EdgePaths(Path):
-    """
-    EdgePaths is a simple Element representing the paths of edges
-    connecting nodes in a graph.
-    """
-
-    group = param.String(default='EdgePaths', constant=True)
 
 
 class TriMesh(Graph):
@@ -414,10 +418,6 @@ class TriMesh(Graph):
 
     group = param.String(default='TriMesh', constant=True)
 
-    _node_type = Nodes
-
-    _edge_type = EdgePaths
-
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
@@ -433,27 +433,27 @@ class TriMesh(Graph):
                 raise ValueError("TriMesh expects both simplices and nodes "
                                  "to be supplied.")
 
-        if isinstance(nodes, self._node_type):
+        if isinstance(nodes, self.node_type):
             pass
         elif isinstance(nodes, Points):
             # Add index to make it a valid Nodes object
-            nodes = self._node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
+            nodes = self.node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
             try:
                 # Try assuming data contains indices (3 columns)
-                nodes = self._node_type(nodes)
+                nodes = self.node_type(nodes)
             except:
                 # Try assuming data contains just coordinates (2 columns)
                 try:
-                    points = Points(nodes)
+                    points = Points(nodes, kdims=self.node_type.kdims[:2])
                     ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
-                    nodes = self._node_type(ds)
+                    nodes = self.node_type(ds)
                 except:
                     raise ValueError("Nodes argument could not be interpreted, expected "
                                      "data with two or three columns representing the "
                                      "x/y positions and optionally the node indices.")
-        if edgepaths is not None and not isinstance(edgepaths, self._edge_type):
-            edgepaths = self._edge_type(edgepaths)
+        if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
+            edgepaths = self.edge_type(edgepaths)
 
         self._nodes = nodes
         self._edgepaths = edgepaths
@@ -482,7 +482,7 @@ class TriMesh(Graph):
         if self._edgepaths:
             return self._edgepaths
         elif not len(self):
-            edgepaths = self._edge_type([], kdims=self.nodes.kdims[:2])
+            edgepaths = self.edge_type([], kdims=self.nodes.kdims[:2])
             self._edgepaths = edgepaths
             return edgepaths
 
@@ -491,7 +491,7 @@ class TriMesh(Graph):
         empty = np.array([[np.NaN, np.NaN]])
         paths = [arr for tri in pts[simplices] for arr in
                  (tri[[0, 1, 2, 0], :], empty)][:-1]
-        edgepaths = self._edge_type([np.concatenate(paths)],
+        edgepaths = self.edge_type([np.concatenate(paths)],
                                     kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
