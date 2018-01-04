@@ -127,17 +127,18 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
 
     def _get_edge_paths(self, element):
-        path_data = {}
+        path_data, mapping = {}, {}
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         if element._edgepaths is not None:
             edges = element._split_edgepaths.split(datatype='array', dimensions=element.edgepaths.kdims)
             if len(edges) == len(element):
                 path_data['xs'] = [path[:, xidx] for path in edges]
                 path_data['ys'] = [path[:, yidx] for path in edges]
+                mapping = {'xs': 'xs', 'ys': 'ys'}
             else:
                 raise ValueError("Edge paths do not match the number of supplied edges."
                                  "Expected %d, found %d paths." % (len(element), len(edges)))
-        return path_data, {'xs': 'xs', 'ys': 'ys'}
+        return path_data, mapping
 
 
     def get_data(self, element, ranges, style):
