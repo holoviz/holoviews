@@ -198,7 +198,7 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def canonicalize(cls, dataset, data, coord_dims=None):
+    def canonicalize(cls, dataset, data, coord_dims=None, irregular_dims=[]):
         """
         Canonicalize takes an array of values as input and
         reorients and transposes it to match the canonical
@@ -226,13 +226,16 @@ class GridInterface(DictInterface):
         # Transpose data
         dims = [name for name in coord_dims
                 if isinstance(cls.coords(dataset, name), np.ndarray)]
-        dropped = [dims.index(d) for d in dims if d not in dataset.kdims]
-        inds = [dims.index(kd.name)for kd in dataset.kdims]
-        inds = [i - sum([1 for d in dropped if i>=d]) for i in inds]
+        dropped = [dims.index(d) for d in dims
+                   if d not in dataset.kdims+irregular_dims]
         if dropped:
             data = data.squeeze(axis=tuple(dropped))
-        if inds:
-            data = data.transpose(inds[::-1])
+
+        if not any(cls.irregular(dataset, d) for d in dataset.kdims):
+            inds = [dims.index(kd.name)for kd in dataset.kdims]
+            inds = [i - sum([1 for d in dropped if i>=d]) for i in inds]
+            if inds:
+                data = data.transpose(inds[::-1])
 
         # Allow lower dimensional views into data
         if len(dataset.kdims) < 2:

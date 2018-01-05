@@ -215,12 +215,17 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
+        irregular_kdims = [d for d in dataset.kdims if cls.irregular(dataset, d)]
+        if irregular_kdims:
+            irregular_dims = list(dataset.data[irregular_kdims[0].name].coords.dims)
+        else:
+            irregular_dims = []
         if dim in dataset.vdims or irregular:
             coord_dims = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
-            if not irregular and not any(cls.irregular(dataset, d) for d in dataset.kdims):
-                data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
+            data = cls.canonicalize(dataset, data, coord_dims=coord_dims,
+                                    irregular_dims=irregular_dims)
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
