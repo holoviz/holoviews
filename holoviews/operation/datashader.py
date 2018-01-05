@@ -384,7 +384,7 @@ class aggregate(ResamplingOperation):
 
         dfdata = PandasInterface.as_dframe(data)
         agg = getattr(cvs, glyph)(dfdata, x.name, y.name, self.p.aggregator)
-        if 'x_axis' in agg and 'y_axis' in agg:
+        if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
             agg[x.name] = agg[x.name].astype('datetime64[us]')
