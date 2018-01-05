@@ -157,12 +157,12 @@ class Binned2DTest(ComparisonTestCase):
 class Irregular2DBinsTest(ComparisonTestCase):
 
     def setUp(self):
-        lon, lat = np.meshgrid(np.linspace(-20, 20, 5), np.linspace(0, 30, 4))
+        lon, lat = np.meshgrid(np.linspace(-20, 20, 6), np.linspace(0, 30, 4))
         lon += lat/10
         lat += lon/10
         self.xs = lon
         self.ys = lat
-        self.zs = np.arange(20).reshape(4, 5)
+        self.zs = np.arange(24).reshape(4, 6)
 
     def test_construct_from_dict(self):
         dataset = Dataset((self.xs, self.ys, self.zs), ['x', 'y'], 'z')
@@ -188,7 +188,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
             import xarray as xr
         except:
             raise SkipError("Test requires xarray")
-        zs = np.arange(40).reshape(2, 4, 5)
+        zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(zs, dims=['z', 'y', 'x'],
                           coords = {'lat': (('y', 'x'), self.ys),
                                     'lon': (('y', 'x'), self.xs),
@@ -204,7 +204,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
             import xarray as xr
         except:
             raise SkipError("Test requires xarray")
-        zs = np.arange(40).reshape(2, 4, 5)
+        zs = np.arange(48).reshape(2, 4, 6)
         da = xr.DataArray(zs, dims=['z', 'y', 'x'],
                           coords = {'lat': (('y', 'x'), self.ys),
                                     'lon': (('y', 'x'), self.xs),

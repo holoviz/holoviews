@@ -84,6 +84,8 @@ class GridInterface(DictInterface):
         kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
         vdim_names = [d.name if isinstance(d, Dimension) else d for d in vdims]
         expected = tuple([len(data[kd]) for kd in kdim_names])
+        irregular_shape = data[kdim_names[0]].shape if kdim_names else ()
+        valid_shape = irregular_shape if len(irregular_shape) > 1 else expected[::-1]
         shapes = tuple([data[kd].shape for kd in kdim_names])
         for vdim in vdim_names:
             shape = data[vdim].shape
@@ -96,10 +98,10 @@ class GridInterface(DictInterface):
                             'match the expected dimensionality indicated '
                             'by the key dimensions. Expected %d-D array, '
                             'found %d-D array.' % (vdim, len(expected), len(shape)))
-            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, expected[::-1])):
+            elif any((s!=e and (s+1)!=e) for s, e in zip(shape, valid_shape)):
                 raise error('Key dimension values and value array %s '
                             'shapes do not match. Expected shape %s, '
-                            'actual shape: %s' % (vdim, expected[::-1], shape), cls)
+                            'actual shape: %s' % (vdim, valid_shape, shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
 
