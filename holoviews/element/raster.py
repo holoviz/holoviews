@@ -635,7 +635,7 @@ class QuadMesh(Dataset, Element2D):
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2), constant=True)
 
-    vdims = param.List(default=[Dimension('z')], bounds=(1,1))
+    vdims = param.List(default=[Dimension('z')], bounds=(1, None))
 
     _binned = True
 
@@ -659,15 +659,15 @@ class QuadMesh(Dataset, Element2D):
         Converts a QuadMesh into a TriMesh.
         """
         # Generate vertices
-        xs = self.interface.coords(self, 'x', edges=True)
-        ys = self.interface.coords(self, 'y', edges=True)
+        xs = self.interface.coords(self, 0, edges=True)
+        ys = self.interface.coords(self, 1, edges=True)
         if xs.ndim == 1:
             xs, ys = (np.tile(xs[:, np.newaxis], len(ys)).T,
                       np.tile(ys[:, np.newaxis], len(xs)))
         vertices = (xs.T.flatten(), ys.T.flatten())
 
         # Generate triangle simplexes
-        s0 = self.interface.shape(self, gridded=True)[0]
+        s0 = self.dimension_values(2, flat=False).shape[0]
         t1 = np.arange(len(self))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
@@ -681,13 +681,17 @@ class QuadMesh(Dataset, Element2D):
         t3 = np.concatenate([t3s, t4s])
         ts = (t1, t2, t3)
         for vd in self.vdims:
-            zs = self.dimension_values(2)
+            zs = self.dimension_values(vd)
             ts = ts + (np.concatenate([zs, zs]),)
 
         # Construct TriMesh
-        params = {k: v for k, v in util.get_param_values(self).items()
-                  if k != 'kdims'}
-        return TriMesh(((ts,), vertices), **params)
+        params = util.get_param_values(self)
+        params['kdims'] = params['kdims'] + TriMesh.node_type.kdims[2:]
+        node_params = {k: v for k, v in params.items() if k != 'vdims'}
+        nodes = TriMesh.node_type(vertices+(np.arange(len(vertices[0])),),
+                                  **node_params)
+        params = {k: v for k, v in params.items() if k != 'kdims'}
+        return TriMesh(((ts,), nodes), **params)
 
 
 
