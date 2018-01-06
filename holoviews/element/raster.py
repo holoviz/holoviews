@@ -667,8 +667,9 @@ class QuadMesh(Dataset, Element2D):
         vertices = (xs.T.flatten(), ys.T.flatten())
 
         # Generate triangle simplexes
-        s0 = self.dimension_values(2, flat=False).shape[0]
-        t1 = np.arange(len(self))
+        shape = self.dimension_values(2, flat=False).shape
+        s0 = shape[0]
+        t1 = np.arange(np.product(shape))
         js = (t1//s0)
         t1s = js*(s0+1)+t1%s0
         t2s = t1s+1
