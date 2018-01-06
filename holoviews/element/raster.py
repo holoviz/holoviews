@@ -233,6 +233,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, **params):
+        if isinstance(data, Image):
+            bounds = bounds or data.bounds
+            xdensity = xdensity or data.xdensity
+            ydensity = ydensity or data.ydensity
         extents = extents if extents else (None, None, None, None)
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)

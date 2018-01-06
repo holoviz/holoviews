@@ -127,8 +127,11 @@ class Graph(Dataset, Element2D):
         if isinstance(data, tuple):
             data = data + (None,)* (3-len(data))
             edges, nodes, edgepaths = data
+        elif isinstance(data, type(self)):
+            edges, nodes, edgepaths = data, data.nodes, data._edgepaths
         else:
             edges, nodes, edgepaths = data, None, None
+
         if nodes is not None:
             node_info = None
             if isinstance(nodes, self.node_type):
@@ -422,6 +425,8 @@ class TriMesh(Graph):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
             edges, nodes, edgepaths = data
+        elif isinstance(data, type(self)):
+            edges, nodes, edgepaths = data, data.nodes, data._edgepaths
         else:
             edges, nodes, edgepaths = data, None, None
 
