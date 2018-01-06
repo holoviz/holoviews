@@ -199,6 +199,19 @@ class Irregular2DBinsTest(ComparisonTestCase):
         self.assertEqual(dataset.dimension_values('z', expanded=False), np.array([0, 1]))
         self.assertEqual(dataset.dimension_values('A'), zs.T.flatten())
 
+    def test_3d_xarray_with_constant_dim_canonicalized_to_2d(self):
+        try:
+            import xarray as xr
+        except:
+            raise SkipError("Test requires xarray")
+        zs = np.arange(24).reshape(1, 4, 6)
+        da = xr.DataArray(zs, dims=['z', 'y', 'x'],
+                          coords = {'lat': (('y', 'x'), self.ys),
+                                    'lon': (('y', 'x'), self.xs),
+                                    'z': [0]}, name='A')
+        dataset = Dataset(da, ['lon', 'lat'], 'A')
+        self.assertEqual(dataset.dimension_values('A', flat=False).ndim, 2)
+        
     def test_groupby_3d_from_xarray(self):
         try:
             import xarray as xr
