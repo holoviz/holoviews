@@ -116,6 +116,27 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
+    def validate(cls, dataset, vdims=True):
+        Interface.validate(dataset, vdims)
+        # Check whether irregular (i.e. multi-dimensional) coordinate
+        # array dimensionality matches
+        irregular = []
+        for kd in dataset.kdims:
+            if cls.irregular(dataset, kd):
+                irregular.append((kd, dataset.data[kd.name].dims))
+        if irregular:
+            nonmatching = ['%s: %s' % (kd, dims) for kd, dims in irregular[1:]
+                           if dims != irregular[0][1]]
+            if nonmatching:
+                nonmatching = ['%s: %s' % irregular[0]] + nonmatching
+                raise DataError("The dimensions of coordinate arrays "
+                                "on irregular data must match. The "
+                                "following kdims were found to have "
+                                "non-matching array dimensions:\n\n%s"
+                                % ('\n'.join(nonmatching)), cls)
+
+
+    @classmethod
     def range(cls, dataset, dimension):
         dim = dataset.get_dimension(dimension, strict=True).name
         if dataset._binned and dimension in dataset.kdims:
