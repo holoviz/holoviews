@@ -3,7 +3,8 @@ import numpy as np
 from holoviews import (Dimension, Dataset, Curve, Path, Histogram,
                        HeatMap, Contours, Scatter, Points, Polygons,
                        VectorField, Spikes, Area, Bars, ErrorBars,
-                       BoxWhisker, Raster, Image, QuadMesh, RGB)
+                       BoxWhisker, Raster, Image, QuadMesh, RGB,
+                       Graph, TriMesh)
 from holoviews.element.comparison import ComparisonTestCase
 
 class ElementConstructorTest(ComparisonTestCase):
@@ -179,3 +180,26 @@ class ElementSignatureTest(ComparisonTestCase):
         self.assertEqual(qmesh.vdims, [Dimension('c')])
 
     
+class ElementConstructorTest(ComparisonTestCase):
+    """
+    Tests whether casting an element will faithfully copy data and
+    parameters. Important to check for elements where data is not all
+    held on .data attribute, e.g. Image bounds or Graph nodes and
+    edgepaths.
+    """
+
+    def test_image_casting(self):
+        img = Image([], bounds=2)
+        self.assertEqual(img, Image(img))
+
+    def test_rgb_casting(self):
+        rgb = RGB([], bounds=2)
+        self.assertEqual(rgb, RGB(rgb))
+
+    def test_graph_casting(self):
+        graph = Graph(([(0, 1)], [(0, 0, 0), (0, 1, 1)]))
+        self.assertEqual(graph, Graph(graph))
+
+    def test_trimesh_casting(self):
+        trimesh = TriMesh(([(0, 1, 2)], [(0, 0, 0), (0, 1, 1), (1, 1, 2)]))
+        self.assertEqual(trimesh, TriMesh(trimesh))
