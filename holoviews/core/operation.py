@@ -61,6 +61,13 @@ class Operation(param.ParameterizedFunction):
         List of streams that are applied if dynamic=True, allowing
         for dynamic interaction with the plot.""")
 
+    # Hooks to allow external libraries to extend existing operations.
+    # Preprocessor hooks should accept the input element and return a
+    # dictionary of data which will be made available to the
+    # postprocessor hooks in additional to the processed element
+    _preprocess_hooks = []
+    _postprocess_hooks = []
+
     @classmethod
     def search(cls, element, pattern):
         """
@@ -102,6 +109,20 @@ class Operation(param.ParameterizedFunction):
             raise ValueError("Extents across the overlay are inconsistent")
 
 
+    def _apply(self, element, key=None):
+        """
+        Applies the operation to the element, executing any pre- and
+        post-processor hooks if defined.
+        """
+        kwargs = {}
+        for hook in self._preprocess_hooks:
+            kwargs.update(hook(element))
+        ret = self._process(element, key)
+        for hook in self._postprocess_hooks:
+            ret = hook(ret, **kwargs)
+        return ret
+
+
     def _process(self, view, key=None):
         """
         Process a single input element and outputs new single element or
@@ -118,7 +139,7 @@ class Operation(param.ParameterizedFunction):
         operated on given an externally supplied key.
         """
         self.p = param.ParamOverrides(self, params)
-        return self._process(element, key)
+        return self._apply(element, key)
 
 
     def __call__(self, element, **params):
@@ -138,7 +159,7 @@ class Operation(param.ParameterizedFunction):
                                 link_inputs=self.p.link_inputs,
                                 operation=self, kwargs=params)
         elif isinstance(element, ViewableElement):
-            processed = self._process(element)
+            processed = self._apply(element)
         elif isinstance(element, DynamicMap):
             if any((not d.values) for d in element.kdims):
                 raise ValueError('Applying a non-dynamic operation requires '
@@ -147,7 +168,7 @@ class Operation(param.ParameterizedFunction):
             samples = tuple(d.values for d in element.kdims)
             processed = self(element[samples], **params)
         elif isinstance(element, HoloMap):
-            mapped_items = [(k, self._process(el, key=k))
+            mapped_items = [(k, self._apply(el, key=k))
                             for k, el in element.items()]
             processed = element.clone(mapped_items)
         else:
