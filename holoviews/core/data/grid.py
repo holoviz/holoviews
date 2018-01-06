@@ -198,23 +198,28 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def canonicalize(cls, dataset, data, coord_dims=None, irregular_dims=[]):
+    def canonicalize(cls, dataset, data, data_coords=None, virtual_coords=[]):
         """
-        Canonicalize takes an array of values as input and
-        reorients and transposes it to match the canonical
-        format expected by plotting functions. In addition
-        to the dataset and the particular array to apply
-        transforms to a list of coord_dims may be supplied
-        in case the array indexing does not match the key
-        dimensions of the dataset.
+        Canonicalize takes an array of values as input and reorients
+        and transposes it to match the canonical format expected by
+        plotting functions. In certain cases the dimensions defined
+        via the kdims of an Element may not match the dimensions of
+        the underlying data. A set of data_coords may be passed in to
+        define the dimensionality of the data, which can then be used
+        to np.squeeze the data to remove any constant dimensions. If
+        the data is also irregular, i.e. contains multi-dimensional
+        coordinates, a set of virtual_coords can be supplied, required
+        by some interfaces (e.g. xarray) to index irregular datasets
+        with a virtual integer index. This ensures these coordinates
+        are not simply dropped.
         """
-        if coord_dims is None:
-            coord_dims = dataset.dimensions('key', label='name')[::-1]
+        if data_coords is None:
+            data_coords = dataset.dimensions('key', label='name')[::-1]
 
         # Reorient data
         invert = False
         slices = []
-        for d in coord_dims:
+        for d in data_coords:
             coords = cls.coords(dataset, d)
             if np.all(coords[1:] < coords[:-1]):
                 slices.append(slice(None, None, -1))
@@ -224,10 +229,10 @@ class GridInterface(DictInterface):
         data = data[slices] if invert else data
 
         # Transpose data
-        dims = [name for name in coord_dims
+        dims = [name for name in data_coords
                 if isinstance(cls.coords(dataset, name), np.ndarray)]
         dropped = [dims.index(d) for d in dims
-                   if d not in dataset.kdims+irregular_dims]
+                   if d not in dataset.kdims+virtual_coords]
         if dropped:
             data = data.squeeze(axis=tuple(dropped))
 
