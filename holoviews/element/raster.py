@@ -688,11 +688,11 @@ class QuadMesh(Dataset, Element2D):
         # Construct TriMesh
         params = util.get_param_values(self)
         params['kdims'] = params['kdims'] + TriMesh.node_type.kdims[2:]
-        node_params = {k: v for k, v in params.items() if k != 'vdims'}
         nodes = TriMesh.node_type(vertices+(np.arange(len(vertices[0])),),
-                                  **node_params)
-        params = {k: v for k, v in params.items() if k != 'kdims'}
-        return TriMesh(((ts,), nodes), **params)
+                                  **{k: v for k, v in params.items()
+                                     if k != 'vdims'})
+        return TriMesh(((ts,), nodes), **{k: v for k, v in params.items()
+                                          if k != 'kdims'})
 
 
 
