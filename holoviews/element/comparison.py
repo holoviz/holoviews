@@ -176,6 +176,7 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Graph] =        cls.compare_graph
         cls.equality_type_funcs[Nodes] =        cls.compare_nodes
         cls.equality_type_funcs[EdgePaths] =    cls.compare_edgepaths
+        cls.equality_type_funcs[TriMesh] =      cls.compare_trimesh
 
         # Tables
         cls.equality_type_funcs[ItemTable] =    cls.compare_itemtables
@@ -575,6 +576,10 @@ class Comparison(ComparisonInterface):
         cls.compare_nodes(el1.nodes, el2.nodes, msg)
         if el1._edgepaths or el2._edgepaths:
             cls.compare_edgepaths(el1.edgepaths, el2.edgepaths, msg)
+
+    @classmethod
+    def compare_trimesh(cls, el1, el2, msg='TriMesh'):
+        cls.compare_graph(el1, el2, msg)
 
     @classmethod
     def compare_nodes(cls, el1, el2, msg='Nodes'):
