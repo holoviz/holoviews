@@ -6,7 +6,7 @@ from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve)
+                                         interpolate_curve, operation)
 
 class OperationTests(ComparisonTestCase):
     """
@@ -153,3 +153,13 @@ class OperationTests(ComparisonTestCase):
         area1 = Area(([0, 1, 2], [1, 2, 3], [0, 0, 0]), vdims=['y', 'Baseline'])
         area2 = Area(([0, 1, 2], [2, 4, 6], [1, 2, 3]), vdims=['y', 'Baseline'])
         self.assertEqual(stacked, NdOverlay([(0, area1), (1, area2)]))
+
+    def test_pre_and_postprocess_hooks(self):
+        pre_backup = operation._preprocess_hooks
+        post_backup = operation._postprocess_hooks
+        operation._preprocess_hooks = [lambda x: {'label': str(x.id)}]
+        operation._postprocess_hooks = [lambda x, **kwargs: x.clone(**kwargs)]
+        curve = Curve([1, 2, 3])
+        self.assertEqual(operation(curve).label, str(curve.id))
+        operation._preprocess_hooks = pre_backup
+        operation._postprocess_hooks = post_backup
