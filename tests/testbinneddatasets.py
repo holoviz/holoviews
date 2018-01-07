@@ -180,8 +180,9 @@ class Irregular2DBinsTest(ComparisonTestCase):
                           coords = {'lat': (('y', 'x'), self.ys),
                                     'lon': (('y', 'x'), self.xs)}, name='z')
         dataset = Dataset(da, ['lon', 'lat'], 'z')
-        self.assertEqual(dataset.dimension_values('lon'), self.xs.T.flatten())
-        self.assertEqual(dataset.dimension_values('lat'), self.ys.T.flatten())
+        # Ensure that canonicalization works on multi-dimensional coordinates
+        self.assertEqual(dataset.dimension_values('lon', flat=False), self.xs)
+        self.assertEqual(dataset.dimension_values('lat', flat=False), self.ys)
         self.assertEqual(dataset.dimension_values('z'), self.zs.T.flatten())
 
     def test_construct_3d_from_xarray(self):
@@ -219,12 +220,15 @@ class Irregular2DBinsTest(ComparisonTestCase):
         except:
             raise SkipError("Test requires xarray")
         zs = np.arange(24).reshape(1, 4, 6)
+        # Construct DataArray with additional constant dimension
         da = xr.DataArray(zs, dims=['z', 'y', 'x'],
                           coords = {'lat': (('y', 'x'), self.ys),
                                     'lon': (('y', 'x'), self.xs),
                                     'z': [0]}, name='A')
+        # Declare Dataset without declaring constant dimension
         dataset = Dataset(da, ['lon', 'lat'], 'A')
-        self.assertEqual(dataset.dimension_values('A', flat=False).ndim, 2)
+        # Ensure that canonicalization drops the constant dimension
+        self.assertEqual(dataset.dimension_values('A', flat=False), zs[0])
         
     def test_groupby_3d_from_xarray(self):
         try:
