@@ -16,7 +16,7 @@ class TablePlot(BokehPlot, GenericElementPlot):
     width = param.Number(default=400)
 
     style_opts = ['row_headers', 'selectable', 'editable',
-                  'sortable', 'fit_columns']
+                  'sortable', 'fit_columns', 'scroll_to_selection']
 
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a column.
