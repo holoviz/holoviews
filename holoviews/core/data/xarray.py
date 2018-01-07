@@ -63,10 +63,8 @@ class XArrayInterface(GridInterface):
                                 "supply an explicit vdim." % eltype.__name__,
                                 cls)
             vdims = [vdim]
-            if not kdims:
-                kdims = [Dimension(d) for d in data.dims[::-1]]
             data = data.to_dataset(name=vdim.name)
-        elif not isinstance(data, xr.Dataset):
+        if not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
             if vdims is None:
@@ -99,6 +97,12 @@ class XArrayInterface(GridInterface):
             if kdims is None:
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
+                xrdims = list(data.dims)
+                if set(xrdims) != set(kdims):
+                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
+                    for c in data.coords:
+                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
+                            kdims.append(c)
 
         kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
         not_found = []
@@ -126,7 +130,7 @@ class XArrayInterface(GridInterface):
                 irregular.append((kd, dataset.data[kd.name].dims))
         if irregular:
             nonmatching = ['%s: %s' % (kd, dims) for kd, dims in irregular[1:]
-                           if dims != irregular[0][1]]
+                           if set(dims) != set(irregular[0][1])]
             if nonmatching:
                 nonmatching = ['%s: %s' % irregular[0]] + nonmatching
                 raise DataError("The dimensions of coordinate arrays "

@@ -6,6 +6,7 @@ from unittest import SkipTest
 
 import numpy as np
 
+from holoviews.core.dimension import Dimension
 from holoviews.core.spaces import HoloMap
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
@@ -179,7 +180,12 @@ class Irregular2DBinsTest(ComparisonTestCase):
         da = xr.DataArray(self.zs, dims=['y', 'x'],
                           coords = {'lat': (('y', 'x'), self.ys),
                                     'lon': (('y', 'x'), self.xs)}, name='z')
-        dataset = Dataset(da, ['lon', 'lat'], 'z')
+        dataset = Dataset(da)
+
+        # Ensure that dimensions are inferred correctly
+        self.assertEqual(dataset.kdims, [Dimension('lat'), Dimension('lon')])
+        self.assertEqual(dataset.vdims, [Dimension('z')])
+
         # Ensure that canonicalization works on multi-dimensional coordinates
         self.assertEqual(dataset.dimension_values('lon', flat=False), self.xs)
         self.assertEqual(dataset.dimension_values('lat', flat=False), self.ys)
