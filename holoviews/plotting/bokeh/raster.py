@@ -194,7 +194,12 @@ class QuadMeshPlot(ColorbarPlot):
                     for d in dims]
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
-            data = {'xs': list(X), 'ys': list(Y), z.name: zvals}
+            XS, YS = [], []
+            for x, y, zval in zip(X, Y, zvals):
+                if np.isfinite(zval):
+                    XS.append(x)
+                    YS.append(y)
+            data = {'xs': XS, 'ys': YS, z.name: zvals[np.isfinite(zvals)]}
         else:
             xc, yc = (element.interface.coords(element, x, edges=True),
                       element.interface.coords(element, y, edges=True))
