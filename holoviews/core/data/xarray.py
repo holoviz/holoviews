@@ -63,10 +63,8 @@ class XArrayInterface(GridInterface):
                                 "supply an explicit vdim." % eltype.__name__,
                                 cls)
             vdims = [vdim]
-            if not kdims:
-                kdims = [Dimension(d) for d in data.dims[::-1]]
             data = data.to_dataset(name=vdim.name)
-        elif not isinstance(data, xr.Dataset):
+        if not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
             if vdims is None:
@@ -99,6 +97,12 @@ class XArrayInterface(GridInterface):
             if kdims is None:
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
+                xrdims = list(data.dims)
+                if set(xrdims) != set(kdims):
+                    virtual_dims = [xd for xd in xrdims if xd not in kdims]
+                    for c in data.coords:
+                        if c not in kdims and set(data[c].dims) == set(virtual_dims):
+                            kdims.append(c)
 
         kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
         not_found = []
@@ -113,6 +117,27 @@ class XArrayInterface(GridInterface):
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
         return data, {'kdims': kdims, 'vdims': vdims}, {}
+
+
+    @classmethod
+    def validate(cls, dataset, vdims=True):
+        Interface.validate(dataset, vdims)
+        # Check whether irregular (i.e. multi-dimensional) coordinate
+        # array dimensionality matches
+        irregular = []
+        for kd in dataset.kdims:
+            if cls.irregular(dataset, kd):
+                irregular.append((kd, dataset.data[kd.name].dims))
+        if irregular:
+            nonmatching = ['%s: %s' % (kd, dims) for kd, dims in irregular[1:]
+                           if set(dims) != set(irregular[0][1])]
+            if nonmatching:
+                nonmatching = ['%s: %s' % irregular[0]] + nonmatching
+                raise DataError("The dimensions of coordinate arrays "
+                                "on irregular data must match. The "
+                                "following kdims were found to have "
+                                "non-matching array dimensions:\n\n%s"
+                                % ('\n'.join(nonmatching)), cls)
 
 
     @classmethod
@@ -215,12 +240,17 @@ class XArrayInterface(GridInterface):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
+        irregular_kdims = [d for d in dataset.kdims if cls.irregular(dataset, d)]
+        if irregular_kdims:
+            virtual_coords = list(dataset.data[irregular_kdims[0].name].coords.dims)
+        else:
+            virtual_coords = []
         if dim in dataset.vdims or irregular:
-            coord_dims = list(dataset.data[dim.name].dims)
+            data_coords = list(dataset.data[dim.name].dims)
             if dask and isinstance(data, dask.array.Array):
                 data = data.compute()
-            if not irregular and not any(cls.irregular(dataset, d) for d in dataset.kdims):
-                data = cls.canonicalize(dataset, data, coord_dims=coord_dims)
+            data = cls.canonicalize(dataset, data, data_coords=data_coords,
+                                    virtual_coords=virtual_coords)
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)

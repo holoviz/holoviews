@@ -255,21 +255,6 @@ class QuadMeshPlot(ColorbarPlot):
         return {'artist': artist, 'locs': locs}
 
 
-    def update_handles(self, key, axis, element, ranges, style):
-        cmesh = self.handles['artist']
-        data, style, axis_kwargs = self.get_data(element, ranges, style)
-        locs = style.get('locs')
-        old_locs = self.handles.get('locs')
-        if None in (locs, old_locs) or (locs == old_locs).all():
-            cmesh.set_array(data[-1].flatten())
-            cmesh.set_clim((style['vmin'], style['vmax']))
-            if 'norm' in style:
-                cmesh.norm = style['norm']
-            return axis_kwargs
-        return super(QuadMeshPlot, self).update_handles(key, axis, element,
-                                                        ranges, style)
-
-
 class RasterGridPlot(GridPlot, OverlayPlot):
     """
     RasterGridPlot evenly spaces out plots of individual projections on
