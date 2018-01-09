@@ -4,7 +4,7 @@ from nose.plugins.attrib import attr
 import numpy as np
 
 from holoviews import NdOverlay, Overlay
-from holoviews.core.spaces import DynamicMap
+from holoviews.core.spaces import DynamicMap, HoloMap
 from holoviews.core.options import Store, Cycle
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.element import Curve, Area, Points
@@ -20,6 +20,19 @@ except:
 
 
 class TestOverlayableZorders(ComparisonTestCase):
+
+    def test_compute_overlayable_zorders_holomap(self):
+        hmap = HoloMap({0: Points([])})
+        sources = compute_overlayable_zorders(hmap)
+        self.assertEqual(sources[0], [hmap, hmap.last])
+
+    def test_compute_overlayable_zorders_with_overlaid_holomap(self):
+        points = Points([])
+        hmap = HoloMap({0: points})
+        curve = Curve([])
+        combined = hmap*curve
+        sources = compute_overlayable_zorders(combined)
+        self.assertEqual(sources[0], [points, combined.last, combined])
 
     def test_dynamic_compute_overlayable_zorders_two_mixed_layers(self):
         area = Area(range(10))
