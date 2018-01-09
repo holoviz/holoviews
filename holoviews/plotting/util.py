@@ -117,6 +117,13 @@ def compute_overlayable_zorders(obj, path=[]):
         if isinstance(obj, CompositeOverlay):
             for z, o in enumerate(obj):
                 zorder_map[z] = [o, obj]
+        elif isinstance(obj, HoloMap):
+            for el in obj.values():
+                if isinstance(el, CompositeOverlay):
+                    for k, v in compute_overlayable_zorders(el, path).items():
+                        zorder_map[k] += v + [obj]
+                else:
+                    zorder_map[0] += [obj, el]
         else:
             if obj not in zorder_map[0]:
                 zorder_map[0].append(obj)
