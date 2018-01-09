@@ -179,39 +179,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         self._shared = {'x': False, 'y': False}
 
 
-    def _construct_callbacks(self):
-        """
-        Initializes any callbacks for streams which have defined
-        the plotted object as a source.
-        """
-        if isinstance(self, OverlayPlot):
-            zorders = []
-        elif self.batched:
-            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
-        else:
-            zorders = [self.zorder]
-
-        if isinstance(self, OverlayPlot) and not self.batched:
-            sources = []
-        elif not self.static or isinstance(self.hmap, DynamicMap):
-            sources = [(i, o) for i, inputs in self.stream_sources.items()
-                       for o in inputs if i in zorders]
-        else:
-            sources = [(self.zorder, self.hmap.last)]
-        cb_classes = set()
-        for _, source in sources:
-            streams = Stream.registry.get(id(source), [])
-            registry = Stream._callbacks['bokeh']
-            cb_classes |= {(registry[type(stream)], stream) for stream in streams
-                           if type(stream) in registry and stream.linked}
-        cbs = []
-        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
-        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
-            cb_streams = [s for _, s in group]
-            cbs.append(cb(self, cb_streams, source))
-        return cbs
-
-
     def _hover_opts(self, element):
         if self.batched:
             dims = list(self.hmap.last.kdims)
