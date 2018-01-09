@@ -8,11 +8,13 @@ from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
 from ...core import (OrderedDict, Store, GridMatrix, AdjointLayout,
-                     NdLayout, Empty, GridSpace, HoloMap, Element)
+                     NdLayout, Empty, GridSpace, HoloMap, Element,
+                     DynamicMap)
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...element import Histogram
+from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
-                    GenericElementPlot)
+                    GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot)
@@ -97,6 +99,40 @@ class BokehPlot(DimensionedPlot):
         the column in the datasource.
         """
         raise NotImplementedError
+
+
+    def _construct_callbacks(self):
+        """
+        Initializes any callbacks for streams which have defined
+        the plotted object as a source.
+        """
+        if isinstance(self, GenericOverlayPlot):
+            zorders = []
+        elif self.batched:
+            zorders = list(range(self.zorder, self.zorder+len(self.hmap.last)))
+        else:
+            zorders = [self.zorder]
+
+        if isinstance(self, GenericOverlayPlot) and not self.batched:
+            sources = []
+        elif not self.static or isinstance(self.hmap, DynamicMap):
+            sources = [(i, o) for i, inputs in self.stream_sources.items()
+                       for o in inputs if i in zorders]
+        else:
+            sources = [(self.zorder, self.hmap.last)]
+
+        cb_classes = set()
+        for _, source in sources:
+            streams = Stream.registry.get(id(source), [])
+            registry = Stream._callbacks['bokeh']
+            cb_classes |= {(registry[type(stream)], stream) for stream in streams
+                           if type(stream) in registry and stream.linked}
+        cbs = []
+        sorted_cbs = sorted(cb_classes, key=lambda x: id(x[0]))
+        for cb, group in groupby(sorted_cbs, lambda x: x[0]):
+            cb_streams = [s for _, s in group]
+            cbs.append(cb(self, cb_streams, source))
+        return cbs
 
 
     def push(self):
