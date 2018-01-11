@@ -1461,9 +1461,18 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_ranges(element, ranges)
-            
+
+        # Determine which stream (if any) triggered the update
+        triggering = [stream for stream in self.streams if stream._triggering]
+
         for k, subplot in self.subplots.items():
             el = None
+
+            # Skip updates to subplots when its streams is not one of
+            # the streams that initiated the update
+            if triggering and all(s not in triggering for s in subplot.streams):
+                continue
+
             # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
                 # In batched mode NdOverlay is passed to subplot directly

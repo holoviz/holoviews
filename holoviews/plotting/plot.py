@@ -22,7 +22,8 @@ from ..core.util import stream_parameters, cartesian_product
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
-                   compute_overlayable_zorders, get_plot_frame)
+                   compute_overlayable_zorders, get_plot_frame,
+                   split_dmap_overlay)
 
 
 class Plot(param.Parameterized):
@@ -565,7 +566,7 @@ class GenericElementPlot(DimensionedPlot):
 
     def __init__(self, element, keys=None, ranges=None, dimensions=None,
                  batched=False, overlaid=0, cyclic_index=0, zorder=0, style=None,
-                 overlay_dims={}, stream_sources=[], **params):
+                 overlay_dims={}, stream_sources=[], streams=None, **params):
         self.zorder = zorder
         self.cyclic_index = cyclic_index
         self.overlaid = overlaid
@@ -608,10 +609,7 @@ class GenericElementPlot(DimensionedPlot):
         super(GenericElementPlot, self).__init__(keys=keys, dimensions=dimensions,
                                                  dynamic=dynamic,
                                                  **dict(params, **plot_opts))
-        streams = []
-        if isinstance(self.hmap, DynamicMap):
-            streams = get_nested_streams(self.hmap)
-        self.streams = streams
+        self.streams = get_nested_streams(self.hmap) if streams is None else streams
         if self.top_level:
             self.comm = self.init_comm()
             self.traverse(lambda x: setattr(x, 'comm', self.comm))
@@ -850,6 +848,12 @@ class GenericOverlayPlot(GenericElementPlot):
             self.batched = False
             keys, vmaps = self.hmap.split_overlays()
 
+        if isinstance(self.hmap, DynamicMap):
+            dmap_streams = [get_nested_streams(layer) for layer in
+                            split_dmap_overlay(self.hmap)]
+        else:
+            dmap_streams = [None]*len(keys)
+
         # Compute global ordering
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
@@ -861,7 +865,7 @@ class GenericOverlayPlot(GenericElementPlot):
         group_counter = Counter()
 
         subplots = OrderedDict()
-        for (key, vmap) in zip(keys, vmaps):
+        for (key, vmap, streams) in zip(keys, vmaps, dmap_streams):
             opts = {'overlaid': overlay_type}
             if self.hmap.type == Overlay:
                 style_key = (vmap.type.__name__,) + key
@@ -911,7 +915,7 @@ class GenericOverlayPlot(GenericElementPlot):
                             layout_dimensions=self.layout_dimensions,
                             ranges=ranges, show_title=self.show_title,
                             style=style, uniform=self.uniform,
-                            fontsize=self.fontsize,
+                            fontsize=self.fontsize, streams=streams,
                             renderer=self.renderer, stream_sources=stream_sources,
                             zorder=zorder, adjoined=self.adjoined, **passed_handles)
 
