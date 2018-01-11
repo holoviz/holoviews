@@ -240,6 +240,9 @@ class BokehPlot(DimensionedPlot):
                     else:
                         renderer.update(source=new_source)
                     plot.handles['source'] = new_source
+                    for callback in plot.callbacks:
+                        callback.reset()
+                        callback.initialize()
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
         self.handles['shared_sources'] = shared_sources
