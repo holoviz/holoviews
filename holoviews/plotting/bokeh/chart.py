@@ -497,6 +497,8 @@ class SpreadPlot(ElementPlot):
 
 class AreaPlot(SpreadPlot):
 
+    _stream_data = False # Plot does not support streaming data
+
     def get_extents(self, element, ranges):
         vdims = element.vdims
         vdim = vdims[0].name
