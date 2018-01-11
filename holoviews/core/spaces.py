@@ -570,10 +570,11 @@ def get_nested_dmaps(dmap):
     """
     Get all DynamicMaps referenced by the supplied DynamicMap's callback.
     """
+    if not isinstance(dmap, DynamicMap):
+        return []
     dmaps = [dmap]
     for o in dmap.callback.inputs:
-        if isinstance(o, DynamicMap):
-            dmaps.extend(get_nested_dmaps(o))
+        dmaps.extend(get_nested_dmaps(o))
     return list(set(dmaps))
 
 
