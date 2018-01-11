@@ -80,6 +80,9 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self._execute_hooks(element)
         self.drawn = True
 
+        for cb in self.callbacks:
+            cb.initialize()
+
         return table
 
 

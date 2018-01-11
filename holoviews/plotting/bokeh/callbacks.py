@@ -56,6 +56,10 @@ class MessageCallback(object):
             except AttributeError:
                 self.comm = Comm(plot)
         self.source = source
+        self.reset()
+
+
+    def reset(self):
         self.handle_ids = defaultdict(dict)
         self.callbacks = []
         self.plot_handles = {}
