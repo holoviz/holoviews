@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, glob
+import sys, os
 import shutil
 from collections import defaultdict
 try:
@@ -11,11 +11,11 @@ except ImportError:
 
 setup_args = {}
 install_requires = ['param>=1.5.1,<2.0', 'numpy>=1.0']
-extras_require={}
+extras_require = {}
 
 # Notebook dependencies of IPython 3
 extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
-                                           'jsonschema',  'notebook', 'pygments']
+                                           'jsonschema', 'notebook', 'pygments']
 # IPython Notebook + matplotlib
 extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib']
 # Additional, useful third-party packages
@@ -27,7 +27,7 @@ extras_require['all'] = (extras_require['recommended']
                          + ['cyordereddict', 'nose'])
 
 
-PYPI_BLURB="""
+PYPI_BLURB = """
 HoloViews is designed to make data analysis and visualization seamless and simple. With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
 Check out the `HoloViews web site <http://holoviews.org>`_ for extensive examples and documentation.
@@ -36,39 +36,39 @@ Check out the `HoloViews web site <http://holoviews.org>`_ for extensive example
 setup_args.update(dict(
     name='holoviews',
     version="1.9.2",
-    install_requires = install_requires,
-    extras_require = extras_require,
+    install_requires=install_requires,
+    extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
     long_description=PYPI_BLURB,
-    author= "Jean-Luc Stevens and Philipp Rudiger",
-    author_email= "holoviews@gmail.com",
-    maintainer= "IOAM",
-    maintainer_email= "holoviews@gmail.com",
+    author="Jean-Luc Stevens and Philipp Rudiger",
+    author_email="holoviews@gmail.com",
+    maintainer="IOAM",
+    maintainer_email="holoviews@gmail.com",
     platforms=['Windows', 'Mac OS X', 'Linux'],
     license='BSD',
     url='http://www.holoviews.org',
     entry_points={
-          'console_scripts': [
-              'holoviews = holoviews.util.command:main'
-          ]},
-    packages = ["holoviews",
-                "holoviews.core",
-                "holoviews.core.data",
-                "holoviews.element",
-                "holoviews.ipython",
-                "holoviews.util",
-                "holoviews.operation",
-                "holoviews.plotting",
-                "holoviews.plotting.mpl",
-                "holoviews.plotting.bokeh",
-                "holoviews.plotting.plotly",
-                "holoviews.plotting.widgets"],
+        'console_scripts': [
+            'holoviews = holoviews.util.command:main'
+        ]},
+    packages=["holoviews",
+              "holoviews.core",
+              "holoviews.core.data",
+              "holoviews.element",
+              "holoviews.ipython",
+              "holoviews.util",
+              "holoviews.operation",
+              "holoviews.plotting",
+              "holoviews.plotting.mpl",
+              "holoviews.plotting.bokeh",
+              "holoviews.plotting.plotly",
+              "holoviews.plotting.widgets"],
     package_data={'holoviews.ipython': ['*.html'],
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js', '*.css'],
                   'holoviews.plotting.plotly': ['*.js'],
                   'holoviews.plotting.widgets': ['*.jinja', '*.js', '*.css']},
-    classifiers = [
+    classifiers=[
         "License :: OSI Approved :: BSD License",
         "Development Status :: 5 - Production/Stable",
         "Programming Language :: Python :: 2.7",
@@ -81,6 +81,7 @@ setup_args.update(dict(
         "Topic :: Scientific/Engineering",
         "Topic :: Software Development :: Libraries"]
 ))
+
 
 def check_pseudo_package(path):
     """
@@ -98,6 +99,7 @@ def check_pseudo_package(path):
 excludes = ['DS_Store', '.log', 'ipynb_checkpoints']
 packages = []
 extensions = defaultdict(list)
+
 
 def walker(top, names):
     """
@@ -130,13 +132,12 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
             print('%s directory already exists, either delete it or set the force flag' % path)
             return
         shutil.rmtree(path)
-    ignore = shutil.ignore_patterns('.ipynb_checkpoints','*.pyc','*~')
+    ignore = shutil.ignore_patterns('.ipynb_checkpoints', '*.pyc', '*~')
     tree_root = os.path.abspath(example_dir)
     if os.path.isdir(tree_root):
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
         print('Cannot find %s' % tree_root)
-
 
 
 def package_assets(example_path):
@@ -152,10 +153,10 @@ def package_assets(example_path):
             setup_args['package_data'][p] = exts
 
 
-if __name__=="__main__":
+if __name__ == "__main__":
     example_path = os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                               'holoviews/examples')
-    if not 'develop' in sys.argv:
+                                'holoviews/examples')
+    if 'develop' not in sys.argv:
         package_assets(example_path)
 
     if ('upload' in sys.argv) or ('sdist' in sys.argv):

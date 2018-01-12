@@ -58,6 +58,7 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                 print("Warning: Could not load %r [%r]" % (filename, str(e)))
         break
 
+
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
     """
@@ -74,9 +75,9 @@ def help(obj, visualization=True, ansi=True, backend=None,
     info = Store.info(obj, ansi=ansi, backend=backend, visualization=visualization,
                       recursive=recursive, pattern=pattern, elements=elements_list)
 
-    msg = ( "\nTo view the visualization options applicable to this "
-            "object or class, use:\n\n"
-            "   holoviews.help(obj, visualization=True)\n\n")
+    msg = ("\nTo view the visualization options applicable to this "
+           "object or class, use:\n\n"
+           "   holoviews.help(obj, visualization=True)\n\n")
     if info:
         print((msg if visualization is False else '') + info)
     else:
