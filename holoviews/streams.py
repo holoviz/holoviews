@@ -92,8 +92,8 @@ class Stream(param.Parameterized):
 
         Supported types: bool, int, float, str, dict, tuple and list
         """
-        params = {'name':param.String(default=name)}
-        for k,v in kwargs.items():
+        params = {'name': param.String(default=name)}
+        for k, v in kwargs.items():
             kws = dict(default=v, constant=True)
             if isinstance(v, param.Parameter):
                 params[k] = v
@@ -103,15 +103,15 @@ class Stream(param.Parameterized):
                 params[k] = param.Integer(**kws)
             elif isinstance(v, float):
                 params[k] = param.Number(**kws)
-            elif isinstance(v,str):
+            elif isinstance(v, str):
                 params[k] = param.String(**kws)
-            elif isinstance(v,dict):
+            elif isinstance(v, dict):
                 params[k] = param.Dict(**kws)
             elif isinstance(v, tuple):
                 params[k] = param.Tuple(**kws)
-            elif isinstance(v,list):
+            elif isinstance(v, list):
                 params[k] = param.List(**kws)
-            elif isinstance(v,np.ndarray):
+            elif isinstance(v, np.ndarray):
                 params[k] = param.Array(**kws)
             else:
                 params[k] = param.Parameter(**kws)
@@ -133,7 +133,7 @@ class Stream(param.Parameterized):
         # Union of stream contents
         items = [stream.contents.items() for stream in streams]
         union = [kv for kvs in items for kv in kvs]
-        klist = [k for k,_ in union]
+        klist = [k for k, _ in union]
         clashes = set([k for k in klist if klist.count(k) > 1])
         if clashes:
             param.main.warning('Parameter name clashes for keys: %r' % clashes)
@@ -195,7 +195,7 @@ class Stream(param.Parameterized):
 
     @property
     def subscribers(self):
-        " Property returning the subscriber list"
+        """Property returning the subscriber list"""
         return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
 
 
@@ -215,9 +215,9 @@ class Stream(param.Parameterized):
         if policy == 'all':
             remaining = []
         elif policy == 'user':
-            remaining = [(p,s) for (p,s) in self._subscribers if p > 1]
+            remaining = [(p, s) for (p, s) in self._subscribers if p > 1]
         else:
-            remaining = [(p,s) for (p,s) in self._subscribers if p <= 1]
+            remaining = [(p, s) for (p, s) in self._subscribers if p <= 1]
         self._subscribers = remaining
 
 
@@ -250,7 +250,7 @@ class Stream(param.Parameterized):
 
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
-        for k,v in mapping.items():
+        for k, v in mapping.items():
             if k not in param_names:
                 raise KeyError('Cannot rename %r as it is not a stream parameter' % k)
             if v in param_names:
@@ -266,7 +266,7 @@ class Stream(param.Parameterized):
         same name. Returns a new clone of the stream instance with the
         specified name mapping.
         """
-        params = {k:v for k,v in self.get_param_values() if k != 'name'}
+        params = {k: v for k, v in self.get_param_values() if k != 'name'}
         return self.__class__(rename=mapping,
                               source=self._source,
                               linked=self.linked, **params)
@@ -297,9 +297,9 @@ class Stream(param.Parameterized):
 
     @property
     def contents(self):
-        filtered = {k:v for k,v in self.get_param_values() if k!= 'name' }
-        return {self._rename.get(k,k):v for (k,v) in filtered.items()
-                if (self._rename.get(k,True) is not None)}
+        filtered = {k: v for k, v in self.get_param_values() if k != 'name'}
+        return {self._rename.get(k, k): v for (k, v) in filtered.items()
+                if self._rename.get(k, True) is not None}
 
     @property
     def hashkey(self):
@@ -342,8 +342,8 @@ class Stream(param.Parameterized):
 
     def __repr__(self):
         cls_name = self.__class__.__name__
-        kwargs = ','.join('%s=%r' % (k,v)
-                          for (k,v) in self.get_param_values() if k != 'name')
+        kwargs = ','.join('%s=%r' % (k, v)
+                          for (k, v) in self.get_param_values() if k != 'name')
         if not self._rename:
             return '%s(%s)' % (cls_name, kwargs)
         else:
@@ -360,7 +360,7 @@ class Counter(Stream):
     parameter every time it is updated.
     """
 
-    counter = param.Integer(default=0, constant=True, bounds=(0,None))
+    counter = param.Integer(default=0, constant=True, bounds=(0, None))
 
     def transform(self):
         return {'counter': self.counter + 1}
@@ -770,10 +770,10 @@ class ParamValues(Stream):
     @property
     def contents(self):
         if isinstance(self._obj, type):
-            remapped={k: getattr(self._obj,k)
-                               for k in self._obj.params().keys() if k!= 'name'}
+            remapped = {k: getattr(self._obj, k)
+                        for k in self._obj.params().keys() if k != 'name'}
         else:
-            remapped={k:v for k,v in self._obj.get_param_values() if k!= 'name'}
+            remapped = {k: v for k, v in self._obj.get_param_values() if k != 'name'}
         return remapped
 
 
@@ -814,4 +814,3 @@ class PositionXY(PointerXY):
     def __init__(self, **params):
         self.warning('PositionXY stream deprecated: use PointerXY instead')
         super(PositionXY, self).__init__(**params)
-
