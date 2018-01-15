@@ -49,6 +49,7 @@ class Annotation(Element2D):
         ystart, ystop = ykey.start, ykey.stop
         return self.clone(self.data, extents=(xstart, ystart, xstop, ystop))
 
+
     def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
@@ -118,6 +119,7 @@ class HLine(Annotation):
             return super(HLine, self).dimension_values(dimension)
 
 
+
 class Spline(Annotation):
     """
     Draw a spline using the given handle coordinates and handle
@@ -139,12 +141,14 @@ class Spline(Annotation):
     def __init__(self, spline_points, **params):
         super(Spline, self).__init__(spline_points, **params)
 
+
     def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index in [0, 1]:
             return np.array([point[index] for point in self.data[0]])
         else:
             return super(Spline, self).dimension_values(dimension)
+
 
 
 class Arrow(Annotation):
@@ -198,6 +202,7 @@ class Arrow(Annotation):
             direction, text, (x, y), points, arrowstyle = self.data
             self.data = (x, y, text, direction, points, arrowstyle)
 
+
     def dimension_values(self, dimension, expanded=True, flat=True):
         index = self.get_dimension_index(dimension)
         if index == 0:
@@ -206,6 +211,7 @@ class Arrow(Annotation):
             return np.array([self.y])
         else:
             return super(Arrow, self).dimension_values(dimension)
+
 
 
 class Text(Annotation):

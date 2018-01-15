@@ -77,6 +77,7 @@ class Stream(param.Parameterized):
     # e.g. Stream._callbacks['bokeh'][Stream] = Callback
     _callbacks = defaultdict(dict)
 
+
     @classmethod
     def define(cls, name, **kwargs):
         """
@@ -118,6 +119,7 @@ class Stream(param.Parameterized):
         # Dynamic class creation using type
         return type(name, (Stream,), params)
 
+
     @classmethod
     def trigger(cls, streams):
         """
@@ -155,6 +157,7 @@ class Stream(param.Parameterized):
                 if stream.transient:
                     stream.reset()
 
+
     def __init__(self, rename={}, source=None, subscribers=[], linked=False,
                  transient=False, **params):
         """
@@ -189,10 +192,12 @@ class Stream(param.Parameterized):
         if source is not None:
             self.registry[id(source)].append(self)
 
+
     @property
     def subscribers(self):
         """Property returning the subscriber list"""
         return [s for p, s in sorted(self._subscribers, key=lambda x: x[0])]
+
 
     def clear(self, policy='all'):
         """
@@ -215,6 +220,7 @@ class Stream(param.Parameterized):
             remaining = [(p, s) for (p, s) in self._subscribers if p <= 1]
         self._subscribers = remaining
 
+
     def reset(self):
         """
         Resets stream parameters to their defaults.
@@ -223,6 +229,7 @@ class Stream(param.Parameterized):
             for k, p in self.params().items():
                 if k != 'name':
                     setattr(self, k, p.default)
+
 
     def add_subscriber(self, subscriber, precedence=0):
         """
@@ -240,6 +247,7 @@ class Stream(param.Parameterized):
             raise TypeError('Subscriber must be a callable.')
         self._subscribers.append((precedence, subscriber))
 
+
     def _validate_rename(self, mapping):
         param_names = [k for k in self.params().keys() if k != 'name']
         for k, v in mapping.items():
@@ -249,6 +257,7 @@ class Stream(param.Parameterized):
                 raise KeyError('Cannot rename to %r as it clashes with a '
                                'stream parameter of the same name' % v)
         return mapping
+
 
     def rename(self, **mapping):
         """
@@ -266,6 +275,7 @@ class Stream(param.Parameterized):
     def source(self):
         return self._source
 
+
     @source.setter
     def source(self, source):
         if self._source:
@@ -275,6 +285,7 @@ class Stream(param.Parameterized):
         self._source = source
         self.registry[id(source)].append(self)
 
+
     def transform(self):
         """
         Method that can be overwritten by subclasses to process the
@@ -282,6 +293,7 @@ class Stream(param.Parameterized):
         dictionary of transformed parameters.
         """
         return {}
+
 
     @property
     def contents(self):
@@ -297,6 +309,7 @@ class Stream(param.Parameterized):
         a custom hash key.
         """
         return self.contents
+
 
     def _set_stream_parameters(self, **kwargs):
         """
@@ -335,6 +348,7 @@ class Stream(param.Parameterized):
             return '%s(%s)' % (cls_name, kwargs)
         else:
             return '%s(%r, %s)' % (cls_name, self._rename, kwargs)
+
 
     def __str__(self):
         return repr(self)
@@ -435,6 +449,7 @@ class Buffer(Pipe):
         self._count = 0
         self._index = index
 
+
     def verify(self, x):
         """ Verify consistency of dataframes that pass through this stream """
         if type(x) != type(self.data):
@@ -457,6 +472,7 @@ class Buffer(Pipe):
                 raise ValueError("Input columns expected to have the "
                                  "same number of rows.")
 
+
     def clear(self):
         "Clears the data in the stream"
         if isinstance(self.data, np.ndarray):
@@ -468,6 +484,7 @@ class Buffer(Pipe):
         with util.disable_constant(self):
             self.data = data
         self.send(data)
+
 
     def _concat(self, data):
         """
@@ -503,6 +520,7 @@ class Buffer(Pipe):
         self._chunk_length = data_length
         return data
 
+
     def update(self, **kwargs):
         """
         Overrides update to concatenate streamed data up to defined length.
@@ -516,9 +534,11 @@ class Buffer(Pipe):
             self._count += 1
         super(Buffer, self).update(**kwargs)
 
+
     @property
     def hashkey(self):
         return {'hash': self._count}
+
 
 
 class LinkedStream(Stream):
@@ -557,6 +577,7 @@ class PointerY(LinkedStream):
     the plot bounds, the position is set to None.
     """
 
+
     y = param.ClassSelector(class_=pointer_types, default=None,
                             constant=True, doc="""
            Pointer position along the y-axis in data coordinates""")
@@ -590,7 +611,6 @@ class Draw(PointerXY):
     stroke_count = param.Integer(default=0, constant=True, doc="""
        The current drawing stroke count. Increments every time a new
        stroke is started.""")
-
 
 class SingleTap(PointerXY):
     """
@@ -746,6 +766,7 @@ class ParamValues(Stream):
         self._obj = obj
         super(ParamValues, self).__init__(**params)
 
+
     @property
     def contents(self):
         if isinstance(self._obj, type):
@@ -754,6 +775,7 @@ class ParamValues(Stream):
         else:
             remapped = {k: v for k, v in self._obj.get_param_values() if k != 'name'}
         return remapped
+
 
     def update(self, **kwargs):
         """
@@ -773,6 +795,7 @@ class ParamValues(Stream):
         cls_name = self.__class__.__name__
         return '%s(%r)' % (cls_name, self._obj)
 
+
     def __str__(self):
         return repr(self)
 
@@ -782,12 +805,10 @@ class PositionX(PointerX):
         self.warning('PositionX stream deprecated: use PointerX instead')
         super(PositionX, self).__init__(**params)
 
-
 class PositionY(PointerY):
     def __init__(self, **params):
         self.warning('PositionY stream deprecated: use PointerY instead')
         super(PositionY, self).__init__(**params)
-
 
 class PositionXY(PointerXY):
     def __init__(self, **params):

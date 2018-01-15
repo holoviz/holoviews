@@ -82,7 +82,6 @@ setup_args.update(dict(
         "Topic :: Software Development :: Libraries"]
 ))
 
-
 def check_pseudo_package(path):
     """
     Verifies that a fake subpackage path for assets (notebooks, svgs,
@@ -99,7 +98,6 @@ def check_pseudo_package(path):
 excludes = ['DS_Store', '.log', 'ipynb_checkpoints']
 packages = []
 extensions = defaultdict(list)
-
 
 def walker(top, names):
     """
@@ -138,6 +136,7 @@ def examples(path='holoviews-examples', verbose=False, force=False, root=__file_
         shutil.copytree(tree_root, path, ignore=ignore, symlinks=True)
     else:
         print('Cannot find %s' % tree_root)
+
 
 
 def package_assets(example_path):

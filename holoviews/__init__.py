@@ -58,7 +58,6 @@ for rcfile in [os.environ.get("HOLOVIEWSRC", ''),
                 print("Warning: Could not load %r [%r]" % (filename, str(e)))
         break
 
-
 def help(obj, visualization=True, ansi=True, backend=None,
          recursive=False, pattern=None):
     """
