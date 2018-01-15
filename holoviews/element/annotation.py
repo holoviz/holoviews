@@ -22,7 +22,7 @@ class Annotation(Element2D):
     """
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                       bounds=(2,2))
+                       bounds=(2, 2))
 
     group = param.String(default='Annotation', constant=True)
 
@@ -35,13 +35,15 @@ class Annotation(Element2D):
         return 1
 
     def __getitem__(self, key):
-        if key in self.dimensions(): return self.dimension_values(key)
+        if key in self.dimensions():
+            return self.dimension_values(key)
         if not isinstance(key, tuple) or len(key) == 1:
             key = (key, slice(None))
-        elif len(key) == 0: return self.clone()
+        elif len(key) == 0:
+            return self.clone()
         if not all(isinstance(k, slice) for k in key):
             raise KeyError("%s only support slice indexing" %
-                             self.__class__.__name__)
+                           self.__class__.__name__)
         xkey, ykey = tuple(key[:len(self.kdims)])
         xstart, xstop = xkey.start, xkey.stop
         ystart, ystop = ykey.start, ykey.stop
@@ -72,11 +74,11 @@ class Annotation(Element2D):
 
 
 class VLine(Annotation):
-    "Vertical line annotation at the given position"
+    """Vertical line annotation at the given position."""
 
     group = param.String(default='VLine', constant=True)
 
-    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
        The x-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['x']
@@ -95,11 +97,11 @@ class VLine(Annotation):
 
 
 class HLine(Annotation):
-    "Horizontal line annotation at the given position"
+    """Horizontal line annotation at the given position."""
 
     group = param.String(default='HLine', constant=True)
 
-    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
        The y-position of the VLine which make be numeric or a timestamp.""")
 
     __pos_params = ['y']
@@ -156,10 +158,10 @@ class Arrow(Annotation):
     specified as well as the arrow head style.
     """
 
-    x = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_= (Number, ) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=(Number, ) + datetime_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="Text associated with the arrow.")
@@ -217,10 +219,10 @@ class Text(Annotation):
     Draw a text annotation at the specified position with custom
     fontsize, alignment and rotation.
     """
-    x = param.ClassSelector(default=0, class_= (Number, basestring) + datetime_types, doc="""
+    x = param.ClassSelector(default=0, class_=(Number, basestring) + datetime_types, doc="""
        The x-position of the arrow which make be numeric or a timestamp.""")
 
-    y = param.ClassSelector(default=0, class_= (Number, basestring) + datetime_types, doc="""
+    y = param.ClassSelector(default=0, class_=(Number, basestring) + datetime_types, doc="""
        The y-position of the arrow which make be numeric or a timestamp.""")
 
     text = param.String(default='', doc="The text to be displayed.")
@@ -229,13 +231,13 @@ class Text(Annotation):
 
     rotation = param.Number(default=0, doc="Text rotation angle in degrees.")
 
-    halign= param.ObjectSelector(default='center',
-                                 objects= ['left', 'right', 'center'], doc="""
+    halign = param.ObjectSelector(default='center',
+                                  objects=['left', 'right', 'center'], doc="""
        The horizontal alignment position of the displayed text. Allowed values
        are 'left', 'right' and 'center'.""")
 
-    valign= param.ObjectSelector(default='center',
-                                 objects= ['top', 'bottom', 'center'], doc="""
+    valign = param.ObjectSelector(default='center',
+                                  objects=['top', 'bottom', 'center'], doc="""
        The vertical alignment position of the displayed text. Allowed values
        are 'center', 'top' and 'bottom'.""")
 
@@ -243,9 +245,9 @@ class Text(Annotation):
 
     __pos_params = ['x', 'y', 'text', 'fontsize', 'halign', 'valign', 'rotation']
 
-    def __init__(self, x,y, text, fontsize=12,
+    def __init__(self, x, y, text, fontsize=12,
                  halign='center', valign='center', rotation=0, **params):
-        info = (x,y, text, fontsize, halign, valign, rotation)
+        info = (x, y, text, fontsize, halign, valign, rotation)
         super(Text, self).__init__(info, x=x, y=y, text=text,
                                    fontsize=fontsize, rotation=rotation,
                                    halign=halign, valign=valign, **params)
