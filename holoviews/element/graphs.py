@@ -421,6 +421,8 @@ class TriMesh(Graph):
 
     group = param.String(default='TriMesh', constant=True)
 
+    point_type = Points
+
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
@@ -440,23 +442,19 @@ class TriMesh(Graph):
 
         if isinstance(nodes, self.node_type):
             pass
-        elif isinstance(nodes, Points):
+        elif isinstance(nodes, self.point_type):
             # Add index to make it a valid Nodes object
             nodes = self.node_type(Dataset(nodes).add_dimension('index', 2, np.arange(len(nodes))))
         elif not isinstance(nodes, Dataset) or nodes.ndims in [2, 3]:
+            # Try assuming data contains just coordinates (2 columns)
             try:
-                # Try assuming data contains indices (3 columns)
-                nodes = self.node_type(nodes)
+                points = self.point_type(nodes)
+                ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
+                nodes = self.node_type(ds)
             except:
-                # Try assuming data contains just coordinates (2 columns)
-                try:
-                    points = Points(nodes, kdims=self.node_type.kdims[:2])
-                    ds = Dataset(points).add_dimension('index', 2, np.arange(len(points)))
-                    nodes = self.node_type(ds)
-                except:
-                    raise ValueError("Nodes argument could not be interpreted, expected "
-                                     "data with two or three columns representing the "
-                                     "x/y positions and optionally the node indices.")
+                raise ValueError("Nodes argument could not be interpreted, expected "
+                                 "data with two or three columns representing the "
+                                 "x/y positions and optionally the node indices.")
         if edgepaths is not None and not isinstance(edgepaths, self.edge_type):
             edgepaths = self.edge_type(edgepaths)
 
