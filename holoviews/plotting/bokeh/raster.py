@@ -166,7 +166,7 @@ class QuadMeshPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    _plot_methods = dict(single='rect')
+    _plot_methods = dict(single='quad')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def get_data(self, element, ranges, style):
@@ -197,8 +197,8 @@ class QuadMeshPlot(ColorbarPlot):
             XS, YS = [], []
             for x, y, zval in zip(X, Y, zvals):
                 if np.isfinite(zval):
-                    XS.append(x)
-                    YS.append(y)
+                    XS.append(list(x[:-1]))
+                    YS.append(list(y[:-1]))
             data = {'xs': XS, 'ys': YS, z.name: zvals[np.isfinite(zvals)]}
         else:
             xc, yc = (element.interface.coords(element, x, edges=True),
