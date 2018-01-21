@@ -157,8 +157,6 @@ class BokehRenderer(Renderer):
             return doc
 
         def modify_doc(doc):
-            if self_or_cls.theme:
-                doc.theme = self_or_cls.theme
             renderer(plot, doc=doc)
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
@@ -197,17 +195,21 @@ class BokehRenderer(Renderer):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        if doc is None:
-            doc = curdoc()
         if not isinstance(obj, (Plot, BokehServerWidgets)):
             renderer = self_or_cls.instance(mode='server')
             plot, _ =  renderer._validate(obj, 'auto')
         else:
             plot = obj
+
         root = plot.state
         if isinstance(plot, BokehServerWidgets):
             plot = plot.plot
-        plot.document = doc
+
+        if doc is None:
+            doc = plot.document
+        else:
+            plot.document = doc
+
         plot.traverse(lambda x: attach_periodic(x), [GenericElementPlot])
         doc.add_root(root)
         return doc
@@ -215,10 +217,10 @@ class BokehRenderer(Renderer):
 
     def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
-        if plot.document:
+        if doc is None:
             doc = plot.document
         else:
-            doc = Document() if doc is None else doc
+            plot.document = doc
 
         for m in model.references():
             m._document = None
