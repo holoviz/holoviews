@@ -5,7 +5,7 @@ from unittest import SkipTest
 import numpy as np
 from itertools import product
 from holoviews.core.options import Store
-from holoviews.element.raster import RadialHeatMap
+from holoviews.element.raster import HeatMap
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -41,12 +41,13 @@ class BokehGraphPlotTests(ComparisonTestCase):
         plot_opts = dict(start_angle=0,
                          max_radius=1,
                          padding_inner=0.5,
-                         padding_outer=0.2)
+                         padding_outer=0.2,
+                         radial=True)
 
-        opts = dict(RadialHeatMap=dict(plot=plot_opts))
+        opts = dict(HeatMap=dict(plot=plot_opts))
 
         # provide element and plot instances for tests
-        self.element = RadialHeatMap((self.x, self.y, self.z)).opts(opts)
+        self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
         self.plot = bokeh_renderer.get_plot(self.element)
 
     def tearDown(self):

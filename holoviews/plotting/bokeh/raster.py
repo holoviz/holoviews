@@ -167,6 +167,10 @@ class HeatMapPlot(ColorbarPlot):
                 sanitized = dimension_sanitizer(vdim.name)
                 data[sanitized] = ['-' if is_nan(v) else vdim.pprint_value(v)
                                    for v in aggregate.dimension_values(vdim)]
+
+        # Filter radial heatmap options
+        style = {k: v for k, v in style.items() if not
+                 any(g in k for g in RadialHeatMapPlot._style_groups.values())}
         return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
                        'height': 1, 'width': 1}, style)
 

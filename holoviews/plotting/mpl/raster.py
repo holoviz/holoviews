@@ -182,6 +182,9 @@ class HeatMapPlot(RasterPlot):
         ax.set_aspect(plot_kwargs.pop('aspect', 1))
 
         handles = {}
+        prefixes = ['annular', 'xmarks', 'ymarks']
+        plot_kwargs = {k: v for k, v in plot_kwargs.items()
+                       if not any(p in k for p in prefixes)}
         annotations = plot_kwargs.pop('annotations', None)
         handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
         if self.show_values and annotations:
