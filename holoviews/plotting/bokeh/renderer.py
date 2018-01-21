@@ -23,6 +23,7 @@ from .util import attach_periodic, compute_plot_size
 from bokeh.io.notebook import load_notebook
 from bokeh.protocol import Protocol
 from bokeh.embed.notebook import encode_utf8, notebook_content
+from bokeh.themes.theme import Theme
 
 NOTEBOOK_DIV = """
 {plot_div}
@@ -33,6 +34,9 @@ NOTEBOOK_DIV = """
 
 
 class BokehRenderer(Renderer):
+
+    theme = param.ClassSelector(default=None, class_=Theme, allow_None=True, doc="""
+       The applicable Bokeh Theme object (if any).""")
 
     backend = param.String(default='bokeh', doc="The backend name.")
 
@@ -79,7 +83,7 @@ class BokehRenderer(Renderer):
         backend. The output is not a file format but a suitable,
         in-memory byte stream together with any suitable metadata.
         """
-        plot, fmt =  self._validate(obj, fmt)
+        plot, fmt =  self._validate(obj, fmt, doc=doc)
         info = {'file-ext': fmt, 'mime_type': MIME_TYPES[fmt]}
 
         if self.mode == 'server':
@@ -106,6 +110,7 @@ class BokehRenderer(Renderer):
             return '\n'.join(self_or_cls.html_assets()).encode('utf8')
         return
 
+
     @bothmethod
     def get_plot(self_or_cls, obj, doc=None, renderer=None):
         """
@@ -113,11 +118,11 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
+        doc = curdoc() if doc is None else doc
+        if self_or_cls.theme:
+            doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
-        if self_or_cls.mode == 'server' and doc is None:
-            doc = curdoc()
-        if doc is not None:
-            plot.document = doc
+        plot.document = doc
         return plot
 
 
@@ -190,17 +195,21 @@ class BokehRenderer(Renderer):
         an existing doc, otherwise bokeh.io.curdoc() is used to
         attach the plot to the global document instance.
         """
-        if doc is None:
-            doc = curdoc()
         if not isinstance(obj, (Plot, BokehServerWidgets)):
             renderer = self_or_cls.instance(mode='server')
             plot, _ =  renderer._validate(obj, 'auto')
         else:
             plot = obj
+
         root = plot.state
         if isinstance(plot, BokehServerWidgets):
             plot = plot.plot
-        plot.document = doc
+
+        if doc is None:
+            doc = plot.document
+        else:
+            plot.document = doc
+
         plot.traverse(lambda x: attach_periodic(x), [GenericElementPlot])
         doc.add_root(root)
         return doc
@@ -208,10 +217,17 @@ class BokehRenderer(Renderer):
 
     def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
         model = plot.state
-        doc = Document() if doc is None else doc
+        if doc is None:
+            doc = plot.document
+        else:
+            plot.document = doc
+
         for m in model.references():
             m._document = None
+        if self.theme:
+            doc.theme = self.theme
         doc.add_root(model)
+
         comm_id = plot.comm.id if plot.comm else None
         # Bokeh raises warnings about duplicate tools and empty subplots
         # but at the holoviews level these are not issues
