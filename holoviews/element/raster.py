@@ -744,12 +744,3 @@ class HeatMap(Dataset, Element2D):
                      "the 2D aggregate is now computed dynamically "
                      "during plotting.")
         return self.gridded.dimension_values(2, flat=False)
-
-
-class RadialHeatMap(HeatMap):
-    """
-    RadialHeatMap shares the same conceptual data structure as HeatMap but has
-    different visualizations and defaults.
-    """
-
-    group = param.String(default='RadialHeatMap', constant=True)

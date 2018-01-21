@@ -113,8 +113,16 @@ class HeatMapPlot(RasterPlot):
         #FFFFFFFF or a length 3 or length 4 tuple specifying values in
         the range 0-1 or a named HTML color.""")
 
+    radial = param.Boolean(default=False, doc="""
+        Whether the HeatMap should be radial""")
+
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
+
+
+    @classmethod
+    def is_radial(cls, heatmap):
+        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
 
     def _annotate_plot(self, ax, annotations):
         handles = {}
@@ -225,6 +233,9 @@ class RadialHeatMapPlot(ColorbarPlot):
     padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
+    radial = param.Boolean(default=True, doc="""
+        Whether the HeatMap should be radial""")
+
     xmarks = param.Number(default=0, doc="""
         Add separation lines between segments for better readability. By
         default, does not show any separation lines.""")
@@ -235,6 +246,10 @@ class RadialHeatMapPlot(ColorbarPlot):
 
     style_opts = ['annular_edgecolors', 'annular_linewidth',
                  'separator_linewidth', 'separator_edgecolor', 'cmap']
+
+    @classmethod
+    def is_radial(cls, heatmap):
+        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
 
     @staticmethod
     def _map_order_to_ticks(start, end, order, reverse=False):
@@ -337,6 +352,7 @@ class RadialHeatMapPlot(ColorbarPlot):
                      for k, v in plot_kwargs.items()
                      if not any(k.startswith(p) for p in groups)}
         annuli = plot_args['annular']
+        edge_opts.pop('interpolation', None)
         annuli = PatchCollection(annuli, transform=ax.transAxes, **edge_opts)
         ax.add_collection(annuli)
 
@@ -346,6 +362,7 @@ class RadialHeatMapPlot(ColorbarPlot):
                      if not any(k.startswith(p) for p in groups)
                      and k not in color_opts}
         paths = plot_args['separator']
+        edge_opts.pop('interpolation', None)
         separators = LineCollection(paths, **edge_opts)
         ax.add_collection(separators)
 

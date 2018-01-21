@@ -6,8 +6,8 @@ from bokeh.models.glyphs import AnnularWedge
 from ...core import Element
 from ...core.util import cartesian_product, is_nan, dimension_sanitizer
 from ...element import Raster
-from .element import (ElementPlot, ColorbarPlot, line_properties,
-                      fill_properties, text_properties)
+from .element import (ElementPlot, ColorbarPlot, CompositeElementPlot,
+                      line_properties, fill_properties, text_properties)
 from .util import mpl_to_bokeh, colormesh
 
 
@@ -114,20 +114,27 @@ class HSVPlot(RGBPlot):
 class HeatMapPlot(ColorbarPlot):
 
     clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
-        Dictionary to specify colors for clipped values. 
+        Dictionary to specify colors for clipped values.
         Allows setting color for NaN values and for values above and below
         the min and max value. The min, max, or NaN color may specify
-        an RGB(A) color as a either (1) a color hex string of the form 
+        an RGB(A) color as a either (1) a color hex string of the form
         #FFFFFF or #FFFFFFFF, (2) a length-3 or length-4 tuple specifying
         values in the range 0-1, or (3) a named HTML color.""")
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
+    radial = param.Boolean(default=False, doc="""
+        Whether the HeatMap should be radial""")
+
     _plot_methods = dict(single='rect')
     style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     _categorical = True
+
+    @classmethod
+    def is_radial(cls, heatmap):
+        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
 
     def _get_factors(self, element):
         return super(HeatMapPlot, self)._get_factors(element.gridded)
@@ -166,6 +173,13 @@ class HeatMapPlot(ColorbarPlot):
 
 class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
+        Dictionary to specify colors for clipped values.
+        Allows setting color for NaN values and for values above and below
+        the min and max value. The min, max, or NaN color may specify
+        an RGB(A) color as a either (1) a color hex string of the form
+        #FFFFFF or #FFFFFFFF, (2) a length-3 or length-4 tuple specifying
+        values in the range 0-1, or (3) a named HTML color.""")
 
     start_angle = param.Number(default=np.pi/2, doc="""
         Define starting angle of the first annulus segment. By default, begins 
@@ -201,6 +215,12 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         Define the maximum radius which is used for the x and y range extents.
         """)
 
+    radial = param.Boolean(default=False, doc="""
+        Whether the HeatMap should be radial""")
+
+    show_frame = param.Boolean(default=False, doc="""
+        Whether or not to show a complete frame around the plot.""")
+
     xticks = param.Parameter(default=4, doc="""
         Ticks along x-axis/segments specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
@@ -225,6 +245,11 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                   ['ymarks_' + p for p in line_properties] + \
                   ['annular_' + p for p in fill_properties + line_properties] + \
                   ['ticks_' + p for p in text_properties] + ['width', 'cmap'])
+
+    def __init__(self, *args, **kwargs):
+        super(RadialHeatMapPlot, self).__init__(*args, **kwargs)
+        self.xaxis = None
+        self.yaxis = None
 
 
     def _get_bins(self, kind, order, reverse=False):
