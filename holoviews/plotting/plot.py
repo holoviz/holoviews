@@ -123,7 +123,9 @@ class PlotSelector(object):
 
         if not allow_mismatch and not all(style == styles[0] for style in styles):
             raise Exception("All selectable plot classes must have identical style options.")
-        return styles[0], parameters[0]
+
+        plot_params = {p: v for params in parameters for p, v in params.items()}
+        return [s for style in styles for s in style], plot_params
 
 
     def __call__(self, obj, **kwargs):
