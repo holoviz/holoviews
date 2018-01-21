@@ -3,7 +3,7 @@ from itertools import product
 import numpy as np
 import param
 
-from matplotlib.patches import Wedge
+from matplotlib.patches import Wedge, Circle
 from matplotlib.collections import LineCollection, PatchCollection
 
 from ...core import CompositeOverlay, Element
@@ -119,6 +119,13 @@ class HeatMapPlot(RasterPlot):
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
+    xticks = param.Parameter(default=20, doc="""
+        Ticks along x-axis/segments specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
+
+    yticks = param.Parameter(default=20, doc="""
+        Ticks along y-axis/annulars specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -227,6 +234,10 @@ class RadialHeatMapPlot(ColorbarPlot):
         Define starting angle of the first annulars. By default, beings
         at 12 o clock.""")
 
+    max_radius = param.Number(default=0.5, doc="""
+        Define the maximum radius which is used for the x and y range extents.
+        """)
+
     padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
         Define the radius fraction of inner, empty space.""")
 
@@ -236,16 +247,41 @@ class RadialHeatMapPlot(ColorbarPlot):
     radial = param.Boolean(default=True, doc="""
         Whether the HeatMap should be radial""")
 
-    xmarks = param.Number(default=0, doc="""
+    xmarks = param.Parameter(default=None, doc="""
         Add separation lines between segments for better readability. By
-        default, does not show any separation lines.""")
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        radial heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given segment values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        segment value.""")
+
+    ymarks = param.Parameter(default=None, doc="""
+        Add separation lines between annulars for better readability. By
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        radial heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given annular values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        annular value.""")
+
+    xticks = param.Parameter(default=4, doc="""
+        Ticks along x-axis/segments specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
+
+    yticks = param.Parameter(default=4, doc="""
+        Ticks along y-axis/annulars specified as an integer, explicit list of
+        ticks or function. If `None`, no ticks are shown.""")
 
     projection = param.ObjectSelector(default='polar', objects=['polar'])
 
-    _style_groups = ['annular', 'separator']
+    _style_groups = ['annular', 'xmarks', 'ymarks']
 
     style_opts = ['annular_edgecolors', 'annular_linewidth',
-                 'separator_linewidth', 'separator_edgecolor', 'cmap']
+                  'xmarks_linewidth', 'xmarks_edgecolor', 'cmap',
+                  'ymarks_linewidth', 'ymarks_edgecolor']
 
     @classmethod
     def is_radial(cls, heatmap):
@@ -272,13 +308,41 @@ class RadialHeatMapPlot(ColorbarPlot):
         """
         return [np.array([[a, inner], [a, outer]]) for a in angles]
 
+    @staticmethod
+    def _get_marks(ticks, marker):
+        if callable(marker):
+            marks = [v for v, l in ticks if marker(l)]
+        elif isinstance(marker, int):
+            nth_mark = np.ceil(len(ticks) / marker).astype(int)
+            marks = [v for v, l in ticks[::nth_mark]]
+        elif isinstance(marker, tuple):
+            marks = [v for v, l in ticks if l in marker]
+        else:
+            marks = []
+        return marks
+
+    @staticmethod
+    def _get_ticks(ticks, ticker):
+        if callable(ticker):
+            ticks = [(v, l) for v, l in ticks if ticker(l)]
+        elif isinstance(ticker, int):
+            nth_mark = np.ceil(len(ticks) / ticker).astype(int)
+            ticks = ticks[::nth_mark]
+        elif isinstance(ticker, (tuple, list)):
+            nth_mark = np.ceil(len(ticks) / len(ticker)).astype(int)
+            ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker)]
+        elif ticker:
+            ticks = list(ticker)
+        else:
+            ticks = []
+        return ticks
+
 
     def get_extents(self, view, ranges):
-        return (0, 0, np.pi*2, 0.5)
+        return (0, 0, np.pi*2, self.max_radius)
 
 
     def get_data(self, element, ranges, style):
-
         # dimension labels
         dim_labels = element.dimensions(label=True)[:3]
         x, y, z = [dimension_sanitizer(d) for d in dim_labels]
@@ -325,22 +389,22 @@ class RadialHeatMapPlot(ColorbarPlot):
                 wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
                 patches.append(wedge)
 
-        # multi_lines for separation
-        if self.xmarks > 1:
-            angles = bins_segment[::self.xmarks]
-            paths = self._compute_separations(radius_min, radius_max, angles)
-        else:
-            paths = []
+        angles = self._get_marks(segment_ticks, self.xmarks)
+        xmarks = self._compute_separations(radius_min, radius_max, angles)
+        radii = self._get_marks(radius_ticks, self.ymarks)
+        ymarks = [Circle((0.5, 0.5), r) for r in radii]
 
         style['array'] = zvals.flatten()
         self._norm_kwargs(element, ranges, style, element.vdims[0])
         if 'vmin' in style:
             style['clim'] = style.pop('vmin'), style.pop('vmax')
 
-        data = {'annular': patches, 'separator': paths}
-        xstep = max([len(segment_ticks)//self.xticks, 1]) if self.xticks else 1
-        ystep = max([len(radius_ticks)//self.yticks, 1]) if self.yticks else 1
-        ticks = {'xticks': segment_ticks[::xstep],  'yticks': radius_ticks[::ystep]}
+        data = {'annular': patches, 'xseparator': xmarks, 'yseparator': ymarks}
+        xticks = self._get_ticks(segment_ticks, self.xticks)
+        if not isinstance(self.xticks, int):
+            xticks = [(v-((np.pi)/len(xticks)), l) for v, l in xticks]
+        yticks = self._get_ticks(radius_ticks, self.yticks)
+        ticks = {'xticks': xticks,  'yticks': yticks}
         return data, style, ticks
 
 
@@ -356,18 +420,34 @@ class RadialHeatMapPlot(ColorbarPlot):
         annuli = PatchCollection(annuli, transform=ax.transAxes, **edge_opts)
         ax.add_collection(annuli)
 
-        groups = [g for g in self._style_groups if g != 'separator']
-        edge_opts = {k[10:] if 'separator_' in k else k: v
-                     for k, v in plot_kwargs.items()
-                     if not any(k.startswith(p) for p in groups)
-                     and k not in color_opts}
-        paths = plot_args['separator']
-        edge_opts.pop('interpolation', None)
-        separators = LineCollection(paths, **edge_opts)
-        ax.add_collection(separators)
+        artists = {'artist': annuli}
 
-        return {'artist': annuli, 'separator': separators}
+        paths = plot_args['xseparator']
+        if paths:
+            groups = [g for g in self._style_groups if g != 'xmarks']
+            edge_opts = {k[7:] if 'xmarks_' in k else k: v
+                         for k, v in plot_kwargs.items()
+                         if not any(k.startswith(p) for p in groups)
+                         and k not in color_opts}
+            edge_opts.pop('interpolation', None)
+            xseparators = LineCollection(paths, **edge_opts)
+            ax.add_collection(xseparators)
+            artists['xseparator'] = xseparators
 
+        paths = plot_args['yseparator']
+        if paths:
+            groups = [g for g in self._style_groups if g != 'ymarks']
+            edge_opts = {k[7:] if 'ymarks_' in k else k: v
+                         for k, v in plot_kwargs.items()
+                         if not any(k.startswith(p) for p in groups)
+                         and k not in color_opts}
+            edge_opts.pop('interpolation', None)
+            yseparators = PatchCollection(paths, facecolor='none',
+                                          transform=ax.transAxes, **edge_opts)
+            ax.add_collection(yseparators)
+            artists['yseparator'] = yseparators
+
+        return artists
 
 
 class QuadMeshPlot(ColorbarPlot):

@@ -229,7 +229,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
-    yticks_angle = param.Number(default=np.pi/2, doc="""
+    yrotation = param.Number(default=90, doc="""
         Define angle along which yticks/annulars are shown. By default, yticks
         are drawn like a regular y-axis.""")
 
@@ -427,8 +427,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         labels, radius = zip(*values)
         radius = np.array(radius)
 
-        y_coord = np.sin(self.yticks_angle) * radius + self.max_radius
-        x_coord = np.cos(self.yticks_angle) * radius + self.max_radius
+        y_coord = np.sin(np.deg2rad(self.yrotation)) * radius + self.max_radius
+        x_coord = np.cos(np.deg2rad(self.yrotation)) * radius + self.max_radius
 
         return dict(x=x_coord,
                     y=y_coord,
