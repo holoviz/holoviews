@@ -281,7 +281,7 @@ class Interface(param.Parameterized):
     @classmethod
     def range(cls, dataset, dimension):
         column = dataset.dimension_values(dimension)
-        if dataset.get_dimension_type(dimension) is np.datetime64:
+        if column.dtype.kind == 'M':
             return column.min(), column.max()
         elif len(column) == 0:
             return np.NaN, np.NaN
