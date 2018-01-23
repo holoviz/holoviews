@@ -1,14 +1,17 @@
 from collections import defaultdict
 
-from bokeh.models import CustomJS, FactorRange, DatetimeAxis
+import numpy as np
+from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw, BoundsXY, PlotReset)
+                        PlotSize, Draw, BoundsXY, PlotReset, BoxDraw,
+                        PointDraw, PolyDraw, VertexEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
+from .path import PolygonPlot
 from .util import convert_timestamp
 
 
@@ -833,6 +836,133 @@ class ResetCallback(Callback):
         return {'reset': True}
 
 
+class CDSCallback(Callback):
+    """
+    A Stream callback that syncs the data on a bokeh ColumnDataSource
+    model with Python.
+    """
+
+    attributes = {'data': 'source.data'}
+    models = ['source']
+    on_changes = ['data']
+
+    def _process_msg(self, msg):
+        for col, values in msg['data'].items():
+            if isinstance(values, dict):
+                items = sorted([(int(k), v) for k, v in values.items()])
+                values = [v for k, v in items]
+            msg['data'][col] = values
+        return msg
+
+
+class PointDrawCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import PointDrawTool
+        except:
+            self.warning('PointDraw requires bokeh >= 0.12.15')
+            return
+        plot = self.plot
+        source = plot.handles['source']
+        x, y = plot.current_frame.kdims
+        point_tool = PointDrawTool()
+        point_tool.renderers.append(plot.handles['glyph_renderer'])
+        plot.state.tools.append(point_tool)
+        super(PointDrawCallback, self).initialize()
+
+
+
+class PolyDrawCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import PolyDrawTool
+        except:
+            self.warning('PolyDraw requires bokeh >= 0.12.15')
+            return
+        plot = self.plot
+        source = plot.handles['source']
+        poly_tool = PolyDrawTool()
+        poly_tool.renderers.append(plot.handles['glyph_renderer'])
+        plot.state.tools.append(poly_tool)
+        super(PolyDrawCallback, self).initialize()
+
+    def _process_msg(self, msg):
+        data = super(PolyDrawCallback, self)._process_msg(msg)['data']
+        element = self.plot.current_frame
+        x, y = element.dimensions('key', label=True)
+        if 'xs' in data and 'xs' != x:
+            data[x] = data.pop('xs', [])
+        if 'ys' in data and 'ys' != y:
+            data[y] = data.pop('ys', [])
+        return dict(data=data)
+
+
+
+class BoxDrawCallback(CDSCallback):
+
+    attributes = {'data': 'rect_source.data'}
+    models = ['rect_source']
+
+    def initialize(self):
+        try:
+            from bokeh.models import BoxDrawTool
+        except:
+            self.warning('BoxDraw requires bokeh >= 0.12.15')
+            return
+        plot = self.plot
+        element = self.plot.current_frame
+        data = {'x': [], 'y': [], 'width': [], 'height': []}
+        data.update({vd.name: [] for vd in element.vdims})
+        rect_source = ColumnDataSource(data=data)
+        style = self.plot.style[self.plot.cyclic_index]
+        style.pop('cmap', None)
+        r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
+        plot.handles['rect_source'] = rect_source
+        source = plot.handles['source']
+        box_tool = BoxDrawTool(renderers=[r1])
+        plot.state.tools.append(box_tool)
+        super(BoxDrawCallback, self).initialize()
+
+    def _process_msg(self, msg):
+        data = super(BoxDrawCallback, self)._process_msg(msg)['data']
+        element = self.plot.current_frame
+        xpaths, ypaths = [], []
+        for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
+            x0, x1 = x-w/2., x+w/2.
+            y0, y1 = y-h/2., y+h/2.
+            xs = [x0, x0, x1, x1]
+            ys = [y0, y1, y1, y0]
+            if isinstance(self.plot, PolygonPlot):
+                xs.append(x0)
+                ys.append(y0)
+            xpaths.append(np.array(xs))
+            ypaths.append(np.array(ys))
+        x, y = element.dimensions('key', label=True)
+        data[x] = xpaths
+        data[y] = ypaths
+        return dict(data=data)
+
+
+class VertexEditCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import VertexEditTool
+        except:
+            self.warning('VertexEdit requires bokeh >= 0.12.15')
+            return
+        plot = self.plot
+        point_source = ColumnDataSource(data=dict(x=[], y=[]))
+        r1 = plot.state.scatter('x', 'y', source=point_source, size=10)
+        vertex_tool = VertexEditTool(drag=False, vertex_renderer=r1)
+        vertex_tool.renderers.append(plot.handles['glyph_renderer'])
+        plot.state.tools.append(vertex_tool)
+        super(VertexEditCallback, self).initialize()
+
+
+
 callbacks = Stream._callbacks['bokeh']
 
 callbacks[PointerXY]   = PointerXYCallback
@@ -854,6 +984,11 @@ callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback
+callbacks[CDSStream]   = CDSStream
+callbacks[BoxDraw]     = BoxDrawCallback
+callbacks[PointDraw]   = PointDrawCallback
+callbacks[PolyDraw]    = PolyDrawCallback
+callbacks[VertexEdit]  = VertexEditCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback

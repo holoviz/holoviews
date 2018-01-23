@@ -5,14 +5,15 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+from numbers import Number
+from collections import defaultdict
+from contextlib import contextmanager
 
 import param
 import numpy as np
-from numbers import Number
-from collections import defaultdict
-from .core import util
 
-from contextlib import contextmanager
+from .core import util
+from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
 pointer_types = (Number, util.basestring, tuple)+util.datetime_types
@@ -814,3 +815,72 @@ class PositionXY(PointerXY):
     def __init__(self, **params):
         self.warning('PositionXY stream deprecated: use PointerXY instead')
         super(PositionXY, self).__init__(**params)
+
+
+
+class CDSStream(LinkedStream):
+    """
+    A Stream that syncs a bokeh ColumnDataSource with python.
+    """
+
+    data = param.Dict()
+
+
+
+class PointDraw(CDSStream):
+    """
+    Attaches a PointAddTool and syncs the datasource.
+    """
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        if not self.data:
+            return source.clone([])
+        return source.clone(self.data)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class PolyDraw(CDSStream):
+    """
+    Attaches a PolyDrawTool and syncs the datasource.
+    """
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        data = self.data
+        if not data:
+            return source.clone([])
+        cols = list(self.data)
+        data = [{c: data[c][i] for c in self.data}
+                             for i in range(len(data[cols[0]]))]
+        return source.clone(data)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class BoxDraw(PolyDraw):
+    """
+    Attaches a BoxDrawTool and syncs the datasource.
+    """
+
+
+
+class VertexEdit(PolyDraw):
+    """
+    Attaches a VertexEditTool and syncs the datasource.
+    """
