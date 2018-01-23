@@ -292,21 +292,25 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if plots and self.shared_axes and not norm_opts.get('axiswise', False):
             plot_ranges = self._merge_ranges(plots, xlabel, ylabel)
 
-        if el.get_dimension_type(0) in util.datetime_types:
-            x_axis_type = 'datetime'
-        else:
-            x_axis_type = 'log' if self.logx else 'auto'
-
-        if len(dims) > 1 and el.get_dimension_type(1) in util.datetime_types:
-            y_axis_type = 'datetime'
-        else:
-            y_axis_type = 'log' if self.logy else 'auto'
-
         # Get the Element that determines the range and get_extents
         range_el = el if self.batched and not isinstance(self, OverlayPlot) else element
         l, b, r, t = self.get_extents(range_el, ranges)
         if self.invert_axes:
             l, b, r, t = b, l, t, r
+
+        xtype = el.get_dimension_type(0)
+        if ((xtype is np.object_ and type(l) in util.datetime_types) or
+            xtype in util.datetime_types):
+            x_axis_type = 'datetime'
+        else:
+            x_axis_type = 'log' if self.logx else 'auto'
+
+        y_axis_type = 'log' if self.logy else 'auto'
+        if len(dims) > 1:
+            ytype = el.get_dimension_type(1)
+            if ((ytype is np.object_ and type(b) in util.datetime_types)
+                or ytype in util.datetime_types):
+                y_axis_type = 'datetime'
 
         # Declare shared axes
         if 'x_range' in plot_ranges:
