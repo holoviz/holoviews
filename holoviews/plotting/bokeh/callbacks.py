@@ -370,7 +370,7 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((attr, old, new))
-        if not self._active:
+        if not self._active and self.plot.document:
             self.plot.document.add_timeout_callback(self.process_on_change, 50)
             self._active = True
 
@@ -381,9 +381,10 @@ class ServerCallback(MessageCallback):
         value change at once rather than firing off multiple plot updates.
         """
         self._queue.append((event))
-        if not self._active:
+        if not self._active and self.plot.document:
             self.plot.document.add_timeout_callback(self.process_on_event, 50)
             self._active = True
+
 
     def process_on_event(self):
         """
