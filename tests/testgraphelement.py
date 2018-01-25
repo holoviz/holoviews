@@ -1,8 +1,11 @@
 """
 Unit tests of Graph Element.
 """
+from unittest import SkipTest
+
 import numpy as np
 from holoviews.core.data import Dataset
+from holoviews.core import util
 from holoviews.element.chart import Points
 from holoviews.element.graphs import (
     Graph, Nodes, EdgePaths, TriMesh, circular_layout, connect_edges,
@@ -130,13 +133,15 @@ class GraphTests(ComparisonTestCase):
 class TriMeshTests(ComparisonTestCase):
 
     def setUp(self):
-        self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
+        self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 4)]
         self.simplices = [(0, 1, 2), (1, 2, 3)]
 
     def test_trimesh_constructor(self):
-        trimesh = TriMesh((self.simplices, self.nodes))
+        nodes = [n[:2] for n in self.nodes]
+        trimesh = TriMesh((self.simplices, nodes))
         self.assertEqual(trimesh.array(), np.array(self.simplices))
-        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+        self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes))
+        self.assertEqual(trimesh.nodes.dimension_values(2), np.arange(4))
 
     def test_trimesh_empty(self):
         trimesh = TriMesh([])
@@ -152,12 +157,25 @@ class TriMeshTests(ComparisonTestCase):
         nodes = tuple(zip(*self.nodes))[:2]
         trimesh = TriMesh((self.simplices, nodes))
         self.assertEqual(trimesh.array(), np.array(self.simplices))
-        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+        self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes).T)
+        self.assertEqual(trimesh.nodes.dimension_values(2), np.arange(4))
+
+    def test_trimesh_constructor_df_nodes(self):
+        if util.pd is None:
+            raise SkipTest('Test requires pandas')
+        nodes_df = util.pd.DataFrame(self.nodes, columns=['x', 'y', 'z'])
+        trimesh = TriMesh((self.simplices, nodes_df))
+        nodes = Nodes([(0, 0, 0, 0), (0.5, 1, 1, 1),
+                       (1., 0, 2, 2), (1.5, 1, 3, 4)], vdims='z')
+        self.assertEqual(trimesh.array(), np.array(self.simplices))
+        self.assertEqual(trimesh.nodes, nodes)
 
     def test_trimesh_constructor_point_nodes(self):
-        trimesh = TriMesh((self.simplices, Points([n[:2] for n in self.nodes])))
+        nodes = [n[:2] for n in self.nodes]
+        trimesh = TriMesh((self.simplices, Points(self.nodes)))
         self.assertEqual(trimesh.array(), np.array(self.simplices))
-        self.assertEqual(trimesh.nodes.array(), np.array(self.nodes))
+        self.assertEqual(trimesh.nodes.array([0, 1]), np.array(nodes))
+        self.assertEqual(trimesh.nodes.dimension_values(2), np.arange(4))
 
     def test_trimesh_edgepaths(self):
         trimesh = TriMesh((self.simplices, self.nodes))
