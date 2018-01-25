@@ -1468,10 +1468,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for k, subplot in self.subplots.items():
             el = None
 
-            # Skip updates to subplots when its streams is not one of
-            # the streams that initiated the update
-            if triggering and all(s not in triggering for s in subplot.streams):
-                continue
 
             # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
@@ -1483,6 +1479,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     idx = dynamic_update(self, subplot, k, element, items)
                     if idx is not None:
                         _, el = items.pop(idx)
+
+                # Skip updates to subplots when its streams is not one of
+                # the streams that initiated the update
+                if triggering and all(s not in triggering for s in subplot.streams):
+                    continue
             subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
