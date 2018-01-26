@@ -1,3 +1,5 @@
+from datetime import date, datetime
+
 from .boundingregion import *  # noqa (API import)
 from .data import *            # noqa (API import)
 from .dimension import *       # noqa (API import)
@@ -24,6 +26,8 @@ Dimension.type_formatters[float] = "%.5g"
 Dimension.type_formatters[np.float32] = "%.5g"
 Dimension.type_formatters[np.float64] = "%.5g"
 Dimension.type_formatters[np.datetime64] = '%Y-%m-%d %H:%M:%S'
+Dimension.type_formatters[datetime] = '%Y-%m-%d %H:%M:%S'
+Dimension.type_formatters[date] = '%Y-%m-%d'
 
 try:
     import pandas as pd

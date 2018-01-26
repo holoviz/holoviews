@@ -72,7 +72,8 @@ class CurvePlot(ChartPlot):
         ys = element.dimension_values(1)
         dims = element.dimensions()
         if xs.dtype.kind == 'M':
-            dt_format = Dimension.type_formatters[np.datetime64]
+            dimtype = element.get_dimension_type(0)
+            dt_format = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
             dims[0] = dims[0](value_format=DateFormatter(dt_format))
         coords = (ys, xs) if self.invert_axes else (xs, ys)
         return coords, style, {'dimensions': dims}

@@ -28,7 +28,7 @@ try:
 except:
    import builtins as builtins   # noqa (compatibility)
 
-datetime_types = (np.datetime64, dt.datetime)
+datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 
 try:

@@ -449,7 +449,7 @@ class Dimension(param.Parameterized):
             if callable(formatter):
                 return formatter(value)
             elif isinstance(formatter, basestring):
-                if isinstance(value, dt.datetime):
+                if isinstance(value, (dt.datetime, dt.date)):
                     return value.strftime(formatter)
                 elif isinstance(value, np.datetime64):
                     return dt64_to_dt(value).strftime(formatter)
