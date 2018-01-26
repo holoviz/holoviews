@@ -145,11 +145,10 @@ class BokehRenderer(Renderer):
         tornado server (such as the notebook) and it is not on the
         default port ('localhost:8888').
         """
-        renderer = self_or_cls.instance(mode='server')
-        # If show=False and not in notebook context return document
-        if not show and not self_or_cls.notebook_context:
-            doc, _ = renderer(plot)
-            return doc
+        if not isinstance(self_or_cls, BokehRenderer) or self_or_cls.mode != 'server':
+            renderer = self_or_cls.instance(mode='server')
+        else:
+            renderer = self_or_cls
 
         def modify_doc(doc):
             renderer(plot, doc=doc)
@@ -193,7 +192,10 @@ class BokehRenderer(Renderer):
         if doc is None:
             doc = curdoc()
         if not isinstance(obj, (Plot, BokehServerWidgets)):
-            renderer = self_or_cls.instance(mode='server')
+            if not isinstance(self_or_cls, BokehRenderer) or self_or_cls.mode != 'server':
+                renderer = self_or_cls.instance(mode='server')
+            else:
+                renderer = self_or_cls
             plot, _ =  renderer._validate(obj, 'auto')
         else:
             plot = obj

@@ -356,7 +356,7 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
     def tearDown(self):
         Store.current_backend = self.previous_backend
         Callback._comm_type = comms.JupyterCommJS
-        mpl_renderer.comms['default'] = self.default_comm
+        bokeh_renderer.comms['default'] = self.default_comm
         Callback._callbacks = {}
 
     def test_overlay_legend(self):
