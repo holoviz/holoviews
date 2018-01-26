@@ -883,7 +883,7 @@ class PolyDrawCallback(CDSCallback):
             return
         plot = self.plot
         source = plot.handles['source']
-        poly_tool = PolyDrawTool()
+        poly_tool = PolyDrawTool(drag=False)
         poly_tool.renderers.append(plot.handles['glyph_renderer'])
         plot.state.tools.append(poly_tool)
         super(PolyDrawCallback, self).initialize()
@@ -949,14 +949,14 @@ class VertexEditCallback(CDSCallback):
 
     def initialize(self):
         try:
-            from bokeh.models import VertexEditTool
+            from bokeh.models import PolyEditTool
         except:
             self.warning('VertexEdit requires bokeh >= 0.12.15')
             return
         plot = self.plot
         point_source = ColumnDataSource(data=dict(x=[], y=[]))
         r1 = plot.state.scatter('x', 'y', source=point_source, size=10)
-        vertex_tool = VertexEditTool(drag=False, vertex_renderer=r1)
+        vertex_tool = PolyEditTool(vertex_renderer=r1)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
         plot.state.tools.append(vertex_tool)
         super(VertexEditCallback, self).initialize()
