@@ -597,7 +597,7 @@ def date_to_integer(date):
         date = dt64_to_dt(date)
     elif pd and isinstance(date, pd.Timestamp):
         date = date.to_pydatetime()
-    if isinstance(date, dt.datetime):
+    if isinstance(date, (dt.datetime, dt.date)):
         dt_int = time.mktime(date.timetuple())*1000
     else:
         raise ValueError('Datetime type not recognized')

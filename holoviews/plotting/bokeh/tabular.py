@@ -1,10 +1,14 @@
-from bokeh.models.widgets import DataTable, TableColumn
-
 import param
 
-from ...core import Dataset
+from bokeh.models.widgets import (
+    DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
+    TimeEditor, StringFormatter, StringEditor, IntEditor
+)
+
+from ...core import Dataset, Dimension
 from ...element import ItemTable
 from ...streams import Buffer
+from ...core.util import dimension_sanitizer, datetime_types
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
 
@@ -46,12 +50,8 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
 
     def get_data(self, element, ranges, style):
-        dims = element.dimensions()
-        mapping = {d.name: d.name for d in dims}
-        data = {d: element.dimension_values(d) for d in dims}
-        data = {d.name: values if values.dtype.kind in "if" else list(map(d.pprint_value, values))
-                for d, values in data.items()}
-        return data, mapping, style
+        return ({dimension_sanitizer(d.name): element.dimension_values(d)
+                 for d in element.dimensions()}, {}, style)
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
@@ -70,8 +70,28 @@ class TablePlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['source'] = source
 
+        columns = []
         dims = element.dimensions()
-        columns = [TableColumn(field=d.name, title=d.pprint_label) for d in dims]
+        for d in dims:
+            col = dimension_sanitizer(d.name)
+            kind = data[col].dtype.kind
+            if kind == 'i':
+                formatter = NumberFormatter()
+                editor = IntEditor()
+            elif kind == 'f':
+                formatter = NumberFormatter(format='0,0.0[00000]')
+                editor = NumberEditor()
+            elif kind == 'M' or (kind == 'O' and type(data[col][0]) in datetime_types):
+                dimtype = element.get_dimension_type(0)
+                dformat = Dimension.type_formatters.get(dimtype, '%Y-%m-%d %H:%M:%S')
+                formatter = DateFormatter(format=dformat)
+                editor = TimeEditor()
+            else:
+                formatter = StringFormatter()
+                editor = StringEditor()
+            column = TableColumn(field=d.name, title=d.pprint_label,
+                                 editor=editor, formatter=formatter)
+            columns.append(column)
         style['reorderable'] = False
         table = DataTable(source=source, columns=columns, height=self.height,
                           width=self.width, **style)
