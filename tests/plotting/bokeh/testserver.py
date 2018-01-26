@@ -90,12 +90,10 @@ class TestBokehServerRun(ComparisonTestCase):
 
     def test_launch_simple_server(self):
         obj = Curve([])
-        global launched
-        launched = False
+        launched = []
         def modify_doc(doc):
             bokeh_renderer(obj, doc=doc)
-            global launched
-            launched = True
+            launched.append(True)
             server.stop()
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
@@ -103,18 +101,16 @@ class TestBokehServerRun(ComparisonTestCase):
         server.start()
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertTrue(launched)
+        self.assertTrue(len(launched)==1)
 
     def test_launch_server_with_stream(self):
         obj = Curve([])
         stream = RangeXY(source=obj)
 
-        global launched
-        launched = False
+        launched = []
         def modify_doc(doc):
             bokeh_renderer(obj, doc=doc)
-            global launched
-            launched = True
+            launched.append(True)
             server.stop()
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
@@ -123,7 +119,7 @@ class TestBokehServerRun(ComparisonTestCase):
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
 
-        self.assertTrue(launched)
+        self.assertTrue(len(launched)==1)
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
         self.assertEqual(cb.streams, [stream])
@@ -141,12 +137,10 @@ class TestBokehServerRun(ComparisonTestCase):
         static = Polygons([]) * Path([]) * Curve([])
         layout = overlay + static
 
-        global launched
-        launched = False
+        launched = []
         def modify_doc(doc):
             bokeh_renderer(layout, doc=doc)
-            global launched
-            launched = True
+            launched.append(True)
             server.stop()
         handler = FunctionHandler(modify_doc)
         app = Application(handler)
@@ -154,4 +148,4 @@ class TestBokehServerRun(ComparisonTestCase):
         server.start()
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertTrue(launched)
+        self.assertTrue(len(launched)==1)
