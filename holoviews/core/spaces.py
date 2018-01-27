@@ -11,7 +11,7 @@ import param
 
 from . import traversal, util
 from .dimension import OrderedDict, Dimension, ViewableElement, redim
-from .layout import Layout, AdjointLayout, NdLayout
+from .layout import Layout, AdjointLayout, NdLayout, Empty
 from .ndmapping import UniformNdMapping, NdMapping, item_check
 from .overlay import Overlay, CompositeOverlay, NdOverlay, Overlayable
 from .options import Store, StoreOptions
@@ -225,7 +225,7 @@ class HoloMap(UniformNdMapping, Overlayable):
 
 
     def __lshift__(self, other):
-        if isinstance(other, (ViewableElement, UniformNdMapping)):
+        if isinstance(other, (ViewableElement, UniformNdMapping, Empty)):
             return AdjointLayout([self, other])
         elif isinstance(other, AdjointLayout):
             return AdjointLayout(other.data+[self])
