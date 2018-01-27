@@ -371,8 +371,8 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
     _callback = """
     color_mapper.low = cb_data['geometry']['y0'];
     color_mapper.high = cb_data['geometry']['y1'];
-    source.trigger('change')
-    main_source.trigger('change')
+    source.change.emit()
+    main_source.change.emit()
     """
 
     def get_data(self, element, ranges, style):
