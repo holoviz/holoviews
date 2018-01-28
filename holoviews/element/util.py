@@ -295,6 +295,8 @@ def validate_regular_sampling(img, dimension, rtol=10e-9):
     dim = img.get_dimension(dimension)
     diffs = np.diff(img.dimension_values(dim, expanded=False))
     vals = np.unique(diffs)
+    if vals.dtype.kind == 'm':
+        rtol = rtol*1000
     if len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol:
         raise ValueError("%s dimension %s is not evenly sampled, "
                          "please use the QuadMesh element for "
