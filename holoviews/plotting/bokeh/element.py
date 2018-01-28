@@ -49,7 +49,7 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    bgcolor = param.Parameter(default='white', doc="""
+    bgcolor = param.Parameter(default=None, allow_None=True, doc="""
         Background color of the plot.""")
 
     border = param.Number(default=10, doc="""
