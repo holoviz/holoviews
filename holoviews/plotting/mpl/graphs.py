@@ -239,12 +239,13 @@ class ChordPlot(GraphPlot):
                              "expected one of %s, got %s." %
                              (dims, self.label_index))
             return data, style, plot_kwargs
+        nodes = element.nodes
         if element.vdims:
-            edges = Dataset(element)[element[element.vdims[0].name]>0]
-            nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
-            nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
-        else:
-            nodes = element
+            values = element.dimension_values(element.vdims[0])
+            if values.dtype.kind in 'if':
+                edges = Dataset(element)[values>0]
+                nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
+                nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
         offset = style.get('label_offset', 1.05)
         xs, ys = (nodes.dimension_values(i)*offset for i in range(2))
         labels = [lidx.pprint_value(v) for v in nodes.dimension_values(lidx)]
