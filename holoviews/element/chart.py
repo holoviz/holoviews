@@ -136,7 +136,7 @@ class Bars(Chart):
 
 
 
-class Histogram(Element2D):
+class Histogram(Chart):
     """
     Histogram contains a number of bins, which are defined by the
     upper and lower bounds of their edges and the computed bin values.

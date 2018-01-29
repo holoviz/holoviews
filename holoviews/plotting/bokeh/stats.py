@@ -7,7 +7,7 @@ import numpy as np
 from bokeh.models import DataRange1d, FactorRange, HoverTool
 
 from ...core.dimension import Dimension
-from ...core.util import basestring, dimension_sanitizer
+from ...core.util import basestring, dimension_sanitizer, wrap_tuple
 from ...operation.stats import univariate_kde
 from .chart import AreaPlot
 from .element import (CompositeElementPlot, ColorbarPlot, LegendPlot,
