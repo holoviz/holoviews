@@ -224,14 +224,16 @@ class SheetCoordinateSystem(object):
         # to be flipped, because the points are moving down in the
         # sheet as the y index increases in the matrix.
         xdensity = self.__xdensity
-        if isinstance(x, datetime_types):
+        if ((isinstance(x, np.ndarray) and x.dtype.kind == 'M') or
+            isinstance(x, datetime_types)):
             xdensity = np.timedelta64(int(round(1./xdensity)), self._time_unit)
             float_col = (x-self.lbrt[0]) / xdensity
         else:
             float_col = (x-self.lbrt[0]) * xdensity
 
         ydensity = self.__ydensity
-        if isinstance(y, datetime_types):
+        if ((isinstance(y, np.ndarray) and y.dtype.kind == 'M') or
+            isinstance(y, datetime_types)):
             ydensity = np.timedelta64(int(round(1./ydensity)), self._time_unit)
             float_row = (self.lbrt[3]-y) / ydensity
         else:
