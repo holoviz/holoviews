@@ -122,19 +122,43 @@ class ViolinPlot(BoxPlot):
     plot option.
     """
 
+    bandwidth = param.Number(default=None, doc="""
+        Allows supplying explicit bandwidth value rather than relying
+        on scott or silverman method.""")
+
+    inner = param.ObjectSelector(objects=['box', 'medians', None],
+                                 default='box', doc="""
+        Inner visual indicator for distribution values:
+
+          * box - A small box plot
+          * stick - Lines indicating each sample value
+          * quartiles - Indicates first, second and third quartiles
+        """)
+
     _plot_methods = dict(single='violinplot')
 
-    style_opts = ['showmedians', 'showmeans', 'facecolors',
-                  'showextrema', 'bw_method', 'widths',
-                  'stats_color', 'alpha', 'edgecolors']
+    style_opts = ['showmeans', 'facecolors', 'showextrema', 'bw_method',
+                  'widths', 'stats_color', 'box_color', 'alpha', 'edgecolors']
 
     def init_artists(self, ax, plot_args, plot_kwargs):
+        box_color = plot_kwargs.pop('box_color', 'black')
         stats_color = plot_kwargs.pop('stats_color', 'black')
         facecolors = plot_kwargs.pop('facecolors', [])
         edgecolors = plot_kwargs.pop('edgecolors', 'black')
+        labels = plot_kwargs.pop('labels')
         alpha = plot_kwargs.pop('alpha', 1.)
-        artists = super(ViolinPlot, self).init_artists(ax, plot_args, plot_kwargs)
-        artist = artists['artist']
+        showmedians = self.inner == 'medians'
+        bw_method = self.bandwidth or 'scott'
+        artist = ax.violinplot(*plot_args, bw_method=bw_method,
+                               showmedians=showmedians, **plot_kwargs)
+        artists = {'artist': artist}
+        if self.inner == 'box':
+            box = ax.boxplot(*plot_args, positions=plot_kwargs['positions'],
+                             showfliers=False, showcaps=False, patch_artist=True,
+                             boxprops={'facecolor': box_color},
+                             medianprops={'color': 'white'}, widths=0.1,
+                             labels=labels)
+            artists['box'] = box
         for body, color in zip(artist['bodies'], facecolors):
             body.set_facecolors(color)
             body.set_edgecolors(edgecolors)
@@ -160,6 +184,7 @@ class ViolinPlot(BoxPlot):
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
         style['positions'] = range(len(data))
+        style['labels'] = labels
         style['facecolors'] = colors
         style = {k: v for k, v in style.items()
                  if k not in ['zorder', 'label']}
@@ -167,3 +192,11 @@ class ViolinPlot(BoxPlot):
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
         return (data,), style, {'dimensions': [format_kdims, element.vdims[0]], **ticks}
+
+    def teardown_handles(self):
+        for group in self.handles['artist'].values():
+            for v in group:
+                v.remove()
+        for group in self.handles['box'].values():
+            for v in group:
+                v.remove()

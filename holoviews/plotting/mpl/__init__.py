@@ -281,5 +281,4 @@ options.EdgePaths = Options('style', color='black')
 # Statistics
 options.Distribution = Options('style', facecolor=Cycle(), edgecolor='black',
                                alpha=0.5)
-options.Violin = Options('style', facecolors=Cycle(), bw_method='scott',
-                         showmedians=True, showextrema=False, alpha=0.7)
+options.Violin = Options('style', facecolors=Cycle(), showextrema=False, alpha=0.7)
