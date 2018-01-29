@@ -873,10 +873,28 @@ class PolyDraw(CDSStream):
 
 
 
-class BoxDraw(PolyDraw):
+class BoxDraw(CDSStream):
     """
     Attaches a BoxDrawTool and syncs the datasource.
     """
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        data = self.data
+        if not data:
+            return source.clone([])
+        paths = []
+        for (x0, x1, y0, y1) in zip(data['x0'], data['x1'], data['y0'], data['y1']):
+            xs = [x0, x0, x1, x1]
+            ys = [y0, y1, y1, y0]
+            if isinstance(source, Polygons):
+                xs.append(x0)
+                ys.append(y0)
+            paths.append(np.column_stack((xs, ys)))
+        return source.clone(paths)
 
 
 

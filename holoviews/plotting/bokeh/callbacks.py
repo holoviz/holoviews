@@ -907,13 +907,22 @@ class BoxDrawCallback(CDSCallback):
 
     def initialize(self):
         try:
-            from bokeh.models import BoxDrawTool
+            from bokeh.models import BoxEditTool
         except:
-            self.warning('BoxDraw requires bokeh >= 0.12.15')
+            self.warning('BoxEdit requires bokeh >= 0.12.15')
             return
         plot = self.plot
         element = self.plot.current_frame
-        data = {'x': [], 'y': [], 'width': [], 'height': []}
+        self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
+        xs, ys, widths, heights = [], [], [], []
+        for el in element.split():
+            x0, x1 = el.range(0)
+            y0, y1 = el.range(1)
+            xs.append((x0+x1)/2.)
+            ys.append((y0+y1)/2.)
+            widths.append(x1-x0)
+            heights.append(y1-y0)
+        data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
         data.update({vd.name: [] for vd in element.vdims})
         rect_source = ColumnDataSource(data=data)
         style = self.plot.style[self.plot.cyclic_index]
@@ -921,27 +930,24 @@ class BoxDrawCallback(CDSCallback):
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
         source = plot.handles['source']
-        box_tool = BoxDrawTool(renderers=[r1])
+        box_tool = BoxEditTool(renderers=[r1])
         plot.state.tools.append(box_tool)
         super(BoxDrawCallback, self).initialize()
 
     def _process_msg(self, msg):
         data = super(BoxDrawCallback, self)._process_msg(msg)['data']
         element = self.plot.current_frame
-        xpaths, ypaths = [], []
+        x0s, x1s, y0s, y1s = [], [], [], []
         for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
-            x0, x1 = x-w/2., x+w/2.
-            y0, y1 = y-h/2., y+h/2.
-            xs = [x0, x0, x1, x1]
-            ys = [y0, y1, y1, y0]
-            if isinstance(self.plot, PolygonPlot):
-                xs.append(x0)
-                ys.append(y0)
-            xpaths.append(np.array(xs))
-            ypaths.append(np.array(ys))
+            x0s.append(x-w/2.)
+            x1s.append(x+w/2.)
+            y0s.append(y-h/2.)
+            y1s.append(y+h/2.)
         x, y = element.dimensions('key', label=True)
-        data[x] = xpaths
-        data[y] = ypaths
+        data['x0'] = x0s
+        data['x1'] = x1s
+        data['y0'] = y0s
+        data['y1'] = y1s
         return dict(data=data)
 
 
