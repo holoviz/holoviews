@@ -1555,7 +1555,10 @@ def dt_to_int(value, time_unit='us'):
     """
     Converts a datetime type to an integer with the supplied time unit.
     """
-    tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
+    if time_unit == 'ns':
+        tscale = 1./np.timedelta64(1, time_unit).tolist()
+    else:
+        tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
     if pd and isinstance(value, pd.Timestamp):
         value = value.to_pydatetime()
     elif isinstance(value, np.datetime64):

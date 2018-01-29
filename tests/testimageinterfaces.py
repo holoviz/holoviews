@@ -321,6 +321,22 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.assertEqual(image.xdensity, 0.5)
         self.assertEqual(image.ydensity, 1e-5)
 
+    def test_sample_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        xs = date_range(start, end, 10)
+        image = Image((xs, self.ys, self.array))
+        curve = image.sample(x=xs[3])
+        self.assertEqual(curve, Curve((self.ys, self.array[:, 3]), 'y', 'z'))
+
+    def test_sample_datetime_yaxis(self):
+        start = np.datetime64(dt.datetime.today())
+        end = start+np.timedelta64(1, 's')
+        ys = date_range(start, end, 10)
+        image = Image((self.xs, ys, self.array))
+        curve = image.sample(y=ys[3])
+        self.assertEqual(curve, Curve((self.xs, self.array[3]), 'x', 'z'))
+
     def test_range_datetime_xdim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
@@ -474,6 +490,12 @@ class ImageIrisInterfaceTest(ImageGridInterfaceTest):
         raise SkipTest("Not supported")
 
     def test_aggregate_with_spreadfn(self):
+        raise SkipTest("Not supported")
+
+    def test_sample_datetime_xaxis(self):
+        raise SkipTest("Not supported")
+
+    def test_sample_datetime_yaxis(self):
         raise SkipTest("Not supported")
 
 
