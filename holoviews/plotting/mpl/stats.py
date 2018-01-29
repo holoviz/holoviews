@@ -191,7 +191,7 @@ class ViolinPlot(BoxPlot):
         style['vert'] = not self.invert_axes
         format_kdims = [kd(value_format=None) for kd in element.kdims]
         ticks = {'yticks' if self.invert_axes else 'xticks': list(enumerate(labels))}
-        return (data,), style, {'dimensions': [format_kdims, element.vdims[0]], **ticks}
+        return (data,), style, dict(dimensions=[format_kdims, element.vdims[0]], **ticks)
 
     def teardown_handles(self):
         for group in self.handles['artist'].values():
