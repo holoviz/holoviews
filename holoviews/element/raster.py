@@ -361,10 +361,13 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         # If a 1D cross-section of 2D space return Curve
         shape = self.interface.shape(self, gridded=True)
         if len(samples) == 1:
-            dims = [kd for kd, v in zip(self.kdims, samples[0]) if not np.isscalar(v)]
+            dims = [kd for kd, v in zip(self.kdims, samples[0])
+                    if not (np.isscalar(v) or isinstance(v, util.datetime_types))]
             if len(dims) == 1:
                 kdims = [self.get_dimension(kd) for kd in dims]
-                sel = {kd.name: s for kd, s in zip(self.kdims, samples[0])}
+                sample = tuple(np.datetime64(s) if isinstance(s, util.datetime_types) else s
+                               for s in samples[0])
+                sel = {kd.name: s for kd, s in zip(self.kdims, sample)}
                 dims = [kd for kd, v in sel.items() if not np.isscalar(v)]
                 selection = self.select(**sel)
                 selection = tuple(selection.columns(kdims+self.vdims).values())
@@ -377,6 +380,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             kdims = self.kdims
 
         xs, ys = zip(*samples)
+        if isinstance(xs[0], util.datetime_types):
+            xs = np.array(xs).astype(np.datetime64)
+        if isinstance(ys[0], util.datetime_types):
+            ys = np.array(ys).astype(np.datetime64)
         yidx, xidx = self.sheet2matrixidx(np.array(xs), np.array(ys))
         yidx = shape[0]-yidx-1
 
