@@ -148,4 +148,4 @@ class Violin(BoxWhisker):
     violin.
     """
 
-    group = param.String(default='Violin')
+    group = param.String(default='Violin', constant=True)

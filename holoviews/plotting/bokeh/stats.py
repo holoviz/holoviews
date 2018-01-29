@@ -4,7 +4,8 @@ from functools import partial
 import param
 import numpy as np
 
-from bokeh.models import DataRange1d, FactorRange, HoverTool
+from bokeh.models import (DataRange1d, FactorRange, HoverTool,
+                          Circle, VBar, HBar)
 
 from ...core.dimension import Dimension
 from ...core.util import basestring, dimension_sanitizer, wrap_tuple
@@ -107,6 +108,11 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             xfactors, yfactors = factors, []
         return (yfactors, xfactors) if self.invert_axes else (xfactors, yfactors)
 
+    def _postprocess_hover(self, renderer, source):
+        if not isinstance(renderer.glyph, (Circle, VBar, HBar)):
+            return
+        super(BoxWhiskerPlot, self)._postprocess_hover(renderer, source)
+
     def get_data(self, element, ranges, style):
         if element.kdims:
             groups = element.groupby(element.kdims).data
@@ -150,6 +156,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                     label = label[0]
             else:
                 label = key
+            hover = any(isinstance(t, HoverTool) for t in self.state.tools)
 
             # Add color factor
             if cidx is not None and cidx<element.ndims:
@@ -187,9 +194,15 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             if len(outliers):
                 out_data['index'] += [label]*len(outliers)
                 out_data[vdim] += list(outliers)
-                if any(isinstance(t, HoverTool) for t in self.state.tools):
+                if hover:
                     for kd, k in zip(element.kdims, wrap_tuple(key)):
                         out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
+            if hover:
+                for kd, k in zip(element.kdims, wrap_tuple(key)):
+                    r1_data[dimension_sanitizer(kd.name)].append(k)
+                    r2_data[dimension_sanitizer(kd.name)].append(k)
+                r1_data[vdim].append(q2)
+                r2_data[vdim].append(q2)
 
         # Define combined data and mappings
         bar_glyph = 'hbar' if self.invert_axes else 'vbar'
@@ -240,7 +253,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
         return data, mapping, style
 
-    
+
 
 class ViolinPlot(BoxWhiskerPlot):
 
