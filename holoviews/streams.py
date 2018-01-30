@@ -853,6 +853,11 @@ class PolyDraw(CDSStream):
     Attaches a PolyDrawTool and syncs the datasource.
     """
 
+    def __init__(self, drag=False, **params):
+        self.drag = drag
+        super(PolyDraw, self).__init__(**params)
+
+
     @property
     def element(self):
         source = self.source

@@ -883,7 +883,7 @@ class PolyDrawCallback(CDSCallback):
             return
         plot = self.plot
         source = plot.handles['source']
-        poly_tool = PolyDrawTool(drag=False)
+        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams))
         poly_tool.renderers.append(plot.handles['glyph_renderer'])
         plot.state.tools.append(poly_tool)
         super(PolyDrawCallback, self).initialize()
@@ -943,12 +943,7 @@ class BoxDrawCallback(CDSCallback):
             x1s.append(x+w/2.)
             y0s.append(y-h/2.)
             y1s.append(y+h/2.)
-        x, y = element.dimensions('key', label=True)
-        data['x0'] = x0s
-        data['x1'] = x1s
-        data['y0'] = y0s
-        data['y1'] = y1s
-        return dict(data=data)
+        return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
 
 
 class VertexEditCallback(CDSCallback):
