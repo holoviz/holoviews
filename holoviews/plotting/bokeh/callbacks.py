@@ -7,8 +7,8 @@ from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw, BoundsXY, PlotReset, BoxDraw,
-                        PointDraw, PolyDraw, VertexEdit, CDSStream)
+                        PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
+                        PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
 from .path import PolygonPlot
@@ -857,6 +857,14 @@ class CDSCallback(Callback):
             if isinstance(values, dict):
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
+            elif isinstance(values, list) and isinstance(values[0], dict):
+                new_values = []
+                for vals in values:
+                    if isinstance(vals, dict):
+                        vals = sorted([(int(k), v) for k, v in vals.items()])
+                        vals = [v for k, v in vals]
+                    new_values.append(vals)
+                values = new_values
             msg['data'][col] = values
         return msg
 
@@ -869,14 +877,11 @@ class PointDrawCallback(CDSCallback):
         except:
             self.warning('PointDraw requires bokeh >= 0.12.15')
             return
-        plot = self.plot
-        source = plot.handles['source']
-        x, y = plot.current_frame.kdims
-        point_tool = PointDrawTool()
-        point_tool.renderers.append(plot.handles['glyph_renderer'])
-        plot.state.tools.append(point_tool)
+        renderers = [self.plot.handles['glyph_renderer']]
+        point_tool = PointDrawTool(empty_value=self.streams[0].empty_value,
+                                   renderers=renderers)
+        self.plot.state.tools.append(point_tool)
         super(PointDrawCallback, self).initialize()
-
 
 
 class PolyDrawCallback(CDSCallback):
@@ -889,8 +894,8 @@ class PolyDrawCallback(CDSCallback):
             return
         plot = self.plot
         source = plot.handles['source']
-        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams))
-        poly_tool.renderers.append(plot.handles['glyph_renderer'])
+        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
+                                 renderers=[plot.handles['glyph_renderer']])
         plot.state.tools.append(poly_tool)
         super(PolyDrawCallback, self).initialize()
 
@@ -905,8 +910,7 @@ class PolyDrawCallback(CDSCallback):
         return dict(data=data)
 
 
-
-class BoxDrawCallback(CDSCallback):
+class BoxEditCallback(CDSCallback):
 
     attributes = {'data': 'rect_source.data'}
     models = ['rect_source']
@@ -938,10 +942,10 @@ class BoxDrawCallback(CDSCallback):
         source = plot.handles['source']
         box_tool = BoxEditTool(renderers=[r1])
         plot.state.tools.append(box_tool)
-        super(BoxDrawCallback, self).initialize()
+        super(BoxEditCallback, self).initialize()
 
     def _process_msg(self, msg):
-        data = super(BoxDrawCallback, self)._process_msg(msg)['data']
+        data = super(BoxEditCallback, self)._process_msg(msg)['data']
         element = self.plot.current_frame
         x0s, x1s, y0s, y1s = [], [], [], []
         for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
@@ -952,21 +956,20 @@ class BoxDrawCallback(CDSCallback):
         return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
 
 
-class VertexEditCallback(CDSCallback):
+class PolyEditCallback(CDSCallback):
 
     def initialize(self):
         try:
             from bokeh.models import PolyEditTool
         except:
-            self.warning('VertexEdit requires bokeh >= 0.12.15')
+            self.warning('PolyEdit requires bokeh >= 0.12.15')
             return
         plot = self.plot
-        point_source = ColumnDataSource(data=dict(x=[], y=[]))
-        r1 = plot.state.scatter('x', 'y', source=point_source, size=10)
-        vertex_tool = PolyEditTool(vertex_renderer=r1)
-        vertex_tool.renderers.append(plot.handles['glyph_renderer'])
+        r1 = plot.state.scatter([], [], **dict(size=10, **self.streams[0].vertex_style))
+        vertex_tool = PolyEditTool(renderers=[plot.handles['glyph_renderer']],
+                                   vertex_renderer=r1)
         plot.state.tools.append(vertex_tool)
-        super(VertexEditCallback, self).initialize()
+        super(PolyEditCallback, self).initialize()
 
 
 
@@ -992,10 +995,10 @@ callbacks[PlotSize]    = PlotSizeCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback
 callbacks[CDSStream]   = CDSStream
-callbacks[BoxDraw]     = BoxDrawCallback
+callbacks[BoxEdit]     = BoxEditCallback
 callbacks[PointDraw]   = PointDrawCallback
 callbacks[PolyDraw]    = PolyDrawCallback
-callbacks[VertexEdit]  = VertexEditCallback
+callbacks[PolyEdit]    = PolyEditCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback

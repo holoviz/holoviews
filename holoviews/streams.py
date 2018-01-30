@@ -832,6 +832,10 @@ class PointDraw(CDSStream):
     Attaches a PointAddTool and syncs the datasource.
     """
 
+    def __init__(self, empty_value=None, **params):
+        self.empty_value = empty_value
+        super(PointDraw, self).__init__(**params)
+
     @property
     def element(self):
         source = self.source
@@ -857,7 +861,6 @@ class PolyDraw(CDSStream):
         self.drag = drag
         super(PolyDraw, self).__init__(**params)
 
-
     @property
     def element(self):
         source = self.source
@@ -867,8 +870,10 @@ class PolyDraw(CDSStream):
         if not data:
             return source.clone([])
         cols = list(self.data)
-        data = [{c: data[c][i] for c in self.data}
-                             for i in range(len(data[cols[0]]))]
+        x, y = source.kdims
+        lookup = {'xs': x.name, 'ys': y.name}
+        data = [{lookup.get(c, c): data[c][i] for c in self.data}
+                for i in range(len(data[cols[0]]))]
         return source.clone(data)
 
     @property
@@ -878,13 +883,14 @@ class PolyDraw(CDSStream):
 
 
 
-class BoxDraw(CDSStream):
+class BoxEdit(CDSStream):
     """
-    Attaches a BoxDrawTool and syncs the datasource.
+    Attaches a BoxEditTool and syncs the datasource.
     """
 
     @property
     def element(self):
+        from .element import Polygons
         source = self.source
         if isinstance(source, UniformNdMapping):
             source = source.last
@@ -901,9 +907,18 @@ class BoxDraw(CDSStream):
             paths.append(np.column_stack((xs, ys)))
         return source.clone(paths)
 
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
 
 
-class VertexEdit(PolyDraw):
+
+class PolyEdit(PolyDraw):
     """
-    Attaches a VertexEditTool and syncs the datasource.
+    Attaches a PolyEditTool and syncs the datasource.
     """
+
+    def __init__(self, vertex_style={}, **params):
+        self.vertex_style = vertex_style
+        super(PolyEdit, self).__init__(**params)
