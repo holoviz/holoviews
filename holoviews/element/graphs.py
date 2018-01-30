@@ -462,7 +462,7 @@ class TriMesh(Graph):
         self._edgepaths = edgepaths
 
     @classmethod
-    def from_vertices(cls, points):
+    def from_vertices(cls, data):
         """
         Uses Delauney triangulation to compute triangle simplices for
         each point.
@@ -472,10 +472,12 @@ class TriMesh(Graph):
         except:
             raise ImportError("Generating triangles from points requires, "
                               "SciPy to be installed.")
-        if not isinstance(points, Points):
-            points = Points(points)
-        tris = Delaunay(points.array([0, 1]))
-        return cls((tris.simplices, points))
+        if not isinstance(data, Points):
+            data = Points(data)
+        if not len(data):
+            return cls(([], []))
+        tris = Delaunay(data.array([0, 1]))
+        return cls((tris.simplices, data))
 
     @property
     def edgepaths(self):
