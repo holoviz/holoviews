@@ -121,6 +121,8 @@ class BokehRenderer(Renderer):
         doc = curdoc() if doc is None else doc
         if self_or_cls.theme:
             doc.theme = self_or_cls.theme
+        elif self_or_cls.theme is None:
+            doc.theme = None
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
         plot.document = doc
         return plot
@@ -228,6 +230,9 @@ class BokehRenderer(Renderer):
             m._document = None
         if self.theme:
             doc.theme = self.theme
+        elif self.theme is None:
+            doc.theme = None
+
         doc.add_root(model)
 
         comm_id = plot.comm.id if plot.comm else None
