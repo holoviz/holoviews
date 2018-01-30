@@ -823,7 +823,10 @@ class CDSStream(LinkedStream):
     A Stream that syncs a bokeh ColumnDataSource with python.
     """
 
-    data = param.Dict()
+    data = param.Dict(constant=True, doc=""" Data synced from bokeh
+        ColumnDataSource supplied as a dictionary of columns, where
+        each column is a list of values (for point-like data) or list
+        of lists of values (for path-like data).""")
 
 
 
