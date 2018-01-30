@@ -224,6 +224,7 @@ class BokehPlot(DimensionedPlot):
         grouped_sources = groupby(sorted(data_sources, key=lambda x: x[0]), lambda x: x[0])
         shared_sources = []
         source_cols = {}
+        plots = []
         for _, group in grouped_sources:
             group = list(group)
             if len(group) > 1:
@@ -233,18 +234,23 @@ class BokehPlot(DimensionedPlot):
                 new_source = ColumnDataSource(source_data)
                 for _, plot in group:
                     renderer = plot.handles.get('glyph_renderer')
+                    for callback in plot.callbacks:
+                        callback.reset()
                     if renderer is None:
                         continue
                     elif 'data_source' in renderer.properties():
                         renderer.update(data_source=new_source)
                     else:
                         renderer.update(source=new_source)
+                    if hasattr(renderer, 'view'):
+                        renderer.view.update(source=new_source)
                     plot.handles['source'] = new_source
-                    for callback in plot.callbacks:
-                        callback.reset()
-                        callback.initialize()
+                    plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
+        for plot in plots:
+            for callback in plot.callbacks:
+                callback.initialize()
         self.handles['shared_sources'] = shared_sources
         self.handles['source_cols'] = source_cols
 

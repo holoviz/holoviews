@@ -59,11 +59,17 @@ class MessageCallback(object):
             except AttributeError:
                 self.comm = Comm(plot)
         self.source = source
+        self.handle_ids = defaultdict(dict)
         self.reset()
 
 
     def reset(self):
-        self.handle_ids = defaultdict(dict)
+        if self.handle_ids:
+            handles = self._init_plot_handles()
+            for handle_name in self.models:
+                handle = handles[handle_name]
+                cb_hash = (id(handle), id(type(self)))
+                self._callbacks.pop(cb_hash, None)
         self.callbacks = []
         self.plot_handles = {}
         self._queue = []
