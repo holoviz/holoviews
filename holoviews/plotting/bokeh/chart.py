@@ -365,15 +365,23 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         Whether to display the plot title.""")
 
     default_tools = param.List(default=['save', 'pan', 'wheel_zoom',
-                                        'box_zoom', 'reset', 'ybox_select'],
+                                        'box_zoom', 'reset'],
         doc="A list of plugin tools to use on the plot.")
 
     _callback = """
-    color_mapper.low = cb_data['geometry']['y0'];
-    color_mapper.high = cb_data['geometry']['y1'];
+    color_mapper.low = cb_data['geometry']['{axis}0'];
+    color_mapper.high = cb_data['geometry']['{axis}1'];
     source.change.emit()
     main_source.change.emit()
     """
+
+    def __init__(self, *args, **kwargs):
+        super(SideHistogramPlot, self).__init__(*args, **kwargs)
+        if self.invert_axes:
+            self.default_tools.append('ybox_select')
+        else:
+            self.default_tools.append('xbox_select')
+
 
     def get_data(self, element, ranges, style):
         data, mapping, style = HistogramPlot.get_data(self, element, ranges, style)
@@ -407,11 +415,13 @@ class SideHistogramPlot(ColorbarPlot, HistogramPlot):
         handles = {'color_mapper': self.handles['color_mapper'],
                    'source': self.handles['source'],
                    'main_source': main_source}
+        axis = 'y' if self.invert_axes else 'x'
+        callback = self._callback.format(axis=axis)
         if box_select.callback:
-            box_select.callback.code += self._callback
+            box_select.callback.code += callback
             box_select.callback.args.update(handles)
         else:
-            box_select.callback = CustomJS(args=handles, code=self._callback)
+            box_select.callback = CustomJS(args=handles, code=callback)
         return ret
 
 
