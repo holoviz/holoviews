@@ -857,7 +857,7 @@ class CDSCallback(Callback):
             if isinstance(values, dict):
                 items = sorted([(int(k), v) for k, v in values.items()])
                 values = [v for k, v in items]
-            elif isinstance(values, list) and isinstance(values[0], dict):
+            elif isinstance(values, list) and values and isinstance(values[0], dict):
                 new_values = []
                 for vals in values:
                     if isinstance(vals, dict):
