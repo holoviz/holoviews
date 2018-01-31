@@ -967,11 +967,16 @@ class PolyEditCallback(CDSCallback):
             param.main.warning('PolyEdit requires bokeh >= 0.12.14')
             return
         plot = self.plot
-        vertex_style = dict(size=10, **self.streams[0].vertex_style)
-        r1 = plot.state.scatter([], [], **vertex_style)
-        vertex_tool = PolyEditTool(renderers=[plot.handles['glyph_renderer']],
-                                   vertex_renderer=r1)
-        plot.state.tools.append(vertex_tool)
+        vertex_tool = None
+        if all(s.shared for s in self.streams):
+            tools = [tool for tool in plot.state.tools if isinstance(tool, PolyEditTool)]
+            vertex_tool = tools[0] if tools else None
+        if vertex_tool is None:
+            vertex_style = dict(size=10, **self.streams[0].vertex_style)
+            r1 = plot.state.scatter([], [], **vertex_style)
+            vertex_tool = PolyEditTool(vertex_renderer=r1)
+            plot.state.tools.append(vertex_tool)
+        vertex_tool.renderers.append(plot.handles['glyph_renderer'])
         super(PolyEditCallback, self).initialize()
 
 
