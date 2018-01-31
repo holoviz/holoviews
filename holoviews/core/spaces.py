@@ -1171,7 +1171,6 @@ class DynamicMap(HoloMap):
             return dmap
 
 
-
     def _cache(self, key, val):
         """
         Request that a key/value pair be considered for caching.
@@ -1221,6 +1220,31 @@ class DynamicMap(HoloMap):
                 dmap.label = relabelled.label
             return dmap
         return relabelled
+
+
+    def split_overlays(self):
+        """
+        Splits a DynamicMap into its components. Only well defined for
+        DynamicMap with consistent number and order of layers.
+        """
+        if not len(self):
+            raise ValueError('Cannot split DynamicMap before it has been initialized')
+        elif not issubclass(self.type, Overlay):
+            return None, self
+
+        from ..util import Dynamic
+        keys = list(self.last.keys())
+        dmaps = []
+        for key in keys:
+            def cb(obj, overlay_key=key, **kwargs):
+                specs = [(i, util.get_overlay_spec(obj, k, v))
+                         for i, (k, v) in enumerate(obj.data.items())]
+                match = util.closest_match(overlay_key, specs)
+                return obj.data[match]
+            dmap = Dynamic(self, streams=self.streams, operation=cb)
+            dmap.data = OrderedDict([(list(self.data.keys())[-1], self.last.data[key])])
+            dmaps.append(dmap)
+        return keys, dmaps
 
 
     def collate(self):
