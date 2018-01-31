@@ -5,14 +5,15 @@ server-side or in Javascript in the Jupyter notebook (client-side).
 """
 
 import uuid
+from numbers import Number
+from collections import defaultdict
+from contextlib import contextmanager
 
 import param
 import numpy as np
-from numbers import Number
-from collections import defaultdict
-from .core import util
 
-from contextlib import contextmanager
+from .core import util
+from .core.ndmapping import UniformNdMapping
 
 # Types supported by Pointer derived streams
 pointer_types = (Number, util.basestring, tuple)+util.datetime_types
@@ -814,3 +815,115 @@ class PositionXY(PointerXY):
     def __init__(self, **params):
         self.warning('PositionXY stream deprecated: use PointerXY instead')
         super(PositionXY, self).__init__(**params)
+
+
+
+class CDSStream(LinkedStream):
+    """
+    A Stream that syncs a bokeh ColumnDataSource with python.
+    """
+
+    data = param.Dict(constant=True, doc=""" Data synced from bokeh
+        ColumnDataSource supplied as a dictionary of columns, where
+        each column is a list of values (for point-like data) or list
+        of lists of values (for path-like data).""")
+
+
+
+class PointDraw(CDSStream):
+    """
+    Attaches a PointAddTool and syncs the datasource.
+    """
+
+    def __init__(self, empty_value=None, drag=True, **params):
+        self.drag = drag
+        self.empty_value = empty_value
+        super(PointDraw, self).__init__(**params)
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        if not self.data:
+            return source.clone([])
+        return source.clone(self.data)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class PolyDraw(CDSStream):
+    """
+    Attaches a PolyDrawTool and syncs the datasource.
+    """
+
+    def __init__(self, empty_value=None, drag=True, **params):
+        self.drag = drag
+        self.empty_value = empty_value
+        super(PolyDraw, self).__init__(**params)
+
+    @property
+    def element(self):
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        data = self.data
+        if not data:
+            return source.clone([])
+        cols = list(self.data)
+        x, y = source.kdims
+        lookup = {'xs': x.name, 'ys': y.name}
+        data = [{lookup.get(c, c): data[c][i] for c in self.data}
+                for i in range(len(data[cols[0]]))]
+        return source.clone(data)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class BoxEdit(CDSStream):
+    """
+    Attaches a BoxEditTool and syncs the datasource.
+    """
+
+    @property
+    def element(self):
+        from .element import Polygons
+        source = self.source
+        if isinstance(source, UniformNdMapping):
+            source = source.last
+        data = self.data
+        if not data:
+            return source.clone([])
+        paths = []
+        for (x0, x1, y0, y1) in zip(data['x0'], data['x1'], data['y0'], data['y1']):
+            xs = [x0, x0, x1, x1]
+            ys = [y0, y1, y1, y0]
+            if isinstance(source, Polygons):
+                xs.append(x0)
+                ys.append(y0)
+            paths.append(np.column_stack((xs, ys)))
+        return source.clone(paths)
+
+    @property
+    def dynamic(self):
+        from .core.spaces import DynamicMap
+        return DynamicMap(lambda *args, **kwargs: self.element, streams=[self])
+
+
+
+class PolyEdit(PolyDraw):
+    """
+    Attaches a PolyEditTool and syncs the datasource.
+    """
+
+    def __init__(self, vertex_style={}, **params):
+        self.vertex_style = vertex_style
+        super(PolyEdit, self).__init__(**params)

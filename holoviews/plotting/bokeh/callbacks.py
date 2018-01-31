@@ -1,14 +1,18 @@
 from collections import defaultdict
 
-from bokeh.models import CustomJS, FactorRange, DatetimeAxis
+import param
+import numpy as np
+from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
-                        PlotSize, Draw, BoundsXY, PlotReset)
+                        PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
+                        PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
+from .path import PolygonPlot
 from .util import convert_timestamp
 
 
@@ -56,11 +60,17 @@ class MessageCallback(object):
             except AttributeError:
                 self.comm = Comm(plot)
         self.source = source
+        self.handle_ids = defaultdict(dict)
         self.reset()
 
 
     def reset(self):
-        self.handle_ids = defaultdict(dict)
+        if self.handle_ids:
+            handles = self._init_plot_handles()
+            for handle_name in self.models:
+                handle = handles[handle_name]
+                cb_hash = (id(handle), id(type(self)))
+                self._callbacks.pop(cb_hash, None)
         self.callbacks = []
         self.plot_handles = {}
         self._queue = []
@@ -833,6 +843,139 @@ class ResetCallback(Callback):
         return {'reset': True}
 
 
+class CDSCallback(Callback):
+    """
+    A Stream callback that syncs the data on a bokeh ColumnDataSource
+    model with Python.
+    """
+
+    attributes = {'data': 'source.data'}
+    models = ['source']
+    on_changes = ['data']
+
+    def _process_msg(self, msg):
+        for col, values in msg['data'].items():
+            if isinstance(values, dict):
+                items = sorted([(int(k), v) for k, v in values.items()])
+                values = [v for k, v in items]
+            elif isinstance(values, list) and values and isinstance(values[0], dict):
+                new_values = []
+                for vals in values:
+                    if isinstance(vals, dict):
+                        vals = sorted([(int(k), v) for k, v in vals.items()])
+                        vals = [v for k, v in vals]
+                    new_values.append(vals)
+                values = new_values
+            msg['data'][col] = values
+        return msg
+
+
+class PointDrawCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import PointDrawTool
+        except Exception as e:
+            param.main.warning('PointDraw requires bokeh >= 0.12.14')
+            return
+        renderers = [self.plot.handles['glyph_renderer']]
+        point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
+                                   empty_value=self.streams[0].empty_value,
+                                   renderers=renderers)
+        self.plot.state.tools.append(point_tool)
+        super(PointDrawCallback, self).initialize()
+
+
+class PolyDrawCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import PolyDrawTool
+        except:
+            param.main.warning('PolyDraw requires bokeh >= 0.12.14')
+            return
+        plot = self.plot
+        source = plot.handles['source']
+        poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
+                                 empty_value=self.streams[0].empty_value,
+                                 renderers=[plot.handles['glyph_renderer']])
+        plot.state.tools.append(poly_tool)
+        super(PolyDrawCallback, self).initialize()
+
+    def _process_msg(self, msg):
+        data = super(PolyDrawCallback, self)._process_msg(msg)['data']
+        element = self.plot.current_frame
+        x, y = element.dimensions('key', label=True)
+        if 'xs' in data and 'xs' != x:
+            data[x] = data.pop('xs', [])
+        if 'ys' in data and 'ys' != y:
+            data[y] = data.pop('ys', [])
+        return dict(data=data)
+
+
+class BoxEditCallback(CDSCallback):
+
+    attributes = {'data': 'rect_source.data'}
+    models = ['rect_source']
+
+    def initialize(self):
+        try:
+            from bokeh.models import BoxEditTool
+        except:
+            param.main.warning('BoxEdit requires bokeh >= 0.12.14')
+            return
+        plot = self.plot
+        element = self.plot.current_frame
+        xs, ys, widths, heights = [], [], [], []
+        for el in element.split():
+            x0, x1 = el.range(0)
+            y0, y1 = el.range(1)
+            xs.append((x0+x1)/2.)
+            ys.append((y0+y1)/2.)
+            widths.append(x1-x0)
+            heights.append(y1-y0)
+        data = {'x': xs, 'y': ys, 'width': widths, 'height': heights}
+        data.update({vd.name: [] for vd in element.vdims})
+        rect_source = ColumnDataSource(data=data)
+        style = self.plot.style[self.plot.cyclic_index]
+        style.pop('cmap', None)
+        r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
+        plot.handles['rect_source'] = rect_source
+        box_tool = BoxEditTool(renderers=[r1])
+        plot.state.tools.append(box_tool)
+        self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
+        super(BoxEditCallback, self).initialize()
+
+    def _process_msg(self, msg):
+        data = super(BoxEditCallback, self)._process_msg(msg)['data']
+        element = self.plot.current_frame
+        x0s, x1s, y0s, y1s = [], [], [], []
+        for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
+            x0s.append(x-w/2.)
+            x1s.append(x+w/2.)
+            y0s.append(y-h/2.)
+            y1s.append(y+h/2.)
+        return {'data': {'x0': x0s, 'x1': x1s, 'y0': y0s, 'y1': y1s}}
+
+
+class PolyEditCallback(CDSCallback):
+
+    def initialize(self):
+        try:
+            from bokeh.models import PolyEditTool
+        except:
+            param.main.warning('PolyEdit requires bokeh >= 0.12.14')
+            return
+        plot = self.plot
+        vertex_style = dict(size=10, **self.streams[0].vertex_style)
+        r1 = plot.state.scatter([], [], **vertex_style)
+        vertex_tool = PolyEditTool(renderers=[plot.handles['glyph_renderer']],
+                                   vertex_renderer=r1)
+        plot.state.tools.append(vertex_tool)
+        super(PolyEditCallback, self).initialize()
+
+
+
 callbacks = Stream._callbacks['bokeh']
 
 callbacks[PointerXY]   = PointerXYCallback
@@ -854,6 +997,11 @@ callbacks[Selection1D] = Selection1DCallback
 callbacks[PlotSize]    = PlotSizeCallback
 callbacks[Draw]        = DrawCallback
 callbacks[PlotReset]   = ResetCallback
+callbacks[CDSStream]   = CDSCallback
+callbacks[BoxEdit]     = BoxEditCallback
+callbacks[PointDraw]   = PointDrawCallback
+callbacks[PolyDraw]    = PolyDrawCallback
+callbacks[PolyEdit]    = PolyEditCallback
 
 # Aliases for deprecated streams
 callbacks[PositionXY]  = PointerXYCallback
