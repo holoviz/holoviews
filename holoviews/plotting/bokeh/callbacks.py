@@ -1,5 +1,6 @@
 from collections import defaultdict
 
+import param
 import numpy as np
 from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
 
@@ -874,11 +875,12 @@ class PointDrawCallback(CDSCallback):
     def initialize(self):
         try:
             from bokeh.models import PointDrawTool
-        except:
-            self.warning('PointDraw requires bokeh >= 0.12.15')
+        except Exception as e:
+            param.main('PointDraw requires bokeh >= 0.12.14')
             return
         renderers = [self.plot.handles['glyph_renderer']]
-        point_tool = PointDrawTool(empty_value=self.streams[0].empty_value,
+        point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
+                                   empty_value=self.streams[0].empty_value,
                                    renderers=renderers)
         self.plot.state.tools.append(point_tool)
         super(PointDrawCallback, self).initialize()
@@ -890,11 +892,12 @@ class PolyDrawCallback(CDSCallback):
         try:
             from bokeh.models import PolyDrawTool
         except:
-            self.warning('PolyDraw requires bokeh >= 0.12.15')
+            param.main('PolyDraw requires bokeh >= 0.12.14')
             return
         plot = self.plot
         source = plot.handles['source']
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
+                                 empty_value=self.streams[0].empty_value,
                                  renderers=[plot.handles['glyph_renderer']])
         plot.state.tools.append(poly_tool)
         super(PolyDrawCallback, self).initialize()
@@ -919,11 +922,10 @@ class BoxEditCallback(CDSCallback):
         try:
             from bokeh.models import BoxEditTool
         except:
-            self.warning('BoxEdit requires bokeh >= 0.12.15')
+            param.main('BoxEdit requires bokeh >= 0.12.14')
             return
         plot = self.plot
         element = self.plot.current_frame
-        self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         xs, ys, widths, heights = [], [], [], []
         for el in element.split():
             x0, x1 = el.range(0)
@@ -939,9 +941,9 @@ class BoxEditCallback(CDSCallback):
         style.pop('cmap', None)
         r1 = plot.state.rect('x', 'y', 'width', 'height', source=rect_source, **style)
         plot.handles['rect_source'] = rect_source
-        source = plot.handles['source']
         box_tool = BoxEditTool(renderers=[r1])
         plot.state.tools.append(box_tool)
+        self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         super(BoxEditCallback, self).initialize()
 
     def _process_msg(self, msg):
@@ -962,10 +964,11 @@ class PolyEditCallback(CDSCallback):
         try:
             from bokeh.models import PolyEditTool
         except:
-            self.warning('PolyEdit requires bokeh >= 0.12.15')
+            param.main('PolyEdit requires bokeh >= 0.12.14')
             return
         plot = self.plot
-        r1 = plot.state.scatter([], [], **dict(size=10, **self.streams[0].vertex_style))
+        vertex_style = dict(size=10, **self.streams[0].vertex_style)
+        r1 = plot.state.scatter([], [], **vertex_style)
         vertex_tool = PolyEditTool(renderers=[plot.handles['glyph_renderer']],
                                    vertex_renderer=r1)
         plot.state.tools.append(vertex_tool)

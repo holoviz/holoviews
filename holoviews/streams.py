@@ -835,7 +835,8 @@ class PointDraw(CDSStream):
     Attaches a PointAddTool and syncs the datasource.
     """
 
-    def __init__(self, empty_value=None, **params):
+    def __init__(self, empty_value=None, drag=True, **params):
+        self.drag = drag
         self.empty_value = empty_value
         super(PointDraw, self).__init__(**params)
 
@@ -860,8 +861,9 @@ class PolyDraw(CDSStream):
     Attaches a PolyDrawTool and syncs the datasource.
     """
 
-    def __init__(self, drag=False, **params):
+    def __init__(self, empty_value=None, drag=True, **params):
         self.drag = drag
+        self.empty_value = empty_value
         super(PolyDraw, self).__init__(**params)
 
     @property
