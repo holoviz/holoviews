@@ -12,6 +12,7 @@ try:
         BoxEditCallback
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
+    from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
     bokeh_renderer = None
@@ -21,8 +22,8 @@ class TestEditToolCallbacks(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
+        if not bokeh_renderer or bokeh_version < '0.12.14':
+            raise SkipTest("Bokeh >= 0.12.14 required to test edit tool streams")
         Store.current_backend = 'bokeh'
 
     def tearDown(self):

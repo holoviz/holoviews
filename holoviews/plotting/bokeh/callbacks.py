@@ -876,7 +876,7 @@ class PointDrawCallback(CDSCallback):
         try:
             from bokeh.models import PointDrawTool
         except Exception as e:
-            param.main('PointDraw requires bokeh >= 0.12.14')
+            param.main.warning('PointDraw requires bokeh >= 0.12.14')
             return
         renderers = [self.plot.handles['glyph_renderer']]
         point_tool = PointDrawTool(drag=all(s.drag for s in self.streams),
@@ -892,7 +892,7 @@ class PolyDrawCallback(CDSCallback):
         try:
             from bokeh.models import PolyDrawTool
         except:
-            param.main('PolyDraw requires bokeh >= 0.12.14')
+            param.main.warning('PolyDraw requires bokeh >= 0.12.14')
             return
         plot = self.plot
         source = plot.handles['source']
@@ -922,7 +922,7 @@ class BoxEditCallback(CDSCallback):
         try:
             from bokeh.models import BoxEditTool
         except:
-            param.main('BoxEdit requires bokeh >= 0.12.14')
+            param.main.warning('BoxEdit requires bokeh >= 0.12.14')
             return
         plot = self.plot
         element = self.plot.current_frame
@@ -964,7 +964,7 @@ class PolyEditCallback(CDSCallback):
         try:
             from bokeh.models import PolyEditTool
         except:
-            param.main('PolyEdit requires bokeh >= 0.12.14')
+            param.main.warning('PolyEdit requires bokeh >= 0.12.14')
             return
         plot = self.plot
         vertex_style = dict(size=10, **self.streams[0].vertex_style)
