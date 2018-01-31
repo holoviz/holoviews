@@ -82,7 +82,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         mapping = dict(x=dims[xidx], y=dims[yidx])
         data = {}
 
-        if not self.static_source:
+        if not self.static_source or self.batched:
             xdim, ydim = dims[xidx], dims[yidx]
             data[xdim] = element.dimension_values(xidx)
             data[ydim] = element.dimension_values(yidx)
@@ -269,7 +269,7 @@ class CurvePlot(ElementPlot):
         xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
         x = element.get_dimension(xidx).name
         y = element.get_dimension(yidx).name
-        if self.static_source:
+        if self.static_source and not self.batched:
             return {}, dict(x=x, y=y), style
 
         if 'steps' in self.interpolation:
