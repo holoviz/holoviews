@@ -612,7 +612,10 @@ class ColorbarPlot(ElementPlot):
                 clim = (0, 0)
                 categorical = False
             elif values.dtype.kind in 'uif':
-                clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
+                if vdim.name in ranges:
+                    clim = ranges[vdim.name]['combined']
+                else:
+                    clim = element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value

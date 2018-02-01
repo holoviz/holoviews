@@ -75,7 +75,7 @@ class Raster(Element2D):
         if data_range and idx == 2:
             dimension = self.get_dimension(dim)
             lower, upper = np.nanmin(self.data), np.nanmax(self.data)
-            return dimension_range(lower, upper, dimension)
+            return dimension_range(lower, upper, dimension.range, dimension.soft_range)
         return super(Raster, self).range(dim, data_range)
 
 

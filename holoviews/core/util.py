@@ -810,6 +810,20 @@ def find_range(values, soft_range=[]):
             return (None, None)
 
 
+def is_finite(value):
+    """
+    Safe check whether a value is finite, only None and NaN values are
+    considered non-finite and allows checking all types not restricted
+    to numeric types.
+    """
+    if value is None:
+        return False
+    try:
+        return np.isfinite(value)
+    except:
+        return True
+
+
 def max_range(ranges):
     """
     Computes the maximal lower and upper bounds from a list bounds.
@@ -824,22 +838,26 @@ def max_range(ranges):
             if arr.dtype.kind in 'OSU':
                 arr = list(python2sort([v for v in arr.flat if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
-            if arr.dtype.kind in 'M':
-                return arr[:, 0].min(), arr[:, 1].max()
-            return (np.nanmin(arr[:, 0]), np.nanmax(arr[:, 1]))
+            elif values.dtype.kind in 'M':
+                return values.min(), values.max()
+            return (np.nanmin(values), np.nanmax(values))
     except:
         return (np.NaN, np.NaN)
 
 
-def dimension_range(lower, upper, dimension):
+def dimension_range(lower, upper, hard_range, soft_range, padding=0):
     """
     Computes the range along a dimension by combining the data range
     with the Dimension soft_range and range.
     """
-    lower, upper = max_range([(lower, upper), dimension.soft_range])
-    dmin, dmax = dimension.range
-    lower = dmin if isfinite(dmin) else lower
-    upper = dmax if isfinite(dmax) else upper
+    if is_number(lower) and is_number(upper) and padding != 0:
+        pad = (upper - lower)*padding
+        lower -= pad
+        upper += pad
+    lower, upper = max_range([(lower, upper), soft_range])
+    dmin, dmax = hard_range
+    lower = lower if dmin is None or not np.isfinite(dmin) else dmin
+    upper = upper if dmax is None or not np.isfinite(dmax) else dmax
     return lower, upper
 
 
@@ -1035,6 +1053,7 @@ def dimension_sort(odict, kdims, vdims, key_index):
 # Copied from param should make param version public
 def is_number(obj):
     if isinstance(obj, numbers.Number): return True
+    elif isinstance(obj, (np.str_, np.unicode_)): return False
     # The extra check is for classes that behave like numbers, such as those
     # found in numpy, gmpy, etc.
     elif (hasattr(obj, '__int__') and hasattr(obj, '__add__')): return True

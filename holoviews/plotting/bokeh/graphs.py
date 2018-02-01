@@ -75,8 +75,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def get_extents(self, element, ranges):
         xdim, ydim = element.nodes.kdims[:2]
-        x0, x1 = ranges[xdim.name]
-        y0, y1 = ranges[ydim.name]
+        x0, x1 = ranges[xdim.name]['combined']
+        y0, y1 = ranges[ydim.name]['combined']
         return (x0, y0, x1, y1)
 
     def _get_axis_labels(self, *args, **kwargs):

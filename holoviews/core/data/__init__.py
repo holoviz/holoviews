@@ -289,7 +289,9 @@ class Dataset(Element):
             lower, upper = self.interface.range(self, dim)
         else:
             lower, upper = (np.NaN, np.NaN)
-        return dimension_range(lower, upper, dim)
+        if data_range == 'exclusive':
+            return (lower, upper)
+        return dimension_range(lower, upper, dim.range, dim.soft_range)
 
 
     def add_dimension(self, dimension, dim_pos, dim_val, vdim=False, **kwargs):

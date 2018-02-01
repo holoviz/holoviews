@@ -226,7 +226,10 @@ class ColorbarPlot(ElementPlot):
                 opts['reversescale'] = True
         opts['colorscale'] = cmap
         if dim:
-            cmin, cmax = ranges.get(dim.name, element.range(dim.name))
+            if dim.name in ranges:
+                cmin, cmax = ranges[dim.name]['combined']
+            else:
+                cmin, cmax = element.range(dim.name)
             opts['cmin'] = cmin
             opts['cmax'] = cmax
             opts['cauto'] = False

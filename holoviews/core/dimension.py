@@ -1129,7 +1129,9 @@ class Dimensioned(LabelledData):
                 lower, upper = max_range(ranges)
         else:
             lower, upper = (np.NaN, np.NaN)
-        return dimension_range(lower, upper, dimension)
+        if data_range == 'exclusive':
+            return (lower, upper)
+        return dimension_range(lower, upper, dimension.range, dimension.soft_range)
 
 
     def __repr__(self):

@@ -13,6 +13,7 @@ import param
 from ..core import OrderedDict
 from ..core import util, traversal
 from ..core.element import Element
+from ..core.data import Dataset
 from ..core.overlay import Overlay, CompositeOverlay
 from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
@@ -438,12 +439,25 @@ class DimensionedPlot(Plot):
         group_ranges = OrderedDict()
         for el in elements:
             if isinstance(el, (Empty, Table)): continue
-            for dim in el.dimensions('ranges', label=True):
-                dim_range = el.range(dim)
-                if dim not in group_ranges:
-                    group_ranges[dim] = []
-                group_ranges[dim].append(dim_range)
-        ranges[group] = OrderedDict((k, util.max_range(v)) for k, v in group_ranges.items())
+            for dim in el.dimensions('ranges'):
+                data_range = el.range(dim, data_range='exclusive')
+                if dim.name not in group_ranges:
+                    group_ranges[dim.name] = {'data': [], 'hard': [], 'soft': []}
+                group_ranges[dim.name]['data'].append(data_range)
+                group_ranges[dim.name]['hard'].append(dim.range)
+                group_ranges[dim.name]['soft'].append(dim.soft_range)
+
+        dim_ranges = []
+        for dim, values in group_ranges.items():
+            hard_range = util.max_range(values['hard'])
+            soft_range = util.max_range(values['soft'])
+            data_range = util.max_range(values['data'])
+            combined = util.dimension_range(data_range[0], data_range[1],
+                                            hard_range, soft_range)
+            dranges = {'data': data_range, 'hard': hard_range,
+                       'soft': soft_range, 'combined': combined}
+            dim_ranges.append((dim, dranges))
+        ranges[group] = OrderedDict(dim_ranges)
 
 
     @classmethod
@@ -598,6 +612,9 @@ class GenericElementPlot(DimensionedPlot):
 
     logy = param.Boolean(default=False, doc="""
         Whether the y-axis of the plot will be a log axis.""")
+
+    padding = param.Number(default=0, doc="""
+        Amount of padding to apply to data ranges.""")
 
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
@@ -759,27 +776,53 @@ class GenericElementPlot(DimensionedPlot):
         Gets the extents for the axes from the current View. The globally
         computed ranges can optionally override the extents.
         """
-        ndims = len(view.dimensions())
+        dims = view.dimensions()
+        ndims = len(dims)
         num = 6 if self.projection == '3d' else 4
         if self.apply_ranges:
+            xdim = dims[0]
             if ranges:
-                dims = view.dimensions()
-                x0, x1 = ranges[dims[0].name]
+                x0, x1 = ranges[xdim.name]['data']
+                xsrange = ranges[xdim.name]['soft']
+                xhrange = ranges[xdim.name]['hard']
                 if ndims > 1:
-                    y0, y1 = ranges[dims[1].name]
+                    ydim = dims[1].name
+                    y0, y1 = ranges[ydim]['data']
+                    ysrange = ranges[ydim]['soft']
+                    yhrange = ranges[ydim]['hard']
                 else:
-                    y0, y1 = (np.NaN, np.NaN)
-                if self.projection == '3d':
-                    if len(dims) > 2:
-                        z0, z1 = ranges[dims[2].name]
-                    else:
-                        z0, z1 = np.NaN, np.NaN
+                    y0, y1 = ysrange = yhrange = (np.NaN, np.NaN)
+
+                if self.projection == '3d' and ndims > 2:
+                    zdim = dims[2].name
+                    z0, z1 = ranges[zdim]['data']
+                    zsrange = ranges[zdim]['soft']
+                    zhrange = ranges[zdim]['hard']
+                else:
+                    z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
             else:
-                x0, x1 = view.range(0)
-                y0, y1 = view.range(1) if ndims > 1 else (np.NaN, np.NaN)
-                if self.projection == '3d':
+                x0, x1 = view.range(0, data_range='exclusive')
+                xsrange = xdim.soft_range
+                xhrange = xdim.range
+                if ndims > 1:
+                    ydim = dims[1]
+                    y0, y1 = view.range(1, data_range='exclusive')
+                    ysrange = ydim.soft_range
+                    yhrange = ydim.range
+                else:
+                    y0, y1 = ysrange = yhrange = (np.NaN, np.NaN)
+                if self.projection == '3d' and ndims > 2:
+                    zdim = dims[2]
                     z0, z1 = view.range(2)
+                    zsrange = zdim.soft_range
+                    zhrange = zdim.range
+                else:
+                    z0, z1 = zsrange = zhrange = (np.NaN, np.NaN)
+            x0, x1 = util.dimension_range(x0, x1, xhrange, xsrange, self.padding)
+            if ndims > 1:
+                y0, y1 = util.dimension_range(y0, y1, yhrange, ysrange, self.padding)
             if self.projection == '3d':
+                z0, z1 = util.dimension_range(z0, z1, zhrange, zsrange, self.padding)
                 range_extents = (x0, y0, z0, x1, y1, z1)
             else:
                 range_extents = (x0, y0, x1, y1)

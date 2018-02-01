@@ -172,6 +172,7 @@ class ErrorPlot(ChartPlot):
         return axis_kwargs
 
 
+
 class AreaPlot(ChartPlot):
 
     show_legend = param.Boolean(default=False, doc="""
@@ -196,7 +197,16 @@ class AreaPlot(ChartPlot):
     def get_extents(self, element, ranges):
         vdims = element.vdims
         vdim = vdims[0].name
-        ranges[vdim] = max_range([ranges[vd.name] for vd in vdims])
+        new_range = {}
+        if len(vdims) > 1:
+            for r in ranges[vdim]:
+                new_range[r] = max_range([ranges[vd.name][r] for vd in vdims])
+        else:
+            vranges = ranges[vdim]
+            for r in vranges:
+                vrange = vranges[r]
+                new_range[r] = (np.nanmin([0, vrange[0]]), vrange[1])
+        ranges[vdim] = new_range
         return super(AreaPlot, self).get_extents(element, ranges)
 
 
@@ -662,7 +672,7 @@ class VectorFieldPlot(ColorbarPlot):
         mag_dim = element.get_dimension(self.size_index)
         if mag_dim:
             magnitudes = element.dimension_values(mag_dim)
-            _, max_magnitude = ranges[mag_dim.name]
+            _, max_magnitude = ranges[mag_dim.name]['combined']
             if self.normalize_lengths and max_magnitude != 0:
                 magnitudes = magnitudes / max_magnitude
         else:
@@ -795,7 +805,7 @@ class BarPlot(LegendPlot):
         if self.stack_index in range(element.ndims):
             return 0, 0, ngroups, np.NaN
         else:
-            vrange = ranges[vdim]
+            vrange = ranges[vdim]['combined']
             return 0, np.nanmin([vrange[0], 0]), ngroups, vrange[1]
 
 
