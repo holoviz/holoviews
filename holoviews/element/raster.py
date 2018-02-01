@@ -4,18 +4,10 @@ import colorsys
 import numpy as np
 import param
 
-<<<<<<< HEAD
 from ..core import util, config, Dimension, Element2D, Overlay, Dataset
 from ..core.data import ImageInterface, GridInterface
 from ..core.data.interface import DataError
-from ..core.dimension import dimension_name
-=======
-from ..core import Dimension, Element2D, Overlay, Dataset
-from ..core import util, config
-from ..core.data import ImageInterface, GridInterface
-from ..core.data.interface import DataError
-from ..core.dimension import process_dimensions
->>>>>>> Make Raster a Dataset type
+from ..core.dimension import dimension_name, process_dimensions
 from ..core.boundingregion import BoundingRegion, BoundingBox
 from ..core.sheetcoords import SheetCoordinateSystem, Slice
 from .chart import Curve

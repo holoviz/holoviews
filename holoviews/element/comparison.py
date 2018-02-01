@@ -641,8 +641,7 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_raster(cls, el1, el2, msg='Raster'):
-        cls.compare_dimensioned(el1, el2)
-        cls.compare_arrays(el1.data, el2.data, msg)
+        cls.compare_dataset(el1, el2, msg)
 
     @classmethod
     def compare_quadmesh(cls, el1, el2, msg='QuadMesh'):
