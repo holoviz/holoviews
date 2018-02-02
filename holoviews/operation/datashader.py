@@ -883,42 +883,26 @@ class stack(Operation):
 
 
 
-class dynspread(Operation):
+class SpreadingOperation(Operation):
     """
     Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
     pixels using a specified compositing operator. This can be useful
-    to make sparse plots more visible. Dynamic spreading determines
-    how many pixels to spread based on a density heuristic.
-
-    See the datashader documentation for more detail:
-
-    http://datashader.readthedocs.io/en/latest/api.html#datashader.transfer_functions.dynspread
+    to make sparse plots more visible.
     """
 
     how = param.ObjectSelector(default='source',
-                               objects=['source', 'over',
-                                        'saturate', 'add'], doc="""
+            objects=['source', 'over', 'saturate', 'add'], doc="""
         The name of the compositing operator to use when combining
         pixels.""")
-
-    max_px = param.Integer(default=3, doc="""
-        Maximum number of pixels to spread on all sides.""")
 
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
 
-    threshold = param.Number(default=0.5, bounds=(0,1), doc="""
-        When spreading, determines how far to spread.
-        Spreading starts at 1 pixel, and stops when the fraction
-        of adjacent non-empty pixels reaches this threshold.
-        Higher values give more spreading, up to the max_px
-        allowed.""")
-
     link_inputs = param.Boolean(default=True, doc="""
         By default, the link_inputs parameter is set to True so that
-        when applying dynspread, backends that support linked streams
+        when applying spreading, backends that support linked streams
         update RangeXY streams on the inputs of the dynspread operation.
         Disable when you do not want the resulting plot to be interactive,
         e.g. when trying to display an interactive plot a second time.""")
@@ -930,29 +914,77 @@ class dynspread(Operation):
         rgb = img.reshape((flat_shape, 4)).view('uint32').reshape(shape[:2])
         return rgb
 
-
-    def _apply_dynspread(self, array):
-        img = tf.Image(array)
-        return tf.dynspread(img, max_px=self.p.max_px,
-                            threshold=self.p.threshold,
-                            how=self.p.how, shape=self.p.shape).data
-
+    def _apply_spreading(self, array):
+        """Apply the spread function using the indicated parameters."""
+        raise NotImplementedError
 
     def _process(self, element, key=None):
         if not isinstance(element, RGB):
-            raise ValueError('dynspread can only be applied to RGB Elements.')
+            raise ValueError('spreading can only be applied to RGB Elements.')
         rgb = element.rgb
         new_data = {kd.name: rgb.dimension_values(kd, expanded=False)
                     for kd in rgb.kdims}
         rgbarray = np.dstack([element.dimension_values(vd, flat=False)
                               for vd in element.vdims])
         data = self.uint8_to_uint32(rgbarray)
-        array = self._apply_dynspread(data)
+        array = self._apply_spreading(data)
         img = datashade.uint32_to_uint8(array)
         for i, vd in enumerate(element.vdims):
             if i < img.shape[-1]:
                 new_data[vd.name] = np.flipud(img[..., i])
         return element.clone(new_data)
+
+
+
+class spread(SpreadingOperation):
+    """
+    Spreading expands each pixel in an Image based Element a certain
+    number of pixels on all sides according to a given shape, merging
+    pixels using a specified compositing operator. This can be useful
+    to make sparse plots more visible.
+
+    See the datashader documentation for more detail:
+
+    http://datashader.org/api.html#datashader.transfer_functions.spread
+    """
+
+    px = param.Integer(default=1, doc="""
+        Number of pixels to spread on all sides.""")
+
+    def _apply_spreading(self, array):
+        img = tf.Image(array)
+        return tf.spread(img, px=self.p.px,
+                         how=self.p.how, shape=self.p.shape).data
+
+
+class dynspread(SpreadingOperation):
+    """
+    Spreading expands each pixel in an Image based Element a certain
+    number of pixels on all sides according to a given shape, merging
+    pixels using a specified compositing operator. This can be useful
+    to make sparse plots more visible. Dynamic spreading determines
+    how many pixels to spread based on a density heuristic.
+
+    See the datashader documentation for more detail:
+
+    http://datashader.org/api.html#datashader.transfer_functions.dynspread
+    """
+
+    max_px = param.Integer(default=3, doc="""
+        Maximum number of pixels to spread on all sides.""")
+
+    threshold = param.Number(default=0.5, bounds=(0,1), doc="""
+        When spreading, determines how far to spread.
+        Spreading starts at 1 pixel, and stops when the fraction
+        of adjacent non-empty pixels reaches this threshold.
+        Higher values give more spreading, up to the max_px
+        allowed.""")
+
+    def _apply_spreading(self, array):
+        img = tf.Image(array)
+        return tf.dynspread(img, max_px=self.p.max_px,
+                            threshold=self.p.threshold,
+                            how=self.p.how, shape=self.p.shape).data
 
 
 def split_dataframe(path_df):
