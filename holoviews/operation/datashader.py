@@ -374,9 +374,10 @@ class aggregate(ResamplingOperation):
                 raise ValueError("Aggregation column %s not found on %s element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
+            name = column
             if isinstance(agg_fn, ds.count_cat):
-                name = '%s Count' % agg_fn.column
-            vdims = [dims[0](column)]
+                name = '%s Count' % column
+            vdims = [dims[0](name)]
         else:
             vdims = Dimension('Count')
         params = dict(get_param_values(element), kdims=[x, y],
@@ -400,7 +401,7 @@ class aggregate(ResamplingOperation):
             for c in agg.coords[column].data:
                 cagg = agg.sel(**{column: c})
                 eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
-                layers[c] = self.p.element_type(eldata, **params)
+                layers[c] = self.p.element_type(eldata, **dict(params, vdims=vdims))
             return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
@@ -725,12 +726,12 @@ class shade(Operation):
         """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
-        xarr = xr.concat([v.data.T for v in overlay.values()],
+        xarr = xr.concat([v.data.transpose() for v in overlay.values()],
                          pd.Index(overlay.keys(), name=overlay.kdims[0].name))
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
-        return Dataset(xarr.T, datatype=['xarray'], **params)
+        return Dataset(xarr.transpose(), datatype=['xarray'], **params)
 
 
     @classmethod
