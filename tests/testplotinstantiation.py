@@ -1326,9 +1326,9 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         ys = box.aggregate(function=np.median).dimension_values('y')
         hover_tool = plot.handles['hover']
         self.assertEqual(src.data['y'], ys)
-        self.assertIn(plot.handles['vbar_1glyph_renderer'], hover_tool.renderers)
-        self.assertIn(plot.handles['vbar_2glyph_renderer'], hover_tool.renderers)
-        self.assertIn(plot.handles['circle_1glyph_renderer'], hover_tool.renderers)
+        self.assertIn(plot.handles['vbar_1_glyph_renderer'], hover_tool.renderers)
+        self.assertIn(plot.handles['vbar_2_glyph_renderer'], hover_tool.renderers)
+        self.assertIn(plot.handles['circle_1_glyph_renderer'], hover_tool.renderers)
 
     def test_curve_datetime64(self):
         dates = [np.datetime64(dt.datetime(2016,1,i)) for i in range(1, 11)]
