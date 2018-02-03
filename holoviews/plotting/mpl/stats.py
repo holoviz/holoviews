@@ -183,7 +183,7 @@ class ViolinPlot(BoxPlot):
             data.append(group[group.vdims[0]])
             labels.append(label)
             colors.append(elstyle[i].get('facecolors', 'blue'))
-        style['positions'] = range(len(data))
+        style['positions'] = list(range(len(data)))
         style['labels'] = labels
         style['facecolors'] = colors
         style = {k: v for k, v in style.items()
