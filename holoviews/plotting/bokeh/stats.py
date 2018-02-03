@@ -289,6 +289,9 @@ class ViolinPlot(BoxWhiskerPlot):
           * quartiles - Indicates first, second and third quartiles
         """)
 
+    violin_width = param.Number(default=0.8, doc="""
+       Relative width of the violin""")
+
     # Map each glyph to a style group
     _style_groups = {'patch': 'violin', 'segment': 'stats', 'vbar': 'box',
                      'scatter': 'median', 'hbar': 'box'}
@@ -311,7 +314,7 @@ class ViolinPlot(BoxWhiskerPlot):
             el = el.clone(vdims=[vdim])
         kde = univariate_kde(el, dimension=vdim, **kwargs)
         xs, ys = (kde.dimension_values(i) for i in range(2))
-        ys = (ys/ys.max())*0.4
+        ys = (ys/ys.max())*(self.violin_width/2.)
         ys = [key+(sign*y,) for sign, vs in ((-1, ys), (1, ys[::-1])) for y in vs]
         kde =  {'x': np.concatenate([xs, xs[::-1]]), 'y': ys}
 
