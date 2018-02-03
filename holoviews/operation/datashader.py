@@ -265,8 +265,7 @@ class aggregate(ResamplingOperation):
             df = df.copy()
         for d in (x, y):
             if df[d.name].dtype.kind == 'M':
-                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
-
+                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 1000.
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
