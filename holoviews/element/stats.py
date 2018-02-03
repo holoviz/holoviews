@@ -4,7 +4,7 @@ import numpy as np
 from ..core.dimension import Dimension, process_dimensions
 from ..core.element import Element
 from ..core.util import get_param_values, OrderedDict
-from .chart import Chart
+from .chart import Chart, BoxWhisker
 
 
 class StatisticsElement(Chart):
@@ -120,23 +120,6 @@ class Distribution(StatisticsElement):
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
     # Ensure Interface does not add an index
-    _auto_indexable_1d = False
-
-
-class BoxWhisker(Chart):
-    """
-    BoxWhisker represent data as a distributions highlighting the
-    median, mean and various percentiles. It may have a single value
-    dimension and any number of key dimensions declaring the grouping
-    of each violin.
-    """
-
-    group = param.String(default='BoxWhisker', constant=True)
-
-    kdims = param.List(default=[], bounds=(0,None))
-
-    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
-
     _auto_indexable_1d = False
 
 
