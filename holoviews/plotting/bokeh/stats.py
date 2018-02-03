@@ -199,10 +199,23 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                         out_data[dimension_sanitizer(kd.name)] += [k]*len(outliers)
             if hover:
                 for kd, k in zip(element.kdims, wrap_tuple(key)):
-                    r1_data[dimension_sanitizer(kd.name)].append(k)
-                    r2_data[dimension_sanitizer(kd.name)].append(k)
-                r1_data[vdim].append(q2)
-                r2_data[vdim].append(q2)
+                    kd_name = dimension_sanitizer(kd.name)
+                    if kd_name in r1_data:
+                        r1_data[kd_name].append(k)
+                    else:
+                        r1_data[kd_name] = [k]
+                    if kd_name in r2_data:
+                        r2_data[kd_name].append(k)
+                    else:
+                        r2_data[kd_name] = [k]
+                if vdim in r1_data:
+                    r1_data[vdim].append(q2)
+                else:
+                    r1_data[vdim] = [q2]
+                if vdim in r2_data:
+                    r2_data[vdim].append(q2)
+                else:
+                    r2_data[vdim] = [q2]
 
         # Define combined data and mappings
         bar_glyph = 'hbar' if self.invert_axes else 'vbar'
