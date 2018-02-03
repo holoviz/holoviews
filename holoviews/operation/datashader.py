@@ -752,7 +752,20 @@ class shade(Operation):
         return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
+    @classmethod
+    def to_xarray(cls, element):
+        if issubclass(element.interface, XArrayInterface):
+            return element
+        data = tuple(element.dimension_values(kd, expanded=False)
+                     for kd in element.kdims)
+        data += tuple(element.dimension_values(vd, flat=False)
+                      for vd in element.vdims)
+        dtypes = [dt for dt in element.datatype if dt != 'xarray']
+        return element.clone(data, datatype=['xarray']+dtypes)
+
+
     def _process(self, element, key=None):
+        element = element.map(self.to_xarray, Image)
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
             element = self.concatenate(element)

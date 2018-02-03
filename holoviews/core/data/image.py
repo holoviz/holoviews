@@ -66,14 +66,14 @@ class ImageInterface(GridInterface):
     @classmethod
     def shape(cls, dataset, gridded=False):
         if gridded:
-            return dataset.data.shape
+            return dataset.data.shape[:2]
         else:
             return cls.length(dataset), len(dataset.dimensions())
 
 
     @classmethod
     def length(cls, dataset):
-        return np.product(dataset.data.shape)
+        return np.product(dataset.data.shape[:2])
 
 
     @classmethod
