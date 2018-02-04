@@ -111,9 +111,10 @@ class XArrayInterface(GridInterface):
             if vdims is None:
                 vdims = list(data.data_vars.keys())
             if kdims is None:
+                xrdims = list(data.dims)
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
-                xrdims = list(data.dims)
+                kdims = sorted(kdims, key=lambda x: (xrdims.index(x) if x in xrdims else float('inf'), x))
                 if set(xrdims) != set(kdims):
                     virtual_dims = [xd for xd in xrdims if xd not in kdims]
                     for c in data.coords:

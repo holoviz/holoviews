@@ -436,13 +436,22 @@ class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
             raise SkipTest('Test requires xarray')
         super(ImageXArrayInterfaceTest, self).setUp()
 
-    def test_dataarray_shape(self):
+    def test_dataarray_dimension_order(self):
         import xarray as xr
         x = np.linspace(-3, 7, 53)
         y = np.linspace(-5, 8, 89)
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array)
+        self.assertEqual(img.kdims, [Dimension('x'), Dimension('y')])
+
+    def test_dataarray_shape(self):
+        import xarray as xr
+        x = np.linspace(-3, 7, 53)
+        y = np.linspace(-5, 8, 89)
+        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
+        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        img = Image(array, ['x', 'y'])
         self.assertEqual(img.interface.shape(img, gridded=True), (53, 89))
 
 
@@ -463,7 +472,7 @@ class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
         z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
         array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
         img = Image(array)[1:3]
-        self.assertEqual(img.data, Image(array.sel(x=slice(1, 3))).data)
+        self.assertEqual(img['z'], Image(array.sel(x=slice(1, 3)))['z'])
 
 
 @attr(optional=1)
