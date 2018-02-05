@@ -38,6 +38,22 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
+    def shape(cls, dataset, gridded=False):
+        array = dataset.data[dataset.vdims[0].name]
+        if not any(cls.irregular(dataset, kd) for kd in dataset.kdims):
+            names = [kd.name for kd in dataset.kdims
+                     if kd.name in array.dims][::-1]
+            if not all(d in names for d in array.dims):
+                array = np.squeeze(array)
+            array = array.transpose(*names)
+        shape = array.shape
+        if gridded:
+            return shape
+        else:
+            return (np.product(shape), len(dataset.dimensions()))
+
+
+    @classmethod
     def init(cls, eltype, data, kdims, vdims):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
@@ -95,9 +111,10 @@ class XArrayInterface(GridInterface):
             if vdims is None:
                 vdims = list(data.data_vars.keys())
             if kdims is None:
+                xrdims = list(data.dims)
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
-                xrdims = list(data.dims)
+                kdims = sorted(kdims, key=lambda x: (xrdims.index(x) if x in xrdims else float('inf'), x))
                 if set(xrdims) != set(kdims):
                     virtual_dims = [xd for xd in xrdims if xd not in kdims]
                     for c in data.coords:

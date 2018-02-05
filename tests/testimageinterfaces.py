@@ -24,7 +24,7 @@ class ImageInterfaceTest(ComparisonTestCase):
     def init_data(self):
         self.array = np.arange(10) * np.arange(10)[:, np.newaxis]
         self.image = Image(np.flipud(self.array), bounds=(-10, 0, 10, 10))
-        
+
     def tearDown(self):
         self.eltype.datatype = self.restore_datatype
 
@@ -428,6 +428,51 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
 class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
 
     datatype = 'xarray'
+
+    def setUp(self):
+        try:
+            import xarray as xr
+        except:
+            raise SkipTest('Test requires xarray')
+        super(ImageXArrayInterfaceTest, self).setUp()
+
+    def test_dataarray_dimension_order(self):
+        import xarray as xr
+        x = np.linspace(-3, 7, 53)
+        y = np.linspace(-5, 8, 89)
+        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
+        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        img = Image(array)
+        self.assertEqual(img.kdims, [Dimension('x'), Dimension('y')])
+
+    def test_dataarray_shape(self):
+        import xarray as xr
+        x = np.linspace(-3, 7, 53)
+        y = np.linspace(-5, 8, 89)
+        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
+        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        img = Image(array, ['x', 'y'])
+        self.assertEqual(img.interface.shape(img, gridded=True), (53, 89))
+
+
+    def test_dataarray_shape_transposed(self):
+        import xarray as xr
+        x = np.linspace(-3, 7, 53)
+        y = np.linspace(-5, 8, 89)
+        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
+        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        img = Image(array, ['y', 'x'])
+        self.assertEqual(img.interface.shape(img, gridded=True), (89, 53))
+
+
+    def test_select_on_transposed_dataarray(self):
+        import xarray as xr
+        x = np.linspace(-3, 7, 53)
+        y = np.linspace(-5, 8, 89)
+        z = np.exp(-1*(x**2 + y[:, np.newaxis]**2))
+        array = xr.DataArray(z, coords=[y, x], dims=['x', 'y'])
+        img = Image(array)[1:3]
+        self.assertEqual(img['z'], Image(array.sel(x=slice(1, 3)))['z'])
 
 
 @attr(optional=1)
