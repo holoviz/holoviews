@@ -105,6 +105,33 @@ class opts(param.ParameterizedFunction):
             return StoreOptions.set_options(obj, options)
 
 
+    @classmethod
+    def expand_options(cls, options, backend=None):
+        """
+        Expands a flat dictionary of options organized by the type
+        of object into the appropriate groups.
+        """
+        backend = backend or Store.current_backend
+        backend_options = Store.options(backend=backend)
+        groups = set(backend_options.groups.keys())
+        expanded = {}
+        for objtype, options in options.items():
+            if objtype not in backend_options:
+                raise ValueError('%s type not found, could not apply options.' % objtype)
+            obj_options = backend_options[objtype]
+            expanded[objtype] = {g: {} for g in obj_options.groups}
+            for opt, value in options.items():
+                found = False
+                for g, group_opts in obj_options.groups.items():
+                    if opt in group_opts.allowed_keywords:
+                        expanded[objtype][g][opt] = value
+                        found = True
+                if not found:
+                    raise ValueError('%s option is not valid for %s types '
+                                     'on %s backend.' % (opt, objtype, backend))
+        return expanded
+
+
 class output(param.ParameterizedFunction):
     """
     Utility function to set output either at the global level or on a

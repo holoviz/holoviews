@@ -1136,9 +1136,6 @@ class Dimensioned(LabelledData):
 
 
     def options(self, options=None, backend=None, **kwargs):
-        backend = backend or Store.current_backend
-        backend_options = Store.options(backend=backend)
-        groups = set(backend_options.groups.keys())
         if options and kwargs:
             raise ValueError("Options must be defined in one of two formats."
                              "Either supply keywords defining the options for "
@@ -1148,22 +1145,10 @@ class Dimensioned(LabelledData):
                              "Supplying both formats is not supported.")
         elif kwargs:
             options = {type(self).__name__: kwargs}
-        processed = {}
-        for objtype, options in options.items():
-            if objtype not in backend_options:
-                raise ValueError('%s type not found, could not apply options.' % objtype)
-            obj_options = backend_options[objtype]
-            processed[objtype] = {g: {} for g in obj_options.groups}
-            for opt, value in options.items():
-                found = False
-                for g, group_opts in obj_options.groups.items():
-                    if opt in group_opts.allowed_keywords:
-                        processed[objtype][g][opt] = value
-                        found = True
-                if not found:
-                    raise ValueError('%s option is not valid for %s types '
-                                     'on %s backend.' % (opt, objtype, backend))
-        return self.opts(processed, backend)
+
+        from ..util import opts
+        expanded = opts.expand_options(options, backend)
+        return self.opts(expanded, backend)
 
 
 
