@@ -452,7 +452,7 @@ class DynamicCallableMemoize(ComparisonTestCase):
         del dmap.data[(0,)]
         second = dmap[0]
         self.assertIsNot(first, second)
-        
+
     def test_dynamic_callable_memoize(self):
         # Always memoized only one of each held
         def history_callback(x, history=deque(maxlen=10)):
