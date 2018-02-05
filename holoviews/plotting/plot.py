@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters, cartesian_product
+from ..core.util import stream_parameters
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -594,7 +594,7 @@ class GenericElementPlot(DimensionedPlot):
             dimensions = self.hmap.kdims
             values = [d.values for d in dimensions]
             if dynamic and values and all(values):
-                keys = list(zip(*cartesian_product(values)))
+                keys = list(product(*values))
             else:
                 keys = list(self.hmap.data.keys())
 
