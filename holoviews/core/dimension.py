@@ -1086,14 +1086,15 @@ class Dimensioned(LabelledData):
                          'in future. Use the equivalent opts method instead.')
         return self.opts(options, **kwargs)
 
-    def opts(self, options=None, **kwargs):
+    def opts(self, options=None, backend=None, **kwargs):
         """
         Apply the supplied options to a clone of the object which is
         then returned. Note that if no options are supplied at all,
         all ids are reset.
         """
-        from ..util.parser import OptsSpec
+        backend = backend or Store.current_backend
         if isinstance(options, basestring):
+            from ..util.parser import OptsSpec
             try:
                 options = OptsSpec.parse(options)
             except SyntaxError:
@@ -1101,14 +1102,14 @@ class Dimensioned(LabelledData):
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
 
-        groups = set(Store.options().groups.keys())
+        groups = set(Store.options(backend=backend).groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
                                 ','.join(repr(k) for k in kwargs.keys()))
 
             # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = Store.options().children
+            entries = Store.options(backend=backend).children
             targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
             if any(targets) and not all(targets):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
@@ -1130,8 +1131,39 @@ class Dimensioned(LabelledData):
             deep_clone = self.map(lambda x: x.clone(id=None))
         else:
             deep_clone = self.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(deep_clone, options, **kwargs)
+        StoreOptions.set_options(deep_clone, options, backend=backend, **kwargs)
         return deep_clone
+
+
+    def options(self, options=None, backend=None, **kwargs):
+        backend = backend or Store.current_backend
+        backend_options = Store.options(backend=backend)
+        groups = set(backend_options.groups.keys())
+        if options and kwargs:
+            raise ValueError("Options must be defined in one of two formats."
+                             "Either supply keywords defining the options for "
+                             "the current object, e.g. obj.options(cmap='viridis'), "
+                             "or explicitly define the type, e.g."
+                             "obj.options({'Image': {'cmap': 'viridis'}})."
+                             "Supplying both formats is not supported.")
+        elif kwargs:
+            options = {type(self).__name__: kwargs}
+        processed = {}
+        for objtype, options in options.items():
+            if objtype not in backend_options:
+                raise ValueError('%s type not found, could not apply options.' % objtype)
+            obj_options = backend_options[objtype]
+            processed[objtype] = {g: {} for g in obj_options.groups}
+            for opt, value in options.items():
+                found = False
+                for g, group_opts in obj_options.groups.items():
+                    if opt in group_opts.allowed_keywords:
+                        processed[objtype][g][opt] = value
+                        found = True
+                if not found:
+                    raise ValueError('%s option is not valid for %s types '
+                                     'on %s backend.' % (opt, objtype, backend))
+        return self.opts(processed, backend)
 
 
 
