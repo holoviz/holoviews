@@ -284,22 +284,20 @@ def connect_edges(graph):
     return paths
 
 
-def validate_regular_sampling(img, dimension, rtol=10e-9, dt_rtol=10e-6):
+def validate_regular_sampling(img, dimension, rtol=10e-6):
     """
     Validates regular sampling of Image elements ensuring that
     coordinates the difference in sampling steps is at most rtol times
     the smallest sampling step. By default ensures the largest
-    sampling difference is less than one billionth of the smallest
-    sampling step. dt_rtol specifies a separate tolerance for datetime
-    types, which currently only allow for microsecond resolution.
+    sampling difference is less than one millionth of the smallest
+    sampling step.
     """
     dim = img.get_dimension(dimension)
     diffs = np.diff(img.dimension_values(dim, expanded=False))
     vals = np.unique(diffs)
-    if vals.dtype.kind == 'm':
-        rtol = dt_rtol
+    msg = ("{clsname} dimension {dim} is not evenly sampled to rtol "
+           "tolerance of {rtol}, please use the QuadMesh element for "
+           "unevenly or irregularly sampled data.")
     if len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol:
-        raise ValueError("%s dimension %s is not evenly sampled, "
-                         "please use the QuadMesh element for "
-                         "unevenly or irregularly sampled data." %
-                         (type(img).__name__, dim))
+        raise ValueError(msg.format(clsname=type(img).__name__,
+                                    dim=dim, rtol=rtol))
