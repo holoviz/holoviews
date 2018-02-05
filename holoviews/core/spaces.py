@@ -857,16 +857,30 @@ class DynamicMap(HoloMap):
         return self._style(retval)
 
 
-    def opts(self, options=None, **kwargs):
+    def opts(self, options=None, backend=None, **kwargs):
         """
         Apply the supplied options to a clone of the DynamicMap which is
         then returned. Note that if no options are supplied at all,
         all ids are reset.
         """
         from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, **kwargs),
+        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend, **kwargs),
                        streams=self.streams, link_inputs=True)
         dmap.data = OrderedDict([(k, v.opts(options, **kwargs))
+                                 for k, v in self.data.items()])
+        return dmap
+
+
+    def options(self, options=None, backend=None, **kwargs):
+        """
+        Apply the supplied options to a clone of the DynamicMap which is
+        then returned. Note that if no options are supplied at all,
+        all ids are reset.
+        """
+        from ..util import Dynamic
+        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.options(options, backend, **kwargs),
+                       streams=self.streams, link_inputs=True)
+        dmap.data = OrderedDict([(k, v.options(options, backend, **kwargs))
                                  for k, v in self.data.items()])
         return dmap
 
