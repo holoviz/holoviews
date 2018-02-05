@@ -247,8 +247,7 @@ class aggregate(ResamplingOperation):
             df = df.copy()
         for d in (x, y):
             if df[d.name].dtype.kind == 'M':
-                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 10e-4
-
+                df[d.name] = df[d.name].astype('datetime64[ns]').astype('int64') * 1000.
         return x, y, Dataset(df, kdims=kdims, vdims=vdims), glyph
 
 
@@ -343,9 +342,15 @@ class aggregate(ResamplingOperation):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
-        column = agg_fn.column
-        if column and isinstance(agg_fn, ds.count_cat):
-            name = '%s Count' % agg_fn.column
+        column = agg_fn.column if agg_fn else None
+        if column:
+            dims = [d for d in element.dimensions('ranges') if d == column]
+            if not dims:
+                raise ValueError("Aggregation column %s not found on %s element. "
+                                 "Ensure the aggregator references an existing "
+                                 "dimension." % (column,element))
+            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
+            vdims = [dims[0](name)]
         else:
             name = column
         vdims = [element.get_dimension(column)(name) if column
@@ -371,7 +376,7 @@ class aggregate(ResamplingOperation):
             for c in agg.coords[column].data:
                 cagg = agg.sel(**{column: c})
                 eldata = cagg if ds_version > '0.5.0' else (xs, ys, cagg.data)
-                layers[c] = self.p.element_type(eldata, **params)
+                layers[c] = self.p.element_type(eldata, **dict(params, vdims=vdims))
             return NdOverlay(layers, kdims=[data.get_dimension(column)])
 
 
@@ -539,12 +544,12 @@ class shade(Operation):
         """
         if not isinstance(overlay, NdOverlay):
             raise ValueError('Only NdOverlays can be concatenated')
-        xarr = xr.concat([v.data.T for v in overlay.values()],
+        xarr = xr.concat([v.data.transpose() for v in overlay.values()],
                          pd.Index(overlay.keys(), name=overlay.kdims[0].name))
         params = dict(get_param_values(overlay.last),
                       vdims=overlay.last.vdims,
                       kdims=overlay.kdims+overlay.last.kdims)
-        return Dataset(xarr.T, datatype=['xarray'], **params)
+        return Dataset(xarr.transpose(), datatype=['xarray'], **params)
 
 
     @classmethod
@@ -565,7 +570,20 @@ class shade(Operation):
         return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
 
 
+    @classmethod
+    def to_xarray(cls, element):
+        if issubclass(element.interface, XArrayInterface):
+            return element
+        data = tuple(element.dimension_values(kd, expanded=False)
+                     for kd in element.kdims)
+        data += tuple(element.dimension_values(vd, flat=False)
+                      for vd in element.vdims)
+        dtypes = [dt for dt in element.datatype if dt != 'xarray']
+        return element.clone(data, datatype=['xarray']+dtypes)
+
+
     def _process(self, element, key=None):
+        element = element.map(self.to_xarray, Image)
         if isinstance(element, NdOverlay):
             bounds = element.last.bounds
             element = self.concatenate(element)
