@@ -5,7 +5,7 @@ import numpy as np
 import colorsys
 import param
 
-from ..core import util
+from ..core import util, config
 from ..core.data import ImageInterface, GridInterface
 from ..core import Dimension, Element2D, Overlay, Dataset
 from ..core.boundingregion import BoundingRegion, BoundingBox
@@ -232,7 +232,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         The dimension description of the data held in the matrix.""")
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
-                 xdensity=None, ydensity=None, **params):
+                 xdensity=None, ydensity=None, rtol=None, **params):
         if isinstance(data, Image):
             bounds = bounds or data.bounds
             xdensity = xdensity or data.xdensity
@@ -268,8 +268,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled
-        validate_regular_sampling(self, 0)
-        validate_regular_sampling(self, 1)
+
+        rtol = config.rtol if rtol is None else rtol
+        validate_regular_sampling(self, 0, rtol)
+        validate_regular_sampling(self, 1, rtol)
 
 
     def __setstate__(self, state):
