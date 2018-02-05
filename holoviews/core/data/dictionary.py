@@ -210,7 +210,7 @@ class DictInterface(Interface):
         if np.isscalar(values):
             if not expanded:
                 return np.array([values])
-            values = np.full(len(dataset), values)
+            values = np.full(len(dataset), values, dtype=np.array(values).dtype)
         else:
             if not expanded:
                 return util.unique_array(values)
