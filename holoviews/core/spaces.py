@@ -859,9 +859,20 @@ class DynamicMap(HoloMap):
 
     def opts(self, options=None, backend=None, **kwargs):
         """
-        Apply the supplied options to a clone of the DynamicMap which is
-        then returned. Note that if no options are supplied at all,
-        all ids are reset.
+        Applies options on an object or nested group of objects in a
+        by options group returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts({'Image': {'plot':  {'show_title': False},
+                                'style': {'cmap': 'viridis}}})
+
+        If no opts are supplied all options on the object will be reset.
         """
         from ..util import Dynamic
         dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend, **kwargs),
@@ -873,9 +884,23 @@ class DynamicMap(HoloMap):
 
     def options(self, options=None, backend=None, **kwargs):
         """
-        Apply the supplied options to a clone of the DynamicMap which is
-        then returned. Note that if no options are supplied at all,
-        all ids are reset.
+        Applies options on an object or nested group of objects in a
+        flat format returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.options(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.options('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        If no options are supplied all options on the object will be reset.
         """
         from ..util import Dynamic
         dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.options(options, backend, **kwargs),

@@ -1088,9 +1088,20 @@ class Dimensioned(LabelledData):
 
     def opts(self, options=None, backend=None, **kwargs):
         """
-        Apply the supplied options to a clone of the object which is
-        then returned. Note that if no options are supplied at all,
-        all ids are reset.
+        Applies options on an object or nested group of objects in a
+        by options group returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts({'Image': {'plot':  {'show_title': False},
+                                'style': {'cmap': 'viridis}}})
+
+        If no opts are supplied all options on the object will be reset.
         """
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
@@ -1102,14 +1113,15 @@ class Dimensioned(LabelledData):
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
 
-        groups = set(Store.options(backend=backend).groups.keys())
+        backend_options = Store.options(backend=backend)
+        groups = set(backend_options.groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
                                 ','.join(repr(k) for k in kwargs.keys()))
 
             # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = Store.options(backend=backend).children
+            entries = backend_options.children
             targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
             if any(targets) and not all(targets):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
@@ -1136,7 +1148,30 @@ class Dimensioned(LabelledData):
 
 
     def options(self, options=None, backend=None, **kwargs):
-        if options and kwargs:
+        """
+        Applies options on an object or nested group of objects in a
+        flat format returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.options(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.options('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        If no options are supplied all options on the object will be reset.
+        """
+        backend = backend or Store.current_backend
+        backend_options = Store.options(backend=backend)
+        if isinstance(options, basestring):
+            options = {options: kwargs}
+        elif options and kwargs:
             raise ValueError("Options must be defined in one of two formats."
                              "Either supply keywords defining the options for "
                              "the current object, e.g. obj.options(cmap='viridis'), "

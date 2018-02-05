@@ -3,7 +3,7 @@ import os, sys, inspect, shutil
 import param
 
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from ..core.options import options_policy
+from ..core.options import options_policy, Keywords
 from ..core.operation import Operation
 from ..core.util import Aliases, basestring  # noqa (API import)
 from ..core.operation import OperationCallable
@@ -115,20 +115,28 @@ class opts(param.ParameterizedFunction):
         backend_options = Store.options(backend=backend)
         groups = set(backend_options.groups.keys())
         expanded = {}
-        for objtype, options in options.items():
+        for objspec, options in options.items():
+            objtype = objspec.split('.')[0]
             if objtype not in backend_options:
-                raise ValueError('%s type not found, could not apply options.' % objtype)
+                raise ValueError('%s type not found, could not apply options.'
+                                 % objtype)
             obj_options = backend_options[objtype]
-            expanded[objtype] = {g: {} for g in obj_options.groups}
+            expanded[objspec] = {g: {} for g in obj_options.groups}
             for opt, value in options.items():
                 found = False
+                valid_options = []
                 for g, group_opts in obj_options.groups.items():
                     if opt in group_opts.allowed_keywords:
-                        expanded[objtype][g][opt] = value
+                        expanded[objspec][g][opt] = value
                         found = True
+                    valid_options += group_opts.allowed_keywords
                 if not found:
-                    raise ValueError('%s option is not valid for %s types '
-                                     'on %s backend.' % (opt, objtype, backend))
+                    kws = Keywords(values=valid_options, target=objspec)
+                    matches = kws.fuzzy_match(opt)
+                    raise ValueError('Unexpected option %r for %s types '
+                                     'when using the %r backend. Similar '
+                                     'options are: %s.' %
+                                     (opt, objtype, backend, matches))
         return expanded
 
 
