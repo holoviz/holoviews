@@ -136,27 +136,6 @@ class Bars(Chart):
 
 
 
-class BoxWhisker(Chart):
-    """
-    BoxWhisker allows representing the distribution of data grouped
-    into one or more groups by summarizing the data using quartiles.
-    The boxes of a BoxWhisker element represent the first, second and
-    third quartiles. The whiskers follow the Tukey boxplot definition
-    representing the lowest datum still within 1.5 IQR of the lower
-    quartile, and the highest datum still within 1.5 IQR of the upper
-    quartile. Any points falling outside this range are shown as
-    distinct outlier points.
-    """
-
-    group = param.String(default='BoxWhisker', constant=True)
-
-    kdims = param.List(default=[], bounds=(0,None))
-
-    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
-
-    _auto_indexable_1d = False
-
-
 class Histogram(Chart):
     """
     Histogram contains a number of bins, which are defined by the
@@ -340,3 +319,20 @@ class Area(Curve):
                                     new_type=Area)
             baseline += y
         return stacked
+
+
+class BoxWhisker(Chart):
+    """
+    BoxWhisker represent data as a distributions highlighting the
+    median, mean and various percentiles. It may have a single value
+    dimension and any number of key dimensions declaring the grouping
+    of each violin.
+    """
+
+    group = param.String(default='BoxWhisker', constant=True)
+
+    kdims = param.List(default=[], bounds=(0,None))
+
+    vdims = param.List(default=[Dimension('y')], bounds=(1,1))
+
+    _auto_indexable_1d = False

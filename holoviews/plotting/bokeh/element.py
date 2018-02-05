@@ -926,7 +926,7 @@ class CompositeElementPlot(ElementPlot):
                 renderer, glyph = self._init_glyph(plot, mapping.get(key, {}), properties, key)
             self.handles[key+'_glyph'] = glyph
             if isinstance(renderer, Renderer):
-                self.handles[key+'glyph_renderer'] = renderer
+                self.handles[key+'_glyph_renderer'] = renderer
 
             self._postprocess_hover(renderer, source)
 

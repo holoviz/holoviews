@@ -4,7 +4,7 @@ import numpy as np
 from ..core.dimension import Dimension, process_dimensions
 from ..core.element import Element
 from ..core.util import get_param_values, OrderedDict
-from .chart import Chart
+from .chart import Chart, BoxWhisker
 
 
 class StatisticsElement(Chart):
@@ -122,3 +122,13 @@ class Distribution(StatisticsElement):
     # Ensure Interface does not add an index
     _auto_indexable_1d = False
 
+
+class Violin(BoxWhisker):
+    """
+    Violin elements represent data as 1D distributions visualized
+    as a kernel-density estimate. It may have a single value dimension
+    and any number of key dimensions declaring the grouping of each
+    violin.
+    """
+
+    group = param.String(default='Violin', constant=True)

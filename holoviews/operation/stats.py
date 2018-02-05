@@ -16,7 +16,7 @@ def _kde_support(bin_range, bw, gridsize, cut, clip):
     if clip[0] is not None and np.isfinite(clip[0]):
         kmin = max(kmin, clip[0])
     if clip[1] is not None and np.isfinite(clip[1]):
-        kmax = max(kmax, clip[1])
+        kmax = min(kmax, clip[1])
     return np.linspace(kmin, kmax, gridsize)
 
 
