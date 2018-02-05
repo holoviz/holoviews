@@ -73,10 +73,11 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
-    rtol = param.Number(default=10e-6, doc="""
-      The tolerance used to enforce regular sampling for gridded data
-      where regular sampling is expected. Expressed as the maximal
-      allowable sampling difference between sample locations.""")
+    image_rtol = param.Number(default=10e-6, doc="""
+      The tolerance used to enforce regular sampling for regular,
+      gridded data where regular sampling is expected. Expressed as the
+      maximal allowable sampling difference between sample
+      locations.""")
 
     def __call__(self, **params):
         self.set_param(**params)

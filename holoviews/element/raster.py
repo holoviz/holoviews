@@ -269,7 +269,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
         # Ensure coordinates are regularly sampled
 
-        rtol = config.rtol if rtol is None else rtol
+        rtol = config.image_rtol if rtol is None else rtol
         validate_regular_sampling(self, 0, rtol)
         validate_regular_sampling(self, 1, rtol)
 
