@@ -7,6 +7,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointDraw, PolyDraw, PolyEdit, BoxEdit
 
 try:
+    from bokeh.models import PolyEditTool
     from holoviews.plotting.bokeh.callbacks import (
         Callback, PointDrawCallback, PolyDrawCallback, PolyEditCallback,
         BoxEditCallback
@@ -97,3 +98,24 @@ class TestEditToolCallbacks(ComparisonTestCase):
         callback.on_msg({'data': data})
         element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
         self.assertEqual(poly_edit.element, element)
+
+    def test_poly_edit_shared_callback(self):
+        polys = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        polys2 = Polygons([[(0, 0), (2, 2), (4, 0)]])
+        poly_edit = PolyEdit(source=polys, shared=True)
+        poly_edit2 = PolyEdit(source=polys2, shared=True)
+        plot = bokeh_renderer.get_plot(polys*polys2)
+        edit_tools = [t for t in plot.state.tools if isinstance(t, PolyEditTool)]
+        self.assertEqual(len(edit_tools), 1)
+        plot1, plot2 = plot.subplots.values()
+        self.assertIsInstance(plot1.callbacks[0], PolyEditCallback)
+        callback = plot1.callbacks[0]
+        data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
+        callback.on_msg({'data': data})
+        self.assertIsInstance(plot2.callbacks[0], PolyEditCallback)
+        callback = plot2.callbacks[0]
+        data = {'x': [[1, 2, 3], [3, 4, 5]], 'y': [[1, 2, 3], [3, 4, 5]]}
+        callback.on_msg({'data': data})
+        element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
+        self.assertEqual(poly_edit.element, element)
+        self.assertEqual(poly_edit2.element, element)

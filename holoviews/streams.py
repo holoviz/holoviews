@@ -833,6 +833,12 @@ class CDSStream(LinkedStream):
 class PointDraw(CDSStream):
     """
     Attaches a PointAddTool and syncs the datasource.
+
+    drag: boolean
+        Whether to enable dragging of polygons and paths
+
+    empty_value: int/float/string/None
+        The value to insert on non-position columns when adding a new polygon
     """
 
     def __init__(self, empty_value=None, drag=True, **params):
@@ -859,6 +865,12 @@ class PointDraw(CDSStream):
 class PolyDraw(CDSStream):
     """
     Attaches a PolyDrawTool and syncs the datasource.
+
+    drag: boolean
+        Whether to enable dragging of polygons and paths
+
+    empty_value: int/float/string/None
+        The value to insert on non-position columns when adding a new polygon
     """
 
     def __init__(self, empty_value=None, drag=True, **params):
@@ -922,8 +934,17 @@ class BoxEdit(CDSStream):
 class PolyEdit(PolyDraw):
     """
     Attaches a PolyEditTool and syncs the datasource.
+
+    shared: boolean
+        Whether PolyEditTools should be shared between multiple elements
+
+    vertex_style: dict
+        A dictionary specifying the style options for the vertices.
+        The usual bokeh style options apply, e.g. fill_color,
+        line_alpha, size, etc.
     """
 
-    def __init__(self, vertex_style={}, **params):
+    def __init__(self, vertex_style={}, shared=True, **params):
+        self.shared = shared
         self.vertex_style = vertex_style
         super(PolyEdit, self).__init__(**params)
