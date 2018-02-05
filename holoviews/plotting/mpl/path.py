@@ -85,9 +85,12 @@ class ContourPlot(PathPlot):
             return (paths,), style, {}
 
         if element.level is not None:
-            style['array'] = np.full(len(paths), element.level)
+            array = np.full(len(paths), element.level)
         else:
-            style['array'] = element.dimension_values(cdim, expanded=False)
+            array = element.dimension_values(cdim, expanded=False)
+        if array.dtype.kind not in 'if':
+            array = np.searchsorted(np.unique(array), array)
+        style['array']= array
         self._norm_kwargs(element, ranges, style, cdim)
         style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
