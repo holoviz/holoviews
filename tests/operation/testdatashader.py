@@ -2,13 +2,16 @@ from unittest import SkipTest
 from nose.plugins.attrib import attr
 
 import numpy as np
-from holoviews import Curve, Points, Image, Dataset, RGB, Path, Graph, TriMesh, QuadMesh
+from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
+                       Graph, TriMesh, QuadMesh, NdOverlay)
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.core.util import pd
 
 try:
     import datashader as ds
     from holoviews.operation.datashader import (
-        aggregate, regrid, ds_version, stack, directly_connect_edges, rasterize
+        aggregate, regrid, ds_version, stack, directly_connect_edges,
+        shade, rasterize
     )
 except:
     ds_version = None
@@ -43,12 +46,35 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         x_sampling=0.5, y_sampling=0.5)
         self.assertEqual(img, expected)
 
+    def test_aggregate_points_categorical(self):
+        points = Points([(0.2, 0.3, 'A'), (0.4, 0.7, 'B'), (0, 0.99, 'C')], vdims='z')
+        img = aggregate(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2, aggregator=ds.count_cat('z'))
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        expected = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), vdims='z Count'),
+                              'B': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count'),
+                              'C': Image((xs, ys, [[0, 0], [1, 0]]), vdims='z Count')},
+                             kdims=['z'])
+        self.assertEqual(img, expected)
+
     def test_aggregate_curve(self):
         curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
         expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
                          vdims=['Count'])
         img = aggregate(curve, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
+        self.assertEqual(img, expected)
+
+    def test_aggregate_curve_datetimes(self):
+        dates = pd.date_range(start="2016-01-01", end="2016-01-03", freq='1D')
+        curve = Curve((dates, [1, 2, 3]))
+        img = aggregate(curve, width=2, height=2, dynamic=False)
+        bounds = (np.datetime64('2015-12-31T23:59:59.723518000'), 1.0,
+                  np.datetime64('2016-01-03T00:00:00.276482000'), 3.0)
+        dates = [np.datetime64('2016-01-01T12:00:00.000000000'),
+                 np.datetime64('2016-01-02T12:00:00.000000000')]
+        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
+                         datatype=['xarray'], bounds=bounds, vdims='Count')
         self.assertEqual(img, expected)
 
     def test_aggregate_ndoverlay(self):
@@ -76,6 +102,39 @@ class DatashaderAggregateTests(ComparisonTestCase):
                         width=2, height=2)
         self.assertEqual(img, expected)
 
+
+@attr(optional=1)
+class DatashaderShadeTests(ComparisonTestCase):
+
+    def test_shade_categorical_images_xarray(self):
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['xarray'], vdims='z Count'),
+                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count'),
+                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['xarray'], vdims='z Count')},
+                         kdims=['z'])
+        shaded = shade(data)
+        r = [[228, 255], [66, 255]]
+        g = [[26, 255], [150, 255]]
+        b = [[28, 255], [129, 255]]
+        a = [[40, 0], [255, 0]]
+        expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
+                       vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
+        self.assertEqual(shaded, expected)
+
+    def test_shade_categorical_images_grid(self):
+        xs, ys = [0.25, 0.75], [0.25, 0.75]
+        data = NdOverlay({'A': Image((xs, ys, [[1, 0], [0, 0]]), datatype=['grid'], vdims='z Count'),
+                          'B': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count'),
+                          'C': Image((xs, ys, [[0, 0], [1, 0]]), datatype=['grid'], vdims='z Count')},
+                         kdims=['z'])
+        shaded = shade(data)
+        r = [[228, 255], [66, 255]]
+        g = [[26, 255], [150, 255]]
+        b = [[28, 255], [129, 255]]
+        a = [[40, 0], [255, 0]]
+        expected = RGB((xs, ys, r, g, b, a), datatype=['grid'],
+                       vdims=RGB.vdims+[Dimension('A', range=(0, 1))])
+        self.assertEqual(shaded, expected)
 
 
 
