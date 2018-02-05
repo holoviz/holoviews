@@ -373,9 +373,7 @@ class aggregate(ResamplingOperation):
                 raise ValueError("Aggregation column %s not found on %s element. "
                                  "Ensure the aggregator references an existing "
                                  "dimension." % (column,element))
-            name = column
-            if isinstance(agg_fn, ds.count_cat):
-                name = '%s Count' % column
+            name = '%s Count' % column if isinstance(agg_fn, ds.count_cat) else column
             vdims = [dims[0](name)]
         else:
             vdims = Dimension('Count')
