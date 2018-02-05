@@ -35,7 +35,11 @@ class PandasInterface(Interface):
         element_params = eltype.params()
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
+        if util.is_series(data):
+            data = data.to_frame()
         if util.is_dataframe(data):
+            if eltype._auto_indexable_1d and len(data.columns) == 1:
+                data = data.reset_index()
             if isinstance(kdim_param.bounds[1], int):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
@@ -52,6 +56,16 @@ class PandasInterface(Interface):
                              if d not in kdims]
             elif kdims == [] and vdims is None:
                 vdims = list(data.columns[:nvdim if nvdim else None])
+
+            # Handle reset of index if kdims reference index by name
+            for kd in kdims:
+                if isinstance(kd, Dimension): kd = kd.name
+                if kd in data.columns:
+                    continue
+                if any(kd == ('index' if name is None else name)
+                       for name in data.index.names):
+                    data = data.reset_index()
+                    break
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 raise DataError("pandas DataFrame column names used as dimensions "
                                 "must be strings not integers.", cls)
@@ -108,7 +122,7 @@ class PandasInterface(Interface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
-        dim_types = 'all' if vdims else 'key' 
+        dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
         not_found = [d for d in dimensions if d not in dataset.data.columns]
         if not_found:

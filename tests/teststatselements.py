@@ -24,6 +24,13 @@ class StatisticalElementTest(ComparisonTestCase):
         self.assertEqual(dist.kdims, [Dimension('Value')])
         self.assertEqual(dist.vdims, [Dimension('Density')])
 
+    def test_distribution_series_constructor(self):
+        if pd is None:
+            raise SkipTest("Test requires pandas")
+        dist = Distribution(pd.Series([0, 1, 2], name='Value'))
+        self.assertEqual(dist.kdims, [Dimension('Value')])
+        self.assertEqual(dist.vdims, [Dimension('Density')])
+
     def test_distribution_dict_constructor(self):
         dist = Distribution({'Value': [0, 1, 2]})
         self.assertEqual(dist.kdims, [Dimension('Value')])

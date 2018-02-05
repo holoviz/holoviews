@@ -863,11 +863,26 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = pd.DataFrame
         self.init_column_data()
 
+    def test_dataset_series_construct(self):
+        ds = Dataset(pd.Series([1, 2, 3], name='A'))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+
+    def test_dataset_single_column_construct(self):
+        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A']))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+
     def test_dataset_extract_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])
         ds = Dataset(df, kdims=['x'])
         self.assertEqual(ds.vdims, [Dimension('y'), Dimension('z')])
+
+    def test_dataset_process_index(self):
+        df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
+                          columns=['x', 'y', 'z'])
+        ds = Dataset(df, 'index')
+        self.assertEqual(ds.kdims, [Dimension('index')])
+        self.assertEqual(ds.vdims, [Dimension('x'), Dimension('y'), Dimension('z')])
 
     def test_dataset_extract_kdims_and_vdims_no_bounds(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},

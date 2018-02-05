@@ -110,7 +110,7 @@ class DictInterface(Interface):
 
     @classmethod
     def validate(cls, dataset, vdims=True):
-        dim_types = 'key' if vdims else 'all'
+        dim_types = 'all' if vdims else 'key'
         dimensions = dataset.dimensions(dim_types, label='name')
         not_found = [d for d in dimensions if d not in dataset.data]
         if not_found:
