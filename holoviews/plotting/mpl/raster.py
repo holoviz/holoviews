@@ -76,6 +76,7 @@ class RasterPlot(ColorbarPlot):
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
+        style['origin'] = 'upper'
 
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
@@ -175,6 +176,7 @@ class HeatMapPlot(RasterPlot):
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
         style['annotations'] = self._annotate_values(element.gridded)
+        style['origin'] = 'upper'
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         return [data], style, {'xticks': xticks, 'yticks': yticks}
@@ -199,28 +201,6 @@ class HeatMapPlot(RasterPlot):
             annotations = self._annotate_plot(axis, style['annotations'])
             self.handles['annotations'] = annotations
         return axis_kwargs
-
-
-class ImagePlot(RasterPlot):
-
-    def get_data(self, element, ranges, style):
-        data = np.flipud(element.dimension_values(2, flat=False))
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        l, b, r, t = element.bounds.lbrt()
-        if self.invert_axes:
-            data = data[::-1].T
-            l, b, r, t = b, l, t, r
-        vdim = element.vdims[0]
-        self._norm_kwargs(element, ranges, style, vdim)
-        style['extent'] = [l, r, b, t]
-        return (data,), style, {}
-
-    def get_extents(self, element, ranges):
-        extents = super(ImagePlot, self).get_extents(element, ranges)
-        if self.situate_axes:
-            return extents
-        else:
-            return element.bounds.lbrt()
 
 
 class QuadMeshPlot(ColorbarPlot):
