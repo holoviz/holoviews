@@ -76,6 +76,7 @@ class RasterPlot(ColorbarPlot):
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         style['extent'] = [l, r, b, t]
+        style['origin'] = 'upper'
 
         return [data], style, {'xticks': xticks, 'yticks': yticks}
 
@@ -175,6 +176,7 @@ class HeatMapPlot(RasterPlot):
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
         style['annotations'] = self._annotate_values(element.gridded)
+        style['origin'] = 'upper'
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
         return [data], style, {'xticks': xticks, 'yticks': yticks}
