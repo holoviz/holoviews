@@ -551,25 +551,32 @@ def traverse_setter(obj, attribute, value):
     obj.traverse(lambda x: setattr(x, attribute, value))
 
 
+def _get_min_distance_numpy(element):
+    """
+    NumPy based implementation of get_min_distance
+    """
+    xys = element.array([0, 1])
+    with warnings.catch_warnings():
+        warnings.filterwarnings('ignore', r'invalid value encountered in')
+        xys = xys.astype('float32').view(np.complex64)
+        distances = np.abs(xys.T-xys)
+        np.fill_diagonal(distances, np.inf)
+        distances = distances[distances>0]
+        if len(distances):
+            return distances.min()
+    return 0
+    
+
 def get_min_distance(element):
     """
     Gets the minimum sampling distance of the x- and y-coordinates
     in a grid.
     """
-    xys = element.array([0, 1])
     try:
         from scipy.spatial.distance import pdist
-        return pdist(xys).min()
+        return pdist(element.array([0, 1])).min()
     except:
-        with warnings.catch_warnings():
-            warnings.filterwarnings('ignore', r'invalid value encountered in')
-            xys = xys.astype('float32').view(np.complex64)
-            distances = np.abs(xys.T-xys)
-            np.fill_diagonal(distances, np.inf)
-            distances = distances[distances>0]
-            if len(distances):
-                return distances.min()
-            return 0
+        return _get_min_distance_numpy(element)
 
 
 def rgb2hex(rgb):
