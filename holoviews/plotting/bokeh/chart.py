@@ -171,17 +171,18 @@ class VectorFieldPlot(ColorbarPlot):
     def _get_lengths(self, element, ranges):
         mag_dim = element.get_dimension(self.size_index)
         (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
-        base_dist = get_min_distance(element)
         if mag_dim:
             magnitudes = element.dimension_values(mag_dim)
             _, max_magnitude = ranges[mag_dim.name]
             if self.normalize_lengths and max_magnitude != 0:
                 magnitudes = magnitudes / max_magnitude
             if self.rescale_lengths:
+                base_dist = get_min_distance(element)
                 magnitudes *= base_dist
         else:
             magnitudes = np.ones(len(element))
             if self.rescale_lengths:
+                base_dist = get_min_distance(element)
                 magnitudes *= base_dist
 
         return magnitudes
