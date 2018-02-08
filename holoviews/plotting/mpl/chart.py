@@ -605,16 +605,6 @@ class VectorFieldPlot(ColorbarPlot):
 
     _plot_methods = dict(single='quiver')
 
-    def __init__(self, *args, **params):
-        super(VectorFieldPlot, self).__init__(*args, **params)
-        self._min_dist = self._get_map_info(self.hmap)
-
-
-    def _get_map_info(self, vmap):
-        """
-        Get the minimum sample distance and maximum magnitude
-        """
-        return np.min([get_min_distance(vfield) for vfield in vmap])
 
 
     def get_data(self, element, ranges, style):
@@ -627,7 +617,8 @@ class VectorFieldPlot(ColorbarPlot):
         if self.invert_axes: radians = radians+1.5*np.pi
         angles = list(np.rad2deg(radians)) 
         if self.rescale_lengths:
-            input_scale = input_scale / self._min_dist
+            min_dist = get_min_distance(element)
+            input_scale = input_scale / min_dist
 
         mag_dim = element.get_dimension(self.size_index)
         if mag_dim:

@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from unittest import SkipTest
 from nose.plugins.attrib import attr
 
@@ -12,7 +14,7 @@ from holoviews.element import (Image, Scatter, Curve, Text, Points,
 from holoviews.operation import operation
 from holoviews.plotting.util import (
     compute_overlayable_zorders, get_min_distance, process_cmap,
-    initialize_dynamic, split_dmap_overlay)
+    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy)
 from holoviews.streams import PointerX
 
 try:
@@ -430,13 +432,12 @@ class TestPlotColorUtils(ComparisonTestCase):
     def test_process_cmap_mpl(self):
         colors = process_cmap('Greys', 3)
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
-
     
     def test_process_cmap_instance_mpl(self):
         try:
             from matplotlib.cm import get_cmap
         except:
-            raise SkipError("Matplotlib needed to test matplotlib colormap instances")
+            raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
         cmap = get_cmap('Greys')
         colors = process_cmap(cmap, 3)
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
@@ -476,6 +477,20 @@ class TestPlotUtils(ComparisonTestCase):
                   np.arange(0, 10, dtype='int32'))
         X, Y = np.meshgrid(xs, ys)
         dist = get_min_distance(Points((X.flatten(), Y.flatten())))
+        self.assertEqual(dist, 1.0)
+
+    def test_get_min_distance_float32_type_no_scipy(self):
+        xs, ys = (np.arange(0, 2., .2, dtype='float32'),
+                  np.arange(0, 2., .2, dtype='float32'))
+        X, Y = np.meshgrid(xs, ys)
+        dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
+        self.assertEqual(dist, np.float32(0.2))
+
+    def test_get_min_distance_int32_type_no_scipy(self):
+        xs, ys = (np.arange(0, 10, dtype='int32'),
+                  np.arange(0, 10, dtype='int32'))
+        X, Y = np.meshgrid(xs, ys)
+        dist = _get_min_distance_numpy(Points((X.flatten(), Y.flatten())))
         self.assertEqual(dist, 1.0)
 
 
