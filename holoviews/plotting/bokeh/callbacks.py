@@ -853,6 +853,11 @@ class CDSCallback(Callback):
     models = ['source']
     on_changes = ['data']
 
+    def initialize(self):
+        super(CDSCallback, self).initialize()
+        for stream in self.streams:
+            stream.update(data=self.plot_handles['source'].data)
+
     def _process_msg(self, msg):
         for col, values in msg['data'].items():
             if isinstance(values, dict):
@@ -945,6 +950,9 @@ class BoxEditCallback(CDSCallback):
         plot.state.tools.append(box_tool)
         self.plot.state.renderers.remove(plot.handles['glyph_renderer'])
         super(BoxEditCallback, self).initialize()
+        for stream in self.streams:
+            stream.update(data=self._process_msg({'data': data})['data'])
+
 
     def _process_msg(self, msg):
         data = super(BoxEditCallback, self)._process_msg(msg)['data']
