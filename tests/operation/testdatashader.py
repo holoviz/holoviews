@@ -8,6 +8,7 @@ from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.util import pd
 
 try:
+    import datashader as ds
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
         shade, rasterize

@@ -5,14 +5,12 @@ from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Table
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import CDSStream
 
 try:
     from bokeh.models.widgets import (
         DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
         DateEditor, StringFormatter, StringEditor, IntEditor
     )
-    from holoviews.plotting.bokeh.callbacks import CDSCallback
     from holoviews.plotting.bokeh.renderer import BokehRenderer
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
@@ -49,10 +47,3 @@ class TestBokehTablePlot(ComparisonTestCase):
         self.assertEqual(column.title, 'Date')
         self.assertIsInstance(column.formatter, DateFormatter)
         self.assertIsInstance(column.editor, DateEditor)
-
-    def test_table_plot_callback(self):
-        table = Table(([1, 2, 3], [1., 2., 3.], ['A', 'B', 'C']), ['x', 'y'], 'z')
-        CDSStream(source=table)
-        plot = bokeh_renderer.get_plot(table)
-        self.assertEqual(len(plot.callbacks), 1)
-        self.assertIsInstance(plot.callbacks[0], CDSCallback)
