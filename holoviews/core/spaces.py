@@ -857,7 +857,7 @@ class DynamicMap(HoloMap):
         return self._style(retval)
 
 
-    def opts(self, options=None, backend=None, **kwargs):
+    def opts(self, options=None, backend=None, clone=True, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         by options group returning a new object with the options
@@ -873,16 +873,18 @@ class DynamicMap(HoloMap):
                                 'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
         """
         from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend, **kwargs),
+        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.opts(options, backend,
+                                                                         clone, **kwargs),
                        streams=self.streams, link_inputs=True)
         dmap.data = OrderedDict([(k, v.opts(options, **kwargs))
                                  for k, v in self.data.items()])
         return dmap
 
 
-    def options(self, options=None, backend=None, **kwargs):
+    def options(self, options=None, backend=None, clone=True, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -901,9 +903,11 @@ class DynamicMap(HoloMap):
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
 
         If no options are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
         """
         from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.options(options, backend, **kwargs),
+        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.options(options, backend,
+                                                                            clone, **kwargs),
                        streams=self.streams, link_inputs=True)
         dmap.data = OrderedDict([(k, v.options(options, backend, **kwargs))
                                  for k, v in self.data.items()])
