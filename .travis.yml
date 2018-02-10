@@ -64,6 +64,7 @@ install:
 
 before-script:
   - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
+  - export MPLBACKEND='agg'
 
 script:
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
