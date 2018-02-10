@@ -1086,7 +1086,7 @@ class Dimensioned(LabelledData):
                          'in future. Use the equivalent opts method instead.')
         return self.opts(options, **kwargs)
 
-    def opts(self, options=None, backend=None, **kwargs):
+    def opts(self, options=None, backend=None, clone=True, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         by options group returning a new object with the options
@@ -1102,6 +1102,7 @@ class Dimensioned(LabelledData):
                                 'style': {'cmap': 'viridis}}})
 
         If no opts are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
         """
         backend = backend or Store.current_backend
         if isinstance(options, basestring):
@@ -1139,15 +1140,19 @@ class Dimensioned(LabelledData):
 
                 kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
-        if options is None and kwargs=={}:
-            deep_clone = self.map(lambda x: x.clone(id=None))
-        else:
-            deep_clone = self.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(deep_clone, options, backend=backend, **kwargs)
-        return deep_clone
+        obj = self
+        if options is None and kwargs == {}:
+            if clone:
+                obj = self.map(lambda x: x.clone(id=None))
+            else:
+                self.map(lambda x: setattr(x, 'id', None))
+        elif clone:
+            obj = self.map(lambda x: x.clone(id=x.id))
+        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
+        return obj
 
 
-    def options(self, options=None, backend=None, **kwargs):
+    def options(self, options=None, backend=None, clone=True, **kwargs):
         """
         Applies options on an object or nested group of objects in a
         flat format returning a new object with the options
@@ -1166,9 +1171,8 @@ class Dimensioned(LabelledData):
             obj.options({'Image': dict(cmap='viridis', show_title=False)})
 
         If no options are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
         """
-        backend = backend or Store.current_backend
-        backend_options = Store.options(backend=backend)
         if isinstance(options, basestring):
             options = {options: kwargs}
         elif options and kwargs:
@@ -1183,7 +1187,7 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         expanded = opts.expand_options(options, backend)
-        return self.opts(expanded, backend)
+        return self.opts(expanded, backend, clone)
 
 
 
