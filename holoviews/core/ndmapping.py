@@ -142,7 +142,10 @@ class MultiDimensionalMapping(Dimensioned):
                                                       data=type(data).__name__,
                                                       restr=data_type))
         elif not len(dim_vals) == self.ndims:
-            raise KeyError('Key has to match number of dimensions.')
+            raise KeyError('The data contains keys of length %d, but the kdims '
+                           'only declare %d dimensions. Ensure that the number '
+                           'of kdims match the length of the keys in your data.'
+                           % (len(dim_vals), self.ndims))
 
 
     def _add_item(self, dim_vals, data, sort=True, update=True):
