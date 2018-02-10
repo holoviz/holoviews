@@ -915,7 +915,7 @@ class Dimensioned(LabelledData):
         strict is False. If strict is True, a KeyError is raised
         instead.
         """
-        if isinstance(dimension, (int, basestring, Dimension)):
+        if dimension is not None and not isinstance(dimension, (int, basestring, Dimension)):
             raise TypeError('Dimension lookup supports int, string, '
                             'and Dimension instances, cannot lookup '
                             'Dimensions using %s type.' % type(dimension).__name__)

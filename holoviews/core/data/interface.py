@@ -189,24 +189,24 @@ class Interface(param.Parameterized):
             # Prioritize interfaces which have matching types
             prioritized = head + [el for el in prioritized if el != head[0]]
 
+        if isinstance(data, tuple) and kdims is not None:
+            invalid_dims = False
+            if vdims is not None and validate_vdims and len(data) != len(kdims+vdims):
+                invalid_dims = True
+                ndims = len(kdims+vdims)
+            elif not validate_vdims and len(data) != len(kdims):
+                invalid_dims = True
+                ndims = len(kdims)
+            if invalid_dims:
+                raise DataError('%d key and value dimensions were declared '
+                                'but supplied data tuple is length %d.'
+                                'Ensure the data tuple and declared '
+                                'dimensions match.' % (ndims, len(data)))
+
         # Iterate over interfaces until one can interpret the input
         priority_errors = []
         for interface in prioritized:
             try:
-                invalid_dims = False
-                if isinstance(data, tuple):
-                    if kdims and vdims and validate_vdims and len(data) != len(kdims+vdims):
-                        invalid_dims = True
-                        ndims = len(kdims+vdims)
-                    elif kdims and not validate_vdims and len(data) != len(kdims):
-                        invalid_dims = True
-                        ndims = len(kdims)
-                if invalid_dims:
-                    raise DataError('Declared %d dimensions but only '
-                                    'found data corresponding to %d '
-                                    'dimensions. Ensure the data tuple '
-                                    'matches the declared dimensionality.'
-                                    % (ndims, len(data)))
                 (data, dims, extra_kws) = interface.init(eltype, data, kdims, vdims)
                 break
             except DataError:
