@@ -221,20 +221,23 @@ class AttrTree(object):
 
         if not any(identifier.startswith(prefix)
                    for prefix in type(self)._disabled_prefixes):
-            identifier = type(self)._sanitizer(identifier, escape=False)
+            sanitized = type(self)._sanitizer(identifier, escape=False)
+        else:
+            sanitized = identifier
 
-        if identifier in self.children:
-            return self.__dict__[identifier]
+        if sanitized in self.children:
+            return self.__dict__[sanitized]
 
-        if not identifier.startswith('_'):
-            self.children.append(identifier)
+        if not sanitized.startswith('_') and identifier[0].isupper():
+            self.children.append(sanitized)
             dir_mode = self.__dict__['_dir_mode']
-            child_tree = self.__class__(identifier=identifier,
+            child_tree = self.__class__(identifier=sanitized,
                                         parent=self, dir_mode=dir_mode)
-            self.__dict__[identifier] = child_tree
+            self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError
+            raise AttributeError('%r object has no attribute %s.' %
+                                 (type(self).__name__, identifier))
 
 
     def __iter__(self):
