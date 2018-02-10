@@ -1326,13 +1326,13 @@ class StoreOptions(object):
         return specs
 
     @classmethod
-    def propagate_ids(cls, obj, match_id, new_id, applied_keys):
+    def propagate_ids(cls, obj, match_id, new_id, applied_keys, backend=None):
         """
         Recursively propagate an id through an object for components
         matching the applied_keys. This method can only be called if
         there is a tree with a matching id in Store.custom_options
         """
-        if not new_id in Store.custom_options():
+        if not new_id in Store.custom_options(backend=backend):
             raise AssertionError("The set_ids method requires "
                                  "Store.custom_options to contain"
                                  " a tree with id %d" % new_id)
@@ -1389,7 +1389,7 @@ class StoreOptions(object):
         Only useful when invalid keywords generate exceptions instead of
         skipping i.e Options.skip_invalid is False.
         """
-        loaded_backends =  Store.loaded_backends()if backends is None else backends
+        loaded_backends =  Store.loaded_backends() if backends is None else backends
 
         error_info     = {}
         backend_errors = defaultdict(set)
@@ -1406,6 +1406,7 @@ class StoreOptions(object):
                              error.group_name)
                 error_info[error_key+(backend,)] = error.allowed_keywords
                 backend_errors[error_key].add(backend)
+
 
         for ((keyword, target, group_name), backends) in backend_errors.items():
             # If the keyword failed for the target across all loaded backends...
@@ -1649,7 +1650,7 @@ class StoreOptions(object):
         options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
-        cls.update_backends(id_mapping, custom_trees)
+        cls.update_backends(id_mapping, custom_trees, backend=backend)
         for (match_id, new_id) in id_mapping:
-            cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()))
+            cls.propagate_ids(obj, match_id, new_id, compositor_applied+list(spec.keys()), backend=backend)
         return obj
