@@ -67,7 +67,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = element.nodes.dimensions()
             dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
         elif self.inspection_policy == 'edges':
-            dims = element.kdims+element.vdims
+            kdims = [(kd.pprint_label, '@{%s_values}' % kd)
+                     if kd in ('start', 'end') else kd for kd in element.kdims]
+            dims = kdims+element.vdims
         else:
             dims = []
         return dims, {}
@@ -206,7 +208,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                     point_data[dimension_sanitizer(d.name)] = element.nodes.dimension_values(d)
             elif self.inspection_policy == 'edges':
                 for d in element.dimensions():
-                    path_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
+                    dim_name = dimension_sanitizer(d.name)
+                    if dim_name in ('start', 'end'):
+                        dim_name += '_values'
+                    path_data[dim_name] = element.dimension_values(d)
         data = {'scatter_1': point_data, self.edge_glyph: path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, self.edge_glyph: edge_mapping}
         return data, mapping, style
