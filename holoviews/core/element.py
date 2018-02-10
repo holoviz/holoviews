@@ -68,6 +68,15 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         return True
 
+
+    def __contains__(self, dimension):
+        """
+        Allows checking whether a Dimension is in the Elements key or
+        value dimensions.
+        """
+        return dimension in self.dimensions()
+
+
     __bool__ = __nonzero__
 
 
