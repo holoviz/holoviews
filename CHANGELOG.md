@@ -27,7 +27,8 @@ Enhancements:
 -    Added support for handling datetime.date types
      ([\#2267](https://github.com/ioam/holoviews/pull/2267))
 -    Add support for pre- and post-process hooks on operations
-     ([\#2246](https://github.com/ioam/holoviews/pull/2246))
+     ([\#2246](https://github.com/ioam/holoviews/pull/2246),
+	  [\#2334](https://github.com/ioam/holoviews/pull/2334))
 
 Fixes:
 
