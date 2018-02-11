@@ -157,8 +157,8 @@ class OperationTests(ComparisonTestCase):
     def test_pre_and_postprocess_hooks(self):
         pre_backup = operation._preprocess_hooks
         post_backup = operation._postprocess_hooks
-        operation._preprocess_hooks = [lambda x: {'label': str(x.id)}]
-        operation._postprocess_hooks = [lambda x, **kwargs: x.clone(**kwargs)]
+        operation._preprocess_hooks = [lambda op, x: {'label': str(x.id)}]
+        operation._postprocess_hooks = [lambda op, x, **kwargs: x.clone(**kwargs)]
         curve = Curve([1, 2, 3])
         self.assertEqual(operation(curve).label, str(curve.id))
         operation._preprocess_hooks = pre_backup
