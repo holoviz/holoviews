@@ -5,7 +5,7 @@ import os, pydoc
 import numpy as np # noqa (API import)
 import param
 
-__version__ = param.Version(release=(1,9,2), fpath=__file__,
+__version__ = param.Version(release=(1,9,3), fpath=__file__,
                             commit="$Format:%h$", reponame='holoviews')
 
 from .core import archive, config                        # noqa (API import)

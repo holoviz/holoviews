@@ -1,6 +1,6 @@
 package:
   name: holoviews
-  version: 1.9.2
+  version: 1.9.3
 
 source:
   path: .
@@ -20,7 +20,7 @@ requirements:
     - param >=1.5.1,<2.0
     - numpy
     - matplotlib
-    - bokeh =0.12.14
+    - bokeh >=0.12.13,<=0.12.14
     - jupyter
     - notebook
     - ipython
