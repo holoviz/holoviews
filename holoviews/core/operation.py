@@ -62,9 +62,10 @@ class Operation(param.ParameterizedFunction):
         for dynamic interaction with the plot.""")
 
     # Hooks to allow external libraries to extend existing operations.
-    # Preprocessor hooks should accept the input element and return a
-    # dictionary of data which will be made available to the
-    # postprocessor hooks in additional to the processed element
+    # Preprocessor hooks should accept the operation and input element
+    # and return a dictionary of data which will be made available to
+    # the postprocessor hooks as kwargs in addition to the operation
+    # and processed element
     _preprocess_hooks = []
     _postprocess_hooks = []
 
@@ -116,10 +117,10 @@ class Operation(param.ParameterizedFunction):
         """
         kwargs = {}
         for hook in self._preprocess_hooks:
-            kwargs.update(hook(element))
+            kwargs.update(hook(self, element))
         ret = self._process(element, key)
         for hook in self._postprocess_hooks:
-            ret = hook(ret, **kwargs)
+            ret = hook(self, ret, **kwargs)
         return ret
 
 
