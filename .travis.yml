@@ -63,8 +63,9 @@ install:
   - cd ../..
 
 before-script:
-  - "echo 'backend : Agg' > $HOME/.matplotlib/matplotlibrc"
+  - "echo 'backend : agg' > $HOME/.matplotlib/matplotlibrc"
   - export MPLBACKEND='agg'
+  - export QT_QPA_PLATFORM='offscreen'
 
 script:
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
