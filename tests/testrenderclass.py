@@ -92,11 +92,6 @@ class MPLRendererTest(ComparisonTestCase):
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (288, 288))
 
-    def test_get_size_tables_in_layout(self):
-        table = Table(range(10), kdims=['x'])
-        plot = self.renderer.get_plot(table+table)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 230))
 
 @attr(optional=1)
 class BokehRendererTest(ComparisonTestCase):
