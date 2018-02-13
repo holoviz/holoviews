@@ -17,12 +17,12 @@ from .grid import GridInterface
 from .multipath import MultiInterface         # noqa (API import)
 from .image import ImageInterface             # noqa (API import)
 
-datatypes = ['array', 'dictionary', 'grid']
+datatypes = ['dictionary', 'grid']
 
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
-    datatypes = ['array', 'dataframe', 'dictionary', 'grid', 'ndelement']
+    datatypes = ['dataframe', 'dictionary', 'grid', 'ndelement', 'array']
     DFColumns = PandasInterface
 except ImportError:
     pass
@@ -52,6 +52,9 @@ try:
     datatypes.append('dask')
 except ImportError:
     pass
+
+if 'array' not in datatypes:
+    datatypes.append('array')
 
 from ..dimension import Dimension, process_dimensions
 from ..element import Element
