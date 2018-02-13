@@ -58,12 +58,13 @@ class PandasInterface(Interface):
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
             # Handle reset of index if kdims reference index by name
+            index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
             for kd in kdims:
                 if isinstance(kd, Dimension): kd = kd.name
                 if kd in data.columns:
                     continue
                 if any(kd == ('index' if name is None else name)
-                       for name in data.index.names):
+                       for name in index_names):
                     data = data.reset_index()
                     break
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
