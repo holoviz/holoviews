@@ -27,10 +27,10 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy=0.18.1 numpy freetype nose pandas=0.19.2 jupyter ipython=4.2.0 param pyqt=4 matplotlib=1.5.1 xarray
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=4.2.0 param matplotlib=2.1.2 xarray
   - source activate test-environment
-  - conda install -c conda-forge  iris sip=4.18 plotly flexx
-  - conda install -c bokeh datashader dask=0.13 bokeh=0.12.10 selenium
+  - conda install -c conda-forge  iris plotly flexx --quiet
+  - conda install -c bokeh datashader dask=0.16.1 bokeh=0.12.14 selenium
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
@@ -68,8 +68,8 @@ before-script:
 script:
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
   - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
-  - nosetests --with-doctest --with-coverage --cover-package=holoviews
-  - cd doc/nbpublisher; chmod +x test_notebooks.py; BOKEH_DEV=True ./test_notebooks.py
+  - nosetests --with-doctest --with-coverage --cover-package=holoviews -v
+  - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks
   - coverage combine --append

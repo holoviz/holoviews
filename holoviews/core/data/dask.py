@@ -109,7 +109,7 @@ class DaskInterface(PandasInterface):
             else:
                 masks.append(series == k)
             for mask in masks:
-                if select_mask:
+                if select_mask is not None:
                     select_mask &= mask
                 else:
                     select_mask = mask

@@ -492,6 +492,7 @@ class regrid(ResamplingOperation):
                              datatype=['xarray']+element.datatype)
 
 
+
 class shade(Operation):
     """
     shade applies a normalization function followed by colormapping to
