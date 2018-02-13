@@ -40,6 +40,13 @@ class TestBokehTablePlot(ComparisonTestCase):
             self.assertIsInstance(column.formatter, fmt)
             self.assertIsInstance(column.editor, edit)
 
+    def test_table_plot_escaped_dimension(self):
+        table = Table([1, 2, 3], ['A Dimension'])
+        plot = bokeh_renderer.get_plot(table)
+        source = plot.handles['source']
+        renderer = plot.handles['glyph_renderer']
+        self.assertEqual(list(source.data.keys())[0], renderer.columns[0].field)
+
     def test_table_plot_datetimes(self):
         table = Table([dt.now(), dt.now()], 'Date')
         plot = bokeh_renderer.get_plot(table)
