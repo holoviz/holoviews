@@ -792,12 +792,12 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
                          vdims=['a', 'b']).opts(style=opts)
         plot = bokeh_renderer.get_plot(points)
         glyph_renderer = plot.handles['glyph_renderer']
-        self.assertEqual(glyph_renderer.glyph.fill_color, 'green')
-        self.assertEqual(glyph_renderer.glyph.line_color, 'green')
-        self.assertEqual(glyph_renderer.selection_glyph.fill_color, 'red')
-        self.assertEqual(glyph_renderer.selection_glyph.line_color, 'red')
-        self.assertEqual(glyph_renderer.nonselection_glyph.fill_color, 'blue')
-        self.assertEqual(glyph_renderer.nonselection_glyph.line_color, 'blue')
+        self.assertEqual(glyph_renderer.glyph.fill_color, '#008000')
+        self.assertEqual(glyph_renderer.glyph.line_color, '#008000')
+        self.assertEqual(glyph_renderer.selection_glyph.fill_color, '#FF0000')
+        self.assertEqual(glyph_renderer.selection_glyph.line_color, '#FF0000')
+        self.assertEqual(glyph_renderer.nonselection_glyph.fill_color, '#0000FF')
+        self.assertEqual(glyph_renderer.nonselection_glyph.line_color, '#0000FF')
 
     def test_points_alpha_selection_nonselection(self):
         opts = dict(alpha=0.8, selection_alpha=1.0, nonselection_alpha=0.2)
@@ -1388,21 +1388,21 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xlabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_ylabel(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'ylabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_both_labels(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'labels': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_xticks(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '14pt'}))

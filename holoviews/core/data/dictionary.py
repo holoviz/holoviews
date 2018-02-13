@@ -217,7 +217,7 @@ class DictInterface(Interface):
         else:
             if not expanded:
                 return util.unique_array(values)
-            values = np.array(values)
+            values = np.asarray(values)
         return values
 
 
