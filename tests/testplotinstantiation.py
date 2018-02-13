@@ -1388,21 +1388,21 @@ class TestBokehPlotInstantiation(ComparisonTestCase):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xlabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_ylabel(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'ylabel': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_both_labels(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'labels': '14pt'}))
         plot = bokeh_renderer.get_plot(curve)
         self.assertEqual(plot.handles['xaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
         self.assertEqual(plot.handles['yaxis'].axis_label_text_font_size,
-                         {'value': '14pt'})
+                         '14pt')
 
     def test_curve_fontsize_xticks(self):
         curve = Curve(range(10)).opts(plot=dict(fontsize={'xticks': '14pt'}))
