@@ -692,6 +692,8 @@ class interpolate_curve(Operation):
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
         x, y = element.dimension_values(0), element.dimension_values(1)
+        if 'f' in (x.dtype.kind, y.dtype.kind):
+            x, y = x.astype('float'), y.astype('float')
         array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
         return element.clone((array[0, :].astype(x.dtype), array[1, :].astype(y.dtype))+dvals)
