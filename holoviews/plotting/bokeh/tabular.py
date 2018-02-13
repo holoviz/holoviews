@@ -70,9 +70,23 @@ class TablePlot(BokehPlot, GenericElementPlot):
             source = self._init_datasource(data)
         self.handles['source'] = source
 
+        columns = self._get_columns(element, data)
+        style['reorderable'] = False
+        table = DataTable(source=source, columns=columns, height=self.height,
+                          width=self.width, **style)
+        self.handles['plot'] = table
+        self.handles['glyph_renderer'] = table
+        self._execute_hooks(element)
+        self.drawn = True
+
+        for cb in self.callbacks:
+            cb.initialize()
+
+        return table
+
+    def _get_columns(self, element, data):
         columns = []
-        dims = element.dimensions()
-        for d in dims:
+        for d in element.dimensions():
             col = dimension_sanitizer(d.name)
             kind = data[col].dtype.kind
             if kind == 'i':
@@ -89,21 +103,10 @@ class TablePlot(BokehPlot, GenericElementPlot):
             else:
                 formatter = StringFormatter()
                 editor = StringEditor()
-            column = TableColumn(field=d.name, title=d.pprint_label,
+            column = TableColumn(field=dimension_sanitizer(d.name), title=d.pprint_label,
                                  editor=editor, formatter=formatter)
             columns.append(column)
-        style['reorderable'] = False
-        table = DataTable(source=source, columns=columns, height=self.height,
-                          width=self.width, **style)
-        self.handles['plot'] = table
-        self.handles['glyph_renderer'] = table
-        self._execute_hooks(element)
-        self.drawn = True
-
-        for cb in self.callbacks:
-            cb.initialize()
-
-        return table
+        return columns
 
 
     def update_frame(self, key, ranges=None, plot=None):
