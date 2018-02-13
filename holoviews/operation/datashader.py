@@ -548,7 +548,7 @@ class trimesh_rasterize(aggregate):
         for c, dtype in zip(simplices.columns, simplices.dtypes):
             if dtype.kind != 'i':
                 simplices[c] = simplices[c].astype('int')
-        return {'mesh': mesh(verts, , 'simplices': simplices,
+        return {'mesh': mesh(verts, simplices), 'simplices': simplices,
                 'vertices': verts}
 
 
