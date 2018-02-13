@@ -36,7 +36,7 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.node_info = Dataset(['Output']+['Input']*(N-1), vdims=['Label'])
         self.node_info2 = Dataset(self.weights, vdims='Weight')
         self.graph2 = Graph(((self.source, self.target), self.node_info))
-        self.graph3 = Graph(((self.source, self.target), self.node_info2))
+        self.graph3 = Graph(((self.source, self.target), self.node_info2), datatype=['dictionary'])
         self.graph4 = Graph(((self.source, self.target, self.weights),), vdims='Weight')
 
     def tearDown(self):
