@@ -60,6 +60,8 @@ class layout_nodes(Operation):
             source = element.dimension_values(0, expanded=False)
             target = element.dimension_values(1, expanded=False)
             nodes = np.unique(np.concatenate([source, target]))
+            if source.dtype.kind == 'i' and target.dtype.kind == 'i':
+                nodes = node.astype('int')
             if self.p.layout:
                 import pandas as pd
                 df = pd.DataFrame({'index': nodes})
