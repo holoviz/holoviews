@@ -7,10 +7,8 @@ from holoviews.core.data import Dataset
 from holoviews.core.options import Store
 from holoviews.element import Graph, circular_layout
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import comms
 
 try:
-    from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes)
     from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
@@ -98,7 +96,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
     def test_graph_inspection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(plot=dict(inspection_policy=None)))
         renderer = plot.handles['glyph_renderer']
-        hover = plot.handles['hover']
         self.assertIs(renderer.inspection_policy, None)
 
     def test_graph_selection_policy_nodes(self):
@@ -118,7 +115,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
     def test_graph_selection_policy_none(self):
         plot = bokeh_renderer.get_plot(self.graph.opts(plot=dict(selection_policy=None)))
         renderer = plot.handles['glyph_renderer']
-        hover = plot.handles['hover']
         self.assertIs(renderer.selection_policy, None)
 
     def test_graph_nodes_categorical_colormapped(self):
@@ -158,8 +154,8 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.assertEqual(cmapper.factors, factors)
         self.assertEqual(edge_source.data['start_str'], factors)
         self.assertEqual(glyph.line_color, {'field': 'start_str', 'transform': cmapper})
-    
-    def test_graph_nodes_numerically_colormapped(self):
+
+    def test_graph_edges_numerically_colormapped(self):
         g = self.graph4.opts(plot=dict(edge_color_index='Weight'),
                              style=dict(edge_cmap=['#FFFFFF', '#000000']))
         plot = bokeh_renderer.get_plot(g)

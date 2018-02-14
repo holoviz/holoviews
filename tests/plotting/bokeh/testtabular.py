@@ -1,14 +1,13 @@
 from datetime import datetime as dt
 from unittest import SkipTest
 
-from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Table
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from bokeh.models.widgets import (
-        DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
+        NumberEditor, NumberFormatter, DateFormatter,
         DateEditor, StringFormatter, StringEditor, IntEditor
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer

@@ -9,7 +9,7 @@ from holoviews import NdOverlay, Overlay
 from holoviews.core.spaces import DynamicMap, HoloMap
 from holoviews.core.options import Store, Cycle
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.element import (Image, Scatter, Curve, Text, Points,
+from holoviews.element import (Image, Scatter, Curve, Points,
                                Area, VectorField, HLine, Path)
 from holoviews.operation import operation
 from holoviews.plotting.util import (
@@ -419,7 +419,7 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
         layers = [mapped, mapped, self.dmap_ndoverlay]
         self.assertEqual(split_dmap_overlay(test), layers)
 
-    def test_dmap_overlay_linked_operation_mul_dmap_ndoverlay(self):
+    def test_dmap_overlay_linked_operation_mul_dmap_element_ndoverlay(self):
         mapped = self.dmap_overlay.map(lambda x: x.get(0), Overlay)
         test = mapped * self.element * self.dmap_ndoverlay
         initialize_dynamic(test)
@@ -456,11 +456,11 @@ class TestPlotColorUtils(ComparisonTestCase):
 
     def test_process_cmap_invalid_str(self):
         with self.assertRaises(ValueError):
-            colors = process_cmap('NonexistentColorMap', 3)
+            process_cmap('NonexistentColorMap', 3)
 
     def test_process_cmap_invalid_type(self):
         with self.assertRaises(TypeError):
-            colors = process_cmap({'A', 'B', 'C'}, 3)
+            process_cmap({'A', 'B', 'C'}, 3)
 
 
 class TestPlotUtils(ComparisonTestCase):

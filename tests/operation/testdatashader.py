@@ -11,7 +11,7 @@ try:
     import datashader as ds
     from holoviews.operation.datashader import (
         aggregate, regrid, ds_version, stack, directly_connect_edges,
-        shade, rasterize
+        shade
     )
 except:
     ds_version = None

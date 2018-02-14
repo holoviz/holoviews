@@ -13,7 +13,6 @@ from holoviews.plotting import comms
 try:
     from matplotlib import pyplot
     pyplot.switch_backend('agg')
-    from holoviews.plotting.mpl import OverlayPlot
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None
