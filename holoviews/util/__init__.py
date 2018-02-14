@@ -120,7 +120,6 @@ class opts(param.ParameterizedFunction):
         """
         current_backend = Store.current_backend
         backend_options = Store.options(backend=backend or current_backend)
-        groups = set(backend_options.groups.keys())
         expanded = {}
         for objspec, options in options.items():
             objtype = objspec.split('.')[0]
