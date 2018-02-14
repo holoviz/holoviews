@@ -27,8 +27,9 @@ mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 if pd:
     try:
-        pandas.plotting.register_matplotlib_converters()
-    except:
+        from pandas.plotting import register_matplotlib_converters
+        register_matplotlib_converters()
+    except ImportError:
         from pandas.tseries import converter
         converter.register()
 
