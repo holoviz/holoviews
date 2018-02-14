@@ -4,26 +4,21 @@ from unittest import SkipTest
 
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.core.options import Store
-from holoviews.element import Graph, TriMesh, circular_layout
-from holoviews.element.comparison import ComparisonTestCase
+from holoviews.element import Graph, TriMesh, Chord, circular_layout
 
 try:
-    bokeh_renderer = Store.renderers['bokeh']
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, Patches)
     from bokeh.models.mappers import CategoricalColorMapper, LinearColorMapper
-except :
-    bokeh_renderer = None
+except:
+    pass
+
+from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class BokehGraphPlotTests(ComparisonTestCase):
-    
+class TestBokehGraphPlot(TestBokehPlot):
+
     def setUp(self):
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
-        self.default_comm = bokeh_renderer.comms['default']
+        super(TestBokehGraphPlot, self).setUp()
 
         N = 8
         self.nodes = circular_layout(np.arange(N, dtype=np.int32))
@@ -37,10 +32,6 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.graph3 = Graph(((self.source, self.target), self.node_info2))
         self.graph4 = Graph(((self.source, self.target, self.weights),), vdims='Weight')
 
-    def tearDown(self):
-        Store.current_backend = self.previous_backend
-        bokeh_renderer.comms['default'] = self.default_comm
-        
     def test_plot_simple_graph(self):
         plot = bokeh_renderer.get_plot(self.graph)
         node_source = plot.handles['scatter_1_source']
@@ -168,23 +159,15 @@ class BokehGraphPlotTests(ComparisonTestCase):
         self.assertEqual(glyph.line_color, {'field': 'Weight', 'transform': cmapper})
 
 
-class TestBokehTriMeshPlots(ComparisonTestCase):
+class TestBokehTriMeshPlot(TestBokehPlot):
 
     def setUp(self):
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
-        self.default_comm = bokeh_renderer.comms['default']
+        super(TestBokehTriMeshPlot, self).setUp()
 
         self.nodes = [(0, 0, 0), (0.5, 1, 1), (1., 0, 2), (1.5, 1, 3)]
         self.simplices = [(0, 1, 2, 0), (1, 2, 3, 1)]
         self.trimesh = TriMesh((self.simplices, self.nodes))
         self.trimesh_weighted = TriMesh((self.simplices, self.nodes), vdims='weight')
-
-    def tearDown(self):
-        Store.current_backend = self.previous_backend
-        bokeh_renderer.comms['default'] = self.default_comm
 
     def test_plot_simple_trimesh(self):
         plot = bokeh_renderer.get_plot(self.trimesh)
@@ -234,3 +217,47 @@ class TestBokehTriMeshPlots(ComparisonTestCase):
         self.assertEqual(cmapper.high, 1)
         self.assertEqual(edge_source.data['weight'], np.array([0, 1]))
         self.assertEqual(glyph.line_color, {'field': 'weight', 'transform': cmapper})
+
+
+class TestBokehChordPlot(TestBokehPlot):
+
+    def setUp(self):
+        super(TestBokehChordPlot, self).setUp()
+        self.edges = [(0, 1, 1), (0, 2, 2), (1, 2, 3)]
+        self.nodes = Dataset([(0, 'A'), (1, 'B'), (2, 'C')], 'index', 'Label')
+        self.chord = Chord((self.edges, self.nodes))
+
+    def test_chord_nodes_label_text(self):
+        g = self.chord.opts(plot=dict(label_index='Label'))
+        plot = bokeh_renderer.get_plot(g)
+        source = plot.handles['text_1_source']
+        self.assertEqual(source.data['text'], ['A', 'B', 'C'])
+
+    def test_chord_nodes_categorically_colormapped(self):
+        g = self.chord.opts(plot=dict(color_index='Label', label_index='Label'),
+                            style=dict(cmap=['#FFFFFF', '#888888', '#000000']))
+        plot = bokeh_renderer.get_plot(g)
+        cmapper = plot.handles['color_mapper']
+        source = plot.handles['scatter_1_source']
+        arc_source = plot.handles['multi_line_2_source']
+        glyph = plot.handles['scatter_1_glyph']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.factors, ['A', 'B', 'C'])
+        self.assertEqual(cmapper.palette, ['#FFFFFF', '#888888', '#000000'])
+        self.assertEqual(source.data['Label'], np.array(['A', 'B', 'C']))
+        self.assertEqual(arc_source.data['Label'], np.array(['A', 'B', 'C']))
+        self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
+
+    def test_chord_edges_categorically_colormapped(self):
+        g = self.chord.opts(plot=dict(edge_color_index='start'),
+                            style=dict(edge_cmap=['#FFFFFF', '#000000']))
+        plot = bokeh_renderer.get_plot(g)
+        cmapper = plot.handles['edge_colormapper']
+        edge_source = plot.handles['multi_line_1_source']
+        glyph = plot.handles['multi_line_1_glyph']
+        self.assertIsInstance(cmapper, CategoricalColorMapper)
+        self.assertEqual(cmapper.palette, ['#FFFFFF', '#000000', '#FFFFFF'])
+        self.assertEqual(cmapper.factors, ['0', '1', '2'])
+        self.assertEqual(edge_source.data['start_str'], ['0', '0', '1'])
+        self.assertEqual(glyph.line_color, {'field': 'start_str', 'transform': cmapper})
+

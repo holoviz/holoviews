@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin)
+                        TriMesh, Violin, Chord)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -34,7 +34,7 @@ from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
-from .graphs import GraphPlot, NodePlot, TriMeshPlot
+from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
@@ -95,6 +95,7 @@ associations = {Overlay: OverlayPlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
+                Chord: ChordPlot,
                 Nodes: NodePlot,
                 EdgePaths: PathPlot,
                 TriMesh: TriMeshPlot,
@@ -210,6 +211,22 @@ options.TriMesh = Options('style', node_size=5, node_line_color='black',
                           node_nonselection_alpha=0.2,
                           edge_line_width=1)
 options.TriMesh = Options('plot', tools=[])
+options.Chord = Options('style', node_size=15, node_fill_color=Cycle(),
+                        node_line_color='black',
+                        node_selection_fill_color='limegreen',
+                        node_nonselection_fill_color=Cycle(),
+                        node_hover_line_color='black',
+                        node_nonselection_line_color='black',
+                        node_selection_line_color='black',
+                        node_hover_fill_color='limegreen',
+                        node_nonselection_alpha=0.2,
+                        edge_nonselection_alpha=0.1,
+                        edge_line_color='black', edge_line_width=1,
+                        edge_nonselection_line_color='black',
+                        edge_hover_line_color='limegreen',
+                        edge_selection_line_color='limegreen',
+                        label_text_font_size='8pt')
+options.Chord = Options('plot', xaxis=None, yaxis=None)
 options.Nodes = Options('style', line_color='black', color=Cycle(),
                         size=20, nonselection_fill_color=Cycle(),
                         selection_fill_color='limegreen',
