@@ -394,9 +394,9 @@ class Graph(Dataset, Element2D):
             edges = [(src, tgt) for (src, tgt) in edges if src in indices and tgt in indices]
             nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
             nodes = nodes.add_dimension('x', 0, xs)
-            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=self.node_type)
+            nodes = nodes.add_dimension('y', 1, ys).clone(new_type=cls.node_type)
         else:
-            nodes = self.node_type([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
+            nodes = cls.node_type([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
         return cls((edges, nodes))
 
 
