@@ -878,7 +878,7 @@ class PointDrawCallback(CDSCallback):
     def initialize(self):
         try:
             from bokeh.models import PointDrawTool
-        except Exception as e:
+        except Exception:
             param.main.warning('PointDraw requires bokeh >= 0.12.14')
             return
         renderers = [self.plot.handles['glyph_renderer']]

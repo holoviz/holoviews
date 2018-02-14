@@ -186,7 +186,7 @@ class periodic(Thread):
             self.counter += 1
             try:
                 self.callback(self.counter)
-            except Exception as e:
+            except Exception:
                 self.stop()
 
             if self.timeout is not None:
