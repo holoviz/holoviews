@@ -237,12 +237,12 @@ class TestStreamSource(ComparisonTestCase):
 
     def test_source_registry(self):
         points = Points([(0, 0)])
-        positionX = PointerX(source=points)
+        PointerX(source=points)
         self.assertIn(id(points), Stream.registry)
 
     def test_source_registry_empty_element(self):
         points = Points([])
-        positionX = PointerX(source=points)
+        PointerX(source=points)
         self.assertIn(id(points), Stream.registry)
 
 
@@ -367,7 +367,7 @@ class TestBufferStream(ComparisonTestCase):
     def test_buffer_array_ndim_exception(self):
         error = "Only 2D array data may be streamed by Buffer."
         with self.assertRaisesRegexp(ValueError, error):
-            buff = Buffer(np.array([0, 1]))
+            Buffer(np.array([0, 1]))
 
     def test_buffer_array_send(self):
         buff = Buffer(np.array([[0, 1]]))
@@ -415,14 +415,14 @@ class TestBufferStream(ComparisonTestCase):
         buff.send({'x': np.array([1]), 'y': np.array([2])})
         self.assertEqual(buff.data, {'x': np.array([0, 1]), 'y': np.array([1, 2])})
 
-    def test_buffer_array_larger_than_length(self):
+    def test_buffer_dict_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data, length=1)
         chunk = {'x': np.array([1]), 'y': np.array([2])}
         buff.send(chunk)
         self.assertEqual(buff.data, chunk)
 
-    def test_buffer_array_patch_larger_than_length(self):
+    def test_buffer_dict_patch_larger_than_length(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data, length=1)
         chunk = {'x': np.array([1, 2]), 'y': np.array([2, 3])}

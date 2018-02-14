@@ -219,7 +219,7 @@ else:
     basestring = basestring
     unicode = unicode
     from itertools import izip
-    generator_types = (izip, xrange, types.GeneratorType)
+    generator_types = (izip, xrange, types.GeneratorType) # noqa
 
 
 

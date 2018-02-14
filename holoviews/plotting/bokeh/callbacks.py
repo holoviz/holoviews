@@ -1,7 +1,6 @@
 from collections import defaultdict
 
 import param
-import numpy as np
 from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
 
 from ...core import OrderedDict
@@ -12,7 +11,6 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
 from ..comms import JupyterCommJS, Comm
-from .path import PolygonPlot
 from .util import convert_timestamp
 
 
@@ -900,7 +898,6 @@ class PolyDrawCallback(CDSCallback):
             param.main.warning('PolyDraw requires bokeh >= 0.12.14')
             return
         plot = self.plot
-        source = plot.handles['source']
         poly_tool = PolyDrawTool(drag=all(s.drag for s in self.streams),
                                  empty_value=self.streams[0].empty_value,
                                  renderers=[plot.handles['glyph_renderer']])
@@ -956,7 +953,6 @@ class BoxEditCallback(CDSCallback):
 
     def _process_msg(self, msg):
         data = super(BoxEditCallback, self)._process_msg(msg)['data']
-        element = self.plot.current_frame
         x0s, x1s, y0s, y1s = [], [], [], []
         for x, y, w, h in zip(data['x'], data['y'], data['width'], data['height']):
             x0s.append(x-w/2.)

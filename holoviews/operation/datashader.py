@@ -1,7 +1,6 @@
 from __future__ import absolute_import, division
 
 from collections import Callable, Iterable
-from functools import partial
 from distutils.version import LooseVersion
 import warnings
 
@@ -27,8 +26,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, Points,
-                       Scatter, Dataset, QuadMesh)
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh)
 from ..streams import RangeXY, PlotSize
 
 

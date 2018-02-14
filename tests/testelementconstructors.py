@@ -180,7 +180,7 @@ class ElementSignatureTest(ComparisonTestCase):
         self.assertEqual(qmesh.vdims, [Dimension('c')])
 
     
-class ElementConstructorTest(ComparisonTestCase):
+class ElementCastingTests(ComparisonTestCase):
     """
     Tests whether casting an element will faithfully copy data and
     parameters. Important to check for elements where data is not all

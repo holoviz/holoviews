@@ -61,7 +61,8 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(ndoverlay)
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
-        
+        self.assertIn(selection, plot.callbacks[0].streams)
+
 
 @attr(optional=1)
 class TestBokehServerJSCallbacks(ComparisonTestCase):

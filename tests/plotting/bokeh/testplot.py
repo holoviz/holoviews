@@ -1,7 +1,5 @@
 from unittest import SkipTest
 
-import param
-import numpy as np
 
 from holoviews.core.element import Element
 from holoviews.core.options import Store
@@ -13,7 +11,6 @@ try:
         ColumnDataSource, LinearColorMapper, LogColorMapper, HoverTool
     )
     from holoviews.plotting.bokeh.callbacks import Callback
-    from holoviews.plotting.bokeh.util import bokeh_version
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None

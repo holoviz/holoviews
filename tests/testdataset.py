@@ -8,7 +8,6 @@ from itertools import product
 
 import numpy as np
 from holoviews import Dataset, HoloMap, Dimension, Image
-from holoviews.core.data.interface import DataError
 from holoviews.element import Distribution, Points, Scatter
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -105,11 +104,11 @@ class HomogeneousColumnTypes(object):
 
     def test_dataset_dict_dim_not_found_raises_on_array(self):
         with self.assertRaises(ValueError):
-            dataset = Dataset({'x': np.zeros(5)}, kdims=['Test'], vdims=[])
+            Dataset({'x': np.zeros(5)}, kdims=['Test'], vdims=[])
 
     def test_dataset_dict_dim_not_found_raises_on_scalar(self):
         with self.assertRaises(ValueError):
-            dataset = Dataset({'x': 1}, kdims=['Test'], vdims=[])
+            Dataset({'x': 1}, kdims=['Test'], vdims=[])
 
     # Properties and information
 
@@ -932,7 +931,7 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(ds.kdims, [Dimension('x'), Dimension('y')])
         self.assertEqual(ds.vdims, [])
 
-    def test_dataset_extract_kdims_declare_no_vdims(self):
+    def test_dataset_extract_no_kdims_extract_only_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])
         ds = Dataset(df, kdims=[])

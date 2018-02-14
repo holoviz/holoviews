@@ -7,11 +7,9 @@ import param
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, Store, GridMatrix, AdjointLayout,
-                     NdLayout, Empty, GridSpace, HoloMap, Element,
-                     DynamicMap)
+from ...core import (OrderedDict, Store, AdjointLayout, NdLayout,
+                     Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.util import basestring, wrap_tuple, unique_iterator
-from ...element import Histogram
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)

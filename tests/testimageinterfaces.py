@@ -32,7 +32,7 @@ class ImageInterfaceTest(ComparisonTestCase):
         xs = np.arange(5)
         ys = np.arange(10)
         array = xs * ys[:, np.newaxis]
-        image = Image((xs, ys, array))
+        Image((xs, ys, array))
 
     def test_init_data_tuple_error(self):
         xs = np.arange(5)
@@ -44,12 +44,12 @@ class ImageInterfaceTest(ComparisonTestCase):
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        image = Image(np.flipud(self.array), bounds=(start, 0, end, 10))
+        Image(np.flipud(self.array), bounds=(start, 0, end, 10))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        image = Image(np.flipud(self.array), bounds=(-10, start, 10, end))
+        Image(np.flipud(self.array), bounds=(-10, start, 10, end))
 
     def test_init_bounds(self):
         self.assertEqual(self.image.bounds.lbrt(), (-10, 0, 10, 10))
@@ -283,13 +283,13 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        image = Image((xs, self.ys, self.array))
+        Image((xs, self.ys, self.array))
 
     def test_init_data_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        image = Image((self.xs, ys, self.array))
+        Image((self.xs, ys, self.array))
 
     def test_init_bounds_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
@@ -321,7 +321,7 @@ class ImageGridInterfaceTest(ImageInterfaceTest):
         self.assertEqual(image.xdensity, 0.5)
         self.assertEqual(image.ydensity, 1e-5)
 
-    def test_sample_datetime_yaxis(self):
+    def test_sample_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
@@ -431,7 +431,7 @@ class ImageXArrayInterfaceTest(ImageGridInterfaceTest):
 
     def setUp(self):
         try:
-            import xarray as xr
+            import xarray as xr # noqa
         except:
             raise SkipTest('Test requires xarray')
         super(ImageXArrayInterfaceTest, self).setUp()
