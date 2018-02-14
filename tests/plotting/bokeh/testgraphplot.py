@@ -4,9 +4,7 @@ from unittest import SkipTest
 
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.core.options import Store
 from holoviews.element import Graph, TriMesh, Chord, circular_layout
-from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from bokeh.models import (NodesAndLinkedEdges, EdgesAndLinkedNodes, Patches)

@@ -1,17 +1,12 @@
 from __future__ import absolute_import
 
-from unittest import SkipTest
-
 import numpy as np
 from holoviews.core.data import Dataset
-from holoviews.core.options import Store, Cycle
+from holoviews.core.options import Cycle
 from holoviews.element import Graph, TriMesh, Chord, circular_layout
-from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import comms
 
 # Standardize backend due to random inconsistencies
 try:
-    from holoviews.plotting.mpl import OverlayPlot
     from matplotlib.collections import LineCollection, PolyCollection
 except:
     pass

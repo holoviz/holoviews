@@ -587,10 +587,6 @@ class layout_chords(Operation):
         points[1:] = areas_in_radians
         points = points.cumsum()
 
-        # Compute edge points
-        xs = np.cos(points)
-        ys = np.sin(points)
-
         # Compute mid-points for node positions
         midpoints = np.convolve(points, [0.5, 0.5], mode='valid')
         mxs = np.cos(midpoints)
@@ -677,7 +673,6 @@ class Chord(Graph):
                     nodes = Dataset(nodes)
                     nodes = nodes.clone(kdims=nodes.kdims[0],
                                         vdims=nodes.kdims[1:])
-        node_info = nodes
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if compute:
             self._nodes = nodes
