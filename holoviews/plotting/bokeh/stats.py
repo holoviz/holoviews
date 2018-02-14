@@ -4,16 +4,17 @@ from functools import partial
 import param
 import numpy as np
 
-from bokeh.models import (DataRange1d, FactorRange, HoverTool,
-                          Circle, VBar, HBar)
+from bokeh.models import FactorRange, HoverTool, Circle, VBar, HBar
 
 from ...core.dimension import Dimension
-from ...core.util import basestring, dimension_sanitizer, wrap_tuple
+from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
+                          unique_iterator)
 from ...operation.stats import univariate_kde
 from .chart import AreaPlot
 from .element import (CompositeElementPlot, ColorbarPlot, LegendPlot,
                       fill_properties, line_properties)
 from .path import PolygonPlot
+from .util import rgb2hex
 
 
 class DistributionPlot(AreaPlot):
@@ -167,12 +168,13 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
             if len(vals):
-                qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
+                q1, q2, q3 = (np.percentile(vals, q=q)
+                              for q in range(25, 100, 25))
                 iqr = q3 - q1
                 upper = min(q3 + 1.5*iqr, vals.max())
                 lower = max(q1 - 1.5*iqr, vals.min())
             else:
-                qmin, q1, q2, q3, qmax = 0, 0, 0, 0, 0
+                q1, q2, q3 = 0, 0, 0
                 lower, upper = 0, 0
             outliers = vals[(vals>upper) | (vals<lower)]
             # Add to CDS data
@@ -337,8 +339,8 @@ class ViolinPlot(BoxWhiskerPlot):
                 segments['y1'].append(sy)
         elif self.inner == 'box':
             xpos = key+(0,)
-            qmin, q1, q2, q3, qmax = (np.percentile(values, q=q)
-                                      for q in range(0,125,25))
+            q1, q2, q3 = (np.percentile(values, q=q)
+                          for q in range(25, 100, 25))
             iqr = q3 - q1
             upper = min(q3 + 1.5*iqr, np.nanmax(values))
             lower = max(q1 - 1.5*iqr, np.nanmin(values))
@@ -381,17 +383,9 @@ class ViolinPlot(BoxWhiskerPlot):
             scatter_map = {'x': 'x', 'y': 'y'}
             bar_glyph = 'vbar'
 
-        # Get color values
-        if self.color_index is not None:
-            cdim = element.get_dimension(self.color_index)
-            cidx = element.get_dimension_index(self.color_index)
-        else:
-            cdim, cidx = None, None
-
         elstyle = self.lookup_options(element, 'style')
         kwargs = {'bandwidth': self.bandwidth, 'cut': self.cut}
 
-        factors = []
         data, mapping = {}, {}
         seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(3))
         for i, (key, g) in enumerate(groups.items()):

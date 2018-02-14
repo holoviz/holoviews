@@ -6,7 +6,7 @@ from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
-                                         interpolate_curve, operation)
+                                         interpolate_curve)
 
 class OperationTests(ComparisonTestCase):
     """

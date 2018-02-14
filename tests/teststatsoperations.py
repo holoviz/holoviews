@@ -1,14 +1,13 @@
 from unittest import SkipTest
-from nose.plugins.attrib import attr
 
 try:
-    import scipy
+    import scipy # noqa
 except:
     raise SkipTest('SciPy not available')
 
 import numpy as np
 
-from holoviews import Distribution, Bivariate, Dataset, Area, Image
+from holoviews import Distribution, Bivariate, Area, Image
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.stats import (univariate_kde, bivariate_kde)
 

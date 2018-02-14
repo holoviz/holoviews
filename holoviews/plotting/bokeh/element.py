@@ -1,4 +1,3 @@
-from itertools import groupby
 import warnings
 
 import param
@@ -21,7 +20,7 @@ from bokeh.plotting.helpers import _known_tools as known_tools
 from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
-from ...streams import Stream, Buffer
+from ...streams import Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap
 from .plot import BokehPlot, TOOLS

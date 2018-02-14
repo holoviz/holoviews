@@ -1,15 +1,11 @@
 from unittest import SkipTest
 
-import param
-import numpy as np
-
-from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.plotting import comms
 
 try:
-    import holoviews.plotting.mpl
+    import holoviews.plotting.mpl # noqa
     mpl_renderer = Store.renderers['matplotlib']
 except:
     mpl_renderer = None

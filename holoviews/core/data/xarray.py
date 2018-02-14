@@ -375,7 +375,6 @@ class XArrayInterface(GridInterface):
     @classmethod
     def select(cls, dataset, selection_mask=None, **selection):
         validated = {}
-        irregular = False
         for k, v in selection.items():
             dim = dataset.get_dimension(k, strict=True)
             if cls.irregular(dataset, dim):

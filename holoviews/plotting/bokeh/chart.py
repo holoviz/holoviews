@@ -3,20 +3,17 @@ from collections import defaultdict
 import numpy as np
 import param
 from bokeh.models import (CategoricalColorMapper, CustomJS, HoverTool,
-                          FactorRange, Whisker, Band, Range1d, Circle,
-                          VBar, HBar)
+                          Whisker, Range1d)
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
 from ...core import Dataset, OrderedDict
-from ...core.dimension import Dimension
-from ...core.util import (max_range, basestring, dimension_sanitizer,
-                          wrap_tuple, unique_iterator)
+from ...core.util import max_range, basestring, dimension_sanitizer
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label
-from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
-                      line_properties, fill_properties)
+from .element import (ElementPlot, ColorbarPlot, LegendPlot, line_properties,
+                      fill_properties)
 from .util import expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
 
 

@@ -3,7 +3,6 @@ from __future__ import absolute_import
 import numpy as np
 
 from holoviews.element import Violin
-from holoviews.operation.stats import univariate_kde
 
 from .testplot import TestMPLPlot, mpl_renderer
 

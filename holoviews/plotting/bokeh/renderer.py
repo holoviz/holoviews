@@ -7,7 +7,6 @@ from param.parameterized import bothmethod
 import bokeh.core
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
-from bokeh.document import Document
 from bokeh.io import curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE

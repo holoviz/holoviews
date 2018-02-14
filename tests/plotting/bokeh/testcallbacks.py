@@ -1,8 +1,7 @@
 from unittest import SkipTest
 
-from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Path, Box
+from holoviews.element import Points, Polygons, Box
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointDraw, PolyDraw, PolyEdit, BoxEdit
 
@@ -47,7 +46,6 @@ class TestEditToolCallbacks(ComparisonTestCase):
         point_draw = PointDraw(source=points)
         plot = bokeh_renderer.get_plot(points)
         self.assertIsInstance(plot.callbacks[0], PointDrawCallback)
-        data = {'x': [0], 'y': [1]}
         self.assertEqual(point_draw.element, points)
         
     def test_point_draw_callback_with_vdims(self):
@@ -82,13 +80,6 @@ class TestEditToolCallbacks(ComparisonTestCase):
         element = Polygons([{'x': [1, 2, 3], 'y': [1, 2, 3], 'A': 1},
                             {'x': [3, 4, 5], 'y': [3, 4, 5], 'A': 2}], vdims=['A'])
         self.assertEqual(poly_draw.element, element)
-
-    def test_box_edit_callback(self):
-        boxes = Polygons([Box(0, 0, 1)])
-        box_edit = BoxEdit(source=boxes)
-        plot = bokeh_renderer.get_plot(boxes)
-        self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
-        self.assertEqual(box_edit.element, boxes)
 
     def test_box_edit_callback(self):
         boxes = Polygons([Box(0, 0, 1)])

@@ -4,7 +4,6 @@ import param
 from bokeh.models import HoverTool
 from ...core.util import cartesian_product, is_nan, dimension_sanitizer
 from ...element import Raster
-from ..renderer import SkipRendering
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 from .util import mpl_to_bokeh, colormesh
 

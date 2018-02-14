@@ -8,7 +8,7 @@ from holoviews.core.data import Dataset
 from holoviews.core import util
 from holoviews.element.chart import Points
 from holoviews.element.graphs import (
-    Graph, Nodes, EdgePaths, TriMesh, circular_layout, connect_edges,
+    Graph, Nodes, TriMesh, circular_layout, connect_edges,
     connect_edges_pd)
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -76,14 +76,13 @@ class GraphTests(ComparisonTestCase):
     def test_constructor_with_nodes_and_paths(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
         graph = Graph(((self.source, self.target), self.nodes, paths.data))
-        nodes = Nodes(self.nodes)
         self.assertEqual(graph._edgepaths, paths)
 
     def test_constructor_with_nodes_and_paths_dimension_mismatch(self):
         paths = Graph(((self.source, self.target), self.nodes)).edgepaths
         exception = 'Ensure that the first two key dimensions on Nodes and EdgePaths match: x != x2'
         with self.assertRaisesRegexp(ValueError, exception):
-            graph = Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
+            Graph(((self.source, self.target), self.nodes, paths.redim(x='x2')))
 
     def test_graph_clone_static_plot_id(self):
         self.assertEqual(self.graph.clone()._plot_id, self.graph._plot_id)
