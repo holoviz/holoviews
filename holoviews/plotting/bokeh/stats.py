@@ -322,6 +322,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
+        values = values[np.isfinite(values)]
         if self.inner == 'quartiles':
             for stat_fn in self._stat_fns:
                 stat = stat_fn(values)
