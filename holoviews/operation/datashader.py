@@ -151,8 +151,8 @@ class ResamplingOperation(Operation):
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             if element.get_dimension_type(y) in datetime_types:
-                xstart, xend = 0, 10000
-                xtype = 'datetime'
+                ystart, yend = 0, 10000
+                ytype = 'datetime'
             else:
                 ystart, yend = 0, 1
         elif ystart == yend:
