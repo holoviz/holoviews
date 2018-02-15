@@ -167,6 +167,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
+            vals = values[np.isfinite(vals)]
             if len(vals):
                 q1, q2, q3 = (np.percentile(vals, q=q)
                               for q in range(25, 100, 25))
