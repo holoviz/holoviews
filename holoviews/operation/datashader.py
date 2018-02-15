@@ -255,7 +255,7 @@ class aggregate(ResamplingOperation):
                 paths = [p.compute() if isinstance(p, dd.DataFrame) else p for p in paths]
                 df = pd.concat(paths)
         else:
-            df = paths[0]
+            df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
@@ -359,6 +359,10 @@ class aggregate(ResamplingOperation):
         if x is None or y is None:
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
                                   dims=['y', 'x'], coords={'x': xs, 'y': ys})
+            return self.p.element_type(xarray)
+        elif not len(data):
+            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
             return self.p.element_type(xarray)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
