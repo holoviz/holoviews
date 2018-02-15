@@ -229,6 +229,8 @@ def circular_layout(nodes):
     Lay out nodes on a circle and add node index.
     """
     N = len(nodes)
+    if not N:
+        return ([], [], [])
     circ = np.pi/N*np.arange(N)*2
     x = np.cos(circ)
     y = np.sin(circ)
