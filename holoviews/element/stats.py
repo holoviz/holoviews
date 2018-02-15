@@ -75,7 +75,7 @@ class StatisticsElement(Chart):
             dimensions = [self.get_dimension(d, strict=True) for d in dimensions
                           if d in dimensions.kdims]
         else:
-            dimensions = dimensions.kdims
+            dimensions = self.kdims
         return self.interface.dframe(self, dimensions)
 
 
