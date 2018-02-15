@@ -289,7 +289,7 @@ class Interface(param.Parameterized):
             try:
                 return (np.nanmin(column), np.nanmax(column))
             except TypeError:
-                column.sort()
+                column = [v for v in util.python2sort(column) if v is not None]
                 return column[0], column[-1]
 
     @classmethod

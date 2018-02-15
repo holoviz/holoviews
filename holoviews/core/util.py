@@ -722,7 +722,7 @@ def max_range(ranges):
                 values = [(v1.to_datetime64(), v2.to_datetime64()) for v1, v2 in values]
             arr = np.array(values)
             if arr.dtype.kind in 'OSU':
-                arr = np.sort([v for v in arr.flat if not is_nan(v)])
+                arr = list(python2sort([v for v in arr.flat if not is_nan(v) and v is not None]))
                 return arr[0], arr[-1]
             if arr.dtype.kind in 'M':
                 return arr[:, 0].min(), arr[:, 1].max()

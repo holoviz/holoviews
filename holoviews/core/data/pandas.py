@@ -141,6 +141,7 @@ class PandasInterface(Interface):
                 column = column.sort(inplace=False)
             else:
                 column = column.sort_values()
+            column = column[~column.isin([None])]
             return column.iloc[0], column.iloc[-1]
         else:
             return (column.min(), column.max())
