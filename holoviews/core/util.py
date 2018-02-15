@@ -1570,13 +1570,13 @@ def dt_to_int(value, time_unit='us'):
     Converts a datetime type to an integer with the supplied time unit.
     """
     if time_unit == 'ns':
-        tscale = 1./np.timedelta64(1, time_unit).tolist()
+        tscale = 1
     else:
         tscale = 1./np.timedelta64(1, time_unit).tolist().total_seconds()
     if pd and isinstance(value, pd.Timestamp):
         value = value.to_pydatetime()
     elif isinstance(value, np.datetime64):
-        value = value.tolist()
+        value = np.datetime64(value, 'ns').tolist()
     if isinstance(value, (int, long)):
         # Handle special case of nanosecond precision which cannot be
         # represented by python datetime
