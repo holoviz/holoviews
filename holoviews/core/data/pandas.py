@@ -142,6 +142,8 @@ class PandasInterface(Interface):
             else:
                 column = column.sort_values()
             column = column[~column.isin([None])]
+            if not len(column):
+                return np.NaN, np.NaN
             return column.iloc[0], column.iloc[-1]
         else:
             return (column.min(), column.max())
@@ -290,6 +292,16 @@ class PandasInterface(Interface):
             return columns.data[dimensions]
         else:
             return columns.data.copy()
+
+
+    @classmethod
+    def array(cls, dataset, dimensions):
+        if not dimensions:
+            dimensions = dataset.dimensions(label='name')
+        else:
+            dimensions = [dataset.get_dimensions(d).name for d in dimensions]
+        inds = [dataset.data.columns.index(dim.name) for dim in dimensions]
+        return dataset.data.values[:, inds]
 
 
     @classmethod
