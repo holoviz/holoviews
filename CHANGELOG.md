@@ -1,4 +1,4 @@
-Version 1.9.3
+Version 1.9.4
 =============
 
 This release contains a small number of important bug fixes:
@@ -9,6 +9,8 @@ This release contains a small number of important bug fixes:
      in bokeh Tables ([\#2336](https://github.com/ioam/holoviews/pull/2336))
 -    Fixed issue in regrid operation
      ([2337](https://github.com/ioam/holoviews/pull/2337))
+-    Fixed issue when using datetimes with datashader when processing
+     ranges ([\#2344](https://github.com/ioam/holoviews/pull/2344))
 
 
 Version 1.9.3
