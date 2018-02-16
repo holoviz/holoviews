@@ -9,15 +9,12 @@ from holoviews.element.raster import HeatMap
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
-    from holoviews.plotting.bokeh.util import bokeh_version
-    from holoviews.plotting.bokeh.raster import RadialHeatMapPlot
-
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
 
 
-class BokehGraphPlotTests(ComparisonTestCase):
+class BokehRadialHeatMapPlotTests(ComparisonTestCase):
     def setUp(self):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")

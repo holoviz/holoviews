@@ -297,8 +297,6 @@ class RadialHeatMapPlot(ColorbarPlot):
         """
         size = len(order)
         bounds = np.linspace(start, end, size + 1)
-        bins = np.column_stack([bounds[:-1], bounds[1:]])
-
         if reverse:
             bounds = bounds[::-1]
         mapping = list(zip(bounds[:-1]%(np.pi*2), order))
@@ -387,7 +385,6 @@ class RadialHeatMapPlot(ColorbarPlot):
             ybin = bins_annular[j:j+2]
             for i in range(len(xvals))[::-1]:
                 xbin = np.rad2deg(bins_segment[i:i+2])
-                r = ybin.mean()
                 width = ybin[1]-ybin[0]
                 wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
                 patches.append(wedge)

@@ -1,9 +1,8 @@
 import numpy as np
 import param
 
-from bokeh.models import HoverTool, Range1d
+from bokeh.models import HoverTool
 from bokeh.models.glyphs import AnnularWedge
-from ...core import Element
 from ...core.util import cartesian_product, is_nan, dimension_sanitizer
 from ...element import Raster
 from .element import (ElementPlot, ColorbarPlot, CompositeElementPlot,
