@@ -966,7 +966,7 @@ class GenericOverlayPlot(GenericElementPlot):
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
 
-            if issubclass(plottype, GenericOverlayPlot):
+            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
                 if not any(len(frame) for frame in vmap):
                     self.warning('%s is empty and will be skipped during plotting'
