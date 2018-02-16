@@ -173,5 +173,3 @@ class ElementSignatureTest(ComparisonTestCase):
         qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [0, 1]])), ['a', 'b'], 'c')
         self.assertEqual(qmesh.kdims, [Dimension('a'), Dimension('b')])
         self.assertEqual(qmesh.vdims, [Dimension('c')])
-
-    

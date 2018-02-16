@@ -55,7 +55,7 @@ class TestCallableName(ComparisonTestCase):
 
     def test_generator_expression_name(self):
         if sys.version_info < (3,0):
-            cb = Generator((i for i in xrange(10)))
+            cb = Generator((i for i in xrange(10))) # noqa
         else:
             cb = Generator((i for i in range(10)))
         self.assertEqual(cb.name, '<genexpr>')

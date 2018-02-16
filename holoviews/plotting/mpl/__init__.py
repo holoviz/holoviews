@@ -26,8 +26,12 @@ from .renderer import MPLRenderer
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
 
 if pd:
-    from pandas.tseries import converter
-    converter.register()
+    try:
+        from pandas.plotting import register_matplotlib_converters
+        register_matplotlib_converters()
+    except ImportError:
+        from pandas.tseries import converter
+        converter.register()
 
 
 def set_style(key):

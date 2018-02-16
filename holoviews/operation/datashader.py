@@ -136,8 +136,8 @@ class ResamplingOperation(Operation):
             ytype = 'datetime'
         elif not np.isfinite(ystart) and not np.isfinite(yend):
             if element.get_dimension_type(y) in datetime_types:
-                xstart, xend = 0, 10000
-                xtype = 'datetime'
+                ystart, yend = 0, 10000
+                ytype = 'datetime'
             else:
                 ystart, yend = 0, 1
         elif ystart == yend:
@@ -239,7 +239,7 @@ class aggregate(ResamplingOperation):
                 paths = [p.compute() if isinstance(p, dd.DataFrame) else p for p in paths]
                 df = pd.concat(paths)
         else:
-            df = paths[0]
+            df = paths[0] if paths else pd.DataFrame([], columns=[x.name, y.name])
         if category and df[category].dtype.name != 'category':
             df[category] = df[category].astype('category')
 
@@ -338,6 +338,10 @@ class aggregate(ResamplingOperation):
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
                                   dims=['y', 'x'], coords={'x': xs, 'y': ys})
             return self.p.element_type(xarray)
+        elif not len(data):
+            xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
+                                  dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
+            return self.p.element_type(xarray)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
@@ -432,7 +436,7 @@ class regrid(ResamplingOperation):
                 xarr = element.data[vd.name]
                 if 'datetime' in (xtype, ytype):
                     xarr = xarr.copy()
-                if dims != xarr.dims and not irregular:
+                if dims != xarr.dims:
                     xarr = xarr.transpose(*dims)
             else:
                 arr = element.dimension_values(vd, flat=False)
@@ -490,6 +494,7 @@ class regrid(ResamplingOperation):
         bbox = BoundingBox(points=[(xstart, ystart), (xend, yend)])
         return element.clone(regridded, bounds=bbox,
                              datatype=['xarray']+element.datatype)
+
 
 
 class shade(Operation):

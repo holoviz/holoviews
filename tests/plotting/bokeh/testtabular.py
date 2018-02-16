@@ -1,14 +1,13 @@
 from datetime import datetime as dt
 from unittest import SkipTest
 
-from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Table
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from bokeh.models.widgets import (
-        DataTable, TableColumn, NumberEditor, NumberFormatter, DateFormatter,
+        NumberEditor, NumberFormatter, DateFormatter,
         DateEditor, StringFormatter, StringEditor, IntEditor
     )
     from holoviews.plotting.bokeh.renderer import BokehRenderer
@@ -39,6 +38,13 @@ class TestBokehTablePlot(ComparisonTestCase):
             self.assertEqual(column.title, dim.pprint_label)
             self.assertIsInstance(column.formatter, fmt)
             self.assertIsInstance(column.editor, edit)
+
+    def test_table_plot_escaped_dimension(self):
+        table = Table([1, 2, 3], ['A Dimension'])
+        plot = bokeh_renderer.get_plot(table)
+        source = plot.handles['source']
+        renderer = plot.handles['glyph_renderer']
+        self.assertEqual(list(source.data.keys())[0], renderer.columns[0].field)
 
     def test_table_plot_datetimes(self):
         table = Table([dt.now(), dt.now()], 'Date')

@@ -73,12 +73,12 @@ class MPLRendererTest(ComparisonTestCase):
     def test_get_size_row_plot(self):
         plot = self.renderer.get_plot(self.image1+self.image2)
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 258))
+        self.assertEqual((w, h), (576, 255))
 
     def test_get_size_column_plot(self):
         plot = self.renderer.get_plot((self.image1+self.image2).cols(1))
         w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (288, 510))
+        self.assertEqual((w, h), (288, 505))
 
     def test_get_size_grid_plot(self):
         grid = GridSpace({(i, j): self.image1 for i in range(3) for j in range(3)})
@@ -92,11 +92,6 @@ class MPLRendererTest(ComparisonTestCase):
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (288, 288))
 
-    def test_get_size_tables_in_layout(self):
-        table = Table(range(10), kdims=['x'])
-        plot = self.renderer.get_plot(table+table)
-        w, h = self.renderer.get_size(plot)
-        self.assertEqual((w, h), (576, 231))
 
 @attr(optional=1)
 class BokehRendererTest(ComparisonTestCase):

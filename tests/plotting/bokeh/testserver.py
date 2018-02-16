@@ -2,7 +2,7 @@ from unittest import SkipTest
 
 from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Curve, Polygons, Path, Image, HLine
+from holoviews.element import Curve, Polygons, Path, HLine
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import RangeXY, PlotReset
 
@@ -53,6 +53,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         obj = Curve([])
         stream = RangeXY(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
+        self.assertIsInstance(server_doc, Document)
         self.assertEqual(len(bokeh_renderer.last_plot.callbacks), 1)
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, RangeXYCallback)
@@ -68,6 +69,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         obj = Curve([])
         stream = PlotReset(source=obj)
         server_doc = bokeh_renderer.server_doc(obj)
+        self.assertIsInstance(server_doc, Document)
         cb = bokeh_renderer.last_plot.callbacks[0]
         self.assertIsInstance(cb, ResetCallback)
         self.assertEqual(cb.streams, [stream])

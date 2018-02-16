@@ -72,7 +72,7 @@ def unique_dimkeys(obj, default_dim='Frame'):
                 for d, k in zip(dims, key):
                     dim_keys[d.name] = k
         if dim_keys:
-            keys = [tuple(dim_keys[dim.name] for dim in dimensions)]
+            keys = [tuple(dim_keys.get(dim.name) for dim in dimensions)]
         else:
             keys = []
         return merge_dimensions(dim_groups), keys

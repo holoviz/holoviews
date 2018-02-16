@@ -3,20 +3,19 @@ from collections import defaultdict
 import numpy as np
 import param
 from bokeh.models import (CategoricalColorMapper, CustomJS, HoverTool,
-                          FactorRange, Whisker, Band, Range1d, Circle,
-                          VBar, HBar)
+                          FactorRange, Whisker, Range1d, Circle, VBar,
+                          HBar)
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
-from ...core import Dataset, OrderedDict
-from ...core.dimension import Dimension
+from ...core import Dataset, OrderedDict, Dimension
 from ...core.util import (max_range, basestring, dimension_sanitizer,
-                          wrap_tuple, unique_iterator)
+                          unique_iterator, wrap_tuple)
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label
-from .element import (ElementPlot, ColorbarPlot, LegendPlot, CompositeElementPlot,
-                      line_properties, fill_properties)
+from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
+                      LegendPlot, line_properties, fill_properties)
 from .util import expand_batched_style, categorize_array, rgb2hex, mpl_to_bokeh
 
 
@@ -1078,6 +1077,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
+            vals = vals[np.isfinite(vals)]
             if len(vals):
                 qmin, q1, q2, q3, qmax = (np.percentile(vals, q=q) for q in range(0,125,25))
                 iqr = q3 - q1

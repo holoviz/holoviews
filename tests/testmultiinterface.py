@@ -5,7 +5,6 @@ Tests for the Dataset Element types.
 from unittest import SkipTest
 
 import numpy as np
-from holoviews import Dataset
 from holoviews.core.data.interface import DataError
 from holoviews.element import Path
 from holoviews.element.comparison import ComparisonTestCase
@@ -114,13 +113,13 @@ class MultiInterfaceTest(ComparisonTestCase):
         arrays = [np.random.rand(10, 2) if j else {'x': range(10), 'y': range(10)}
                   for i in range(2) for j in range(2)]
         with self.assertRaises(DataError):
-            mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+            Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
 
     def test_multi_mixed_dims_raises(self):
         arrays = [{'x': range(10), 'y' if j else 'z': range(10)}
                   for i in range(2) for j in range(2)]
         with self.assertRaises(DataError):
-            mds = Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
+            Path(arrays, kdims=['x', 'y'], datatype=['multitabular'])
 
     def test_multi_split(self):
         arrays = [np.column_stack([np.arange(i, i+2), np.arange(i, i+2)]) for i in range(2)]

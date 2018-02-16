@@ -7,15 +7,13 @@ from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import Selection1D
 
-try:
-    from holoviews.plotting.bokeh.callbacks import Callback, Selection1DCallback
-    from holoviews.plotting.bokeh.util import bokeh_version
+from holoviews.plotting.bokeh.callbacks import Callback, Selection1DCallback
+from holoviews.plotting.bokeh.util import bokeh_version
 
-    from bokeh.events import Tap
-    from bokeh.models import Range1d, Plot, ColumnDataSource
-    bokeh_renderer = Store.renderers['bokeh']
-except:
-    bokeh_renderer = None
+from bokeh.events import Tap
+from bokeh.models import Range1d, Plot, ColumnDataSource
+bokeh_renderer = Store.renderers['bokeh']
+
 
 @attr(optional=1)
 class TestBokehCustomJSCallbacks(ComparisonTestCase):
@@ -61,7 +59,8 @@ class TestBokehCustomJSCallbacks(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(ndoverlay)
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], Selection1DCallback)
-        
+        self.assertIn(selection, plot.callbacks[0].streams)
+
 
 @attr(optional=1)
 class TestBokehServerJSCallbacks(ComparisonTestCase):

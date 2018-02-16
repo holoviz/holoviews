@@ -109,7 +109,7 @@ class DaskInterface(PandasInterface):
             else:
                 masks.append(series == k)
             for mask in masks:
-                if select_mask:
+                if select_mask is not None:
                     select_mask &= mask
                 else:
                     select_mask = mask
@@ -145,7 +145,10 @@ class DaskInterface(PandasInterface):
         if len(group_by) == 1:
             column = columns.data[group_by[0]]
             if column.dtype.name == 'category':
-                indices = ((ind,) for ind in column.cat.categories)
+                try:
+                    indices = ((ind,) for ind in column.cat.categories)
+                except NotImplementedError:
+                    indices = ((ind,) for ind in column.unique().compute())
             else:
                 indices = ((ind,) for ind in column.unique().compute())
         else:

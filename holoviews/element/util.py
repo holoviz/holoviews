@@ -241,6 +241,8 @@ def circular_layout(nodes):
     Lay out nodes on a circle and add node index.
     """
     N = len(nodes)
+    if not N:
+        return ([], [], [])
     circ = np.pi/N*np.arange(N)*2
     x = np.cos(circ)
     y = np.sin(circ)
@@ -269,7 +271,6 @@ def connect_edges_pd(graph):
     df = df.sort_values('graph_edge_index').drop(['graph_edge_index'], axis=1)
 
     edge_segments = []
-    N = len(nodes)
     for i, edge in df.iterrows():
         start = edge['src_x'], edge['src_y']
         end = edge['dst_x'], edge['dst_y']
