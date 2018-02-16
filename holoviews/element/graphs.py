@@ -495,10 +495,12 @@ class TriMesh(Graph):
 
         simplices = self.array([0, 1, 2]).astype(np.int32)
         pts = self.nodes.array([0, 1]).astype(float)
-        empty = np.array([[np.NaN, np.NaN]])
-        paths = [arr for tri in pts[simplices] for arr in
-                 (tri[[0, 1, 2, 0], :], empty)][:-1]
-        edgepaths = self.edge_type([np.concatenate(paths)],
+        pts = pts[simplices]
+        paths = np.pad(pts[:, [0, 1, 2, 0], :],
+                       pad_width=((0, 0), (0, 1), (0, 0)),
+                       mode='constant',
+                       constant_values=np.nan).reshape(-1, 2)[:-1]
+        edgepaths = self.edge_type([paths],
                                     kdims=self.nodes.kdims[:2])
         self._edgepaths = edgepaths
         return edgepaths
