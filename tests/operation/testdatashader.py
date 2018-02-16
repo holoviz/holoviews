@@ -77,6 +77,20 @@ class DatashaderAggregateTests(ComparisonTestCase):
                          datatype=['xarray'], bounds=bounds, vdims='Count')
         self.assertEqual(img, expected)
 
+    def test_aggregate_curve_datetimes_microsecond_timebase(self):
+        dates = pd.date_range(start="2016-01-01", end="2016-01-03", freq='1D')
+        xstart = np.datetime64('2015-12-31T23:59:59.723518000', 'us')
+        xend = np.datetime64('2016-01-03T00:00:00.276482000', 'us')
+        curve = Curve((dates, [1, 2, 3]))
+        img = aggregate(curve, width=2, height=2, x_range=(xstart, xend), dynamic=False)
+        bounds = (np.datetime64('2015-12-31T23:59:59.585277000'), 1.0,
+                  np.datetime64('2016-01-03T00:00:00.414723000'), 3.0)
+        dates = [np.datetime64('2016-01-01T11:59:59.861759000',),
+                 np.datetime64('2016-01-02T12:00:00.138241000')]
+        expected = Image((dates, [1.5, 2.5], [[1, 0], [0, 2]]),
+                         datatype=['xarray'], bounds=bounds, vdims='Count')
+        self.assertEqual(img, expected)
+
     def test_aggregate_ndoverlay(self):
         ds = Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
         ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
