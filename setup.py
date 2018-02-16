@@ -35,7 +35,7 @@ Check out the `HoloViews web site <http://holoviews.org>`_ for extensive example
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.9.3",
+    version="1.9.4",
     install_requires=install_requires,
     extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
