@@ -1,27 +1,16 @@
 from __future__ import absolute_import
 
-from unittest import SkipTest
-
 import numpy as np
 from itertools import product
-from holoviews.core.options import Store
 from holoviews.element.raster import HeatMap
-from holoviews.element.comparison import ComparisonTestCase
 
-try:
-    bokeh_renderer = Store.renderers['bokeh']
-except:
-    bokeh_renderer = None
+from .testplot import TestBokehPlot, bokeh_renderer
 
 
-class BokehRadialHeatMapPlotTests(ComparisonTestCase):
+class BokehRadialHeatMapPlotTests(TestBokehPlot):
+
     def setUp(self):
-        if not bokeh_renderer:
-            raise SkipTest("Bokeh required to test plot instantiation")
-        self.previous_backend = Store.current_backend
-        Store.current_backend = 'bokeh'
-        self.default_comm = bokeh_renderer.comms['default']
-
+        super(BokehRadialHeatMapPlotTests, self).setUp()
         # set up dummy data for convenient tests
         x = ["Seg {}".format(idx) for idx in range(2)]
         y = ["Ann {}".format(idx) for idx in range(2)]
@@ -47,9 +36,6 @@ class BokehRadialHeatMapPlotTests(ComparisonTestCase):
         self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
         self.plot = bokeh_renderer.get_plot(self.element)
 
-    def tearDown(self):
-        Store.current_backend = self.previous_backend
-        bokeh_renderer.comms['default'] = self.default_comm
 
     def test_radius_bin_computation(self):
         """Test computation of bins for radius/annulars.

@@ -310,7 +310,7 @@ class RadialHeatMapPlot(ColorbarPlot):
         return [np.array([[a, inner], [a, outer]]) for a in angles]
 
     @staticmethod
-    def _get_marks(ticks, marker):
+    def _get_markers(ticks, marker):
         if callable(marker):
             marks = [v for v, l in ticks if marker(l)]
         elif isinstance(marker, int):
@@ -389,9 +389,9 @@ class RadialHeatMapPlot(ColorbarPlot):
                 wedge = Wedge((0.5, 0.5), ybin[1], xbin[0], xbin[1], width)
                 patches.append(wedge)
 
-        angles = self._get_marks(segment_ticks, self.xmarks)
+        angles = self._get_markers(segment_ticks, self.xmarks)
         xmarks = self._compute_separations(radius_min, radius_max, angles)
-        radii = self._get_marks(radius_ticks, self.ymarks)
+        radii = self._get_markers(radius_ticks, self.ymarks)
         ymarks = [Circle((0.5, 0.5), r) for r in radii]
 
         style['array'] = zvals.flatten()
