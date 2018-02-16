@@ -167,6 +167,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
             # Compute statistics
             vals = g.dimension_values(g.vdims[0])
+            vals = vals[np.isfinite(vals)]
             if len(vals):
                 q1, q2, q3 = (np.percentile(vals, q=q)
                               for q in range(25, 100, 25))
@@ -322,6 +323,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
         bars, segments, scatter = defaultdict(list), defaultdict(list), {}
         values = el.dimension_values(vdim)
+        values = values[np.isfinite(values)]
         if self.inner == 'quartiles':
             for stat_fn in self._stat_fns:
                 stat = stat_fn(values)

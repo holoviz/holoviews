@@ -129,7 +129,8 @@ class MessageCallback(object):
                 requested[h] = handles[h]
             elif h in self.extra_models:
                 print("Warning %s could not find the %s model. "
-                      "The corresponding stream may not work.")
+                      "The corresponding stream may not work."
+                      % (type(self).__name__, h))
         self.handle_ids.update(self._get_stream_handle_ids(requested))
 
         return requested
