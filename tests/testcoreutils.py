@@ -558,20 +558,44 @@ class TestDatetimeUtils(unittest.TestCase):
         dt = datetime.datetime(2017, 1, 1)
         self.assertEqual(dt_to_int(dt), 1483228800000000.0)
 
-    def test_datetime64_to_us_int(self):
+    def test_datetime64_s_to_ns_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+
+    def test_datetime64_us_to_ns_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+
+    def test_datetime64_to_ns_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt, 'ns'), 1483228800000000000000.0)
+
+    def test_datetime64_us_to_us_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
+        self.assertEqual(dt_to_int(dt), 1483228800000000.0)
+
+    def test_datetime64_s_to_us_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
         self.assertEqual(dt_to_int(dt), 1483228800000000.0)
 
     def test_timestamp_to_us_int(self):
         dt = pd.Timestamp(datetime.datetime(2017, 1, 1))
         self.assertEqual(dt_to_int(dt), 1483228800000000.0)
-    
+
     def test_datetime_to_s_int(self):
         dt = datetime.datetime(2017, 1, 1)
         self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
 
     def test_datetime64_to_s_int(self):
         dt = np.datetime64(datetime.datetime(2017, 1, 1))
+        self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
+
+    def test_datetime64_us_to_s_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 'us')
+        self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
+
+    def test_datetime64_s_to_s_int(self):
+        dt = np.datetime64(datetime.datetime(2017, 1, 1), 's')
         self.assertEqual(dt_to_int(dt, 's'), 1483228800.0)
 
     def test_timestamp_to_s_int(self):
