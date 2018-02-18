@@ -4,7 +4,7 @@ Test cases for Dimension and Dimensioned object behaviour.
 from unittest import SkipTest
 from holoviews.core import Dimensioned, Dimension
 from holoviews.element.comparison import ComparisonTestCase
-from . import LoggingComparisonTestCase
+from .. import LoggingComparisonTestCase
 
 import numpy as np
 try:
