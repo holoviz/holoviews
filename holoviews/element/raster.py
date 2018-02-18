@@ -58,10 +58,40 @@ class Raster(Dataset, Element2D):
                 raise DataError('%s type expects 2D array data.' % type(self).__name__,
                                 GridInterface)
         super(Raster, self).__init__(data, kdims=kdims, vdims=vdims, **params)
+        if not self.interface.gridded:
+            raise DataError("%s type expects gridded data, %s is columnar."
+                            "To display columnar data as gridded use the HeatMap "
+                            "element or aggregate the data." %
+                            (type(self).__name__, self.interface.__name__))
+
         if extents is None:
             self.extents = (0, 0)+self.interface.shape(self, gridded=True)[::-1]
         else:
             self.extents = extents
+
+    def __setstate__(self, state):
+        """
+        Ensures old-style unpickled Image types without an interface
+        use the ImageInterface.
+
+        Note: Deprecate as part of 2.0
+        """
+        self.__dict__ = state
+        if isinstance(self.data, np.ndarray):
+            self.interface = GridInterface
+            d2, d1 = self.data.shape
+            dims = process_dimensions(kdims, vdims)
+            x, y = dims.get('kdims', self.kdims)
+            z = dims.get('vdims', self.vdims)[0]
+            data = OrderedDict([(x.name, np.arange(d1)), (y.name, np.arange(d2)),
+                                (z.name, self.data)])
+            self.data = data
+        super(Raster, self).__setstate__(state)
+
+
+    def aggregate(self, dimensions=None, function=None, spreadfn=None, **kwargs):
+        agg = super(Raster, self).aggregate(dimensions, function, spreadfn, **kwargs)
+        return Curve(agg) if isinstance(agg, Dataset) and len(self.vdims) == 1 else agg
 
 
 
