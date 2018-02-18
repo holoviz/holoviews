@@ -77,6 +77,13 @@ class Element(ViewableElement, Composable, Overlayable):
         return dimension in self.dimensions()
 
 
+    def __iter__(self):
+        """
+        Disable iterator interface.
+        """
+        raise NotImplementedError('Iteration on Elements is not supported.')
+
+
     __bool__ = __nonzero__
 
 
