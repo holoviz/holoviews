@@ -80,9 +80,8 @@ class Raster(Dataset, Element2D):
         if isinstance(self.data, np.ndarray):
             self.interface = GridInterface
             d2, d1 = self.data.shape
-            dims = process_dimensions(kdims, vdims)
-            x, y = dims.get('kdims', self.kdims)
-            z = dims.get('vdims', self.vdims)[0]
+            x, y = self.kdims
+            z = self.vdims[0]
             data = OrderedDict([(x.name, np.arange(d1)), (y.name, np.arange(d2)),
                                 (z.name, self.data)])
             self.data = data
