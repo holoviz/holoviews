@@ -5,6 +5,8 @@ import param
 from ..core.util import datetime_types, basestring
 from ..core import Dimension, Element2D, Element
 
+from .chart import Points
+
 
 class Annotation(Element2D):
     """
@@ -266,3 +268,18 @@ class Div(Element):
             raise ValueError("Div element html data must be a string "
                              "type, found %s type." % type(html).__name__)
         super(Div, self).__init__(html, **params)
+
+
+
+class Labels(Points):
+    """
+    Labels represents a collection of text labels associated with 2D
+    coordinates. Unlike other Annotation types it is vectorized to
+    draw labels from a dataset.
+    """
+
+    group = param.String(default='Labels', constant=True)
+
+    vdims = param.List([Dimension('Label')], bounds=(1, 1), doc="""
+        Defines the value dimension corresponding to the label text.""")
+

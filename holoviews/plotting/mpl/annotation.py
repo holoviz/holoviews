@@ -85,6 +85,30 @@ class TextPlot(AnnotationPlot):
                           rotation=rotation, **opts)]
 
 
+class LabelsPlot(ElementPlot):
+
+    style_opts = ['alpha', 'color', 'visible', 'linewidth',
+                  'linestyle', 'marker', 'ms']
+
+    _plot_methods = dict(single='annotate')
+
+    def get_data(self, element, ranges, style):
+        xs, ys = (element.dimension_values(i) for i in range(2))
+        text = element.dimension_values(2)
+        positions = (ys, xs) if self.invert_axes else (xs, ys)
+        return positions + (text,), style, {}
+
+    def init_artists(self, ax, plot_args, plot_kwargs):
+        texts = []
+        for x, y, text in zip(*plot_args):
+            texts.append(ax.text(x, y, text, **plot_kwargs))
+        return {'artist': texts}
+
+    def teardown_handles(self):
+        if 'artist' in self.handles:
+            for artist in self.handles['artist']:
+                artist.remove()
+
 
 class ArrowPlot(AnnotationPlot):
     "Draw an arrow using the information supplied to the Arrow annotation"

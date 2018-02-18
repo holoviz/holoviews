@@ -65,6 +65,32 @@ class TextPlot(ElementPlot):
 
 
 
+class LabelsPlot(ElementPlot):
+
+    style_opts = text_properties
+
+    _plot_methods = dict(single='text', batched='text')
+    _batched_style_opts = text_properties
+
+    def get_data(self, element, ranges=None, empty=False):
+        style = self.style[self.cyclic_index]
+        dims = element.dimensions(label=True)
+
+        xidx, yidx = (1, 0) if self.invert_axes else (0, 1)
+        mapping = dict(x=dims[xidx], y=dims[yidx])
+        data = {}
+
+        xdim, ydim = dims[xidx], dims[yidx]
+        data[xdim] = element.dimension_values(xidx)
+        data[ydim] = element.dimension_values(yidx)
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
+
+        text_dim = dims[2]
+        data[text_dim] = element.dimension_values(text_dim)
+        return data, mapping
+
+
+
 class LineAnnotationPlot(ElementPlot):
 
     style_opts = line_properties
