@@ -1,5 +1,7 @@
 from itertools import product
 
+import numpy as np
+
 from holoviews.element.raster import HeatMap
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -35,10 +37,10 @@ class RadialHeatMapPlotTests(TestMPLPlot):
 
         # provide element and plot instances for tests
         self.element = HeatMap((self.x, self.y, self.z)).opts(opts)
-        self.plot = mpl_renderer.get_plot(self.element)
 
     def test_get_data(self):
-        data, style, ticks = self.plot.get_data(self.element, {'z': (0, 3)}, {})
+        plot = mpl_renderer.get_plot(self.element)
+        data, style, ticks = plot.get_data(self.element, {'z': (0, 3)}, {})
         wedges = data['annular']
         for wedge, wdata in zip(wedges, self.wedge_data):
             self.assertEqual((wedge.center, wedge.width, wedge.r,
@@ -46,4 +48,20 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         self.assertEqual(ticks['xticks'], self.xticks)
         self.assertEqual(ticks['yticks'], self.yticks)
 
+    def test_get_data_xseparators(self):
+        plot = mpl_renderer.get_plot(self.element.opts(plot=dict(xmarks=4)))
+        data, style, ticks = plot.get_data(self.element, {'z': (0, 3)}, {})
+        xseparators = data['xseparator']
+        arrays = [np.array([[0., 0.25],
+                            [0., 0.5 ]]),
+                  np.array([[3.14159265, 0.25],
+                            [3.14159265, 0.5]])]
+        self.assertEqual(xseparators, arrays)
+
+    def test_get_data_yseparators(self):
+        plot = mpl_renderer.get_plot(self.element.opts(plot=dict(ymarks=4)))
+        data, style, ticks = plot.get_data(self.element, {'z': (0, 3)}, {})
+        yseparators = data['yseparator']
+        for circle, r in zip(yseparators, [0.25, 0.375]):
+            self.assertEqual(circle.radius, r)
 

@@ -313,8 +313,8 @@ class RadialHeatMapPlot(ColorbarPlot):
     def _get_markers(ticks, marker):
         if callable(marker):
             marks = [v for v, l in ticks if marker(l)]
-        elif isinstance(marker, int):
-            nth_mark = np.ceil(len(ticks) / marker).astype(int)
+        elif isinstance(marker, int) and marker:
+            nth_mark = max([np.ceil(len(ticks) / marker).astype(int), 1])
             marks = [v for v, l in ticks[::nth_mark]]
         elif isinstance(marker, tuple):
             marks = [v for v, l in ticks if l in marker]
@@ -327,10 +327,10 @@ class RadialHeatMapPlot(ColorbarPlot):
         if callable(ticker):
             ticks = [(v, l) for v, l in ticks if ticker(l)]
         elif isinstance(ticker, int):
-            nth_mark = np.ceil(len(ticks) / ticker).astype(int)
+            nth_mark = max([np.ceil(len(ticks) / ticker).astype(int), 1])
             ticks = ticks[::nth_mark]
         elif isinstance(ticker, (tuple, list)):
-            nth_mark = np.ceil(len(ticks) / len(ticker)).astype(int)
+            nth_mark = max([np.ceil(len(ticks) / len(ticker)).astype(int), 1])
             ticks = [(v, tl) for (v, l), tl in zip(ticks[::nth_mark], ticker)]
         elif ticker:
             ticks = list(ticker)
