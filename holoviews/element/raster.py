@@ -64,7 +64,7 @@ class Raster(Dataset, Element2D):
                             "element or aggregate the data." %
                             (type(self).__name__, self.interface.__name__))
 
-        if extents is None:
+        if extents in (None, (None, None, None, None)):
             self.extents = (0, 0)+self.interface.shape(self, gridded=True)[::-1]
         else:
             self.extents = extents

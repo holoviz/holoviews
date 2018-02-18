@@ -37,7 +37,11 @@ class RasterBasePlot(ElementPlot):
             if isinstance(element, Image):
                 return element.bounds.lbrt()
             else:
-                return element.extents
+                xvals = element.dimension_values(0, expanded=False)
+                yvals = element.dimension_values(1, expanded=False)
+                l, r = 0, len(xvals)
+                b, t = 0, len(yvals)
+                return (l, b, r, t)
 
     def _compute_ticks(self, element, ranges):
         return None, None
