@@ -142,6 +142,7 @@ class HeatMapPlot(ColorbarPlot):
         x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
         if self.invert_axes: x, y = y, x
         cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
+        if 'line_alpha' not in style: style['line_alpha'] = 0
         if self.static_source:
             return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
 
