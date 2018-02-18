@@ -1,9 +1,14 @@
+from collections import deque
 from unittest import SkipTest
 
+import numpy as np
+
+from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Box
+from holoviews.element import Points, Polygons, Box, Curve
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.streams import PointDraw, PolyDraw, PolyEdit, BoxEdit
+from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
+                               PointerXY, PointerX)
 
 try:
     from bokeh.models import PolyEditTool
@@ -16,6 +21,44 @@ try:
     bokeh_renderer = BokehRenderer.instance(mode='server')
 except:
     bokeh_renderer = None
+
+
+class TestCallbacks(ComparisonTestCase):
+
+    def test_stream_callback(self):
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        plot.callbacks[0].on_msg({"x": 10, "y": -10})
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.array([10]))
+        self.assertEqual(data['y'], np.array([-10]))
+
+    def test_stream_callback_with_ids(self):
+        dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        model = plot.state
+        plot.callbacks[0].on_msg({"x": {'id': model.ref['id'], 'value': 10},
+                                  "y": {'id': model.ref['id'], 'value': -10}})
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.array([10]))
+        self.assertEqual(data['y'], np.array([-10]))
+
+    def test_stream_callback_single_call(self):
+        def history_callback(x, history=deque(maxlen=10)):
+            history.append(x)
+            return Curve(list(history))
+        stream = PointerX(x=0)
+        dmap = DynamicMap(history_callback, kdims=[], streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+        bokeh_renderer(plot)
+        for i in range(20):
+            stream.event(x=i)
+        data = plot.handles['source'].data
+        self.assertEqual(data['x'], np.arange(10))
+        self.assertEqual(data['y'], np.arange(10, 20))
+
 
 
 class TestEditToolCallbacks(ComparisonTestCase):
