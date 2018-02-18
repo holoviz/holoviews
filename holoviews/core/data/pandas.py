@@ -295,16 +295,6 @@ class PandasInterface(Interface):
 
 
     @classmethod
-    def array(cls, dataset, dimensions):
-        if not dimensions:
-            dimensions = dataset.dimensions(label='name')
-        else:
-            dimensions = [dataset.get_dimensions(d).name for d in dimensions]
-        inds = [dataset.data.columns.index(dim.name) for dim in dimensions]
-        return dataset.data.values[:, inds]
-
-
-    @classmethod
     def iloc(cls, dataset, index):
         rows, cols = index
         scalar = False
