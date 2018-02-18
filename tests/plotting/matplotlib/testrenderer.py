@@ -1,3 +1,9 @@
+# -*- coding: utf-8 -*-
+"""
+Test cases for rendering exporters
+"""
+from __future__ import unicode_literals
+
 from unittest import SkipTest
 from nose.plugins.attrib import attr
 
