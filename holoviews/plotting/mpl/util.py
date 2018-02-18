@@ -317,10 +317,7 @@ def get_raster_array(image):
                           for d in rgb.vdims])
     else:
         data = image.dimension_values(2, flat=False)
-        if type(image) is Raster:
-            data = data.T
-        else:
-            data = np.flipud(data)
+        data = np.flipud(data)
     return data
 
 
