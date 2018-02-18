@@ -218,7 +218,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         Define the maximum radius which is used for the x and y range extents.
         """)
 
-    radial = param.Boolean(default=False, doc="""
+    radial = param.Boolean(default=True, doc="""
         Whether the HeatMap should be radial""")
 
     show_frame = param.Boolean(default=False, doc="""
