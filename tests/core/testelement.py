@@ -1,4 +1,3 @@
-from unittest import SkipTest
 from holoviews.core import Dimension, Element
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -23,5 +22,5 @@ class ElementTests(ComparisonTestCase):
     def test_value_dimension_string_in_element(self):
         self.assertTrue('C' in self.element)
 
-    def test_constant_dimension_string_in_element(self):
-        self.assertTrue('Z' in self.element)
+    def test_dimension_string_not_in_element(self):
+        self.assertFalse('D' in self.element)
