@@ -68,6 +68,22 @@ class Element(ViewableElement, Composable, Overlayable):
         """
         return True
 
+
+    def __contains__(self, dimension):
+        """
+        Allows checking whether a Dimension is in the Elements key or
+        value dimensions.
+        """
+        return dimension in self.dimensions()
+
+
+    def __iter__(self):
+        """
+        Disable iterator interface.
+        """
+        raise NotImplementedError('Iteration on Elements is not supported.')
+
+
     __bool__ = __nonzero__
 
 
