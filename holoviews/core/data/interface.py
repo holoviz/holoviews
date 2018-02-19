@@ -287,9 +287,12 @@ class Interface(param.Parameterized):
             return np.NaN, np.NaN
         else:
             try:
+                assert column.dtype.kind not in 'SUO'
                 return (np.nanmin(column), np.nanmax(column))
-            except TypeError:
-                column.sort()
+            except (AssertionError, TypeError):
+                column = [v for v in util.python2sort(column) if v is not None]
+                if not len(column):
+                    return np.NaN, np.NaN
                 return column[0], column[-1]
 
     @classmethod

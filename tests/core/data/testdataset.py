@@ -473,6 +473,10 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
         self.assertEqual(dataset.redim(**{'X-label':'X'}), dataset_redim)
         self.assertEqual(dataset.redim(**{'x':'X'}), dataset_redim)
 
+    def test_dataset_mixed_type_range(self):
+        ds = Dataset((['A', 'B', 'C', None],), 'A')
+        self.assertEqual(ds.range(0), ('A', 'C'))
+
     def test_dataset_sort_vdim_ht(self):
         dataset = Dataset({'x':self.xs, 'y':-self.ys},
                           kdims=['x'], vdims=['y'])
