@@ -146,7 +146,15 @@ class AttrTree(object):
         """
         Propagate the value up to the root node.
         """
-        self.data[path] = val
+        if val == '_DELETE':
+            if path in self.data:
+                del self.data[path]
+            else:
+                items = [(key, v) for key, v in self.data.items()
+                         if not all(k==p for k, p in zip(key, path))]
+                self.data = OrderedDict(items)
+        else:
+            self.data[path] = val
         if self.parent is not None:
             self.parent._propagate((self.identifier,)+path, val)
 
@@ -187,6 +195,25 @@ class AttrTree(object):
         for identifier in split_label:
             path_item = path_item[identifier]
         return path_item
+
+
+    def __delitem__(self, identifier):
+        split_label = (tuple(identifier.split('.'))
+                       if isinstance(identifier, str) else tuple(identifier))
+        if len(split_label) == 1:
+            identifier = split_label[0]
+            if identifier in self.children:
+                del self.__dict__[identifier]
+                self.children.pop(self.children.index(identifier))
+            else:
+                raise KeyError(identifier)
+            self._propagate(split_label, '_DELETE')
+        else:
+            path_item = self
+            for i, identifier in enumerate(split_label[:-1]):
+                path = split_label[i:]
+                path_item = path_item[identifier]
+            del path_item[split_label[-1]]
 
 
     def __setattr__(self, identifier, val):
