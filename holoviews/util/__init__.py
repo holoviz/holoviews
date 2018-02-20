@@ -3,7 +3,7 @@ import os, sys, inspect, shutil
 import param
 
 from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from ..core.options import options_policy
+from ..core.options import options_policy, Keywords
 from ..core.operation import Operation
 from ..core.util import Aliases, basestring  # noqa (API import)
 from ..core.operation import OperationCallable
@@ -103,6 +103,92 @@ class opts(param.ParameterizedFunction):
             return obj
         else:
             return StoreOptions.set_options(obj, options)
+
+
+    @classmethod
+    def expand_options(cls, options, backend=None):
+        """
+        Validates and expands a dictionaries of options indexed by
+        type[.group][.label] keys into separate style, plot and norm
+        options.
+
+            opts.expand_options({'Image': dict(cmap='viridis', show_title=False)})
+
+        returns
+
+            {'Image': {'plot': dict(show_title=False), 'style': dict(cmap='viridis')}}
+        """
+        current_backend = Store.current_backend
+        backend_options = Store.options(backend=backend or current_backend)
+        expanded = {}
+        for objspec, options in options.items():
+            objtype = objspec.split('.')[0]
+            if objtype not in backend_options:
+                raise ValueError('%s type not found, could not apply options.'
+                                 % objtype)
+            obj_options = backend_options[objtype]
+            expanded[objspec] = {g: {} for g in obj_options.groups}
+            for opt, value in options.items():
+                found = False
+                valid_options = []
+                for g, group_opts in obj_options.groups.items():
+                    if opt in group_opts.allowed_keywords:
+                        expanded[objspec][g][opt] = value
+                        found = True
+                        break
+                    valid_options += group_opts.allowed_keywords
+                if found: continue
+                cls._options_error(opt, objtype, backend, valid_options)
+        return expanded
+
+
+    @classmethod
+    def _options_error(cls, opt, objtype, backend, valid_options):
+        """
+        Generates an error message for an invalid option suggesting
+        similar options through fuzzy matching.
+        """
+        current_backend = Store.current_backend
+        loaded_backends = Store.loaded_backends()
+        kws = Keywords(values=valid_options)
+        matches = sorted(kws.fuzzy_match(opt))
+        if backend is not None:
+            if matches:
+                raise ValueError('Unexpected option %r for %s types '
+                                 'when using the %r extension. Similar '
+                                 'options are: %s.' %
+                                 (opt, objtype, backend, matches))
+            else:
+                raise ValueError('Unexpected option %r for %s types '
+                                 'when using the %r extension. No '
+                                 'similar options founds.' %
+                                 (opt, objtype, backend))
+
+        # Check option is invalid for all backends
+        found = []
+        for lb in [b for b in loaded_backends if b != backend]:
+            lb_options = Store.options(backend=lb).get(objtype)
+            if lb_options is None:
+                continue
+            for g, group_opts in lb_options.groups.items():
+                if opt in group_opts.allowed_keywords:
+                    found.append(lb)
+        if found:
+            param.main.warning('Option %r for %s type not valid '
+                               'for selected backend (%r). Option '
+                               'only applies to following backends: %r' %
+                               (opt, objtype, current_backend, found))
+            return
+
+        if matches:
+            raise ValueError('Unexpected option %r for %s types '
+                             'across all extensions. Similar options '
+                             'for current extension (%r) are: %s.' %
+                             (opt, objtype, current_backend, matches))
+        else:
+            raise ValueError('Unexpected option %r for %s types '
+                             'across all extensions. No similar options '
+                             'found.' % (opt, objtype))
 
 
 class output(param.ParameterizedFunction):
