@@ -2,8 +2,8 @@ import os, sys, inspect, shutil
 
 import param
 
-from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement, StoreOptions, Store
-from ..core.options import options_policy, Keywords
+from ..core import DynamicMap, HoloMap, Dimensioned, ViewableElement
+from ..core.options import Keywords, StoreOptions, Store, OptionError
 from ..core.operation import Operation
 from ..core.util import Aliases, basestring  # noqa (API import)
 from ..core.operation import OperationCallable
@@ -69,12 +69,18 @@ class opts(param.ParameterizedFunction):
     %%opts cell magic respectively.
     """
 
+    backend = param.String(default=None, doc="""
+       A specific backend to apply the options to, if not set uses
+       current backend.""")
+
     strict = param.Boolean(default=False, doc="""
        Whether to be strict about the options specification. If not set
        to strict (default), any invalid keywords are simply skipped. If
        strict, invalid keywords prevent the options being applied.""")
 
     def __call__(self, *args, **params):
+        if 'backend' not in params:
+            params['backend'] = Store.current_backend
         p = param.ParamOverrides(self, params)
         if len(args) not in [1,2]:
             raise TypeError('The opts utility accepts one or two positional arguments.')
@@ -87,8 +93,12 @@ class opts(param.ParameterizedFunction):
             from .parser import OptsSpec
             options = OptsSpec.parse(options)
 
+        try:
+            StoreOptions.validate_spec(options, backend=p.backend)
+            errmsg = None
+        except OptionError as e:
+            errmsg = e.format_options_error()
 
-        errmsg = StoreOptions.validation_error_message(options)
         if errmsg:
             sys.stderr.write(errmsg)
             if p.strict:
@@ -97,12 +107,11 @@ class opts(param.ParameterizedFunction):
                 else:   return
 
         if obj is None:
-            with options_policy(skip_invalid=True, warn_on_skip=False):
-                StoreOptions.apply_customizations(options, Store.options())
+            StoreOptions.apply_customizations(options, Store.options(p.backend))
         elif not isinstance(obj, Dimensioned):
             return obj
         else:
-            return StoreOptions.set_options(obj, options)
+            return StoreOptions.set_options(obj, options, backend=p.backend)
 
 
     @classmethod
@@ -138,57 +147,10 @@ class opts(param.ParameterizedFunction):
                         break
                     valid_options += group_opts.allowed_keywords
                 if found: continue
-                cls._options_error(opt, objtype, backend, valid_options)
+                kws = Keywords(values=valid_options, target=objtype)
+                StoreOptions.generate_option_error(objtype, opt, kws, backend=backend)
         return expanded
 
-
-    @classmethod
-    def _options_error(cls, opt, objtype, backend, valid_options):
-        """
-        Generates an error message for an invalid option suggesting
-        similar options through fuzzy matching.
-        """
-        current_backend = Store.current_backend
-        loaded_backends = Store.loaded_backends()
-        kws = Keywords(values=valid_options)
-        matches = sorted(kws.fuzzy_match(opt))
-        if backend is not None:
-            if matches:
-                raise ValueError('Unexpected option %r for %s types '
-                                 'when using the %r extension. Similar '
-                                 'options are: %s.' %
-                                 (opt, objtype, backend, matches))
-            else:
-                raise ValueError('Unexpected option %r for %s types '
-                                 'when using the %r extension. No '
-                                 'similar options founds.' %
-                                 (opt, objtype, backend))
-
-        # Check option is invalid for all backends
-        found = []
-        for lb in [b for b in loaded_backends if b != backend]:
-            lb_options = Store.options(backend=lb).get(objtype)
-            if lb_options is None:
-                continue
-            for g, group_opts in lb_options.groups.items():
-                if opt in group_opts.allowed_keywords:
-                    found.append(lb)
-        if found:
-            param.main.warning('Option %r for %s type not valid '
-                               'for selected backend (%r). Option '
-                               'only applies to following backends: %r' %
-                               (opt, objtype, current_backend, found))
-            return
-
-        if matches:
-            raise ValueError('Unexpected option %r for %s types '
-                             'across all extensions. Similar options '
-                             'for current extension (%r) are: %s.' %
-                             (opt, objtype, current_backend, matches))
-        else:
-            raise ValueError('Unexpected option %r for %s types '
-                             'across all extensions. No similar options '
-                             'found.' % (opt, objtype))
 
 
 class output(param.ParameterizedFunction):

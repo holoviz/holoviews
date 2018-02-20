@@ -8,7 +8,7 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 
-from ..core.options import Options, Store, StoreOptions, options_policy
+from ..core.options import Options, Store, StoreOptions
 from ..core.pprint import InfoPrinter
 
 from IPython.display import display, HTML
@@ -247,9 +247,7 @@ class OptsMagic(Magics):
     Magic for easy customising of normalization, plot and style options.
     Consult %%opts? for more information.
     """
-    error_message = None # If not None, the error message that will be displayed
     opts_spec = None       # Next id to propagate, binding displayed object together.
-    strict = False
 
     @classmethod
     def process_element(cls, obj):
@@ -260,22 +258,14 @@ class OptsMagic(Magics):
         may be returned. If None is returned, display will proceed as
         normal.
         """
-        if cls.error_message:
-            if cls.strict:
-                return cls.error_message
-            else:
-                sys.stderr.write(cls.error_message)
         if cls.opts_spec is not None:
-            StoreOptions.set_options(obj, cls.opts_spec)
+            StoreOptions.set_options(obj, cls.opts_spec, validate=False)
             cls.opts_spec = None
         return None
 
     @classmethod
     def register_custom_spec(cls, spec):
         spec, _ = StoreOptions.expand_compositor_keys(spec)
-        errmsg = StoreOptions.validation_error_message(spec)
-        if errmsg:
-            cls.error_message = errmsg
         cls.opts_spec = spec
 
     @classmethod
@@ -340,22 +330,13 @@ class OptsMagic(Magics):
                    "with any of the loaded backends.")
             display(HTML(msg.format(unknown=', '.join(unknown_elements))))
 
+        StoreOptions.validate_spec(spec)
         if cell:
             self.register_custom_spec(spec)
             # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
-            errmsg = StoreOptions.validation_error_message(spec)
-            if errmsg:
-                OptsMagic.error_message = None
-                sys.stderr.write(errmsg)
-                if self.strict:
-                    display(HTML('Options specification will not be applied.'))
-                    return
-
-            with options_policy(skip_invalid=True, warn_on_skip=False):
-                StoreOptions.apply_customizations(spec, Store.options())
-        OptsMagic.error_message = None
+            StoreOptions.apply_customizations(spec, Store.options())
 
 
 

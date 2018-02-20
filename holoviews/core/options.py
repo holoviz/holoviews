@@ -36,7 +36,7 @@ import pickle
 import traceback
 import difflib
 from contextlib import contextmanager
-from collections import OrderedDict, defaultdict
+from collections import OrderedDict
 
 import numpy as np
 
@@ -65,23 +65,15 @@ class OptionError(Exception):
     appropriately.
     """
     def __init__(self, invalid_keyword, allowed_keywords,
-                 group_name=None, path=None):
-        super(OptionError, self).__init__(self.message(invalid_keyword,
-                                                       allowed_keywords,
-                                                       group_name, path))
+                 group_name=None, path=None, backend=None):
         self.invalid_keyword = invalid_keyword
         self.allowed_keywords = allowed_keywords
         self.group_name =group_name
         self.path = path
+        self.backend = backend
+        msg = self.format_options_error()
+        super(OptionError, self).__init__(msg)
 
-
-    def message(self, invalid_keyword, allowed_keywords, group_name, path):
-        msg = ("Invalid option %s, valid options are: %s"
-               % (repr(invalid_keyword), str(allowed_keywords)))
-        if path and group_name:
-            msg = ("Invalid key for group %r on path %r;\n"
-                    % (group_name, path)) + msg
-        return msg
 
     def format_options_error(self):
         """
@@ -97,29 +89,35 @@ class OptionError(Exception):
             similarity = 'Similar'
 
         loaded_backends = Store.loaded_backends()
-        target = 'for {0}'.format(target) if target else ''
+        target = '{0}'.format(target) if target else ''
 
         if len(loaded_backends) == 1:
-            loaded=' in loaded backend {0!r}'.format(loaded_backends[0])
+            loaded = ' for loaded backend {0!r}.'.format(loaded_backends[0])
         else:
             backend_list = ', '.join(['%r'% b for b in loaded_backends[:-1]])
-            loaded=' in loaded backends {0} and {1!r}'.format(backend_list,
-                                                            loaded_backends[-1])
+            loaded = ' for loaded backends {0} and {1!r}.'.format(backend_list,
+                                                                  loaded_backends[-1])
 
         suggestion = ("If you believe this keyword is correct, please make sure "
                       "the backend has been imported or loaded with the "
                       "hv.extension.")
 
-        group = '{0} option'.format(self.group_name) if self.group_name else 'keyword'
-        msg=('Unexpected {group} {kw} {target}{loaded}.\n\n'
-             '{similarity} keywords in the currently active '
-             '{current_backend} renderer are: {matches}\n\n{suggestion}')
-        return msg.format(kw="'%s'" % self.invalid_keyword,
-                          target=target,
-                          group=group,
-                          loaded=loaded, similarity=similarity,
-                          current_backend=repr(Store.current_backend),
-                          matches=matches,
+        if self.group_name:
+            group = '{0} option'.format(self.group_name)
+        else:
+            group = 'option'
+        msg = 'Unexpected {group} {kw} to {target}'
+
+        if self.backend:
+            msg += ' when using the %s backend.' % self.backend
+        else:
+            msg += loaded
+
+        backend = repr(self.backend or Store.current_backend)
+        msg += ' {similarity} options for {backend} backend are: {matches}\n\n{suggestion}'
+        return msg.format(kw=repr(self.invalid_keyword), target=target,
+                          group=group, similarity=similarity,
+                          backend=backend, matches=matches,
                           suggestion=suggestion)
 
 
@@ -163,18 +161,6 @@ class abbreviated_exception(object):
     def __exit__(self, etype, value, traceback):
         if isinstance(value, Exception):
             raise AbbreviatedException(etype, value, traceback)
-
-
-@contextmanager
-def options_policy(skip_invalid, warn_on_skip):
-    """
-    Context manager to temporarily set the skip_invalid and warn_on_skip
-    class parameters on Options.
-    """
-    settings = (Options.skip_invalid, Options.warn_on_skip)
-    (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
-    yield
-    (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
 class Keywords(param.Parameterized):
@@ -396,14 +382,11 @@ class Options(param.Parameterized):
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
-                if self.skip_invalid:
+                if self.warn_on_skip:
                     invalid_kws.append(kwarg)
                 else:
-                    raise OptionError(kwarg, allowed_keywords)
+                    raise OptionError(kwarg, allowed_keywords, group_name=key)
 
-        for invalid_kw in invalid_kws:
-            error = OptionError(invalid_kw, allowed_keywords, group_name=key)
-            StoreOptions.record_skipped_option(error)
         if invalid_kws and self.warn_on_skip:
             self.warning("Invalid options %s, valid options are: %s"
                          % (repr(invalid_kws), str(allowed_keywords)))
@@ -1264,41 +1247,6 @@ class StoreOptions(object):
     purposes.
     """
 
-    #=======================#
-    # OptionError recording #
-    #=======================#
-
-    _errors_recorded = None
-
-    @classmethod
-    def start_recording_skipped(cls):
-        """
-        Start collecting OptionErrors for all skipped options recorded
-        with the record_skipped_option method
-        """
-        cls._errors_recorded = []
-
-    @classmethod
-    def stop_recording_skipped(cls):
-        """
-        Stop collecting OptionErrors recorded with the
-        record_skipped_option method and return them
-        """
-        if cls._errors_recorded is None:
-            raise Exception('Cannot stop recording before it is started')
-        recorded = cls._errors_recorded[:]
-        cls._errors_recorded = None
-        return recorded
-
-    @classmethod
-    def record_skipped_option(cls, error):
-        """
-        Record the OptionError associated with a skipped option if
-        currently recording
-        """
-        if cls._errors_recorded is not None:
-            cls._errors_recorded.append(error)
-
     #===============#
     # ID management #
     #===============#
@@ -1377,55 +1325,60 @@ class StoreOptions(object):
             options[str(key)] = customization
         return options
 
+
     @classmethod
-    def validate_spec(cls, spec, backends=None):
+    def generate_option_error(cls, objtype, option, allowed_keywords, group=None, backend=None):
+        current_backend = Store.current_backend
+        loaded_backends = Store.loaded_backends()
+
+        # If no explicit backend set check option is invalid for all backends
+        backends = [b for b in loaded_backends if b != backend] if backend is None else []
+        found = []
+        for lb in backends:
+            lb_options = Store.options(backend=lb).get(objtype)
+            if lb_options is None:
+                continue
+            group_opts = [(g, o) for g, o in lb_options.groups.items()
+                          if group is None or group == g]
+            for g, gopts in group_opts:
+                if option in gopts.allowed_keywords:
+                    found.append(lb)
+        if found:
+            param.main.warning('Option %r for %s type not valid '
+                               'for selected backend (%r). Option '
+                               'only applies to following backends: %r' %
+                               (option, objtype, current_backend, found))
+            return
+        raise OptionError(option, allowed_keywords, group, objtype, backend)
+
+
+    @classmethod
+    def validate_spec(cls, spec, backend=None):
         """
         Given a specification, validated it against the options tree for
         the specified backends by raising OptionError for invalid
         options. If backends is None, validates against all the
         currently loaded backend.
-
-        Only useful when invalid keywords generate exceptions instead of
-        skipping i.e Options.skip_invalid is False.
         """
-        loaded_backends =  Store.loaded_backends() if backends is None else backends
-
-        error_info     = {}
-        backend_errors = defaultdict(set)
-        for backend in loaded_backends:
-            cls.start_recording_skipped()
-            with options_policy(skip_invalid=True, warn_on_skip=False):
-                options = OptionTree(items=Store.options(backend).data.items(),
-                                     groups=Store.options(backend).groups)
-                cls.apply_customizations(spec, options)
-
-            for error in cls.stop_recording_skipped():
-                error_key = (error.invalid_keyword,
-                             error.allowed_keywords.target,
-                             error.group_name)
-                error_info[error_key+(backend,)] = error.allowed_keywords
-                backend_errors[error_key].add(backend)
-
-
-        for ((keyword, target, group_name), backends) in backend_errors.items():
-            # If the keyword failed for the target across all loaded backends...
-            if set(backends) == set(loaded_backends):
-                key = (keyword, target, group_name, Store.current_backend)
-                raise OptionError(keyword,
-                                  group_name=group_name,
-                                  allowed_keywords=error_info[key])
-
-
-    @classmethod
-    def validation_error_message(cls, spec, backends=None):
-        """
-        Returns an options validation error message if there are any
-        invalid keywords. Otherwise returns None.
-        """
-        try:
-            cls.validate_spec(spec, backends=backends)
-        except OptionError as e:
-            return e.format_options_error()
+        current_backend = Store.current_backend
+        applied_backend = backend or current_backend
+        backend_options = Store.options(backend=applied_backend)
+        for objspec, opts in sorted(spec.items()):
+            objtype = objspec.split('.')[0]
+            if objtype not in backend_options:
+                raise ValueError('%s type not registered with %s extension, '
+                                 'could not apply options.' % (objtype, applied_backend))
+            obj_options = backend_options[objtype]
+            if isinstance(opts, list):
+                opts = {o.key: o for o in opts}
+            for group, gopts in opts.items():
+                valid_options = obj_options.groups[group]
+                gopts = gopts.kwargs if isinstance(gopts, Options) else gopts
+                for opt in gopts:
+                    allowed_kws = valid_options.allowed_keywords
+                    if opt not in allowed_kws:
+                        cls.generate_option_error(objtype, opt, allowed_kws,
+                                                  group, backend)
 
     @classmethod
     def expand_compositor_keys(cls, spec):
@@ -1603,7 +1556,7 @@ class StoreOptions(object):
 
 
     @classmethod
-    def set_options(cls, obj, options=None, backend=None, **kwargs):
+    def set_options(cls, obj, options=None, backend=None, validate=True, **kwargs):
         """
         Pure Python function for customize HoloViews objects in terms of
         their style, plot and normalization options.
@@ -1647,6 +1600,9 @@ class StoreOptions(object):
         # {'Image.Channel:{'plot':  Options(size=50),
         #                  'style': Options('style', cmap='Blues')]}
         options = cls.merge_options(Store.options(backend=backend).groups.keys(), options, **kwargs)
+
+        if validate:
+            cls.validate_spec(options, backend=backend)
         spec, compositor_applied = cls.expand_compositor_keys(options)
         custom_trees, id_mapping = cls.create_custom_trees(obj, spec)
         cls.update_backends(id_mapping, custom_trees, backend=backend)

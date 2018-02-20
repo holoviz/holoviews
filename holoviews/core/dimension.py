@@ -1132,7 +1132,7 @@ class Dimensioned(LabelledData):
         If no opts are supplied all options on the object will be reset.
         Disabling clone will modify the object inplace.
         """
-        backend = backend or Store.current_backend
+        selected_backend = backend or Store.current_backend
         if isinstance(options, basestring):
             from ..util.parser import OptsSpec
             try:
@@ -1142,7 +1142,7 @@ class Dimensioned(LabelledData):
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
 
-        backend_options = Store.options(backend=backend)
+        backend_options = Store.options(backend=selected_backend)
         groups = set(backend_options.groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
@@ -1168,15 +1168,20 @@ class Dimensioned(LabelledData):
 
                 kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
+        # Pre-validate options
+        groups = Store.options(backend=selected_backend).groups.keys()
+        options = StoreOptions.merge_options(groups, options, **kwargs)
+        StoreOptions.validate_spec(options, backend=backend)
+
         obj = self
-        if options is None and kwargs == {}:
+        if not options:
             if clone:
                 obj = self.map(lambda x: x.clone(id=None))
             else:
                 self.map(lambda x: setattr(x, 'id', None))
         elif clone:
             obj = self.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
+        StoreOptions.set_options(obj, options, backend=backend, validate=False)
         return obj
 
 
@@ -1215,6 +1220,8 @@ class Dimensioned(LabelledData):
 
         from ..util import opts
         expanded = opts.expand_options(options, backend)
+        if options and not expanded:
+            return self
         return self.opts(expanded, backend, clone)
 
 
