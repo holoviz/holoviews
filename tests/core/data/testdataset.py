@@ -849,6 +849,20 @@ class ArrayDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
                                           kdims=['x'], vdims=['y']))
 
+    def test_dataset_sort_hm(self):
+        ds = Dataset(([2, 2, 1], [2,1,2], [1, 2, 3]),
+                     kdims=['x', 'y'], vdims=['z']).sort()
+        ds_sorted = Dataset(([1, 2, 2], [2, 1, 2], [3, 2, 1]),
+                            kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(ds.sort(), ds_sorted)
+
+    def test_dataset_sort_reverse_hm(self):
+        ds = Dataset(([2, 1, 2, 1], [2, 2, 1, 1], [0, 1, 2, 3]),
+                     kdims=['x', 'y'], vdims=['z'])
+        ds_sorted = Dataset(([2, 2, 1, 1], [2, 1, 2, 1], [0, 2, 1, 3]),
+                            kdims=['x', 'y'], vdims=['z'])
+        self.assertEqual(ds.sort(reverse=True), ds_sorted)
+
 
 
 class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):

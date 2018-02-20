@@ -178,6 +178,7 @@ class categorical_aggregate2d(Operation):
         xdim, ydim = dim_labels[:2]
         shape = (len(ycoords), len(xcoords))
         nsamples = np.product(shape)
+        grid_data = {xdim: xcoords, ydim: ycoords}
 
         ys, xs = cartesian_product([ycoords, xcoords], copy=True)
         data = {xdim: xs, ydim: ys}
@@ -189,7 +190,9 @@ class categorical_aggregate2d(Operation):
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
         reindexed = concat_data.reindex([xdim, ydim], vdims)
-        if pd:
+        if not reindexed:
+            agg = reindexed
+        elif pd:
             df = PandasInterface.as_dframe(reindexed)
             df = df.groupby([xdim, ydim], sort=False).first().reset_index()
             agg = reindexed.clone(df)
@@ -197,7 +200,6 @@ class categorical_aggregate2d(Operation):
             agg = reindexed.aggregate([xdim, ydim], reduce_fn)
 
         # Convert data to a gridded dataset
-        grid_data = {xdim: xcoords, ydim: ycoords}
         for vdim in vdims:
             grid_data[vdim.name] = agg.dimension_values(vdim).reshape(shape)
         return agg.clone(grid_data, kdims=[xdim, ydim], vdims=vdims,

@@ -33,7 +33,9 @@ class ArrayInterface(Interface):
                       d for d in kdims + vdims]
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
-            dataset = [data[d] for d in dimensions]
+            dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]
+            if len(set(d.dtype.kind for d in dataset)) > 1:
+                raise ValueError('ArrayInterface expects all columns to be of the same dtype')
             data = np.column_stack(dataset)
         elif isinstance(data, dict) and not all(d in data for d in dimensions):
             dict_data = sorted(data.items())
@@ -41,10 +43,10 @@ class ArrayInterface(Interface):
                             for k, v in dict_data))
             data = np.column_stack(dataset)
         elif isinstance(data, tuple):
-            data = [np.asarray(d) for d in data]
-            if any(arr.ndim > 1 for arr in data):
-                raise ValueError('ArrayInterface expects data to be of flat shape.')
-            if cls.expanded(data):
+            data = [d if isinstance(d, np.ndarray) else np.asarray(d) for d in data]
+            if len(set(d.dtype.kind for d in data)) > 1:
+                raise ValueError('ArrayInterface expects all columns to be of the same dtype')
+            elif cls.expanded(data):
                 data = np.column_stack(data)
             else:
                 raise ValueError('ArrayInterface expects data to be of uniform shape.')
