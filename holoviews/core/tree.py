@@ -211,7 +211,6 @@ class AttrTree(object):
         else:
             path_item = self
             for i, identifier in enumerate(split_label[:-1]):
-                path = split_label[i:]
                 path_item = path_item[identifier]
             del path_item[split_label[-1]]
 
