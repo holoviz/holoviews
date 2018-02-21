@@ -8,8 +8,9 @@ except:
     raise SkipTest("IPython extension requires IPython >= 0.13")
 
 
-from ..core.options import Options, Store, StoreOptions
+from ..core.options import Options, Store, StoreOptions, OptionError
 from ..core.pprint import InfoPrinter
+from ..core.util import config
 
 from IPython.display import display, HTML
 from ..operation import Compositor
@@ -247,6 +248,7 @@ class OptsMagic(Magics):
     Magic for easy customising of normalization, plot and style options.
     Consult %%opts? for more information.
     """
+    error_message = None
     opts_spec = None       # Next id to propagate, binding displayed object together.
 
     @classmethod
@@ -258,6 +260,13 @@ class OptsMagic(Magics):
         may be returned. If None is returned, display will proceed as
         normal.
         """
+        if cls.error_message:
+            error_msg = cls.error_message
+            cls.error_message = None
+            if config.strict_opts_magic:
+                return error_msg
+            else:
+                sys.stderr.write(error_msg)
         if cls.opts_spec is not None:
             StoreOptions.set_options(obj, cls.opts_spec, validate=False)
             cls.opts_spec = None
@@ -266,6 +275,10 @@ class OptsMagic(Magics):
     @classmethod
     def register_custom_spec(cls, spec):
         spec, _ = StoreOptions.expand_compositor_keys(spec)
+        try:
+            StoreOptions.validate_spec(spec)
+        except OptionError as e:
+            cls.error_message = e.format_options_error()
         cls.opts_spec = spec
 
     @classmethod
@@ -330,12 +343,20 @@ class OptsMagic(Magics):
                    "with any of the loaded backends.")
             display(HTML(msg.format(unknown=', '.join(unknown_elements))))
 
-        StoreOptions.validate_spec(spec)
         if cell:
             self.register_custom_spec(spec)
             # Process_element is invoked when the cell is run.
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
+            try:
+                StoreOptions.validate_spec(spec)
+            except OptionError as e:
+                errmsg = erre.format_options_error()
+                sys.stderr.write(errmsg)
+                if config.strict_opts_magic:
+                    display(HTML('Options specification will not be applied.'))
+                    return
+
             StoreOptions.apply_customizations(spec, Store.options())
 
 

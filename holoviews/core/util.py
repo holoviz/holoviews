@@ -73,6 +73,10 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
+    strict_opts_magic = param.Boolean(default=False, doc="""
+       Whether the opts magic should strictly validate options passed
+       to it or merely skip invalid options.""")
+
     image_rtol = param.Number(default=10e-6, doc="""
       The tolerance used to enforce regular sampling for regular,
       gridded data where regular sampling is expected. Expressed as the
