@@ -277,8 +277,8 @@ class ViolinPlot(BoxWhiskerPlot):
         Allows supplying explicit bandwidth value rather than relying
         on scott or silverman method.""")
 
-    clip = param.Boolean(default=True, doc="""
-        Whether to clip the violins at the max and min of the data.""")
+    clip = param.NumericTuple(default=None, length=2, doc="""
+        A tuple of a lower and upper bound to clip the violin at.""")
 
     cut = param.Number(default=5, doc="""
         Draw the estimate to cut * bw from the extreme data points.""")
@@ -313,7 +313,7 @@ class ViolinPlot(BoxWhiskerPlot):
         vdim = el.vdims[0]
         values = el.dimension_values(vdim)
         if self.clip:
-            vdim = vdim(range=(np.nanmin(values), np.nanmax(values)))
+            vdim = vdim(range=self.clip)
             el = el.clone(vdims=[vdim])
         kde = univariate_kde(el, dimension=vdim, **kwargs)
         xs, ys = (kde.dimension_values(i) for i in range(2))

@@ -12,7 +12,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_simple(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(violin_width=0.7, clip=False))
+        violin = Violin(values).opts(plot=dict(violin_width=0.7))
         qmin, q1, q2, q3, qmax = (np.percentile(values, q=q)
                                   for q in range(0,125,25))
         iqr = q3 - q1
@@ -44,7 +44,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_inner_quartiles(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(inner='quartiles', clip=False))
+        violin = Violin(values).opts(plot=dict(inner='quartiles'))
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
         plot = bokeh_renderer.get_plot(violin)
@@ -56,7 +56,7 @@ class TestBokehViolinPlot(TestBokehPlot):
 
     def test_violin_inner_stick(self):
         values = np.random.rand(100)
-        violin = Violin(values).opts(plot=dict(inner='stick', clip=False))
+        violin = Violin(values).opts(plot=dict(inner='stick'))
         kde = univariate_kde(violin, cut=5)
         xs = kde.dimension_values(0)
         plot = bokeh_renderer.get_plot(violin)
