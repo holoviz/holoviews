@@ -11,7 +11,7 @@ from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
-from ..plotting.renderer import Renderer
+from ..plotting.renderer import Renderer, MIME_TYPES
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks
@@ -101,10 +101,6 @@ class notebook_extension(extension):
        behavior. """)
 
     _loaded = False
-
-    JS_MIME_TYPE = 'application/javascript'
-
-    JL_MIME_TYPE = 'application/vnd.bokehjs_load.v0+json'
 
     def __call__(self, *args, **params):
         super(notebook_extension, self).__call__(*args, **params)
@@ -243,8 +239,8 @@ class notebook_extension(extension):
         publish_display_data(data={'text/html': html})
         if JS:
             publish_display_data(data={
-                cls.JS_MIME_TYPE   : widgetjs,
-                cls.JL_MIME_TYPE   : widgetjs
+                MIME_TYPES['js']   : widgetjs,
+                MIME_TYPES['load'] : widgetjs
             })
 
 
