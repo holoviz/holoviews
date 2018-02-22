@@ -1,6 +1,6 @@
 /* Instantiate the {{ widget_name }} class. */
 /* The IDs given should match those used in the template above. */
-(function() {
+function create_scrubber() {
     var frame_data = {{ frames | safe }};
 
     function create_widget() {
@@ -14,4 +14,20 @@
 
 	{{ init_js }}
     {% endblock %}
-})()
+};
+if (!window.$) {
+  var script = document.createElement('script');
+  document.head.appendChild(script);
+  script.type = 'text/javascript';
+  script.src = '{{ CDN['jQuery'] }}';
+  script.onload = function() {
+  var script2 = document.createElement('script');
+  document.head.appendChild(script2);
+  script2.type = 'text/javascript';
+  script2.src = '{{ CDN['require'] }}';
+  script2.onload = create_scrubber;
+  };
+} else {
+  create_scrubber()
+}
+

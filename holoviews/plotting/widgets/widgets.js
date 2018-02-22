@@ -373,11 +373,11 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
     define('jquery', [], function() { return jQuery; });
   }
   if (!jQueryUI) {
-    paths.jQueryUI = jQueryUI_CDN
+	paths.jQueryUI = jQueryUI_CDN.slice(null, -3);
   } else {
     define('jQueryUI', [], function() { return jQuery.ui; });
   }
-  paths.underscore = UNDERSCORE_CDN;
+  paths.underscore = UNDERSCORE_CDN.slice(null, -3);
   var jquery_require = {
     paths: paths,
     shim: {

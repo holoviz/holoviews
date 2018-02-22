@@ -6,8 +6,6 @@ from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 
 class MPLWidget(NdWidget):
 
-    CDN = param.Dict(default=dict(NdWidget.CDN))
-
     extensionjs = param.String(default='mplwidgets.js', doc="""
         Optional javascript extension file for a particular backend.""")
 
