@@ -12,14 +12,19 @@ import param
 from ...core import HoloMap
 from ...core.options import Store
 
+from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
 from .comms import (JupyterComm, NbAggJupyterComm,
                     mpl_msg_handler)
-from .widgets import MPLSelectionWidget, MPLScrubberWidget
+from .widgets import NdWidget, MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
+
+JS_MIME_TYPE = 'application/javascript'
+
+EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json'
 
 
 class MPLRenderer(Renderer):
@@ -222,6 +227,20 @@ class MPLRenderer(Renderer):
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
+
+
+    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
+        if isinstance(obj, Plot):
+            plot = obj
+        else:
+            plot, fmt =  self._validate(obj, fmt)
+        if isinstance(plot, NdWidget):
+            js, html = plot()
+            jsdata = {JS_MIME_TYPE: js, 'application/vnd.bokehjs_load.v0+json': js}
+        else:
+            html = self.html(plot)
+            jsdata = {}
+        return dict({'text/html': html}, **jsdata), {}
 
 
     def _anim_data(self, anim, fmt):

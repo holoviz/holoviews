@@ -182,7 +182,7 @@ class CustomJSCallback(MessageCallback):
             var events = unique_events(comm_state.event_buffer);
             for (var i=0; i<events.length; i++) {{
                 var data = events[i];
-                var comm = HoloViewsWidget.comms[data["comm_id"]];
+                var comm = HoloViews.comms[data["comm_id"]];
                 comm.send(data);
             }}
             comm_state.event_buffer = [];
@@ -193,7 +193,7 @@ class CustomJSCallback(MessageCallback):
           // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
-          var comm_state = HoloViewsWidget.comm_state[comm_id];
+          var comm_state = HoloViews.comm_state[comm_id];
           if (comm_state.event_buffer.length) {{
             process_events(comm_state);
             comm_state.blocked = true;
@@ -212,22 +212,22 @@ class CustomJSCallback(MessageCallback):
         // Initialize Comm
         if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
           var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comm = HoloViewsWidget.comms["{comm_id}"];
+          var comm = HoloViews.comms["{comm_id}"];
           if (comm == null) {{
             comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
             comm.on_msg(on_msg);
             comm_manager["{comm_id}"] = comm;
-            HoloViewsWidget.comms["{comm_id}"] = comm;
+            HoloViews.comms["{comm_id}"] = comm;
           }}
         }} else {{
           return
         }}
 
         // Initialize event queue and timeouts for Comm
-        var comm_state = HoloViewsWidget.comm_state["{comm_id}"];
+        var comm_state = HoloViews.comm_state["{comm_id}"];
         if (comm_state === undefined) {{
             comm_state = {{event_buffer: [], blocked: false, time: Date.now()}}
-            HoloViewsWidget.comm_state["{comm_id}"] = comm_state
+            HoloViews.comm_state["{comm_id}"] = comm_state
         }}
 
         // Add current event to queue and process queue if not blocked
