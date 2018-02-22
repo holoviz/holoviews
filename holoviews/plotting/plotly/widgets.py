@@ -10,9 +10,10 @@ class PlotlyWidget(NdWidget):
 
     def _get_data(self):
         # Get initial frame to draw immediately
-        init_frame = self._plot_figure(0, fig_format='html')
+        msg, metadata = self.renderer.components(self.plot, divuuid=self.id, comm=False)
         data = super(PlotlyWidget, self)._get_data()
-        return dict(data, init_frame=init_frame)
+        return dict(data, init_html=msg['text/html'],
+                    init_js=msg['application/javascript'])
 
     def encode_frames(self, frames):
         frames = json.dumps(frames).replace('</', r'<\/')
@@ -24,13 +25,8 @@ class PlotlyWidget(NdWidget):
         first call and
         """
         self.plot.update(idx)
-        if self.embed or fig_format == 'html':
-            if fig_format == 'html':
-                msg = self.renderer.figure_data(self.plot,
-                                                divuuid=self.id, comm=False)
-            else:
-                msg = self.renderer.diff(self.plot)
-            return msg
+        if self.embed:
+            return self.renderer.diff(self.plot)
 
 
 class PlotlySelectionWidget(PlotlyWidget, SelectionWidget):

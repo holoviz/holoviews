@@ -31,10 +31,6 @@ NOTEBOOK_DIV = """
 </script>
 """
 
-JS_MIME_TYPE = 'application/javascript'
-
-EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json'
-
 
 class BokehRenderer(Renderer):
 
@@ -263,8 +259,8 @@ class BokehRenderer(Renderer):
             js, html = self._figure_data(plot, fmt='html', as_script=True, **kwargs)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             root = plot.state._id
-        return ({'text/html': html, JS_MIME_TYPE: js, EXEC_MIME_TYPE: ""},
-                {EXEC_MIME_TYPE: {"id": root}})
+        return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['exec']: ""},
+                {MIME_TYPES['exec']: {"id": root}})
 
 
     def diff(self, plot, binary=True):

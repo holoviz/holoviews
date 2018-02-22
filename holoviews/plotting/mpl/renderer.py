@@ -22,10 +22,6 @@ from .util import get_tight_bbox
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
 
-JS_MIME_TYPE = 'application/javascript'
-
-EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json'
-
 
 class MPLRenderer(Renderer):
     """
@@ -236,7 +232,7 @@ class MPLRenderer(Renderer):
             plot, fmt =  self._validate(obj, fmt)
         if isinstance(plot, NdWidget):
             js, html = plot()
-            jsdata = {JS_MIME_TYPE: js, 'application/vnd.bokehjs_load.v0+json': js}
+            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['load']: js}
         else:
             html = self.html(plot)
             jsdata = {}
