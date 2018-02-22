@@ -247,7 +247,8 @@ class BokehWidget(NdWidget):
         # Get initial frame to draw immediately
         msg, metadata = self.renderer.components(self.plot)
         data = super(BokehWidget, self)._get_data()
-        return dict(data, init_html=msg['text/html'], init_js=msg['application/javascript'])
+        return dict(data, init_html=msg['text/html'],
+                    init_js=msg['application/javascript'])
 
     def encode_frames(self, frames):
         if self.export_json:

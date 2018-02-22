@@ -20,9 +20,9 @@ function create_jsslider() {
   {% block create_widget %}
   {% for widget_data in widgets %}
   {% if widget_data['type'] == 'slider' %}
-  window.HoloViews.init_slider('{{  id  }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, {{ dynamic }}, {{ widget_data['step'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, '{{ CDN['jQueryUI'] }}', '{{ CDN['underscore'] }}')
-	
+  HoloViews.init_slider('{{  id  }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, {{ dynamic }}, {{ widget_data['step'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, '{{ CDN['jQueryUI'] }}', '{{ CDN['underscore'] }}')
   {% elif widget_data['type']=='dropdown' %}
+  HoloViews.init_dropdown('{{  id  }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, {{ dynamic }})
   {% endif %}
   {% endfor %}
   create_widget();
