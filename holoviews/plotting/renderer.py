@@ -52,8 +52,8 @@ MIME_TYPES = {
     'html': 'text/html',
     'json': 'text/json',
     'js':   'application/javascript',
-    'exec': 'application/vnd.bokehjs_exec.v0+json',
-    'load': 'application/vnd.bokehjs_load.v0+json',
+    'exec': 'application/vnd.holoviews_exec.v0+json',
+    'load': 'application/vnd.holoviews_load.v0+json',
     'server': None
 }
 
