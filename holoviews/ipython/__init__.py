@@ -5,7 +5,7 @@ import param
 from IPython import version_info
 import holoviews
 from param import ipython as param_ext
-from IPython.display import HTML
+from IPython.display import HTML, publish_display_data
 
 from ..core.tree import AttrTree
 from ..core.options import Store
@@ -101,6 +101,10 @@ class notebook_extension(extension):
        behavior. """)
 
     _loaded = False
+
+    JS_MIME_TYPE = 'application/javascript'
+
+    JL_MIME_TYPE = 'application/vnd.bokehjs_load.v0+json'
 
     def __call__(self, *args, **params):
         super(notebook_extension, self).__call__(*args, **params)
@@ -224,19 +228,25 @@ class notebook_extension(extension):
         import jinja2
         # Evaluate load_notebook.html template with widgetjs code
         if JS:
-            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
+            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[], script=True)
         else:
             widgetjs, widgetcss = '', ''
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        display(HTML(template.render({'widgetjs':    widgetjs,
-                                      'widgetcss':   widgetcss,
-                                      'logo':        logo,
-                                      'bokeh_logo':  bokeh_logo,
-                                      'mpl_logo':    mpl_logo,
-                                      'plotly_logo': plotly_logo,
-                                      'message':     message})))
+        html = template.render({'widgetcss':   widgetcss,
+                                'logo':        logo,
+                                'bokeh_logo':  bokeh_logo,
+                                'mpl_logo':    mpl_logo,
+                                'plotly_logo': plotly_logo,
+                                'message':     message})
+        publish_display_data(data={'text/html': html})
+        if JS:
+            publish_display_data(data={
+                cls.JS_MIME_TYPE   : widgetjs,
+                cls.JL_MIME_TYPE   : widgetjs
+            })
+
 
     @param.parameterized.bothmethod
     def tab_completion_docstring(self_or_cls):

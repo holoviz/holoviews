@@ -288,6 +288,7 @@ class Renderer(Exporter):
             return html
 
 
+
     def static_html(self, obj, fmt=None, template=None):
         """
         Generates a static HTML with the rendered object in the
@@ -386,7 +387,7 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def html_assets(cls, core=True, extras=True, backends=None):
+    def html_assets(cls, core=True, extras=True, backends=None, script=False):
         """
         Returns JS and CSS and for embedding of widgets.
         """
@@ -426,8 +427,11 @@ class Renderer(Exporter):
             js_data = dep.get('js', [])
             if isinstance(js_data, tuple):
                 for js in js_data:
-                    js_html += '\n<script type="text/javascript">%s</script>' % js
-            else:
+                    if script:
+                        js_html += js
+                    else:
+                        js_html += '\n<script type="text/javascript">%s</script>' % js
+            elif not script:
                 for js in js_data:
                     js_html += '\n<script src="%s" type="text/javascript"></script>' % js
             css_data = dep.get('css', [])
@@ -438,7 +442,10 @@ class Renderer(Exporter):
                 for css in css_data:
                     css_html += '\n<link rel="stylesheet" href="%s">' % css
 
-        js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
+        if script:
+            js_html += widgetjs
+        else:
+            js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
         css_html += '\n<style>%s</style>' % widgetcss
 
         return unicode(js_html), unicode(css_html)

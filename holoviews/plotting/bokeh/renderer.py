@@ -16,7 +16,7 @@ from ...core import Store, HoloMap
 from ..comms import JupyterComm, Comm
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
+from .widgets import NdWidget, BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size
 
 from bokeh.io.notebook import load_notebook
@@ -30,6 +30,10 @@ NOTEBOOK_DIV = """
   {plot_script}
 </script>
 """
+
+JS_MIME_TYPE = 'application/javascript'
+
+EXEC_MIME_TYPE = 'application/vnd.bokehjs_exec.v0+json'
 
 
 class BokehRenderer(Renderer):
@@ -215,7 +219,7 @@ class BokehRenderer(Renderer):
         return doc
 
 
-    def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
+    def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
         model = plot.state
         if doc is None:
             doc = plot.document
@@ -236,14 +240,31 @@ class BokehRenderer(Renderer):
         try:
             js, div, _ = notebook_content(model, comm_id)
             html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-            div = encode_utf8(html)
+            html = encode_utf8(html)
             doc.hold()
         except:
             logger.disabled = False
             raise
         logger.disabled = False
         plot.document = doc
-        return div
+        if as_script:
+            return js, div
+        return html
+
+    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
+        if isinstance(obj, Plot):
+            plot = obj
+        else:
+            plot, fmt =  self._validate(obj, fmt)
+        if isinstance(plot, NdWidget):
+            js, html = plot()
+            root = plot.plot.state._id
+        else:
+            js, html = self._figure_data(plot, fmt='html', as_script=True, **kwargs)
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+            root = plot.state._id
+        return ({'text/html': html, JS_MIME_TYPE: js, EXEC_MIME_TYPE: ""},
+                {EXEC_MIME_TYPE: {"id": root}})
 
 
     def diff(self, plot, binary=True):

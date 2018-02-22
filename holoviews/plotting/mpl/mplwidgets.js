@@ -43,3 +43,6 @@ var MPLMethods = {
 // Extend MPL widgets with backend specific methods
 extend(MPLSelectionWidget.prototype, MPLMethods);
 extend(MPLScrubberWidget.prototype, MPLMethods);
+
+window.HoloViews.MPLSelectionWidget = MPLSelectionWidget
+window.HoloViews.MPLScrubberWidget = MPLScrubberWidget
