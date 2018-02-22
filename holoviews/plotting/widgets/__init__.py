@@ -89,9 +89,6 @@ class NdWidget(param.Parameterized):
     # Javascript include options #
     ##############################
 
-    CDN = param.Dict(default={'underscore': 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
-                              'jQueryUI':   'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'})
-
     css = param.String(default=None, doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
@@ -142,7 +139,13 @@ class NdWidget(param.Parameterized):
 
     def _get_data(self):
         delay = int(1000./self.display_options.get('fps', 5))
-        CDN = {k: v[:-3] for k, v in self.CDN.items()}
+        CDN = {}
+        for name, resources in self.plot.renderer.core_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0][6:]
+        for name, resources in self.plot.renderer.extra_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0][6:]
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
