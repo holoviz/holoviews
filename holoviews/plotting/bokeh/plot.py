@@ -15,7 +15,7 @@ from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
-                   update_shared_sources, empty_plot)
+                   update_shared_sources, empty_plot, decode_bytes)
 
 from bokeh.layouts import gridplot
 from bokeh.plotting.helpers import _known_tools as known_tools
@@ -165,6 +165,7 @@ class BokehPlot(DimensionedPlot):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
+        data = {k: decode_bytes(vs) for k, vs in data.items()}
         return ColumnDataSource(data=data)
 
 
@@ -172,6 +173,7 @@ class BokehPlot(DimensionedPlot):
         """
         Update datasource with data for a new frame.
         """
+        data = {k: decode_bytes(vs) for k, vs in data.items()}
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data):
             stream = self.streaming[0]
