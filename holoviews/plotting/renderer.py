@@ -49,8 +49,11 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  'text/html',
-    'json':  'text/json',
+    'html': 'text/html',
+    'json': 'text/json',
+    'js':   'application/javascript',
+    'exec': 'application/vnd.bokehjs_exec.v0+json',
+    'load': 'application/vnd.bokehjs_load.v0+json',
     'server': None
 }
 
