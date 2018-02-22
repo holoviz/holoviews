@@ -14,7 +14,7 @@ from .chart import AreaPlot
 from .element import (CompositeElementPlot, ColorbarPlot, LegendPlot,
                       fill_properties, line_properties)
 from .path import PolygonPlot
-from .util import rgb2hex
+from .util import rgb2hex, decode_bytes
 
 
 class DistributionPlot(AreaPlot):
@@ -391,6 +391,7 @@ class ViolinPlot(BoxWhiskerPlot):
         data, mapping = {}, {}
         seg_data, bar_data, scatter_data = (defaultdict(list) for i in range(3))
         for i, (key, g) in enumerate(groups.items()):
+            key = decode_bytes(key)
             gkey = 'patch_%d'%i
             kde, segs, bars, scatter = self._kde_data(g, key, **kwargs)
             for k, v in segs.items():
@@ -406,7 +407,7 @@ class ViolinPlot(BoxWhiskerPlot):
 
         if seg_data:
             data['segment_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
-                                       for k, v in seg_data.items()}
+                                 for k, v in seg_data.items()}
             mapping['segment_1'] = seg_map
         if bar_data:
             data[bar_glyph+'_1'] = {k: v if isinstance(v[0], tuple) else np.array(v)
