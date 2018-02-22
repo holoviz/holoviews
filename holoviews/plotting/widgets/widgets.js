@@ -200,7 +200,7 @@ ScrubberWidget.prototype = new HoloViewsWidget;
 
 ScrubberWidget.prototype.set_frame = function(frame){
   this.current_frame = frame;
-  widget = document.getElementById(this.slider_id);
+  var widget = document.getElementById(this.slider_id);
   if (widget === null) {
     this.pause_animation();
     return
@@ -442,7 +442,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
         var text = $('#textInput'+id+'_'+dim);
         text.val(label);
         adjustFontSize(text);
-        window.HoloViews.index[id].set_frame(dim_val, dim_idx);
+        HoloViews.index[id].set_frame(dim_val, dim_idx);
         if (Object.keys(next_vals).length > 0) {
           var new_vals = next_vals[dim_val];
           var next_widget = $('#_anim_widget'+id+'_'+next_dim);
@@ -484,10 +484,8 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
   });
 }
 
-function init_dropdown(id, dim, vals, labels, next_vals, next_dim, dim_idx, dynamic) {
+function init_dropdown(id, dim, vals, next_vals, labels, next_dim, dim_idx, dynamic) {
   var widget = $("#_anim_widget"+id+'_'+dim);
-  var vals = values;
-  var labels = labels;
   widget.data('values', vals)
   for (var i=0; i<vals.length; i++){
     if (dynamic) {
@@ -513,7 +511,7 @@ function init_dropdown(id, dim, vals, labels, next_vals, next_dim, dim_idx, dyna
       var next_widget = $('#_anim_widget'+id+'_'+next_dim);
       update_widget(next_widget, new_vals);
     }
-	widgets = window.HoloViews.index[id]
+	var widgets = HoloViews.index[id]
     if (widgets) {
       widgets.set_frame(dim_val, dim_idx);
     }
