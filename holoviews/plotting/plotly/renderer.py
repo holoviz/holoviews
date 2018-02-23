@@ -7,7 +7,6 @@ with param.logging_level('CRITICAL'):
 from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
 from ...core import HoloMap
-from ..comms import JupyterComm
 from ..plot import Plot
 from ..widgets import NdWidget
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
@@ -50,7 +49,7 @@ class PlotlyRenderer(Renderer):
     widgets = {'scrubber': PlotlyScrubberWidget,
                'widgets': PlotlySelectionWidget}
 
-    comms = {'default': (JupyterComm, plotly_msg_handler)}
+    comm_msg_handler = plotly_msg_handler
 
     _loaded = False
 
@@ -135,17 +134,30 @@ class PlotlyRenderer(Renderer):
 
 
     def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, Plot):
+        if isinstance(obj, (Plot, NdWidget)):
             plot = obj
         else:
             plot, fmt =  self._validate(obj, fmt)
+
+        metadata = {}
         if isinstance(plot, NdWidget):
             js, html = plot()
+            if comm and plot.plot.comm is not None:
+                metadata['id'] = plot.id
         else:
             js, html = self._figure_data(plot, as_script=True, **kwargs)
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-        return {'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['load']: js}, {}
-    
+            if comm and plot.comm is not None:
+                msg_handler = self.comm_msg_handler.format(comm_id=plot.comm.id)
+                html = plot.comm.html_template.format(init_frame=html,
+                                                      comm_id=plot.comm.id)
+                js += plot.comm.js_template.format(msg_handler=msg_handler,
+                                                   comm_id=plot.comm.id)
+                metadata['id'] = plot.comm.id
+            else:
+                html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+        return (dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata})
+
 
     @classmethod
     def plot_options(cls, obj, percent_size):

@@ -13,7 +13,6 @@ from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
 
 from ...core import Store, HoloMap
-from ..comms import JupyterComm, Comm
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import NdWidget, BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
@@ -70,9 +69,6 @@ class BokehRenderer(Renderer):
 
     backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
-
-    comms = {'default': (JupyterComm, None),
-             'server': (Comm, None)}
 
     _loaded = False
 
@@ -258,8 +254,13 @@ class BokehRenderer(Renderer):
             root = plot.plot.state._id
         else:
             js, html = self._figure_data(plot, fmt='html', as_script=True, **kwargs)
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
             root = plot.state._id
+            if comm and plot.comm is not None and self.comm_msg_handler:
+                comm, msg_handler = self.comms[self.mode]
+                msg_handler = msg_handler.format(comm_id=plot.comm.id)
+                html = plot.comm.html_template.format(init_frame=html,
+                                                      comm_id=plot.comm.id)
+                js += plot.comm.js_template.format(msg_handler=msg_handler)
         return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['exec']: ""},
                 {MIME_TYPES['exec']: {"id": root}})
 

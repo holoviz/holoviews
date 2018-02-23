@@ -130,6 +130,16 @@ class NdWidget(param.Parameterized):
         import jinja2
         templateLoader = jinja2.FileSystemLoader(subdirs)
         self.jinjaEnv = jinja2.Environment(loader=templateLoader)
+        if not self.embed:
+            comm_manager = self.renderer.comm_manager
+            self.comm = comm_manager.get_client_comm(self.plot,
+                                                     id=self.id+'_client',
+                                                     on_msg=self._process_update)
+
+    def _process_update(self, msg):
+        if 'content' not in msg:
+            raise ValueError('Received widget message has no content.')
+        self.update(msg['content'])
 
     def __call__(self):
         data = self._get_data()

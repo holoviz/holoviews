@@ -35,34 +35,10 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
   if(this.dynamic) {
     current = JSON.stringify(current);
   }
-  var that = this
-  function callback(msg){
-    /* This callback receives data from Python as a string
-       in order to parse it correctly quotes are sliced off*/
-	if (msg.content.ename != undefined) {
-      that.process_error(msg);
-    }
-    if (msg.msg_type != "execute_result") {
-      console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
-    } else {
-      if (msg.content.data['text/plain'].includes('Complete')) {
-        if (that.queue.length > 0) {
-          that.time = Date.now();
-          that.dynamic_update(that.queue[that.queue.length-1]);
-          that.queue = [];
-        } else {
-          that.wait = false;
-        }
-        return
-      }
-    }
-  }
   this.current = current;
-  if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
-    var kernel = Jupyter.notebook.kernel;
-    var callbacks = {iopub: {output: callback}};
-    var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
-    kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
+  if (this.comm) {
+    var msg = {comm_id: this.id+'_client', content: current}
+    this.comm.send(msg);
   }
 }
 
@@ -95,12 +71,29 @@ HoloViewsWidget.prototype.update = function(current){
 }
 
 HoloViewsWidget.prototype.init_comms = function() {
-  if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel !== undefined)) {
-    var widget = this;
-    comm_manager = Jupyter.notebook.kernel.comm_manager;
-    comm_manager.register_target(this.id, function (comm) {
-      comm.on_msg(function (msg) { widget.process_msg(msg) });
-    });
+  var that = this
+  HoloViews.comm_manager.register_target(this.id, function (msg) { that.process_msg(msg) })
+  if (!this.cached || this.dynamic) {
+    var that = this;
+	function ack_callback(msg) {
+      msg = JSON.parse(msg.content.data);
+      var comm_id = msg["comm_id"]
+      var comm_state = HoloViews.comm_state[comm_id];
+      if (that.queue.length > 0) {
+        that.time = Date.now();
+        that.dynamic_update(that.queue[that.queue.length-1]);
+        that.queue = [];
+      } else {
+        that.wait = false;
+      }
+      if ((msg.msg_type == "Ready") && msg.content) {
+        console.log("Python callback returned following output:", msg.content);
+      } else if (msg.msg_type == "Error") {
+        console.log("Python failed with the following traceback:", msg['traceback'])
+      }
+    }
+    var comm = HoloViews.comm_manager.get_client_comm(this.id, this.id+'_client', ack_callback);
+    return comm
   }
 }
 
@@ -125,7 +118,7 @@ function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, loa
   this.queue = [];
   this.wait = false;
   if (!this.cached || this.dynamic) {
-    this.init_comms()
+    this.comm = this.init_comms();
   }
 }
 
@@ -193,7 +186,7 @@ function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cache
   this.wait = false;
   this.queue = [];
   if (!this.cached || this.dynamic) {
-    this.init_comms()
+    this.comm = this.init_comms()
   }
 }
 
@@ -528,6 +521,7 @@ if (!window.HoloViews) {
     init_dropdown: init_dropdown,
     comms: {},
     comm_state: {},
-    index: {}
+    index: {},
+	kernels: {}
   }
 }

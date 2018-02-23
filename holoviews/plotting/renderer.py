@@ -16,7 +16,7 @@ from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
-from .comms import JupyterComm
+from .comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
@@ -133,10 +133,12 @@ class Renderer(Exporter):
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
 
-    # Define comms class and message handler for each mode
-    # The Comm opens a communication channel and the message
-    # handler defines how the message is processed on the frontend
-    comms = {'default': (JupyterComm, None)}
+    # The comm_manager handles the creation and registering of client,
+    # and server side comms
+    comm_manager = CommManager
+
+    # JS code which handles comm messages and updates the plot
+    comm_msg_handler = None
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
@@ -284,12 +286,13 @@ class Renderer(Exporter):
             if msg_handler is None:
                 return html
             msg_handler = msg_handler.format(comm_id=plot.comm.id)
-            return comm.template.format(init_frame=html,
-                                        msg_handler=msg_handler,
-                                        comm_id=plot.comm.id)
+            html = plot.comm.html_template.format(init_frame=html,
+                                                  comm_id=plot.comm.id)
+            js = plot.comm.js_template.format(msg_handler=msg_handler)
+            js_script = '<script type="text/javascript">%s</script>' % js
+            return '\n'.join([html, js_script])
         else:
             return html
-
 
 
     def static_html(self, obj, fmt=None, template=None):
@@ -444,12 +447,17 @@ class Renderer(Exporter):
             else:
                 for css in css_data:
                     css_html += '\n<link rel="stylesheet" href="%s">' % css
-
         if script:
             js_html += widgetjs
         else:
             js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
         css_html += '\n<style>%s</style>' % widgetcss
+
+        comm_js = cls.comm_manager.js_manager
+        if script:
+            js_html += comm_js
+        else:
+            js_html += '\n<script type="text/javascript">%s</script>' % comm_js
 
         return unicode(js_html), unicode(css_html)
 
@@ -545,4 +553,4 @@ class Renderer(Exporter):
         """
         with param.logging_level('ERROR'):
             cls.notebook_context = True
-
+            cls.comm_manager = JupyterCommManager

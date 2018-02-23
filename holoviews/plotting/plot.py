@@ -527,7 +527,7 @@ class DimensionedPlot(Plot):
         """
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comms[self.renderer.mode][0](self)
+            comm = self.renderer.comm_manager.get_server_comm(self)
         return comm
 
 

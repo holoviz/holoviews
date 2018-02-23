@@ -14,8 +14,7 @@ from ...core.options import Store
 
 from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES
-from .comms import (JupyterComm, NbAggJupyterComm,
-                    mpl_msg_handler)
+from .comms import mpl_msg_handler
 from .widgets import NdWidget, MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
@@ -84,8 +83,7 @@ class MPLRenderer(Renderer):
                'widgets': MPLSelectionWidget}
 
     # Define comm targets by mode
-    comms = {'default': (JupyterComm, mpl_msg_handler),
-             'nbagg':   (NbAggJupyterComm, None)}
+    comm_msg_handler = mpl_msg_handler
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -226,17 +224,29 @@ class MPLRenderer(Renderer):
 
 
     def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, Plot):
+        if isinstance(obj, (Plot, NdWidget)):
             plot = obj
         else:
             plot, fmt =  self._validate(obj, fmt)
+
+        metadata = {}
         if isinstance(plot, NdWidget):
             js, html = plot()
-            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['load']: js}
+            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+            if comm and plot.plot.comm is not None:
+                metadata['id'] = plot.id
         else:
-            html = self.html(plot)
+            html = self.html(plot, comm=False)
             jsdata = {}
-        return dict({'text/html': html}, **jsdata), {}
+            if comm and plot.comm is not None:
+                msg_handler = self.comm_msg_handler.format(comm_id=plot.comm.id)
+                html = plot.comm.html_template.format(init_frame=html,
+                                                      comm_id=plot.comm.id)
+                js = plot.comm.js_template.format(msg_handler=msg_handler,
+                                                  comm_id=plot.comm.id)
+                jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+                metadata['id'] = plot.comm.id
+        return dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata}
 
 
     def _anim_data(self, anim, fmt):

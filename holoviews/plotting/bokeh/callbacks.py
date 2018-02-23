@@ -53,10 +53,7 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
-            try:
-                self.comm = self._comm_type(plot, on_msg=self.on_msg)
-            except AttributeError:
-                self.comm = Comm(plot)
+            self.comm = plot.renderer.comm_manager.get_client_comm(plot, on_msg=self.on_msg)
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()
@@ -210,16 +207,8 @@ class CustomJSCallback(MessageCallback):
         }}
 
         // Initialize Comm
-        if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
-          var comm_manager = Jupyter.notebook.kernel.comm_manager;
-          var comm = HoloViews.comms["{comm_id}"];
-          if (comm == null) {{
-            comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}});
-            comm.on_msg(on_msg);
-            comm_manager["{comm_id}"] = comm;
-            HoloViews.comms["{comm_id}"] = comm;
-          }}
-        }} else {{
+        comm = HoloViews.comm_manager.get_client_comm("{plot_id}", "{comm_id}", on_msg);
+        if (!comm) {{
           return
         }}
 
@@ -234,8 +223,7 @@ class CustomJSCallback(MessageCallback):
         event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
         timeout = comm_state.time + {timeout};
-        if ((window.Jupyter == null) | (Jupyter.notebook.kernel == null)) {{
-        }} else if ((comm_state.blocked && (Date.now() < timeout))) {{
+        if ((comm_state.blocked && (Date.now() < timeout))) {{
             comm_state.event_buffer.unshift([event_name, data]);
         }} else {{
             comm_state.event_buffer.unshift([event_name, data]);
@@ -307,7 +295,8 @@ class CustomJSCallback(MessageCallback):
         # Generate callback JS code to get all the requested data
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
-                                                debounce=self.debounce)
+                                                debounce=self.debounce,
+                                                plot_id=self.plot.state._id)
 
         attributes = self.attributes_js(self.attributes)
         conditions = ["%s" % cond for cond in self.skip]
