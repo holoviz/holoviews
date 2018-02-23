@@ -66,6 +66,7 @@ def render(obj, **kwargs):
     publish_display_data({'text/html': html})
     if data or metadata:
         publish_display_data(data, metadata=metadata)
+    return ''
 
 
 def single_frame_plot(obj):
@@ -187,6 +188,7 @@ def element_display(element, max_frames):
     publish_display_data({'text/html': html})
     if data or metadata:
         publish_display_data(data, metadata=metadata)
+    return ''
 
 
 @display_hook

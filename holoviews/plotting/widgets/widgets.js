@@ -35,22 +35,23 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
   if(this.dynamic) {
     current = JSON.stringify(current);
   }
-  function callback(initialized, msg){
+  var that = this
+  function callback(msg){
     /* This callback receives data from Python as a string
        in order to parse it correctly quotes are sliced off*/
-    if (msg.content.ename != undefined) {
-      this.process_error(msg);
+	if (msg.content.ename != undefined) {
+      that.process_error(msg);
     }
     if (msg.msg_type != "execute_result") {
       console.log("Warning: HoloViews callback returned unexpected data for key: (", current, ") with the following content:", msg.content)
     } else {
       if (msg.content.data['text/plain'].includes('Complete')) {
-        if (this.queue.length > 0) {
-          this.time = Date.now();
-          this.dynamic_update(this.queue[this.queue.length-1]);
-          this.queue = [];
+        if (that.queue.length > 0) {
+          that.time = Date.now();
+          that.dynamic_update(that.queue[that.queue.length-1]);
+          that.queue = [];
         } else {
-          this.wait = false;
+          that.wait = false;
         }
         return
       }
@@ -59,7 +60,7 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
   this.current = current;
   if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
     var kernel = Jupyter.notebook.kernel;
-    callbacks = {iopub: {output: callback}};
+    var callbacks = {iopub: {output: callback}};
     var cmd = "holoviews.plotting.widgets.NdWidget.widgets['" + this.id + "'].update(" + current + ")";
     kernel.execute("import holoviews;" + cmd, callbacks, {silent : false});
   }
