@@ -74,7 +74,6 @@ HoloViewsWidget.prototype.init_comms = function() {
   var that = this
   HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.process_msg(msg) })
   if (!this.cached || this.dynamic) {
-    var that = this;
 	function ack_callback(msg) {
       msg = JSON.parse(msg.content.data);
       var comm_id = msg["comm_id"]
@@ -92,8 +91,8 @@ HoloViewsWidget.prototype.init_comms = function() {
         console.log("Python failed with the following traceback:", msg['traceback'])
       }
     }
-    var comm = HoloViews.comm_manager.get_client_comm(this.id, this.id+'_client', ack_callback);
-    return comm
+    var comm = HoloViews.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
+	return comm
   }
 }
 

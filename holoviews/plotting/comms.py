@@ -272,7 +272,6 @@ class JupyterCommManager(CommManager):
     }
 
     JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {
-      console.log(plot_id, comm_id)
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
         var comm_manager = Jupyter.notebook.kernel.comm_manager;
         comm_manager.register_target(comm_id, function(comm) {
@@ -295,7 +294,7 @@ class JupyterCommManager(CommManager):
           comm.on_msg(msg_handler);
         }
       } else if (plot_id in HoloViews.kernels) {
-        var comm = HoloViews.kernels[plot_id].connectToComm(comm_id, comm_id);
+        var comm = HoloViews.kernels[plot_id].connectToComm(comm_id);
         comm.open();
         if (msg_handler) {
           comm.onMsg = msg_handler;

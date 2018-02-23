@@ -245,7 +245,7 @@ class BokehWidget(NdWidget):
 
     def _get_data(self):
         # Get initial frame to draw immediately
-        msg, metadata = self.renderer.components(self.plot)
+        msg, metadata = self.renderer.components(self.plot, comm=False)
         data = super(BokehWidget, self)._get_data()
         return dict(data, init_html=msg['text/html'],
                     init_js=msg['application/javascript'],
