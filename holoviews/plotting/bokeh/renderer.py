@@ -248,10 +248,11 @@ class BokehRenderer(Renderer):
         return html
 
     def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, Plot):
+        if isinstance(obj, (Plot, NdWidget)):
             plot = obj
         else:
             plot, fmt =  self._validate(obj, fmt)
+
         if isinstance(plot, NdWidget):
             js, html = plot()
             root = plot.plot.state._id

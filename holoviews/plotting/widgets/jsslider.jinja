@@ -11,7 +11,7 @@ function create_jsslider() {
   var notFound = "{{ notFound }}";
   function create_widget() {
     setTimeout(function() {
-      anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
+      var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
     keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
     {{ cached }}, "{{ json_path}}", {{ dynamic }});
 	  HoloViews.index['{{ id }}'] = anim;
