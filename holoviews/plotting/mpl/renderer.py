@@ -82,7 +82,7 @@ class MPLRenderer(Renderer):
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
 
-    # Define comm targets by mode
+    # Define the handler for updating matplotlib plots
     comm_msg_handler = mpl_msg_handler
 
     def __call__(self, obj, fmt='auto'):
@@ -243,7 +243,8 @@ class MPLRenderer(Renderer):
                 html = plot.comm.html_template.format(init_frame=html,
                                                       comm_id=plot.comm.id)
                 js = plot.comm.js_template.format(msg_handler=msg_handler,
-                                                  comm_id=plot.comm.id)
+                                                  comm_id=plot.comm.id,
+                                                  plot_id=plot.comm.id)
                 jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
                 metadata['id'] = plot.comm.id
         return dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata}

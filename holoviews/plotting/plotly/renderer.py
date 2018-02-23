@@ -151,7 +151,8 @@ class PlotlyRenderer(Renderer):
                 html = plot.comm.html_template.format(init_frame=html,
                                                       comm_id=plot.comm.id)
                 js += plot.comm.js_template.format(msg_handler=msg_handler,
-                                                   comm_id=plot.comm.id)
+                                                   comm_id=plot.comm.id,
+                                                   plot_id=plot.comm.id)
                 metadata['id'] = plot.comm.id
             else:
                 html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html

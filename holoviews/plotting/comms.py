@@ -140,10 +140,11 @@ class JupyterComm(Comm):
 
     js_template = """
     function msg_handler(msg) {{
+      var buffers = msg.buffers;
       var msg = msg.content.data;
       {msg_handler}
     }}
-    HoloViews.comm_manager.register_target('{comm_id}', msg_handler);
+    HoloViews.comm_manager.register_target('{plot_id}', '{comm_id}', msg_handler);
     """
 
     def init(self):
@@ -190,6 +191,7 @@ class JupyterCommJS(JupyterComm):
     <script>
       function msg_handler(msg) {{
         var msg = msg.content.data;
+        var buffers = msg.buffers
         {msg_handler}
       }}
       comm = HoloViews.comm_manager.get_client_comm("{comm_id}");
@@ -269,14 +271,15 @@ class JupyterCommManager(CommManager):
     function JupyterCommManager() {
     }
 
-    JupyterCommManager.prototype.register_target = function(comm_id, msg_handler) {
+    JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {
+      console.log(plot_id, comm_id)
       if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
         var comm_manager = Jupyter.notebook.kernel.comm_manager;
         comm_manager.register_target(comm_id, function(comm) {
           comm.on_msg(msg_handler);
         });
-      } else if (comm_id in HoloViews.kernels) {
-        HoloViews.kernels[comm_id].registerCommTarget(comm_id, function(comm) {
+      } else if (plot_id in HoloViews.kernels) {
+        HoloViews.kernels[plot_id].registerCommTarget(comm_id, function(comm) {
           comm.onMsg = msg_handler;
         });
       }

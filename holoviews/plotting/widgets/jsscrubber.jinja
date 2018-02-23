@@ -5,7 +5,7 @@ function create_scrubber() {
 
     function create_widget() {
         setTimeout(function() {
-            var anim = new HoloViews.{{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ delay }}, {{ load_json }}, "{{ mode }}", {{ cached }}, "{{ json_path }}", {{ dynamic }});
+            var anim = new HoloViews.{{ widget_name }}(frame_data, {{ Nframes }}, "{{ id }}", {{ delay }}, {{ load_json }}, "{{ mode }}", {{ cached }}, "{{ json_path }}", {{ dynamic }}, "{{ plot_id }}");
             HoloViews.index['{{ id }}'] = anim;
         }, 0);
     }

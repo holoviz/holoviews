@@ -72,7 +72,7 @@ HoloViewsWidget.prototype.update = function(current){
 
 HoloViewsWidget.prototype.init_comms = function() {
   var that = this
-  HoloViews.comm_manager.register_target(this.id, function (msg) { that.process_msg(msg) })
+  HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.process_msg(msg) })
   if (!this.cached || this.dynamic) {
     var that = this;
 	function ack_callback(msg) {
@@ -100,9 +100,10 @@ HoloViewsWidget.prototype.init_comms = function() {
 HoloViewsWidget.prototype.process_msg = function(msg) {
 }
 
-function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached, json_path, dynamic){
+function SelectionWidget(frames, id, slider_ids, keyMap, dim_vals, notFound, load_json, mode, cached, json_path, dynamic, plot_id){
   this.frames = frames;
   this.id = id;
+  this.plot_id = plot_id;
   this.slider_ids = slider_ids;
   this.keyMap = keyMap
   this.current_frame = 0;
@@ -165,10 +166,11 @@ SelectionWidget.prototype.set_frame = function(dim_val, dim_idx){
 
 
 /* Define the ScrubberWidget class */
-function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, json_path, dynamic){
+function ScrubberWidget(frames, num_frames, id, interval, load_json, mode, cached, json_path, dynamic, plot_id){
   this.slider_id = "_anim_slider" + id;
   this.loop_select_id = "_anim_loop_select" + id;
   this.id = id;
+  this.plot_id = plot_id;
   this.interval = interval;
   this.current_frame = 0;
   this.direction = 0;
@@ -522,6 +524,7 @@ if (!window.HoloViews) {
     comms: {},
     comm_state: {},
     index: {},
-	kernels: {}
+    kernels: {},
+    receivers: {}
   }
 }

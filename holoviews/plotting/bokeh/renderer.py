@@ -30,6 +30,28 @@ NOTEBOOK_DIV = """
 </script>
 """
 
+bokeh_msg_handler = """
+var plot = Bokeh.index["{plot_id}"];
+
+if ("{plot_id}" in HoloViews.receivers) {{
+  var receiver = HoloViews.receivers["{plot_id}"];
+}} else {{
+  var receiver = new Bokeh.Receiver();
+  HoloViews.receivers["{plot_id}"] = receiver;
+}}
+
+if (buffers.length > 0) {{
+  receiver.consume(buffers[0].buffer)
+}} else {{
+  receiver.consume(msg)
+}}
+
+const comm_msg = receiver.message;
+if (comm_msg != null) {{
+  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
+}}
+"""
+
 
 class BokehRenderer(Renderer):
 
@@ -71,6 +93,9 @@ class BokehRenderer(Renderer):
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
 
     _loaded = False
+
+    # Define the handler for updating matplotlib plots
+    comm_msg_handler = bokeh_msg_handler
 
     def __call__(self, obj, fmt=None, doc=None):
         """
@@ -256,11 +281,13 @@ class BokehRenderer(Renderer):
             js, html = self._figure_data(plot, fmt='html', as_script=True, **kwargs)
             root = plot.state._id
             if comm and plot.comm is not None and self.comm_msg_handler:
-                comm, msg_handler = self.comms[self.mode]
-                msg_handler = msg_handler.format(comm_id=plot.comm.id)
+                msg_handler = self.comm_msg_handler.format(plot_id=root)
                 html = plot.comm.html_template.format(init_frame=html,
                                                       comm_id=plot.comm.id)
-                js += plot.comm.js_template.format(msg_handler=msg_handler)
+                js += plot.comm.js_template.format(msg_handler=msg_handler,
+                                                   comm_id=plot.comm.id,
+                                                   plot_id=root)
+        #print(js)
         return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['exec']: ""},
                 {MIME_TYPES['exec']: {"id": root}})
 

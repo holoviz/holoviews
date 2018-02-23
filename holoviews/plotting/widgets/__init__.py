@@ -168,7 +168,7 @@ class NdWidget(param.Parameterized):
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
-                    dynamic=dynamic)
+                    dynamic=dynamic, plot_id=self.id)
 
 
     def render_html(self, data):

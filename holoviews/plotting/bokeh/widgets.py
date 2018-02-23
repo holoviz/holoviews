@@ -248,7 +248,8 @@ class BokehWidget(NdWidget):
         msg, metadata = self.renderer.components(self.plot)
         data = super(BokehWidget, self)._get_data()
         return dict(data, init_html=msg['text/html'],
-                    init_js=msg['application/javascript'])
+                    init_js=msg['application/javascript'],
+                    plot_id=self.plot.state._id)
 
     def encode_frames(self, frames):
         if self.export_json:

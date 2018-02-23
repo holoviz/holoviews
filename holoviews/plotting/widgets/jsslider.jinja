@@ -13,7 +13,7 @@ function create_jsslider() {
     setTimeout(function() {
       var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
     keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
-    {{ cached }}, "{{ json_path}}", {{ dynamic }});
+    {{ cached }}, "{{ json_path}}", {{ dynamic }}, "{{ plot_id }}");
 	  HoloViews.index['{{ id }}'] = anim;
     }, 0);
   }
