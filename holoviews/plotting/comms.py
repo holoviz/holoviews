@@ -277,7 +277,7 @@ class JupyterCommManager(CommManager):
         comm_manager.register_target(comm_id, function(comm) {
           comm.on_msg(msg_handler);
         });
-      } else if (plot_id in HoloViews.kernels) {
+      } else if ((plot_id in HoloViews.kernels) && (HoloViews.kernels[plot_id])) {
         HoloViews.kernels[plot_id].registerCommTarget(comm_id, function(comm) {
           comm.onMsg = msg_handler;
         });
@@ -293,7 +293,7 @@ class JupyterCommManager(CommManager):
         if (msg_handler) {
           comm.on_msg(msg_handler);
         }
-      } else if (plot_id in HoloViews.kernels) {
+      } else if ((plot_id in HoloViews.kernels) && (HoloViews.kernels[plot_id])) {
         var comm = HoloViews.kernels[plot_id].connectToComm(comm_id);
         comm.open();
         if (msg_handler) {

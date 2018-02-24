@@ -1,47 +1,34 @@
 /* Instantiate the {{ widget_name }} class. */
 /* The IDs given should match those used in the template above. */
-function create_jsslider() {
-  var widget_ids = new Array({{ Nwidget }});
-  {% for dim in dimensions %}
-  widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
-  {% endfor %}
-  var frame_data = {{ frames | safe }};
-  var dim_vals = {{ init_dim_vals }};
-  var keyMap = {{ key_data }};
-  var notFound = "{{ notFound }}";
-  function create_widget() {
-    setTimeout(function() {
-      var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
-    keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
-    {{ cached }}, "{{ json_path}}", {{ dynamic }}, "{{ plot_id }}");
-	  HoloViews.index['{{ id }}'] = anim;
-    }, 0);
-  }
-  {% block create_widget %}
-  {% for widget_data in widgets %}
-  {% if widget_data['type'] == 'slider' %}
-  HoloViews.init_slider('{{  id  }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, {{ dynamic }}, {{ widget_data['step'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, '{{ CDN['jQueryUI'] }}', '{{ CDN['underscore'] }}')
-  {% elif widget_data['type']=='dropdown' %}
-  HoloViews.init_dropdown('{{  id  }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, {{ dynamic }})
-  {% endif %}
-  {% endfor %}
-  create_widget();
-  {{ init_js }}
-  {% endblock %}
-};
+var widget_ids = new Array({{ Nwidget }});
 
-if (!window.$) {
-  var script = document.createElement('script'); 
-  document.head.appendChild(script);    
-  script.type = 'text/javascript';
-  script.src = '{{ CDN['jQuery'] }}';
-  script.onload = function() {
-  var script2 = document.createElement('script'); 
-  document.head.appendChild(script2);
-  script2.type = 'text/javascript';
-  script2.src = '{{ CDN['require'] }}';
-  script2.onload = create_jsslider;
-  };
-} else {
-  create_jsslider()
+{% for dim in dimensions %}
+widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
+{% endfor %}
+
+var frame_data = {{ frames | safe }};
+var dim_vals = {{ init_dim_vals }};
+var keyMap = {{ key_data }};
+var notFound = "{{ notFound }}";
+
+function create_widget() {
+  setTimeout(function() {
+    var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
+  keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
+  {{ cached }}, "{{ json_path}}", {{ dynamic }}, "{{ plot_id }}");
+	HoloViews.index['{{ plot_id }}'] = anim;
+  }, 0);
 }
+
+{% for widget_data in widgets %}
+
+{% if widget_data['type'] == 'slider' %}
+HoloViews.init_slider('{{ id }}', '{{ plot_id }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, {{ dynamic }}, {{ widget_data['step'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, {{ delay }}, '{{ CDN['jQueryUI'] }}', '{{ CDN['underscore'] }}')
+{% elif widget_data['type']=='dropdown' %}
+HoloViews.init_dropdown('{{ id }}', '{{ plot_id }}', '{{ widget_data['dim'] }}', {{ widget_data['vals'] }}, {{ widget_data['next_vals'] }}, {{ widget_data['labels'] }}, '{{ widget_data['next_dim'] }}', {{ widget_data['dim_idx'] }}, {{ dynamic }})
+{% endif %}
+
+{% endfor %}
+
+create_widget();
+{{ init_js }}

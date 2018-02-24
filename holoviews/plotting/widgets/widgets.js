@@ -335,8 +335,8 @@ function update_widget(widget, values) {
   };
 }
 
-function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim,
-                     dim_idx, jQueryUI_CDN, UNDERSCORE_CDN) {
+function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, next_dim,
+                     dim_idx, delay, jQueryUI_CDN, UNDERSCORE_CDN) {
 	// Slider JS Block START
   function loadcssfile(filename){
     var fileref=document.createElement("link")
@@ -434,7 +434,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
         var text = $('#textInput'+id+'_'+dim);
         text.val(label);
         adjustFontSize(text);
-        HoloViews.index[id].set_frame(dim_val, dim_idx);
+        HoloViews.index[plot_id].set_frame(dim_val, dim_idx);
         if (Object.keys(next_vals).length > 0) {
           var new_vals = next_vals[dim_val];
           var next_widget = $('#_anim_widget'+id+'_'+next_dim);
@@ -476,7 +476,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
   });
 }
 
-function init_dropdown(id, dim, vals, next_vals, labels, next_dim, dim_idx, dynamic) {
+function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_idx, dynamic) {
   var widget = $("#_anim_widget"+id+'_'+dim);
   widget.data('values', vals)
   for (var i=0; i<vals.length; i++){
@@ -503,24 +503,29 @@ function init_dropdown(id, dim, vals, next_vals, labels, next_dim, dim_idx, dyna
       var next_widget = $('#_anim_widget'+id+'_'+next_dim);
       update_widget(next_widget, new_vals);
     }
-	var widgets = HoloViews.index[id]
+	var widgets = HoloViews.index[plot_id]
     if (widgets) {
       widgets.set_frame(dim_val, dim_idx);
     }
   });
 }
 
-if (!window.HoloViews) {
-  window.HoloViews = {
-    ScrubberWidget: ScrubberWidget,
-    SelectionWidget: SelectionWidget,
-    update_widget: update_widget,
-    init_slider: init_slider,
-    init_dropdown: init_dropdown,
-    comms: {},
-    comm_state: {},
-    index: {},
-    kernels: {},
-    receivers: {}
+if (window.HoloViews === undefined) {
+	window.HoloViews = {}
+}
+
+var _namespace = {
+  init_slider: init_slider,
+  init_dropdown: init_dropdown,
+  comms: {},
+  comm_state: {},
+  index: {},
+  kernels: {},
+  receivers: {}
+}
+
+for (var k in _namespace) {
+  if (!(k in window.HoloViews)) {
+    window.HoloViews[k] = _namespace[k];
   }
 }
