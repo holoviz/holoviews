@@ -156,7 +156,7 @@ class PlotlyRenderer(Renderer):
                 metadata['id'] = plot.comm.id
             else:
                 html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+        jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
         return (dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata})
 
 

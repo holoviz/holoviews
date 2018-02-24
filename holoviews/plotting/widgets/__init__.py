@@ -138,7 +138,7 @@ class NdWidget(param.Parameterized):
 
     def _process_update(self, msg):
         if 'content' not in msg:
-            raise ValueError('Received widget message has no content.')
+            raise ValueError('Received widget comm message has no content.')
         self.update(msg['content'])
 
     def __call__(self):
@@ -405,4 +405,3 @@ class SelectionWidget(NdWidget):
                                      self.plot.streams)
         self.plot.update(key)
         self.plot.push()
-        return 'Complete'

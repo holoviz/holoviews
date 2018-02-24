@@ -287,7 +287,7 @@ class BokehRenderer(Renderer):
                 js += plot.comm.js_template.format(msg_handler=msg_handler,
                                                    comm_id=plot.comm.id,
                                                    plot_id=root)
-        #print(js)
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
         return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['exec']: ""},
                 {MIME_TYPES['exec']: {"id": root}})
 

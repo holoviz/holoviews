@@ -32,9 +32,6 @@ HoloViewsWidget.prototype.dynamic_update = function(current){
   if (current === undefined) {
     return
   }
-  if(this.dynamic) {
-    current = JSON.stringify(current);
-  }
   this.current = current;
   if (this.comm) {
     var msg = {comm_id: this.id+'_client', content: current}
@@ -392,7 +389,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
     if (dynamic && vals.constructor === Array) {
       var min = parseFloat(vals[0]);
       var max = parseFloat(vals[vals.length-1]);
-      var step = step;
+      var wstep = step;
       var wlabels = [min];
     } else {
       var min = 0;
@@ -401,7 +398,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
       } else {
         var max = vals.length - 1;
       }
-      var step = 1;
+      var wstep = 1;
       var wlabels = labels;
     }
     function adjustFontSize(text) {
@@ -409,12 +406,12 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
       var size = Math.min(0.9, Math.max(0.6, width_ratio))+'em';
       text.css('font-size', size);
     }
-    var slider = $('#_anim_widget'+id+'_'+dim);
+	var slider = $('#_anim_widget'+id+'_'+dim);
     slider.slider({
       animate: "fast",
       min: min,
       max: max,
-      step: step,
+      step: wstep,
       value: min,
       dim_vals: vals,
       dim_labels: wlabels,
@@ -474,7 +471,7 @@ function init_slider(id, dim, values, next_vals, labels, dynamic, step, next_dim
       }
     });
     var textInput = $('#textInput'+id+'_'+dim)
-    textInput.val(labels[0]);
+    textInput.val(wlabels[0]);
     adjustFontSize(textInput);
   });
 }
