@@ -233,8 +233,7 @@ class MPLRenderer(Renderer):
         if isinstance(plot, NdWidget):
             js, html = plot()
             jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
-            if comm and plot.plot.comm is not None:
-                metadata['id'] = plot.id
+            metadata['id'] = plot.id
         else:
             html = self.html(plot, comm=False)
             jsdata = {}

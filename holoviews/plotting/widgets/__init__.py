@@ -226,7 +226,6 @@ class NdWidget(param.Parameterized):
         else:
             self.plot.update(key)
             self.plot.push()
-        return 'Complete'
 
 
 
@@ -358,7 +357,6 @@ class SelectionWidget(NdWidget):
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
-
             visibility = '' if visible else 'display: none'
             dim_str = dim.pprint_label
             escaped_dim = dimension_sanitizer(dim_str)

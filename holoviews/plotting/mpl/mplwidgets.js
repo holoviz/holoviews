@@ -24,13 +24,6 @@ var MPLMethods = {
             this.set_frame(init_val, 0);
         }
     },
-    populate_cache : function(idx){
-        var cache_id = "_anim_img"+this.id+"_"+idx;
-        this.cache[idx].html(this.frames[idx]);
-        if (this.embed) {
-            delete this.frames[idx];
-        }
-    },
     process_msg : function(msg) {
         if (!(this.mode == 'nbagg')) {
             var data = msg.content.data;
