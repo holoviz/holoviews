@@ -2,7 +2,7 @@ import uuid, json
 
 import param
 with param.logging_level('CRITICAL'):
-    from plotly.offline.offline import utils, get_plotlyjs
+    from plotly.offline.offline import utils, get_plotlyjs, init_notebook_mode
 
 from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
@@ -181,5 +181,6 @@ class PlotlyRenderer(Renderer):
         if not cls._loaded:
             display(HTML(PLOTLY_WARNING))
             cls._loaded = True
-        from plotly.offline import init_notebook_mode
         init_notebook_mode(connected=not inline)
+        publish_display_data(data={MIME_TYPES['jlab-hv-load']:
+                                   get_plotlyjs()})
