@@ -16,7 +16,7 @@ from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import NdWidget, BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import attach_periodic, compute_plot_size
+from .util import attach_periodic, compute_plot_size, bokeh_version
 
 from bokeh.io.notebook import load_notebook
 from bokeh.protocol import Protocol
@@ -284,9 +284,10 @@ class BokehRenderer(Renderer):
                 msg_handler = self.comm_msg_handler.format(plot_id=root)
                 html = plot.comm.html_template.format(init_frame=html,
                                                       comm_id=plot.comm.id)
-                js += plot.comm.js_template.format(msg_handler=msg_handler,
-                                                   comm_id=plot.comm.id,
-                                                   plot_id=root)
+                if bokeh_version > '0.12.14':
+                    js += plot.comm.js_template.format(msg_handler=msg_handler,
+                                                       comm_id=plot.comm.id,
+                                                       plot_id=root)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
         return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: ""},
                 {MIME_TYPES['jlab-hv-exec']: {"id": root}})

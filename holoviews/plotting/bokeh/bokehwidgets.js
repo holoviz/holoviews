@@ -29,11 +29,16 @@ var BokehMethods = {
     }
   },
   init_comms: function() {
-    this.receiver = new Bokeh.Receiver()
+    if (Bokeh.Receiver !== undefined) {
+      this.receiver = new Bokeh.Receiver()
+    } else {
+      this.receiver = null;
+	}
     return HoloViewsWidget.prototype.init_comms.call(this);
   },
   process_msg : function(msg) {
     var doc = Bokeh.index[this.plot_id].model.document;
+    if (this.receiver === null) { return }
     var receiver = this.receiver;
     if (msg.buffers.length > 0) {
       receiver.consume(msg.buffers[0].buffer)
