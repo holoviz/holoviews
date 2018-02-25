@@ -48,7 +48,7 @@ MIME_TYPES = {
     'gif':  'image/gif',
     'webm': 'video/webm',
     'mp4':  'video/mp4',
-    'pdf':  'application/pdf,
+    'pdf':  'application/pdf',
     'html': 'text/html',
     'json': 'text/json',
     'js':   'application/javascript',

@@ -6,18 +6,17 @@ var widget_ids = new Array({{ Nwidget }});
 widget_ids[{{ loop.index0 }}] = "_anim_widget{{ id }}_{{ dim }}";
 {% endfor %}
 
-var frame_data = {{ frames | safe }};
-var dim_vals = {{ init_dim_vals }};
-var keyMap = {{ key_data }};
-var notFound = "{{ notFound }}";
-
 function create_widget() {
-  setTimeout(function() {
-    var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
+  var frame_data = {{ frames | safe }};
+  var dim_vals = {{ init_dim_vals }};
+  var keyMap = {{ key_data }};
+  var notFound = "{{ notFound }}";
+
+  var anim = new HoloViews.{{ widget_name }}(frame_data, "{{ id }}", widget_ids,
   keyMap, dim_vals, notFound, {{ load_json }}, "{{ mode }}",
   {{ cached }}, "{{ json_path}}", {{ dynamic }}, "{{ plot_id }}");
-	HoloViews.index['{{ plot_id }}'] = anim;
-  }, 0);
+
+  HoloViews.index['{{ plot_id }}'] = anim;
 }
 
 {% for widget_data in widgets %}

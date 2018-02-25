@@ -20,11 +20,10 @@ var BokehMethods = {
   },
   update : function(current){
     if (current === undefined) {
-      var data = undefined;
-    } else {
-      var data = this.frames[current];
+      return;
     }
-    if (data !== undefined) {
+    var data = this.frames[current];
+	if (data !== undefined) {
       var doc = Bokeh.index[data.root].model.document;
       doc.apply_json_patch(data.content);
     }
