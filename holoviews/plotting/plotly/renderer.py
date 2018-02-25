@@ -142,8 +142,7 @@ class PlotlyRenderer(Renderer):
         metadata = {}
         if isinstance(plot, NdWidget):
             js, html = plot()
-            if comm and plot.plot.comm is not None:
-                metadata['id'] = plot.id
+            metadata['id'] = plot.id
         else:
             js, html = self._figure_data(plot, as_script=True, **kwargs)
             if comm and plot.comm is not None:
@@ -155,9 +154,11 @@ class PlotlyRenderer(Renderer):
                                                    plot_id=plot.comm.id)
                 metadata['id'] = plot.comm.id
             else:
-                html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-        jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
-        return (dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata})
+                metadata['id'] = str(id(plot))
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+        jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
+        return (dict({'text/html': html}, **jsdata),
+                {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
     @classmethod
@@ -180,14 +181,5 @@ class PlotlyRenderer(Renderer):
         if not cls._loaded:
             display(HTML(PLOTLY_WARNING))
             cls._loaded = True
-        plotly_js = plotly_include()
-        publish_display_data({MIME_TYPES['js']: plotly_js, MIME_TYPES['load']: plotly_js})
-
-
-def plotly_include():
-    return """
-            require_=require;requirejs_=requirejs; define_=define;
-            require=requirejs=define=undefined;
-            {include}
-            require=require_;requirejs=requirejs_; define=define_;
-            """.format(include=get_plotlyjs())
+        from plotly.offline import init_notebook_mode
+        init_notebook_mode(connected=not inline)

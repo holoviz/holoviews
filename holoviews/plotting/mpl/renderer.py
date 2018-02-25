@@ -232,7 +232,7 @@ class MPLRenderer(Renderer):
         metadata = {}
         if isinstance(plot, NdWidget):
             js, html = plot()
-            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
             metadata['id'] = plot.id
         else:
             html = self.html(plot, comm=False)
@@ -244,9 +244,10 @@ class MPLRenderer(Renderer):
                 js = plot.comm.js_template.format(msg_handler=msg_handler,
                                                   comm_id=plot.comm.id,
                                                   plot_id=plot.comm.id)
-                jsdata = {MIME_TYPES['js']: js, MIME_TYPES['exec']: js}
+                jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
                 metadata['id'] = plot.comm.id
-        return dict({'text/html': html}, **jsdata), {MIME_TYPES['exec']: metadata}
+        return (dict({'text/html': html}, **jsdata),
+                {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
     def _anim_data(self, anim, fmt):

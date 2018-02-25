@@ -240,7 +240,7 @@ class notebook_extension(extension):
         if JS:
             publish_display_data(data={
                 MIME_TYPES['js']   : widgetjs,
-                MIME_TYPES['load'] : widgetjs
+                MIME_TYPES['jlab-hv-load'] : widgetjs
             })
 
 

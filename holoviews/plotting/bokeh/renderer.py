@@ -288,8 +288,8 @@ class BokehRenderer(Renderer):
                                                    comm_id=plot.comm.id,
                                                    plot_id=root)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-        return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['exec']: ""},
-                {MIME_TYPES['exec']: {"id": root}})
+        return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: ""},
+                {MIME_TYPES['jlab-hv-exec']: {"id": root}})
 
 
     def diff(self, plot, binary=True):

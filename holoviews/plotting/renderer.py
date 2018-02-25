@@ -48,12 +48,12 @@ MIME_TYPES = {
     'gif':  'image/gif',
     'webm': 'video/webm',
     'mp4':  'video/mp4',
-    'pdf':  'application/pdf',
+    'pdf':  'application/pdf,
     'html': 'text/html',
     'json': 'text/json',
     'js':   'application/javascript',
-    'exec': 'application/vnd.holoviews_exec.v0+json',
-    'load': 'application/vnd.holoviews_load.v0+json',
+    'jlab-hv-exec': 'application/vnd.holoviews_exec.v0+json',
+    'jlab-hv-load': 'application/vnd.holoviews_load.v0+json',
     'server': None
 }
 

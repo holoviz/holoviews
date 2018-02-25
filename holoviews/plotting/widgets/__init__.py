@@ -152,10 +152,10 @@ class NdWidget(param.Parameterized):
         CDN = {}
         for name, resources in self.plot.renderer.core_dependencies.items():
             if 'js' in resources:
-                CDN[name] = resources['js'][0][6:]
+                CDN[name] = resources['js'][0]
         for name, resources in self.plot.renderer.extra_dependencies.items():
             if 'js' in resources:
-                CDN[name] = resources['js'][0][6:]
+                CDN[name] = resources['js'][0]
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
