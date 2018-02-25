@@ -14,9 +14,9 @@ BokehScrubberWidget.prototype = Object.create(ScrubberWidget.prototype);
 // Define methods to override on widgets
 var BokehMethods = {
   update_cache : function(){
-    $.each(this.frames, $.proxy(function(index, frame) {
-      this.frames[index] = JSON.parse(frame);
-    }, this));
+    for (var index in this.frames) {
+      this.frames[index] = JSON.parse(this.frames[index]);
+    }
   },
   update : function(current){
     if (current === undefined) {

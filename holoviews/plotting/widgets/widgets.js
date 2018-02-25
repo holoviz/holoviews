@@ -10,7 +10,7 @@ HoloViewsWidget.prototype.init_slider = function(init_val){
 }
 
 HoloViewsWidget.prototype.populate_cache = function(idx){
-  this.cache[idx].html(this.frames[idx]);
+  this.cache[idx].innerHTML = this.frames[idx];
   if (this.embed) {
     delete this.frames[idx];
   }
@@ -49,9 +49,12 @@ HoloViewsWidget.prototype.update_cache = function(force){
     }
     if(!(frame in this.cache) || force) {
       if ((frame in this.cache) && force) { this.cache[frame].remove() }
-      this.cache[frame] = $('<div />').appendTo("#"+"_anim_img"+this.id).hide();
+      var div = document.createElement("div");
+      var parent = document.getElementById("_anim_img"+this.id);
+      div.style.display = "none";
+      parent.appendChild(div)
+      this.cache[frame] = div;
       var cache_id = "_anim_img"+this.id+"_"+frame;
-      this.cache[frame].attr("id", cache_id);
       this.populate_cache(frame);
     }
   }
@@ -59,10 +62,10 @@ HoloViewsWidget.prototype.update_cache = function(force){
 
 HoloViewsWidget.prototype.update = function(current){
   if(current in this.cache) {
-    $.each(this.cache, function(index, value) {
-      value.hide();
-    });
-    this.cache[current].show();
+    for (var index in this.cache) {
+      this.cache[index].style.display = "none";
+    }
+    this.cache[current].style.display = "";
     this.wait = false;
   }
 }
