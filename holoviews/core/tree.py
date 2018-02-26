@@ -146,7 +146,15 @@ class AttrTree(object):
         """
         Propagate the value up to the root node.
         """
-        self.data[path] = val
+        if val == '_DELETE':
+            if path in self.data:
+                del self.data[path]
+            else:
+                items = [(key, v) for key, v in self.data.items()
+                         if not all(k==p for k, p in zip(key, path))]
+                self.data = OrderedDict(items)
+        else:
+            self.data[path] = val
         if self.parent is not None:
             self.parent._propagate((self.identifier,)+path, val)
 
@@ -189,6 +197,24 @@ class AttrTree(object):
         return path_item
 
 
+    def __delitem__(self, identifier):
+        split_label = (tuple(identifier.split('.'))
+                       if isinstance(identifier, str) else tuple(identifier))
+        if len(split_label) == 1:
+            identifier = split_label[0]
+            if identifier in self.children:
+                del self.__dict__[identifier]
+                self.children.pop(self.children.index(identifier))
+            else:
+                raise KeyError(identifier)
+            self._propagate(split_label, '_DELETE')
+        else:
+            path_item = self
+            for i, identifier in enumerate(split_label[:-1]):
+                path_item = path_item[identifier]
+            del path_item[split_label[-1]]
+
+
     def __setattr__(self, identifier, val):
         # Getattr is skipped for root and first set of children
         shallow = (self.parent is None or self.parent.parent is None)
@@ -221,20 +247,23 @@ class AttrTree(object):
 
         if not any(identifier.startswith(prefix)
                    for prefix in type(self)._disabled_prefixes):
-            identifier = type(self)._sanitizer(identifier, escape=False)
+            sanitized = type(self)._sanitizer(identifier, escape=False)
+        else:
+            sanitized = identifier
 
-        if identifier in self.children:
-            return self.__dict__[identifier]
+        if sanitized in self.children:
+            return self.__dict__[sanitized]
 
-        if not identifier.startswith('_'):
-            self.children.append(identifier)
+        if not sanitized.startswith('_') and identifier[0].isupper():
+            self.children.append(sanitized)
             dir_mode = self.__dict__['_dir_mode']
-            child_tree = self.__class__(identifier=identifier,
+            child_tree = self.__class__(identifier=sanitized,
                                         parent=self, dir_mode=dir_mode)
-            self.__dict__[identifier] = child_tree
+            self.__dict__[sanitized] = child_tree
             return child_tree
         else:
-            raise AttributeError
+            raise AttributeError('%r object has no attribute %s.' %
+                                 (type(self).__name__, identifier))
 
 
     def __iter__(self):
