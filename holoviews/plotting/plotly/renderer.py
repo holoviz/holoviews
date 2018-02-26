@@ -99,13 +99,13 @@ class PlotlyRenderer(Renderer):
 
         script = '\n'.join([
             'Plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    $(".{id}.loading").remove();',
+            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
             '}})']).format(id=divuuid,
                            data=jdata,
                            layout=jlayout,
                            config=jconfig)
 
-        html = ('<div class="{id} loading" style="color: rgb(50,50,50);">'
+        html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
                 'Drawing...</div>'
                 '<div id="{id}" style="height: {height}; width: {width};" '
                 'class="plotly-graph-div">'
