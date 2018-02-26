@@ -36,7 +36,7 @@ var plot = Bokeh.index["{plot_id}"];
 if ("{plot_id}" in HoloViews.receivers) {{
   var receiver = HoloViews.receivers["{plot_id}"];
 }} else {{
-  var receiver = new Bokeh.Receiver();
+  var receiver = new Bokeh.embed.Receiver();
   HoloViews.receivers["{plot_id}"] = receiver;
 }}
 
