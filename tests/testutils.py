@@ -13,20 +13,24 @@ from holoviews.util import output, opts, OutputSettings
 from holoviews.core import OrderedDict
 
 from holoviews.core.options import OptionTree
+from holoviews.plotting.comms import CommManager
 
-from holoviews.plotting import mpl
+try:
+    from holoviews.plotting import mpl
+except:
+    mpl = None
+
 try:
     from holoviews.plotting import bokeh
 except:
     bokeh = None
 
 BACKENDS = ['matplotlib'] + (['bokeh'] if bokeh else [])
-notebook_extension(*BACKENDS)
-
 
 class TestOutputUtil(ComparisonTestCase):
 
     def setUp(self):
+        notebook_extension(*BACKENDS)
         Store.current_backend = 'matplotlib'
         Store.renderers['matplotlib'] = mpl.MPLRenderer.instance()
         if bokeh:
@@ -40,6 +44,8 @@ class TestOutputUtil(ComparisonTestCase):
         if bokeh:
             Store.renderers['bokeh'] = bokeh.BokehRenderer.instance()
         OutputSettings.options =  OrderedDict(OutputSettings.defaults.items())
+        for renderer in Store.renderers.values():
+            renderer.comm_manager = CommManager
         super(TestOutputUtil, self).tearDown()
 
     def test_output_util_svg_string(self):

@@ -5,6 +5,7 @@ regardless of plotting package or backend.
 from __future__ import unicode_literals
 
 from io import BytesIO
+import inspect
 import os, base64
 from contextlib import contextmanager
 
@@ -176,7 +177,10 @@ class Renderer(Exporter):
                 initialize_dynamic(obj)
             obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
 
-        if not renderer: renderer = self_or_cls.instance()
+        if not renderer:
+            renderer = self_or_cls
+            if inspect.isclass(self_or_cls):
+                renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
@@ -347,8 +351,11 @@ class Renderer(Exporter):
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
-        return widget_cls(plot, renderer=self_or_cls.instance(),
-                          embed=self_or_cls.widget_mode == 'embed', **kwargs)
+        renderer = self_or_cls
+        if inspect.isclass(self_or_cls):
+            renderer = self_or_cls.instance()
+        embed = self_or_cls.widget_mode == 'embed'
+        return widget_cls(plot, renderer=renderer, embed=embed, **kwargs)
 
 
     @bothmethod

@@ -9,12 +9,15 @@ except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing magics")
 
 from holoviews.operation import Compositor
+from holoviews.plotting.comms import CommManager
 
 class ExtensionTestCase(IPTestCase):
 
     def setUp(self):
         super(ExtensionTestCase, self).setUp()
         self.ip.run_line_magic("load_ext", "holoviews.ipython")
+        for renderer in Store.renderers.values():
+            renderer.comm_manager = CommManager
 
     def tearDown(self):
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}

@@ -20,17 +20,15 @@ class TestBokehPlot(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
+        self.comm_manager = bokeh_renderer.comm_manager
+        bokeh_renderer.comm_manager = comms.CommManager
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
-        Callback._comm_type = comms.Comm
-        self.default_comm = bokeh_renderer.comms['default']
-        bokeh_renderer.comms['default'] = (comms.Comm, '')
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
-        Callback._comm_type = comms.JupyterCommJS
-        bokeh_renderer.comms['default'] = self.default_comm
+        bokeh_renderer.comm_manager = self.comm_manager
         Callback._callbacks = {}
 
     def _test_colormapping(self, element, dim, log=False):
