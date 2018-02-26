@@ -49,7 +49,11 @@ class Comm(object):
     * init_frame  -  The initial frame to render on the frontend.
     """
 
-    html_template = ''
+    html_template = """
+    <div id="fig_{comm_id}">
+      {init_frame}
+    </div>
+    """
 
     js_template = ''
 
@@ -132,12 +136,6 @@ class JupyterComm(Comm):
     the first time data is pushed to the frontend.
     """
 
-    html_template = """
-    <div id="fig_{comm_id}">
-      {init_frame}
-    </div>
-    """
-
     js_template = """
     function msg_handler(msg) {{
       var buffers = msg.buffers;
@@ -179,12 +177,6 @@ class JupyterCommJS(JupyterComm):
     JupyterCommJS provides a comms channel for the Jupyter notebook,
     which is initialized on the frontend. This allows sending events
     initiated on the frontend to python.
-    """
-
-    html_template = """
-    <div id="fig_{comm_id}">
-      {init_frame}
-    </div>
     """
 
     js_template = """
