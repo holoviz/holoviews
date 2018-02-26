@@ -4,7 +4,7 @@ import logging
 import param
 from param.parameterized import bothmethod
 
-import bokeh.core
+import bokeh
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.io import curdoc, show as bkshow
@@ -95,7 +95,7 @@ class BokehRenderer(Renderer):
     _loaded = False
 
     # Define the handler for updating matplotlib plots
-    comm_msg_handler = bokeh_msg_handler
+    comm_msg_handler = bokeh_msg_handler if bokeh_version > '0.12.14' else None
 
     def __call__(self, obj, fmt=None, doc=None):
         """
@@ -329,6 +329,8 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        from bokeh.io.notebook import curstate
+        LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
+        bokeh.io.notebook.LOAD_MIME_TYPE = MIME_TYPES['jlab-hv-load']
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-        curstate().output_notebook()
+        bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
+        bokeh.io.notebook.curstate().output_notebook()
