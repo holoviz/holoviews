@@ -105,6 +105,7 @@ class NdWidget(param.Parameterized):
         super(NdWidget, self).__init__(**params)
         self.id = plot.comm.id if plot.comm else uuid.uuid4().hex
         self.plot = plot
+        self.plot_id = plot.id
         streams = []
         for stream in plot.streams:
             if any(k in plot.dimensions for k in stream.contents):
@@ -168,7 +169,7 @@ class NdWidget(param.Parameterized):
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
-                    dynamic=dynamic, plot_id=self.id)
+                    dynamic=dynamic, plot_id=self.plot_id)
 
 
     def render_html(self, data):

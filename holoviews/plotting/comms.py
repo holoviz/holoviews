@@ -50,7 +50,7 @@ class Comm(object):
     """
 
     html_template = """
-    <div id="fig_{comm_id}">
+    <div id="fig_{plot_id}">
       {init_frame}
     </div>
     """

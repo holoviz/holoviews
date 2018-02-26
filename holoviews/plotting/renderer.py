@@ -253,7 +253,7 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, comm=True, **kwargs):
+    def html(self, obj, fmt=None, css=None, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
@@ -281,18 +281,37 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         html = tag.format(src=src, mime_type=mime_type, css=css)
-        if comm and plot.comm is not None:
-            comm, msg_handler = self.comms[self.mode]
-            if msg_handler is None:
-                return html
-            msg_handler = msg_handler.format(comm_id=plot.comm.id)
-            html = plot.comm.html_template.format(init_frame=html,
-                                                  comm_id=plot.comm.id)
-            js = plot.comm.js_template.format(msg_handler=msg_handler)
-            js_script = '<script type="text/javascript">%s</script>' % js
-            return '\n'.join([html, js_script])
+        return html
+
+
+    def components(self, obj, fmt=None, comm=True, **kwargs):
+        if isinstance(obj, (Plot, NdWidget)):
+            plot = obj
         else:
-            return html
+            plot, fmt = self._validate(obj, fmt)
+
+        data, metadata = {}, {}
+        if isinstance(plot, NdWidget):
+            js, html = plot()
+            plot_id = plot.plot_id
+        else:
+            html, js = self._figure_data(plot, as_script=True, **kwargs)
+            plot_id = plot.id
+            if comm and plot.comm is not None and self.comm_msg_handler:
+                msg_handler = self.comm_msg_handler.format(plot_id=plot_id)
+                html = plot.comm.html_template.format(init_frame=html,
+                                                      plot_id=plot_id)
+                js += plot.comm.js_template.format(msg_handler=msg_handler,
+                                                   comm_id=plot.comm.id,
+                                                   plot_id=plot_id)
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+
+        data['text/html'] = html
+        if js:
+            data[MIME_TYPES['js']] = js
+            data[MIME_TYPES['jlab-hv-exec']] = js
+            metadata['id'] = plot_id
+        return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
     def static_html(self, obj, fmt=None, template=None):

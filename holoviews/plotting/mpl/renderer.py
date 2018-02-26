@@ -1,4 +1,5 @@
 import sys
+import base64
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
@@ -13,7 +14,7 @@ from ...core import HoloMap
 from ...core.options import Store
 
 from ..plot import Plot
-from ..renderer import Renderer, MIME_TYPES
+from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .comms import mpl_msg_handler
 from .widgets import NdWidget, MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
@@ -176,11 +177,11 @@ class MPLRenderer(Renderer):
                 figure_format = self.params('fig').objects[0]
             else:
                 figure_format = self.fig
-            data = self.html(plot, figure_format, comm=False)
+            data = self.html(plot, figure_format)
         return data
 
 
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
+    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
         """
         Render matplotlib figure object and return the corresponding data.
 
@@ -218,36 +219,15 @@ class MPLRenderer(Renderer):
         bytes_io = BytesIO()
         fig.canvas.print_figure(bytes_io, **kw)
         data = bytes_io.getvalue()
+        if as_script:
+            b64 = base64.b64encode(data).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            html = tag.format(src=src, mime_type=mime_type, css='')
+            return html, ''
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
-
-
-    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, (Plot, NdWidget)):
-            plot = obj
-        else:
-            plot, fmt =  self._validate(obj, fmt)
-
-        metadata = {}
-        if isinstance(plot, NdWidget):
-            js, html = plot()
-            jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
-            metadata['id'] = plot.id
-        else:
-            html = self.html(plot, comm=False)
-            jsdata = {}
-            if comm and plot.comm is not None:
-                msg_handler = self.comm_msg_handler.format(comm_id=plot.comm.id)
-                html = plot.comm.html_template.format(init_frame=html,
-                                                      comm_id=plot.comm.id)
-                js = plot.comm.js_template.format(msg_handler=msg_handler,
-                                                  comm_id=plot.comm.id,
-                                                  plot_id=plot.comm.id)
-                jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
-                metadata['id'] = plot.comm.id
-        return (dict({'text/html': html}, **jsdata),
-                {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
     def _anim_data(self, anim, fmt):

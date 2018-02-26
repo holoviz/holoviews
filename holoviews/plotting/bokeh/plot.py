@@ -74,6 +74,11 @@ class BokehPlot(DimensionedPlot):
         return self._document
 
 
+    @property
+    def id(self):
+        return self.state._id
+
+
     @document.setter
     def document(self, doc):
         self._document = doc

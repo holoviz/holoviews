@@ -14,7 +14,7 @@ from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 plotly_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{comm_id}')[0];
+var plot = $('#{plot_id}')[0];
 var data = JSON.parse(msg);
 $.each(data.data, function(i, obj) {{
   $.each(Object.keys(obj), function(j, key) {{
@@ -81,10 +81,7 @@ class PlotlyRenderer(Renderer):
     def _figure_data(self, plot, divuuid=None, comm=True, as_script=False, width=800, height=600):
         figure = plot.state
         if divuuid is None:
-            if plot.comm:
-                divuuid = plot.comm.id
-            else:
-                divuuid = uuid.uuid4().hex
+            divuuid = plot.id
 
         jdata = json.dumps(figure.get('data', []), cls=utils.PlotlyJSONEncoder)
         jlayout = json.dumps(figure.get('layout', {}), cls=utils.PlotlyJSONEncoder)
@@ -114,51 +111,15 @@ class PlotlyRenderer(Renderer):
                 'class="plotly-graph-div">'
                 '</div>'.format(id=divuuid, height=height, width=width))
         if as_script:
-            return header + script, html
-        else:
-            content = (
-              '{html}'
-              '<script type="text/javascript">'
-              '  {script}'
-              '</script>'
-            ).format(html=html, script=script)
-            joined = '\n'.join([header, content])
+            return html, header + script
 
-        if comm and plot.comm is not None:
-            comm, msg_handler = self.comms[self.mode]
-            msg_handler = msg_handler.format(comm_id=plot.comm.id)
-            return comm.template.format(init_frame=joined,
-                                        msg_handler=msg_handler,
-                                        comm_id=plot.comm.id)
-        return joined
-
-
-    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, (Plot, NdWidget)):
-            plot = obj
-        else:
-            plot, fmt =  self._validate(obj, fmt)
-
-        metadata = {}
-        if isinstance(plot, NdWidget):
-            js, html = plot()
-            metadata['id'] = plot.id
-        else:
-            js, html = self._figure_data(plot, as_script=True, **kwargs)
-            if comm and plot.comm is not None:
-                msg_handler = self.comm_msg_handler.format(comm_id=plot.comm.id)
-                html = plot.comm.html_template.format(init_frame=html,
-                                                      comm_id=plot.comm.id)
-                js += plot.comm.js_template.format(msg_handler=msg_handler,
-                                                   comm_id=plot.comm.id,
-                                                   plot_id=plot.comm.id)
-                metadata['id'] = plot.comm.id
-            else:
-                metadata['id'] = str(id(plot))
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-        jsdata = {MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: js}
-        return (dict({'text/html': html}, **jsdata),
-                {MIME_TYPES['jlab-hv-exec']: metadata})
+        content = (
+            '{html}'
+            '<script type="text/javascript">'
+            '  {script}'
+            '</script>'
+        ).format(html=html, script=script)
+        return '\n'.join([header, content])
 
 
     @classmethod

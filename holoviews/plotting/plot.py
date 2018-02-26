@@ -63,6 +63,11 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
+    @property
+    def id(self):
+        return self.comm.id if self.comm else id(self.state)
+
+
     def __len__(self):
         """
         Returns the total number of available frames.

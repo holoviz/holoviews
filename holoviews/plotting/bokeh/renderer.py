@@ -265,32 +265,8 @@ class BokehRenderer(Renderer):
         logger.disabled = False
         plot.document = doc
         if as_script:
-            return js, div
+            return div, js
         return html
-
-    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
-        if isinstance(obj, (Plot, NdWidget)):
-            plot = obj
-        else:
-            plot, fmt =  self._validate(obj, fmt)
-
-        if isinstance(plot, NdWidget):
-            js, html = plot()
-            root = plot.plot.state._id
-        else:
-            js, html = self._figure_data(plot, fmt='html', as_script=True, **kwargs)
-            root = plot.state._id
-            if comm and plot.comm is not None and self.comm_msg_handler:
-                msg_handler = self.comm_msg_handler.format(plot_id=root)
-                html = plot.comm.html_template.format(init_frame=html,
-                                                      comm_id=plot.comm.id)
-                if bokeh_version > '0.12.14':
-                    js += plot.comm.js_template.format(msg_handler=msg_handler,
-                                                       comm_id=plot.comm.id,
-                                                       plot_id=root)
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
-        return ({'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['jlab-hv-exec']: ""},
-                {MIME_TYPES['jlab-hv-exec']: {"id": root}})
 
 
     def diff(self, plot, binary=True):

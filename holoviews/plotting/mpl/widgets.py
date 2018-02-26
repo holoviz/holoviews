@@ -22,7 +22,7 @@ class MPLWidget(NdWidget):
                 figure_format = self.renderer.params('fig').objects[0]
             else:
                 figure_format = self.renderer.fig
-            return self.renderer.html(self.plot, figure_format, comm=False)
+            return self.renderer._figure_data(self.plot, figure_format, as_script=True)[0]
 
 
     def get_frames(self):
