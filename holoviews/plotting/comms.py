@@ -224,7 +224,7 @@ class CommManager(object):
     function CommManager() {
     }
 
-    CommManager.prototype.get_server_comm = function() {
+    CommManager.prototype.register_target = function() {
     }
 
     CommManager.prototype.get_client_comm = function() {
