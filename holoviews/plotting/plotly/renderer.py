@@ -1,4 +1,4 @@
-import uuid, json
+import json
 
 import param
 with param.logging_level('CRITICAL'):
@@ -7,8 +7,6 @@ with param.logging_level('CRITICAL'):
 from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
 from ...core import HoloMap
-from ..plot import Plot
-from ..widgets import NdWidget
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 

@@ -10,7 +10,6 @@ from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         PlotSize, Draw, BoundsXY, PlotReset, BoxEdit,
                         PointDraw, PolyDraw, PolyEdit, CDSStream)
 from ...streams import PositionX, PositionY, PositionXY, Bounds # Deprecated: remove in 2.0
-from ..comms import JupyterCommJS, Comm
 from .util import convert_timestamp
 
 
@@ -240,8 +239,6 @@ class CustomJSCallback(MessageCallback):
 
     # Timeout before the first event is processed
     debounce = 20
-
-    _comm_type = JupyterCommJS
 
     @classmethod
     def attributes_js(cls, attributes):

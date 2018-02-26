@@ -15,7 +15,7 @@ from bokeh.server.server import Server
 from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
-from .widgets import NdWidget, BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
+from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size, bokeh_version
 
 from bokeh.io.notebook import load_notebook

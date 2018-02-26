@@ -13,10 +13,9 @@ import param
 from ...core import HoloMap
 from ...core.options import Store
 
-from ..plot import Plot
 from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .comms import mpl_msg_handler
-from .widgets import NdWidget, MPLSelectionWidget, MPLScrubberWidget
+from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
 class OutputWarning(param.Parameterized):pass
