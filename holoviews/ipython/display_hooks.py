@@ -8,6 +8,7 @@ import sys, traceback
 
 import IPython
 from IPython import get_ipython
+from IPython.display import publish_display_data
 
 import holoviews
 from holoviews.plotting import Plot
@@ -59,7 +60,13 @@ def render(obj, **kwargs):
     # Drop back to png if pdf selected, notebook PDF rendering is buggy
     if renderer.fig == 'pdf':
         renderer = renderer.instance(fig='png')
-    return renderer.html(obj, **kwargs)
+
+    data, metadata = renderer.components(obj, **kwargs)
+    html = data.pop('text/html')
+    publish_display_data({'text/html': html})
+    if data or metadata:
+        publish_display_data(data, metadata=metadata)
+    return ''
 
 
 def single_frame_plot(obj):
@@ -175,7 +182,13 @@ def element_display(element, max_frames):
     renderer = Store.renderers[backend]
     if renderer.fig == 'pdf':
         renderer = renderer.instance(fig='png')
-    return renderer.html(element, fmt=renderer.fig)
+
+    data, metadata = renderer.components(element)
+    html = data.pop('text/html')
+    publish_display_data({'text/html': html})
+    if data or metadata:
+        publish_display_data(data, metadata=metadata)
+    return ''
 
 
 @display_hook

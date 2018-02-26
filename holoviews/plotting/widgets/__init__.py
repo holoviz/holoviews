@@ -89,9 +89,6 @@ class NdWidget(param.Parameterized):
     # Javascript include options #
     ##############################
 
-    CDN = param.Dict(default={'underscore': 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
-                              'jQueryUI':   'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'})
-
     css = param.String(default=None, doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
@@ -134,15 +131,21 @@ class NdWidget(param.Parameterized):
         templateLoader = jinja2.FileSystemLoader(subdirs)
         self.jinjaEnv = jinja2.Environment(loader=templateLoader)
 
-
     def __call__(self):
-        return self.render_html(self._get_data())
-
+        data = self._get_data()
+        html = self.render_html(data)
+        js = self.render_js(data)
+        return js, html
 
     def _get_data(self):
         delay = int(1000./self.display_options.get('fps', 5))
-        CDN = {k: v[:-3] for k, v in self.CDN.items()}
-        template = self.jinjaEnv.get_template(self.base_template)
+        CDN = {}
+        for name, resources in self.plot.renderer.core_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0][6:]
+        for name, resources in self.plot.renderer.extra_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0][6:]
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
@@ -155,11 +158,16 @@ class NdWidget(param.Parameterized):
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
-                    widget_template=template, dynamic=dynamic)
+                    dynamic=dynamic)
 
 
     def render_html(self, data):
-        template = self.jinjaEnv.get_template(self.template)
+        template = self.jinjaEnv.get_template(self.html_template)
+        return template.render(**data)
+
+
+    def render_js(self, data):
+        template = self.jinjaEnv.get_template(self.js_template)
         return template.render(**data)
 
 
@@ -177,6 +185,7 @@ class NdWidget(param.Parameterized):
             frames = dict(frames)
         return json.dumps(frames)
 
+
     def save_json(self, frames):
         """
         Saves frames data into a json file at the
@@ -189,6 +198,7 @@ class NdWidget(param.Parameterized):
         with open(path, 'w') as f:
             json.dump(frames, f)
         self.json_data = frames
+
 
     def _plot_figure(self, idx):
         with self.renderer.state():
@@ -222,10 +232,10 @@ class ScrubberWidget(NdWidget):
     on a simple server.
     """
 
-    base_template = param.String('jsscrubber.jinja', doc="""
+    html_template = param.String('htmlscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
-    template = param.String('jsscrubber.jinja', doc="""
+    js_template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
 
@@ -248,13 +258,13 @@ class SelectionWidget(NdWidget):
     to json and dynamically loaded from a server.
     """
 
-    base_template = param.String('jsslider.jinja', doc="""
-        The jinja2 template used to generate the html output.""")
-
     css = param.String(default='jsslider.css', doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
-    template = param.String('jsslider.jinja', doc="""
+    html_template = param.String('htmlslider.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
+    js_template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
     ##############################
@@ -344,7 +354,7 @@ class SelectionWidget(NdWidget):
             escaped_dim = dimension_sanitizer(dim_str)
             widget_data = dict(dim=escaped_dim, dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step, next_dim=next_dim,
+                               visibility=visibility, step=step, next_dim=next_dim or None,
                                next_vals=next_vals, labels=value_labels)
 
             widgets.append(widget_data)

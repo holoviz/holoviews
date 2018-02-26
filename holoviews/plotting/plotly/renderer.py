@@ -8,6 +8,8 @@ from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
 from ...core import HoloMap
 from ..comms import JupyterComm
+from ..plot import Plot
+from ..widgets import NdWidget
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 
@@ -59,7 +61,7 @@ class PlotlyRenderer(Renderer):
         if isinstance(plot, tuple(self.widgets.values())):
             return plot(), mime_types
         elif fmt == 'html':
-            return self.figure_data(plot, divuuid=divuuid), mime_types
+            return self._figure_data(plot, divuuid=divuuid), mime_types
         elif fmt == 'json':
             return self.diff(plot), mime_types
 
@@ -77,7 +79,7 @@ class PlotlyRenderer(Renderer):
             return diff
 
 
-    def figure_data(self, plot, divuuid=None, comm=True, width=800, height=600):
+    def _figure_data(self, plot, divuuid=None, comm=True, as_script=False, width=800, height=600):
         figure = plot.state
         if divuuid is None:
             if plot.comm:
@@ -92,9 +94,12 @@ class PlotlyRenderer(Renderer):
         config['showLink'] = False
         jconfig = json.dumps(config)
 
-        header = ('<script type="text/javascript">'
-                  'window.PLOTLYENV=window.PLOTLYENV || {};'
-                  '</script>')
+        if as_script:
+            header = 'window.PLOTLYENV=window.PLOTLYENV || {};'
+        else:
+            header = ('<script type="text/javascript">'
+                      'window.PLOTLYENV=window.PLOTLYENV || {};'
+                      '</script>')
 
         script = '\n'.join([
             'Plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
@@ -104,16 +109,21 @@ class PlotlyRenderer(Renderer):
                            layout=jlayout,
                            config=jconfig)
 
-        content =    ('<div class="{id} loading" style="color: rgb(50,50,50);">'
-                      'Drawing...</div>'
-                      '<div id="{id}" style="height: {height}; width: {width};" '
-                      'class="plotly-graph-div">'
-                      '</div>'
-                      '<script type="text/javascript">'
-                      '{script}'
-                      '</script>').format(id=divuuid, script=script,
-                                          height=height, width=width)
-        joined = '\n'.join([header, content])
+        html = ('<div class="{id} loading" style="color: rgb(50,50,50);">'
+                'Drawing...</div>'
+                '<div id="{id}" style="height: {height}; width: {width};" '
+                'class="plotly-graph-div">'
+                '</div>'.format(id=divuuid, height=height, width=width))
+        if as_script:
+            return header + script, html
+        else:
+            content = (
+              '{html}'
+              '<script type="text/javascript">'
+              '  {script}'
+              '</script>'
+            ).format(html=html, script=script)
+            joined = '\n'.join([header, content])
 
         if comm and plot.comm is not None:
             comm, msg_handler = self.comms[self.mode]
@@ -123,6 +133,19 @@ class PlotlyRenderer(Renderer):
                                         comm_id=plot.comm.id)
         return joined
 
+
+    def components(self, obj, fmt=None, css=None, comm=True, **kwargs):
+        if isinstance(obj, Plot):
+            plot = obj
+        else:
+            plot, fmt =  self._validate(obj, fmt)
+        if isinstance(plot, NdWidget):
+            js, html = plot()
+        else:
+            js, html = self._figure_data(plot, as_script=True, **kwargs)
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+        return {'text/html': html, MIME_TYPES['js']: js, MIME_TYPES['load']: js}, {}
+    
 
     @classmethod
     def plot_options(cls, obj, percent_size):
@@ -140,22 +163,18 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import display, HTML
+        from IPython.display import display, HTML, publish_display_data
         if not cls._loaded:
             display(HTML(PLOTLY_WARNING))
             cls._loaded = True
-        display(HTML(plotly_include()))
+        plotly_js = plotly_include()
+        publish_display_data({MIME_TYPES['js']: plotly_js, MIME_TYPES['load']: plotly_js})
 
 
 def plotly_include():
     return """
-            <script type="text/javascript">
             require_=require;requirejs_=requirejs; define_=define;
             require=requirejs=define=undefined;
-            </script>
-            <script type="text/javascript">
             {include}
-            </script>
-            <script type="text/javascript">
             require=require_;requirejs=requirejs_; define=define_;
-            </script>""".format(include=get_plotlyjs())
+            """.format(include=get_plotlyjs())

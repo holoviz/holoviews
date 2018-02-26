@@ -40,3 +40,6 @@ var PlotlyMethods = {
 // Extend Plotly widgets with backend specific methods
 extend(PlotlySelectionWidget.prototype, PlotlyMethods);
 extend(PlotlyScrubberWidget.prototype, PlotlyMethods);
+
+window.HoloViews.PlotlySelectionWidget = PlotlySelectionWidget;
+window.HoloViews.PlotlyScrubberWidget = PlotlyScrubberWidget;

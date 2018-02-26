@@ -36,3 +36,6 @@ var BokehMethods = {
 // Extend Bokeh widgets with backend specific methods
 extend(BokehSelectionWidget.prototype, BokehMethods);
 extend(BokehScrubberWidget.prototype, BokehMethods);
+
+window.HoloViews.BokehSelectionWidget = BokehSelectionWidget
+window.HoloViews.BokehScrubberWidget = BokehScrubberWidget
