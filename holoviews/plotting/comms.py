@@ -217,7 +217,7 @@ class JupyterCommJS(JupyterComm):
 class CommManager(object):
     """
     The CommManager is an abstract baseclass for establishing
-    Websocket Comms on the client and the server.
+    websocket comms on the client and the server.
     """
 
     js_manager = """
@@ -255,8 +255,16 @@ class CommManager(object):
 
 class JupyterCommManager(CommManager):
     """
-    The CommManager is an abstract baseclass for establishing
-    Websocket Comms on the client and the server.
+    The JupyterCommManager is used to establishing websocket comms on
+    the client and the server via the Jupyter comms interface.
+
+    There are two cases for both the register_target and get_client_comm
+    methods: one to handle the classic notebook frontend and one to
+    handle JupyterLab. The latter case uses the globally available
+    HoloViews object which is made available when the HoloViews notebook
+    extension is loaded. This object is handled in turn by the
+    JupyterLab extension which keeps track of the kernels associated
+    with each plot, ensuring the corresponding comms can be accessed.
     """
 
     js_manager = """
