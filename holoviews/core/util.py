@@ -1195,7 +1195,7 @@ def get_ndmapping_label(ndmapping, attr):
             el = next(els)
         except StopIteration:
             return None
-        if not el._auxiliary_component:
+        if not getattr(el, '_auxiliary_component', True):
             label = getattr(el, attr)
     if attr == 'group':
         tp = type(el).__name__
