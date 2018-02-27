@@ -82,9 +82,20 @@ Once you've installed HoloViews, you can get a copy of all the examples shown on
 
 And then you can launch Jupyter Notebook to explore them::
 
-  jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
+  jupyter notebook
 
-(Increasing the rate limit in this way is `required for the current 5.0 Jupyter version <user_guide/Installing_and_Configuring.html>`_, but should not be needed in later Jupyter releases.)
+To work with JupyterLab you will also need the HoloViews JupyterLab
+extension::
+
+  conda install -c conda-forge jupyterlab
+  jupyter labextension install @pyviz/jupyterlab_holoviews
+
+Once you have installed JupyterLab and the extension launch it with::
+
+  jupyter-lab
+
+For more details on installing and configuring HoloViews see `the user
+guide <user_guide/Installing_and_Configuring.html>`_.
 
 
 .. |PyPI| image:: https://img.shields.io/pypi/v/holoviews.svg

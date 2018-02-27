@@ -90,11 +90,19 @@ examples shown on the website:
 
 And then you can launch Jupyter Notebook to explore them:
 
-    jupyter notebook --NotebookApp.iopub_data_rate_limit=100000000
+    jupyter notebook
 
-(Increasing the rate limit in this way is [required for the current 5.0
-Jupyter version](http://holoviews.org/user_guide/Installing_and_Configuring.html), but
-should not be needed in later Jupyter releases.)
+To work with JupyterLab you will also need the HoloViews JupyterLab
+extension:
+
+    conda install -c conda-forge jupyterlab
+    jupyter labextension install @pyviz/jupyterlab_holoviews
+
+Once you have installed JupyterLab and the extension launch it with::
+
+    jupyter-lab
+
+For more details on setup and configuration see [our website](http://holoviews.org/user_guide/Installing_and_Configuring.html).
 
 For general discussion, we have a [gitter channel](https://gitter.im/ioam/holoviews).
 If you find any bugs or have any feature suggestions please file a GitHub 
