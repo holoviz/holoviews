@@ -30,6 +30,7 @@ NOTEBOOK_DIV = """
 </script>
 """
 
+# Following JS block becomes body of the message handler callback
 bokeh_msg_handler = """
 var plot = Bokeh.index["{plot_id}"];
 
@@ -94,7 +95,7 @@ class BokehRenderer(Renderer):
 
     _loaded = False
 
-    # Define the handler for updating matplotlib plots
+    # Define the handler for updating bokeh plots
     comm_msg_handler = bokeh_msg_handler if bokeh_version > '0.12.14' else None
 
     def __call__(self, obj, fmt=None, doc=None):
@@ -237,6 +238,11 @@ class BokehRenderer(Renderer):
 
 
     def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
+        """
+        Given a plot instance, an output format and an optional bokeh
+        document, return the corresponding data. If as_script is True,
+        the content will be split in an HTML and a JS component.
+        """
         model = plot.state
         if doc is None:
             doc = plot.document

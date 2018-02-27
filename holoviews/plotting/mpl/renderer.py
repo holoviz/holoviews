@@ -182,7 +182,9 @@ class MPLRenderer(Renderer):
 
     def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
         """
-        Render matplotlib figure object and return the corresponding data.
+        Render matplotlib figure object and return the corresponding
+        data.  If as_script is True, the content will be split in an
+        HTML and a JS component.
 
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
