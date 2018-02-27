@@ -20,17 +20,12 @@ var MPLMethods = {
       this.update_cache();
     }
     this.update(0);
-    if(this.mode == 'nbagg') {
-      this.set_frame(init_val, 0);
-    }
   },
   process_msg : function(msg) {
-    if (!(this.mode == 'nbagg')) {
-      var data = msg.content.data;
-      this.frames[this.current] = data;
-      this.update_cache(true);
-      this.update(this.current);
-    }
+    var data = msg.content.data;
+    this.frames[this.current] = data;
+    this.update_cache(true);
+    this.update(this.current);
   }
 }
 // Extend MPL widgets with backend specific methods

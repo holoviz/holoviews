@@ -217,8 +217,7 @@ class NdWidget(param.Parameterized):
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css,
-                                      comm=False)
+            return self.renderer.html(self.plot, figure_format, css=css)
 
 
     def update(self, key):
@@ -261,8 +260,7 @@ class SelectionWidget(NdWidget):
     update the widget with a live IPython kernel.
 
     The widget supports all current HoloViews figure backends
-    including png, svg and nbagg output. To select nbagg output,
-    the SelectionWidget must not be set to embed.
+    including png and svg output..
 
     Just like the ScrubberWidget the data can be optionally saved
     to json and dynamically loaded from a server.
