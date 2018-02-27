@@ -29,8 +29,8 @@ var BokehMethods = {
     }
   },
   init_comms: function() {
-    if (Bokeh.embed.Receiver !== undefined) {
-      this.receiver = new Bokeh.embed.Receiver()
+    if (Bokeh.protocol.Receiver !== undefined) {
+      this.receiver = new Bokeh.protocol.Receiver()
     } else {
       this.receiver = null;
 	}
