@@ -66,6 +66,16 @@ Jupyter Notebook::
 
   jupyter notebook
 
+To work with JupyterLab you will also need the HoloViews JupyterLab
+extension::
+
+  conda install -c conda-forge jupyterlab
+  jupyter labextension install @pyviz/jupyterlab_holoviews
+
+Once you have installed JupyterLab and the extension launch it with::
+
+  jupyter-lab
+
 Now you can download the `tutorial notebooks`_.  unzip them somewhere
 Jupyter Notebook can find them, and then open the Homepage.ipynb
 tutorial or any of the others in the Notebook.  Enjoy exploring your

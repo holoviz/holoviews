@@ -5,13 +5,13 @@ import param
 from IPython import version_info
 import holoviews
 from param import ipython as param_ext
-from IPython.display import HTML
+from IPython.display import HTML, publish_display_data
 
 from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
-from ..plotting.renderer import Renderer
+from ..plotting.renderer import Renderer, MIME_TYPES
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
 from .display_hooks import set_display_hooks
@@ -224,19 +224,28 @@ class notebook_extension(extension):
         import jinja2
         # Evaluate load_notebook.html template with widgetjs code
         if JS:
-            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[])
+            widgetjs, widgetcss = Renderer.html_assets(extras=False, backends=[], script=True)
         else:
             widgetjs, widgetcss = '', ''
         templateLoader = jinja2.FileSystemLoader(os.path.dirname(os.path.abspath(__file__)))
         jinjaEnv = jinja2.Environment(loader=templateLoader)
         template = jinjaEnv.get_template('load_notebook.html')
-        display(HTML(template.render({'widgetjs':    widgetjs,
-                                      'widgetcss':   widgetcss,
-                                      'logo':        logo,
-                                      'bokeh_logo':  bokeh_logo,
-                                      'mpl_logo':    mpl_logo,
-                                      'plotly_logo': plotly_logo,
-                                      'message':     message})))
+        html = template.render({'widgetcss':   widgetcss,
+                                'logo':        logo,
+                                'bokeh_logo':  bokeh_logo,
+                                'mpl_logo':    mpl_logo,
+                                'plotly_logo': plotly_logo,
+                                'message':     message})
+        publish_display_data(data={'text/html': html})
+
+        # Vanilla JS mime type is only consumed by classic notebook
+        # Custom mime type is only consumed by JupyterLab
+        if JS:
+            publish_display_data(data={
+                MIME_TYPES['js']           : widgetjs,
+                MIME_TYPES['jlab-hv-load'] : widgetjs
+            })
+
 
     @param.parameterized.bothmethod
     def tab_completion_docstring(self_or_cls):

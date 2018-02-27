@@ -63,6 +63,11 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
+    @property
+    def id(self):
+        return self.comm.id if self.comm else id(self.state)
+
+
     def __len__(self):
         """
         Returns the total number of available frames.
@@ -527,7 +532,7 @@ class DimensionedPlot(Plot):
         """
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comms[self.renderer.mode][0](self)
+            comm = self.renderer.comm_manager.get_server_comm(self)
         return comm
 
 

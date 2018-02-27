@@ -245,9 +245,11 @@ class BokehWidget(NdWidget):
 
     def _get_data(self):
         # Get initial frame to draw immediately
-        init_frame = self._plot_figure(0, fig_format='html')
+        msg, metadata = self.renderer.components(self.plot, comm=False)
         data = super(BokehWidget, self)._get_data()
-        return dict(data, init_frame=init_frame)
+        return dict(data, init_html=msg['text/html'],
+                    init_js=msg['application/javascript'],
+                    plot_id=self.plot.state._id)
 
     def encode_frames(self, frames):
         if self.export_json:
@@ -273,13 +275,10 @@ class BokehWidget(NdWidget):
         first call and
         """
         self.plot.update(idx)
-        if self.embed or fig_format == 'html':
-            if fig_format == 'html':
-                msg = self.renderer.html(self.plot, fig_format)
-            else:
-                patch = self.renderer.diff(self.plot, binary=False)
-                msg = serialize_json(dict(content=patch.content,
-                                          root=self.plot.state._id))
+        if self.embed:
+            patch = self.renderer.diff(self.plot, binary=False)
+            msg = serialize_json(dict(content=patch.content,
+                                      root=self.plot.state._id))
             return msg
 
 

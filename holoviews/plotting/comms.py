@@ -49,7 +49,13 @@ class Comm(object):
     * init_frame  -  The initial frame to render on the frontend.
     """
 
-    template = ''
+    html_template = """
+    <div id="fig_{plot_id}">
+      {init_frame}
+    </div>
+    """
+
+    js_template = ''
 
     def __init__(self, plot, id=None, on_msg=None):
         """
@@ -130,22 +136,13 @@ class JupyterComm(Comm):
     the first time data is pushed to the frontend.
     """
 
-    template = """
-    <script>
-      function msg_handler(msg) {{
-        var msg = msg.content.data;
-        {msg_handler}
-      }}
-
-      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
-        comm_manager = Jupyter.notebook.kernel.comm_manager;
-        comm_manager.register_target("{comm_id}", function(comm) {{ comm.on_msg(msg_handler);}});
-      }}
-    </script>
-
-    <div id="fig_{comm_id}">
-      {init_frame}
-    </div>
+    js_template = """
+    function msg_handler(msg) {{
+      var buffers = msg.buffers;
+      var msg = msg.content.data;
+      {msg_handler}
+    }}
+    HoloViews.comm_manager.register_target('{plot_id}', '{comm_id}', msg_handler);
     """
 
     def init(self):
@@ -182,23 +179,16 @@ class JupyterCommJS(JupyterComm):
     initiated on the frontend to python.
     """
 
-    template = """
+    js_template = """
     <script>
       function msg_handler(msg) {{
         var msg = msg.content.data;
+        var buffers = msg.buffers
         {msg_handler}
       }}
-
-      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {{
-        var comm_manager = Jupyter.notebook.kernel.comm_manager;
-        comm = comm_manager.new_comm("{comm_id}", {{}}, {{}}, {{}}, "{comm_id}");
-        comm.on_msg(msg_handler);
-      }}
+      comm = HoloViews.comm_manager.get_client_comm("{comm_id}");
+      comm.on_msg(msg_handler);
     </script>
-
-    <div id="fig_{comm_id}">
-      {init_frame}
-    </div>
     """
 
     def __init__(self, plot, id=None, on_msg=None):
@@ -222,3 +212,101 @@ class JupyterCommJS(JupyterComm):
         """
         self.comm.send(data, buffers=buffers)
 
+
+
+class CommManager(object):
+    """
+    The CommManager is an abstract baseclass for establishing
+    websocket comms on the client and the server.
+    """
+
+    js_manager = """
+    function CommManager() {
+    }
+
+    CommManager.prototype.register_target = function() {
+    }
+
+    CommManager.prototype.get_client_comm = function() {
+    }
+
+    window.HoloViews.comm_manager = CommManager()
+    """
+
+    _comms = {}
+
+    server_comm = Comm
+
+    client_comm = Comm
+
+    @classmethod
+    def get_server_comm(cls, plot, on_msg=None, id=None):
+        comm = cls.server_comm(plot, id, on_msg)
+        cls._comms[comm.id] = comm
+        return comm
+
+    @classmethod
+    def get_client_comm(cls, plot, on_msg=None, id=None):
+        comm = cls.client_comm(plot, id, on_msg)
+        cls._comms[comm.id] = comm
+        return comm
+
+
+
+class JupyterCommManager(CommManager):
+    """
+    The JupyterCommManager is used to establishing websocket comms on
+    the client and the server via the Jupyter comms interface.
+
+    There are two cases for both the register_target and get_client_comm
+    methods: one to handle the classic notebook frontend and one to
+    handle JupyterLab. The latter case uses the globally available
+    HoloViews object which is made available when the HoloViews notebook
+    extension is loaded. This object is handled in turn by the
+    JupyterLab extension which keeps track of the kernels associated
+    with each plot, ensuring the corresponding comms can be accessed.
+    """
+
+    js_manager = """
+    function JupyterCommManager() {
+    }
+
+    JupyterCommManager.prototype.register_target = function(plot_id, comm_id, msg_handler) {
+      if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
+        var comm_manager = Jupyter.notebook.kernel.comm_manager;
+        comm_manager.register_target(comm_id, function(comm) {
+          comm.on_msg(msg_handler);
+        });
+      } else if ((plot_id in HoloViews.kernels) && (HoloViews.kernels[plot_id])) {
+        HoloViews.kernels[plot_id].registerCommTarget(comm_id, function(comm) {
+          comm.onMsg = msg_handler;
+        });
+      }
+    }
+
+    JupyterCommManager.prototype.get_client_comm = function(plot_id, comm_id, msg_handler) {
+      if (comm_id in window.HoloViews.comms) {
+        return HoloViews.comms[comm_id];
+      } else if ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null)) {
+        var comm_manager = Jupyter.notebook.kernel.comm_manager;
+        var comm = comm_manager.new_comm(comm_id, {}, {}, {}, comm_id);
+        if (msg_handler) {
+          comm.on_msg(msg_handler);
+        }
+      } else if ((plot_id in HoloViews.kernels) && (HoloViews.kernels[plot_id])) {
+        var comm = HoloViews.kernels[plot_id].connectToComm(comm_id);
+        comm.open();
+        if (msg_handler) {
+          comm.onMsg = msg_handler;
+        }
+      }
+      HoloViews.comms[comm_id] = comm;
+      return comm;
+    }
+
+    window.HoloViews.comm_manager = new JupyterCommManager();
+    """
+
+    server_comm = JupyterComm
+
+    client_comm = JupyterCommJS

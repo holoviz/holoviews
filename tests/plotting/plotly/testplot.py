@@ -23,14 +23,14 @@ class TestPlotlyPlotInstantiation(ComparisonTestCase):
     def setUp(self):
         self.previous_backend = Store.current_backend
         Store.current_backend = 'plotly'
-        self.default_comm = plotly_renderer.comms['default']
+        self.comm_manager = plotly_renderer.comm_manager
+        plotly_renderer.comm_manager = comms.CommManager
         if not plotly_renderer:
             raise SkipTest("Plotly required to test plot instantiation")
-        plotly_renderer.comms['default'] = (comms.Comm, '')
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
-        plotly_renderer.comms['default'] = self.default_comm
+        plotly_renderer.comm_manager = self.comm_manager
 
     def _get_plot_state(self, element):
         plot = plotly_renderer.get_plot(element)

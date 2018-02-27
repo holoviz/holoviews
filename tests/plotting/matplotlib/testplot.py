@@ -15,12 +15,12 @@ class TestMPLPlot(ComparisonTestCase):
 
     def setUp(self):
         self.previous_backend = Store.current_backend
+        self.comm_manager = mpl_renderer.comm_manager
+        mpl_renderer.comm_manager = comms.CommManager
         if not mpl_renderer:
             raise SkipTest("Matplotlib required to test plot instantiation")
         Store.current_backend = 'matplotlib'
-        self.default_comm = mpl_renderer.comms['default']
-        mpl_renderer.comms['default'] = (comms.Comm, '')
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
-        mpl_renderer.comms['default'] = self.default_comm
+        mpl_renderer.comm_manager = self.comm_manager

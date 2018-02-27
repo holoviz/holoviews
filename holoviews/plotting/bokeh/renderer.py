@@ -4,7 +4,7 @@ import logging
 import param
 from param.parameterized import bothmethod
 
-import bokeh.core
+import bokeh
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
 from bokeh.io import curdoc, show as bkshow
@@ -13,11 +13,10 @@ from bokeh.resources import CDN, INLINE
 from bokeh.server.server import Server
 
 from ...core import Store, HoloMap
-from ..comms import JupyterComm, Comm
 from ..plot import Plot, GenericElementPlot
 from ..renderer import Renderer, MIME_TYPES
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
-from .util import attach_periodic, compute_plot_size
+from .util import attach_periodic, compute_plot_size, bokeh_version
 
 from bokeh.io.notebook import load_notebook
 from bokeh.protocol import Protocol
@@ -29,6 +28,29 @@ NOTEBOOK_DIV = """
 <script type="text/javascript">
   {plot_script}
 </script>
+"""
+
+# Following JS block becomes body of the message handler callback
+bokeh_msg_handler = """
+var plot = Bokeh.index["{plot_id}"];
+
+if ("{plot_id}" in HoloViews.receivers) {{
+  var receiver = HoloViews.receivers["{plot_id}"];
+}} else {{
+  var receiver = new Bokeh.protocol.Receiver();
+  HoloViews.receivers["{plot_id}"] = receiver;
+}}
+
+if (buffers.length > 0) {{
+  receiver.consume(buffers[0].buffer)
+}} else {{
+  receiver.consume(msg)
+}}
+
+const comm_msg = receiver.message;
+if (comm_msg != null) {{
+  plot.model.document.apply_json_patch(comm_msg.content, comm_msg.buffers)
+}}
 """
 
 
@@ -71,10 +93,10 @@ class BokehRenderer(Renderer):
     backend_dependencies = {'js': CDN.js_files if CDN.js_files else tuple(INLINE.js_raw),
                             'css': CDN.css_files if CDN.css_files else tuple(INLINE.css_raw)}
 
-    comms = {'default': (JupyterComm, None),
-             'server': (Comm, None)}
-
     _loaded = False
+
+    # Define the handler for updating bokeh plots
+    comm_msg_handler = bokeh_msg_handler if bokeh_version > '0.12.14' else None
 
     def __call__(self, obj, fmt=None, doc=None):
         """
@@ -215,7 +237,12 @@ class BokehRenderer(Renderer):
         return doc
 
 
-    def _figure_data(self, plot, fmt='html', doc=None, **kwargs):
+    def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
+        """
+        Given a plot instance, an output format and an optional bokeh
+        document, return the corresponding data. If as_script is True,
+        the content will be split in an HTML and a JS component.
+        """
         model = plot.state
         if doc is None:
             doc = plot.document
@@ -236,14 +263,16 @@ class BokehRenderer(Renderer):
         try:
             js, div, _ = notebook_content(model, comm_id)
             html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-            div = encode_utf8(html)
+            html = encode_utf8(html)
             doc.hold()
         except:
             logger.disabled = False
             raise
         logger.disabled = False
         plot.document = doc
-        return div
+        if as_script:
+            return div, js
+        return html
 
 
     def diff(self, plot, binary=True):
@@ -306,6 +335,8 @@ class BokehRenderer(Renderer):
         """
         Loads the bokeh notebook resources.
         """
-        from bokeh.io.notebook import curstate
+        LOAD_MIME_TYPE = bokeh.io.notebook.LOAD_MIME_TYPE
+        bokeh.io.notebook.LOAD_MIME_TYPE = MIME_TYPES['jlab-hv-load']
         load_notebook(hide_banner=True, resources=INLINE if inline else CDN)
-        curstate().output_notebook()
+        bokeh.io.notebook.LOAD_MIME_TYPE = LOAD_MIME_TYPE
+        bokeh.io.notebook.curstate().output_notebook()

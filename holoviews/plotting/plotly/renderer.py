@@ -1,19 +1,18 @@
-import uuid, json
+import json
 
 import param
 with param.logging_level('CRITICAL'):
-    from plotly.offline.offline import utils, get_plotlyjs
+    from plotly.offline.offline import utils, get_plotlyjs, init_notebook_mode
 
 from ..renderer import Renderer, MIME_TYPES
 from ...core.options import Store
 from ...core import HoloMap
-from ..comms import JupyterComm
 from .widgets import PlotlyScrubberWidget, PlotlySelectionWidget
 
 
 plotly_msg_handler = """
 /* Backend specific body of the msg_handler, updates displayed frame */
-var plot = $('#{comm_id}')[0];
+var plot = $('#{plot_id}')[0];
 var data = JSON.parse(msg);
 $.each(data.data, function(i, obj) {{
   $.each(Object.keys(obj), function(j, key) {{
@@ -48,7 +47,7 @@ class PlotlyRenderer(Renderer):
     widgets = {'scrubber': PlotlyScrubberWidget,
                'widgets': PlotlySelectionWidget}
 
-    comms = {'default': (JupyterComm, plotly_msg_handler)}
+    comm_msg_handler = plotly_msg_handler
 
     _loaded = False
 
@@ -59,7 +58,7 @@ class PlotlyRenderer(Renderer):
         if isinstance(plot, tuple(self.widgets.values())):
             return plot(), mime_types
         elif fmt == 'html':
-            return self.figure_data(plot, divuuid=divuuid), mime_types
+            return self._figure_data(plot, divuuid=divuuid), mime_types
         elif fmt == 'json':
             return self.diff(plot), mime_types
 
@@ -77,13 +76,10 @@ class PlotlyRenderer(Renderer):
             return diff
 
 
-    def figure_data(self, plot, divuuid=None, comm=True, width=800, height=600):
+    def _figure_data(self, plot, divuuid=None, comm=True, as_script=False, width=800, height=600):
         figure = plot.state
         if divuuid is None:
-            if plot.comm:
-                divuuid = plot.comm.id
-            else:
-                divuuid = uuid.uuid4().hex
+            divuuid = plot.id
 
         jdata = json.dumps(figure.get('data', []), cls=utils.PlotlyJSONEncoder)
         jlayout = json.dumps(figure.get('layout', {}), cls=utils.PlotlyJSONEncoder)
@@ -92,36 +88,36 @@ class PlotlyRenderer(Renderer):
         config['showLink'] = False
         jconfig = json.dumps(config)
 
-        header = ('<script type="text/javascript">'
-                  'window.PLOTLYENV=window.PLOTLYENV || {};'
-                  '</script>')
+        if as_script:
+            header = 'window.PLOTLYENV=window.PLOTLYENV || {};'
+        else:
+            header = ('<script type="text/javascript">'
+                      'window.PLOTLYENV=window.PLOTLYENV || {};'
+                      '</script>')
 
         script = '\n'.join([
             'Plotly.plot("{id}", {data}, {layout}, {config}).then(function() {{',
-            '    $(".{id}.loading").remove();',
+            '    var elem = document.getElementById("{id}.loading"); elem.parentNode.removeChild(elem);',
             '}})']).format(id=divuuid,
                            data=jdata,
                            layout=jlayout,
                            config=jconfig)
 
-        content =    ('<div class="{id} loading" style="color: rgb(50,50,50);">'
-                      'Drawing...</div>'
-                      '<div id="{id}" style="height: {height}; width: {width};" '
-                      'class="plotly-graph-div">'
-                      '</div>'
-                      '<script type="text/javascript">'
-                      '{script}'
-                      '</script>').format(id=divuuid, script=script,
-                                          height=height, width=width)
-        joined = '\n'.join([header, content])
+        html = ('<div id="{id}.loading" style="color: rgb(50,50,50);">'
+                'Drawing...</div>'
+                '<div id="{id}" style="height: {height}; width: {width};" '
+                'class="plotly-graph-div">'
+                '</div>'.format(id=divuuid, height=height, width=width))
+        if as_script:
+            return html, header + script
 
-        if comm and plot.comm is not None:
-            comm, msg_handler = self.comms[self.mode]
-            msg_handler = msg_handler.format(comm_id=plot.comm.id)
-            return comm.template.format(init_frame=joined,
-                                        msg_handler=msg_handler,
-                                        comm_id=plot.comm.id)
-        return joined
+        content = (
+            '{html}'
+            '<script type="text/javascript">'
+            '  {script}'
+            '</script>'
+        ).format(html=html, script=script)
+        return '\n'.join([header, content])
 
 
     @classmethod
@@ -140,22 +136,10 @@ class PlotlyRenderer(Renderer):
         """
         Loads the plotly notebook resources.
         """
-        from IPython.display import display, HTML
+        from IPython.display import display, HTML, publish_display_data
         if not cls._loaded:
             display(HTML(PLOTLY_WARNING))
             cls._loaded = True
-        display(HTML(plotly_include()))
-
-
-def plotly_include():
-    return """
-            <script type="text/javascript">
-            require_=require;requirejs_=requirejs; define_=define;
-            require=requirejs=define=undefined;
-            </script>
-            <script type="text/javascript">
-            {include}
-            </script>
-            <script type="text/javascript">
-            require=require_;requirejs=requirejs_; define=define_;
-            </script>""".format(include=get_plotlyjs())
+        init_notebook_mode(connected=not inline)
+        publish_display_data(data={MIME_TYPES['jlab-hv-load']:
+                                   get_plotlyjs()})

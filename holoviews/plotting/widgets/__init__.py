@@ -89,9 +89,6 @@ class NdWidget(param.Parameterized):
     # Javascript include options #
     ##############################
 
-    CDN = param.Dict(default={'underscore': 'https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.8.3/underscore-min.js',
-                              'jQueryUI':   'https://code.jquery.com/ui/1.10.4/jquery-ui.min.js'})
-
     css = param.String(default=None, doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
@@ -108,6 +105,7 @@ class NdWidget(param.Parameterized):
         super(NdWidget, self).__init__(**params)
         self.id = plot.comm.id if plot.comm else uuid.uuid4().hex
         self.plot = plot
+        self.plot_id = plot.id
         streams = []
         for stream in plot.streams:
             if any(k in plot.dimensions for k in stream.contents):
@@ -133,16 +131,32 @@ class NdWidget(param.Parameterized):
         import jinja2
         templateLoader = jinja2.FileSystemLoader(subdirs)
         self.jinjaEnv = jinja2.Environment(loader=templateLoader)
+        if not self.embed:
+            comm_manager = self.renderer.comm_manager
+            self.comm = comm_manager.get_client_comm(self.plot,
+                                                     id=self.id+'_client',
+                                                     on_msg=self._process_update)
 
+    def _process_update(self, msg):
+        if 'content' not in msg:
+            raise ValueError('Received widget comm message has no content.')
+        self.update(msg['content'])
 
     def __call__(self):
-        return self.render_html(self._get_data())
-
+        data = self._get_data()
+        html = self.render_html(data)
+        js = self.render_js(data)
+        return js, html
 
     def _get_data(self):
         delay = int(1000./self.display_options.get('fps', 5))
-        CDN = {k: v[:-3] for k, v in self.CDN.items()}
-        template = self.jinjaEnv.get_template(self.base_template)
+        CDN = {}
+        for name, resources in self.plot.renderer.core_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0]
+        for name, resources in self.plot.renderer.extra_dependencies.items():
+            if 'js' in resources:
+                CDN[name] = resources['js'][0]
         name = type(self).__name__
         cached = str(self.embed).lower()
         load_json = str(self.export_json).lower()
@@ -155,11 +169,16 @@ class NdWidget(param.Parameterized):
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
                     Nframes=len(self.plot), widget_name=name, json_path=json_path,
-                    widget_template=template, dynamic=dynamic)
+                    dynamic=dynamic, plot_id=self.plot_id)
 
 
     def render_html(self, data):
-        template = self.jinjaEnv.get_template(self.template)
+        template = self.jinjaEnv.get_template(self.html_template)
+        return template.render(**data)
+
+
+    def render_js(self, data):
+        template = self.jinjaEnv.get_template(self.js_template)
         return template.render(**data)
 
 
@@ -177,6 +196,7 @@ class NdWidget(param.Parameterized):
             frames = dict(frames)
         return json.dumps(frames)
 
+
     def save_json(self, frames):
         """
         Saves frames data into a json file at the
@@ -190,14 +210,14 @@ class NdWidget(param.Parameterized):
             json.dump(frames, f)
         self.json_data = frames
 
+
     def _plot_figure(self, idx):
         with self.renderer.state():
             self.plot.update(idx)
             css = self.display_options.get('css', {})
             figure_format = self.display_options.get('figure_format',
                                                      self.renderer.fig)
-            return self.renderer.html(self.plot, figure_format, css=css,
-                                      comm=False)
+            return self.renderer.html(self.plot, figure_format, css=css)
 
 
     def update(self, key):
@@ -206,7 +226,6 @@ class NdWidget(param.Parameterized):
         else:
             self.plot.update(key)
             self.plot.push()
-        return 'Complete'
 
 
 
@@ -222,10 +241,10 @@ class ScrubberWidget(NdWidget):
     on a simple server.
     """
 
-    base_template = param.String('jsscrubber.jinja', doc="""
+    html_template = param.String('htmlscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
-    template = param.String('jsscrubber.jinja', doc="""
+    js_template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
 
@@ -241,20 +260,19 @@ class SelectionWidget(NdWidget):
     update the widget with a live IPython kernel.
 
     The widget supports all current HoloViews figure backends
-    including png, svg and nbagg output. To select nbagg output,
-    the SelectionWidget must not be set to embed.
+    including png and svg output..
 
     Just like the ScrubberWidget the data can be optionally saved
     to json and dynamically loaded from a server.
     """
 
-    base_template = param.String('jsslider.jinja', doc="""
-        The jinja2 template used to generate the html output.""")
-
     css = param.String(default='jsslider.css', doc="""
         Defines the local CSS file to be loaded for this widget.""")
 
-    template = param.String('jsslider.jinja', doc="""
+    html_template = param.String('htmlslider.jinja', doc="""
+        The jinja2 template used to generate the html output.""")
+
+    js_template = param.String('jsslider.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
     ##############################
@@ -338,13 +356,12 @@ class SelectionWidget(NdWidget):
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
-
             visibility = '' if visible else 'display: none'
             dim_str = dim.pprint_label
             escaped_dim = dimension_sanitizer(dim_str)
             widget_data = dict(dim=escaped_dim, dim_label=dim_str,
                                dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step, next_dim=next_dim,
+                               visibility=visibility, step=step, next_dim=next_dim or None,
                                next_vals=next_vals, labels=value_labels)
 
             widgets.append(widget_data)
@@ -385,4 +402,3 @@ class SelectionWidget(NdWidget):
                                      self.plot.streams)
         self.plot.update(key)
         self.plot.push()
-        return 'Complete'

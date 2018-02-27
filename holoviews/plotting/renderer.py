@@ -16,7 +16,7 @@ from .. import Layout, HoloMap, AdjointLayout
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
-from .comms import JupyterComm
+from .comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod
@@ -49,8 +49,11 @@ MIME_TYPES = {
     'webm': 'video/webm',
     'mp4':  'video/mp4',
     'pdf':  'application/pdf',
-    'html':  'text/html',
-    'json':  'text/json',
+    'html': 'text/html',
+    'json': 'text/json',
+    'js':   'application/javascript',
+    'jlab-hv-exec': 'application/vnd.holoviews_exec.v0+json',
+    'jlab-hv-load': 'application/vnd.holoviews_load.v0+json',
     'server': None
 }
 
@@ -130,10 +133,12 @@ class Renderer(Exporter):
     mode_formats = {'fig': {'default': [None, 'auto']},
                     'holomap': {'default': [None, 'auto']}}
 
-    # Define comms class and message handler for each mode
-    # The Comm opens a communication channel and the message
-    # handler defines how the message is processed on the frontend
-    comms = {'default': (JupyterComm, None)}
+    # The comm_manager handles the creation and registering of client,
+    # and server side comms
+    comm_manager = CommManager
+
+    # JS code which handles comm messages and updates the plot
+    comm_msg_handler = None
 
     # Define appropriate widget classes
     widgets = {'scrubber': ScrubberWidget, 'widgets': SelectionWidget}
@@ -171,7 +176,10 @@ class Renderer(Exporter):
                 initialize_dynamic(obj)
             obj = Compositor.map(obj, mode='data', backend=self_or_cls.backend)
 
-        if not renderer: renderer = self_or_cls.instance()
+        if not renderer:
+            renderer = self_or_cls
+            if not isinstance(self_or_cls, Renderer):
+                renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
             plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
@@ -248,7 +256,7 @@ class Renderer(Exporter):
         return data
 
 
-    def html(self, obj, fmt=None, css=None, comm=True, **kwargs):
+    def html(self, obj, fmt=None, css=None, **kwargs):
         """
         Renders plot or data structure and wraps the output in HTML.
         The comm argument defines whether the HTML output includes
@@ -276,16 +284,46 @@ class Renderer(Exporter):
         (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
         src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
         html = tag.format(src=src, mime_type=mime_type, css=css)
-        if comm and plot.comm is not None:
-            comm, msg_handler = self.comms[self.mode]
-            if msg_handler is None:
-                return html
-            msg_handler = msg_handler.format(comm_id=plot.comm.id)
-            return comm.template.format(init_frame=html,
-                                        msg_handler=msg_handler,
-                                        comm_id=plot.comm.id)
+        return html
+
+
+    def components(self, obj, fmt=None, comm=True, **kwargs):
+        """
+        Returns data and metadata dictionaries containing HTML and JS
+        components to include render in app, notebook, or standalone
+        document. Depending on the backend the fmt defines the format
+        embedded in the HTML, e.g. png or svg. If comm is enabled the
+        JS code will set up a Websocket comm channel using the
+        currently defined CommManager.
+        """
+        if isinstance(obj, (Plot, NdWidget)):
+            plot = obj
         else:
-            return html
+            plot, fmt = self._validate(obj, fmt)
+
+        data, metadata = {}, {}
+        if isinstance(plot, NdWidget):
+            js, html = plot()
+            plot_id = plot.plot_id
+        else:
+            html, js = self._figure_data(plot, as_script=True, **kwargs)
+            plot_id = plot.id
+            if comm and plot.comm is not None and self.comm_msg_handler:
+                msg_handler = self.comm_msg_handler.format(plot_id=plot_id)
+                html = plot.comm.html_template.format(init_frame=html,
+                                                      plot_id=plot_id)
+                comm_js = plot.comm.js_template.format(msg_handler=msg_handler,
+                                                       comm_id=plot.comm.id,
+                                                       plot_id=plot_id)
+                js = '\n'.join([js, comm_js])
+            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+
+        data['text/html'] = html
+        if js:
+            data[MIME_TYPES['js']] = js
+            data[MIME_TYPES['jlab-hv-exec']] = js
+            metadata['id'] = plot_id
+        return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
     def static_html(self, obj, fmt=None, template=None):
@@ -321,8 +359,11 @@ class Renderer(Exporter):
             widget_type = holomap_formats[0] if self_or_cls.holomap=='auto' else self_or_cls.holomap
 
         widget_cls = self_or_cls.widgets[widget_type]
-        return widget_cls(plot, renderer=self_or_cls.instance(),
-                          embed=self_or_cls.widget_mode == 'embed', **kwargs)
+        renderer = self_or_cls
+        if not isinstance(self_or_cls, Renderer):
+            renderer = self_or_cls.instance()
+        embed = self_or_cls.widget_mode == 'embed'
+        return widget_cls(plot, renderer=renderer, embed=embed, **kwargs)
 
 
     @bothmethod
@@ -386,7 +427,7 @@ class Renderer(Exporter):
 
 
     @classmethod
-    def html_assets(cls, core=True, extras=True, backends=None):
+    def html_assets(cls, core=True, extras=True, backends=None, script=False):
         """
         Returns JS and CSS and for embedding of widgets.
         """
@@ -426,8 +467,11 @@ class Renderer(Exporter):
             js_data = dep.get('js', [])
             if isinstance(js_data, tuple):
                 for js in js_data:
-                    js_html += '\n<script type="text/javascript">%s</script>' % js
-            else:
+                    if script:
+                        js_html += js
+                    else:
+                        js_html += '\n<script type="text/javascript">%s</script>' % js
+            elif not script:
                 for js in js_data:
                     js_html += '\n<script src="%s" type="text/javascript"></script>' % js
             css_data = dep.get('css', [])
@@ -437,9 +481,17 @@ class Renderer(Exporter):
             else:
                 for css in css_data:
                     css_html += '\n<link rel="stylesheet" href="%s">' % css
-
-        js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
+        if script:
+            js_html += widgetjs
+        else:
+            js_html += '\n<script type="text/javascript">%s</script>' % widgetjs
         css_html += '\n<style>%s</style>' % widgetcss
+
+        comm_js = cls.comm_manager.js_manager
+        if script:
+            js_html += comm_js
+        else:
+            js_html += '\n<script type="text/javascript">%s</script>' % comm_js
 
         return unicode(js_html), unicode(css_html)
 
@@ -535,4 +587,4 @@ class Renderer(Exporter):
         """
         with param.logging_level('ERROR'):
             cls.notebook_context = True
-
+            cls.comm_manager = JupyterCommManager

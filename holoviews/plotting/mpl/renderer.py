@@ -1,4 +1,5 @@
 import sys
+import base64
 from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
@@ -12,15 +13,20 @@ import param
 from ...core import HoloMap
 from ...core.options import Store
 
-from ..renderer import Renderer, MIME_TYPES
-from .comms import (JupyterComm, NbAggJupyterComm,
-                    mpl_msg_handler)
+from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import MPLSelectionWidget, MPLScrubberWidget
 from .util import get_tight_bbox
 
 class OutputWarning(param.Parameterized):pass
 outputwarning = OutputWarning(name='Warning')
 
+mpl_msg_handler = """
+/* Backend specific body of the msg_handler, updates displayed frame */
+var target = $('#fig_{plot_id}');
+var img = $('<div />').html(msg);
+target.children().each(function () {{ $(this).remove() }})
+target.append(img)
+"""
 
 class MPLRenderer(Renderer):
     """
@@ -56,9 +62,7 @@ class MPLRenderer(Renderer):
         Whether to enable interactive plotting allowing interactive
         plotting with explicitly calling show.""")
 
-    mode = param.ObjectSelector(default='default',
-                                objects=['default', 'nbagg'], doc="""
-         The 'nbagg' mode uses matplotlib's nbagg backend. """)
+    mode = param.ObjectSelector(default='default', objects=['default'])
 
     # <format name> : (animation writer, format,  anim_kwargs, extra_args)
     ANIMATION_OPTS = {
@@ -70,11 +74,9 @@ class MPLRenderer(Renderer):
         'scrubber': ('html', None, {'fps': 5}, None)
     }
 
-    mode_formats = {'fig':{'default': ['png', 'svg', 'pdf', 'html', None, 'auto'],
-                           'nbagg': ['html', None, 'auto']},
-                    'holomap': {m:['widgets', 'scrubber', 'webm','mp4', 'gif',
-                                   'html', None, 'auto']
-                                for m in ['default', 'nbagg']}}
+    mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
+                    'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
+                                            'html', None, 'auto']}}
 
     counter = 0
 
@@ -82,9 +84,8 @@ class MPLRenderer(Renderer):
     widgets = {'scrubber': MPLScrubberWidget,
                'widgets': MPLSelectionWidget}
 
-    # Define comm targets by mode
-    comms = {'default': (JupyterComm, mpl_msg_handler),
-             'nbagg':   (NbAggJupyterComm, None)}
+    # Define the handler for updating matplotlib plots
+    comm_msg_handler = mpl_msg_handler
 
     def __call__(self, obj, fmt='auto'):
         """
@@ -171,30 +172,23 @@ class MPLRenderer(Renderer):
         """
         Returns the latest plot data to update an existing plot.
         """
-        data = None
-        if self.mode != 'nbagg':
-            if self.fig == 'auto':
-                figure_format = self.params('fig').objects[0]
-            else:
-                figure_format = self.fig
-            data = self.html(plot, figure_format, comm=False)
-        return data
+        if self.fig == 'auto':
+            figure_format = self.params('fig').objects[0]
+        else:
+            figure_format = self.fig
+        return self.html(plot, figure_format)
 
 
-    def _figure_data(self, plot, fmt='png', bbox_inches='tight', **kwargs):
+    def _figure_data(self, plot, fmt='png', bbox_inches='tight', as_script=False, **kwargs):
         """
-        Render matplotlib figure object and return the corresponding data.
+        Render matplotlib figure object and return the corresponding
+        data.  If as_script is True, the content will be split in an
+        HTML and a JS component.
 
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
         """
         fig = plot.state
-        if self.mode == 'nbagg':
-            manager = plot.comm.get_figure_manager()
-            if manager is None: return ''
-            self.counter += 1
-            manager.show()
-            return ''
 
         traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
         extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
@@ -219,6 +213,12 @@ class MPLRenderer(Renderer):
         bytes_io = BytesIO()
         fig.canvas.print_figure(bytes_io, **kw)
         data = bytes_io.getvalue()
+        if as_script:
+            b64 = base64.b64encode(data).decode("utf-8")
+            (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+            src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+            html = tag.format(src=src, mime_type=mime_type, css='')
+            return html, ''
         if fmt == 'svg':
             data = data.decode('utf-8')
         return data
@@ -275,16 +275,6 @@ class MPLRenderer(Renderer):
             mpl.rcParams.clear()
             mpl.rcParams.update(cls._rcParams)
 
-    @classmethod
-    def validate(cls, options):
-        """
-        Validates a dictionary of options set on the backend.
-        """
-        if options['backend']=='matplotlib:nbagg' and options['widgets'] != 'live':
-            outputwarning.warning("The widget mode must be set to 'live' for "
-                                  "matplotlib:nbagg.\nSwitching widget mode to 'live'.")
-            options['widgets'] = 'live'
-        return options
 
     @classmethod
     def load_nb(cls, inline=True):
