@@ -76,7 +76,7 @@ class BokehPlot(DimensionedPlot):
 
     @property
     def id(self):
-        return self.state._id
+        return self.state.ref['id']
 
 
     @document.setter

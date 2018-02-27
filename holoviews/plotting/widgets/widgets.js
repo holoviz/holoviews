@@ -77,7 +77,7 @@ HoloViewsWidget.prototype.init_comms = function() {
 	function ack_callback(msg) {
       msg = JSON.parse(msg.content.data);
       var comm_id = msg["comm_id"]
-      var comm_state = HoloViews.comm_state[comm_id];
+      var comm_status = HoloViews.comm_status[comm_id];
       if (that.queue.length > 0) {
         that.time = Date.now();
         that.dynamic_update(that.queue[that.queue.length-1]);
@@ -129,7 +129,7 @@ SelectionWidget.prototype.get_key = function(current_vals) {
   var key = "(";
   for (var i=0; i<this.slider_ids.length; i++)
   {
-    let val = this.current_vals[i];
+    var val = this.current_vals[i];
 	if (!(typeof val === 'string')) {
       if (val % 1 === 0) { val = val.toFixed(1); }
       else { val = val.toFixed(10); val = val.slice(0, val.length-1);}
@@ -521,7 +521,7 @@ var _namespace = {
   init_slider: init_slider,
   init_dropdown: init_dropdown,
   comms: {},
-  comm_state: {},
+  comm_status: {},
   index: {},
   kernels: {},
   receivers: {}

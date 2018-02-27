@@ -5,7 +5,6 @@ regardless of plotting package or backend.
 from __future__ import unicode_literals
 
 from io import BytesIO
-import inspect
 import os, base64
 from contextlib import contextmanager
 
@@ -179,7 +178,7 @@ class Renderer(Exporter):
 
         if not renderer:
             renderer = self_or_cls
-            if inspect.isclass(self_or_cls):
+            if not isinstance(self_or_cls, Renderer):
                 renderer = self_or_cls.instance()
         if not isinstance(obj, Plot):
             obj = Layout.from_values(obj) if isinstance(obj, AdjointLayout) else obj
@@ -289,6 +288,14 @@ class Renderer(Exporter):
 
 
     def components(self, obj, fmt=None, comm=True, **kwargs):
+        """
+        Returns data and metadata dictionaries containing HTML and JS
+        components to include render in app, notebook, or standalone
+        document. Depending on the backend the fmt defines the format
+        embedded in the HTML, e.g. png or svg. If comm is enabled the
+        JS code will set up a Websocket comm channel using the
+        currently defined CommManager.
+        """
         if isinstance(obj, (Plot, NdWidget)):
             plot = obj
         else:
@@ -305,9 +312,10 @@ class Renderer(Exporter):
                 msg_handler = self.comm_msg_handler.format(plot_id=plot_id)
                 html = plot.comm.html_template.format(init_frame=html,
                                                       plot_id=plot_id)
-                js += plot.comm.js_template.format(msg_handler=msg_handler,
-                                                   comm_id=plot.comm.id,
-                                                   plot_id=plot_id)
+                comm_js = plot.comm.js_template.format(msg_handler=msg_handler,
+                                                       comm_id=plot.comm.id,
+                                                       plot_id=plot_id)
+                js = '\n'.join([js, comm_js])
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
 
         data['text/html'] = html
@@ -352,7 +360,7 @@ class Renderer(Exporter):
 
         widget_cls = self_or_cls.widgets[widget_type]
         renderer = self_or_cls
-        if inspect.isclass(self_or_cls):
+        if not isinstance(self_or_cls, Renderer):
             renderer = self_or_cls.instance()
         embed = self_or_cls.widget_mode == 'embed'
         return widget_cls(plot, renderer=renderer, embed=embed, **kwargs)

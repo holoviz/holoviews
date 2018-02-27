@@ -173,15 +173,15 @@ class CustomJSCallback(MessageCallback):
             return unique;
         }}
 
-        function process_events(comm_state) {{
+        function process_events(comm_status) {{
             // Iterates over event queue and sends events via Comm
-            var events = unique_events(comm_state.event_buffer);
+            var events = unique_events(comm_status.event_buffer);
             for (var i=0; i<events.length; i++) {{
                 var data = events[i];
                 var comm = HoloViews.comms[data["comm_id"]];
                 comm.send(data);
             }}
-            comm_state.event_buffer = [];
+            comm_status.event_buffer = [];
         }}
 
         function on_msg(msg){{
@@ -189,15 +189,15 @@ class CustomJSCallback(MessageCallback):
           // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
           var comm_id = msg["comm_id"]
-          var comm_state = HoloViews.comm_state[comm_id];
-          if (comm_state.event_buffer.length) {{
-            process_events(comm_state);
-            comm_state.blocked = true;
-            comm_state.time = Date.now()+{debounce};
+          var comm_status = HoloViews.comm_status[comm_id];
+          if (comm_status.event_buffer.length) {{
+            process_events(comm_status);
+            comm_status.blocked = true;
+            comm_status.time = Date.now()+{debounce};
           }} else {{
-            comm_state.blocked = false;
+            comm_status.blocked = false;
           }}
-          comm_state.event_buffer = [];
+          comm_status.event_buffer = [];
           if ((msg.msg_type == "Ready") && msg.content) {{
             console.log("Python callback returned following output:", msg.content);
           }} else if (msg.msg_type == "Error") {{
@@ -212,23 +212,23 @@ class CustomJSCallback(MessageCallback):
         }}
 
         // Initialize event queue and timeouts for Comm
-        var comm_state = HoloViews.comm_state["{comm_id}"];
-        if (comm_state === undefined) {{
-            comm_state = {{event_buffer: [], blocked: false, time: Date.now()}}
-            HoloViews.comm_state["{comm_id}"] = comm_state
+        var comm_status = HoloViews.comm_status["{comm_id}"];
+        if (comm_status === undefined) {{
+            comm_status = {{event_buffer: [], blocked: false, time: Date.now()}}
+            HoloViews.comm_status["{comm_id}"] = comm_status
         }}
 
         // Add current event to queue and process queue if not blocked
         event_name = cb_obj.event_name
         data['comm_id'] = "{comm_id}";
-        timeout = comm_state.time + {timeout};
-        if ((comm_state.blocked && (Date.now() < timeout))) {{
-            comm_state.event_buffer.unshift([event_name, data]);
+        timeout = comm_status.time + {timeout};
+        if ((comm_status.blocked && (Date.now() < timeout))) {{
+            comm_status.event_buffer.unshift([event_name, data]);
         }} else {{
-            comm_state.event_buffer.unshift([event_name, data]);
-            setTimeout(function() {{ process_events(comm_state); }}, {debounce});
-            comm_state.blocked = true;
-            comm_state.time = Date.now()+{debounce};
+            comm_status.event_buffer.unshift([event_name, data]);
+            setTimeout(function() {{ process_events(comm_status); }}, {debounce});
+            comm_status.blocked = true;
+            comm_status.time = Date.now()+{debounce};
         }}
     """
 
