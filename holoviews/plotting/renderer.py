@@ -303,7 +303,7 @@ class Renderer(Exporter):
 
         data, metadata = {}, {}
         if isinstance(plot, NdWidget):
-            js, html = plot()
+            js, html = plot(as_script=True)
             plot_id = plot.plot_id
         else:
             html, js = self._figure_data(plot, as_script=True, **kwargs)
@@ -518,8 +518,11 @@ class Renderer(Exporter):
         if info or key:
             raise Exception('Renderer does not support saving metadata to file.')
 
-        with StoreOptions.options(obj, options, **kwargs):
-            plot = self_or_cls.get_plot(obj)
+        if isinstance(obj, (Plot, NdWidget)):
+            plot = obj
+        else:
+            with StoreOptions.options(obj, options, **kwargs):
+                plot = self_or_cls.get_plot(obj)
 
         if (fmt in list(self_or_cls.widgets.keys())+['auto']) and len(plot) > 1:
             with StoreOptions.options(obj, options, **kwargs):
@@ -528,8 +531,7 @@ class Renderer(Exporter):
                 self_or_cls.export_widgets(plot, basename, fmt)
             return
 
-        with StoreOptions.options(obj, options, **kwargs):
-            rendered = self_or_cls(plot, fmt)
+        rendered = self_or_cls(plot, fmt)
         if rendered is None: return
         (data, info) = rendered
         encoded = self_or_cls.encode(rendered)
