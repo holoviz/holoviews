@@ -198,6 +198,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
+options.Labels = Options('style', text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
