@@ -137,16 +137,23 @@ class NdWidget(param.Parameterized):
                                                      id=self.id+'_client',
                                                      on_msg=self._process_update)
 
+
     def _process_update(self, msg):
         if 'content' not in msg:
             raise ValueError('Received widget comm message has no content.')
         self.update(msg['content'])
 
-    def __call__(self):
+
+    def __call__(self, as_script=False):
         data = self._get_data()
         html = self.render_html(data)
         js = self.render_js(data)
-        return js, html
+        if as_script:
+            return js, html
+        js = '<script type="text/javascript">%s</script>' % js
+        html = '\n'.join([html, js])
+        return html
+
 
     def _get_data(self):
         delay = int(1000./self.display_options.get('fps', 5))

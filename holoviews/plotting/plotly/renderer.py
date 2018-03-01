@@ -47,6 +47,8 @@ class PlotlyRenderer(Renderer):
     widgets = {'scrubber': PlotlyScrubberWidget,
                'widgets': PlotlySelectionWidget}
 
+    backend_dependencies = {'js': (get_plotlyjs(),)}
+
     comm_msg_handler = plotly_msg_handler
 
     _loaded = False
