@@ -231,6 +231,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
+    rtol = param.Number(config.image_rtol, doc="""The tolerance used to enforce 
+            regular sampling for regular, gridded data where regular sampling is 
+            expected. Expressed as the maximal allowable sampling difference 
+            between sample locations.""")
+
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):
         if isinstance(data, Image):
@@ -274,9 +279,10 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
         # Ensure coordinates are regularly sampled
 
-        rtol = config.image_rtol if rtol is None else rtol
-        validate_regular_sampling(self, 0, rtol)
-        validate_regular_sampling(self, 1, rtol)
+        self.set_param(rtol=config.image_rtol) if rtol is None else self.set_param(rtol=rtol)
+
+        validate_regular_sampling(self, 0, self.rtol)
+        validate_regular_sampling(self, 1, self.rtol)
 
 
     def __setstate__(self, state):
