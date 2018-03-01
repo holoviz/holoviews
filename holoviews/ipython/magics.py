@@ -349,7 +349,9 @@ class OptsMagic(Magics):
             self.shell.run_cell(cell, store_history=STORE_HISTORY)
         else:
             try:
-                StoreOptions.validate_spec(spec)
+                with options_policy(skip_invalid=not config.strict_opts_magic,
+                                    warn_on_skip=True):
+                    StoreOptions.validate_spec(spec)
             except OptionError as e:
                 errmsg = erre.format_options_error()
                 sys.stderr.write(errmsg)

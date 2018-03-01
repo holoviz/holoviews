@@ -98,10 +98,6 @@ class OptionError(Exception):
             loaded = ' for loaded backends {0} and {1!r}.'.format(backend_list,
                                                                   loaded_backends[-1])
 
-        suggestion = ("If you believe this keyword is correct, please make sure "
-                      "the backend has been imported or loaded with the "
-                      "hv.extension.")
-
         if self.group_name:
             group = '{0} option'.format(self.group_name)
         else:
@@ -114,11 +110,10 @@ class OptionError(Exception):
             msg += loaded
 
         backend = repr(self.backend or Store.current_backend)
-        msg += ' {similarity} options for {backend} backend are: {matches}\n\n{suggestion}'
+        msg += ' {similarity} options for {backend} backend are: {matches}'
         return msg.format(kw=repr(self.invalid_keyword), target=target,
                           group=group, similarity=similarity,
-                          backend=backend, matches=matches,
-                          suggestion=suggestion)
+                          backend=backend, matches=matches)
 
 
 class AbbreviatedException(Exception):
@@ -161,6 +156,19 @@ class abbreviated_exception(object):
     def __exit__(self, etype, value, traceback):
         if isinstance(value, Exception):
             raise AbbreviatedException(etype, value, traceback)
+
+
+
+@contextmanager
+def options_policy(skip_invalid, warn_on_skip):
+    """
+    Context manager to temporarily set the skip_invalid and warn_on_skip
+    class parameters on Options.
+    """
+    settings = (Options.skip_invalid, Options.warn_on_skip)
+    (Options.skip_invalid, Options.warn_on_skip) = (skip_invalid, warn_on_skip)
+    yield
+    (Options.skip_invalid, Options.warn_on_skip) = settings
 
 
 class Keywords(param.Parameterized):
@@ -382,7 +390,7 @@ class Options(param.Parameterized):
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
-                if self.warn_on_skip:
+                if self.skip_invalid:
                     invalid_kws.append(kwarg)
                 else:
                     raise OptionError(kwarg, allowed_keywords, group_name=key)
@@ -1349,7 +1357,11 @@ class StoreOptions(object):
                                'only applies to following backends: %r' %
                                (option, objtype, current_backend, found))
             return
-        raise OptionError(option, allowed_keywords, group, objtype, backend)
+        error = OptionError(option, allowed_keywords, group, objtype, backend)
+        if Options.skip_invalid:
+            raise error
+        elif Options.warn_on_skip:
+            param.main.warning(error.format_options_error())
 
 
     @classmethod
