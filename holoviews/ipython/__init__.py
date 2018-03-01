@@ -96,7 +96,7 @@ class notebook_extension(extension):
         using the matplotlib backend) may be used. This may be useful to
         export figures to other formats such as PDF with nbconvert. """)
 
-    case_sensitive_completion = param.Boolean(default=False, doc="""
+    case_sensitive_completion = param.Boolean(default=True, doc="""
        Whether to monkey patch IPython to use the correct tab-completion
        behavior. """)
 
