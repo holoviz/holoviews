@@ -1086,14 +1086,27 @@ class Dimensioned(LabelledData):
                          'in future. Use the equivalent opts method instead.')
         return self.opts(options, **kwargs)
 
-    def opts(self, options=None, **kwargs):
+    def opts(self, options=None, backend=None, clone=True, **kwargs):
         """
-        Apply the supplied options to a clone of the object which is
-        then returned. Note that if no options are supplied at all,
-        all ids are reset.
+        Applies options on an object or nested group of objects in a
+        by options group returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts({'Image': {'plot':  {'show_title': False},
+                                'style': {'cmap': 'viridis}}})
+
+        If no opts are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
         """
-        from ..util.parser import OptsSpec
+        backend = backend or Store.current_backend
         if isinstance(options, basestring):
+            from ..util.parser import OptsSpec
             try:
                 options = OptsSpec.parse(options)
             except SyntaxError:
@@ -1101,14 +1114,15 @@ class Dimensioned(LabelledData):
                     '{clsname} {options}'.format(clsname=self.__class__.__name__,
                                                  options=options))
 
-        groups = set(Store.options().groups.keys())
+        backend_options = Store.options(backend=backend)
+        groups = set(backend_options.groups.keys())
         if kwargs and set(kwargs) <= groups:
             if not all(isinstance(v, dict) for v in kwargs.values()):
                 raise Exception("The %s options must be specified using dictionary groups" %
                                 ','.join(repr(k) for k in kwargs.keys()))
 
             # Check whether the user is specifying targets (such as 'Image.Foo')
-            entries = Store.options().children
+            entries = backend_options.children
             targets = [k.split('.')[0] in entries for grp in kwargs.values() for k in grp]
             if any(targets) and not all(targets):
                 raise Exception("Cannot mix target specification keys such as 'Image' with non-target keywords.")
@@ -1126,12 +1140,54 @@ class Dimensioned(LabelledData):
 
                 kwargs = {k:{identifier:v} for k,v in kwargs.items()}
 
-        if options is None and kwargs=={}:
-            deep_clone = self.map(lambda x: x.clone(id=None))
-        else:
-            deep_clone = self.map(lambda x: x.clone(id=x.id))
-        StoreOptions.set_options(deep_clone, options, **kwargs)
-        return deep_clone
+        obj = self
+        if options is None and kwargs == {}:
+            if clone:
+                obj = self.map(lambda x: x.clone(id=None))
+            else:
+                self.map(lambda x: setattr(x, 'id', None))
+        elif clone:
+            obj = self.map(lambda x: x.clone(id=x.id))
+        StoreOptions.set_options(obj, options, backend=backend, **kwargs)
+        return obj
+
+
+    def options(self, options=None, backend=None, clone=True, **kwargs):
+        """
+        Applies options on an object or nested group of objects in a
+        flat format returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.options(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.options('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        If no options are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
+        """
+        if isinstance(options, basestring):
+            options = {options: kwargs}
+        elif options and kwargs:
+            raise ValueError("Options must be defined in one of two formats."
+                             "Either supply keywords defining the options for "
+                             "the current object, e.g. obj.options(cmap='viridis'), "
+                             "or explicitly define the type, e.g."
+                             "obj.options({'Image': {'cmap': 'viridis'}})."
+                             "Supplying both formats is not supported.")
+        elif kwargs:
+            options = {type(self).__name__: kwargs}
+
+        from ..util import opts
+        expanded = opts.expand_options(options, backend)
+        return self.opts(expanded, backend, clone)
 
 
 

@@ -1,4 +1,4 @@
-import inspect, re, time
+import inspect, re, time, sys
 from distutils.version import LooseVersion
 from collections import defaultdict
 import datetime as dt
@@ -64,6 +64,22 @@ def rgba_tuple(rgba):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
     else:
         return rgba
+
+
+def decode_bytes(array):
+    """
+    Decodes an array, list or tuple of bytestrings to avoid python 3
+    bokeh serialization errors
+    """
+    if (sys.version_info.major == 2 or not len(array) or
+        (isinstance(array, np.ndarray) and array.dtype.kind != 'O')):
+        return array
+    decoded = [v.decode('utf-8') if isinstance(v, bytes) else v for v in array]
+    if isinstance(array, np.ndarray):
+        return np.asarray(decoded)
+    elif isinstance(array, tuple):
+        return tuple(decoded)
+    return decoded
 
 
 def get_cmap(cmap):

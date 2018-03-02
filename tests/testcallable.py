@@ -13,7 +13,7 @@ from holoviews.core.operation import OperationCallable
 from holoviews.operation import contours
 from functools import partial
 
-from . import LoggingComparisonTestCase
+from ..utils import LoggingComparisonTestCase
 
 class CallableClass(object):
 
