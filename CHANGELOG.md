@@ -1,3 +1,24 @@
+Version 1.9.5
+=============
+
+This release includes a very small number of minor bugfixes and a new
+feature to simplify setting options in python:
+
+Enhancements:
+
+-  Added .options method for simplified options setting.
+   ([\#2306](https://github.com/ioam/holoviews/pull/2306))
+
+Fixes:
+
+-  Allow plotting bytes datausing the bokeh backend in python3
+   ([\#2357](https://github.com/ioam/holoviews/pull/2357))
+-  Allow .range to work on data with heterogeneous types in Python 3
+   ([\#2345](https://github.com/ioam/holoviews/pull/2345))
+-  Fixed bug streaming data containing datetimes using bokeh>=0.12.14
+   ([\#2383](https://github.com/ioam/holoviews/pull/2383))
+
+
 Version 1.9.4
 =============
 
