@@ -1,3 +1,95 @@
+Version 1.9.5
+=============
+
+This release includes a very small number of minor bugfixes and a new
+feature to simplify setting options in python:
+
+Enhancements:
+
+-  Added .options method for simplified options setting.
+   ([\#2306](https://github.com/ioam/holoviews/pull/2306))
+
+Fixes:
+
+-  Allow plotting bytes datausing the bokeh backend in python3
+   ([\#2357](https://github.com/ioam/holoviews/pull/2357))
+-  Allow .range to work on data with heterogeneous types in Python 3
+   ([\#2345](https://github.com/ioam/holoviews/pull/2345))
+-  Fixed bug streaming data containing datetimes using bokeh>=0.12.14
+   ([\#2383](https://github.com/ioam/holoviews/pull/2383))
+
+
+Version 1.9.4
+=============
+
+This release contains a small number of important bug fixes:
+
+-    Compatibility with recent versions of dask and pandas
+     ([\#2329](https://github.com/ioam/holoviews/pull/2329))
+-    Fixed bug referencing columns containing non-alphanumeric characters
+     in bokeh Tables ([\#2336](https://github.com/ioam/holoviews/pull/2336))
+-    Fixed issue in regrid operation
+     ([2337](https://github.com/ioam/holoviews/pull/2337))
+-    Fixed issue when using datetimes with datashader when processing
+     ranges ([\#2344](https://github.com/ioam/holoviews/pull/2344))
+
+
+Version 1.9.3
+=============
+
+This release contains a number of important bug fixes and minor
+enhancements.
+
+Particular thanks to @jbampton, @ea42gh, @laleph, and @drs251 for a
+number of fixes and improvements to the documentation.
+
+Enhancements:
+
+-    Optimized rendering of stream based OverlayPlots
+     ([\#2253](https://github.com/ioam/holoviews/pull/2253))
+-    Added ``merge_toolbars`` and ``toolbar`` options to control
+     toolbars on ``Layout`` and Grid plots
+     ([\#2289](https://github.com/ioam/holoviews/pull/2289))
+-    Optimized rendering of ``VectorField``
+     ([\#2314](https://github.com/ioam/holoviews/pull/2289))
+-    Improvements to documentation
+     ([\#2198](https://github.com/ioam/holoviews/pull/2198),
+     [\#2220](https://github.com/ioam/holoviews/pull/2220),
+     [\#2233](https://github.com/ioam/holoviews/pull/2233),
+     [\#2235](https://github.com/ioam/holoviews/pull/2235),
+     [\#2316](https://github.com/ioam/holoviews/pull/2316))
+-    Improved bokeh ``Table`` formatting
+     ([\#2267](https://github.com/ioam/holoviews/pull/2267))
+-    Added support for handling datetime.date types
+     ([\#2267](https://github.com/ioam/holoviews/pull/2267))
+-    Add support for pre- and post-process hooks on operations
+     ([\#2246](https://github.com/ioam/holoviews/pull/2246),
+	  [\#2334](https://github.com/ioam/holoviews/pull/2334))
+
+Fixes:
+
+-    Fix for bokeh server widgets
+     ([\#2218](https://github.com/ioam/holoviews/pull/2218))
+-    Fix using event based streams on bokeh server
+     ([\#2239](https://github.com/ioam/holoviews/pull/2239),
+     [\#2256](https://github.com/ioam/holoviews/pull/2256))
+-    Switched to drawing ``Distribution``, ``Area`` and ``Spread``
+     using patch glyphs in bokeh fixing legends
+     ([\#2225](https://github.com/ioam/holoviews/pull/2225))
+-    Fixed categorical coloring of ``Polygons``/``Path`` elements in
+     matplotlib ([\#2259](https://github.com/ioam/holoviews/pull/2259))
+-    Fixed bug computing categorical datashader aggregates
+     ([\#2295](https://github.com/ioam/holoviews/pull/2295))
+-    Allow using ``Empty`` object in ``AdjointLayout``
+     ([\#2275](https://github.com/ioam/holoviews/pull/2275))
+
+
+API Changes:
+
+-    Renamed ``Trisurface`` to ``TriSurface`` for future consistency
+     ([\#2219](https://github.com/ioam/holoviews/pull/2219))
+
+
 Version 1.9.2
 =============
 
