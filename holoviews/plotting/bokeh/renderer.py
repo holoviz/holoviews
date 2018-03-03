@@ -36,6 +36,8 @@ var plot = Bokeh.index["{plot_id}"];
 
 if ("{plot_id}" in HoloViews.receivers) {{
   var receiver = HoloViews.receivers["{plot_id}"];
+}} else if (Bokeh.protocol !== undefined) {{
+  return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
   HoloViews.receivers["{plot_id}"] = receiver;
@@ -235,6 +237,12 @@ class BokehRenderer(Renderer):
         plot.traverse(lambda x: attach_periodic(x), [GenericElementPlot])
         doc.add_root(root)
         return doc
+
+
+    def components(self, obj, fmt=None, comm=True, **kwargs):
+        # Bokeh has to handle comms directly in <0.12.15
+        comm = False if bokeh_version < '0.12.15' else comm
+        return super(BokehRenderer, self).components(obj,fmt, comm, **kwargs)
 
 
     def _figure_data(self, plot, fmt='html', doc=None, as_script=False, **kwargs):
