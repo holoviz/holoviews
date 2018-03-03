@@ -29,7 +29,7 @@ var BokehMethods = {
     }
   },
   init_comms: function() {
-    if (Bokeh.protocol.Receiver !== undefined) {
+    if (Bokeh.protocol !== undefined) {
       this.receiver = new Bokeh.protocol.Receiver()
     } else {
       this.receiver = null;
