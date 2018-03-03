@@ -324,10 +324,10 @@ class SelectionWidget(NdWidget):
                                 dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
                     int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
-                    if isinstance(dim_range, int) or int_type:
-                        step = 1
-                    elif dim.step is not None:
+                    if dim.step is not None:
                         step = dim.step
+                    elif isinstance(dim_range, int) or int_type:
+                        step = 1
                     else:
                         step = 10**(round(math.log10(dim_range))-3)
                     init_dim_vals.append(dim_vals[0])
