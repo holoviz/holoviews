@@ -664,19 +664,38 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return renderer, renderer.glyph
 
 
-    def _glyph_properties(self, plot, element, source, ranges, style):
-        for k, v in style.items():
+    def _apply_ops(self, element, source, ranges, style):
+        new_style = dict(style)
+        for k, v in dict(style).items():
+            if isinstance(v, util.basestring) and v in element:
+                v = op(v)
             if not isinstance(v, op):
                 continue
-            val = v.eval(element)
+            dname = v.dimension.name
+            if dname not in element:
+                new_style.pop(k)
+                self.warning('Specified %s op %r could not be applied, %s dimension '
+                             'could not be found' % (k, v, v.dimension))
+                continue
+            vrange = ranges.get(dname)
+            val = v.eval(element, ranges)
             if np.isscalar(val):
                 key = val
             else:
                 key = k
                 source.data[k] = val
-            style[k] = key
+            if ('color' in k and isinstance(val, np.ndarray) and
+                val.dtype.kind in 'if'):
+                cmapper = self._get_colormapper(v.dimension, element, ranges,
+                                                style, name=dname+'_color_mapper')
+                key = {'field': k, 'transform': cmapper}
+            new_style[k] = key
+        return new_style
 
-        properties = dict(style, source=source)
+
+    def _glyph_properties(self, plot, element, source, ranges, style):
+        new_style = self._apply_ops(element, source, ranges, style)
+        properties = dict(new_style, source=source)
         if self.show_legend:
             if self.overlay_dims:
                 legend = ', '.join([d.pprint_value(v) for d, v in

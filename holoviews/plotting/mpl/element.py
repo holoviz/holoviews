@@ -13,6 +13,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ...element import Graph
+from ...util.ops import op
 from ..plot import GenericElementPlot, GenericOverlayPlot
 from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
@@ -476,6 +477,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if self.show_legend:
             style['label'] = element.label
 
+        style = self._apply_ops(element, ranges, style)
         plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
 
         with abbreviated_exception():
@@ -503,12 +505,26 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         Update the elements of the plot.
         """
         self.teardown_handles()
-        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, style)
+        new_style = self._apply_ops(element, range, style)
+        plot_data, plot_kwargs, axis_kwargs = self.get_data(element, ranges, new_style)
 
         with abbreviated_exception():
             handles = self.init_artists(axis, plot_data, plot_kwargs)
         self.handles.update(handles)
         return axis_kwargs
+
+
+    def _apply_ops(self, element, ranges, style):
+        new_style = dict(style)
+        for k, v in style.items():
+            if (isinstance(v, util.basestring) and v in element):
+                v = op(v)
+            if not isinstance(v, op):
+                continue
+            val = v.eval(element, ranges)
+            new_style[k] = val
+        return new_style
+
 
     def teardown_handles(self):
         """
@@ -641,13 +657,14 @@ class ColorbarPlot(ElementPlot):
         ColorbarPlot._colorbars[id(axis)] = (ax_colorbars, (l, b, w, h))
 
 
-    def _norm_kwargs(self, element, ranges, opts, vdim, prefix=''):
+    def _norm_kwargs(self, element, ranges, opts, vdim, values=None, prefix=''):
         """
         Returns valid color normalization kwargs
         to be passed to matplotlib plot function.
         """
         clim = opts.pop(prefix+'clims', None)
-        values = np.asarray(element.dimension_values(vdim))
+        if values is None:
+            values = np.asarray(element.dimension_values(vdim))
         if clim is None:
             if not len(values):
                 clim = (0, 0)

@@ -2,20 +2,24 @@ import operator
 import numpy as np
 
 from ..core.dimension import Dimension
+from ..core.util import basestring
+
 
 def norm_fn(values, min=None, max=None):
     min = np.min(values) if min is None else min
     max = np.max(values) if max is None else max
     return (values - min) / (max-min)
-    
+
 class op(object):
 
     _op_registry = {'norm': norm_fn}
 
     def __init__(self, obj, fn=None, other=None, reverse=False, **kwargs):
-        if isinstance(obj, (str, Dimension)):
+        ops = []
+        if isinstance(obj, basestring):
+            self.dimension = Dimension(obj)
+        elif isinstance(obj, Dimension):
             self.dimension = obj
-            ops = []
         else:
             self.dimension = obj.dimension
             ops = obj.ops
@@ -57,6 +61,7 @@ class op(object):
         ufunc = getattr(args[0], args[1])
         kwargs = {k: v for k, v in kwargs.items() if v is not None}
         return op(self, ufunc, **kwargs)
+
     def max(self, **kwargs): return op(self, np.max, **kwargs)
     def mean(self, **kwargs): return op(self, np.mean, **kwargs)
     def min(self, **kwargs): return op(self, np.min, **kwargs)
@@ -65,18 +70,22 @@ class op(object):
     def std(self, **kwargs): return op(self, np.std, **kwargs)
     def var(self, **kwargs): return op(self, np.var, **kwargs)
 
-    def eval(self, dataset):
+    def eval(self, dataset, ranges={}):
         expanded = not (dataset.interface.gridded and self.dimension in dataset.kdims)
         data = dataset.dimension_values(self.dimension, expanded=expanded, flat=False)
         for o in self.ops:
             other = o['other']
             if other is not None:
                 if isinstance(other, op):
-                    other = other.eval(dataset)
+                    other = other.eval(dataset, ranges)
                 args = (other, data) if o['reverse'] else (data, other)
             else:
                 args = (data,)
-            data = o['fn'](*args, **o['kwargs'])
+            drange = ranges.get(self.dimension.name)
+            if o['fn'] == norm_fn and drange is not None:
+                data = o['fn'](data, *drange)
+            else:
+                data = o['fn'](*args, **o['kwargs'])
         return data
 
     def __repr__(self):
