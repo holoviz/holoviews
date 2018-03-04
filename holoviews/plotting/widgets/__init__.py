@@ -305,14 +305,16 @@ class SelectionWidget(NdWidget):
                         # Widgets currently detect dynamic mode by type
                         # this value representation is now redundant
                         # and should be removed in a refactor
-                        dim_vals = {i: i for i, v in enumerate(dim.values)}
+                        values = sorted(dim.values)
+                        dim_vals = {i: i for i, v in enumerate(values)}
                         widget_type = 'slider'
                         value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                                for v in dim.values]))
+                                                                for v in sorted(values)]))
                     else:
-                        dim_vals = list(range(len(dim.values)))
+                        values = list(dim.values)
+                        dim_vals = list(range(len(values)))
                         value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                                for v in dim.values]))
+                                                                for v in values]))
                         widget_type = 'dropdown'
                     init_dim_vals.append(dim_vals[0])
                 else:
@@ -322,19 +324,19 @@ class SelectionWidget(NdWidget):
                                 dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
                     dim_range = dim_vals[1] - dim_vals[0]
                     int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
-                    if isinstance(dim_range, int) or int_type:
-                        step = 1
-                    elif dim.step is not None:
+                    if dim.step is not None:
                         step = dim.step
+                    elif isinstance(dim_range, int) or int_type:
+                        step = 1
                     else:
                         step = 10**(round(math.log10(dim_range))-3)
                     init_dim_vals.append(dim_vals[0])
-                    dim_vals = escape_list(escape_vals(dim_vals))
+                    dim_vals = escape_list(escape_vals(sorted(dim_vals)))
             else:
                 if next_vals:
                     dim_vals = next_vals[init_dim_vals[idx-1]]
                 else:
-                    dim_vals = (dim.values if dim.values else
+                    dim_vals = (list(dim.values) if dim.values else
                                 list(unique_array(self.mock_obj.dimension_values(dim.name))))
                     visible = visible and len(dim_vals) > 1
 
@@ -344,14 +346,11 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = {}
 
-                value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                        for v in dim_vals]))
-
                 if isinstance(dim_vals[0], np.datetime64):
-                    dim_vals = [str(v) for v in dim_vals]
+                    dim_vals = sorted([str(v) for v in dim_vals])
                     widget_type = 'slider'
                 elif isnumeric(dim_vals[0]):
-                    dim_vals = [round(v, 10) for v in dim_vals]
+                    dim_vals = sorted([round(v, 10) for v in dim_vals])
                     if next_vals:
                         next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
                                                     for v in vals]
@@ -360,6 +359,9 @@ class SelectionWidget(NdWidget):
                 else:
                     next_vals = dict(next_vals)
                     widget_type = 'dropdown'
+
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in dim_vals]))
                 init_dim_vals.append(dim_vals[0])
                 dim_vals = escape_list(escape_vals(dim_vals))
                 next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})

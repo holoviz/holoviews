@@ -3,13 +3,14 @@ from unittest import SkipTest
 import numpy as np
 
 from holoviews import renderer
-from holoviews.core import Dimension, NdMapping, DynamicMap
+from holoviews.core import Dimension, NdMapping, DynamicMap, HoloMap
 from holoviews.element import Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
     from holoviews.plotting.bokeh.widgets import BokehServerWidgets
     from bokeh.models.widgets import Select, Slider, AutocompleteInput, TextInput, Div
+    bokeh_renderer = renderer('bokeh')
 except:
     BokehServerWidgets = None
 
@@ -22,7 +23,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
 
     def test_bokeh_widgets_server_mode(self):
         dmap = DynamicMap(lambda X: Curve([]), kdims=['X']).redim.range(X=(0, 5))
-        widgets = renderer('bokeh').instance(mode='server').get_widget(dmap, None)
+        widgets = bokeh_renderer.instance(mode='server').get_widget(dmap, None)
         div, widget = widgets.widgets['X']
         self.assertIsInstance(widget, Slider)
         self.assertEqual(widget.value, 0)
@@ -158,3 +159,164 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(label.title, dim.pprint_label)
         self.assertEqual(label.value, '3')
         self.assertEqual(mapping, [(k, dim.pprint_value(k)) for k in ndmap.keys()])
+
+
+
+class TestSelectionWidget(ComparisonTestCase):
+
+    def setUp(self):
+        if not BokehServerWidgets:
+            raise SkipTest("Bokeh required to test BokehServerWidgets")
+
+    def test_holomap_slider(self):
+        hmap = HoloMap({i: Curve([1, 2, 3]) for i in range(10)}, 'X')
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], repr([repr(float(v)) for v in range(10)]))
+        self.assertEqual(slider['labels'], repr([str(v) for v in range(10)]))
+        self.assertEqual(slider['step'], 1)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr(['0.0']))
+
+    def test_holomap_slider_unsorted(self):
+        data = {(i, j): Curve([1, 2, 3]) for i in range(3) for j in range(3)}
+        del data[2, 2]
+        hmap = HoloMap(data, ['X', 'Y'])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 2)
+        slider = widgets[1]
+        self.assertEqual(slider['vals'], repr([repr(float(v)) for v in range(3)]))
+        self.assertEqual(slider['labels'], repr([str(v) for v in range(3)]))
+
+    def test_holomap_dropdown(self):
+        hmap = HoloMap({chr(65+i): Curve([1, 2, 3]) for i in range(10)}, 'X')
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        dropdown = widgets[0]
+        self.assertEqual(dropdown['type'], 'dropdown')
+        self.assertEqual(dropdown['dim'], 'X')
+        self.assertEqual(dropdown['dim_idx'], 0)
+        self.assertEqual(dropdown['vals'], repr([chr(65+v) for v in range(10)]))
+        self.assertEqual(dropdown['labels'], repr([chr(65+v) for v in range(10)]))
+        self.assertEqual(dropdown['step'], 1)
+        self.assertIs(dropdown['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr(['A']))
+
+    def test_holomap_slider_and_dropdown(self):
+        hmap = HoloMap({(i, chr(65+i)): Curve([1, 2, 3]) for i in range(10)}, ['X', 'Y'])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 2)
+
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], repr([repr(float(v)) for v in range(10)]))
+        self.assertEqual(slider['labels'], repr([str(v) for v in range(10)]))
+        self.assertEqual(slider['step'], 1)
+        self.assertEqual(slider['next_dim'], Dimension('Y'))
+        self.assertEqual(eval(slider['next_vals']),
+                         {str(float(i)): [chr(65+i)] for i in range(10)})
+        
+        dropdown = widgets[1]
+        self.assertEqual(dropdown['type'], 'dropdown')
+        self.assertEqual(dropdown['dim'], 'Y')
+        self.assertEqual(dropdown['dim_idx'], 1)
+        self.assertEqual(dropdown['vals'], repr([chr(65+v) for v in range(10)]))
+        self.assertEqual(dropdown['labels'], repr([chr(65+v) for v in range(10)]))
+        self.assertEqual(dropdown['step'], 1)
+        self.assertIs(dropdown['next_dim'], None)
+
+        self.assertEqual(dimensions, ['X', 'Y'])
+        self.assertEqual(init_dim_vals, repr(['0.0', 'A']))
+
+    def test_dynamicmap_int_range_slider(self):
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[Dimension('X', range=(0, 5))])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], "['0.0', '5.0']")
+        self.assertEqual(slider['labels'], [])
+        self.assertEqual(slider['step'], 1)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr([0.0]))
+
+    def test_dynamicmap_float_range_slider(self):
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[Dimension('X', range=(0., 5.))])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], "['0.0', '5.0']")
+        self.assertEqual(slider['labels'], [])
+        self.assertEqual(slider['step'], 0.01)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr([0.0]))
+
+    def test_dynamicmap_float_range_slider_with_step(self):
+        dimension = Dimension('X', range=(0., 5.), step=0.05)
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[dimension])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(widgets[0]['step'], 0.05)
+
+    def test_dynamicmap_int_range_slider_with_step(self):
+        dimension = Dimension('X', range=(0, 10), step=2)
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[dimension])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(widgets[0]['step'], 2)
+
+    def test_dynamicmap_values_slider(self):
+        dimension = Dimension('X', values=list(range(10)))
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[dimension])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'slider')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], {i: i for i in range(10)})
+        self.assertEqual(slider['labels'], repr([str(i) for i in range(10)]))
+        self.assertEqual(slider['step'], 1)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr([0.0]))
+
+    def test_dynamicmap_values_dropdown(self):
+        values = [chr(65+i) for i in range(10)]
+        dimension = Dimension('X', values=values)
+        hmap = DynamicMap(lambda x: Curve([1, 2, 3]), kdims=[dimension])
+        widgets = bokeh_renderer.get_widget(hmap, 'widgets')
+        widgets, dimensions, init_dim_vals =  widgets.get_widgets()
+        self.assertEqual(len(widgets), 1)
+        slider = widgets[0]
+        self.assertEqual(slider['type'], 'dropdown')
+        self.assertEqual(slider['dim'], 'X')
+        self.assertEqual(slider['dim_idx'], 0)
+        self.assertEqual(slider['vals'], list(range(10)))
+        self.assertEqual(slider['labels'], repr(values))
+        self.assertEqual(slider['step'], 1)
+        self.assertIs(slider['next_dim'], None)
+        self.assertEqual(dimensions, ['X'])
+        self.assertEqual(init_dim_vals, repr([0.0]))
