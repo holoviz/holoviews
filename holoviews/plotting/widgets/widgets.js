@@ -400,8 +400,8 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
       var min = 0;
       if (dynamic) {
         var max = Object.keys(vals).length - 1;
-        var init_label = value;
-        var default_value = parseFloat(value);
+        var init_label = labels[value];
+        var default_value = values[value];
       } else {
         var max = vals.length - 1;
         var init_label = labels[value];
