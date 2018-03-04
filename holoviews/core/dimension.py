@@ -356,6 +356,15 @@ class Dimension(param.Parameterized):
 
         all_params['values'] = list(unique_array(values))
         super(Dimension, self).__init__(**all_params)
+        if self.default is not None:
+            if self.values and self.default not in values:
+                raise ValueError('%r default %s not found in declared values: %s' %
+                                 (self, self.default, self.values))
+            elif (self.range != (None, None) and
+                  ((self.range[0] is not None and self.default < self.range[0]) or
+                   (self.range[0] is not None and self.default > self.range[1]))):
+                raise ValueError('%r default %s not in declared range: %s' %
+                                 (self, self.default, self.range))
 
 
     @property
