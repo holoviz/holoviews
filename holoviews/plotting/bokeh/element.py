@@ -746,7 +746,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             element = [el for el in self.hmap.data.values() if el][-1]
         else:
             element = self.hmap.last
-        key = self.keys[-1]
+        key = util.wrap_tuple(self.hmap.last_key)
         ranges = self.compute_ranges(self.hmap, key, ranges)
         self.current_ranges = ranges
         self.current_frame = element
@@ -1390,7 +1390,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
 
 
     def initialize_plot(self, ranges=None, plot=None, plots=None):
-        key = self.keys[-1]
+        key = util.wrap_tuple(self.hmap.last_key)
         nonempty = [el for el in self.hmap.data.values() if el]
         if not nonempty:
             raise SkipRendering('All Overlays empty, cannot initialize plot.')
