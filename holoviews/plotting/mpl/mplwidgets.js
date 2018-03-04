@@ -19,7 +19,11 @@ var MPLMethods = {
     } else {
       this.update_cache();
     }
-    this.update(0);
+    if (this.dynamic | !this.cached) {
+      this.update(0)
+    } else {
+      this.set_frame(this.current_vals[0], 0)
+    }
   },
   process_msg : function(msg) {
     var data = msg.content.data;

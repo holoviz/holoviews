@@ -338,7 +338,7 @@ function update_widget(widget, values) {
   };
 }
 
-function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, next_dim,
+function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, value, next_dim,
                      dim_idx, delay, jQueryUI_CDN, UNDERSCORE_CDN) {
 	// Slider JS Block START
   function loadcssfile(filename){
@@ -390,16 +390,22 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
     if (noConflict) $.noConflict(true);
     var vals = values;
     if (dynamic && vals.constructor === Array) {
+      var default_value = parseFloat(value);
       var min = parseFloat(vals[0]);
       var max = parseFloat(vals[vals.length-1]);
       var wstep = step;
-      var wlabels = [min];
+      var wlabels = [default_value];
+      var init_label = default_value;
     } else {
       var min = 0;
       if (dynamic) {
         var max = Object.keys(vals).length - 1;
+        var init_label = value;
+        var default_value = parseFloat(value);
       } else {
         var max = vals.length - 1;
+        var init_label = labels[value];
+		var default_value = value;
       }
       var wstep = 1;
       var wlabels = labels;
@@ -415,7 +421,7 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
       min: min,
       max: max,
       step: wstep,
-      value: min,
+      value: default_value,
       dim_vals: vals,
       dim_labels: wlabels,
       next_vals: next_vals,
@@ -474,12 +480,12 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
       }
     });
     var textInput = $('#textInput'+id+'_'+dim)
-    textInput.val(wlabels[0]);
+    textInput.val(init_label);
     adjustFontSize(textInput);
   });
 }
 
-function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_idx, dynamic) {
+function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_dim, dim_idx, dynamic) {
   var widget = $("#_anim_widget"+id+'_'+dim);
   widget.data('values', vals)
   for (var i=0; i<vals.length; i++){
@@ -494,6 +500,7 @@ function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_
     }));
   };
   widget.data("next_vals", next_vals);
+  widget.val(value);
   widget.on('change', function(event, ui) {
     if (dynamic) {
       var dim_val = parseInt(this.value);
