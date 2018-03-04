@@ -49,9 +49,6 @@ legend_dimensions = ['label_standoff', 'label_width', 'label_height', 'glyph_wid
 
 class ElementPlot(BokehPlot, GenericElementPlot):
 
-    bgcolor = param.Parameter(default=None, allow_None=True, doc="""
-        Background color of the plot.""")
-
     border = param.Number(default=10, doc="""
         Minimum border around plot.""")
 
@@ -67,15 +64,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
        unmentioned keys reverts to the default sizes, e.g:
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
-
-    invert_axes = param.Boolean(default=False, doc="""
-        Whether to invert the x- and y-axis""")
-
-    invert_xaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot x-axis.""")
-
-    invert_yaxis = param.Boolean(default=False, doc="""
-        Whether to invert the plot y-axis.""")
 
     labelled = param.List(default=['x', 'y'], doc="""
         Whether to plot the 'x' and 'y' labels.""")
@@ -93,15 +81,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
           * threshold - Number of samples before downsampling is enabled.
           * timeout   - Timeout (in ms) for checking whether interactive
                         tool events are still occurring.""")
-
     show_frame = param.Boolean(default=True, doc="""
         Whether or not to show a complete frame around the plot.""")
-
-    show_grid = param.Boolean(default=False, doc="""
-        Whether to show a Cartesian grid on the plot.""")
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
 
     shared_axes = param.Boolean(default=True, doc="""
         Whether to invert the share axes across plots
@@ -113,49 +94,6 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
-
-    toolbar = param.ObjectSelector(default='right',
-                                   objects=["above", "below",
-                                            "left", "right", None],
-                                   doc="""
-        The toolbar location, must be one of 'above', 'below',
-        'left', 'right', None.""")
-
-    xaxis = param.ObjectSelector(default='bottom',
-                                 objects=['top', 'bottom', 'bare', 'top-bare',
-                                          'bottom-bare', None], doc="""
-        Whether and where to display the xaxis, bare options allow suppressing
-        all axis labels including ticks and xlabel. Valid options are 'top',
-        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
-
-    logx = param.Boolean(default=False, doc="""
-        Whether the x-axis of the plot will be a log axis.""")
-
-    xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
-        Rotation angle of the xticks.""")
-
-    xticks = param.Parameter(default=None, doc="""
-        Ticks along x-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None default
-        bokeh ticking behavior is applied.""")
-
-    yaxis = param.ObjectSelector(default='left',
-                                      objects=['left', 'right', 'bare', 'left-bare',
-                                               'right-bare', None], doc="""
-        Whether and where to display the yaxis, bare options allow suppressing
-        all axis labels including ticks and ylabel. Valid options are 'left',
-        'right', 'bare' 'left-bare' and 'right-bare'.""")
-
-    logy = param.Boolean(default=False, doc="""
-        Whether the y-axis of the plot will be a log axis.""")
-
-    yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
-        Rotation angle of the yticks.""")
-
-    yticks = param.Parameter(default=None, doc="""
-        Ticks along y-axis specified as an integer, explicit list of
-        tick locations or bokeh Ticker object. If set to None
-        default bokeh ticking behavior is applied.""")
 
     _categorical = False
 

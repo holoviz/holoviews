@@ -1,3 +1,4 @@
+import param
 import matplotlib
 from matplotlib import patches as patches
 
@@ -11,6 +12,9 @@ class AnnotationPlot(ElementPlot):
     """
     AnnotationPlot handles the display of all annotation elements.
     """
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     def __init__(self, annotation, **params):
         self._annotation = annotation

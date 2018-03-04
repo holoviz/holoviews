@@ -24,9 +24,9 @@ from .plot import AdjoinedPlot, mpl_rc_context
 
 
 class ChartPlot(ElementPlot):
-
-    show_legend = param.Boolean(default=True, doc="""
-        Whether to show legend for the plot.""")
+    """
+    Baseclass to plot Chart elements.
+    """
 
 
 class CurvePlot(ChartPlot):

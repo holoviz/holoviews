@@ -557,6 +557,60 @@ class GenericElementPlot(DimensionedPlot):
     apply_extents = param.Boolean(default=True, doc="""
         Whether to apply extent overrides on the Elements""")
 
+    bgcolor = param.ClassSelector(class_=(str, tuple), default=None, doc="""
+        If set bgcolor overrides the background color of the axis.""")
+
+    invert_axes = param.Boolean(default=False, doc="""
+        Whether to invert the x- and y-axis""")
+
+    invert_xaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot x-axis.""")
+
+    invert_yaxis = param.Boolean(default=False, doc="""
+        Whether to invert the plot y-axis.""")
+
+    logx = param.Boolean(default=False, doc="""
+        Whether the x-axis of the plot will be a log axis.""")
+
+    logy = param.Boolean(default=False, doc="""
+        Whether the y-axis of the plot will be a log axis.""")
+
+    show_legend = param.Boolean(default=True, doc="""
+        Whether to show legend for the plot.""")
+
+    show_grid = param.Boolean(default=False, doc="""
+        Whether to show a Cartesian grid on the plot.""")
+
+    xaxis = param.ObjectSelector(default='bottom',
+                                 objects=['top', 'bottom', 'bare', 'top-bare',
+                                          'bottom-bare', None, True, False], doc="""
+        Whether and where to display the xaxis, bare options allow suppressing
+        all axis labels including ticks and xlabel. Valid options are 'top',
+        'bottom', 'bare', 'top-bare' and 'bottom-bare'.""")
+
+    yaxis = param.ObjectSelector(default='left',
+                                      objects=['left', 'right', 'bare', 'left-bare',
+                                               'right-bare', None, True, False], doc="""
+        Whether and where to display the yaxis, bare options allow suppressing
+        all axis labels including ticks and ylabel. Valid options are 'left',
+        'right', 'bare' 'left-bare' and 'right-bare'.""")
+
+    xrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the xticks.""")
+
+    yrotation = param.Integer(default=None, bounds=(0, 360), doc="""
+        Rotation angle of the yticks.""")
+
+    xticks = param.Parameter(default=None, doc="""
+        Ticks along x-axis specified as an integer, explicit list of
+        tick locations or bokeh Ticker object. If set to None default
+        bokeh ticking behavior is applied.""")
+
+    yticks = param.Parameter(default=None, doc="""
+        Ticks along y-axis specified as an integer, explicit list of
+        tick locations or bokeh Ticker object. If set to None
+        default bokeh ticking behavior is applied.""")
+
     # A dictionary mapping of the plot methods used to draw the
     # glyphs corresponding to the ElementPlot, can support two
     # keyword arguments a 'single' implementation to draw an individual
