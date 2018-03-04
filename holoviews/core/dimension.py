@@ -195,6 +195,9 @@ class redim(object):
     def step(self, specs=None, **values):
         return self._redim('step', specs, **values)
 
+    def default(self, specs=None, **values):
+        return self._redim('default', specs, **values)
+
     def unit(self, specs=None, **values):
         return self._redim('unit', specs, **values)
 
@@ -280,10 +283,14 @@ class Dimension(param.Parameterized):
         may be an inbuilt constructor (such as int, str, float) or a
         custom class object.""")
 
+    default = param.Parameter(default=None, doc="""
+        Default value of the Dimension which may be useful for widget
+        or other situations that require an initial or default value.""")
+
     step = param.Number(default=None, doc="""
         Optional floating point step specifying how frequently the
         underlying space should be sampled. May be used to define a
-        discrete sampling of over the range.""")
+        discrete sampling over the range.""")
 
     unit = param.String(default=None, allow_None=True, doc="""
         Optional unit string associated with the Dimension. For
