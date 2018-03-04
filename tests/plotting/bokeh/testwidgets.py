@@ -95,7 +95,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertIsInstance(label, AutocompleteInput)
         self.assertEqual(label.title, dim.pprint_label)
         self.assertEqual(label.value, '3')
-        self.assertEqual(mapping, [(v, dim.pprint_value(v)) for v in values])
+        self.assertEqual(mapping, [(i, (v, dim.pprint_value(v))) for i, v in enumerate(values)])
 
     def test_bokeh_server_dynamic_values_float_not_editable(self):
         values = list(np.linspace(3.1, 11.2, 7))
@@ -108,7 +108,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(widget.step, 1)
         self.assertIsInstance(label, Div)
         self.assertEqual(label.text, '<b>%s</b>' % dim.pprint_value_string(3.1))
-        self.assertEqual(mapping, [(v, dim.pprint_value(v)) for v in values])
+        self.assertEqual(mapping, [(i, (v, dim.pprint_value(v))) for i, v in enumerate(values)])
 
     def test_bokeh_server_dynamic_values_float_editable(self):
         values = list(np.linspace(3.1, 11.2, 7))
@@ -122,7 +122,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertIsInstance(label, AutocompleteInput)
         self.assertEqual(label.title, dim.pprint_label)
         self.assertEqual(label.value, '3.1')
-        self.assertEqual(mapping, [(v, dim.pprint_value(v)) for v in values])
+        self.assertEqual(mapping, [(i, (v, dim.pprint_value(v))) for i, v in enumerate(values)])
 
     def test_bokeh_server_dynamic_values_str_1(self):
         values = [chr(65+i) for i in range(10)]
@@ -144,7 +144,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertEqual(widget.value, 'A')
         self.assertEqual(widget.options, list(zip(keys, keys)))
         self.assertEqual(widget.title, dim.pprint_label)
-        self.assertEqual(mapping, list(zip(keys, keys)))
+        self.assertEqual(mapping, list(enumerate(zip(keys, keys))))
 
     def test_bokeh_server_static_numeric_values(self):
         dim = Dimension('x')
@@ -158,7 +158,7 @@ class TestBokehServerWidgets(ComparisonTestCase):
         self.assertIsInstance(label, AutocompleteInput)
         self.assertEqual(label.title, dim.pprint_label)
         self.assertEqual(label.value, '3')
-        self.assertEqual(mapping, [(k, dim.pprint_value(k)) for k in ndmap.keys()])
+        self.assertEqual(mapping, [(i, (k, dim.pprint_value(k))) for i, k in enumerate(ndmap.keys())])
 
 
 
