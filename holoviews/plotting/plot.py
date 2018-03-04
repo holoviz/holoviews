@@ -487,7 +487,7 @@ class DimensionedPlot(Plot):
 
 
     def update(self, key):
-        if len(self) == 1 and key == 0 and not self.drawn:
+        if len(self) == 1 and ((key == 0) or (key == self.keys[0])) and not self.drawn:
             return self.initialize_plot()
         item = self.__getitem__(key)
         self.traverse(lambda x: setattr(x, '_updated', True))
