@@ -185,7 +185,10 @@ class Renderer(Exporter):
             plot_opts = self_or_cls.plot_options(obj, self_or_cls.size)
             plot = self_or_cls.plotting_class(obj)(obj, renderer=renderer,
                                                    **plot_opts)
-            plot.update(0)
+            defaults = [kd.default for kd in plot.dimensions]
+            init_key = tuple(v if d is None else d for v, d in
+                             zip(plot.keys[0], defaults))
+            plot.update(init_key)
         else:
             plot = obj
         return plot
