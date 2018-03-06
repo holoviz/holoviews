@@ -1007,7 +1007,7 @@ class GenericOverlayPlot(GenericElementPlot):
                         break
                 if not found:
                     layer = None
-            if layer and subplot.apply_ranges:
+            if layer is not None and subplot.apply_ranges:
                 if isinstance(layer, CompositeOverlay):
                     sp_ranges = ranges
                 else:

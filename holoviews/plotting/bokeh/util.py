@@ -106,7 +106,7 @@ def mpl_to_bokeh(properties):
             new_properties['size'] = v
         elif k == 'marker':
             new_properties.update(markers.get(v, {'marker': v}))
-        elif k == 'color' or k.endswith('_color') and not isinstance(v, dict):
+        elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
             with abbreviated_exception():
                 v = colors.ColorConverter.colors.get(v, v)
             if isinstance(v, tuple):

@@ -140,3 +140,9 @@ class TestOverlayPlot(TestBokehPlot):
         self.assertIsInstance(x_range, Range1d)
         self.assertIsInstance(y_range, FactorRange)
         self.assertEqual(y_range.factors, ['A', 'B', 'C', 'D', 'E'])
+
+    def test_overlay_empty_element_extent(self):
+        overlay = Curve([]).redim.range(x=(-10, 10)) * Points([]).redim.range(y=(-20, 20))
+        plot = bokeh_renderer.get_plot(overlay)
+        extents = plot.get_extents(overlay, {})
+        self.assertEqual(extents, (-10, -20, 10, 20))

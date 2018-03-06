@@ -35,9 +35,13 @@ class TextPlot(ElementPlot):
             data = dict(x=[element.x], y=[element.y])
         self._categorize_data(data, ('x', 'y'), element.dimensions())
         data['text'] = [element.text]
-        style['text_align'] = element.halign
+        if 'text_align' not in style:
+            style['text_align'] = element.halign
         baseline = 'middle' if element.valign == 'center' else element.valign
-        style['text_baseline'] = baseline
+        if 'text_baseline' not in style:
+            style['text_baseline'] = baseline
+        if 'text_font_size' not in style:
+            style['text_font_size'] = '%dPt' % element.fontsize
         if 'color' in style:
             style['text_color'] = style.pop('color')
         return (data, mapping, style)
