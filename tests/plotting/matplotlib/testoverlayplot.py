@@ -24,3 +24,9 @@ class TestOverlayPlot(TestMPLPlot):
         overlay = Curve(range(10)) * NdOverlay()
         plot = mpl_renderer.get_plot(overlay)
         self.assertEqual(len(plot.subplots), 1)
+
+    def test_overlay_empty_element_extent(self):
+        overlay = Curve([]).redim.range(x=(-10, 10)) * Scatter([]).redim.range(y=(-20, 20))
+        plot = mpl_renderer.get_plot(overlay)
+        extents = plot.get_extents(overlay, {})
+        self.assertEqual(extents, (-10, -20, 10, 20))
