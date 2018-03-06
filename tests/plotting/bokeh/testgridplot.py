@@ -7,7 +7,8 @@ from holoviews.operation import gridmatrix
 from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
-    from bokeh.models import Div
+    from bokeh.layouts import Column
+    from bokeh.models import Div, ToolbarBox
 except:
     pass
 
@@ -98,3 +99,15 @@ class TestGridPlot(TestBokehPlot):
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
         self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
         self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
+
+    def test_grid_set_toolbar_location(self):
+        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').options(toolbar='left')
+        plot = bokeh_renderer.get_plot(grid)
+        self.assertIsInstance(plot.state, Column)
+        self.assertIsInstance(plot.state.children[0].children[0], ToolbarBox)
+
+    def test_grid_disable_toolbar(self):
+        grid = GridSpace({0: Curve([]), 1: Points([])}, 'X').options(toolbar=None)
+        plot = bokeh_renderer.get_plot(grid)
+        self.assertIsInstance(plot.state, Column)
+        self.assertEqual([p for p in plot.state.children if isinstance(p, ToolbarBox)], [])
