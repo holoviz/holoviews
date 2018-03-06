@@ -1,6 +1,6 @@
 [![PyPI](https://img.shields.io/pypi/v/holoviews.svg)](https://pypi.python.org/pypi/holoviews)
 [![Conda](https://anaconda.org/ioam/holoviews/badges/installer/conda.svg)](https://anaconda.org/ioam/holoviews)
-[![Downloads](https://anaconda.org/ioam/holoviews/badges/downloads.svg)](https://anaconda.org/ioam/holoviews)
+[![Downloads](https://s3.amazonaws.com/pubbadges/holoviews_current.svg)](https://anaconda.org/ioam/holoviews)
 [![BuildStatus](https://travis-ci.org/ioam/holoviews.svg?branch=master)](https://travis-ci.org/ioam/holoviews)
 [![holoviewsDocs](http://buildbot.holoviews.org:8010/png?builder=website)](http://buildbot.holoviews.org:8010/waterfall)
 [![Coveralls](https://img.shields.io/coveralls/ioam/holoviews.svg)](https://coveralls.io/r/ioam/holoviews)
