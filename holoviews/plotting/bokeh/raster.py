@@ -223,4 +223,6 @@ class QuadMeshPlot(ColorbarPlot):
             renderer = plot.patches(**properties)
         else:
             renderer = plot.quad(**properties)
+        if self.colorbar and 'color_mapper' in self.handles:
+            self._draw_colorbar(plot, self.handles['color_mapper'])
         return renderer, renderer.glyph
