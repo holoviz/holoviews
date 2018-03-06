@@ -22,6 +22,9 @@ class RasterPlot(ColorbarPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
     situate_axes = param.Boolean(default=True, doc="""
         Whether to situate the image relative to other plots. """)
 
@@ -204,6 +207,9 @@ class HeatMapPlot(RasterPlot):
 
 
 class QuadMeshPlot(ColorbarPlot):
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
 
     style_opts = ['alpha', 'cmap', 'clims', 'edgecolors', 'norm', 'shading',
                   'linestyles', 'linewidths', 'hatch', 'visible']
