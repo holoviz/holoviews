@@ -70,8 +70,6 @@ class BokehServerWidgets(param.Parameterized):
         self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                   kdims=list(self.dimensions))
         self.widgets, self.lookups = self.get_widgets()
-        self.reverse_lookups = {d: {v: k for k, v in item.items()}
-                                for d, item in self.lookups.items()}
         self.subplots = {}
         if self.plot.renderer.mode == 'default':
             self.attach_callbacks()
@@ -95,52 +93,80 @@ class BokehServerWidgets(param.Parameterized):
         label, mapping = None, None
         if holomap is None:
             if dim.values:
+                if dim.default is None:
+                    default = dim.values[0]
+                elif dim.default not in dim.values:
+                    raise ValueError("%s dimension default %r is not in dimension values: %s"
+                                     % (dim, dim.default, dim.values))
+                else:
+                    default = dim.default
+                value = dim.values.index(default)
+
                 if all(isnumeric(v) for v in dim.values):
-                    values = dim.values
-                    labels = [unicode(dim.pprint_value(v)) for v in dim.values]
+                    values = sorted(dim.values)
+                    labels = [unicode(dim.pprint_value(v)) for v in values]
                     if editable:
-                        label = AutocompleteInput(value=labels[0], completions=labels,
+                        label = AutocompleteInput(value=labels[value], completions=labels,
                                                   title=dim.pprint_label)
                     else:
-                        label = Div(text='<b>%s</b>' % dim.pprint_value_string(labels[0]))
-                    widget = Slider(value=0, start=0, end=len(dim.values)-1, title=None, step=1)
-                    mapping = list(zip(values, labels))
+                        label = Div(text='<b>%s</b>' % dim.pprint_value_string(labels[value]))
+                    widget = Slider(value=value, start=0, end=len(dim.values)-1, title=None, step=1)
+                    mapping = list(enumerate(zip(values, labels)))
                 else:
                     values = [(v, dim.pprint_value(v)) for v in dim.values]
-                    widget = Select(title=dim.pprint_label, value=values[0][0],
+                    widget = Select(title=dim.pprint_label, value=values[value][0],
                                     options=values)
             else:
                 start = dim.soft_range[0] if dim.soft_range[0] else dim.range[0]
                 end = dim.soft_range[1] if dim.soft_range[1] else dim.range[1]
                 dim_range = end - start
                 int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
-                if isinstance(dim_range, int) or int_type:
-                    step = 1
-                elif dim.step is not None:
+                if dim.step is not None:
                     step = dim.step
+                elif isinstance(dim_range, int) or int_type:
+                    step = 1
                 else:
                     step = 10**((round(math.log10(dim_range))-3))
-                if editable:
-                    label = TextInput(value=str(start), title=dim.pprint_label)
+
+                if dim.default is None:
+                    default = start
+                elif (dim.default < start or dim.default > end):
+                    raise ValueError("%s dimension default %r is not in the provided range: %s"
+                                     % (dim, dim.default, (start, end)))
                 else:
-                    label = Div(text='<b>%s</b>' % dim.pprint_value_string(start))
-                widget = Slider(value=start, start=start,
+                    default = dim.default
+
+                if editable:
+                    label = TextInput(value=str(default), title=dim.pprint_label)
+                else:
+                    label = Div(text='<b>%s</b>' % dim.pprint_value_string(default))
+                widget = Slider(value=default, start=start,
                                 end=end, step=step, title=None)
         else:
             values = (dim.values if dim.values else
                       list(unique_array(holomap.dimension_values(dim.name))))
-            labels = [dim.pprint_value(v) for v in values]
+            if dim.default is None:
+                default = values[0]
+            elif dim.default not in values:
+                raise ValueError("%s dimension default %r is not in dimension values: %s"
+                                 % (dim, dim.default, values))
+            else:
+                default = dim.default
             if isinstance(values[0], np.datetime64) or isnumeric(values[0]):
+                values = sorted(values)
+                labels = [dim.pprint_value(v) for v in values]
+                value = values.index(default)
                 if editable:
-                    label = AutocompleteInput(value=labels[0], completions=labels,
+                    label = AutocompleteInput(value=labels[value], completions=labels,
                                               title=dim.pprint_label)
                 else:
-                    label = Div(text='<b>%s</b>' % (dim.pprint_value_string(labels[0])))
-                widget = Slider(value=0, start=0, end=len(values)-1, title=None, step=1)
+                    label = Div(text='<b>%s</b>' % (dim.pprint_value_string(labels[value])))
+                widget = Slider(value=value, start=0, end=len(values)-1, title=None, step=1)
             else:
-                widget = Select(title=dim.pprint_label, value=values[0],
+                labels = [dim.pprint_value(v) for v in values]
+                widget = Select(title=dim.pprint_label, value=default,
                                 options=list(zip(values, labels)))
-            mapping = list(zip(values, labels))
+            mapping = list(enumerate(zip(values, labels)))
         return widget, label, mapping
 
 
@@ -212,10 +238,10 @@ class BokehServerWidgets(param.Parameterized):
             lookups = self.lookups.get(dim_label)
             if not self.editable:
                 if lookups:
-                    new = list(lookups.keys())[widget.value]
+                    new = lookups[widget.value][1]
                 label.text = '<b>%s</b>' % dim.pprint_value_string(new)
             elif isinstance(label, AutocompleteInput):
-                text = lookups[new]
+                text = lookups[new][1]
                 label.value = text
             else:
                 label.value = dim.pprint_value(new)
@@ -224,7 +250,7 @@ class BokehServerWidgets(param.Parameterized):
         for dim, (label, widget) in self.widgets.items():
             lookups = self.lookups.get(dim)
             if label and lookups:
-                val = list(lookups.keys())[widget.value]
+                val = lookups[widget.value][0]
             else:
                 val = widget.value
             key.append(val)

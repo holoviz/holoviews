@@ -74,7 +74,7 @@ HoloViewsWidget.prototype.init_comms = function() {
   var that = this
   HoloViews.comm_manager.register_target(this.plot_id, this.id, function (msg) { that.process_msg(msg) })
   if (!this.cached || this.dynamic) {
-	function ack_callback(msg) {
+    function ack_callback(msg) {
       msg = JSON.parse(msg.content.data);
       var comm_id = msg["comm_id"]
       var comm_status = HoloViews.comm_status[comm_id];
@@ -92,7 +92,7 @@ HoloViewsWidget.prototype.init_comms = function() {
       }
     }
     var comm = HoloViews.comm_manager.get_client_comm(this.plot_id, this.id+'_client', ack_callback);
-	return comm
+    return comm
   }
 }
 
@@ -130,7 +130,7 @@ SelectionWidget.prototype.get_key = function(current_vals) {
   for (var i=0; i<this.slider_ids.length; i++)
   {
     var val = this.current_vals[i];
-	if (!(typeof val === 'string')) {
+    if (!(typeof val === 'string')) {
       if (val % 1 === 0) { val = val.toFixed(1); }
       else { val = val.toFixed(10); val = val.slice(0, val.length-1);}
     }
@@ -322,7 +322,7 @@ function update_widget(widget, values) {
       dim_vals: values,
       value: 0,
       dim_labels: values
-	})
+    })
     widget.slider('option', 'slide').call(widget, event, {value: 0})
   } else {
     widget.empty();
@@ -338,9 +338,9 @@ function update_widget(widget, values) {
   };
 }
 
-function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, next_dim,
+function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step, value, next_dim,
                      dim_idx, delay, jQueryUI_CDN, UNDERSCORE_CDN) {
-	// Slider JS Block START
+  // Slider JS Block START
   function loadcssfile(filename){
     var fileref=document.createElement("link")
     fileref.setAttribute("rel", "stylesheet")
@@ -368,7 +368,7 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
     define('jquery', [], function() { return jQuery; });
   }
   if (!jQueryUI) {
-	paths.jQueryUI = jQueryUI_CDN.slice(null, -3);
+    paths.jQueryUI = jQueryUI_CDN.slice(null, -3);
   } else {
     define('jQueryUI', [], function() { return jQuery.ui; });
   }
@@ -390,16 +390,22 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
     if (noConflict) $.noConflict(true);
     var vals = values;
     if (dynamic && vals.constructor === Array) {
+      var default_value = parseFloat(value);
       var min = parseFloat(vals[0]);
       var max = parseFloat(vals[vals.length-1]);
       var wstep = step;
-      var wlabels = [min];
+      var wlabels = [default_value];
+      var init_label = default_value;
     } else {
       var min = 0;
       if (dynamic) {
         var max = Object.keys(vals).length - 1;
+        var init_label = labels[value];
+        var default_value = values[value];
       } else {
         var max = vals.length - 1;
+        var init_label = labels[value];
+        var default_value = value;
       }
       var wstep = 1;
       var wlabels = labels;
@@ -409,13 +415,13 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
       var size = Math.min(0.9, Math.max(0.6, width_ratio))+'em';
       text.css('font-size', size);
     }
-	var slider = $('#_anim_widget'+id+'_'+dim);
+    var slider = $('#_anim_widget'+id+'_'+dim);
     slider.slider({
       animate: "fast",
       min: min,
       max: max,
       step: wstep,
-      value: min,
+      value: default_value,
       dim_vals: vals,
       dim_labels: wlabels,
       next_vals: next_vals,
@@ -474,12 +480,12 @@ function init_slider(id, plot_id, dim, values, next_vals, labels, dynamic, step,
       }
     });
     var textInput = $('#textInput'+id+'_'+dim)
-    textInput.val(wlabels[0]);
+    textInput.val(init_label);
     adjustFontSize(textInput);
   });
 }
 
-function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_idx, dynamic) {
+function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_dim, dim_idx, dynamic) {
   var widget = $("#_anim_widget"+id+'_'+dim);
   widget.data('values', vals)
   for (var i=0; i<vals.length; i++){
@@ -494,6 +500,7 @@ function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_
     }));
   };
   widget.data("next_vals", next_vals);
+  widget.val(value);
   widget.on('change', function(event, ui) {
     if (dynamic) {
       var dim_val = parseInt(this.value);
@@ -506,7 +513,7 @@ function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_
       var next_widget = $('#_anim_widget'+id+'_'+next_dim);
       update_widget(next_widget, new_vals);
     }
-	var widgets = HoloViews.index[plot_id]
+    var widgets = HoloViews.index[plot_id]
     if (widgets) {
       widgets.set_frame(dim_val, dim_idx);
     }
@@ -514,7 +521,7 @@ function init_dropdown(id, plot_id, dim, vals, next_vals, labels, next_dim, dim_
 }
 
 if (window.HoloViews === undefined) {
-	window.HoloViews = {}
+  window.HoloViews = {}
 }
 
 var _namespace = {

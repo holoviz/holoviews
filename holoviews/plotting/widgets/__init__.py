@@ -113,6 +113,9 @@ class NdWidget(param.Parameterized):
         self.dimensions, self.keys = drop_streams(streams,
                                                   plot.dimensions,
                                                   plot.keys)
+        defaults = [kd.default for kd in self.dimensions]
+        self.init_key = tuple(v if d is None else d for v, d in
+                              zip(self.keys[0], defaults))
 
         self.json_data = {}
         if self.plot.dynamic: self.embed = False
@@ -290,93 +293,129 @@ class SelectionWidget(NdWidget):
 
     def get_widgets(self):
         # Generate widget data
-        step = 1
         widgets, dimensions, init_dim_vals = [], [], []
         hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
-            next_dim = ''
-            next_vals = {}
-
             # Hide widget if it has 1-to-1 mapping to next widget
-            visible = True
             if self.plot.dynamic:
-                if dim.values:
-                    if all(isnumeric(v) for v in dim.values):
-                        # Widgets currently detect dynamic mode by type
-                        # this value representation is now redundant
-                        # and should be removed in a refactor
-                        values = sorted(dim.values)
-                        dim_vals = {i: i for i, v in enumerate(values)}
-                        widget_type = 'slider'
-                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                                for v in sorted(values)]))
-                    else:
-                        values = list(dim.values)
-                        dim_vals = list(range(len(values)))
-                        value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                                for v in values]))
-                        widget_type = 'dropdown'
-                    init_dim_vals.append(dim_vals[0])
-                else:
-                    widget_type = 'slider'
-                    value_labels = []
-                    dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
-                                dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
-                    dim_range = dim_vals[1] - dim_vals[0]
-                    int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
-                    if dim.step is not None:
-                        step = dim.step
-                    elif isinstance(dim_range, int) or int_type:
-                        step = 1
-                    else:
-                        step = 10**(round(math.log10(dim_range))-3)
-                    init_dim_vals.append(dim_vals[0])
-                    dim_vals = escape_list(escape_vals(sorted(dim_vals)))
+                widget_data = self._get_dynamic_widget(idx, dim)
             else:
-                if next_vals:
-                    dim_vals = next_vals[init_dim_vals[idx-1]]
-                else:
-                    dim_vals = (list(dim.values) if dim.values else
-                                list(unique_array(self.mock_obj.dimension_values(dim.name))))
-                    visible = visible and len(dim_vals) > 1
-
-                if idx < self.mock_obj.ndims-1:
-                    next_vals = hierarchy[idx]
-                    next_dim = bytes_to_unicode(self.mock_obj.kdims[idx+1])
-                else:
-                    next_vals = {}
-
-                if isinstance(dim_vals[0], np.datetime64):
-                    dim_vals = sorted([str(v) for v in dim_vals])
-                    widget_type = 'slider'
-                elif isnumeric(dim_vals[0]):
-                    dim_vals = sorted([round(v, 10) for v in dim_vals])
-                    if next_vals:
-                        next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
-                                                    for v in vals]
-                                     for k, vals in next_vals.items()}
-                    widget_type = 'slider'
-                else:
-                    next_vals = dict(next_vals)
-                    widget_type = 'dropdown'
-
-                value_labels = escape_list(escape_vals([dim.pprint_value(v)
-                                                        for v in dim_vals]))
-                init_dim_vals.append(dim_vals[0])
-                dim_vals = escape_list(escape_vals(dim_vals))
-                next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
-            visibility = '' if visible else 'display: none'
+                widget_data = self._get_static_widget(idx, dim, self.mock_obj, hierarchy,
+                                                      init_dim_vals)
+            init_dim_vals.append(widget_data['init_val'])
+            visibility = '' if widget_data.get('visible', True) else 'display: none'
             dim_str = dim.pprint_label
             escaped_dim = dimension_sanitizer(dim_str)
-            widget_data = dict(dim=escaped_dim, dim_label=dim_str,
-                               dim_idx=idx, vals=dim_vals, type=widget_type,
-                               visibility=visibility, step=step, next_dim=next_dim or None,
-                               next_vals=next_vals, labels=value_labels)
-
+            widget_data = dict(widget_data, dim=escaped_dim, dim_label=dim_str,
+                               dim_idx=idx, visibility=visibility)
             widgets.append(widget_data)
             dimensions.append(escaped_dim)
         init_dim_vals = escape_list(escape_vals(init_dim_vals, not self.plot.dynamic))
         return widgets, dimensions, init_dim_vals
+
+
+    @classmethod
+    def _get_static_widget(cls, idx, dim, mock_obj, hierarchy, init_dim_vals):
+        next_dim = ''
+        next_vals = {}
+        visible = True
+        if next_vals:
+            dim_vals = next_vals[init_dim_vals[idx-1]]
+        else:
+            dim_vals = (list(dim.values) if dim.values else
+                        list(unique_array(mock_obj.dimension_values(dim.name))))
+            visible = visible and len(dim_vals) > 1
+
+        if idx < mock_obj.ndims-1:
+            next_vals = hierarchy[idx]
+            next_dim = bytes_to_unicode(mock_obj.kdims[idx+1])
+        else:
+            next_vals = {}
+
+        if isinstance(dim_vals[0], np.datetime64):
+            dim_vals = sorted([str(v) for v in dim_vals])
+            widget_type = 'slider'
+        elif isnumeric(dim_vals[0]):
+            dim_vals = sorted([round(v, 10) for v in dim_vals])
+            if next_vals:
+                next_vals = {round(k, 10): [round(v, 10) if isnumeric(v) else v
+                                            for v in vals]
+                             for k, vals in next_vals.items()}
+            widget_type = 'slider'
+        else:
+            next_vals = dict(next_vals)
+            widget_type = 'dropdown'
+
+        if dim.default is None:
+            default = 0
+            init_val = dim_vals[0];
+        elif dim.default not in dim_vals:
+            raise ValueError("%s dimension default %r is not in dimension values: %s"
+                             % (dim, dim.default, dim.values))
+        else:
+            default = repr(dim_vals.index(dim.default))
+            init_val = dim.default
+
+        value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                for v in dim_vals]))
+        
+        dim_vals = escape_list(escape_vals(dim_vals))
+        next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
+        return {'type': widget_type, 'vals': dim_vals, 'labels': value_labels,
+                'step': 1, 'default': default, 'next_vals': next_vals,
+                'next_dim': next_dim or None, 'init_val': init_val, 'visible': visible}
+
+
+    @classmethod
+    def _get_dynamic_widget(cls, idx, dim):
+        step = 1
+        if dim.values:
+            if all(isnumeric(v) for v in dim.values):
+                # Widgets currently detect dynamic mode by type
+                # this value representation is now redundant
+                # and should be removed in a refactor
+                values = sorted(dim.values)
+                dim_vals = {i: i for i, v in enumerate(values)}
+                widget_type = 'slider'
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in values]))
+            else:
+                values = list(dim.values)
+                dim_vals = list(range(len(values)))
+                value_labels = escape_list(escape_vals([dim.pprint_value(v)
+                                                        for v in values]))
+                widget_type = 'dropdown'
+
+            if dim.default is None:
+                default = dim_vals[0]
+            elif widget_type == 'slider':
+                default = values.index(dim.default)
+            else:
+                default = repr(values.index(dim.default))
+            init_val = default
+        else:
+            widget_type = 'slider'
+            value_labels = []
+            dim_vals = [dim.soft_range[0] if dim.soft_range[0] else dim.range[0],
+                        dim.soft_range[1] if dim.soft_range[1] else dim.range[1]]
+            dim_range = dim_vals[1] - dim_vals[0]
+            int_type = isinstance(dim.type, type) and issubclass(dim.type, int)
+            if dim.step is not None:
+                step = dim.step
+            elif isinstance(dim_range, int) or int_type:
+                step = 1
+            else:
+                step = 10**(round(math.log10(dim_range))-3)
+
+            if dim.default is None:
+                default = dim_vals[0]
+            else:
+                default = dim.default
+            init_val = default
+            dim_vals = escape_list(escape_vals(sorted(dim_vals)))
+        return {'type': widget_type, 'vals': dim_vals, 'labels': value_labels,
+                'step': step, 'default': default, 'next_vals': {},
+                'next_dim': None, 'init_val': init_val}
 
 
     def get_key_data(self):

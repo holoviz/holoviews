@@ -14,7 +14,7 @@ class MPLWidget(NdWidget):
         if self.embed:
             return super(MPLWidget, self).get_frames()
         else:
-            frames = {0: self._plot_figure(0)}
+            frames = {0: self._plot_figure(self.init_key)}
         return self.encode_frames(frames)
 
 
