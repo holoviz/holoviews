@@ -388,9 +388,6 @@ class SelectionWidget(NdWidget):
 
             if dim.default is None:
                 default = dim_vals[0]
-            elif dim.default not in values:
-                raise ValueError("%s dimension default %r is not in dimension values: %s"
-                                 % (dim, dim.default, dim.values))
             elif widget_type == 'slider':
                 default = values.index(dim.default)
             else:
@@ -412,9 +409,6 @@ class SelectionWidget(NdWidget):
 
             if dim.default is None:
                 default = dim_vals[0]
-            elif (dim.default < dim_vals[0] or dim.default > dim_vals[1]):
-                raise ValueError("%s dimension default %r is not in the provided range: %s"
-                                 % (dim, dim.default, tuple(dim_vals)))
             else:
                 default = dim.default
             init_val = default
