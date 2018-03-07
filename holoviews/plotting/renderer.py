@@ -309,7 +309,7 @@ class Renderer(Exporter):
             js, html = plot(as_script=True)
             plot_id = plot.plot_id
         else:
-            html, js = self._figure_data(plot, as_script=True, **kwargs)
+            html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
             if comm and plot.comm is not None and self.comm_msg_handler:
                 msg_handler = self.comm_msg_handler.format(plot_id=plot_id)
