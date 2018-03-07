@@ -1,4 +1,5 @@
 from io import BytesIO
+import base64
 import logging
 
 import param
@@ -14,7 +15,7 @@ from bokeh.server.server import Server
 
 from ...core import Store, HoloMap
 from ..plot import Plot, GenericElementPlot
-from ..renderer import Renderer, MIME_TYPES
+from ..renderer import Renderer, MIME_TYPES, HTML_TAGS
 from .widgets import BokehScrubberWidget, BokehSelectionWidget, BokehServerWidgets
 from .util import attach_periodic, compute_plot_size, bokeh_version
 
@@ -36,7 +37,7 @@ var plot = Bokeh.index["{plot_id}"];
 
 if ("{plot_id}" in HoloViews.receivers) {{
   var receiver = HoloViews.receivers["{plot_id}"];
-}} else if (Bokeh.protocol !== undefined) {{
+}} else if (Bokeh.protocol === undefined) {{
   return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
@@ -114,11 +115,8 @@ class BokehRenderer(Renderer):
         elif isinstance(plot, tuple(self.widgets.values())):
             return plot(), info
         elif fmt == 'png':
-            from bokeh.io.export import get_screenshot_as_png
-            img = get_screenshot_as_png(plot.state, None)
-            imgByteArr = BytesIO()
-            img.save(imgByteArr, format='PNG')
-            return imgByteArr.getvalue(), info
+            png = self._figure_data(plot, fmt=fmt, doc=doc)
+            return png, info
         elif fmt == 'html':
             html = self._figure_data(plot, doc=doc)
             html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
@@ -268,19 +266,34 @@ class BokehRenderer(Renderer):
         # but at the holoviews level these are not issues
         logger = logging.getLogger(bokeh.core.validation.check.__file__)
         logger.disabled = True
-        try:
-            js, div, _ = notebook_content(model, comm_id)
-            html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
-            html = encode_utf8(html)
-            doc.hold()
-        except:
+
+        if fmt == 'png':
+            from bokeh.io.export import get_screenshot_as_png
+            img = get_screenshot_as_png(plot.state, None)
+            imgByteArr = BytesIO()
+            img.save(imgByteArr, format='PNG')
+            data = imgByteArr.getvalue()
+            if as_script:
+                b64 = base64.b64encode(data).decode("utf-8")
+                (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
+                src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
+                div = tag.format(src=src, mime_type=mime_type, css='')
+                js = ''
+        else:
+            try:
+                js, div, _ = notebook_content(model, comm_id)
+                html = NOTEBOOK_DIV.format(plot_script=js, plot_div=div)
+                data = encode_utf8(html)
+                doc.hold()
+            except:
+                logger.disabled = False
+                raise
             logger.disabled = False
-            raise
-        logger.disabled = False
+
         plot.document = doc
         if as_script:
             return div, js
-        return html
+        return data
 
 
     def diff(self, plot, binary=True):
