@@ -95,6 +95,13 @@ class ElementPlot(BokehPlot, GenericElementPlot):
     tools = param.List(default=[], doc="""
         A list of plugin tools to use on the plot.""")
 
+    toolbar = param.ObjectSelector(default='right',
+                                   objects=["above", "below",
+                                            "left", "right", None],
+                                   doc="""
+        The toolbar location, must be one of 'above', 'below',
+        'left', 'right', None.""")
+
     _categorical = False
 
     # Declares the default types for continuous x- and y-axes

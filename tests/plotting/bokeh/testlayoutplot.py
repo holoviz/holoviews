@@ -202,3 +202,15 @@ class TestLayoutPlot(TestBokehPlot):
         layout = Curve(range(10)) + NdOverlay() + HoloMap() + HoloMap({1: Image(np.random.rand(10,10))})
         plot = bokeh_renderer.get_plot(layout)
         self.assertEqual(len(plot.subplots.values()), 2)
+
+    def test_layout_set_toolbar_location(self):
+        layout = (Curve([]) + Points([])).options(toolbar='left')
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertIsInstance(plot.state, Row)
+        self.assertIsInstance(plot.state.children[0], ToolbarBox)
+
+    def test_layout_disable_toolbar(self):
+        layout = (Curve([]) + Points([])).options(toolbar=None)
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertIsInstance(plot.state, Column)
+        self.assertEqual(len(plot.state.children), 1)
