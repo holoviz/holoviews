@@ -5,7 +5,16 @@ try:
 except ImportError:
     pass
 
+
 import numpy as np
+array_types = (np.ndarray,)
+
+try:
+    import dask.array as da
+    array_types += (da.Array,)
+except ImportError:
+    da = None
+
 
 from .dictionary import DictInterface
 from .interface import Interface, DataError
@@ -78,7 +87,7 @@ class GridInterface(DictInterface):
             name = dim.name if isinstance(dim, Dimension) else dim
             if name not in data:
                 raise ValueError("Values for dimension %s not found" % dim)
-            if not isinstance(data[name], np.ndarray):
+            if not isinstance(data[name], array_types):
                 data[name] = np.array(data[name])
 
         kdim_names = [d.name if isinstance(d, Dimension) else d for d in kdims]
@@ -226,18 +235,18 @@ class GridInterface(DictInterface):
                 invert = True
             else:
                 slices.append(slice(None))
-        data = data[slices] if invert else data
+        data = data[tuple(slices)] if invert else data
 
         # Transpose data
         dims = [name for name in data_coords
-                if isinstance(cls.coords(dataset, name), np.ndarray)]
+                if isinstance(cls.coords(dataset, name), array_types)]
         dropped = [dims.index(d) for d in dims
                    if d not in dataset.kdims+virtual_coords]
         if dropped:
             data = data.squeeze(axis=tuple(dropped))
 
         if not any(cls.irregular(dataset, d) for d in dataset.kdims):
-            inds = [dims.index(kd.name)for kd in dataset.kdims]
+            inds = [dims.index(kd.name) for kd in dataset.kdims]
             inds = [i - sum([1 for d in dropped if i>=d]) for i in inds]
             if inds:
                 data = data.transpose(inds[::-1])
@@ -301,6 +310,8 @@ class GridInterface(DictInterface):
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
+            if da and isinstance(data, da.Array):
+                data = data.compute()
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
@@ -364,7 +375,7 @@ class GridInterface(DictInterface):
     def key_select_mask(cls, dataset, values, ind):
         if isinstance(ind, tuple):
             ind = slice(*ind)
-        if isinstance(ind, np.ndarray):
+        if isinstance(ind, array_types):
             mask = ind
         elif isinstance(ind, slice):
             mask = True
@@ -491,7 +502,10 @@ class GridInterface(DictInterface):
                 data[d].append(arr)
             for vdim, array in zip(dataset.vdims, arrays):
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
-                data[vdim.name].append(array.flat[flat_index])
+                if da and isinstance(array, da.Array):
+                    data[vdim.name].append(array.flatten()[tuple(flat_index)])
+                else:
+                    data[vdim.name].append(array.flat[flat_index])
         concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
         return concatenated
 
