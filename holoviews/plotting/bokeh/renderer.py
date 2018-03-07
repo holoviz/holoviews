@@ -37,7 +37,7 @@ var plot = Bokeh.index["{plot_id}"];
 
 if ("{plot_id}" in HoloViews.receivers) {{
   var receiver = HoloViews.receivers["{plot_id}"];
-}} else if (Bokeh.protocol !== undefined) {{
+}} else if (Bokeh.protocol === undefined) {{
   return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
@@ -277,7 +277,7 @@ class BokehRenderer(Renderer):
                 b64 = base64.b64encode(data).decode("utf-8")
                 (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
                 src = HTML_TAGS['base64'].format(mime_type=mime_type, b64=b64)
-                data = tag.format(src=src, mime_type=mime_type, css='')
+                div = tag.format(src=src, mime_type=mime_type, css='')
                 js = ''
         else:
             try:
@@ -292,7 +292,7 @@ class BokehRenderer(Renderer):
 
         plot.document = doc
         if as_script:
-            return data, js
+            return div, js
         return data
 
 
