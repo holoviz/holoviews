@@ -1627,86 +1627,9 @@ class DaskGridDatasetTest(GridDatasetTest):
 
 
 @attr(optional=1)
-class IrisDatasetTest(GridDatasetTest):
-    """
-    Tests for Iris interface
-    """
-
-    datatype = 'cube'
-
-    def setUp(self):
-        import iris
-        self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['cube']
-        self.eltype = Dataset
-        self.data_instance_type = iris.cube.Cube
-        self.init_column_data()
-        self.init_grid_data()
-
-    def test_dataset_array_init_hm(self):
-        "Tests support for arrays (homogeneous)"
-        raise SkipTest("Not supported")
-
-    # Disabled tests for NotImplemented methods
-    def test_dataset_add_dimensions_values_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_add_dimensions_values_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_reverse_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_vdim_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_reverse_vdim_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sort_vdim_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_1D_reduce_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_1D_reduce_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_2D_reduce_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_2D_reduce_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_2D_aggregate_partial_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_2D_aggregate_partial_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sample_hm(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_sample_hm_alias(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_groupby_drop_dims_with_vdim(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_groupby_drop_dims_dynamic_with_vdim(self):
-        raise SkipTest("Not supported")
-
-    def test_dataset_ndloc_slice_two_vdims(self):
-        raise SkipTest("Not supported")
-
-
-@attr(optional=1)
 class XArrayDatasetTest(GridDatasetTest):
     """
-    Tests for Iris interface
+    Tests for XArray interface
     """
 
     datatype = 'xarray'
@@ -1766,7 +1689,7 @@ class XArrayDatasetTest(GridDatasetTest):
 @attr(optional=1)
 class XArrayDaskArrayDatasetTest(XArrayDatasetTest):
     """
-    Tests for Iris interface
+    Tests for XArray interface using dask arrays
     """
 
     datatype = 'xarray'

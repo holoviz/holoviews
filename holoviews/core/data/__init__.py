@@ -31,16 +31,6 @@ except Exception as e:
                        'following error: %s' % e)
 
 try:
-    import iris # noqa (Availability import)
-    from .iris import CubeInterface # noqa (Conditional API import)
-    datatypes.append('cube')
-except ImportError:
-    pass
-except Exception as e:
-    param.main.warning('Iris interface failed to import with '
-                       'following error: %s' % e)
-
-try:
     import xarray # noqa (Availability import)
     from .xarray import XArrayInterface # noqa (Conditional API import)
     datatypes.append('xarray')
