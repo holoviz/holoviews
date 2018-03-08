@@ -431,7 +431,11 @@ class Buffer(Pipe):
                 from streamz.dataframe import StreamingDataFrame, StreamingSeries
                 loaded = True
             except ImportError:
-                loaded = False
+                try:
+                    from streamz.dataframe import DataFrame as StreamingDataFrame, Series as StreamingSeries
+                    loaded = True
+                except ImportError:
+                    loaded = False
             if not loaded or not isinstance(data, (StreamingDataFrame, StreamingSeries)):
                 raise ValueError("Buffer must be initialized with pandas DataFrame, "
                                  "streamz.StreamingDataFrame or streamz.StreamingSeries.")
