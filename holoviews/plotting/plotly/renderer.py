@@ -78,7 +78,7 @@ class PlotlyRenderer(Renderer):
             return diff
 
 
-    def _figure_data(self, plot, divuuid=None, comm=True, as_script=False, width=800, height=600):
+    def _figure_data(self, plot, fmt=None, divuuid=None, comm=True, as_script=False, width=800, height=600):
         figure = plot.state
         if divuuid is None:
             divuuid = plot.id
