@@ -19,7 +19,7 @@ var MPLMethods = {
     } else {
       this.update_cache();
     }
-    if (this.dynamic | !this.cached) {
+    if (this.dynamic | !this.cached | (this.current_vals === undefined)) {
       this.update(0)
     } else {
       this.set_frame(this.current_vals[0], 0)
