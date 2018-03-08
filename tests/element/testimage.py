@@ -68,3 +68,12 @@ class TestImage(ComparisonTestCase):
         hv.config.image_rtol = 10e-3
         Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals')
         hv.config.image_rtol = image_rtol
+
+    def test_image_clone(self):
+        vals = np.random.rand(20,20)
+        xs = np.linspace(0,10,20)
+        ys = np.linspace(0,10,20)
+        ys[-1] += 0.001
+        img = Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
+        img.clone()
+
