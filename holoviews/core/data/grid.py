@@ -619,7 +619,7 @@ class GridInterface(DictInterface):
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
             if da and isinstance(column, da.Array):
-                return dmin.compute(), dmax.compute()
+                return da.compute(dmin, dmax)
             return dmin, dmax
         elif len(column) == 0:
             return np.NaN, np.NaN
@@ -627,7 +627,7 @@ class GridInterface(DictInterface):
             try:
                 dmin, dmax = (np.nanmin(column), np.nanmax(column))
                 if da and isinstance(column, da.Array):
-                    return dmin.compute(), dmax.compute()
+                    return da.compute(dmin, dmax)
                 return dmin, dmax
             except TypeError:
                 column.sort()

@@ -621,7 +621,7 @@ class Dataset(Element):
         a new_type, which will inherit all shared parameters.
         """
         if 'datatype' not in overrides:
-            datatypes = [self.interface.datatype]+self.datatype
+            datatypes = [self.interface.datatype] + self.datatype
             overrides['datatype'] = list(unique_iterator(datatypes))
         return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
