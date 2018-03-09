@@ -253,7 +253,7 @@ class XArrayInterface(GridInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         dim = dataset.get_dimension(dim, strict=True)
         data = dataset.data[dim.name].data
         irregular = cls.irregular(dataset, dim) if dim in dataset.kdims else False
@@ -264,7 +264,7 @@ class XArrayInterface(GridInterface):
             virtual_coords = []
         if dim in dataset.vdims or irregular:
             data_coords = list(dataset.data[dim.name].dims)
-            if dask and isinstance(data, dask.array.Array):
+            if compute and dask and isinstance(data, dask.array.Array):
                 data = data.compute()
             data = cls.canonicalize(dataset, data, data_coords=data_coords,
                                     virtual_coords=virtual_coords)

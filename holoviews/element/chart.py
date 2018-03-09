@@ -317,7 +317,7 @@ class Area(Curve):
             x, y = (area.dimension_values(i) for i in range(2))
             stacked[k] = area.clone((x, y+baseline, baseline), vdims=vdims,
                                     new_type=Area)
-            baseline += y
+            baseline = baseline + y
         return stacked
 
 

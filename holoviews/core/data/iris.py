@@ -157,7 +157,7 @@ class CubeInterface(GridInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         """
         Returns an array of the values along the supplied dimension.
         """

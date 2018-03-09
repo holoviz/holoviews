@@ -1,3 +1,5 @@
+from __future__ import absolute_import
+
 from collections import OrderedDict, defaultdict, Iterable
 
 try:
@@ -243,7 +245,7 @@ class GridInterface(DictInterface):
         dropped = [dims.index(d) for d in dims
                    if d not in dataset.kdims+virtual_coords]
         if dropped:
-            data = data.squeeze(axis=tuple(dropped))
+            data = np.squeeze(data, axis=tuple(dropped))
 
         if not any(cls.irregular(dataset, d) for d in dataset.kdims):
             inds = [dims.index(kd.name) for kd in dataset.kdims]
@@ -297,7 +299,7 @@ class GridInterface(DictInterface):
         for d in dataset.dimensions():
             if d in dataset.kdims and not cls.irregular(dataset, d):
                 continue
-            arr = dataset.dimension_values(d, flat=False)
+            arr = cls.values(dataset, d, flat=False, compute=False)
             if all_scalar and len(dataset.vdims) == 1:
                 return arr[tuple(ind[0] for ind in adjusted_inds)]
             selected[d.name] = arr[tuple(adjusted_inds)]
@@ -305,12 +307,12 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
-            if da and isinstance(data, da.Array):
+            if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             return data.T.flatten() if flat else data
         elif expanded:
@@ -354,7 +356,8 @@ class GridInterface(DictInterface):
                 group_data = group_data if np.isscalar(group_data) else group_data.columns()
             else:
                 group_data = cls.select(dataset, **select)
-            if np.isscalar(group_data):
+
+            if np.isscalar(group_data) or (isinstance(group_data, array_types) and da.group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
@@ -460,15 +463,25 @@ class GridInterface(DictInterface):
         int_inds = [np.argwhere(v) for v in value_select][::-1]
         index = np.ix_(*[np.atleast_1d(np.squeeze(ind)) if ind.ndim > 1 else np.atleast_1d(ind)
                          for ind in int_inds])
+
         for kdim in dataset.kdims:
             if cls.irregular(dataset, dim):
-                data[kdim.name] = np.asarray(data[kdim.name])[index]
+                if da and isinstance(dataset.data[kdim.name], da.Array):
+                    data[kdim.name] = dataset.data[kdim.name].vindex[index]
+                else:
+                    data[kdim.name] = np.asarray(data[kdim.name])[index]
+
         for vdim in dataset.vdims:
-            data[vdim.name] = np.asarray(dataset.data[vdim.name])[index]
+            if da and isinstance(dataset.data[vdim.name], da.Array):
+                data[vdim.name] = dataset.data[vdim.name].vindex[index]
+            else:
+                data[vdim.name] = np.asarray(dataset.data[vdim.name])[index]
 
         if indexed:
             if len(dataset.vdims) == 1:
                 arr = np.squeeze(data[dataset.vdims[0].name])
+                if da and isinstance(arr, da.Array):
+                    arr = arr.compute()
                 return arr if np.isscalar(arr) else arr[()]
             else:
                 return np.array([np.squeeze(data[vd.name])
@@ -503,7 +516,7 @@ class GridInterface(DictInterface):
             for vdim, array in zip(dataset.vdims, arrays):
                 flat_index = np.ravel_multi_index(tuple(int_inds)[::-1], array.shape)
                 if da and isinstance(array, da.Array):
-                    data[vdim.name].append(array.flatten()[tuple(flat_index)])
+                    data[vdim.name].append(array.flatten().vindex[tuple(flat_index)])
                 else:
                     data[vdim.name].append(array.flat[flat_index])
         concatenated = {d: np.concatenate(arrays).flatten() for d, arrays in data.items()}
@@ -547,7 +560,7 @@ class GridInterface(DictInterface):
                 if len(axes) > 1:
                     vdata = vdata.transpose(axes[::-1])
                 if dropped_axes:
-                    vdata = vdata.squeeze(axis=dropped_axes)
+                    vdata = np.squeeze(vdata, axis=dropped_axes)
                 data[vdim.name] = vdata
             return data
         elif dropped_kdims:
@@ -588,9 +601,11 @@ class GridInterface(DictInterface):
 
         new_data = []
         for d in cols:
-            new_data.append(dataset.dimension_values(d)[rows])
+            new_data.append(cls.values(dataset, d, compute=False)[rows])
 
         if scalar:
+            if new_data and isinstance(new_data[0], da.Array):
+                return new_data[0].compute()[0]
             return new_data[0][0]
         return tuple(new_data)
 
@@ -600,14 +615,20 @@ class GridInterface(DictInterface):
             expanded = cls.irregular(dataset, dimension)
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
-            column = dataset.dimension_values(dimension)
+            column = cls.values(dataset, dimension, flat=False)
         if column.dtype.kind == 'M':
-            return column.min(), column.max()
+            dmin, dmax = column.min(), column.max()
+            if da and isinstance(column, da.Array):
+                return da.compute(dmin, dmax)
+            return dmin, dmax
         elif len(column) == 0:
             return np.NaN, np.NaN
         else:
             try:
-                return (np.nanmin(column), np.nanmax(column))
+                dmin, dmax = (np.nanmin(column), np.nanmax(column))
+                if da and isinstance(column, da.Array):
+                    return da.compute(dmin, dmax)
+                return dmin, dmax
             except TypeError:
                 column.sort()
                 return column[0], column[-1]

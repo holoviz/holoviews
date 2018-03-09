@@ -1506,6 +1506,12 @@ class DaskGridDatasetTest(GridDatasetTest):
                                              self.grid_zs), kdims=['x', 'y'],
                                             vdims=['z'])
 
+    def test_select_lazy(self):
+        import dask.array as da
+        arr = da.from_array(np.arange(1, 12), 3)
+        ds = Dataset({'x': range(11), 'y': arr}, 'x', 'y')
+        self.assertIsInstance(ds.select(x=(0, 5)).data['y'], da.Array)
+
     def test_dataset_add_dimensions_values_hm(self):
         arr = da.from_array(np.arange(1, 12), 3)
         table =  self.dataset_hm.add_dimension('z', 1, arr, vdim=True)
@@ -1551,8 +1557,8 @@ class DaskGridDatasetTest(GridDatasetTest):
         array = da.from_array(np.random.rand(11, 11), 3)
         dataset = Dataset({'x':self.xs, 'y':self.y_ints, 'z': array},
                           kdims=['x', 'y'], vdims=['z'])
-        self.assertEqual(np.array(dataset.reduce(['x', 'y'], np.mean)),
-                         np.mean(array))
+        self.assertEqual((dataset.reduce(['x', 'y'], np.mean)),
+                         np.mean(array).compute())
 
     def test_dataset_2D_reduce_hm_alias(self):
         array = np.random.rand(11, 11)

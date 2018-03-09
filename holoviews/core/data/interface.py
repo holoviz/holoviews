@@ -156,12 +156,14 @@ class Interface(param.Parameterized):
             kdims = pvals.get('kdims') if kdims is None else kdims
             vdims = pvals.get('vdims') if vdims is None else vdims
 
-        if datatype is None:
-            datatype = eltype.datatype
-
         # Process Element data
         if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
-            if data.interface.datatype in datatype:
+            if datatype is None:
+                datatype = [dt for dt in data.datatype if dt in eltype.datatype]
+                if not datatype:
+                    datatype = eltype.datatype
+
+            if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
                 data = data.data
             elif data.interface.gridded:
                 gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
@@ -175,6 +177,9 @@ class Interface(param.Parameterized):
             data = tuple(data.dimension_values(d) for d in kdims+vdims)
         elif isinstance(data, util.generator_types):
             data = list(data)
+
+        if datatype is None:
+            datatype = eltype.datatype
 
         # Set interface priority order
         prioritized = [cls.interfaces[p] for p in datatype

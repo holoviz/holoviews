@@ -9,7 +9,7 @@ import numpy as np
 import param
 
 from ..dimension import redim
-from ..util import dimension_range
+from ..util import dimension_range, unique_iterator
 from .interface import Interface, iloc, ndloc
 from .array import ArrayInterface
 from .dictionary import DictInterface
@@ -609,6 +609,21 @@ class Dataset(Element):
         convert to other Element types.
         """
         return self._conversion_interface(self)
+
+
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        """
+        Returns a clone of the object with matching parameter values
+        containing the specified args and kwargs.
+
+        If shared_data is set to True and no data explicitly supplied,
+        the clone will share data with the original. May also supply
+        a new_type, which will inherit all shared parameters.
+        """
+        if 'datatype' not in overrides:
+            datatypes = [self.interface.datatype] + self.datatype
+            overrides['datatype'] = list(unique_iterator(datatypes))
+        return super(Dataset, self).clone(data, shared_data, new_type, *args, **overrides)
 
 
     @property
