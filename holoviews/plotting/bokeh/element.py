@@ -771,7 +771,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
         renderer = self.handles.get('glyph_renderer', None)
         glyph = self.handles.get('glyph', None)
-        visible = bool(element)
+        visible = element is not None
         if hasattr(renderer, 'visible'):
             renderer.visible = visible
         if hasattr(glyph, 'visible'):
