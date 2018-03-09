@@ -197,10 +197,6 @@ if __name__ == "__main__":
     if 'develop' not in sys.argv:
         package_assets(example_path)
 
-    if ('upload' in sys.argv) or ('sdist' in sys.argv):
-        import holoviews
-        holoviews.__version__.verify(setup_args['version'])
-
     if 'install' in sys.argv:
         header = "HOLOVIEWS INSTALLATION INFORMATION"
         bars = "="*len(header)
