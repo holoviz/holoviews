@@ -4,7 +4,7 @@ from ..boundingregion import BoundingBox
 from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import  NdMapping, item_check
-from ..sheetcoords import Slice
+from ..sheetcoords import Slice, SheetCoordinateSystem
 from .. import util
 from .grid import GridInterface
 from .interface import Interface, DataError
@@ -55,6 +55,9 @@ class ImageInterface(GridInterface):
 
         if not isinstance(data, np.ndarray) or data.ndim not in [2, 3]:
             raise ValueError('ImageInterface expects a 2D array.')
+        elif not issubclass(eltype, SheetCoordinateSystem):
+            raise ValueError('ImageInterface may only be used on elements '
+                             'that subclass SheetCoordinateSystem.')
 
         return data, {'kdims':kdims, 'vdims':vdims}, kwargs
 
