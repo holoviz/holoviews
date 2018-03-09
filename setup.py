@@ -61,7 +61,8 @@ def get_setup_version(reponame):
     except:  # autover available as package
         try: from autover import version
         except:
-            try: from param import version # Try to get it from param
+            try: pass
+                #from param import version # Try to get it from param
             except:
                 embed_version(basepath)
                 version = importlib.import_module("version")
