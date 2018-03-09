@@ -297,7 +297,7 @@ class GridInterface(DictInterface):
         for d in dataset.dimensions():
             if d in dataset.kdims and not cls.irregular(dataset, d):
                 continue
-            arr = dataset.dimension_values(d, flat=False)
+            arr = cls.values(dataset, d, flat=False, compute=False)
             if all_scalar and len(dataset.vdims) == 1:
                 return arr[tuple(ind[0] for ind in adjusted_inds)]
             selected[d.name] = arr[tuple(adjusted_inds)]
@@ -305,12 +305,12 @@ class GridInterface(DictInterface):
 
 
     @classmethod
-    def values(cls, dataset, dim, expanded=True, flat=True):
+    def values(cls, dataset, dim, expanded=True, flat=True, compute=True):
         dim = dataset.get_dimension(dim, strict=True)
         if dim in dataset.vdims or dataset.data[dim.name].ndim > 1:
             data = dataset.data[dim.name]
             data = cls.canonicalize(dataset, data)
-            if da and isinstance(data, da.Array):
+            if compute and da and isinstance(data, da.Array):
                 data = data.compute()
             return data.T.flatten() if flat else data
         elif expanded:
@@ -599,9 +599,11 @@ class GridInterface(DictInterface):
 
         new_data = []
         for d in cols:
-            new_data.append(dataset.dimension_values(d)[rows])
+            new_data.append(cls.values(dataset, d, compute=False)[rows])
 
         if scalar:
+            if new_data and isinstance(new_data[0], da.Array):
+                return new_data[0].compute()[0]
             return new_data[0][0]
         return tuple(new_data)
 
@@ -611,14 +613,20 @@ class GridInterface(DictInterface):
             expanded = cls.irregular(dataset, dimension)
             column = cls.coords(dataset, dimension, expanded=expanded, edges=True)
         else:
-            column = dataset.dimension_values(dimension)
+            column = cls.values(dataset, dimension, flat=False)
         if column.dtype.kind == 'M':
-            return column.min(), column.max()
+            dmin, dmax = column.min(), column.max()
+            if isinstance(column, da.Array):
+                return dmin.compute(), dmax.compute()
+            return dmin, dmax
         elif len(column) == 0:
             return np.NaN, np.NaN
         else:
             try:
-                return (np.nanmin(column), np.nanmax(column))
+                dmin, dmax = (np.nanmin(column), np.nanmax(column))
+                if isinstance(column, da.Array):
+                    return dmin.compute(), dmax.compute()
+                return dmin, dmax
             except TypeError:
                 column.sort()
                 return column[0], column[-1]
