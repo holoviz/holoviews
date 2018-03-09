@@ -7,7 +7,7 @@ import param
 
 
 try:
-    from param.version import Version
+    from version import Version
     __version__ = str(Version(fpath=__file__, archive_commit="$Format:%h$",
                               reponame="holoviews"))
 except:
