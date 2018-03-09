@@ -1,6 +1,6 @@
 #!/usr/bin/env python
 
-import sys, os, json
+import sys, os
 import shutil
 from collections import defaultdict
 try:
@@ -53,6 +53,7 @@ def get_setup_version(reponame):
     Helper to get the current version from either git describe or the
     .version file (if available).
     """
+    import importlib
     basepath = os.path.split(__file__)[0]
     embed_version(basepath)
     version = importlib.import_module("version")
