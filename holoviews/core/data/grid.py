@@ -616,7 +616,7 @@ class GridInterface(DictInterface):
             column = cls.values(dataset, dimension, flat=False)
         if column.dtype.kind == 'M':
             dmin, dmax = column.min(), column.max()
-            if isinstance(column, da.Array):
+            if da and isinstance(column, da.Array):
                 return dmin.compute(), dmax.compute()
             return dmin, dmax
         elif len(column) == 0:
@@ -624,7 +624,7 @@ class GridInterface(DictInterface):
         else:
             try:
                 dmin, dmax = (np.nanmin(column), np.nanmax(column))
-                if isinstance(column, da.Array):
+                if da and isinstance(column, da.Array):
                     return dmin.compute(), dmax.compute()
                 return dmin, dmax
             except TypeError:
