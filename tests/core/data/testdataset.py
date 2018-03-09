@@ -887,11 +887,19 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
 
     def test_dataset_series_construct(self):
         ds = Dataset(pd.Series([1, 2, 3], name='A'))
-        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
+
+    def test_dataset_df_construct_autoindex(self):
+        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'test', 'A')
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'test', 'A'))
+
+    def test_dataset_df_construct_not_autoindex(self):
+        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'index', 'A')
+        self.assertEqual(ds, Dataset(([1, 2, 3], [1, 2, 3]), 'index', 'A'))
 
     def test_dataset_single_column_construct(self):
         ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A']))
-        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), ['index', 'A']))
+        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
 
     def test_dataset_extract_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
