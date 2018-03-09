@@ -53,12 +53,24 @@ def get_setup_version(reponame):
     Helper to get the current version from either git describe or the
     .version file (if available).
     """
-    import importlib
+    import json, importlib
     basepath = os.path.split(__file__)[0]
-    embed_version(basepath)
-    version = importlib.import_module("version")
-    return version.Version.setup_version(basepath, reponame,
-                                         archive_commit="$Format:%h$")
+    version_file_path = os.path.join(basepath, reponame, '.version')
+    version = None
+    try: version = importlib.import_module(reponame + ".version") # Bundled
+    except:  # autover available as package
+        try: from autover import version
+        except:
+            try: from param import version # Try to get it from param
+            except:
+                embed_version(basepath)
+                version = importlib.import_module("version")
+    if version is not None:
+        return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
+    else:
+        print("WARNING: autover unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should refer to autover's documentation to bundle autover or add it as a dependency.")
+        return json.load(open(version_file_path, 'r'))['version_string']
+
 
 PYPI_BLURB = """
 HoloViews is designed to make data analysis and visualization seamless and simple. With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
