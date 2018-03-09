@@ -159,7 +159,9 @@ class Interface(param.Parameterized):
         # Process Element data
         if (hasattr(data, 'interface') and issubclass(data.interface, Interface)):
             if datatype is None:
-                datatype = data.datatype
+                datatype = [dt for dt in data.datatype if dt in eltype.datatype]
+                if not datatype:
+                    datatype = eltype.datatype
 
             if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
                 data = data.data
