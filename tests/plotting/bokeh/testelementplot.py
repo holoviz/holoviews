@@ -23,6 +23,11 @@ class TestElementPlotPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.outline_line_alpha, 0)
 
+    def test_empty_element_visibility(self):
+        curve = Curve([])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertTrue(plot.handles['glyph_renderer'].visible)
+        
     def test_element_no_xaxis(self):
         curve = Curve(range(10)).opts(plot=dict(xaxis=None))
         plot = bokeh_renderer.get_plot(curve).state
