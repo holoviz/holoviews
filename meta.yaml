@@ -1,6 +1,8 @@
+{% set sdata = load_setup_py_data() %}
+
 package:
   name: holoviews
-  version: 1.9.2
+  version: {{ sdata['version'] }}
 
 source:
   path: .

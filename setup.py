@@ -27,6 +27,43 @@ extras_require['all'] = (extras_require['recommended']
                          + ['cyordereddict', 'nose'])
 
 
+
+def embed_version(basepath, ref='v0.2.1'):
+    """
+    Autover is purely a build time dependency in all cases (conda and
+    pip) except for when you use pip's remote git support [git+url] as
+    1) you need a dynamically changing version and 2) the environment
+    starts off clean with zero dependencies installed.
+    This function acts as a fallback to make Version available until
+    PEP518 is commonly supported by pip to express build dependencies.
+    """
+    import io, zipfile
+    try:    from urllib.request import urlopen
+    except: from urllib import urlopen
+    response = urlopen('https://github.com/ioam/autover/archive/{ref}.zip'.format(ref=ref))
+    zf = zipfile.ZipFile(io.BytesIO(response.read()))
+    ref = ref[1:] if ref.startswith('v') else ref
+    embed_version = zf.read('autover-{ref}/autover/version.py'.format(ref=ref))
+    with open(os.path.join(basepath, 'version.py'), 'wb') as f:
+        f.write(embed_version)
+
+
+def get_setup_version(reponame):
+    """
+    Helper to get the current version from either git describe or the
+    .version file (if available).
+    """
+    import json, importlib
+    basepath = os.path.split(__file__)[0]
+    version_file_path = os.path.join(basepath, reponame, '.version')
+    version = importlib.import_module("version")
+    if version is not None:
+        return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
+    else:
+        print("WARNING: autover unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should refer to autover's documentation to bundle autover or add it as a dependency.")
+        return json.load(open(version_file_path, 'r'))['version_string']
+
+
 PYPI_BLURB = """
 HoloViews is designed to make data analysis and visualization seamless and simple. With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
 
@@ -35,7 +72,7 @@ Check out the `HoloViews web site <http://holoviews.org>`_ for extensive example
 
 setup_args.update(dict(
     name='holoviews',
-    version="1.9.2",
+    version=get_setup_version("holoviews"),
     install_requires=install_requires,
     extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
@@ -63,7 +100,8 @@ setup_args.update(dict(
               "holoviews.plotting.bokeh",
               "holoviews.plotting.plotly",
               "holoviews.plotting.widgets"],
-    package_data={'holoviews.ipython': ['*.html'],
+    package_data={'holoviews': ['.version'],
+                  'holoviews.ipython': ['*.html'],
                   'holoviews.plotting.mpl': ['*.mplstyle', '*.jinja', '*.js'],
                   'holoviews.plotting.bokeh': ['*.js', '*.css'],
                   'holoviews.plotting.plotly': ['*.js'],
@@ -157,10 +195,6 @@ if __name__ == "__main__":
                                 'holoviews/examples')
     if 'develop' not in sys.argv:
         package_assets(example_path)
-
-    if ('upload' in sys.argv) or ('sdist' in sys.argv):
-        import holoviews
-        holoviews.__version__.verify(setup_args['version'])
 
     if 'install' in sys.argv:
         header = "HOLOVIEWS INSTALLATION INFORMATION"

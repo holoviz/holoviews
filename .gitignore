@@ -25,3 +25,4 @@
 holoviews.rc
 /examples/assets/
 ghostdriver.log
+holoviews/.version
