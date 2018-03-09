@@ -56,8 +56,6 @@ def get_setup_version(reponame):
     import json, importlib
     basepath = os.path.split(__file__)[0]
     version_file_path = os.path.join(basepath, reponame, '.version')
-    version = None
-    embed_version(basepath)
     version = importlib.import_module("version")
     if version is not None:
         return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
