@@ -80,6 +80,7 @@ class XArrayInterface(GridInterface):
                                 cls)
             vdims = [vdim]
             data = data.to_dataset(name=vdim.name)
+
         if not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
@@ -120,8 +121,9 @@ class XArrayInterface(GridInterface):
                     for c in data.coords:
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
+            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd) for vd in vdims]
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd) for kd in kdims]
 
-        kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
         not_found = []
         for d in kdims:
             if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
@@ -133,6 +135,14 @@ class XArrayInterface(GridInterface):
             raise DataError("xarray Dataset must define coordinates "
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
+
+        # retrieve units and labels from Dataset:
+        for d in kdims + vdims:
+            d.unit = data[d.name].attrs.get('units')
+            label = data[d.name].attrs.get('long_name')
+            if label is not None:
+                d.label = label
+
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
