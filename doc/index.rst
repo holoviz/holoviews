@@ -71,6 +71,9 @@ directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.git
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 
+Additional methods of installation, including different ways to use
+``pip`` can be found in the `installation guide <install.html>`_.
+
 
 Usage
 -----
