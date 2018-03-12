@@ -66,7 +66,7 @@ recommended as you will have incomplete version strings.
 Anyone interested in following development can get the very latest
 version by cloning our git repositories::
 
-  git clone git://github.com/ioam/holoviews.git
+  git clone https://github.com/ioam/holoviews.git
 
 To make this code available for import you then need to run::
 
