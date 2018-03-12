@@ -287,7 +287,7 @@ class JupyterCommManager(CommManager):
     JupyterCommManager.prototype.get_client_comm = function(plot_id, comm_id, msg_handler) {
       if (comm_id in window.HoloViews.comms) {
         return HoloViews.comms[comm_id];
-      } else if ((window.comm_manager || (window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
+      } else if (window.comm_manager || ((window.Jupyter !== undefined) && (Jupyter.notebook.kernel != null))) {
         var comm_manager = window.comm_manager || Jupyter.notebook.kernel.comm_manager;
         var comm = comm_manager.new_comm(comm_id, {}, {}, {}, comm_id);
         if (msg_handler) {
