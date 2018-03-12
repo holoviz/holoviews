@@ -279,7 +279,7 @@ class Version(object):
                     self._commit = commit_argument
                 return
 
-            except IOError as e2:
+            except IOError:
                 if e1.args[1] == 'fatal: No names found, cannot describe anything.':
                     raise Exception("Cannot find any git version tags of format v*.*")
                 # If there is any other error, return (release value still useful)
