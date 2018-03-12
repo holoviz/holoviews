@@ -64,7 +64,7 @@ https://github.com/ioam/holoviews/archive/master.zip``) is *not*
 recommended as you will have incomplete version strings.
 
 Anyone interested in following development can get the very latest
-version by cloning our git repositories::
+version by cloning the git repository::
 
   git clone https://github.com/ioam/holoviews.git
 
