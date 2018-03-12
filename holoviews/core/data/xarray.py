@@ -166,8 +166,8 @@ class XArrayInterface(GridInterface):
         else:
             data = dataset.data[dim]
             dmin, dmax = data.min().data, data.max().data
-            if dask and isinstance(dmin, dask.array.Array):
-                dmin, dmax = dmin.compute(), dmax.compute()
+        if dask and isinstance(dmin, dask.array.Array):
+            dmin, dmax = dask.array.compute(dmin, dmax)
         dmin = dmin if np.isscalar(dmin) else dmin.item()
         dmax = dmax if np.isscalar(dmax) else dmax.item()
         return dmin, dmax
