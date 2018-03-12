@@ -1038,7 +1038,10 @@ class ColorbarPlot(ElementPlot):
 
         ncolors = None if factors is None else len(factors)
         if dim:
-            low, high = ranges.get(dim.name, element.range(dim.name))
+            if dim.name in ranges:
+                low, high = ranges.get(dim.name)
+            else:
+                low, high = element.range(dim.name)
         else:
             low, high = None, None
 

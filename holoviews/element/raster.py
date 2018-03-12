@@ -445,11 +445,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     def range(self, dim, data_range=True):
         idx = self.get_dimension_index(dim)
         dimension = self.get_dimension(dim)
-        low, high = super(Image, self).range(dim, data_range)
         if idx in [0, 1] and data_range and dimension.range == (None, None):
             if self.interface.datatype == 'image':
                 l, b, r, t = self.bounds.lbrt()
                 return (b, t) if idx else (l, r)
+            low, high = super(Image, self).range(dim, data_range)
             density = self.ydensity if idx else self.xdensity
             halfd = (1./density)/2.
             if isinstance(low, datetime_types):
