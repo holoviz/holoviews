@@ -37,10 +37,10 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
+from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatMapPlot, RadialHeatMapPlot,\
-    HSVPlot, QuadMeshPlot
+from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
 from .tabular import TablePlot
