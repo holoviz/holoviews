@@ -40,15 +40,6 @@ class TestOverlayPlot(TestBokehPlot):
         self.assertFalse(subplot1.handles['glyph_renderer'].visible)
         self.assertTrue(subplot2.handles['glyph_renderer'].visible)
 
-    def test_batched_empty_update_invisible(self):
-        hmap = HoloMap({i: NdOverlay({j: Curve(np.arange(i), label='A') for j in range(i%2)})
-                        for i in range(1, 4)})
-        opts = {'NdOverlay': {'legend_limit': 0}}
-        plot = list(bokeh_renderer.get_plot(hmap(plot=opts)).subplots.values())[0]
-        self.assertTrue(plot.handles['glyph_renderer'].visible)
-        plot.update((2,))
-        self.assertFalse(plot.handles['glyph_renderer'].visible)
-
     def test_hover_tool_instance_renderer_association(self):
         tooltips = [("index", "$index")]
         hover = HoverTool(tooltips=tooltips)
