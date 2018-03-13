@@ -7,13 +7,14 @@ import param
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 
-from ...core import (OrderedDict, Store, AdjointLayout, NdLayout,
+from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
+from ...core.options import SkipRendering
 from ...core.util import basestring, wrap_tuple, unique_iterator
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
-from ..util import attach_streams
+from ..util import attach_streams, displayable, collate
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
                    bokeh_version)
@@ -438,6 +439,11 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             else:
                 vtype = None
 
+            if type(view) in (Layout, NdLayout):
+                raise SkipRendering("Cannot plot nested Layouts.")
+            if not displayable(view):
+                view = collate(view)
+
             # Create axes
             offset = self.axis_offset
             kwargs = {}
@@ -678,6 +684,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             element = layout.get(pos, None)
             if element is None or not element.traverse(lambda x: x, [Element, Empty]):
                 continue
+            if not displayable(element):
+                element = collate(element)
 
             subplot_opts = dict(adjoined=main_plot)
             # Options common for any subplot
