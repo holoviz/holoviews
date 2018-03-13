@@ -231,7 +231,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-    rtol = param.Number(config.image_rtol, doc="""The tolerance used to enforce 
+    rtol = param.Number(default=None, doc="""The tolerance used to enforce 
             regular sampling for regular, gridded data where regular sampling is 
             expected. Expressed as the maximal allowable sampling difference 
             between sample locations.""")
@@ -242,11 +242,17 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             bounds = bounds or data.bounds
             xdensity = xdensity or data.xdensity
             ydensity = ydensity or data.ydensity
+            if rtol is None: rtol = data.rtol
         extents = extents if extents else (None, None, None, None)
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)
             or (isinstance(data, np.ndarray) and data.size == 0)):
             data = np.zeros((2, 2))
+        if rtol is not None:
+            params['rtol'] = rtol
+        else:
+            params['rtol'] = config.image_rtol
+
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
             raise DataError("%s type expects gridded data, %s is columnar."
@@ -278,9 +284,6 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled
-
-        self.set_param(rtol=config.image_rtol) if rtol is None else self.set_param(rtol=rtol)
-
         validate_regular_sampling(self, 0, self.rtol)
         validate_regular_sampling(self, 1, self.rtol)
 
