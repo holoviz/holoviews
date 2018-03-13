@@ -738,6 +738,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         plots = [[] for _ in range(self.rows)]
         tab_titles = {}
         insert_rows, insert_cols = [], []
+        offset = 0
         for r, c in self.coords:
             subplot = self.subplots.get((r, c), None)
             if subplot is not None:
