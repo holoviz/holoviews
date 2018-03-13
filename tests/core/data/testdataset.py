@@ -1228,12 +1228,12 @@ class GridTests(object):
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs(self):
-        expanded_xs = np.array([[0, 0, 0], [1, 1, 1]])
+        expanded_xs = np.array([[0, 1], [0, 1], [0, 1]])
         self.assertEqual(self.dataset_grid.dimension_values(0, flat=False),
                          expanded_xs)
 
     def test_dataset_dim_vals_grid_kdims_expanded_xs_inv(self):
-        expanded_xs = np.array([[0, 0, 0], [1, 1, 1]])
+        expanded_xs = np.array([[0, 1], [0, 1], [0, 1]])
         self.assertEqual(self.dataset_grid_inv.dimension_values(0, flat=False),
                          expanded_xs)
 
@@ -1258,16 +1258,22 @@ class GridTests(object):
                          expanded_ys)
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys(self):
-        expanded_ys = np.array([[0.1, 0.2, 0.3],
-                                [0.1, 0.2, 0.3]])
+        expanded_ys = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3]])
         self.assertEqual(self.dataset_grid.dimension_values(1, flat=False),
                          expanded_ys)
 
     def test_dataset_dim_vals_grid_kdims_expanded_ys_inv(self):
-        expanded_ys = np.array([[0.1, 0.2, 0.3],
-                                [0.1, 0.2, 0.3]])
+        expanded_ys = np.array([[0.1, 0.1], [0.2, 0.2], [0.3, 0.3]])
         self.assertEqual(self.dataset_grid_inv.dimension_values(1, flat=False),
                          expanded_ys)
+
+    def test_dataset_dim_vals_dimensions_match_shape(self):
+        self.assertEqual(len(set(self.dataset_grid.dimension_values(i, flat=False).shape
+                                 for i in range(3))), 1)
+
+    def test_dataset_dim_vals_dimensions_match_shape_inv(self):
+        self.assertEqual(len(set(self.dataset_grid_inv.dimension_values(i, flat=False).shape
+                                 for i in range(3))), 1)
 
     def test_dataset_dim_vals_grid_vdims_zs_flat(self):
         expanded_zs = np.array([0, 2, 4, 1, 3, 5])

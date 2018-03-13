@@ -271,7 +271,7 @@ class XArrayInterface(GridInterface):
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
-            return data.flatten() if flat else data
+            return data.T.flatten() if flat else data
         else:
             return cls.coords(dataset, dim.name, ordered=True)
 

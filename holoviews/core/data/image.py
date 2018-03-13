@@ -105,11 +105,19 @@ class ImageInterface(GridInterface):
         return data
 
     @classmethod
-    def coords(cls, dataset, dim, ordered=False, expanded=False):
+    def coords(cls, dataset, dim, ordered=False, expanded=False, edges=False):
         dim = dataset.get_dimension(dim, strict=True)
         if expanded:
-            return util.expand_grid_coords(dataset, dim)
-        return cls.values(dataset, dim, expanded=False)
+            data = util.expand_grid_coords(dataset, dim)
+            if edges and data.shape == dataset.data.shape:
+                data = cls._infer_interval_breaks(data, axis=1)
+                data = cls._infer_interval_breaks(data, axis=0)
+            return data
+        values = cls.values(dataset, dim, expanded=False)
+        if edges:
+            return cls._infer_interval_breaks(values)
+        else:
+            return values
 
     @classmethod
     def range(cls, obj, dim):
@@ -156,7 +164,7 @@ class ImageInterface(GridInterface):
                 ylin = np.linspace(b+(ystep/2.), t-(ystep/2.), dim2)
             if expanded:
                 values = np.meshgrid(ylin, xlin)[abs(dim_idx-1)]
-                return values.flatten() if flat else values
+                return values.flatten() if flat else values.T
             else:
                 return ylin if dim_idx else xlin
         elif dataset.ndims <= dim_idx < len(dataset.dimensions()):
