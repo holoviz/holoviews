@@ -149,7 +149,7 @@ class Interface(param.Parameterized):
 
 
     @classmethod
-    def initialize(cls, eltype, data, kdims, vdims, datatype=None, validate_vdims=True):
+    def initialize(cls, eltype, data, kdims, vdims, datatype=None):
         # Process params and dimensions
         if isinstance(data, Element):
             pvals = util.get_param_values(data)
@@ -188,20 +188,6 @@ class Interface(param.Parameterized):
         if head:
             # Prioritize interfaces which have matching types
             prioritized = head + [el for el in prioritized if el != head[0]]
-
-        if isinstance(data, tuple) and kdims is not None:
-            invalid_dims = False
-            if vdims is not None and validate_vdims and len(data) != len(kdims+vdims):
-                invalid_dims = True
-                ndims = len(kdims+vdims)
-            elif not validate_vdims and len(data) != len(kdims):
-                invalid_dims = True
-                ndims = len(kdims)
-            if invalid_dims:
-                raise DataError('%d key and value dimensions were declared '
-                                'but supplied data tuple is length %d.'
-                                'Ensure the data tuple and declared '
-                                'dimensions match.' % (ndims, len(data)))
 
         # Iterate over interfaces until one can interpret the input
         priority_errors = []
