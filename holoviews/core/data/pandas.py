@@ -79,7 +79,7 @@ class PandasInterface(Interface):
                 kdim = kdims[0].name if isinstance(kdims[0], Dimension) else kdims[0]
                 if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
                     data = data.copy()
-                    data[kdim] = np.arange(len(data))
+                    data.insert(0, kdim, np.arange(len(data)))
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
