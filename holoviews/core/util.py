@@ -1489,7 +1489,7 @@ def expand_grid_coords(dataset, dim):
     arrays = [dataset.interface.coords(dataset, d.name, True)
               for d in dataset.kdims]
     idx = dataset.get_dimension_index(dim)
-    return cartesian_product(arrays, flat=False)[idx]
+    return cartesian_product(arrays, flat=False)[idx].T
 
 
 def dt64_to_dt(dt64):
