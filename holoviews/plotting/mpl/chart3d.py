@@ -166,7 +166,7 @@ class SurfacePlot(Plot3D):
 
     style_opts = ['antialiased', 'cmap', 'color', 'shade',
                   'linewidth', 'facecolors', 'rstride', 'cstride',
-                  'norm', 'edgecolor']
+                  'norm', 'edgecolor', 'rcount', 'ccount']
 
     def init_artists(self, ax, plot_data, plot_kwargs):
         if self.plot_type == "wireframe":
@@ -178,14 +178,20 @@ class SurfacePlot(Plot3D):
         return {'artist': artist}
 
     def get_data(self, element, ranges, style):
-        mat = element.data
-        rn, cn = mat.shape
-        l, b, _, r, t, _ = self.get_extents(element, ranges)
-        r, c = np.mgrid[l:r:(r-l)/float(rn), b:t:(t-b)/float(cn)]
+        zdata = element.dimension_values(2, flat=False)
+        data = np.ma.array(zdata, mask=np.logical_not(np.isfinite(zdata)))
+        coords = [element.interface.coords(element, d, ordered=True,
+                                           expanded=True)
+                  for d in element.kdims]
+        if self.invert_axes:
+            coords = coords[::-1]
+            data = data.T
+        cmesh_data = coords + [data]
+
         if self.plot_type != 'wireframe' and 'cmap' in style:
             self._norm_kwargs(element, ranges, style, element.vdims[0])
-        return (r, c, mat), style, {}
-            
+        return cmesh_data, style, {}
+
 
 
 class TriSurfacePlot(Plot3D):
