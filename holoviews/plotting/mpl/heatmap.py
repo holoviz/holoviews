@@ -27,6 +27,26 @@ class HeatMapPlot(RasterPlot):
     show_values = param.Boolean(default=False, doc="""
         Whether to annotate each pixel with its value.""")
 
+    xmarks = param.Parameter(default=None, doc="""
+        Add separation lines to the heatmap for better readability. By
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given categorical values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        heatmap category.""")
+
+    ymarks = param.Parameter(default=None, doc="""
+        Add separation lines to the heatmap for better readability. By
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given categorical values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        heatmap category.""")
+
     xticks = param.Parameter(default=20, doc="""
         Ticks along x-axis/segments specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
@@ -86,6 +106,38 @@ class HeatMapPlot(RasterPlot):
         return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
 
 
+    def _draw_markers(self, ax, element, marks, axis='x'):
+        if marks is None:
+            return
+        style = self.style[self.cyclic_index]
+        mark_opts = {k[7:]: v for k, v in style.items() if axis+'mark' in k}
+        mark_opts = {k[4:] if 'edge' in k else k: v for k, v in mark_opts.items()}
+        categories = list(element.dimension_values(0 if axis == 'x' else 1,
+                                                   expanded=False))
+
+        if callable(marks):
+            positions = [i for i, x in enumerate(categories) if marks(x)]
+        elif isinstance(marks, int):
+            nth_mark = np.ceil(len(categories) / marks).astype(int)
+            positions = np.arange(len(categories)+1)[::nth_mark]
+        elif isinstance(marks, tuple):
+            positions = [categories.index(m) for m in marks if m in categories]
+        else:
+            positions = [m for m in marks if isinstance(m, int) and m < len(categories)]
+
+        prev_markers = self.handles.get(axis+'marks', [])
+        new_markers = []
+        for p in positions:
+            if axis == 'x':
+                line = ax.axvline(p, **mark_opts)
+            else:
+                line = ax.axhline(p, **mark_opts)
+            new_markers.append(line)
+        for pm in prev_markers:
+            pm.remove()
+        self.handles[axis+'marks'] = new_markers
+
+
     def init_artists(self, ax, plot_args, plot_kwargs):
         ax.set_aspect(plot_kwargs.pop('aspect', 1))
 
@@ -97,6 +149,8 @@ class HeatMapPlot(RasterPlot):
         handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
         if self.show_values and annotations:
             handles['annotations'] = self._annotate_plot(ax, annotations)
+        self._draw_markers(ax, self.current_frame, self.xmarks, axis='x')
+        self._draw_markers(ax, self.current_frame, self.ymarks, axis='y')
         return handles
 
 
@@ -136,6 +190,8 @@ class HeatMapPlot(RasterPlot):
                     pass
             annotations = self._annotate_plot(axis, style['annotations'])
             self.handles['annotations'] = annotations
+        self._draw_markers(ax, element, self.xmarks, axis='x')
+        self._draw_markers(ax, element, self.ymarks, axis='y')
         return axis_kwargs
 
 

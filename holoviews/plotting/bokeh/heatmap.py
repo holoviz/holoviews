@@ -1,11 +1,13 @@
 import param
 import numpy as np
 
-from bokeh.models import HoverTool
+from bokeh.models import HoverTool, Span
 from bokeh.models.glyphs import AnnularWedge
 from ...core.util import is_nan, dimension_sanitizer
 from .element import (ColorbarPlot, CompositeElementPlot,
                       line_properties, fill_properties, text_properties)
+from .util import mpl_to_bokeh
+
 
 
 class HeatMapPlot(ColorbarPlot):
@@ -24,8 +26,31 @@ class HeatMapPlot(ColorbarPlot):
     radial = param.Boolean(default=False, doc="""
         Whether the HeatMap should be radial""")
 
+    xmarks = param.Parameter(default=None, doc="""
+        Add separation lines to the heatmap for better readability. By
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given categorical values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        heatmap category.""")
+
+    ymarks = param.Parameter(default=None, doc="""
+        Add separation lines to the heatmap for better readability. By
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given categorical values. If parameter is of type
+        function, draw separation lines where function returns True for passed
+        heatmap category.""")
+
     _plot_methods = dict(single='rect')
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
+
+    style_opts = (['xmarks_' + p for p in line_properties] +
+                  ['ymarks_' + p for p in line_properties] +
+                  ['cmap', 'color'] + line_properties + fill_properties)
 
     _categorical = True
 
@@ -72,6 +97,59 @@ class HeatMapPlot(ColorbarPlot):
         return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
                        'height': 1, 'width': 1}, style)
 
+    def _draw_markers(self, plot, element, marks, axis='x'):
+        if marks is None:
+            return
+        style = self.style[self.cyclic_index]
+        mark_opts = {k[7:]: v for k, v in style.items() if axis+'mark' in k}
+        mark_opts = {'line_'+k if k in ('color', 'alpha') else k: v
+                     for k, v in mpl_to_bokeh(mark_opts).items()}
+        categories = list(element.dimension_values(0 if axis == 'x' else 1,
+                                                   expanded=False))
+
+        if callable(marks):
+            positions = [i for i, x in enumerate(categories) if marks(x)]
+        elif isinstance(marks, int):
+            nth_mark = np.ceil(len(categories) / marks).astype(int)
+            positions = np.arange(len(categories)+1)[::nth_mark]
+        elif isinstance(marks, tuple):
+            positions = [categories.index(m) for m in marks if m in categories]
+        else:
+            positions = [m for m in marks if isinstance(m, int) and m < len(categories)]
+        if axis == 'y':
+            positions = [len(categories)-p for p in positions]
+
+        prev_markers = self.handles.get(axis+'marks', [])
+        new_markers = []
+        for i, p in enumerate(positions):
+            if i < len(prev_markers):
+                span = prev_markers[i]
+                span.update(**dict(mark_opts, location=p))
+            else:
+                dimension = 'height' if axis == 'x' else 'width'
+                span = Span(level='annotation', dimension=dimension,
+                            location=p, **mark_opts)
+                plot.renderers.append(span)
+            span.visible = True
+            new_markers.append(span)
+        for pm in prev_markers:
+            if pm not in new_markers:
+                pm.visible = False
+                new_markers.append(pm)
+        self.handles[axis+'marks'] = new_markers
+
+    def _init_glyphs(self, plot, element, ranges, source):
+        super(HeatMapPlot, self)._init_glyphs(plot, element, ranges, source)
+        self._draw_markers(plot, element, self.xmarks, axis='x')
+        self._draw_markers(plot, element, self.ymarks, axis='y')
+
+
+    def _update_glyphs(self, element, ranges):
+        super(HeatMapPlot, self)._update_glyphs(element, ranges)
+        plot = self.handles['plot']
+        self._draw_markers(plot, element, self.xmarks, axis='x')
+        self._draw_markers(plot, element, self.ymarks, axis='y')
+
 
 class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
@@ -84,7 +162,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         values in the range 0-1, or (3) a named HTML color.""")
 
     start_angle = param.Number(default=np.pi/2, doc="""
-        Define starting angle of the first annulus segment. By default, begins 
+        Define starting angle of the first annulus segment. By default, begins
         at 12 o'clock.""")
 
     padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
@@ -95,22 +173,22 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
     xmarks = param.Parameter(default=None, doc="""
         Add separation lines between segments for better readability. By
-        default, does not show any separation lines. If parameter is of type 
-        integer, draws the given amount of separations lines spread across 
-        radial heatmap. If parameter is of type list containing integers, show 
-        separation lines at given indices. If parameter is of type tuple, draw 
-        separation lines at given segment values. If parameter is of type 
-        function, draw separation lines where function returns True for passed 
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        radial heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given segment values. If parameter is of type
+        function, draw separation lines where function returns True for passed
         segment value.""")
 
     ymarks = param.Parameter(default=None, doc="""
         Add separation lines between annulars for better readability. By
-        default, does not show any separation lines. If parameter is of type 
-        integer, draws the given amount of separations lines spread across 
-        radial heatmap. If parameter is of type list containing integers, show 
-        separation lines at given indices. If parameter is of type tuple, draw 
-        separation lines at given annular values. If parameter is of type 
-        function, draw separation lines where function returns True for passed 
+        default, does not show any separation lines. If parameter is of type
+        integer, draws the given amount of separations lines spread across
+        radial heatmap. If parameter is of type list containing integers, show
+        separation lines at given indices. If parameter is of type tuple, draw
+        separation lines at given annular values. If parameter is of type
+        function, draw separation lines where function returns True for passed
         annular value.""")
 
     max_radius = param.Number(default=0.5, doc="""
