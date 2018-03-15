@@ -205,10 +205,10 @@ class RadialHeatMapPlot(ColorbarPlot):
         Define the maximum radius which is used for the x and y range extents.
         """)
 
-    padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
+    radius_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
         Define the radius fraction of inner, empty space.""")
 
-    padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
+    radius_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
     radial = param.Boolean(default=True, doc="""
@@ -304,7 +304,7 @@ class RadialHeatMapPlot(ColorbarPlot):
 
 
     def get_extents(self, view, ranges):
-        return (0, 0, np.pi*2, self.max_radius)
+        return (0, 0, np.pi*2, self.max_radius+self.radius_outer)
 
 
     def get_data(self, element, ranges, style):
@@ -339,7 +339,7 @@ class RadialHeatMapPlot(ColorbarPlot):
                                                  xvals, True)
 
         radius_max = 0.5
-        radius_min = radius_max * self.padding_inner
+        radius_min = radius_max * self.radius_inner
         bins_annular = np.linspace(radius_min, radius_max, len(yvals)+1)
         radius_ticks = self._map_order_to_ticks(radius_min, radius_max,
                                                 yvals)

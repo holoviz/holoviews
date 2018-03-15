@@ -165,10 +165,10 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         Define starting angle of the first annulus segment. By default, begins
         at 12 o'clock.""")
 
-    padding_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
+    radius_inner = param.Number(default=0.1, bounds=(0, 0.5), doc="""
         Define the radius fraction of inner, empty space.""")
 
-    padding_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
+    radius_outer = param.Number(default=0.05, bounds=(0, 1), doc="""
         Define the radius fraction of outer space including the labels.""")
 
     xmarks = param.Parameter(default=None, doc="""
@@ -239,7 +239,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """
 
         if kind == "radius":
-            start = self.max_radius * self.padding_inner
+            start = self.max_radius * self.radius_inner
             end = self.max_radius
 
         elif kind == "angle":
@@ -281,8 +281,8 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
         """
 
-        lower = -self.padding_outer
-        upper = 2 * self.max_radius + self.padding_outer
+        lower = -self.radius_outer
+        upper = 2 * self.max_radius + self.radius_outer
         return (lower, lower, upper, upper)
 
 
@@ -445,7 +445,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
         angles = self._get_markers(self.xmarks, order_seg, bins_seg)
 
-        inner = self.max_radius * self.padding_inner
+        inner = self.max_radius * self.radius_inner
         outer = self.max_radius
 
         y_start = np.sin(angles) * inner + self.max_radius
