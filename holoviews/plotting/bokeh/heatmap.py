@@ -56,7 +56,9 @@ class HeatMapPlot(ColorbarPlot):
 
     @classmethod
     def is_radial(cls, heatmap):
-        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
+        opts = cls.lookup_options(heatmap, 'plot').options
+        return ((any(o in opts for o in ('start_angle', 'radius_inner', 'radius_outer'))
+                 and not (opts.get('radial') == False)) or opts.get('radial', False))
 
     def _get_factors(self, element):
         return super(HeatMapPlot, self)._get_factors(element.gridded)

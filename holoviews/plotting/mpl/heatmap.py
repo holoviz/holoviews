@@ -57,7 +57,9 @@ class HeatMapPlot(RasterPlot):
 
     @classmethod
     def is_radial(cls, heatmap):
-        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
+        opts = cls.lookup_options(heatmap, 'plot').options
+        return ((any(o in opts for o in ('start_angle', 'radius_inner', 'radius_outer'))
+                 and not (opts.get('radial') == False)) or opts.get('radial', False))
 
     def _annotate_plot(self, ax, annotations):
         handles = {}
@@ -190,8 +192,8 @@ class HeatMapPlot(RasterPlot):
                     pass
             annotations = self._annotate_plot(axis, style['annotations'])
             self.handles['annotations'] = annotations
-        self._draw_markers(ax, element, self.xmarks, axis='x')
-        self._draw_markers(ax, element, self.ymarks, axis='y')
+        self._draw_markers(axis, element, self.xmarks, axis='x')
+        self._draw_markers(axis, element, self.ymarks, axis='y')
         return axis_kwargs
 
 
@@ -249,10 +251,6 @@ class RadialHeatMapPlot(ColorbarPlot):
     style_opts = ['annular_edgecolors', 'annular_linewidth',
                   'xmarks_linewidth', 'xmarks_edgecolor', 'cmap',
                   'ymarks_linewidth', 'ymarks_edgecolor']
-
-    @classmethod
-    def is_radial(cls, heatmap):
-        return cls.lookup_options(heatmap, 'plot').options.get('radial', False)
 
     @staticmethod
     def _map_order_to_ticks(start, end, order, reverse=False):
