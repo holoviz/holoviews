@@ -166,6 +166,7 @@ class ResamplingOperation(Operation):
             width = int(min([(xspan/self.p.x_sampling), width]))
         if self.p.y_sampling:
             height = int(min([(yspan/self.p.y_sampling), height]))
+        width, height = max([width, 1]), max([height, 1])
         xunit, yunit = float(xspan)/width, float(yspan)/height
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
@@ -500,6 +501,7 @@ class regrid(ResamplingOperation):
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
             height = min([int((yspan/eyspan) * len(coords[1])), height])
+            width, height = max([width, 1]), max([height, 1])
 
         # Get expanded or bounded ranges
         cvs = ds.Canvas(plot_width=width, plot_height=height,
