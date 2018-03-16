@@ -26,8 +26,8 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         # set up plot options for convenient tests
         plot_opts = dict(start_angle=0,
                          max_radius=1,
-                         padding_inner=0.5,
-                         padding_outer=0.2,
+                         radius_inner=0.5,
+                         radius_outer=0.2,
                          radial=True)
 
         opts = dict(HeatMap=dict(plot=plot_opts))
