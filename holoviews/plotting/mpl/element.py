@@ -149,12 +149,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not subplots and not self.drawn:
             self._finalize_artist(element)
 
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
-
+        self._execute_hooks(element)
         return super(ElementPlot, self)._finalize_axis(key)
 
 

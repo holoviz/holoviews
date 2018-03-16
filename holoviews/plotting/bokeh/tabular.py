@@ -38,17 +38,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.static_source = False
 
-    def _execute_hooks(self, element):
-        """
-        Executes finalize hooks
-        """
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
-
-
     def get_data(self, element, ranges, style):
         return ({dimension_sanitizer(d.name): element.dimension_values(d)
                  for d in element.dimensions()}, {}, style)
