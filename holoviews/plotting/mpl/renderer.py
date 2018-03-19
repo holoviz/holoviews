@@ -4,6 +4,7 @@ from io import BytesIO
 from tempfile import NamedTemporaryFile
 from contextlib import contextmanager
 from itertools import chain
+from distutils.version import LooseVersion
 
 import matplotlib as mpl
 from matplotlib import pyplot as plt
@@ -27,6 +28,20 @@ var img = $('<div />').html(msg);
 target.children().each(function () {{ $(this).remove() }})
 target.append(img)
 """
+
+# <format name> : (animation writer, format,  anim_kwargs, extra_args)
+ANIMATION_OPTS = {
+    'webm': ('ffmpeg', 'webm', {},
+             ['-vcodec', 'libvpx-vp9', '-b', '1000k']),
+    'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
+            ['-pix_fmt', 'yuv420p']),
+    'gif': ('imagemagick', 'gif', {'fps': 10}, []),
+    'scrubber': ('html', None, {'fps': 5}, None)
+}
+
+if LooseVersion(mpl.__version__) >= '2.2':
+    ANIMATION_OPTS['gif'] = ('pillow', 'gif', {'fps': 10}, [])
+
 
 class MPLRenderer(Renderer):
     """
@@ -64,15 +79,6 @@ class MPLRenderer(Renderer):
 
     mode = param.ObjectSelector(default='default', objects=['default'])
 
-    # <format name> : (animation writer, format,  anim_kwargs, extra_args)
-    ANIMATION_OPTS = {
-        'webm': ('ffmpeg', 'webm', {},
-                 ['-vcodec', 'libvpx', '-b', '1000k']),
-        'mp4': ('ffmpeg', 'mp4', {'codec': 'libx264'},
-                 ['-pix_fmt', 'yuv420p']),
-        'gif': ('imagemagick', 'gif', {'fps': 10}, []),
-        'scrubber': ('html', None, {'fps': 5}, None)
-    }
 
     mode_formats = {'fig':     {'default': ['png', 'svg', 'pdf', 'html', None, 'auto']},
                     'holomap': {'default': ['widgets', 'scrubber', 'webm','mp4', 'gif',
@@ -97,15 +103,9 @@ class MPLRenderer(Renderer):
 
         if isinstance(plot, tuple(self.widgets.values())):
             data = plot()
-        elif fmt in ['png', 'svg', 'pdf', 'html', 'json']:
+        else:
             with mpl.rc_context(rc=plot.fig_rcparams):
                 data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
-        else:
-            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
-                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
-            with mpl.rc_context(rc=plot.fig_rcparams):
-                anim = plot.anim(fps=self.fps)
-            data = self._anim_data(anim, fmt)
 
         data = self._apply_post_render_hooks(data, obj, fmt)
         return data, {'file-ext':fmt,
@@ -188,31 +188,38 @@ class MPLRenderer(Renderer):
         Similar to IPython.core.pylabtools.print_figure but without
         any IPython dependency.
         """
-        fig = plot.state
+        if fmt in ['gif', 'mp4', 'webm']:
+            if sys.version_info[0] == 3 and mpl.__version__[:-2] in ['1.2', '1.3']:
+                raise Exception("<b>Python 3 matplotlib animation support broken &lt;= 1.3</b>")
+            with mpl.rc_context(rc=plot.fig_rcparams):
+                anim = plot.anim(fps=self.fps)
+            data = self._anim_data(anim, fmt)
+        else:
+            fig = plot.state
 
-        traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
-        extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
-                                     if artists is not None]))
+            traverse_fn = lambda x: x.handles.get('bbox_extra_artists', None)
+            extra_artists = list(chain(*[artists for artists in plot.traverse(traverse_fn)
+                                         if artists is not None]))
 
-        kw = dict(
-            format=fmt,
-            facecolor=fig.get_facecolor(),
-            edgecolor=fig.get_edgecolor(),
-            dpi=self.dpi,
-            bbox_inches=bbox_inches,
-            bbox_extra_artists=extra_artists
-        )
-        kw.update(kwargs)
+            kw = dict(
+                format=fmt,
+                facecolor=fig.get_facecolor(),
+                edgecolor=fig.get_edgecolor(),
+                dpi=self.dpi,
+                bbox_inches=bbox_inches,
+                bbox_extra_artists=extra_artists
+            )
+            kw.update(kwargs)
 
-        # Attempts to precompute the tight bounding box
-        try:
-            kw = self._compute_bbox(fig, kw)
-        except:
-            pass
+            # Attempts to precompute the tight bounding box
+            try:
+                kw = self._compute_bbox(fig, kw)
+            except:
+                pass
+            bytes_io = BytesIO()
+            fig.canvas.print_figure(bytes_io, **kw)
+            data = bytes_io.getvalue()
 
-        bytes_io = BytesIO()
-        fig.canvas.print_figure(bytes_io, **kw)
-        data = bytes_io.getvalue()
         if as_script:
             b64 = base64.b64encode(data).decode("utf-8")
             (mime_type, tag) = MIME_TYPES[fmt], HTML_TAGS[fmt]
@@ -228,7 +235,7 @@ class MPLRenderer(Renderer):
         """
         Render a matplotlib animation object and return the corresponding data.
         """
-        (writer, _, anim_kwargs, extra_args) = self.ANIMATION_OPTS[fmt]
+        (writer, _, anim_kwargs, extra_args) = ANIMATION_OPTS[fmt]
         if extra_args != []:
             anim_kwargs = dict(anim_kwargs, extra_args=extra_args)
 
