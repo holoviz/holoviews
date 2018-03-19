@@ -22,6 +22,9 @@ form.holoform {
     padding-right: 0.8em;
     padding-top: 0.4em;
     padding-bottom: 0.4em;
+	box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.05);
+	margin-bottom: 20px;
+	border: 1px solid #e3e3e3;
 }
 
 div.holowidgets {
@@ -68,4 +71,15 @@ div.hologroup {
 
 .holowidgets .ui-resizable-s {
 	visibility: hidden
+}
+
+.noUi-handle {
+	width: 20px !important;
+    height: 20px !important;
+    left: -5px !important;
+    top: -5px !important;
+}
+
+.noUi-handle:before, .noUi-handle:after {
+	visibility: hidden;
 }
