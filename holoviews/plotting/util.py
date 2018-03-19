@@ -24,7 +24,7 @@ def displayable(obj):
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
-        return not (obj.type in [Layout, GridSpace, NdLayout])
+        return not (obj.type in [Layout, GridSpace, NdLayout, DynamicMap])
     if isinstance(obj, (GridSpace, Layout, NdLayout)):
         for el in obj.values():
             if not displayable(el):
@@ -49,6 +49,13 @@ def collate(obj):
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
+        if obj.type in [DynamicMap, HoloMap]:
+            obj_name = obj.type.__name__
+            raise Exception("Nesting a %s inside a DynamicMap is not "
+                            "supported. Ensure that the DynamicMap callback "
+                            "returns an Element or (Nd)Overlay. If you have "
+                            "applied an operation ensure it is not dynamic by "
+                            "setting dynamic=False." % obj_name)
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.warning("Nesting {0}s within a {1} makes it difficult "
