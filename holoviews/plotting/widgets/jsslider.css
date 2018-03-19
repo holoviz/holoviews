@@ -57,6 +57,7 @@ div.hologroup {
 .holotext {
   padding-left:  0.5em;
   padding-right: 0;
+  width: 100%;
 }
 
 .holowidgets .ui-resizable-se {
