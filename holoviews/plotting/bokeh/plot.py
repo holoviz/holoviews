@@ -423,8 +423,9 @@ class GridPlot(CompositePlot, GenericCompositePlot):
     def _create_subplots(self, layout, ranges):
         subplots = OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
+        keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self.keys])
+                                    for key in keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         for i, coord in enumerate(layout.keys(full_grid=True)):
             r = i % self.rows
@@ -618,8 +619,9 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         layout_count = 0
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
+        keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self.keys])
+                                    for key in keys])
         layout_items = layout.grid_items()
         layout_dimensions = layout.kdims if isinstance(layout, NdLayout) else None
         layout_subplots, layouts, paths = {}, {}, {}
