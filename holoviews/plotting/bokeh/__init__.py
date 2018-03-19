@@ -30,15 +30,17 @@ except:
 
 from .annotation import (TextPlot, LineAnnotationPlot, SplinePlot,
                          ArrowPlot, DivPlot)
+from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
+from .heatmap import HeatMapPlot, RadialHeatMapPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
+from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
 from .tabular import TablePlot
@@ -75,7 +77,10 @@ associations = {Overlay: OverlayPlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
-                HeatMap: HeatMapPlot,
+                HeatMap: PlotSelector(HeatMapPlot.is_radial,
+                                      {True: RadialHeatMapPlot,
+                                       False: HeatMapPlot},
+                                      True),
                 QuadMesh: QuadMeshPlot,
 
                 # Paths
@@ -185,7 +190,9 @@ options.Image = Options('style', cmap=dflt_cmap)
 options.GridImage = Options('style', cmap=dflt_cmap)
 options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
-options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
+options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
+                          xmarks_line_color="#FFFFFF", xmarks_line_width=3,
+                          ymarks_line_color="#FFFFFF", ymarks_line_width=3)
 
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)

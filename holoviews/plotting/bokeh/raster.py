@@ -2,10 +2,11 @@ import numpy as np
 import param
 
 from bokeh.models import HoverTool
-from ...core.util import cartesian_product, is_nan, dimension_sanitizer
+from ...core.util import cartesian_product, dimension_sanitizer
 from ...element import Raster
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
 from .util import mpl_to_bokeh, colormesh
+
 
 class RasterPlot(ColorbarPlot):
 
@@ -101,63 +102,13 @@ class RGBPlot(RasterPlot):
         return ElementPlot._glyph_properties(self, plot, element,
                                              source, ranges, style)
 
+
+
 class HSVPlot(RGBPlot):
 
     def get_data(self, element, ranges, style):
         return super(HSVPlot, self).get_data(element.rgb, ranges, style)
 
-
-class HeatMapPlot(ColorbarPlot):
-
-    clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
-        Dictionary to specify colors for clipped values, allows
-        setting color for NaN values and for values above and below
-        the min and max value. The min, max or NaN color may specify
-        an RGB(A) color as a color hex string of the form #FFFFFF or
-        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
-        the range 0-1 or a named HTML color.""")
-
-    show_legend = param.Boolean(default=False, doc="""
-        Whether to show legend for the plot.""")
-
-    _plot_methods = dict(single='rect')
-    style_opts = ['cmap', 'color'] + line_properties + fill_properties
-
-    _categorical = True
-
-    def _get_factors(self, element):
-        return super(HeatMapPlot, self)._get_factors(element.gridded)
-
-    def get_data(self, element, ranges, style):
-        x, y, z = [dimension_sanitizer(d) for d in element.dimensions(label=True)[:3]]
-        if self.invert_axes: x, y = y, x
-        cmapper = self._get_colormapper(element.vdims[0], element, ranges, style)
-        if self.static_source:
-            return {}, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper}}, style
-
-        aggregate = element.gridded
-        xdim, ydim = aggregate.dimensions()[:2]
-        xvals, yvals = (aggregate.dimension_values(x),
-                        aggregate.dimension_values(y))
-        zvals = aggregate.dimension_values(2, flat=False)
-        if self.invert_axes:
-            xdim, ydim = ydim, xdim
-            zvals = zvals.T.flatten()
-        else:
-            zvals = zvals.T.flatten()
-        if xvals.dtype.kind not in 'SU':
-            xvals = [xdim.pprint_value(xv) for xv in xvals]
-        if yvals.dtype.kind not in 'SU':
-            yvals = [ydim.pprint_value(yv) for yv in yvals]
-        data = {x: xvals, y: yvals, 'zvalues': zvals}
-
-        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
-            for vdim in element.vdims:
-                sanitized = dimension_sanitizer(vdim.name)
-                data[sanitized] = ['-' if is_nan(v) else vdim.pprint_value(v)
-                                   for v in aggregate.dimension_values(vdim)]
-        return (data, {'x': x, 'y': y, 'fill_color': {'field': 'zvalues', 'transform': cmapper},
-                       'height': 1, 'width': 1}, style)
 
 
 class QuadMeshPlot(ColorbarPlot):

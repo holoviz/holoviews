@@ -744,4 +744,3 @@ class HeatMap(Dataset, Element2D):
                      "the 2D aggregate is now computed dynamically "
                      "during plotting.")
         return self.gridded.dimension_values(2, flat=False)
-

@@ -1,15 +1,14 @@
-from itertools import product
-
 import numpy as np
 import param
 
 from ...core import CompositeOverlay, Element
 from ...core import traversal
-from ...core.util import match_spec, max_range, unique_iterator, unique_array, is_nan
+from ...core.util import match_spec, max_range, unique_iterator
 from ...element.raster import Image, Raster, RGB
 from .element import ColorbarPlot, OverlayPlot
 from .plot import MPLPlot, GridPlot, mpl_rc_context
 from .util import get_raster_array
+
 
 
 class RasterPlot(ColorbarPlot):
@@ -95,115 +94,6 @@ class RasterPlot(ColorbarPlot):
 
         return axis_kwargs
 
-
-class HeatMapPlot(RasterPlot):
-
-    clipping_colors = param.Dict(default={'NaN': 'white'}, doc="""
-        Dictionary to specify colors for clipped values, allows
-        setting color for NaN values and for values above and below
-        the min and max value. The min, max or NaN color may specify
-        an RGB(A) color as a color hex string of the form #FFFFFF or
-        #FFFFFFFF or a length 3 or length 4 tuple specifying values in
-        the range 0-1 or a named HTML color.""")
-
-    show_values = param.Boolean(default=False, doc="""
-        Whether to annotate each pixel with its value.""")
-
-    def _annotate_plot(self, ax, annotations):
-        handles = {}
-        for plot_coord, text in annotations.items():
-            handles[plot_coord] = ax.annotate(text, xy=plot_coord,
-                                              xycoords='data',
-                                              horizontalalignment='center',
-                                              verticalalignment='center')
-        return handles
-
-
-    def _annotate_values(self, element):
-        val_dim = element.vdims[0]
-        vals = element.dimension_values(2, flat=False)
-        d1uniq, d2uniq = [element.dimension_values(i, False) for i in range(2)]
-        if self.invert_axes:
-            d1uniq, d2uniq = d2uniq, d1uniq
-        else:
-            vals = vals.T
-        if self.invert_xaxis: vals = vals[::-1]
-        if self.invert_yaxis: vals = vals[:, ::-1]
-        vals = vals.flatten()
-        num_x, num_y = len(d1uniq), len(d2uniq)
-        xpos = np.linspace(0.5, num_x-0.5, num_x)
-        ypos = np.linspace(0.5, num_y-0.5, num_y)
-        plot_coords = product(xpos, ypos)
-        annotations = {}
-        for plot_coord, v in zip(plot_coords, vals):
-            text = '-' if is_nan(v) else val_dim.pprint_value(v)
-            annotations[plot_coord] = text
-        return annotations
-
-
-    def _compute_ticks(self, element, ranges):
-        xdim, ydim = element.dimensions()[:2]
-        agg = element.gridded
-        dim1_keys, dim2_keys = [unique_array(agg.dimension_values(i, False))
-                                for i in range(2)]
-        if self.invert_axes:
-            dim1_keys, dim2_keys = dim2_keys, dim1_keys
-        num_x, num_y = len(dim1_keys), len(dim2_keys)
-        xpos = np.linspace(.5, num_x-0.5, num_x)
-        ypos = np.linspace(.5, num_y-0.5, num_y)
-        xlabels = [xdim.pprint_value(k) for k in dim1_keys]
-        ylabels = [ydim.pprint_value(k) for k in dim2_keys]
-        return list(zip(xpos, xlabels)), list(zip(ypos, ylabels))
-
-
-    def init_artists(self, ax, plot_args, plot_kwargs):
-        ax.set_aspect(plot_kwargs.pop('aspect', 1))
-
-        handles = {}
-        annotations = plot_kwargs.pop('annotations', None)
-        handles['artist'] = ax.imshow(*plot_args, **plot_kwargs)
-        if self.show_values and annotations:
-            handles['annotations'] = self._annotate_plot(ax, annotations)
-        return handles
-
-
-    def get_data(self, element, ranges, style):
-        xticks, yticks = self._compute_ticks(element, ranges)
-
-        data = np.flipud(element.gridded.dimension_values(2, flat=False))
-        data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
-        if self.invert_axes: data = data.T[::-1, ::-1]
-        if self.invert_xaxis: data = data[:, ::-1]
-        if self.invert_yaxis: data = data[::-1]
-        shape = data.shape
-        style['aspect'] = shape[0]/shape[1]
-        style['extent'] = (0, shape[1], 0, shape[0])
-        style['annotations'] = self._annotate_values(element.gridded)
-        style['origin'] = 'upper'
-        vdim = element.vdims[0]
-        self._norm_kwargs(element, ranges, style, vdim)
-        return [data], style, {'xticks': xticks, 'yticks': yticks}
-
-
-    def update_handles(self, key, axis, element, ranges, style):
-        im = self.handles['artist']
-        data, style, axis_kwargs = self.get_data(element, ranges, style)
-        im.set_data(data[0])
-        im.set_extent(style['extent'])
-        im.set_clim((style['vmin'], style['vmax']))
-        if 'norm' in style:
-            im.norm = style['norm']
-
-        if self.show_values:
-            annotations = self.handles['annotations']
-            for annotation in annotations.values():
-                try:
-                    annotation.remove()
-                except:
-                    pass
-            annotations = self._annotate_plot(axis, style['annotations'])
-            self.handles['annotations'] = annotations
-        return axis_kwargs
 
 
 class QuadMeshPlot(ColorbarPlot):

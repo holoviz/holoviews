@@ -418,8 +418,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         key = list(self.hmap.data.keys())[-1]
         dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
         key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
-
         ranges = self.compute_ranges(self.hmap, key, ranges)
+        self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
+
         ranges = util.match_spec(element, ranges)
 
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])

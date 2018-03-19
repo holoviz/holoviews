@@ -14,6 +14,7 @@ from .annotation import * # noqa (API import)
 from .chart import * # noqa (API import)
 from .chart3d import * # noqa (API import)
 from .graphs import * # noqa (API import)
+from .heatmap import * # noqa (API import)
 from .path import * # noqa (API import)
 from .plot import * # noqa (API import)
 from .raster import * # noqa (API import)
@@ -151,7 +152,10 @@ Store.register({Curve: CurvePlot,
                 # Raster plots
                 QuadMesh: QuadMeshPlot,
                 Raster: RasterPlot,
-                HeatMap: HeatMapPlot,
+                HeatMap: PlotSelector(HeatMapPlot.is_radial,
+                                      {True: RadialHeatMapPlot,
+                                       False: HeatMapPlot},
+                                      True),
                 Image: RasterPlot,
                 RGB: RasterPlot,
                 HSV: RasterPlot,
@@ -237,8 +241,11 @@ options.Image = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.GridImage = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.Raster = Options('style', cmap=dflt_cmap, interpolation='nearest')
 options.QuadMesh = Options('style', cmap=dflt_cmap)
-options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest')
-options.HeatMap = Options('plot', show_values=True, xticks=20, yticks=20)
+options.HeatMap = Options('style', cmap='RdYlBu_r', interpolation='nearest',
+                          annular_edgecolors='white', annular_linewidth=0.5,
+                          xmarks_edgecolor='white', xmarks_linewidth=3,
+                          ymarks_edgecolor='white', ymarks_linewidth=3)
+options.HeatMap = Options('plot', show_values=True)
 options.RGB = Options('style', interpolation='nearest')
 # Composites
 options.Layout = Options('plot', sublabel_format='{Alpha}')

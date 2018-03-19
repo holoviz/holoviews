@@ -123,7 +123,9 @@ class PlotSelector(object):
 
         if not allow_mismatch and not all(style == styles[0] for style in styles):
             raise Exception("All selectable plot classes must have identical style options.")
-        return styles[0], parameters[0]
+
+        plot_params = {p: v for params in parameters for p, v in params.items()}
+        return [s for style in styles for s in style], plot_params
 
 
     def __call__(self, obj, **kwargs):
@@ -964,7 +966,7 @@ class GenericOverlayPlot(GenericElementPlot):
             group_counter[group_key] += 1
             group_length = map_lengths[group_key]
 
-            if issubclass(plottype, GenericOverlayPlot):
+            if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
                 opts['show_legend'] = self.show_legend
                 if not any(len(frame) for frame in vmap):
                     self.warning('%s is empty and will be skipped during plotting'
