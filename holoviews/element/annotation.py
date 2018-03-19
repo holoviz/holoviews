@@ -280,6 +280,6 @@ class Labels(Points):
 
     group = param.String(default='Labels', constant=True)
 
-    vdims = param.List([Dimension('Label')], bounds=(1, 1), doc="""
+    vdims = param.List([Dimension('Label')], bounds=(1, None), doc="""
         Defines the value dimension corresponding to the label text.""")
 

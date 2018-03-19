@@ -1,10 +1,11 @@
 import param
+import numpy as np
 import matplotlib
 from matplotlib import patches as patches
 
-from ...core.util import match_spec
+from ...core.util import match_spec, basestring
 from ...core.options import abbreviated_exception
-from .element import ElementPlot
+from .element import ElementPlot, ColorbarPlot
 from .plot import mpl_rc_context
 
 
@@ -85,10 +86,14 @@ class TextPlot(AnnotationPlot):
                           rotation=rotation, **opts)]
 
 
-class LabelsPlot(ElementPlot):
+class LabelsPlot(ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
 
     style_opts = ['alpha', 'color', 'visible', 'linewidth',
-                  'linestyle', 'marker', 'ms']
+                  'linestyle', 'marker', 'ms', 'cmap']
 
     _plot_methods = dict(single='annotate')
 
@@ -96,11 +101,23 @@ class LabelsPlot(ElementPlot):
         xs, ys = (element.dimension_values(i) for i in range(2))
         text = element.dimension_values(2)
         positions = (ys, xs) if self.invert_axes else (xs, ys)
-        return positions + (text,), style, {}
+        cdim = element.get_dimension(self.color_index)
+        self._norm_kwargs(element, ranges, style, cdim)
+        cs = element.dimension_values(cdim) if cdim else np.full(len(text), np.NaN)
+        style = {k: v for k, v in style.items() if k not in ['vmin', 'vmax']}
+        return positions + (text, cs), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
         texts = []
-        for x, y, text in zip(*plot_args):
+        cmap = plot_kwargs.pop('cmap', None)
+        colors = list(np.unique(plot_args[-1]))
+        for x, y, text, color in zip(*plot_args):
+            if color is not None and cmap is not None:
+                if plot_args[-1].dtype.kind in 'if':
+                    plot_kwargs['color'] = cmap(color)
+                else:
+                    color = colors.index(color) if color in colors else np.NaN
+                    plot_kwargs['color'] = cmap(color)
             texts.append(ax.text(x, y, text, **plot_kwargs))
         return {'artist': texts}
 
