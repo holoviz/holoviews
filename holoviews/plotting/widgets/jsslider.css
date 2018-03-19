@@ -71,6 +71,9 @@ div.hologroup {
   visibility: hidden
 }
 
+
+/* CSS rules for noUISlider based slider used by JupyterLab extension  */
+
 .noUi-handle {
   width: 20px !important;
   height: 20px !important;
