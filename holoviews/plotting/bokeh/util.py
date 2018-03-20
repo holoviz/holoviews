@@ -53,7 +53,8 @@ def convert_timestamp(timestamp):
     """
     Converts bokehJS timestamp to datetime64.
     """
-    return np.datetime64(dt.datetime.fromtimestamp(timestamp/1000.))
+    datetime = dt.datetime.fromtimestamp(timestamp, dt.timezone.utc)
+    return np.datetime64(datetime.replace(tzinfo=None))
 
 
 def rgba_tuple(rgba):
