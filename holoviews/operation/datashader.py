@@ -198,7 +198,7 @@ class AggregationOperation(ResamplingOperation):
                     'min':   rd.min,
                     'max':   rd.max}
 
-    def _get_aggregator(self, element):
+    def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
         if isinstance(agg, basestring):
             if agg not in self._agg_methods:
@@ -223,7 +223,7 @@ class AggregationOperation(ResamplingOperation):
                                  '%s operation to. Declare the dimension '
                                  'to aggregate as part of the datashader '
                                  'aggregator.' % type(self).__name__)
-            agg = type(agg)(field)
+            agg = type(agg)(field if add_field else None)
         return agg
 
 
@@ -561,9 +561,10 @@ class regrid(AggregationOperation):
         # Apply regridding to each value dimension
         regridded = {}
         arrays = self._get_xarrays(element, coords, xtype, ytype)
+        agg_fn = self._get_aggregator(element, add_field=False)
         for vd, xarr in arrays.items():
             rarray = cvs.raster(xarr, upsample_method=self.p.interpolation,
-                                downsample_method=self._get_aggregator(element))
+                                downsample_method=agg_fn)
 
             # Convert datetime coordinates
             if xtype == "datetime":
