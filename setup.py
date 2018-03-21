@@ -40,7 +40,7 @@ def embed_version(basepath, ref='v0.2.1'):
     import io, zipfile
     try:    from urllib.request import urlopen
     except: from urllib import urlopen
-    response = urlopen('http://github.com/ioam/autover/archive/{ref}.zip'.format(ref=ref))
+    response = urlopen('https://github.com/ioam/autover/archive/{ref}.zip'.format(ref=ref))
     zf = zipfile.ZipFile(io.BytesIO(response.read()))
     ref = ref[1:] if ref.startswith('v') else ref
     embed_version = zf.read('autover-{ref}/autover/version.py'.format(ref=ref))
