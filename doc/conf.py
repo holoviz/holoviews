@@ -26,7 +26,7 @@ version = setup_args['version']
 # The full version, including alpha/beta/rc tags.
 release = setup_args['version']
 
-ASSETS_URL = 'http://assets.holoviews.org'
+ASSETS_URL = 'https://assets.holoviews.org'
 
 rst_epilog = """
 .. _tutorial notebooks: {url}/notebooks-{version}.zip

@@ -28,7 +28,7 @@ If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to 
      <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
        <img src="http://holoviews.org/_images/iris_splom_example.png" width='20%'>    </img> </a>
      <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
-       <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
+       <img src="https://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
      <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
        <img src="http://holoviews.org/_images/scatter_economic.png" width='43%'> </img>    </a>
    </div>
@@ -45,11 +45,11 @@ If you have any `issues <https://github.com/ioam/holoviews/issues>`_ or wish to 
    </div>
    <div >
        <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
-         <img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+         <img src="https://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
        <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
-         <img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+         <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
        <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
-         <img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+         <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
    </div>
    </div>
 

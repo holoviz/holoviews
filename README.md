@@ -7,7 +7,7 @@
 [![Gitter](https://badges.gitter.im/Join%20Chat.svg)](https://gitter.im/ioam/holoviews?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 [![Binder](https://mybinder.org/badge.svg)](https://mybinder.org/v2/gh/ioam/holoviews/master?filepath=examples)
 
-# <img src="http://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="40px" align="left" /> HoloViews
+# <img src="https://assets.holoviews.org/logo/holoviews_color_icon_500x500.png" alt="HoloViews logo" height="40px" align="left" /> HoloViews
 
 **Stop plotting your data - annotate your data and let it visualize
 itself.**
@@ -26,7 +26,7 @@ Check out the [HoloViews web site](http://holoviews.org) for extensive examples 
   <a href="http://holoviews.org/gallery/demos/bokeh/iris_splom_example.html">
     <img src="http://holoviews.org/_images/iris_splom_example_large.png" width='20%'> </img> </a>
   <a href="http://holoviews.org/getting_started/Gridded_Datasets.html">
-    <img src="http://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
+    <img src="https://assets.holoviews.org/collage/cells.png" width='22%'> </img>  </a>
   <a href="http://holoviews.org/gallery/demos/bokeh/scatter_economic.html">
     <img src="http://holoviews.org/_images/scatter_economic_large.png" width='43%'> </img> </a>
 </div>
@@ -43,11 +43,11 @@ Check out the [HoloViews web site](http://holoviews.org) for extensive examples 
 </div>
 <div >
     <a href="http://holoviews.org/gallery/demos/bokeh/dropdown_economic.html">
-      <img src="http://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
+      <img src="https://assets.holoviews.org/collage/dropdown.gif" width='31%'> </a>
     <a href="http://holoviews.org/gallery/demos/bokeh/dragon_curve.html">
-      <img src="http://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
+      <img src="https://assets.holoviews.org/collage/dragon_fractal.gif" width='26%'> </a>
     <a href="http://holoviews.org/gallery/apps/bokeh/nytaxi_hover.html">
-      <img src="http://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
+      <img src="https://assets.holoviews.org/collage/ny_datashader.gif" width='31%'> </a>
 </div>
 </div>
 
