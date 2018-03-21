@@ -336,7 +336,8 @@ class aggregate(AggregationOperation):
         x, y = element.last.dimensions()[0:2]
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
-        agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
+        agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
+                           if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
 
         # Optimize categorical counts by aggregating them individually
