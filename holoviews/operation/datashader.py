@@ -213,7 +213,7 @@ class AggregationOperation(ResamplingOperation):
             agg = self._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
-        if agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+        if add_field and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % type(self).__name__)
@@ -227,7 +227,7 @@ class AggregationOperation(ResamplingOperation):
                                  '%s operation to. Declare the dimension '
                                  'to aggregate as part of the datashader '
                                  'aggregator.' % type(self).__name__)
-            agg = type(agg)(field if add_field else None)
+            agg = type(agg)(field)
         return agg
 
 
