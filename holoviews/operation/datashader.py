@@ -189,14 +189,18 @@ class AggregationOperation(ResamplingOperation):
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
-    _agg_methods = {'first': rd.first,
-                    'last':  rd.last,
-                    'mode':  rd.mode,
-                    'mean':  rd.mean,
-                    'var':   rd.var,
-                    'std':   rd.std,
-                    'min':   rd.min,
-                    'max':   rd.max}
+    _agg_methods = {
+        'any':   rd.any,
+        'count': rd.count,
+        'first': rd.first,
+        'last':  rd.last,
+        'mode':  rd.mode,
+        'mean':  rd.mean,
+        'var':   rd.var,
+        'std':   rd.std,
+        'min':   rd.min,
+        'max':   rd.max
+    }
 
     def _get_aggregator(self, element, add_field=True):
         agg = self.p.aggregator
@@ -209,7 +213,7 @@ class AggregationOperation(ResamplingOperation):
             agg = self._agg_methods[agg]()
 
         elements = element.traverse(lambda x: x, [Element])
-        if agg.column is None and not isinstance(agg, rd.count):
+        if agg.column is None and not isinstance(agg, (rd.count, rd.any)):
             if not elements:
                 raise ValueError('Could not find any elements to apply '
                                  '%s operation to.' % type(self).__name__)
