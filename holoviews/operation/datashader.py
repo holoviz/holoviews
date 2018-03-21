@@ -31,7 +31,21 @@ from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh)
 from ..streams import RangeXY, PlotSize
 
 
-class ResamplingOperation(Operation):
+class LinkableOperation(Operation):
+    """
+    Abstract baseclass for operations supporting linked inputs.
+    """
+    
+    link_inputs = param.Boolean(default=True, doc="""
+        By default, the link_inputs parameter is set to True so that
+        when applying an operation, backends that support linked
+        streams update RangeXY streams on the inputs of the operation.
+        Disable when you do not want the resulting plot to be
+        interactive, e.g. when trying to display an interactive plot a
+        second time.""")
+
+
+class ResamplingOperation(LinkableOperation):
     """
     Abstract baseclass for resampling operations
     """
@@ -82,13 +96,6 @@ class ResamplingOperation(Operation):
                                         is_instance=False, default=Image,
                                         doc="""
         The type of the returned Elements, must be a 2D Dataset type.""")
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying shade, backends that support linked streams
-        update RangeXY streams on the inputs of the shade operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     precompute = param.Boolean(default=False, doc="""
         Whether to apply precomputing operations. Precomputing can
@@ -185,7 +192,7 @@ class AggregationOperation(ResamplingOperation):
     aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
                                      default=ds.count(), doc="""
         Datashader reduction function used for aggregating the data.
-        The aggregator may also define a column to aggregate, if
+        The aggregator may also define a column to aggregate; if
         no column is defined the first value dimension of the element
         will be used. May also be defined as a string.""")
 
@@ -207,7 +214,7 @@ class AggregationOperation(ResamplingOperation):
         if isinstance(agg, basestring):
             if agg not in self._agg_methods:
                 agg_methods = sorted(agg)
-                raise ValueError('Aggregation method %r is not know, '
+                raise ValueError('Aggregation method %r is not known; '
                                  'aggregator must be one of: %r' %
                                  (agg, agg_methods))
             agg = self._agg_methods[agg]()
@@ -468,17 +475,12 @@ class regrid(AggregationOperation):
     interpolation parameters respectively. By default upsampling is
     disabled to avoid unnecessarily upscaling an image that has to be
     sent to the browser. Also disables expanding the image beyond its
-    original bounds avoiding unneccessarily padding the output array
-    with nan values.
+    original bounds avoiding unnecessarily padding the output array
+    with NaN values.
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring),
-                                     doc="""
-        Datashader reduction function used for aggregating the data.
-        The aggregator may also define a column to aggregate, if
-        no column is defined the first value dimension of the element
-        will be used. May also be defined as a string.""")
+                                     class_=(ds.reductions.Reduction, basestring))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -592,18 +594,13 @@ class regrid(AggregationOperation):
 class trimesh_rasterize(aggregate):
     """
     Rasterize the TriMesh element using the supplied aggregator. If
-    the TriMesh nodes or edges define a value dimension will plot
-    filled and shaded polygons otherwise returns a wiremesh of the
+    the TriMesh nodes or edges define a value dimension, will plot
+    filled and shaded polygons; otherwise returns a wiremesh of the
     data.
     """
 
     aggregator = param.ClassSelector(default=ds.mean(),
-                                     class_=(ds.reductions.Reduction, basestring),
-                                     doc="""
-        Datashader reduction function used for aggregating the data.
-        The aggregator may also define a column to aggregate, if
-        no column is defined the first value dimension of the element
-        will be used. May also be defined as a string.""")
+                                     class_=(ds.reductions.Reduction, basestring))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', None], doc="""
@@ -659,7 +656,7 @@ class trimesh_rasterize(aggregate):
 class quadmesh_rasterize(trimesh_rasterize):
     """
     Rasterize the QuadMesh element using the supplied aggregator.
-    Simply converts to a TriMesh and let's trimesh_rasterize
+    Simply converts to a TriMesh and lets trimesh_rasterize
     handle the actual rasterization.
     """
 
@@ -670,12 +667,12 @@ class quadmesh_rasterize(trimesh_rasterize):
 
 class rasterize(AggregationOperation):
     """
-    Rasterize is a high-level operation which will rasterize any
-    Element or combination of Elements aggregating it with the supplied
+    Rasterize is a high-level operation that will rasterize any
+    Element or combination of Elements, aggregating them with the supplied
     aggregator and interpolation method.
 
     The default aggregation method depends on the type of Element but
-    usually defaults to the count of samples in each bin, other
+    usually defaults to the count of samples in each bin. Other
     aggregators can be supplied implementing mean, max, min and other
     reduction operations.
 
@@ -692,11 +689,7 @@ class rasterize(AggregationOperation):
     """
 
     aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=None, doc="""
-        Datashader reduction function used for aggregating the data.
-        The aggregator may also define a column to aggregate, if
-        no column is defined the first value dimension of the element
-        will be used. May also be defined as a string.""")
+                                     default=None)
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', None], doc="""
@@ -726,7 +719,7 @@ class rasterize(AggregationOperation):
 
 
 
-class shade(Operation):
+class shade(LinkableOperation):
     """
     shade applies a normalization function followed by colormapping to
     an Image or NdOverlay of Images, returning an RGB Element.
@@ -735,8 +728,8 @@ class shade(Operation):
 
     In the 2D case data is normalized and colormapped, while a 3D
     array representing categorical aggregates will be supplied a color
-    key for each category. The colormap (cmap) may be supplied as an
-    Iterable or a Callable.
+    key for each category. The colormap (cmap) for the 2D case may be
+    supplied as an Iterable or a Callable.
     """
 
     cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
@@ -748,9 +741,10 @@ class shade(Operation):
         colormap.""")
 
     color_key = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
-        Iterable or callable which returns colors as hex colors, to
+        Iterable or callable that returns colors as hex colors, to
         be used for the color key of categorical datashader output.
-        Callable type must allow mapping colors between 0 and 1.""")
+        Callable type must allow mapping colors for supplied values 
+        between 0 and 1.""")
 
     normalization = param.ClassSelector(default='eq_hist',
                                         class_=(basestring, Callable),
@@ -764,13 +758,6 @@ class shade(Operation):
         Min and max data values to use for colormap interpolation, when
         wishing to override autoranging.
         """)
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying shade, backends that support linked streams
-        update RangeXY streams on the inputs of the shade operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     min_alpha = param.Number(default=40, doc="""
         The minimum alpha value to use for non-empty pixels when doing
@@ -957,7 +944,7 @@ class stack(Operation):
 
 
 
-class SpreadingOperation(Operation):
+class SpreadingOperation(LinkableOperation):
     """
     Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
@@ -973,13 +960,6 @@ class SpreadingOperation(Operation):
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying spreading, backends that support linked streams
-        update RangeXY streams on the inputs of the dynspread operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):
@@ -1077,7 +1057,7 @@ class _connect_edges(Operation):
         or concatenated with NaN separators.""")
 
     def _bundle(self, position_df, edges_df):
-        raise NotImplementedError('_connect edges is an abstract baseclass '
+        raise NotImplementedError('_connect_edges is an abstract baseclass '
                                   'and does not implement any actual bundling.')
 
     def _process(self, element, key=None):
