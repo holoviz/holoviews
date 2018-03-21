@@ -243,12 +243,74 @@ class DatashaderRasterizeTests(ComparisonTestCase):
                       bounds=(0, 0, 1, 1))
         self.assertEqual(img, image)
 
+    def test_rasterize_trimesh_string_aggregator(self):
+        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        img = rasterize(trimesh, width=3, height=3, dynamic=False, aggregator='mean')
+        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
     def test_rasterize_quadmesh(self):
         qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
         img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator=ds.mean('z'))
         image = Image(np.array([[2., 3., np.NaN], [0, 1, np.NaN], [np.NaN, np.NaN, np.NaN]]),
                       bounds=(-.5, -.5, 1.5, 1.5))
         self.assertEqual(img, image)
+
+    def test_rasterize_quadmesh_string_aggregator(self):
+        qmesh = QuadMesh(([0, 1], [0, 1], np.array([[0, 1], [2, 3]])))
+        img = rasterize(qmesh, width=3, height=3, dynamic=False, aggregator='mean')
+        image = Image(np.array([[2., 3., np.NaN], [0, 1, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(-.5, -.5, 1.5, 1.5))
+        self.assertEqual(img, image)
+
+    def test_rasterize_points(self):
+        points = Points([(0.2, 0.3), (0.4, 0.7), (0, 0.99)])
+        img = rasterize(points, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=['Count'])
+        self.assertEqual(img, expected)
+
+    def test_rasterize_curve(self):
+        curve = Curve([(0.2, 0.3), (0.4, 0.7), (0.8, 0.99)])
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [1, 1]]),
+                         vdims=['Count'])
+        img = rasterize(curve, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        self.assertEqual(img, expected)
+
+    def test_rasterize_ndoverlay(self):
+        ds = Dataset([(0.2, 0.3, 0), (0.4, 0.7, 1), (0, 0.99, 2)], kdims=['x', 'y', 'z'])
+        ndoverlay = ds.to(Points, ['x', 'y'], [], 'z').overlay()
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 0]]),
+                         vdims=['Count'])
+        img = rasterize(ndoverlay, dynamic=False, x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        self.assertEqual(img, expected)
+
+    def test_rasterize_path(self):
+        path = Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        expected = Image(([0.25, 0.75], [0.25, 0.75], [[1, 0], [2, 1]]),
+                         vdims=['Count'])
+        img = rasterize(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
+                        width=2, height=2)
+        self.assertEqual(img, expected)
+
+    def test_rasterize_image(self):
+        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        regridded = regrid(img, width=2, height=2, dynamic=False)
+        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        self.assertEqual(regridded, expected)
+
+    def test_rasterize_image_string_aggregator(self):
+        img = Image((range(10), range(5), np.arange(10) * np.arange(5)[np.newaxis].T))
+        regridded = regrid(img, width=2, height=2, dynamic=False, aggregator='mean')
+        expected = Image(([2., 7.], [0.75, 3.25], [[1, 5], [6, 22]]))
+        self.assertEqual(regridded, expected)
+
 
 
 @attr(optional=1)
