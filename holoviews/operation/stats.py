@@ -150,6 +150,9 @@ class bivariate_kde(Operation):
     filled = param.Boolean(default=False, doc="""
         Controls whether to return filled or unfilled contours.""")
 
+    levels = param.ClassSelector(default=10, class_=(list, int), doc="""
+        A list of scalar values used to specify the contour levels.""")
+
     n_samples = param.Integer(default=100, doc="""
         Number of samples to compute the KDE over.""")
 
@@ -219,6 +222,6 @@ class bivariate_kde(Operation):
 
         img = Image((xs, ys, f.T), kdims=element.dimensions()[:2], vdims=[vdim], **params)
         if self.p.contours:
-            cntr = contours(img, filled=self.p.filled)
+            cntr = contours(img, filled=self.p.filled, levels=self.p.levels)
             return cntr.clone(cntr.data[1:], **params)
         return img
