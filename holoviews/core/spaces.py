@@ -1458,22 +1458,21 @@ class GridSpace(UniformNdMapping):
             raise Exception('Grids can have no more than two dimensions.')
 
 
-    def __mul__(self, other):
+    def __mul__(self, other, reverse=False):
         if isinstance(other, GridSpace):
             if set(self.keys()) != set(other.keys()):
-                raise KeyError("Can only overlay two ParameterGrids if their keys match")
+                raise KeyError("Can only overlay two GridSpaces if their keys match")
             zipped = zip(self.keys(), self.values(), other.values())
             overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
             return self.clone(overlayed_items)
-        elif isinstance(other, UniformNdMapping) and len(other) == 1:
-            view = other.last
-        elif isinstance(other, UniformNdMapping) and len(other) != 1:
-            raise Exception("Can only overlay with HoloMap of length 1")
-        else:
-            view = other
 
-        overlayed_items = [(k, el * view) for k, el in self.items()]
+        overlayed_items = [(k, other * el if reverse else el * other)
+                           for k, el in self.items()]
         return self.clone(overlayed_items)
+
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
 
 
     def __lshift__(self, other):

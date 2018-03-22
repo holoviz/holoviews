@@ -351,6 +351,23 @@ class NdLayout(UniformNdMapping):
         return clone
 
 
+    def __mul__(self, other, reverse=False):
+        if isinstance(other, NdLayout):
+            if set(self.keys()) != set(other.keys()):
+                raise KeyError("Can only overlay two NdLayouts if their keys match")
+            zipped = zip(self.keys(), self.values(), other.values())
+            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
+            return self.clone(overlayed_items)
+
+        overlayed_items = [(k, other * el if reverse else el * other)
+                           for k, el in self.items()]
+        return self.clone(overlayed_items)
+
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
+
+
 
 # To be removed after 1.3.0
 class Warning(param.Parameterized): pass
