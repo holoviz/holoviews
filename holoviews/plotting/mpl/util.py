@@ -1,12 +1,11 @@
 import re
-import inspect
 import warnings
 
 import numpy as np
 from matplotlib import ticker
 from matplotlib.transforms import Bbox, TransformedBbox, Affine2D
 
-from ...core.util import basestring
+from ...core.util import basestring, _getargspec
 from ...element import Raster, RGB
 
 
@@ -18,7 +17,7 @@ def wrap_formatter(formatter):
     if isinstance(formatter, ticker.Formatter):
         return formatter
     elif callable(formatter):
-        args = [arg for arg in inspect.getargspec(formatter).args
+        args = [arg for arg in _getargspec(formatter).args
                 if arg != 'self']
         wrapped = formatter
         if len(args) == 1:
