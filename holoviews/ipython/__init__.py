@@ -123,8 +123,12 @@ class notebook_extension(extension):
 
         # Not quite right, should be set when switching backends
         if 'matplotlib' in Store.renderers and not notebook_extension._loaded:
-            svg_exporter = Store.renderers['matplotlib'].instance(holomap=None,fig='svg')
-            holoviews.archive.exporters = [svg_exporter] + holoviews.archive.exporters
+            mpl_exporter = Store.renderers['matplotlib'].instance(holomap='widgets',fig='svg')
+            holoviews.archive.exporters = [mpl_exporter] + holoviews.archive.exporters
+
+        if 'bokeh' in Store.renderers and not notebook_extension._loaded:
+            bk_exporter = Store.renderers['bokeh'].instance(holomap='widgets')
+            holoviews.archive.exporters = [bk_exporter] + holoviews.archive.exporters
 
         p = param.ParamOverrides(self, {k:v for k,v in params.items() if k!='config'})
         if p.case_sensitive_completion:
