@@ -113,7 +113,7 @@ class BokehRenderer(Renderer):
         if self.mode == 'server':
             return self.server_doc(plot, doc), info
         elif isinstance(plot, tuple(self.widgets.values())):
-            return plot(), info
+            return self.static_html(obj), info
         elif fmt == 'png':
             png = self._figure_data(plot, fmt=fmt, doc=doc)
             return png, info

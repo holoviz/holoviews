@@ -102,7 +102,7 @@ class MPLRenderer(Renderer):
         if plot is None: return
 
         if isinstance(plot, tuple(self.widgets.values())):
-            data = plot()
+            data = self.static_html(obj)
         else:
             with mpl.rc_context(rc=plot.fig_rcparams):
                 data = self._figure_data(plot, fmt, **({'dpi':self.dpi} if self.dpi else {}))
