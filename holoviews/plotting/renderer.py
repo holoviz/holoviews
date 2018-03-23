@@ -266,6 +266,10 @@ class Renderer(Exporter):
         code to initialize a Comm, if the plot supplies one.
         """
         plot, fmt =  self._validate(obj, fmt)
+
+        if any(isinstance(plot, w) for w in self.widgets.values()):
+            return plot()
+
         figdata, _ = self(plot, fmt, **kwargs)
         if css is None: css = self.css
 
