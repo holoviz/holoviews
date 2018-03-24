@@ -13,7 +13,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update
+from ..util import dynamic_update, process_cmap
 from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter
 from distutils.version import LooseVersion
@@ -480,6 +480,9 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
+    color_levels = param.Integer(default=None, doc="""
+        Number of discrete colors to use when colormapping.""")
+
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
         setting color for NaN values and for values above and below
@@ -593,23 +596,22 @@ class ColorbarPlot(ElementPlot):
         to be passed to matplotlib plot function.
         """
         clim = opts.pop(prefix+'clims', None)
+        values = np.asarray(element.dimension_values(vdim))
         if clim is None:
-            cs = element.dimension_values(vdim)
-            if not isinstance(cs, np.ndarray):
-                cs = np.array(cs)
-            if len(cs) and cs.dtype.kind in 'if':
+            if not isinstance(values, np.ndarray):
+                values = np.array(values)
+            if len(values) and values.dtype.kind in 'if':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value
                     # and the overall range
                     if clim[0] == 0:
-                        vals = element.dimension_values(vdim)
-                        clim = (vals[vals!=0].min(), clim[1])
+                        clim = (values[values!=0].min(), clim[1])
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
             else:
-                clim = (0, len(np.unique(cs)))
+                clim = (0, len(np.unique(values)))
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
@@ -621,7 +623,6 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmax'] = clim[1]
 
         # Check whether the colorbar should indicate clipping
-        values = np.asarray(element.dimension_values(vdim))
         if values.dtype.kind not in 'OSUM':
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
@@ -640,12 +641,12 @@ class ColorbarPlot(ElementPlot):
 
         # Define special out-of-range colors on colormap
         cmap = opts.get(prefix+'cmap')
-        if isinstance(cmap, list):
-            cmap = mpl_colors.ListedColormap(cmap)
-        elif isinstance(cmap, util.basestring):
-            cmap = copy.copy(plt.cm.get_cmap(cmap))
+        if self.color_levels:
+            cmap_type = mpl_colors.LinearSegmentedColormap
         else:
-            cmap = copy.copy(cmap)
+            cmap_type = mpl_colors.ListedColormap
+        cmap = process_cmap(cmap, self.color_levels)
+        cmap = cmap_type(cmap)
         colors = {}
         for k, val in self.clipping_colors.items():
             if isinstance(val, tuple):

@@ -974,6 +974,9 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
+    color_levels = param.Integer(default=None, doc="""
+        Number of discrete colors to use when colormapping.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
