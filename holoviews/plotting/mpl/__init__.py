@@ -181,7 +181,8 @@ Store.register({Curve: CurvePlot,
                 # Statistics elements
                 Distribution: DistributionPlot,
                 Bivariate: BivariatePlot,
-                Violin: ViolinPlot},
+                Violin: ViolinPlot,
+                HexTiles: HexTilesPlot},
                'matplotlib', style_aliases=style_aliases)
 
 
