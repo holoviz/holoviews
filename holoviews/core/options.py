@@ -761,6 +761,9 @@ class Compositor(param.Parameterized):
       The mode of the Compositor object which may be either 'data' or
       'display'.""")
 
+    backends = param.List(default=[], doc="""
+      Defines which backends to apply the Compositor for.""")
+
     operation = param.Parameter(doc="""
        The Operation to apply when collapsing overlays.""")
 
@@ -793,7 +796,7 @@ class Compositor(param.Parameterized):
     definitions = [] # The set of all the compositor instances
 
     @classmethod
-    def strongest_match(cls, overlay, mode):
+    def strongest_match(cls, overlay, mode, backend=None):
         """
         Returns the single strongest matching compositor operation
         given an overlay. If no matches are found, None is returned.
@@ -802,7 +805,7 @@ class Compositor(param.Parameterized):
         highest match value as returned by the match_level method.
         """
         match_strength = [(op.match_level(overlay), op) for op in cls.definitions
-                          if op.mode == mode]
+                          if op.mode == mode and (not op.backends or backend in op.backends)]
         matches = [(match[0], op, match[1]) for (match, op) in match_strength if match is not None]
         if matches == []: return None
         else:             return sorted(matches)[0]
@@ -813,6 +816,7 @@ class Compositor(param.Parameterized):
         """
         Finds any applicable compositor and applies it.
         """
+        from .element import Element
         from .overlay import Overlay, CompositeOverlay
         unpack = False
         if not isinstance(overlay, CompositeOverlay):
@@ -820,8 +824,9 @@ class Compositor(param.Parameterized):
             unpack = True
 
         prev_ids = tuple()
+        processed = defaultdict(list)
         while True:
-            match = cls.strongest_match(overlay, mode)
+            match = cls.strongest_match(overlay, mode, backend)
             if match is None:
                 if unpack and len(overlay) == 1:
                     return overlay.values()[0]
@@ -833,6 +838,9 @@ class Compositor(param.Parameterized):
             else:
                 values = overlay.items()
                 sliced = overlay.clone(values[start:stop])
+            items = sliced.traverse(lambda x: x, [Element])
+            if applicable_op and all(el in processed[applicable_op] for el in items):
+                return overlay
             result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
                 result = result.relabel(group=applicable_op.group)
@@ -840,6 +848,7 @@ class Compositor(param.Parameterized):
                 result = [result]
             else:
                 result = list(zip(sliced.keys(), [result]))
+            processed[applicable_op] += [el for r in result for el in r.traverse(lambda x: x, [Element])]
             overlay = overlay.clone(values[:start]+result+values[stop:])
 
             # Guard against infinite recursion for no-ops
@@ -897,7 +906,7 @@ class Compositor(param.Parameterized):
 
 
     def __init__(self, pattern, operation, group, mode, transfer_options=False,
-                 transfer_parameters=False, output_type=None, **kwargs):
+                 transfer_parameters=False, output_type=None, backends=None, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -919,6 +928,7 @@ class Compositor(param.Parameterized):
                                          pattern=pattern,
                                          operation=operation,
                                          mode=mode,
+                                         backends=backends or [],
                                          kwargs=kwargs,
                                          transfer_options=transfer_options,
                                          transfer_parameters=transfer_parameters)
