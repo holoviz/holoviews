@@ -16,7 +16,10 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import (unique_array, get_path, make_path_unique, int_to_roman)
+from .util import (
+    unique_array, get_path, make_path_unique, int_to_roman,
+    unique_iterator
+)
 from . import traversal
 
 
@@ -353,11 +356,26 @@ class NdLayout(UniformNdMapping):
 
     def __mul__(self, other, reverse=False):
         if isinstance(other, NdLayout):
-            if set(self.keys()) != set(other.keys()):
-                raise KeyError("Can only overlay two NdLayouts if their keys match")
-            zipped = zip(self.keys(), self.values(), other.values())
-            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
-            return self.clone(overlayed_items)
+            from .overlay import Overlay
+            if self.kdims != other.kdims:
+                raise KeyError("Can only overlay two NdLayouts with "
+                               "non-matching key dimensions.")
+            items = []
+            self_keys = list(self.data.keys())
+            other_keys = list(other.data.keys())
+            for key in unique_iterator(self_keys+other_keys):
+                self_el = self.data.get(key)
+                other_el = other.data.get(key)
+                if self_el is None:
+                    item = [other_el]
+                elif other_el is None:
+                    item = [self_el]
+                elif reverse:
+                    item = [other_el, self_el]
+                else:
+                    item = [self_el, other_el]
+                items.append((key, Overlay(item)))
+            return self.clone(items)
 
         overlayed_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]

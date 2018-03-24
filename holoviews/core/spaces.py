@@ -1460,11 +1460,26 @@ class GridSpace(UniformNdMapping):
 
     def __mul__(self, other, reverse=False):
         if isinstance(other, GridSpace):
-            if set(self.keys()) != set(other.keys()):
-                raise KeyError("Can only overlay two GridSpaces if their keys match")
-            zipped = zip(self.keys(), self.values(), other.values())
-            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
-            return self.clone(overlayed_items)
+            if self.kdims != other.kdims:
+                raise KeyError("Can only overlay two GridSpaces with "
+                               "non-matching key dimensions.")
+            items = []
+            self_keys = list(self.data.keys())
+            other_keys = list(other.data.keys())
+            for key in util.unique_iterator(self_keys+other_keys):
+                self_el = self.data.get(key)
+                other_el = other.data.get(key)
+                if self_el is None:
+                    item = [other_el]
+                elif other_el is None:
+                    item = [self_el]
+                elif reverse:
+                    item = [other_el, self_el]
+                else:
+                    item = [self_el, other_el]
+                items.append((key, Overlay(item)))
+            print(items)
+            return self.clone(items)
 
         overlayed_items = [(k, other * el if reverse else el * other)
                            for k, el in self.items()]

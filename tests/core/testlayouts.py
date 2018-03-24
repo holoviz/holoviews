@@ -1,4 +1,4 @@
-from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap
+from holoviews import AdjointLayout, NdLayout, GridSpace, Layout, Element, HoloMap, Overlay
 from holoviews.element import HLine
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -152,6 +152,32 @@ class NdLayoutTest(CompositeTest):
         expected = NdLayout(expected_items)
         self.assertEqual(grid2*grid, expected)
 
+    def test_ndlayout_overlay_ndlayout_partial(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = NdLayout(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2, 'X')
+
+        expected_items = [(0, Overlay([self.view1, self.view2])),
+                          (1, Overlay([self.view2])),
+                          (2, Overlay([self.view2])),
+                          (3, Overlay([self.view2, self.view3]))]
+        expected = NdLayout(expected_items, 'X')
+        self.assertEqual(grid*grid2, expected)
+
+    def test_ndlayout_overlay_ndlayout_partial_reverse(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = NdLayout(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = NdLayout(items2, 'X')
+
+        expected_items = [(0, Overlay([self.view2, self.view1])),
+                          (1, Overlay([self.view2])),
+                          (2, Overlay([self.view2])),
+                          (3, Overlay([self.view3, self.view2]))]
+        expected = NdLayout(expected_items, 'X')
+        self.assertEqual(grid2*grid, expected)
+
 
 class GridTest(CompositeTest):
 
@@ -161,7 +187,7 @@ class GridTest(CompositeTest):
         grid = GridSpace(zip(keys, vals))
         self.assertEqual(grid.shape, (2,2))
 
-    def test_ndlayout_overlay_element(self):
+    def test_gridspace_overlay_element(self):
         items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
         grid = GridSpace(items, 'X')
         hline = HLine(0)
@@ -169,7 +195,7 @@ class GridTest(CompositeTest):
         expected = GridSpace([(k, v*hline) for k, v in items], 'X')
         self.assertEqual(overlaid_grid, expected)
 
-    def test_ndlayout_overlay_reverse(self):
+    def test_gridspace_overlay_reverse(self):
         items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
         grid = GridSpace(items, 'X')
         hline = HLine(0)
@@ -177,7 +203,7 @@ class GridTest(CompositeTest):
         expected = GridSpace([(k, hline*v) for k, v in items], 'X')
         self.assertEqual(overlaid_grid, expected)
 
-    def test_ndlayout_overlay_ndlayout(self):
+    def test_gridspace_overlay_gridspace(self):
         items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
         grid = GridSpace(items, 'X')
         items2 = [(0, self.view2), (1, self.view1), (2, self.view2), (3, self.view3)]
@@ -188,7 +214,7 @@ class GridTest(CompositeTest):
         expected = GridSpace(expected_items, 'X')
         self.assertEqual(grid*grid2, expected)
 
-    def test_ndlayout_overlay_ndlayout_reverse(self):
+    def test_gridspace_overlay_gridspace_reverse(self):
         items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
         grid = GridSpace(items, 'X')
         items2 = [(0, self.view2), (1, self.view1), (2, self.view2), (3, self.view3)]
@@ -198,3 +224,30 @@ class GridTest(CompositeTest):
                           (2, self.view2*self.view3), (3, self.view3*self.view2)]
         expected = GridSpace(expected_items, 'X')
         self.assertEqual(grid2*grid, expected)
+
+    def test_gridspace_overlay_gridspace_partial(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = GridSpace(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = GridSpace(items2, 'X')
+
+        expected_items = [(0, Overlay([self.view1, self.view2])),
+                          (1, Overlay([self.view2])),
+                          (2, Overlay([self.view2])),
+                          (3, Overlay([self.view2, self.view3]))]
+        expected = GridSpace(expected_items, 'X')
+        self.assertEqual(grid*grid2, expected)
+
+    def test_gridspace_overlay_gridspace_partial_reverse(self):
+        items = [(0, self.view1), (1, self.view2), (3, self.view2)]
+        grid = GridSpace(items, 'X')
+        items2 = [(0, self.view2), (2, self.view2), (3, self.view3)]
+        grid2 = GridSpace(items2, 'X')
+
+        expected_items = [(0, Overlay([self.view2, self.view1])),
+                          (1, Overlay([self.view2])),
+                          (2, Overlay([self.view2])),
+                          (3, Overlay([self.view3, self.view2]))]
+        expected = GridSpace(expected_items, 'X')
+        self.assertEqual(grid2*grid, expected)
+        
