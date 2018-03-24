@@ -10,6 +10,7 @@ from ..core.options import Cycle, Compositor
 from ..element import Area, Polygons
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
+from .util import list_cmaps # noqa (API import)
 from ..operation.stats import univariate_kde, bivariate_kde
 
 Compositor.register(Compositor("Distribution", univariate_kde, None,

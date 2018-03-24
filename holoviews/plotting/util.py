@@ -503,6 +503,25 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     return list(palette)
 
 
+def list_cmaps():
+    """
+    List available colormaps by combining matplotlib colormaps and
+    bokeh palettes if available.
+    """
+    cmaps = []
+    try:
+        import matplotlib.cm as cm
+        cmaps += list(cm.cmap_d)
+    except:
+        pass
+    try:
+        from bokeh import palettes
+        cmaps += list(palettes.all_palettes)
+    except:
+        pass
+    return sorted(unique_iterator(cmaps))
+
+
 def process_cmap(cmap, ncolors=None):
     """
     Convert valid colormap specifications to a list of colors.
