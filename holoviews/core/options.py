@@ -392,7 +392,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -412,6 +412,7 @@ class Options(param.Parameterized):
         self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
         opt_generator = self._expand_options(self.kwargs)
         self._options = []
+        self._max_cycles = max_cycles
         if any(isinstance(v, Cycle) for v in self.kwargs.values()):
             self._opt_generator = opt_generator
         else:
@@ -484,7 +485,7 @@ class Options(param.Parameterized):
         """
         kwargs = {kw: (arg[num] if isinstance(arg, Cycle) else arg)
                   for kw, arg in self.kwargs.items()}
-        return self(**kwargs)
+        return self(max_cycles=num, **kwargs)
 
 
     def __getitem__(self, index):
