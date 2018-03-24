@@ -38,7 +38,7 @@ def coords_to_hex(x, y, orientation, xsize, ysize):
     """
     Converts array x, y coordinates to hexagonal grid coordinates
     """
-    orientation = HEX_FLAT if orientation == 'flattop' else HEX_POINTY 
+    orientation = HEX_FLAT if orientation == 'flattop' else HEX_POINTY
     x =  x / xsize
     y = -y / ysize
     q = orientation[0] * x + orientation[1] * y
@@ -55,17 +55,17 @@ class hex_binning(Operation):
     """
 
     aggregator = param.Callable(default=np.size)
-    
+
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
-    
+
     min_count = param.Number(default=None)
-    
+
     orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
 
     def _process(self, element, key=None):
 
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
-        
+
         # Determine sampling
         (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
         if isinstance(gridsize, tuple):
@@ -79,7 +79,7 @@ class hex_binning(Operation):
         x, y = (element.dimension_values(i) for i in range(2))
         q, r = coords_to_hex(x, y, orientation, xsize, ysize)
         coords = q, r
-        
+
         # Get aggregation values
         if aggregator is np.size:
             aggregator = np.sum
@@ -91,7 +91,7 @@ class hex_binning(Operation):
         else:
             vdims = element.vdims
             values = tuple(element.dimension_values(vdim) for vdim in vdims)
-            
+
         # Add empty bins
         if self.p.min_count == 0:
             rs = np.arange(int(x0/xsize), int(x1/xsize)+1)
@@ -101,7 +101,7 @@ class hex_binning(Operation):
                       np.concatenate([coords[1], rs.flat]))
             zeros = np.full_like(qs, 0).flat
             values = tuple(np.concatenate([vals, zeros]) for vals in values)
-            
+
         # Construct aggregate
         data = coords + values
         xd, yd = element.kdims
@@ -122,23 +122,32 @@ Compositor.register(compositor)
 class HexTilesPlot(ColorbarPlot):
 
     aggregator = param.Callable(default=np.size)
-    
+
+    color_index = param.ClassSelector(default=2, class_=(basestring, int),
+                                     allow_None=True, doc="""
+      Index of the dimension from which the colors will the drawn.""")
+
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
-    
+
+    max_scale = param.Number(default=0.9, bounds=(0, 1))
+
     min_count = param.Number(default=None)
-    
+
     orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
 
+    size_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                     allow_None=True, doc="""
+      Index of the dimension from which the sizes will the drawn.""")
+
     _plot_methods = dict(single='hex_tile')
-    color_index = 2
-    
+
     def _hover_opts(self, element):
         if self.aggregator is np.size:
             dims = [Dimension('Count')]
         else:
-            dims = element.vdims 
+            dims = element.vdims
         return dims, {}
-    
+
     def get_data(self, element, ranges, style):
         q, r = (element.dimension_values(i) for i in range(2))
         x, y = element.kdims
@@ -159,6 +168,10 @@ class HexTilesPlot(ColorbarPlot):
         self._get_hover_data(data, element)
         style['orientation'] = self.orientation+'top'
         style['size'] = xsize
-        style['scale'] = 1
-        
+        scale_dim = element.get_dimension(self.size_index)
+        if scale_dim is not None:
+            sizes = element.dimension_values(scale_dim)
+            mapping['scale'] = 'scale'
+            data['scale'] = ((sizes - sizes.min()) / sizes.ptp()) * self.max_scale
+
         return data, mapping, style
