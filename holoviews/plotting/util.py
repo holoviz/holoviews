@@ -490,7 +490,7 @@ def mplcmap_to_palette(cmap, ncolors=None):
 def bokeh_palette_to_palette(cmap, ncolors=None):
     from bokeh import palettes
     # Process as bokeh palette
-    palette = getattr(palettes, cmap, None)
+    palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
     elif isinstance(palette, dict):
@@ -498,6 +498,8 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
              palette = palette[ncolors]
          else:
              palette = sorted(palette.items())[-1][1]
+    elif callable(palette):
+        palette = palette(ncolors or 255)
     if ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return list(palette)
