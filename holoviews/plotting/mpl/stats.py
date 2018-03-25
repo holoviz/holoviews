@@ -233,5 +233,5 @@ class HexTilesPlot(ColorbarPlot):
         style['xscale'] = 'log' if self.logx else 'linear'
         style['yscale'] = 'log' if self.logy else 'linear'
         style['gridsize'] = self.gridsize
-        style['mincnt'] = self.min_count
+        style['mincnt'] = -1 if self.min_count == 0 else self.min_count
         return args, style, {}

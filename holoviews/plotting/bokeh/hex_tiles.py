@@ -38,7 +38,7 @@ def coords_to_hex(x, y, orientation, xsize, ysize):
     """
     Converts array x, y coordinates to hexagonal grid coordinates
     """
-    orientation = HEX_FLAT if orientation == 'flattop' else HEX_POINTY
+    orientation = HEX_FLAT if orientation == 'flat' else HEX_POINTY
     x =  x / xsize
     y = -y / ysize
     q = orientation[0] * x + orientation[1] * y
@@ -72,8 +72,8 @@ class hex_binning(Operation):
             sx, sy = gridsize
         else:
             sx, sy = gridsize, gridsize
-        xsize = (x1-x0)/sx
-        ysize = (y1-y0)/sy
+        xsize = ((x1-x0)/sx)*(2.0/3.0)
+        ysize = ((y1-y0)/sy)*(2.0/3.0)
 
         # Compute hexagonal coordinates
         x, y = (element.dimension_values(i) for i in range(2))
@@ -107,7 +107,7 @@ class hex_binning(Operation):
         xd, yd = element.kdims
         xd, yd = xd(range=(x0, x1)), yd(range=(y0, y1))
         agg = element.clone(data, kdims=[xd, yd], vdims=vdims).aggregate(function=aggregator)
-        if self.p.min_count is not None:
+        if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
         return agg
 
@@ -157,8 +157,10 @@ class HexTilesPlot(ColorbarPlot):
             sx, sy = self.gridsize
         else:
             sx, sy = self.gridsize, self.gridsize
-        xsize = (x1-x0)/sx
-        ysize = (y1-y0)/sy
+        xsize = ((x1-x0)/sx)*(2.0/3.0)
+        ysize = ((y1-y0)/sy)*(2.0/3.0)
+        size = xsize if self.orientation == 'flat' else ysize
+        scale = ysize/xsize
 
         mapping = {'q': 'q', 'r': 'r'}
         data = {'q': q, 'r': r}
@@ -167,12 +169,12 @@ class HexTilesPlot(ColorbarPlot):
         mapping.update(cmapping)
         self._get_hover_data(data, element)
         style['orientation'] = self.orientation+'top'
-        style['size'] = xsize
+        style['size'] = size
+        style['aspect_scale'] = scale
         scale_dim = element.get_dimension(self.size_index)
         if scale_dim is not None:
             sizes = element.dimension_values(scale_dim)
             mapping['scale'] = 'scale'
             data['scale'] = ((sizes - sizes.min()) / sizes.ptp()) * self.max_scale
-        style['ysize'] = ysize
 
         return data, mapping, style
