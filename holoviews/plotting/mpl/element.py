@@ -641,12 +641,6 @@ class ColorbarPlot(ElementPlot):
 
         # Define special out-of-range colors on colormap
         cmap = opts.get(prefix+'cmap')
-        if self.color_levels:
-            cmap_type = mpl_colors.LinearSegmentedColormap
-        else:
-            cmap_type = mpl_colors.ListedColormap
-        cmap = process_cmap(cmap, self.color_levels)
-        cmap = cmap_type(cmap)
         colors = {}
         for k, val in self.clipping_colors.items():
             if isinstance(val, tuple):
@@ -659,6 +653,14 @@ class ColorbarPlot(ElementPlot):
                     alpha = int(color[-2:], 16)/255.
                     color = color[:-2]
                 colors[k] = {'color': color, 'alpha': alpha}
+
+        if isinstance(cmap, dict):
+            factors = np.unique(values)
+            palette = [cmap.get(f, colors.get('NaN', {'color': '#8b8b8b'})['color'])
+                       for f in factors]
+        else:
+            palette = process_cmap(cmap, self.color_levels)
+        cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
