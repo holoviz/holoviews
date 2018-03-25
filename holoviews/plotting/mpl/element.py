@@ -1,9 +1,8 @@
-import math, copy
+import math
 
 import param
 import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.colors as mpl_colors
 from matplotlib import ticker
 from matplotlib.dates import date2num
