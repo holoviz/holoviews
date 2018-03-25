@@ -1,11 +1,11 @@
 import param
 import numpy as np
 
-from ...core import Dataset, Dimension, Element2D, Operation
+from ...core import Dimension, Operation
 from ...core.options import Compositor
 from ...core.util import basestring
 from ...element import HexTiles
-from .element import ElementPlot, ColorbarPlot
+from .element import ColorbarPlot
 
 
 def round_hex(q, r):
@@ -173,5 +173,6 @@ class HexTilesPlot(ColorbarPlot):
             sizes = element.dimension_values(scale_dim)
             mapping['scale'] = 'scale'
             data['scale'] = ((sizes - sizes.min()) / sizes.ptp()) * self.max_scale
+        style['ysize'] = ysize
 
         return data, mapping, style
