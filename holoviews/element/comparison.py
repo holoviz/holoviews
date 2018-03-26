@@ -183,9 +183,10 @@ class Comparison(ComparisonInterface):
         cls.equality_type_funcs[Table] =        cls.compare_tables
         cls.equality_type_funcs[Points] =       cls.compare_points
 
-        # Seaborn Views
+        # Statistical
         cls.equality_type_funcs[Bivariate] =    cls.compare_bivariate
         cls.equality_type_funcs[Distribution] = cls.compare_distribution
+        cls.equality_type_funcs[HexTiles] =     cls.compare_hextiles
 
         # NdMappings
         cls.equality_type_funcs[NdLayout] =      cls.compare_gridlayout
@@ -495,7 +496,7 @@ class Comparison(ComparisonInterface):
     #========#
     # Charts #
     #========#
-    
+
     @classmethod
     def compare_dataset(cls, el1, el2, msg='Dataset'):
         cls.compare_dimensioned(el1, el2)
@@ -667,9 +668,9 @@ class Comparison(ComparisonInterface):
         except AssertionError as e:
             raise cls.failureException(msg+': '+str(e))
 
-    #=========#
-    # Seaborn #
-    #=========#
+    #============#
+    # Statistics #
+    #============#
 
     @classmethod
     def compare_distribution(cls, el1, el2, msg='Distribution'):
@@ -677,6 +678,10 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def compare_bivariate(cls, el1, el2, msg='Bivariate'):
+        cls.compare_dataset(el1, el2, msg)
+
+    @classmethod
+    def compare_hextiles(cls, el1, el2, msg='HexTiles'):
         cls.compare_dataset(el1, el2, msg)
 
     #=======#
