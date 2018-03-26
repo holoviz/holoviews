@@ -49,6 +49,10 @@ class BivariatePlot(PolygonPlot):
     filled = param.Boolean(default=False, doc="""
         Whether the bivariate contours should be filled.""")
 
+    levels = param.ClassSelector(default=10, class_=(list, int), doc="""
+        A list of scalar values used to specify the contour levels.""")
+
+
 
 
 class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):

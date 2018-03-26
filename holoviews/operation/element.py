@@ -439,7 +439,7 @@ class contours(Operation):
                     element.data[2])
 
         if isinstance(self.p.levels, int):
-            levels = self.p.levels+1 if self.p.filled else self.p.levels
+            levels = self.p.levels+2 if self.p.filled else self.p.levels+3
             zmin, zmax = element.range(2)
             levels = np.linspace(zmin, zmax, levels)
         else:
@@ -448,23 +448,25 @@ class contours(Operation):
         xdim, ydim = element.dimensions('key', label=True)
         fig = Figure()
         ax = Axes(fig, [0, 0, 1, 1])
-        contour_set = QuadContourSet(ax, *data, filled=self.p.filled, extent=extent, levels=levels)
+        contour_set = QuadContourSet(ax, *data, filled=self.p.filled,
+                                     extent=extent, levels=levels)
         if self.p.filled:
             contour_type = Polygons
-            levels = np.convolve(levels, np.ones((2,))/2, mode='valid')
         else:
             contour_type = Contours
         vdims = element.vdims[:1]
 
         paths = []
-        for level, cset in zip(levels, contour_set.collections):
+        empty = np.full((1, 2), np.NaN)
+        for level, cset in zip(contour_set.get_array(), contour_set.collections):
+            subpaths = []
             for path in cset.get_paths():
                 if path.codes is None:
-                    subpaths = [path.vertices]
+                    subpaths.append(path.vertices)
                 else:
-                    subpaths = np.split(path.vertices, np.where(path.codes==1)[0][1:])
-                for p in subpaths:
-                    paths.append({(xdim, ydim): p, element.vdims[0].name: level})
+                    subpaths += np.split(path.vertices, np.where(path.codes==1)[0][1:])
+            subpath = np.concatenate([p for sp in subpaths for p in (sp, empty)][:-1])
+            paths.append({(xdim, ydim): subpath, element.vdims[0].name: level})
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
             contours = element * contours
