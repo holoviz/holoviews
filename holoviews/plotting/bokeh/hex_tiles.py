@@ -1,49 +1,17 @@
 import param
 import numpy as np
 
+try:
+    from bokeh.util.hex import cartesian_to_axial
+except:
+    cartesian_to_axial = None
+
 from ...core import Dimension, Operation
-from ...core.options import Compositor
+from ...core.options import Compositor, SkipRendering
 from ...core.util import basestring
 from ...element import HexTiles
 from .element import ColorbarPlot, line_properties, fill_properties
-
-
-def round_hex(q, r):
-    """
-    Rounds fractional hex coordinates
-    """
-    x = q
-    z = r
-    y = -x-z
-
-    rx = np.round(x)
-    ry = np.round(y)
-    rz = np.round(z)
-
-    dx = np.abs(rx - x)
-    dy = np.abs(ry - y)
-    dz = np.abs(rz - z)
-
-    cond1 = (dx > dy) & (dx > dz)
-    q = np.where(cond1              , -(ry + rz), rx)
-    r = np.where(~cond1 & ~(dy > dz), -(rx + ry), rz)
-
-    return q.astype(int), r.astype(int)
-
-HEX_FLAT = [2.0/3.0, 0.0, -1.0/3.0, np.sqrt(3.0)/3.0]
-HEX_POINTY = [np.sqrt(3.0)/3.0, -1.0/3.0, 0.0, 2.0/3.0]
-
-
-def coords_to_hex(x, y, orientation, xsize, ysize):
-    """
-    Converts array x, y coordinates to hexagonal grid coordinates
-    """
-    orientation = HEX_FLAT if orientation == 'flat' else HEX_POINTY
-    x =  x / xsize
-    y = -y / ysize
-    q = orientation[0] * x + orientation[1] * y
-    r = orientation[2] * x + orientation[3] * y
-    return round_hex(q, r)
+from .util import bokeh_version
 
 
 class hex_binning(Operation):
@@ -74,6 +42,8 @@ class hex_binning(Operation):
             sx, sy = gridsize, gridsize
         xsize = ((x1-x0)/sx)*(2.0/3.0)
         ysize = ((y1-y0)/sy)*(2.0/3.0)
+        size = xsize if self.orientation == 'flat' else ysize
+        scale = ysize/xsize
 
         # Compute hexagonal coordinates
         x, y = (element.dimension_values(i) for i in range(2))
@@ -81,7 +51,7 @@ class hex_binning(Operation):
             return element.clone([])
         finite = np.isfinite(x) & np.isfinite(y)
         x, y = x[finite], y[finite]
-        q, r = coords_to_hex(x, y, orientation, xsize, ysize)
+        q, r = cartesian_to_axial(x, y, size, orientation+'top', scale)
         coords = q, r
 
         # Get aggregation values
@@ -160,6 +130,10 @@ class HexTilesPlot(ColorbarPlot):
         return dims, {}
 
     def get_data(self, element, ranges, style):
+        if bokeh_version < '0.12.15':
+            raise SkipRendering('Plotting HexTiles with bokeh requires bokeh '
+                                'version >=0.12.15, skipping plot.')
+
         mapping = {'q': 'q', 'r': 'r'}
         if not len(element):
             data = {'q': [], 'r': []}
