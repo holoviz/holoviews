@@ -482,7 +482,7 @@ class Options(param.Parameterized):
             options[key] = values[index % len(values)]
 
         static = {k:v for k,v in self.kwargs.items() if not isinstance(v, Cycle)}
-        return dict(static,**options)
+        return dict(static, **options)
 
 
     @property
