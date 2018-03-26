@@ -471,10 +471,8 @@ class Options(param.Parameterized):
         Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
         """
-        if len(self.kwargs) == 0 and index==0:
+        if len(self.kwargs) == 0:
             return {}
-        elif len(self.kwargs) == 0:
-            raise IndexError('Empty options object only has a zero index')
 
         cycles = {k:v.values for k,v in self.kwargs.items() if isinstance(v, Cycle)}
         options = {}
