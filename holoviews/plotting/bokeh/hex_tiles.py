@@ -5,7 +5,7 @@ from ...core import Dimension, Operation
 from ...core.options import Compositor
 from ...core.util import basestring
 from ...element import HexTiles
-from .element import ColorbarPlot
+from .element import ColorbarPlot, line_properties, fill_properties
 
 
 def round_hex(q, r):
@@ -77,6 +77,10 @@ class hex_binning(Operation):
 
         # Compute hexagonal coordinates
         x, y = (element.dimension_values(i) for i in range(2))
+        if not len(x):
+            return element.clone([])
+        finite = np.isfinite(x) & np.isfinite(y)
+        x, y = x[finite], y[finite]
         q, r = coords_to_hex(x, y, orientation, xsize, ysize)
         coords = q, r
 
@@ -91,16 +95,6 @@ class hex_binning(Operation):
         else:
             vdims = element.vdims
             values = tuple(element.dimension_values(vdim) for vdim in vdims)
-
-        # Add empty bins
-        if self.p.min_count == 0:
-            rs = np.arange(int(x0/xsize), int(x1/xsize)+1)
-            qs = np.arange(int(y0/ysize), int(y1/ysize)+1)
-            qs, rs = np.meshgrid(qs, rs)
-            coords = (np.concatenate([coords[0], qs.flat]),
-                      np.concatenate([coords[1], rs.flat]))
-            zeros = np.full_like(qs, 0).flat
-            values = tuple(np.concatenate([vals, zeros]) for vals in values)
 
         # Construct aggregate
         data = coords + values
@@ -121,25 +115,42 @@ Compositor.register(compositor)
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.Callable(default=np.size)
+    aggregator = param.Callable(default=np.size, doc="""
+      Aggregation function used to compute bin values. Any NumPy
+      reduction is allowed, defaulting to np.size to count the number
+      of values in each bin.""")
 
     color_index = param.ClassSelector(default=2, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the colors will the drawn.""")
 
-    gridsize = param.ClassSelector(default=50, class_=(int, tuple))
+    gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
+      Number of hexagonal bins along x- and y-axes. Defaults to uniform
+      sampling along both axes when setting and integer but independent
+      bin sampling can be specified a tuple of integers corresponding to
+      the number of bins along each axis.""")
 
-    max_scale = param.Number(default=0.9, bounds=(0, 1))
+    max_scale = param.Number(default=0.9, bounds=(0, None), doc="""
+      When size_index is enabled this defines the maximum size of each
+      bin relative to uniform tile size, i.e. for a value of 1, the
+      largest bin will match the size of bins when scaling is disabled.
+      Setting value larger than 1 will result in overlapping bins.""")
 
-    min_count = param.Number(default=None)
+    min_count = param.Number(default=None, doc="""
+      The display threshold before a bin is shown, by default bins with
+      a count of less than 1 are hidden.""")
 
-    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
+    orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'],
+                                       doc="""
+      The orientation of hexagon bins. By default the pointy side is on top.""")
 
     size_index = param.ClassSelector(default=None, class_=(basestring, int),
                                      allow_None=True, doc="""
       Index of the dimension from which the sizes will the drawn.""")
 
     _plot_methods = dict(single='hex_tile')
+
+    style_opts = ['cmap', 'color'] + line_properties + fill_properties
 
     def _hover_opts(self, element):
         if self.aggregator is np.size:
@@ -149,6 +160,10 @@ class HexTilesPlot(ColorbarPlot):
         return dims, {}
 
     def get_data(self, element, ranges, style):
+        mapping = {'q': 'q', 'r': 'r'}
+        if not len(element):
+            data = {'q': [], 'r': []}
+            return data, mapping, style
         q, r = (element.dimension_values(i) for i in range(2))
         x, y = element.kdims
 
@@ -162,11 +177,15 @@ class HexTilesPlot(ColorbarPlot):
         size = xsize if self.orientation == 'flat' else ysize
         scale = ysize/xsize
 
-        mapping = {'q': 'q', 'r': 'r'}
         data = {'q': q, 'r': r}
         cdata, cmapping = self._get_color_data(element, ranges, style)
         data.update(cdata)
         mapping.update(cmapping)
+        if self.min_count is not None and self.min_count <= 0:
+            cmapper = cmapping['color']['transform']
+            cmapper.low = self.min_count
+            self.state.background_fill_color = cmapper.palette[0]
+
         self._get_hover_data(data, element)
         style['orientation'] = self.orientation+'top'
         style['size'] = size

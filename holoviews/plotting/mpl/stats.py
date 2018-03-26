@@ -209,11 +209,26 @@ class ViolinPlot(BoxPlot):
 
 class HexTilesPlot(ColorbarPlot):
 
-    aggregator = param.Callable(default=np.size)
+    aggregator = param.Callable(default=np.size, doc="""
+      Aggregation function used to compute bin values. Any NumPy
+      reduction is allowed, defaulting to np.size to count the number
+      of values in each bin.""")
 
-    gridsize = param.ClassSelector(default=50, class_=(int, tuple))
+    gridsize = param.ClassSelector(default=50, class_=(int, tuple), doc="""
+      Number of hexagonal bins along x- and y-axes. Defaults to uniform
+      sampling along both axes when setting and integer but independent
+      bin sampling can be specified a tuple of integers corresponding to
+      the number of bins along each axis.""")
 
-    min_count = param.Number(default=None)
+    max_scale = param.Number(default=0.9, bounds=(0, None), doc="""
+      When size_index is enabled this defines the maximum size of each
+      bin relative to uniform tile size, i.e. for a value of 1, the
+      largest bin will match the size of bins when scaling is disabled.
+      Setting value larger than 1 will result in overlapping bins.""")
+
+    min_count = param.Number(default=None, doc="""
+      The display threshold before a bin is shown, by default bins with
+      a count of less than 1 are hidden.""")
 
     style_opts = ['edgecolors', 'alpha', 'linewidths', 'marginals']
 
