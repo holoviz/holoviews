@@ -154,6 +154,16 @@ class TestCycle(ComparisonTestCase):
         self.assertEqual(opts[3], {'one': 'b', 'two': 1})
 
 
+    def test_cyclic_property_true(self):
+        cycle1 = Cycle(values=['a', 'b', 'c'])
+        opts = Options('test', one=cycle1, two='two')
+        self.assertEqual(opts.cyclic, True)
+
+    def test_cyclic_property_false(self):
+        opts = Options('test', one='one', two='two')
+        self.assertEqual(opts.cyclic, False)
+
+
     def test_options_property_disabled(self):
         cycle1 = Cycle(values=['a', 'b', 'c'])
         opts = Options('test', one=cycle1)
