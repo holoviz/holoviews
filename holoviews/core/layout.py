@@ -16,10 +16,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import (
-    unique_array, get_path, make_path_unique, int_to_roman,
-    unique_iterator
-)
+from .util import unique_array, get_path, make_path_unique, int_to_roman
 from . import traversal
 
 
