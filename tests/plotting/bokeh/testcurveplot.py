@@ -5,7 +5,7 @@ import numpy as np
 
 from holoviews.core import NdOverlay, HoloMap, DynamicMap
 from holoviews.core.options import Cycle, Palette
-from holoviews.core.util import pd
+from holoviews.core.util import pd, basestring
 from holoviews.element import Curve
 from holoviews.plotting.util import rgb2hex
 from holoviews.streams import PointerX
@@ -55,7 +55,8 @@ class TestCurvePlot(TestBokehPlot):
         colors = palette[3].values
         plot = bokeh_renderer.get_plot(hmap)
         for subp, color in zip(plot.subplots.values(), colors):
-            self.assertEqual(subp.handles['glyph'].line_color, rgb2hex(color))
+            color = color if isinstance(color, basestring) else rgb2hex(color)
+            self.assertEqual(subp.handles['glyph'].line_color, color)
 
     def test_batched_curve_line_color_and_color(self):
         opts = {'NdOverlay': dict(plot=dict(legend_limit=0)),

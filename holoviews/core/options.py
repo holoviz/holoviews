@@ -391,7 +391,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -409,7 +409,9 @@ class Options(param.Parameterized):
                          % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
-        self._options = self._expand_options(kwargs)
+        self._options = []
+        self._max_cycles = max_cycles
+
         allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
                             else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
@@ -443,24 +445,6 @@ class Options(param.Parameterized):
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
 
-    def _expand_options(self, kwargs):
-        """
-        Expand out Cycle objects into multiple sets of keyword values.
-
-        To elaborate, the full Cartesian product over the supplied
-        Cycle objects is expanded into a list, allowing infinite,
-        cyclic indexing in the __getitem__ method."""
-        filter_static = dict((k,v) for (k,v) in kwargs.items() if not isinstance(v, Cycle))
-        filter_cycles = [(k,v) for (k,v) in kwargs.items() if isinstance(v, Cycle)]
-
-        if not filter_cycles: return [kwargs]
-
-        filter_names, filter_values = list(zip(*filter_cycles))
-
-        cyclic_tuples = list(zip(*[val.values for val in filter_values]))
-        return [dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
-
-
     def keys(self):
         "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
@@ -468,30 +452,45 @@ class Options(param.Parameterized):
 
     def max_cycles(self, num):
         """
-        Truncates all contained Cycle objects to a maximum number
-        of Cycles and returns a new Options object with the
-        truncated or resampled Cycles.
+        Truncates all contained Palette objects to a maximum number
+        of samples and returns a new Options object containing the
+        truncated or resampled Palettes.
         """
-        kwargs = {kw: (arg[num] if isinstance(arg, Cycle) else arg)
+        kwargs = {kw: (arg[num] if isinstance(arg, Palette) else arg)
                   for kw, arg in self.kwargs.items()}
-        return self(**kwargs)
+        return self(max_cycles=num, **kwargs)
 
+
+    @property
+    def cyclic(self):
+        "Returns True if the options cycle, otherwise False"
+        return any(isinstance(val, Cycle) for val in self.kwargs.values())
 
     def __getitem__(self, index):
         """
         Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
         """
-        return dict(self._options[index % len(self._options)])
+        if len(self.kwargs) == 0:
+            return {}
+
+        cycles = {k:v.values for k,v in self.kwargs.items() if isinstance(v, Cycle)}
+        options = {}
+        for key, values in cycles.items():
+            options[key] = values[index % len(values)]
+
+        static = {k:v for k,v in self.kwargs.items() if not isinstance(v, Cycle)}
+        return dict(static, **options)
 
 
     @property
     def options(self):
         "Access of the options keywords when no cycles are defined."
-        if len(self._options) == 1:
-            return dict(self._options[0])
+        if not self.cyclic:
+            return self[0]
         else:
-            raise Exception("The options property may only be used with non-cyclic Options.")
+            raise Exception("The options property may only be used"
+                            " with non-cyclic Options.")
 
 
     def __repr__(self):

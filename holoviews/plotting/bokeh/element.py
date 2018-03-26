@@ -775,7 +775,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             max_cycles = None
         else:
             style_element = element
-            max_cycles = len(self.style._options)
+            max_cycles = self.style._max_cycles
         style = self.lookup_options(style_element, 'style')
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
