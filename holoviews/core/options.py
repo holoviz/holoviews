@@ -37,7 +37,6 @@ import traceback
 import difflib
 from contextlib import contextmanager
 from collections import OrderedDict, defaultdict
-from itertools import cycle
 
 import numpy as np
 
@@ -410,14 +409,8 @@ class Options(param.Parameterized):
                          % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
-        opt_generator = self._expand_options(self.kwargs)
         self._options = []
         self._max_cycles = max_cycles
-        if any(isinstance(v, Cycle) for v in self.kwargs.values()):
-            self._opt_generator = opt_generator
-        else:
-            self._opt_generator = None
-            self._options = [next(opt_generator)]
 
         allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
                             else Keywords(allowed_keywords))
@@ -452,26 +445,6 @@ class Options(param.Parameterized):
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
 
-    def _expand_options(self, kwargs):
-        """
-        Generator that expands Cycle objects into multiple sets of keyword values.
-
-        Independently cycles through each cycle values. The __getitem__
-        method will lazily evaluate the expanded options up to the requested
-        cycle.
-        """
-        filter_static = dict((k,v) for (k,v) in kwargs.items() if not isinstance(v, Cycle))
-        filter_cycles = [(k,v) for (k,v) in kwargs.items() if isinstance(v, Cycle)]
-        if filter_cycles:
-            filter_names, filter_values = list(zip(*filter_cycles))
-        else:
-            filter_names, filter_values = [], []
-        cycles = [cycle(val.values) for val in filter_values]
-        while True:
-            cyclic_style = {n: next(c) for n, c in zip(filter_names, cycles)}
-            yield dict(cyclic_style, **filter_static)
-
-
     def keys(self):
         "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
@@ -488,26 +461,38 @@ class Options(param.Parameterized):
         return self(max_cycles=num, **kwargs)
 
 
+    @property
+    def cyclic(self):
+        "Returns True if the options cycle, otherwise False"
+        return any(isinstance(val, Cycle) for val in self.kwargs.values())
+
     def __getitem__(self, index):
         """
         Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
         """
-        if self._opt_generator is None:
-            return dict(self._options[0])
-        if index >= len(self._options):
-            eval_range = range(index-len(self._options)+1)
-            self._options += [next(self._opt_generator) for _ in eval_range]
-        return dict(self._options[index])
+        if len(self.kwargs) == 0 and index==0:
+            return {}
+        elif len(self.kwargs) == 0:
+            raise IndexError('Empty options object only has a zero index')
+
+        cycles = {k:v.values for k,v in self.kwargs.items() if isinstance(v, Cycle)}
+        options = {}
+        for key, values in cycles.items():
+            options[key] = values[index % len(values)]
+
+        static = {k:v for k,v in self.kwargs.items() if not isinstance(v, Cycle)}
+        return dict(static,**options)
 
 
     @property
     def options(self):
         "Access of the options keywords when no cycles are defined."
-        if self._opt_generator is None:
-            return dict(self._options[0])
+        if not self.cyclic:
+            return self[0]
         else:
-            raise Exception("The options property may only be used with non-cyclic Options.")
+            raise Exception("The options property may only be used"
+                            " with non-cyclic Options.")
 
 
     def __repr__(self):
