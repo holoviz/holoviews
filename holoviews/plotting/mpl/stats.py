@@ -236,14 +236,15 @@ class HexTilesPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         if not element.vdims:
-            element = element.add_dimension('z', 0, np.ones(len(element)), True)
+            element = element.add_dimension('Count', 0, np.ones(len(element)), True)
         xs, ys = (element.dimension_values(i) for i in range(2))
         args = (ys, xs) if self.invert_axes else (xs, ys)
         args += (element.dimension_values(2),)
 
         cdim = element.vdims[0]
+        agg = np.sum if self.aggregator is np.size else self.aggregator
         self._norm_kwargs(element, ranges, style, cdim)
-        style['reduce_C_function'] = self.aggregator
+        style['reduce_C_function'] = agg
         style['vmin'], style['vmax'] = cdim.range
         style['xscale'] = 'log' if self.logx else 'linear'
         style['yscale'] = 'log' if self.logy else 'linear'

@@ -6,12 +6,6 @@ from holoviews.plotting.bokeh.hex_tiles import hex_binning
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
-try:
-    from bokeh.models import ColumnDataSource
-except:
-    pass
-
-
 
 class TestHexTilesOperation(TestBokehPlot):
 

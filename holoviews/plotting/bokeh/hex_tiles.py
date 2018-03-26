@@ -26,16 +26,18 @@ class hex_binning(Operation):
 
     gridsize = param.ClassSelector(default=50, class_=(int, tuple))
 
+    invert_axes = param.Boolean(default=False)
+
     min_count = param.Number(default=None)
 
     orientation = param.ObjectSelector(default='pointy', objects=['flat', 'pointy'])
 
     def _process(self, element, key=None):
-
         gridsize, aggregator, orientation = self.p.gridsize, self.p.aggregator, self.p.orientation
 
         # Determine sampling
-        (x0, x1), (y0, y1) = (element.range(i) for i in range(2))
+        indexes = [1, 0] if self.p.invert_axes else [0, 1]
+        (x0, x1), (y0, y1) = (element.range(i) for i in indexes)
         if isinstance(gridsize, tuple):
             sx, sy = gridsize
         else:
@@ -46,7 +48,7 @@ class hex_binning(Operation):
         scale = ysize/xsize
 
         # Compute hexagonal coordinates
-        x, y = (element.dimension_values(i) for i in range(2))
+        x, y = (element.dimension_values(i) for i in indexes)
         if not len(x):
             return element.clone([])
         finite = np.isfinite(x) & np.isfinite(y)
@@ -68,9 +70,10 @@ class hex_binning(Operation):
 
         # Construct aggregate
         data = coords + values
-        xd, yd = element.kdims
+        xd, yd = (element.get_dimension(i) for i in indexes)
         xd, yd = xd(range=(x0, x1)), yd(range=(y0, y1))
-        agg = element.clone(data, kdims=[xd, yd], vdims=vdims).aggregate(function=aggregator)
+        kdims = [yd, xd] if self.p.invert_axes else [xd, yd]
+        agg = element.clone(data, kdims=kdims, vdims=vdims).aggregate(function=aggregator)
         if self.p.min_count is not None and self.p.min_count > 1:
             agg = agg[:, :, self.p.min_count:]
         return agg
@@ -139,8 +142,7 @@ class HexTilesPlot(ColorbarPlot):
             data = {'q': [], 'r': []}
             return data, mapping, style
         q, r = (element.dimension_values(i) for i in range(2))
-        x, y = element.kdims
-
+        x, y = element.kdims[::-1] if self.invert_axes else element.kdims
         (x0, x1), (y0, y1) = ranges[x.name], ranges[y.name]
         if isinstance(self.gridsize, tuple):
             sx, sy = self.gridsize
