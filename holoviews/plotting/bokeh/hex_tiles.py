@@ -167,7 +167,13 @@ class HexTilesPlot(ColorbarPlot):
         scale_dim = element.get_dimension(self.size_index)
         if scale_dim is not None:
             sizes = element.dimension_values(scale_dim)
+            if self.aggregator is np.size:
+                ptp = sizes.max()
+                baseline = 0
+            else:
+                ptp = sizes.ptp()
+                baseline = sizes.min()
             mapping['scale'] = 'scale'
-            data['scale'] = ((sizes - sizes.min()) / sizes.ptp()) * self.max_scale
+            data['scale'] = ((sizes - baseline) / ptp) * self.max_scale
 
         return data, mapping, style
