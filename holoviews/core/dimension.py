@@ -926,14 +926,14 @@ class Dimensioned(LabelledData):
             if 0 <= dimension < len(all_dims):
                 return all_dims[dimension]
             elif strict:
-                raise KeyError("Dimension %s not found" % repr(dimension))
+                raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
         name_map.update({dim.label: dim for dim in all_dims})
         name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
-            raise KeyError("Dimension %s not found." % repr(dimension))
+            raise KeyError("Dimension %r not found." % dimension)
         else:
             return name_map.get(dimension, default)
 
