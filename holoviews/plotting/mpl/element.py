@@ -644,7 +644,9 @@ class ColorbarPlot(ElementPlot):
         cmap = opts.get(prefix+'cmap', 'viridis')
         colors = {}
         for k, val in self.clipping_colors.items():
-            if isinstance(val, tuple):
+            if val == 'transparent':
+                colors[k] = {'color': 'w', 'alpha': 0}
+            elif isinstance(val, tuple):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
             elif isinstance(val, util.basestring):
