@@ -16,7 +16,7 @@ import param
 from .dimension import Dimension, Dimensioned, ViewableElement
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
 from .tree import AttrTree
-from .util import unique_array, get_path, make_path_unique, int_to_roman
+from .util import (unique_array, get_path, make_path_unique, int_to_roman)
 from . import traversal
 
 
@@ -349,7 +349,6 @@ class NdLayout(UniformNdMapping):
         clone._max_cols = self._max_cols
         clone.id = self.id
         return clone
-
 
 
 
