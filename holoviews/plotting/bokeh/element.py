@@ -1009,6 +1009,8 @@ class ColorbarPlot(ElementPlot):
     _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
                               major_tick_line_color='black')
 
+    _default_nan = '#8b8b8b'
+
     def _draw_colorbar(self, plot, color_mapper):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
             return
@@ -1063,7 +1065,7 @@ class ColorbarPlot(ElementPlot):
         cmap = colors or style.pop('cmap', 'viridis')
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
         if isinstance(cmap, dict) and factors:
-            palette = [cmap.get(f, nan_colors.get('NaN', '#8b8b8b')) for f in factors]
+            palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
         else:
             palette = process_cmap(cmap, self.color_levels or ncolors)
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)

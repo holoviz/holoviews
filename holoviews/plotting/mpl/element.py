@@ -508,6 +508,8 @@ class ColorbarPlot(ElementPlot):
 
     _colorbars = {}
 
+    _default_nan = '#8b8b8b'
+
     def __init__(self, *args, **kwargs):
         super(ColorbarPlot, self).__init__(*args, **kwargs)
         self._cbar_extend = 'neither'
@@ -639,7 +641,7 @@ class ColorbarPlot(ElementPlot):
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
-        cmap = opts.get(prefix+'cmap')
+        cmap = opts.get(prefix+'cmap', 'viridis')
         colors = {}
         for k, val in self.clipping_colors.items():
             if isinstance(val, tuple):
@@ -655,7 +657,7 @@ class ColorbarPlot(ElementPlot):
 
         if isinstance(cmap, dict):
             factors = np.unique(values)
-            palette = [cmap.get(f, colors.get('NaN', {'color': '#8b8b8b'})['color'])
+            palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                        for f in factors]
         else:
             palette = process_cmap(cmap, self.color_levels)

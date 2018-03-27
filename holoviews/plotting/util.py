@@ -480,12 +480,14 @@ def mplcmap_to_palette(cmap, ncolors=None):
     if not isinstance(cmap, Colormap):
         import matplotlib.cm as cm
         # Alias bokeh Category cmaps with mpl tab cmaps
-        if cmap.lower().startswith('category'):
-            cmap = cmap.lower().replace('category', 'tab')
+        if cmap.startswith('Category'):
+            cmap = cmap.replace('Category', 'tab')
         try:
-            cmap = cm.get_cmap(cmap, ncolors)
+            cmap = cm.get_cmap(cmap)
         except:
-            cmap = cm.get_cmap(cmap.lower(), ncolors)
+            cmap = cm.get_cmap(cmap.lower())
+    if ncolors:
+        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
     return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
 
 
