@@ -233,7 +233,7 @@ class Overlay(Layout, CompositeOverlay):
 
 
 
-class NdOverlay(UniformNdMapping, CompositeOverlay, Overlayable):
+class NdOverlay(Overlayable, UniformNdMapping, CompositeOverlay):
     """
     An NdOverlay allows a group of NdOverlay to be overlaid together. NdOverlay can
     be indexed out of an overlay and an overlay is an iterable that iterates

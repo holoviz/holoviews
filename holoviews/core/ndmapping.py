@@ -842,3 +842,36 @@ class UniformNdMapping(NdMapping):
                 view_frame.insert(0, dim, val)
             dframes.append(view_frame)
         return pandas.concat(dframes)
+
+
+    def __mul__(self, other, reverse=False):
+        from .overlay import Overlay
+        if isinstance(other, type(self)):
+            if self.kdims != other.kdims:
+                raise KeyError("Can only overlay two %ss with "
+                               "non-matching key dimensions."
+                               % type(self).__name__)
+            items = []
+            self_keys = list(self.data.keys())
+            other_keys = list(other.data.keys())
+            for key in util.unique_iterator(self_keys+other_keys):
+                self_el = self.data.get(key)
+                other_el = other.data.get(key)
+                if self_el is None:
+                    item = [other_el]
+                elif other_el is None:
+                    item = [self_el]
+                elif reverse:
+                    item = [other_el, self_el]
+                else:
+                    item = [self_el, other_el]
+                items.append((key, Overlay(item)))
+            return self.clone(items)
+
+        overlayed_items = [(k, other * el if reverse else el * other)
+                           for k, el in self.items()]
+        return self.clone(overlayed_items)
+
+
+    def __rmul__(self, other):
+        return self.__mul__(other, reverse=True)
