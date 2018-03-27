@@ -479,99 +479,107 @@ def mplcmap_to_palette(cmap, ncolors=None):
     from matplotlib.colors import Colormap
     if not isinstance(cmap, Colormap):
         import matplotlib.cm as cm
-        cmap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-    if ncolors:
-        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
+        # Alias bokeh Category cmaps with mpl tab cmaps
+        if cmap.lower().startswith('category'):
+            cmap = cmap.lower().replace('category', 'tab')
+        try:
+            cmap = cm.get_cmap(cmap, ncolors)
+        except:
+            cmap = cm.get_cmap(cmap.lower(), ncolors)
     return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
 
 
 def bokeh_palette_to_palette(cmap, ncolors=None):
     from bokeh import palettes
+
+    # Handle categorical colormaps to avoid interpolation
+    categorical = ('category', 'dark', 'colorblind', 'pastel', 'set1', 'set2', 'set3', 'paired')
+
+    # Alias mpl tab cmaps with bokeh Category cmaps
+    if cmap.startswith('tab'):
+        cmap = cmap.replace('tab', 'Category')
+
     # Process as bokeh palette
     palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
     elif isinstance(palette, dict):
-         if ncolors in palette:
-             palette = palette[ncolors]
-         else:
-             palette = sorted(palette.items())[-1][1]
-             palette = polylinear_gradient(palette, ncolors or 255)['hex']
+        if ncolors in palette:
+            palette = palette[ncolors]
+        elif any(cat in cmap.lower() for cat in categorical):
+            palette = sorted(palette.items())[-1][1]
+        else:
+            palette = sorted(palette.items())[-1][1]
+            palette = polylinear_gradient(palette, ncolors or 256)
     elif callable(palette):
-        palette = palette(ncolors or 255)
+        palette = palette(ncolors or 256)
     if ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return list(palette)
 
 
-def color_dict(gradient):
-  ''' Takes in a list of RGB sub-lists and returns dictionary of
-    colors in RGB and hex form for use in a graphing function
-    defined later on '''
-  return {"hex":[rgb2hex([c/255. for c in RGB]) for RGB in gradient],
-      "r":[RGB[0] for RGB in gradient],
-      "g":[RGB[1] for RGB in gradient],
-      "b":[RGB[2] for RGB in gradient]}
-
-
 def linear_gradient(start_hex, finish_hex="#FFFFFF", n=10):
-  ''' returns a gradient list of (n) colors between
-    two hex colors. start_hex and finish_hex
-    should be the full six-digit color string,
-    inlcuding the number sign ("#FFFFFF") '''
-  # Starting and ending colors in RGB form
-  s = hex2rgb(start_hex)
-  f = hex2rgb(finish_hex)
-  # Initilize a list of the output colors with the starting color
-  RGB_list = [s]
-  # Calcuate a color at each evenly spaced value of t from 1 to n
-  for t in range(1, n):
-    # Interpolate RGB vector for color at the current value of t
-    curr_vector = [
-      int(s[j] + (float(t)/(n-1))*(f[j]-s[j]))
-      for j in range(3)
-    ]
-    # Add it to our list of output colors
-    RGB_list.append(curr_vector)
-
-  return color_dict(RGB_list)
+    """
+    Interpolates the color gradient between to hex colors
+    """
+    s = hex2rgb(start_hex)
+    f = hex2rgb(finish_hex)
+    gradient = [s]
+    for t in range(1, n):
+        curr_vector = [int(s[j] + (float(t)/(n-1))*(f[j]-s[j])) for j in range(3)]
+        gradient.append(curr_vector)
+    return [rgb2hex([c/255. for c in rgb]) for rgb in gradient]
 
 
 def polylinear_gradient(colors, n):
-  ''' returns a list of colors forming linear gradients between
-      all sequential pairs of colors. "n" specifies the total
-      number of desired output colors '''
-  # The number of colors per individual linear gradient
-  n_out = int(float(n) / (len(colors) - 1))
-  # returns dictionary defined by color_dict()
-  gradient_dict = linear_gradient(colors[0], colors[1], n_out)
+    """
+    Interpolates the color gradients between a list of hex colors.
+    """
+    n_out = int(float(n) / (len(colors) - 1))
+    gradient = linear_gradient(colors[0], colors[1], n_out)
 
-  if len(colors) > 1:
+    if len(colors) <= 1:
+        return gradient
+
     for col in range(1, len(colors) - 1):
-      next = linear_gradient(colors[col], colors[col+1], n_out)
-      for k in ("hex", "r", "g", "b"):
-        # Exclude first point to avoid duplicates
-        gradient_dict[k] += next[k][1:]
-
-  return gradient_dict
+        next_colors = linear_gradient(colors[col], colors[col+1], n_out)
+        gradient += next_colors[1:]
+    return gradient
 
 
-def list_cmaps():
+def list_cmaps(provider='all'):
     """
     List available colormaps by combining matplotlib colormaps and
-    bokeh palettes if available.
+    bokeh palettes if available. May also be narrowed down to a
+    particular provider or list of providers.
     """
+    providers = ['matplotlib', 'bokeh', 'colorcet']
+    if provider == 'all':
+        provider = providers
+    elif isinstance(provider, basestring):
+        if provider not in providers:
+            raise ValueError('Colormap provider %r not recognized, must '
+                             'be one of %r' % (provider, providers))
+        provider = [provider]
     cmaps = []
-    try:
-        import matplotlib.cm as cm
-        cmaps += list(cm.cmap_d)
-    except:
-        pass
-    try:
-        from bokeh import palettes
-        cmaps += list(palettes.all_palettes)
-    except:
-        pass
+    if 'matplotlib' in provider:
+        try:
+            import matplotlib.cm as cm
+            cmaps += list(cm.cmap_d)
+        except:
+            pass
+    if 'bokeh' in provider:
+        try:
+            from bokeh import palettes
+            cmaps += list(palettes.all_palettes)
+        except:
+            pass
+    if 'colorcet' in provider:
+        try:
+            from colorcet import palette_n
+            cmaps += list(palette_n)
+        except:
+            pass
     return sorted(unique_iterator(cmaps))
 
 
@@ -583,22 +591,30 @@ def process_cmap(cmap, ncolors=None):
         palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
     elif isinstance(cmap, list):
         palette = cmap
+    elif isinstance(cmap, basestring):
+        mpl_cmaps = list_cmaps('matplotlib')
+        bk_cmaps = list_cmaps('bokeh')
+        cet_cmaps = list_cmaps('colorcet')
+        if cmap in mpl_cmaps or cmap.lower() in mpl_cmaps:
+            palette = mplcmap_to_palette(cmap, ncolors)
+        elif cmap in bk_cmaps or cmap.capitalize() in bk_cmaps:
+            palette = bokeh_palette_to_palette(cmap, ncolors)
+        elif cmap in cet_cmaps:
+            from colorcet import palette_n
+            palette = palette_n[cmap]
+        else:
+            raise ValueError("Supplied cmap %s not found among matplotlib, "
+                             "bokeh or colorcet colormaps." % cmap)
     else:
         try:
-            # Process as matplotlib colormap
+            # Try processing as matplotlib colormap
             palette = mplcmap_to_palette(cmap, ncolors)
         except:
-            try:
-                palette = bokeh_palette_to_palette(cmap, ncolors)
-            except:
-                if isinstance(cmap, basestring):
-                    raise ValueError("Supplied cmap %s not found among "
-                                     "matplotlib or bokeh colormaps." % cmap)
-                palette = None
+            palette = None
     if not isinstance(palette, list):
         raise TypeError("cmap argument expects a list, Cycle or valid matplotlib "
                         "colormap or bokeh palette, found %s." % cmap)
-    if ncolors:
+    if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette
 
