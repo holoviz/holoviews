@@ -657,13 +657,14 @@ class ColorbarPlot(ElementPlot):
                     color = color[:-2]
                 colors[k] = {'color': color, 'alpha': alpha}
 
-        if isinstance(cmap, dict):
-            factors = np.unique(values)
-            palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
-                       for f in factors]
-        else:
-            palette = process_cmap(cmap, self.color_levels)
-        cmap = mpl_colors.ListedColormap(palette)
+        if not isinstance(cmap, mpl_colors.Colormap):
+            if isinstance(cmap, dict):
+                factors = np.unique(values)
+                palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
+                           for f in factors]
+            else:
+                palette = process_cmap(cmap, self.color_levels)
+            cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
