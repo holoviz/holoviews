@@ -18,6 +18,7 @@ from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
 from holoviews.core.dimension import OrderedDict as cyODict
+from holoviews.core.data.interface import DataError
 
 try:
     import pandas as pd
@@ -901,6 +902,11 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A']))
         self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
 
+    def test_dataset_df_duplicate_columns_raises(self):
+        df = pd.DataFrame(np.random.randint(-100,100, size=(100, 2)), columns=list("AB"))
+        with self.assertRaises(DataError):
+            Dataset(df[['A', 'A']])
+        
     def test_dataset_extract_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])

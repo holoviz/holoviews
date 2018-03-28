@@ -80,6 +80,14 @@ class PandasInterface(Interface):
                 if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
                     data = data.copy()
                     data.insert(0, kdim, np.arange(len(data)))
+
+            for d in kdims+vdims:
+                if isinstance(d, Dimension): d = d.name
+                if len([c for c in data.columns if c == d]) > 1:
+                    raise DataError('Dimensions may not reference duplicated DataFrame '
+                                    'columns (found duplicate %r columns). If you want to plot '
+                                    'a column against itself simply declare two dimensions '
+                                    'with the same name. '% d, cls)
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
