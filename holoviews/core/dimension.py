@@ -50,12 +50,18 @@ def process_dimensions(kdims, vdims):
     for group, dims in [('kdims', kdims), ('vdims', vdims)]:
         if dims is None:
             continue
-        elif isinstance(dims, (tuple, basestring, Dimension)):
+        elif isinstance(dims, (tuple, basestring, Dimension, dict)):
             dims = [dims]
         elif not isinstance(dims, list):
-            raise ValueError("%s must be a Dimension or list of dimensions, "
-                             "specified as tuples, string or Dimension instances, "
-                             "not %s." % (group, dims))
+            raise ValueError("%s argument expects a Dimension or list of dimensions, "
+                             "specified as tuples, strings, dictionaries or Dimension "
+                             "instances, not a %s type. Ensure you passed the data as the "
+                             "first argument." % (group, type(dims).__name__))
+        for dim in dims:
+            if not isinstance(dim, (tuple, basestring, Dimension, dict)):
+                raise ValueError('Dimensions must be defined as a tuple, '
+                                 'string, dictionary or Dimension instance, '
+                                 'found a %s type.' % type(dim).__name__)
         dimensions[group] = [d if isinstance(d, Dimension) else Dimension(d) for d in dims]
     return dimensions
 
@@ -320,6 +326,8 @@ class Dimension(param.Parameterized):
         elif (spec, params.get('unit', None)) in self.presets.keys():
             preset = self.presets[(str(spec), str(params['unit']))]
             existing_params = dict(preset.get_param_values())
+        elif isinstance(spec, dict):
+            existing_params = spec
         elif spec in self.presets:
             existing_params = dict(self.presets[spec].get_param_values())
         elif (spec,) in self.presets:
@@ -907,6 +915,10 @@ class Dimensioned(LabelledData):
         strict is False. If strict is True, a KeyError is raised
         instead.
         """
+        if dimension is not None and not isinstance(dimension, (int, basestring, Dimension)):
+            raise TypeError('Dimension lookup supports int, string, '
+                            'and Dimension instances, cannot lookup '
+                            'Dimensions using %s type.' % type(dimension).__name__)
         all_dims = self.dimensions()
         if isinstance(dimension, Dimension):
             dimension = dimension.name
@@ -914,14 +926,14 @@ class Dimensioned(LabelledData):
             if 0 <= dimension < len(all_dims):
                 return all_dims[dimension]
             elif strict:
-                raise KeyError("Dimension %s not found" % dimension)
+                raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
         name_map = {dim.name: dim for dim in all_dims}
         name_map.update({dim.label: dim for dim in all_dims})
         name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
         if strict and dimension not in name_map:
-            raise KeyError("Dimension %s not found" % dimension)
+            raise KeyError("Dimension %r not found." % dimension)
         else:
             return name_map.get(dimension, default)
 

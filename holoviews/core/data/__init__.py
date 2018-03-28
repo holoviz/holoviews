@@ -192,10 +192,10 @@ class Dataset(Element):
         kwargs.update(process_dimensions(kdims, vdims))
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
+        validate_vdims = kwargs.pop('_validate_vdims', True)
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        validate_vdims = kwargs.pop('_validate_vdims', True)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
