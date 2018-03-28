@@ -22,6 +22,11 @@ Compositor.register(Compositor("Bivariate", bivariate_kde, None,
                                transfer_parameters=True,
                                output_type=Polygons))
 
+DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
+                 '#9467bd', '#d62728', '#1f77b4', '#e377c2', '#8c564b', '#bcbd22']
+
+Cycle.default_cycles['default_colors'] = DEFAULT_CYCLE
+
 def public(obj):
     if not isinstance(obj, type): return False
     is_plot_or_cycle = any([issubclass(obj, bc) for bc in [Plot, Cycle]])
