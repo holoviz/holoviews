@@ -691,7 +691,7 @@ def hex2rgb(hex):
   return [int(hex[i:i+2], 16) for i in range(1,6,2)]
 
 
-MPL_COLORS = {
+COLOR_ALIASES = {
     'b': (0, 0, 1),
     'c': (0, 0.75, 0.75),
     'g': (0, 0.5, 0),
@@ -700,6 +700,7 @@ MPL_COLORS = {
     'r': (1, 0, 0),
     'w': (1, 1, 1),
     'y': (0.75, 0.75, 0),
+    'transparent': (0, 0, 0, 0)
 }
 
 
