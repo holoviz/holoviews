@@ -625,14 +625,12 @@ class ColorbarPlot(ElementPlot):
 
         # Check whether the colorbar should indicate clipping
         if values.dtype.kind not in 'OSUM':
-            categorical = False
             ncolors = self.color_levels
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:
                 el_min, el_max = -np.inf, np.inf
         else:
-            categorical = True
             ncolors = clim[-1]+1
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']

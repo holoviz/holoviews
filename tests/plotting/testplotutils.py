@@ -451,7 +451,7 @@ class TestMPLColormapUtils(ComparisonTestCase):
 
     def setUp(self):
         try:
-            from matplotlib.cm import get_cmap
+            import matplotlib.cm # noqa
         except:
             raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
 
@@ -482,7 +482,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
 
     def setUp(self):
         try:
-            import bokeh.palettes
+            import bokeh.palettes # noqa
         except:
             raise SkipTest('Bokeh required to test bokeh palette utilities')
 
