@@ -612,7 +612,7 @@ class ColorbarPlot(ElementPlot):
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
             else:
-                clim = (0, len(np.unique(values)))
+                clim = (0, len(np.unique(values))-1)
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
@@ -625,11 +625,15 @@ class ColorbarPlot(ElementPlot):
 
         # Check whether the colorbar should indicate clipping
         if values.dtype.kind not in 'OSUM':
+            categorical = False
+            ncolors = self.color_levels
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:
                 el_min, el_max = -np.inf, np.inf
         else:
+            categorical = True
+            ncolors = clim[-1]+1
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
         vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
@@ -663,7 +667,7 @@ class ColorbarPlot(ElementPlot):
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:
-                palette = process_cmap(cmap, self.color_levels)
+                palette = process_cmap(cmap, ncolors)
             cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])

@@ -476,7 +476,9 @@ def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
-    from matplotlib.colors import Colormap
+    from matplotlib.colors import Colormap, ListedColormap
+
+    ncolors = ncolors or 256
     if not isinstance(cmap, Colormap):
         import matplotlib.cm as cm
         # Alias bokeh Category cmaps with mpl tab cmaps
@@ -486,9 +488,12 @@ def mplcmap_to_palette(cmap, ncolors=None):
             cmap = cm.get_cmap(cmap)
         except:
             cmap = cm.get_cmap(cmap.lower())
-    if ncolors:
-        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
-    return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
+    if isinstance(cmap, ListedColormap) and cmap.N > ncolors:
+        palette = [rgb2hex(c) for c in cmap(np.arange(cmap.N))]
+        if len(palette) != ncolors:
+            palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+        return palette
+    return [rgb2hex(c) for c in cmap(np.linspace(0, 1, ncolors))]
 
 
 def bokeh_palette_to_palette(cmap, ncolors=None):
