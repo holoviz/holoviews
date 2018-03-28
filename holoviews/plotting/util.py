@@ -509,29 +509,35 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     # Alias mpl tab cmaps with bokeh Category cmaps
     if cmap.startswith('tab'):
         cmap = cmap.replace('tab', 'Category')
+    if reverse:
+        cmap = cmap[:-2]
 
     # Process as bokeh palette
     palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
-    elif isinstance(palette, dict):
-        if ncolors and ncolors in palette:
-            palette = palette[ncolors]
-            if not reverse:
-                # Bokeh palettes are stored in reverse order
-                palette = palette[::-1]
-        elif any(cat in cmap.lower() for cat in categorical):
+    elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
+        # Some bokeh palettes are doubly nested
+        palette = palette.get(cmap, palette.get(cmap.capitalize()))
+
+    if isinstance(palette, dict):
+        if any(cat in cmap.lower() for cat in categorical):
             palette = sorted(palette.items())[-1][1]
         else:
-            largest_factor = sorted([n for n in palette if ncolors%(n-1) == 0])[-1]
-            palette = palette[largest_factor]
+            if max(palette) > ncolors:
+                palette = palette[max(palette)]
+            else:
+                largest_factor = max([n for n in palette if ncolors%(n-1) == 0])
+                palette = palette[largest_factor]
+                palette = polylinear_gradient(palette, ncolors)
             if not reverse:
                 # Bokeh palettes are stored in reverse order
                 palette = palette[::-1]
-            palette = polylinear_gradient(palette, ncolors)
     elif callable(palette):
         palette = palette(ncolors)
-    return list(palette)
+    if len(palette) != ncolors:
+        palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+    return palette
 
 
 def linear_gradient(start_hex, finish_hex, n=10):
