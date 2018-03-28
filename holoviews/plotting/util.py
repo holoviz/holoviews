@@ -576,7 +576,7 @@ def list_cmaps(provider='all'):
     if 'matplotlib' in provider:
         try:
             import matplotlib.cm as cm
-            cmaps += list(cm.cmap_d)
+            cmaps += [cmap for cmap in cm.cmap_d if not cmap.startswith('cet_')]
         except:
             pass
     if 'bokeh' in provider:
