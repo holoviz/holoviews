@@ -65,6 +65,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
 
+    gridstyle = param.Dict(default={}, doc="""
+        Allows customizing the grid style, e.g. grid_line_color defines
+        the line color for both grids while xgrid_line_color exclusively
+        customizes the x-axis grid lines.""")
+
     labelled = param.List(default=['x', 'y'], doc="""
         Whether to plot the 'x' and 'y' labels.""")
 
@@ -457,6 +462,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
+        else:
+            replace = ['bounds', 'bands']
+            style_items = list(self.gridstyle.items())
+            both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+            xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
+            ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
+            xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                     for k, v in dict(both, **xgrid).items()}
+            yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                     for k, v in dict(both, **ygrid).items()}
+            plot.xgrid[0].update(**xopts)
+            plot.ygrid[0].update(**yopts)
 
 
     def _update_ranges(self, element, ranges):
