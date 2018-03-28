@@ -162,7 +162,7 @@ class HexTilesPlot(ColorbarPlot):
             cmapper.low = self.min_count
             self.state.background_fill_color = cmapper.palette[0]
 
-        self._get_hover_data(data, element)
+        self._get_hover_data(data, element, element.vdims)
         style['orientation'] = self.orientation+'top'
         style['size'] = size
         style['aspect_scale'] = scale

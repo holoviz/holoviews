@@ -183,7 +183,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return copied_tools
 
 
-    def _get_hover_data(self, data, element):
+    def _get_hover_data(self, data, element, dimensions=None):
         """
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
@@ -191,7 +191,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
             return
 
-        for d in element.dimensions():
+        for d in (dimensions or element.dimensions()):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
