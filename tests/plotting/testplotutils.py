@@ -14,7 +14,8 @@ from holoviews.element import (Image, Scatter, Curve, Points,
 from holoviews.operation import operation
 from holoviews.plotting.util import (
     compute_overlayable_zorders, get_min_distance, process_cmap,
-    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy)
+    initialize_dynamic, split_dmap_overlay, _get_min_distance_numpy,
+    bokeh_palette_to_palette, mplcmap_to_palette)
 from holoviews.streams import PointerX
 
 try:
@@ -429,23 +430,6 @@ class TestSplitDynamicMapOverlay(ComparisonTestCase):
 
 class TestPlotColorUtils(ComparisonTestCase):
 
-    def test_process_cmap_mpl(self):
-        colors = process_cmap('Greys', 3)
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
-    
-    def test_process_cmap_instance_mpl(self):
-        try:
-            from matplotlib.cm import get_cmap
-        except:
-            raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
-        cmap = get_cmap('Greys')
-        colors = process_cmap(cmap, 3)
-        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
-
-    def test_process_cmap_bokeh(self):
-        colors = process_cmap('Category20', 3)
-        self.assertEqual(colors, ['#1f77b4', '#aec7e8', '#ff7f0e'])
-
     def test_process_cmap_list_cycle(self):
         colors = process_cmap(['#ffffff', '#959595', '#000000'], 4)
         self.assertEqual(colors, ['#ffffff', '#959595', '#000000', '#ffffff'])
@@ -463,6 +447,66 @@ class TestPlotColorUtils(ComparisonTestCase):
             process_cmap({'A', 'B', 'C'}, 3)
 
 
+class TestMPLColormapUtils(ComparisonTestCase):
+
+    def setUp(self):
+        try:
+            import matplotlib.cm # noqa
+        except:
+            raise SkipTest("Matplotlib needed to test matplotlib colormap instances")
+
+    def test_mpl_colormap_name_palette(self):
+        colors = process_cmap('Greys', 3)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+
+    def test_mpl_colormap_instance(self):
+        from matplotlib.cm import get_cmap
+        cmap = get_cmap('Greys')
+        colors = process_cmap(cmap, 3)
+        self.assertEqual(colors, ['#ffffff', '#959595', '#000000'])
+
+    def test_mpl_colormap_categorical(self):
+        colors = mplcmap_to_palette('Category20', 3)
+        self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
+
+    def test_mpl_colormap_sequential(self):
+        colors = mplcmap_to_palette('RdBu', 3)
+        self.assertEqual(colors, ['#67001f', '#f6f6f6', '#053061'])
+
+    def test_mpl_colormap_perceptually_uniform(self):
+        colors = mplcmap_to_palette('viridis', 4)
+        self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'])
+
+
+class TestBokehPaletteUtils(ComparisonTestCase):
+
+    def setUp(self):
+        try:
+            import bokeh.palettes # noqa
+        except:
+            raise SkipTest('Bokeh required to test bokeh palette utilities')
+
+    def test_bokeh_palette_categorical_palettes_not_interpolated(self):
+        # Ensure categorical palettes are not expanded
+        categorical = ('accent', 'category20', 'dark2', 'colorblind', 'pastel1',
+                       'pastel2', 'set1', 'set2', 'set3', 'paired')
+        for cat in categorical:
+            self.assertTrue(len(set(bokeh_palette_to_palette(cat))) <= 20)
+
+    def test_bokeh_palette_categorical(self):
+        colors = bokeh_palette_to_palette('Category20', 3)
+        self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
+
+    def test_bokeh_palette_sequential(self):
+        colors = bokeh_palette_to_palette('RdBu', 3)
+        self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'])
+
+    def test_bokeh_palette_perceptually_uniform(self):
+        colors = bokeh_palette_to_palette('viridis', 4)
+        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'])
+
+
+        
 class TestPlotUtils(ComparisonTestCase):
 
     def test_get_min_distance_float32_type(self):

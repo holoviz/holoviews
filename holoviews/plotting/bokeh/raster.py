@@ -10,6 +10,8 @@ from .util import mpl_to_bokeh, colormesh
 
 class RasterPlot(ColorbarPlot):
 
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
@@ -112,6 +114,8 @@ class HSVPlot(RGBPlot):
 
 
 class QuadMeshPlot(ColorbarPlot):
+
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")

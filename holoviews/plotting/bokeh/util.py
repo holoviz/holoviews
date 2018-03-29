@@ -34,7 +34,7 @@ from ...core.overlay import Overlay
 from ...core.util import basestring, unique_array, callable_name, pd, dt64_to_dt
 from ...core.spaces import get_nested_dmaps, DynamicMap
 
-from ..util import dim_axis_label, rgb2hex
+from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -64,7 +64,7 @@ def rgba_tuple(rgba):
     if isinstance(rgba, tuple):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
     else:
-        return rgba
+        return COLOR_ALIASES.get(rgba, rgba)
 
 
 def decode_bytes(array):
@@ -109,7 +109,7 @@ def mpl_to_bokeh(properties):
             new_properties.update(markers.get(v, {'marker': v}))
         elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
             with abbreviated_exception():
-                v = colors.ColorConverter.colors.get(v, v)
+                v = COLOR_ALIASES.get(v, v)
             if isinstance(v, tuple):
                 with abbreviated_exception():
                     v = rgb2hex(v)
