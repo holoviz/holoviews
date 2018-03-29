@@ -376,7 +376,7 @@ class Options(param.Parameterized):
        Whether to merge with the existing keywords if the corresponding
        node already exists""")
 
-    skip_invalid = param.Boolean(default=True, doc="""
+    skip_invalid = param.Boolean(default=False, doc="""
        Whether all Options instances should skip invalid keywords or
        raise and exception. May only be specified at the class level.""")
 
@@ -388,6 +388,8 @@ class Options(param.Parameterized):
     def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
         invalid_kws = []
+        allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
+                            else Keywords(allowed_keywords))
         for kwarg in sorted(kwargs.keys()):
             if allowed_keywords and kwarg not in allowed_keywords:
                 if self.skip_invalid:
@@ -403,8 +405,6 @@ class Options(param.Parameterized):
         self._options = []
         self._max_cycles = max_cycles
 
-        allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
-                            else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
                                       merge_keywords=merge_keywords, key=key)
 
@@ -1358,7 +1358,7 @@ class StoreOptions(object):
                                (option, objtype, current_backend, found))
             return
         error = OptionError(option, allowed_keywords, group, objtype, backend)
-        if Options.skip_invalid:
+        if not Options.skip_invalid:
             raise error
         elif Options.warn_on_skip:
             param.main.warning(error.format_options_error())
