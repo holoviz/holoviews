@@ -909,7 +909,8 @@ class GenericOverlayPlot(GenericElementPlot):
         ordering = util.layer_sort(self.hmap)
         batched = self.batched and type(self.hmap.last) is NdOverlay
         if batched:
-            batchedplot = Store.registry.get(type(self.hmap.last.last))
+            backend = self.renderer.backend
+            batchedplot = Store.registry[backend].get(self.hmap.last.type)
         if (batched and batchedplot and 'batched' in batchedplot._plot_methods and
             (not self.show_legend or len(ordering) > self.legend_limit)):
             self.batched = True
