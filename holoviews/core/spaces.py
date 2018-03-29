@@ -3,6 +3,7 @@ import types
 from numbers import Number
 from itertools import groupby
 from functools import partial
+from collections import defaultdict
 from contextlib import contextmanager
 from inspect import ArgSpec
 
@@ -1229,6 +1230,7 @@ class DynamicMap(HoloMap):
             return self
 
         container = initialized.last.clone(shared_data=False)
+        type_counter = defaultdict(int)
 
         # Get stream mapping from callback
         remapped_streams = []
@@ -1253,11 +1255,37 @@ class DynamicMap(HoloMap):
 
             # Define collation callback
             def collation_cb(*args, **kwargs):
-                return self[args][kwargs['selection_key']]
-            callback = Callable(partial(collation_cb, selection_key=k),
+                layout = self[args]
+                layout_type = type(layout).__name__
+                if len(container.keys()) != len(layout.keys()):
+                    raise ValueError('Collated DynamicMaps must return '
+                                     '%s with consistent number of items.'
+                                     % layout_type)
+
+                key = kwargs['selection_key']
+                index = kwargs['selection_index']
+                obj_type = kwargs['selection_type']
+                dyn_type_map = defaultdict(list)
+                for k, v in layout.data.items():
+                    if k == key:
+                        return layout[k]
+                    dyn_type_map[type(v)].append(v)
+
+                dyn_type_counter = {t: len(vals) for t, vals in dyn_type_map.items()}
+                if dyn_type_counter != type_counter:
+                    raise ValueError('The objects in a %s returned by a '
+                                     'DynamicMap must consistently return '
+                                     'the same number of items of the '
+                                     'same type.' % layout_type)
+                return dyn_type_map[obj_type][index]
+
+            callback = Callable(partial(collation_cb, selection_key=k,
+                                        selection_index=type_counter[type(v)],
+                                        selection_type=type(v)),
                                 inputs=[self])
             vdmap = self.clone(callback=callback, shared_data=False,
                                streams=vstreams)
+            type_counter[type(v)] += 1
 
             # Remap source of streams
             for stream in vstreams:

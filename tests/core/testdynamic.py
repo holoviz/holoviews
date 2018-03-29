@@ -805,3 +805,55 @@ class DynamicCollate(ComparisonTestCase):
         self.assertEqual(list(grid.keys()), [(i, j) for i in range(1, 3)
                                              for j in range(1, 3)])
         self.assertEqual(stream.source, grid[(1, 2)])
+
+    def test_dynamic_collate_layout_with_changing_label(self):
+        def callback(i):
+            return Layout([Curve([], label=str(j)) for j in range(i, i+2)])
+        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+        layout = dmap.collate()
+        dmap1, dmap2 = layout.values()
+        el1, el2 = dmap1[2], dmap2[2]
+        self.assertEqual(el1.label, '2')
+        self.assertEqual(el2.label, '3')
+
+    def test_dynamic_collate_ndlayout_with_changing_keys(self):
+        def callback(i):
+            return NdLayout({j: Curve([], label=str(j)) for j in range(i, i+2)})
+        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+        layout = dmap.collate()
+        dmap1, dmap2 = layout.values()
+        el1, el2 = dmap1[2], dmap2[2]
+        self.assertEqual(el1.label, '2')
+        self.assertEqual(el2.label, '3')
+
+    def test_dynamic_collate_gridspace_with_changing_keys(self):
+        def callback(i):
+            return GridSpace({j: Curve([], label=str(j)) for j in range(i, i+2)}, 'X')
+        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(0, 10))
+        layout = dmap.collate()
+        dmap1, dmap2 = layout.values()
+        el1, el2 = dmap1[2], dmap2[2]
+        self.assertEqual(el1.label, '2')
+        self.assertEqual(el2.label, '3')
+
+    def test_dynamic_collate_gridspace_with_changing_items_raises(self):
+        def callback(i):
+            return GridSpace({j: Curve([], label=str(j)) for j in range(i)}, 'X')
+        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
+        layout = dmap.collate()
+        dmap1, dmap2 = layout.values()
+        err = 'Collated DynamicMaps must return GridSpace with consistent number of items.'
+        with self.assertRaisesRegexp(ValueError, err):
+            dmap1[4]
+
+    def test_dynamic_collate_gridspace_with_changing_item_types_raises(self):
+        def callback(i):
+            eltype = Image if i%2 else Curve
+            return GridSpace({j: eltype([], label=str(j)) for j in range(i, i+2)}, 'X')
+        dmap = DynamicMap(callback, kdims=['i']).redim.range(i=(2, 10))
+        layout = dmap.collate()
+        dmap1, dmap2 = layout.values()
+        err = ('The objects in a GridSpace returned by a DynamicMap must '
+               'consistently return the same number of items of the same type.')
+        with self.assertRaisesRegexp(ValueError, err):
+            dmap1[3]
