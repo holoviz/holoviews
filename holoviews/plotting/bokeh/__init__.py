@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord, Div)
+                        TriMesh, Violin, Chord, Div, HexTiles)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -38,6 +38,7 @@ from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     AreaPlot, VectorFieldPlot)
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
 from .heatmap import HeatMapPlot, RadialHeatMapPlot
+from .hex_tiles import HexTilesPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
@@ -115,7 +116,8 @@ associations = {Overlay: OverlayPlot,
                 Distribution: DistributionPlot,
                 Bivariate: BivariatePlot,
                 BoxWhisker: BoxWhiskerPlot,
-                Violin: ViolinPlot}
+                Violin: ViolinPlot,
+                HexTiles: HexTilesPlot}
 
 
 if DFrame is not None:
