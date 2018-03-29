@@ -1,7 +1,6 @@
 from __future__ import unicode_literals, absolute_import
 
 from collections import defaultdict
-
 import traceback
 import warnings
 
@@ -507,17 +506,20 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     # Handle categorical colormaps to avoid interpolation
     categorical = ['accent', 'category', 'dark', 'colorblind', 'pastel',
                    'set1', 'set2', 'set3', 'paired']
-
-    reverse = cmap.endswith('_r')
     categorical = any(cat in cmap.lower() for cat in categorical)
+    reverse = False
+    if cmap.endswith('_r'):
+        cmap = cmap[:-2]
+        reverse = True
+
+    # Some colormaps are inverted compared to matplotlib
+    inverted = not (categorical or cmap.capitalize() in palettes.mpl)
+    reverse = (reverse and not inverted) or inverted
     ncolors = ncolors or 256
 
     # Alias mpl tab cmaps with bokeh Category cmaps
     if cmap.startswith('tab'):
         cmap = cmap.replace('tab', 'Category')
-    if reverse:
-        cmap = cmap[:-2]
-    reverse = not reverse if cmap in palettes.mpl else reverse
 
     # Process as bokeh palette
     palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
@@ -526,18 +528,20 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
         # Some bokeh palettes are doubly nested
         palette = palette.get(cmap, palette.get(cmap.capitalize()))
+
     if isinstance(palette, dict):
         palette = palette[max(palette)]
         if not categorical:
             if len(palette) < ncolors:
                 palette = polylinear_gradient(palette, ncolors)
-            if not reverse: palette = palette[::-1]
     elif callable(palette):
         palette = palette(ncolors)
-        if reverse: palette = palette[::-1]
+    if reverse: palette = palette[::-1]
+
     if len(palette) != ncolors:
         lpad, rpad = -0.5, 0.49999999999
-        palette = [palette[int(np.round(v))] for v in np.linspace(lpad, (len(palette)-1)+rpad, ncolors)]
+        indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
+        palette = [palette[int(np.round(v))] for v in indexes]
     return palette
 
 

@@ -1,4 +1,4 @@
-from __future__ import absolute_import
+from __future__ import absolute_import, unicode_literals
 
 from unittest import SkipTest
 from nose.plugins.attrib import attr
@@ -469,6 +469,10 @@ class TestMPLColormapUtils(ComparisonTestCase):
         colors = mplcmap_to_palette('Category20', 3)
         self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
 
+    def test_mpl_colormap_categorical_reverse(self):
+        colors = mplcmap_to_palette('Category20_r', 3)
+        self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
+
     def test_mpl_colormap_sequential(self):
         colors = mplcmap_to_palette('RdBu', 3)
         self.assertEqual(colors, ['#67001f', '#f6f6f6', '#053061'])
@@ -476,6 +480,10 @@ class TestMPLColormapUtils(ComparisonTestCase):
     def test_mpl_colormap_perceptually_uniform(self):
         colors = mplcmap_to_palette('viridis', 4)
         self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'])
+
+    def test_mpl_colormap_perceptually_uniform_reverse(self):
+        colors = mplcmap_to_palette('viridis_r', 4)
+        self.assertEqual(colors, ['#440154', '#30678d', '#35b778', '#fde724'][::-1])
 
 
 class TestBokehPaletteUtils(ComparisonTestCase):
@@ -497,13 +505,25 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         colors = bokeh_palette_to_palette('Category20', 3)
         self.assertEqual(colors, ['#1f77b4', '#c5b0d5', '#9edae5'])
 
+    def test_bokeh_palette_categorical_reverse(self):
+        colors = bokeh_palette_to_palette('Category20_r', 3)
+        self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
+
     def test_bokeh_palette_sequential(self):
         colors = bokeh_palette_to_palette('RdBu', 3)
         self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'])
 
+    def test_bokeh_palette_uniform_interpolated(self):
+        colors = bokeh_palette_to_palette('Viridis', 4)
+        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'])
+
     def test_bokeh_palette_perceptually_uniform(self):
         colors = bokeh_palette_to_palette('viridis', 4)
         self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'])
+
+    def test_bokeh_palette_perceptually_uniform_reverse(self):
+        colors = bokeh_palette_to_palette('viridis_r', 4)
+        self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'][::-1])
 
 
         
