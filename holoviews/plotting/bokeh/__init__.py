@@ -138,10 +138,7 @@ else:
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
-
 point_size = np.sqrt(6) # Matches matplotlib default
-Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
-                                           '#6d904f', '#8b8b8b']
 
 # Register bokeh.palettes with Palette and Cycle
 def colormap_generator(palette):

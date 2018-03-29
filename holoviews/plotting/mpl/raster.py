@@ -18,6 +18,8 @@ class RasterPlot(ColorbarPlot):
         Images by default but may be set to an explicit
         aspect ratio or to 'square'.""")
 
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to add a colorbar to the plot.""")
 
@@ -97,6 +99,8 @@ class RasterPlot(ColorbarPlot):
 
 
 class QuadMeshPlot(ColorbarPlot):
+
+    clipping_colors = param.Dict(default={'NaN': 'transparent'})
 
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")

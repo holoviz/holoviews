@@ -974,6 +974,9 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
+    color_levels = param.Integer(default=None, doc="""
+        Number of discrete colors to use when colormapping.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -1000,8 +1003,13 @@ class ColorbarPlot(ElementPlot):
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
                               major_tick_line_color='black')
+
+    _default_nan = '#8b8b8b'
 
     def _draw_colorbar(self, plot, color_mapper):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
@@ -1048,12 +1056,18 @@ class ColorbarPlot(ElementPlot):
                 low, high = ranges.get(dim.name)
             else:
                 low, high = element.range(dim.name)
+            if self.symmetric:
+                sym_max = max(abs(low), high)
+                low, high = -sym_max, sym_max
         else:
             low, high = None, None
 
         cmap = colors or style.pop('cmap', 'viridis')
-        palette = process_cmap(cmap, ncolors)
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        if isinstance(cmap, dict) and factors:
+            palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
+        else:
+            palette = process_cmap(cmap, self.color_levels or ncolors)
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)

@@ -467,9 +467,7 @@ def map_colors(arr, crange, cmap, hex=True):
         arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
     arr = cmap(arr)
     if hex:
-        arr *= 255
-        return ["#{0:02x}{1:02x}{2:02x}".format(*(int(v) for v in c[:-1]))
-                for c in arr]
+        return rgb2hex(arr)
     else:
         return arr
 
@@ -478,29 +476,136 @@ def mplcmap_to_palette(cmap, ncolors=None):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
-    from matplotlib.colors import Colormap
+    from matplotlib.colors import Colormap, ListedColormap
+
+    ncolors = ncolors or 256
     if not isinstance(cmap, Colormap):
         import matplotlib.cm as cm
-        cmap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-    if ncolors:
-        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
-    return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
+        # Alias bokeh Category cmaps with mpl tab cmaps
+        if cmap.startswith('Category'):
+            cmap = cmap.replace('Category', 'tab')
+        try:
+            cmap = cm.get_cmap(cmap)
+        except:
+            cmap = cm.get_cmap(cmap.lower())
+    if isinstance(cmap, ListedColormap) and cmap.N > ncolors:
+        palette = [rgb2hex(c) for c in cmap(np.arange(cmap.N))]
+        if len(palette) != ncolors:
+            palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+        return palette
+    return [rgb2hex(c) for c in cmap(np.linspace(0, 1, ncolors))]
 
 
 def bokeh_palette_to_palette(cmap, ncolors=None):
     from bokeh import palettes
+
+    # Handle categorical colormaps to avoid interpolation
+    categorical = ('accent', 'category', 'dark', 'colorblind', 'pastel',
+                   'set1', 'set2', 'set3', 'paired')
+
+    reverse = cmap.endswith('_r')
+    ncolors = ncolors or 256
+
+    # Alias mpl tab cmaps with bokeh Category cmaps
+    if cmap.startswith('tab'):
+        cmap = cmap.replace('tab', 'Category')
+    if reverse:
+        cmap = cmap[:-2]
+
     # Process as bokeh palette
-    palette = getattr(palettes, cmap, None)
+    palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
-    elif isinstance(palette, dict):
-         if ncolors in palette:
-             palette = palette[ncolors]
-         else:
-             palette = sorted(palette.items())[-1][1]
-    if ncolors:
-        return [palette[i%len(palette)] for i in range(ncolors)]
-    return list(palette)
+    elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
+        # Some bokeh palettes are doubly nested
+        palette = palette.get(cmap, palette.get(cmap.capitalize()))
+
+    if isinstance(palette, dict):
+        if any(cat in cmap.lower() for cat in categorical):
+            palette = sorted(palette.items())[-1][1]
+        else:
+            if max(palette) > ncolors:
+                palette = palette[max(palette)]
+            else:
+                largest_factor = max([n for n in palette if ncolors%(n-1) == 0])
+                palette = palette[largest_factor]
+                palette = polylinear_gradient(palette, ncolors)
+            if not reverse:
+                # Bokeh palettes are stored in reverse order
+                palette = palette[::-1]
+    elif callable(palette):
+        palette = palette(ncolors)
+    if len(palette) != ncolors:
+        palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+    return palette
+
+
+def linear_gradient(start_hex, finish_hex, n=10):
+    """
+    Interpolates the color gradient between to hex colors
+    """
+    s = hex2rgb(start_hex)
+    f = hex2rgb(finish_hex)
+    gradient = [s]
+    for t in range(1, n):
+        curr_vector = [int(s[j] + (float(t)/(n-1))*(f[j]-s[j])) for j in range(3)]
+        gradient.append(curr_vector)
+    return [rgb2hex([c/255. for c in rgb]) for rgb in gradient]
+
+
+def polylinear_gradient(colors, n):
+    """
+    Interpolates the color gradients between a list of hex colors.
+    """
+    n_out = int(float(n) / (len(colors)-1))
+    gradient = linear_gradient(colors[0], colors[1], n_out)
+
+    if len(colors) == len(gradient):
+        return gradient
+
+    for col in range(1, len(colors) - 1):
+        next_colors = linear_gradient(colors[col], colors[col+1], n_out+1)
+        gradient += next_colors[1:] if len(next_colors) > 1 else next_colors
+    return gradient
+
+
+def list_cmaps(provider='all'):
+    """
+    List available colormaps by combining matplotlib colormaps and
+    bokeh palettes if available. May also be narrowed down to a
+    particular provider or list of providers.
+    """
+    providers = ['matplotlib', 'bokeh', 'colorcet']
+    if provider == 'all':
+        provider = providers
+    elif isinstance(provider, basestring):
+        if provider not in providers:
+            raise ValueError('Colormap provider %r not recognized, must '
+                             'be one of %r' % (provider, providers))
+        provider = [provider]
+    cmaps = []
+    if 'matplotlib' in provider:
+        try:
+            import matplotlib.cm as cm
+            cmaps += [cmap for cmap in cm.cmap_d if not
+                      (cmap.startswith('cet_') or     # duplicates list below
+                       cmap.startswith('Vega') or     # deprecated in matplotlib=2.1
+                       cmap.startswith('spectral') )] # deprecated in matplotlib=2.1
+        except:
+            pass
+    if 'bokeh' in provider:
+        try:
+            from bokeh import palettes
+            cmaps += list(palettes.all_palettes)
+        except:
+            pass
+    if 'colorcet' in provider:
+        try:
+            from colorcet import palette_n
+            cmaps += list(palette_n)
+        except:
+            pass
+    return sorted(unique_iterator(cmaps))
 
 
 def process_cmap(cmap, ncolors=None):
@@ -511,22 +616,30 @@ def process_cmap(cmap, ncolors=None):
         palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
     elif isinstance(cmap, list):
         palette = cmap
+    elif isinstance(cmap, basestring):
+        mpl_cmaps = list_cmaps('matplotlib')
+        bk_cmaps = list_cmaps('bokeh')
+        cet_cmaps = list_cmaps('colorcet')
+        if cmap in mpl_cmaps or cmap.lower() in mpl_cmaps:
+            palette = mplcmap_to_palette(cmap, ncolors)
+        elif cmap in bk_cmaps or cmap.capitalize() in bk_cmaps:
+            palette = bokeh_palette_to_palette(cmap, ncolors)
+        elif cmap in cet_cmaps:
+            from colorcet import palette_n
+            palette = palette_n[cmap]
+        else:
+            raise ValueError("Supplied cmap %s not found among matplotlib, "
+                             "bokeh or colorcet colormaps." % cmap)
     else:
         try:
-            # Process as matplotlib colormap
+            # Try processing as matplotlib colormap
             palette = mplcmap_to_palette(cmap, ncolors)
         except:
-            try:
-                palette = bokeh_palette_to_palette(cmap, ncolors)
-            except:
-                if isinstance(cmap, basestring):
-                    raise ValueError("Supplied cmap %s not found among "
-                                     "matplotlib or bokeh colormaps." % cmap)
-                palette = None
+            palette = None
     if not isinstance(palette, list):
         raise TypeError("cmap argument expects a list, Cycle or valid matplotlib "
                         "colormap or bokeh palette, found %s." % cmap)
-    if ncolors:
+    if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette
 
@@ -593,6 +706,25 @@ def rgb2hex(rgb):
     if len(rgb) > 3:
         rgb = rgb[:-1]
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
+def hex2rgb(hex):
+  ''' "#FFFFFF" -> [255,255,255] '''
+  # Pass 16 to the integer function for change of base
+  return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+
+
+COLOR_ALIASES = {
+    'b': (0, 0, 1),
+    'c': (0, 0.75, 0.75),
+    'g': (0, 0.5, 0),
+    'k': (0, 0, 0),
+    'm': (0.75, 0, 0.75),
+    'r': (1, 0, 0),
+    'w': (1, 1, 1),
+    'y': (0.75, 0.75, 0),
+    'transparent': (0, 0, 0, 0)
+}
 
 
 # linear_kryw_0_100_c71 (aka "fire"):
