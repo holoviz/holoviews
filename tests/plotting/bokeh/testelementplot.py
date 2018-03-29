@@ -16,7 +16,7 @@ except:
 
 
 
-class TestElementPlotPlot(TestBokehPlot):
+class TestElementPlot(TestBokehPlot):
 
     def test_element_show_frame_disabled(self):
         curve = Curve(range(10)).opts(plot=dict(show_frame=False))

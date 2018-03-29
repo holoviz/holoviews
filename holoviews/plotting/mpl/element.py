@@ -832,9 +832,11 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = None if empty else element.get(k, None)
             if isinstance(self.hmap, DynamicMap) and not empty:
-                idx = dynamic_update(self, subplot, k, element, items)
+                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
                 if idx is not None:
                     _, el = items.pop(idx)
+                    if not exact:
+                        self._update_subplot(subplot, spec)
             subplot.update_frame(key, ranges, el)
 
         if isinstance(self.hmap, DynamicMap) and items:

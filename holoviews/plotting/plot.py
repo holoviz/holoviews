@@ -1014,6 +1014,10 @@ class GenericOverlayPlot(GenericElementPlot):
 
 
     def _create_dynamic_subplots(self, key, items, ranges, **init_kwargs):
+        """
+        Handles the creation of new subplots when a DynamicMap returns
+        a changing set of elements in an Overlay.
+        """
         length = self.style_grouping
         group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
         keys, vmaps = self.hmap.split_overlays()
@@ -1025,6 +1029,23 @@ class GenericOverlayPlot(GenericElementPlot):
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
+
+
+    def _update_subplot(self, subplot, spec):
+        """
+        Updates existing subplots when the subplot has been assigned
+        to plot an element that is not an exact match to the object
+        it was initially assigned.
+        """
+        # Handle reused plot updating plot values
+        group_key = spec[:self.style_grouping]
+        self.group_counter[group_key] += 1
+        cyclic_index = self.group_counter[group_key]
+        subplot.cyclic_index = cyclic_index
+        if subplot.overlay_dims:
+            odim_key = util.wrap_tuple(spec[-1])
+            new_dims = zip(subplot.overlay_dims, odim_key)
+            subplot.overlay_dims = util.OrderedDict(new_dims)
 
 
     def get_extents(self, overlay, ranges):

@@ -17,7 +17,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension
+from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Overlay
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Buffer
@@ -628,6 +628,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
+        legend = merged.pop('legend', None)
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
@@ -635,6 +636,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
             glyph.update(**filtered)
+
+        if legend is not None:
+            for leg in self.state.legend:
+                for item in leg.items:
+                    if renderer in item.renderers:
+                        item.label = legend
 
 
     def _postprocess_hover(self, renderer, source):
@@ -1449,9 +1456,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx = dynamic_update(self, subplot, k, element, items)
+                    idx, spec, exact = dynamic_update(self, subplot, k, element, items)
                     if idx is not None:
                         _, el = items.pop(idx)
+                        if not exact:
+                            self._update_subplot(subplot, spec)
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
