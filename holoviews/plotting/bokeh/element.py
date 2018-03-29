@@ -628,6 +628,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
+        legend = merged.pop('legend', None)
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
@@ -635,6 +636,12 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 continue
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
             glyph.update(**filtered)
+
+        if legend is not None:
+            for leg in self.state.legend:
+                for item in leg.items:
+                    if renderer in item.renderers:
+                        item.label = legend
 
 
     def _postprocess_hover(self, renderer, source):
@@ -1395,6 +1402,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
+        self.handles['plots'] = plots
 
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
@@ -1441,7 +1449,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for k, subplot in self.subplots.items():
             el = None
 
-
             # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
                 # In batched mode NdOverlay is passed to subplot directly
@@ -1449,9 +1456,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx = dynamic_update(self, subplot, k, element, items)
+                    idx, spec, exact = dynamic_update(self, subplot, k, element, items)
                     if idx is not None:
                         _, el = items.pop(idx)
+                        if not exact:
+                            self._update_subplot(subplot, spec)
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
@@ -1460,9 +1469,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
-            self.warning("Some Elements returned by the dynamic callback "
-                         "were not initialized correctly and could not be "
-                         "rendered.")
+            init_kwargs = {'plot': self.handles['plot'], 'plots': self.handles['plots']}
+            self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+            if not self.overlaid:
+                self._process_legend()
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_plot(key, self.handles['plot'], element)

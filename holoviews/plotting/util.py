@@ -414,7 +414,11 @@ def dynamic_update(plot, subplot, key, overlay, items):
                                   subplot.current_frame)
     specs = [(i, get_overlay_spec(overlay, wrap_tuple(k), el))
              for i, (k, el) in enumerate(items)]
-    return closest_match(match_spec, specs)
+    closest = closest_match(match_spec, specs)
+    if closest is None:
+        return closest, None, False
+    matched = specs[closest][1]
+    return closest, matched, match_spec == matched
 
 
 def closest_match(match, specs, depth=0):
