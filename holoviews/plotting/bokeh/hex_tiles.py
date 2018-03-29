@@ -109,6 +109,12 @@ class HexTilesPlot(ColorbarPlot):
       largest bin will match the size of bins when scaling is disabled.
       Setting value larger than 1 will result in overlapping bins.""")
 
+    min_scale = param.Number(default=0, bounds=(0, None), doc="""
+      When size_index is enabled this defines the minimum size of each
+      bin relative to uniform tile size, i.e. for a value of 1, the
+      smallest bin will match the size of bins when scaling is disabled.
+      Setting value larger than 1 will result in overlapping bins.""")
+
     min_count = param.Number(default=None, doc="""
       The display threshold before a bin is shown, by default bins with
       a count of less than 1 are hidden.""")
@@ -175,7 +181,11 @@ class HexTilesPlot(ColorbarPlot):
             else:
                 ptp = sizes.ptp()
                 baseline = sizes.min()
+            if self.min_scale > self.max_scale:
+                raise ValueError('min_scale parameter must be smaller '
+                                 'than max_scale parameter.')
+            scale = self.max_scale - self.min_scale
             mapping['scale'] = 'scale'
-            data['scale'] = ((sizes - baseline) / ptp) * self.max_scale
+            data['scale'] = (((sizes - baseline) / ptp) * scale) + self.min_scale
 
         return data, mapping, style
