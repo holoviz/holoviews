@@ -1,6 +1,7 @@
 from __future__ import unicode_literals, absolute_import
 
 from collections import defaultdict
+
 import traceback
 import warnings
 
@@ -508,6 +509,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
                    'set1', 'set2', 'set3', 'paired']
 
     reverse = cmap.endswith('_r')
+    categorical = any(cat in cmap.lower() for cat in categorical)
     ncolors = ncolors or 256
 
     # Alias mpl tab cmaps with bokeh Category cmaps
@@ -524,26 +526,18 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
         # Some bokeh palettes are doubly nested
         palette = palette.get(cmap, palette.get(cmap.capitalize()))
-
     if isinstance(palette, dict):
-        if any(cat in cmap.lower() for cat in categorical):
-            palette = sorted(palette.items())[-1][1]
-        else:
-            if max(palette) > ncolors:
-                palette = palette[max(palette)]
-            else:
-                largest_factor = max([n for n in palette if ncolors%(n-1) == 0])
-                palette = palette[largest_factor]
+        palette = palette[max(palette)]
+        if not categorical:
+            if len(palette) < ncolors:
                 palette = polylinear_gradient(palette, ncolors)
-            if not reverse:
-                # Bokeh palettes are stored in reverse order
-                palette = palette[::-1]
+            if not reverse: palette = palette[::-1]
     elif callable(palette):
         palette = palette(ncolors)
-        if reverse:
-            palette = palette[::-1]
+        if reverse: palette = palette[::-1]
     if len(palette) != ncolors:
-        palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+        lpad, rpad = -0.5, 0.49999999999
+        palette = [palette[int(round(v))] for v in np.linspace(lpad, (len(palette)-1)+rpad, ncolors)]
     return palette
 
 
