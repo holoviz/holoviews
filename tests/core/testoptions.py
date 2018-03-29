@@ -593,8 +593,8 @@ class TestCrossBackendOptions(ComparisonTestCase):
 
     def clear_options(self):
         # Clear global options..
-        Store.options(val=OptionTree(groups=['plot', 'style']), backend='matplotlib')
-        Store.options(val=OptionTree(groups=['plot', 'style']), backend='bokeh')
+        Store.options(val=OptionTree([('Image', {})], groups=['plot', 'style']), backend='matplotlib')
+        Store.options(val=OptionTree([('Image', {})], groups=['plot', 'style']), backend='bokeh')
         # ... and custom options
         Store.custom_options({}, backend='matplotlib')
         Store.custom_options({}, backend='bokeh')
