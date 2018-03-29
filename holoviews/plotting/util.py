@@ -504,8 +504,8 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     from bokeh import palettes
 
     # Handle categorical colormaps to avoid interpolation
-    categorical = ('accent', 'category', 'dark', 'colorblind', 'pastel',
-                   'set1', 'set2', 'set3', 'paired')
+    categorical = ['accent', 'category', 'dark', 'colorblind', 'pastel',
+                   'set1', 'set2', 'set3', 'paired']
 
     reverse = cmap.endswith('_r')
     ncolors = ncolors or 256
@@ -515,6 +515,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
         cmap = cmap.replace('tab', 'Category')
     if reverse:
         cmap = cmap[:-2]
+    reverse = not reverse if cmap in palettes.mpl else reverse
 
     # Process as bokeh palette
     palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
@@ -539,6 +540,8 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
                 palette = palette[::-1]
     elif callable(palette):
         palette = palette(ncolors)
+        if reverse:
+            palette = palette[::-1]
     if len(palette) != ncolors:
         palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
     return palette
