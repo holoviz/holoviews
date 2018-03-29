@@ -1013,6 +1013,20 @@ class GenericOverlayPlot(GenericElementPlot):
         return plottype(obj, **plotopts)
 
 
+    def _create_dynamic_subplots(self, key, items, ranges, **init_kwargs):
+        length = self.style_grouping
+        group_fn = lambda x: (x.type.__name__, x.last.group, x.last.label)
+        keys, vmaps = self.hmap.split_overlays()
+        for k, m in items:
+            self.map_lengths[group_fn(vmaps[keys.index(k)])[:length]] += 1
+
+        for k, obj in items:
+            subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+            self.subplots[k] = subplot
+            subplot.initialize_plot(ranges, **init_kwargs)
+            subplot.update_frame(key, ranges, element=obj)
+
+
     def get_extents(self, overlay, ranges):
         extents = []
         items = overlay.items()
