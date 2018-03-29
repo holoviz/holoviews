@@ -1,6 +1,6 @@
 import numpy as np
 
-from holoviews.core import Overlay, NdOverlay
+from holoviews.core import Overlay, NdOverlay, DynamicMap
 from holoviews.element import Curve, Scatter
 
 from .testplot import TestMPLPlot, mpl_renderer

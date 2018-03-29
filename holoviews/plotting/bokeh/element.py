@@ -17,7 +17,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import DynamicMap, CompositeOverlay, Element, Dimension, Overlay
+from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Buffer
