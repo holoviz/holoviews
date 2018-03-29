@@ -17,7 +17,7 @@ except ImportError:
     LogColorMapper, ColorBar = None, None
 from bokeh.plotting.helpers import _known_tools as known_tools
 
-from ...core import Store, DynamicMap, CompositeOverlay, Element, Dimension, Overlay
+from ...core import DynamicMap, CompositeOverlay, Element, Dimension
 from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Buffer
@@ -1462,8 +1462,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
             init_kwargs = {'plot': self.handles['plot'], 'plots': self.handles['plots']}
             self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
-            for k, obj in items:
-                el_tools = subplot._init_tools(obj, self.callbacks)
             if not self.overlaid:
                 self._process_legend()
 
