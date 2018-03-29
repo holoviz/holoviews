@@ -2,7 +2,6 @@ import param
 import numpy as np
 
 from .chart import AreaPlot, ChartPlot
-from .element import ColorbarPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
 
