@@ -38,8 +38,8 @@ class TestOverlayPlot(TestMPLPlot):
         dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
         plot = mpl_renderer.get_plot(dmap)
         plot.update((3,))
-        for i, (k, subplot) in enumerate(plot.subplots.values()):
-            self.assertEqual(subplot.cyclic_index, k+3)
+        for i, subplot in enumerate(plot.subplots.values()):
+            self.assertEqual(subplot.cyclic_index, i+3)
             self.assertEqual(list(subplot.overlay_dims.values()), [i+1])
 
     def test_dynamic_subplot_creation(self):
