@@ -537,7 +537,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
         if reverse: palette = palette[::-1]
     if len(palette) != ncolors:
         lpad, rpad = -0.5, 0.49999999999
-        palette = [palette[int(round(v))] for v in np.linspace(lpad, (len(palette)-1)+rpad, ncolors)]
+        palette = [palette[int(np.round(v))] for v in np.linspace(lpad, (len(palette)-1)+rpad, ncolors)]
     return palette
 
 
