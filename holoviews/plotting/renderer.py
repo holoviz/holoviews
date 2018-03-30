@@ -324,7 +324,7 @@ class Renderer(Exporter):
         data['text/html'] = html
         if js:
             data[MIME_TYPES['js']] = js
-            data[MIME_TYPES['jlab-hv-exec']] = js
+            data[MIME_TYPES['jlab-hv-exec']] = ''
             metadata['id'] = plot_id
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 

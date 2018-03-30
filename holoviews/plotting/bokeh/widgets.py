@@ -12,6 +12,7 @@ from bokeh.layouts import widgetbox, row, column
 from ...core import Store, NdMapping, OrderedDict
 from ...core.util import (drop_streams, unique_array, isnumeric,
                           wrap_tuple_streams, unicode)
+from ..renderer import MIME_TYPES
 from ..widgets import NdWidget, SelectionWidget, ScrubberWidget
 from .util import serialize_json
 
@@ -274,7 +275,7 @@ class BokehWidget(NdWidget):
         msg, metadata = self.renderer.components(self.plot, comm=False)
         data = super(BokehWidget, self)._get_data()
         return dict(data, init_html=msg['text/html'],
-                    init_js=msg['application/javascript'],
+                    init_js=msg[MIME_TYPES['js']],
                     plot_id=self.plot.state._id)
 
     def encode_frames(self, frames):
