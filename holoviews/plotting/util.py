@@ -1,6 +1,5 @@
 from __future__ import unicode_literals, absolute_import
 
-import sys
 from collections import defaultdict, namedtuple
 
 import traceback
