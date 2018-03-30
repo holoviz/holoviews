@@ -15,6 +15,7 @@ from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
+from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
                    bokeh_version)
@@ -245,6 +246,9 @@ class BokehPlot(DimensionedPlot):
         plots = self.traverse(lambda x: x, [GenericElementPlot])
         for plot in plots:
             for callback in plot.callbacks:
+                callbacks = {k: cb for k, cb in callback._callbacks.items()
+                            if cb is not callback}
+                Callback._callbacks = callbacks
                 for stream in callback.streams:
                     subscribers = [
                         (p, subscriber) for p, subscriber in stream._subscribers
