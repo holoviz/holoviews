@@ -210,7 +210,7 @@ def deephash(obj):
 
 
 # Python3 compatibility
-if sys.version_info.major == 3:
+if sys.version_info.major >= 3:
     basestring = str
     unicode = str
     long = int
@@ -394,6 +394,13 @@ def bytes_to_unicode(value):
     if isinstance(value, bytes):
         return unicode(value.decode('utf-8'))
     return value
+
+
+def get_method_owner(method):
+    """
+    Gets the instance that owns the supplied method
+    """
+    return method.__self__ if sys.version_info.major >= 3 else method.im_self
 
 
 def capitalize_unicode_name(s):

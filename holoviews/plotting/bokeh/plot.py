@@ -10,7 +10,7 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
-from ...core.util import basestring, wrap_tuple, unique_iterator
+from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
@@ -239,6 +239,18 @@ class BokehPlot(DimensionedPlot):
         should be updated.
         """
         return []
+
+
+    def cleanup(self):
+        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        for plot in plots:
+            for callback in plot.callbacks:
+                for stream in callback.streams:
+                    subscribers = [
+                        (p, subscriber) for p, subscriber in stream._subscribers
+                        if get_method_owner(subscriber) not in plots
+                    ]
+                    stream._subscribers = subscribers
 
 
     def _fontsize(self, key, label='fontsize', common=True):

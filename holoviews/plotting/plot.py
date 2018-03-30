@@ -63,6 +63,12 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
+    def cleanup(self):
+        """
+        Allows defining cleanup actions to perform on plot deletion.
+        """
+
+
     @property
     def id(self):
         return self.comm.id if self.comm else id(self.state)

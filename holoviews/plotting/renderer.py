@@ -157,6 +157,9 @@ class Renderer(Exporter):
     # Whether in a notebook context, set when running Renderer.load_nb
     notebook_context = False
 
+    # Plot registry
+    _plots = {}
+
     def __init__(self, **params):
         self.last_plot = None
         super(Renderer, self).__init__(**params)
@@ -326,6 +329,7 @@ class Renderer(Exporter):
             data[MIME_TYPES['js']] = js
             data[MIME_TYPES['jlab-hv-exec']] = ''
             metadata['id'] = plot_id
+            self._plots[plot_id] = plot
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
@@ -593,3 +597,15 @@ class Renderer(Exporter):
         with param.logging_level('ERROR'):
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager
+
+
+    @classmethod
+    def _delete_plot(cls, plot_id):
+        """
+        Deletes registered plots and calls Plot.cleanup
+        """
+        plot = cls._plots.get(plot_id)
+        if plot is None:
+            return
+        plot.cleanup()
+        del cls._plots[plot_id]

@@ -522,6 +522,8 @@ function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_di
 
 if (window.HoloViews === undefined) {
   window.HoloViews = {}
+} else {
+  delete HoloViews.comms["hv-extension-comm"]
 }
 
 var _namespace = {
@@ -570,6 +572,18 @@ function handleAddOutput(event, handle) {
   }
 }
 
+/**
+ * Handle when an output is cleared or removed
+ */
+
+
+function handleClearOutput(event, handle) {
+  var id = handle.cell.output_area._hv_plot_id;
+  if (id === undefined) { return; }
+    comm = window.HoloViews.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
+    comm.send({event_type: 'delete', 'id': id})
+}
+
 function register_renderer(events, OutputArea) {
   function append_mime(data, metadata, element) {
     // create a DOM node to render to
@@ -585,7 +599,10 @@ function register_renderer(events, OutputArea) {
     element.append(toinsert);
     return toinsert
   }
+
   events.on('output_added.OutputArea', handleAddOutput);
+  events.on('clear_output.CodeCell', handleClearOutput);
+  events.on('delete.Cell', handleClearOutput);
 
   OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
     safe: true,

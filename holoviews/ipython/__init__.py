@@ -238,6 +238,9 @@ class notebook_extension(extension):
                                 'message':     message})
         publish_display_data(data={'text/html': html})
 
+        Renderer.comm_manager.get_client_comm(cls._process_comm_msg,
+                                              "hv-extension-comm")
+
         # Vanilla JS mime type is only consumed by classic notebook
         # Custom mime type is only consumed by JupyterLab
         if JS:
@@ -245,6 +248,14 @@ class notebook_extension(extension):
                 MIME_TYPES['js']           : widgetjs,
                 MIME_TYPES['jlab-hv-load'] : widgetjs
             })
+
+    @classmethod
+    def _process_comm_msg(cls, msg):
+        """
+        Processes global comm messages to process deletions.
+        """
+        if msg['event_type'] == 'delete':
+            Renderer._delete_plot(msg['id'])
 
 
     @param.parameterized.bothmethod
