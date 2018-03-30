@@ -577,7 +577,7 @@ def polylinear_gradient(colors, n):
 
 
 cmap_info=[]
-CMapInfo=namedtuple('CMapInfo',['name','provider','category','source'])
+CMapInfo=namedtuple('CMapInfo',['name','provider','category','source','bg'])
 providers = ['matplotlib', 'bokeh', 'colorcet']
 
 
@@ -598,7 +598,7 @@ def _list_cmaps(provider=None, records=False):
     cmaps = []
 
     def info(provider,names):
-        return [CMapInfo(name=n,provider=provider,category=None,source=None) for n in names] \
+        return [CMapInfo(name=n,provider=provider,category=None,source=None,bg=None) for n in names] \
                if records else list(names)
 
     if 'matplotlib' in provider:
@@ -615,18 +615,20 @@ def _list_cmaps(provider=None, records=False):
         try:
             from bokeh import palettes
             cmaps += info('bokeh', palettes.all_palettes)
+            cmaps += info('bokeh', [p+'_r' for p in palettes.all_palettes])
         except:
             pass
     if 'colorcet' in provider:
         try:
             from colorcet import palette_n
             cmaps += info('colorcet', palette_n)
+            cmaps += info('colorcet', [p+'_r' for p in palette_n])
         except:
             pass
     return sorted(unique_iterator(cmaps))
 
 
-def _register_cmaps(category, provider, source, names):
+def register_cmaps(category, provider, source, bg, names):
     """
     Maintain descriptions of colormaps that include the following information:
 
@@ -634,13 +636,17 @@ def _register_cmaps(category, provider, source, names):
     category - intended use or purpose, mostly following matplotlib
     provider - package providing the colormap directly
     source   - original source or creator of the colormaps
+    bg       - base/background color expected for the map
+               ('light','dark','medium','any' (unknown or N/A))
     """
     for name in names:
         bisect.insort(cmap_info, CMapInfo(name=name, provider=provider,
-                                          category=category, source=source))
+                                          category=category, source=source,
+                                          bg=bg))
 
 
-def list_cmaps(provider=None,category=None,source=None,reverse=None,records=False):
+def list_cmaps(provider=None, records=False, name=None, category=None, source=None, 
+               bg=None, reverse=None):
     """
     Return colormap names matching the specified filters.
     """
@@ -650,92 +656,131 @@ def list_cmaps(provider=None,category=None,source=None,reverse=None,records=Fals
     matches = set()
 
     for avail in available:
-        name=avail.name
+        aname=avail.name
         matched=False
-        basename=name[:-2] if name.endswith('_r') else name
+        basename=aname[:-2] if aname.endswith('_r') else aname
 
         if (reverse is None or
-            (reverse==True and name.endswith('_r')) or
-            (reverse==False and not name.endswith('_r'))):
+            (reverse==True and aname.endswith('_r')) or
+            (reverse==False and not aname.endswith('_r'))):
             for r in cmap_info:
                if (r.name==basename):
                    matched=True
-                   if ((provider==None or r.provider==provider) and
+
+                   # cmap_info stores only non-reversed info, so construct
+                   # suitable values for reversed version if appropriate
+                   r=r._replace(name=aname)
+                   if aname.endswith('_r') and (r.category is not 'Diverging'):
+                       if r.bg=='light': 
+                           r=r._replace(bg='dark')
+                       elif r.bg=='dark': 
+                           r=r._replace(bg='light')
+
+                   if ((    name==None or name in r.name) and
+                       (provider==None or r.provider==provider) and
                        (category==None or r.category==category) and
-                       (  source==None or r.source==source)):
-                       matches.add(r if records else name)
+                       (  source==None or r.source==source) and
+                       (      bg==None or r.bg==bg)):
+                       matches.add(r)
             if not matched and (category==None or category=='Miscellaneous'):
                 # Return colormaps that exist but are not found in cmap_info
-                # under the 'Miscellaneous' category, with an 'unknown' source
-                record = CMapInfo(name,provider=avail.provider,category='Miscellaneous',source='unknown')
-                matches.add(record if records else name)
-        
-    return list(matches)
+                # under the 'Miscellaneous' category, with no source or bg
+                r = CMapInfo(aname,provider=avail.provider,category='Miscellaneous',source=None,bg=None)
+                matches.add(r)
+
+    # Return results sorted by category if category information is provided        
+    if records:
+        return list(unique_iterator(sorted(matches, key=lambda r: (r.category,r.bg,r.source,r.name.lower(),r.provider))))
+    else:
+        return list(unique_iterator(sorted([r.name for r in matches], key=lambda n:n.lower())))
 
 
-_register_cmaps('Uniform Sequential', 'matplotlib', 'matplotlib',
+register_cmaps('Uniform Sequential', 'matplotlib', 'bids', 'dark',
     ['viridis', 'plasma', 'inferno', 'magma', 'cividis'])
 
-_register_cmaps('Mono Sequential', 'matplotlib', 'matplotlib',
+register_cmaps('Mono Sequential', 'matplotlib', 'colorbrewer', 'light',
     ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
      'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
      'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'])
 
-_register_cmaps('Other Sequential', 'matplotlib', 'matplotlib',
-    ['binary', 'gist_yarg', 'gist_gray', 'gray', 'bone', 'pink',
-     'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia',
-     'hot', 'afmhot', 'gist_heat', 'copper'])
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'light',
+    ['gist_yarg', 'binary'])
 
-_register_cmaps('Diverging', 'matplotlib', 'matplotlib',
-    ['PiYG', 'PRGn', 'BrBG', 'PuOr', 'RdGy', 'RdBu',
-     'RdYlBu', 'RdYlGn', 'Spectral', 'coolwarm', 'bwr', 'seismic'])
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'dark',
+    ['afmhot', 'gray', 'bone', 'copper', 'gist_gray', 'gist_heat',
+     'hot', 'pink'])
 
-_register_cmaps('Categorical', 'matplotlib', 'matplotlib',
-    ['Pastel1', 'Pastel2', 'Paired', 'Accent', 'Dark2',
-     'Set1', 'Set2', 'Set3', 'tab10', 'tab20', 'tab20b', 'tab20c'])
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'any',
+    ['spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia'])
 
-_register_cmaps('Rainbow', 'matplotlib', 'matplotlib',
-    ['brg', 'hsv', 'gist_rainbow', 'rainbow', 'jet', 
-     'gist_ncar', 'nipy_spectral'])
+register_cmaps('Diverging', 'matplotlib', 'colorbrewer', 'light',
+    ['BrBG', 'PiYG', 'PRGn', 'PuOr', 'RdBu', 'RdGy',
+     'RdYlBu', 'RdYlGn', 'Spectral'])
 
-_register_cmaps('Miscellaneous', 'matplotlib', 'matplotlib',
-    ['flag', 'prism', 'ocean', 'gist_earth', 'terrain', 'gist_stern',
-     'gnuplot', 'gnuplot2', 'CMRmap', 'cubehelix'])
+register_cmaps('Diverging', 'matplotlib', 'misc', 'light',
+    ['coolwarm', 'bwr', 'seismic'])
+
+register_cmaps('Categorical', 'matplotlib', 'colorbrewer', 'any',
+    ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2', 
+     'Set1', 'Set2', 'Set3'])
+
+register_cmaps('Categorical', 'matplotlib', 'd3', 'any',
+    ['tab10', 'tab20', 'tab20b', 'tab20c'])
+
+register_cmaps('Rainbow', 'matplotlib', 'misc', 'dark',
+    ['brg', 'nipy_spectral', 'gist_ncar'])
+
+register_cmaps('Rainbow', 'matplotlib', 'misc', 'any',
+    ['hsv', 'gist_rainbow', 'rainbow', 'jet'])
+
+register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'dark',
+    ['CMRmap', 'cubehelix', 'gist_earth', 'gist_stern',
+     'gnuplot', 'gnuplot2', 'ocean', 'terrain'])
+
+register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'any',
+    ['flag', 'prism'])
 
 
-_register_cmaps('Uniform Sequential', 'colorcet', 'cet',
-    ['bgyw', 'bgy', 'kbc', 'blues', 'bmw', 'bmy', 'kgy', 'gray',
+register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'light',
+    ['blues'])
+
+register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'dark',
+    ['bgyw', 'bgy', 'kbc', 'bmw', 'bmy', 'kgy', 'gray',
      'dimgray', 'fire', 'kb', 'kg', 'kr'])
 
-_register_cmaps('Diverging', 'colorcet', 'cet',
-    ['bkr', 'bky', 'coolwarm', 'gwv', 'bjy'])
+register_cmaps('Diverging', 'colorcet', 'cet', 'light',
+    ['coolwarm','gwv'])
 
-_register_cmaps('Rainbow', 'colorcet', 'cet',
-    ['rainbow', 'colorwheel'])
+register_cmaps('Diverging', 'colorcet', 'cet', 'dark',
+    ['bkr', 'bky'])
 
-_register_cmaps('Miscellaneous', 'colorcet', 'cet',
-    ['isolum'])
+register_cmaps('Diverging', 'colorcet', 'cet', 'medium',
+    ['bjy'])
 
-_register_cmaps('Uniform Sequential', 'bokeh', 'matplotlib',
+# Actually from 'cet', but listed as 'misc' to sort by mpl
+register_cmaps('Rainbow', 'colorcet', 'misc', 'any',
+    ['rainbow', 'colorwheel','isolum'])
+
+register_cmaps('Uniform Sequential', 'bokeh', 'bids', 'dark',
     ['Viridis', 'Plasma', 'Inferno', 'Magma'])
 
-_register_cmaps('Mono Sequential', 'bokeh', 'colorbrewer',
+register_cmaps('Mono Sequential', 'bokeh', 'colorbrewer', 'light',
     ['Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys',
      'OrRd', 'Oranges', 'PuBu', 'PuBuGn', 'PuRd', 'Purples',
      'RdPu', 'Reds', 'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd'])
 
-_register_cmaps('Diverging', 'bokeh', 'colorbrewer',
+register_cmaps('Diverging', 'bokeh', 'colorbrewer', 'light',
     ['BrBG', 'PiYG', 'PRGn', 'PuOr', 'RdBu', 'RdGy',
      'RdYlBu', 'RdYlGn', 'Spectral'])
 
-_register_cmaps('Categorical', 'bokeh', 'd3',
+register_cmaps('Categorical', 'bokeh', 'd3', 'any',
     ['Category10', 'Category20', 'Category20b', 'Category20c'])
 
-_register_cmaps('Categorical', 'bokeh', 'colorbrewer',
+register_cmaps('Categorical', 'bokeh', 'colorbrewer', 'any',
     ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2',
      'Set1', 'Set2', 'Set3'])
 
-_register_cmaps('Categorical', 'bokeh', 'usability',
+register_cmaps('Categorical', 'bokeh', 'misc', 'any',
     ['Colorblind'])
 
 
@@ -760,7 +805,10 @@ def process_cmap(cmap, ncolors=None, provider=None):
             palette = bokeh_palette_to_palette(cmap, ncolors)
         elif provider=='colorcet' or (provider is None and cmap in cet_cmaps):
             from colorcet import palette
-            palette = palette[cmap]
+            if cmap.endswith('_r'):
+                palette = list(reversed(palette[cmap[:-2]]))
+            else:
+                palette = palette[cmap]
         else:
             raise ValueError("Supplied cmap %s not found among %s colormaps." %
                              (cmap,providers_checked))
