@@ -78,6 +78,9 @@ These guides provide detail about specific additional features in HoloViews:
 * `Styling Plots <Styling_Plots.html>`_
    How to control common styling options including color/style cycles and colormapping.
 
+* `Colormaps <Colormaps.html>`_
+   Overview of colormaps available, including when and how to use each type.
+
 * `Plotting with Bokeh <Plotting_with_Bokeh.html>`_
    Styling options and unique `Bokeh <bokeh.pydata.org>`_ features such as plot tools and using bokeh models directly.
 
@@ -123,6 +126,7 @@ These guides provide detail about specific additional features in HoloViews:
     Working with streaming data <Streaming_Data>
     Creating interactive dashboards <Dashboards>
     Styling Plots <Styling_Plots>
+    Colormaps <Colormaps>
     Plotting with Bokeh <Plotting_with_Bokeh>
     Deploying Bokeh Apps <Deploying_Bokeh_Apps>
     Plotting with matplotlib <Plotting_with_Matplotlib>
