@@ -536,19 +536,34 @@ class PointerXYCallback(Callback):
     extra_models= ['x_range', 'y_range']
 
     on_events = ['mousemove']
+
     # Clip x and y values to available axis range
     code = """
-           if (x_range.type.endsWith('Range1d')) {
-             if (cb_obj.x < x_range.start) {
-               data['x'] = x_range.start }
-             else if (cb_obj.x > x_range.end) {
-               data['x'] = x_range.end }}
-           if (y_range.type.endsWith('Range1d')) {
-             if (cb_obj.y < y_range.start) {
-               data['y'] = y_range.start }
-             else if (cb_obj.y > y_range.end) {
-               data['y'] = y_range.end }}
-           """
+    if (x_range.type.endsWith('Range1d')) {
+      xstart = x_range.start;
+      xend = x_range.end;
+      if (xstart > xend) {
+        [xstart, xend] = [xend, xstart]
+      }
+      if (cb_obj.x < xstart) {
+        data['x'] = xstart;
+      } else if (cb_obj.x > xend) {
+        data['x'] = xend;
+      }
+    }
+    if (y_range.type.endsWith('Range1d')) {
+      ystart = y_range.start;
+      yend = y_range.end;
+      if (ystart > yend) {
+        [ystart, yend] = [yend, ystart]
+      }
+      if (cb_obj.y < ystart) {
+        data['y'] = ystart;
+      } else if (cb_obj.y > yend) {
+        data['y'] = yend;
+      }
+    }
+    """
 
     def _process_msg(self, msg):
         x_range = self.plot.handles.get('x_range')
@@ -575,12 +590,19 @@ class PointerXCallback(PointerXYCallback):
     attributes = {'x': 'cb_obj.x'}
     extra_models= ['x_range']
     code = """
-           if (x_range.type.endsWith('Range1d')) {
-             if (cb_obj.x < x_range.start) {
-               data['x'] = x_range.start }
-             else if (cb_obj.x > x_range.end) {
-               data['x'] = x_range.end }}
-           """
+    if (x_range.type.endsWith('Range1d')) {
+      xstart = x_range.start;
+      xend = x_range.end;
+      if (xstart > xend) {
+        [xstart, xend] = [xend, xstart]
+      }
+      if (cb_obj.x < xstart) {
+        data['x'] = xstart;
+      } else if (cb_obj.x > xend) {
+        data['x'] = xend;
+      }
+    }
+    """
 
 class PointerYCallback(PointerXYCallback):
     """
@@ -590,12 +612,19 @@ class PointerYCallback(PointerXYCallback):
     attributes = {'y': 'cb_obj.y'}
     extra_models= ['y_range']
     code = """
-           if (y_range.type.endsWith('Range1d')) {
-             if (cb_obj.y < y_range.start) {
-               data['y'] = y_range.start }
-             else if (cb_obj.y > y_range.end) {
-               data['y'] = y_range.end }}
-           """
+    if (y_range.type.endsWith('Range1d')) {
+      ystart = y_range.start;
+      yend = y_range.end;
+      if (ystart > yend) {
+        [ystart, yend] = [yend, ystart]
+      }
+      if (cb_obj.y < ystart) {
+        data['y'] = ystart;
+      } else if (cb_obj.y > yend) {
+        data['y'] = yend;
+      }
+    }
+    """
 
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']
