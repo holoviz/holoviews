@@ -140,6 +140,11 @@ class NdWidget(param.Parameterized):
                                                      on_msg=self._process_update)
 
 
+    def cleanup(self):
+        self.plot.cleanup()
+        del NdWidget.widgets[self.id]
+
+
     def _process_update(self, msg):
         if 'content' not in msg:
             raise ValueError('Received widget comm message has no content.')
