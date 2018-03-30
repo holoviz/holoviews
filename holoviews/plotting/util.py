@@ -515,8 +515,9 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
         reverse = True
 
     # Some colormaps are inverted compared to matplotlib
-    inverted = not (categorical or cmap.capitalize() in palettes.mpl)
-    reverse = (reverse and not inverted) or inverted
+    inverted = (not categorical and not cmap.capitalize() in palettes.mpl)
+    if inverted:
+        reverse=not reverse
     ncolors = ncolors or 256
 
     # Alias mpl tab cmaps with bokeh Category cmaps
@@ -676,13 +677,13 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
                        elif r.bg=='dark': 
                            r=r._replace(bg='light')
 
-                   if ((    name==None or name in r.name) and
-                       (provider==None or r.provider==provider) and
-                       (category==None or r.category==category) and
-                       (  source==None or r.source==source) and
-                       (      bg==None or r.bg==bg)):
+                   if ((    name is None or     name in r.name) and
+                       (provider is None or provider in r.provider) and
+                       (category is None or category in r.category) and
+                       (  source is None or   source in r.source) and
+                       (      bg is None or       bg in r.bg)):
                        matches.add(r)
-            if not matched and (category==None or category=='Miscellaneous'):
+            if not matched and (category is None or category=='Miscellaneous'):
                 # Return colormaps that exist but are not found in cmap_info
                 # under the 'Miscellaneous' category, with no source or bg
                 r = CMapInfo(aname,provider=avail.provider,category='Miscellaneous',source=None,bg=None)
@@ -692,7 +693,7 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
     if records:
         return list(unique_iterator(sorted(matches, key=lambda r: (r.category,r.bg,r.source,r.name.lower(),r.provider))))
     else:
-        return list(unique_iterator(sorted([r.name for r in matches], key=lambda n:n.lower())))
+        return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))
 
 
 register_cmaps('Uniform Sequential', 'matplotlib', 'bids', 'dark',
@@ -707,11 +708,11 @@ register_cmaps('Other Sequential', 'matplotlib', 'misc', 'light',
     ['gist_yarg', 'binary'])
 
 register_cmaps('Other Sequential', 'matplotlib', 'misc', 'dark',
-    ['afmhot', 'gray', 'bone', 'copper', 'gist_gray', 'gist_heat',
+    ['afmhot', 'gray', 'bone', 'gist_gray', 'gist_heat',
      'hot', 'pink'])
 
 register_cmaps('Other Sequential', 'matplotlib', 'misc', 'any',
-    ['spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia'])
+    ['copper', 'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia'])
 
 register_cmaps('Diverging', 'matplotlib', 'colorbrewer', 'light',
     ['BrBG', 'PiYG', 'PRGn', 'PuOr', 'RdBu', 'RdGy',
@@ -728,10 +729,10 @@ register_cmaps('Categorical', 'matplotlib', 'd3', 'any',
     ['tab10', 'tab20', 'tab20b', 'tab20c'])
 
 register_cmaps('Rainbow', 'matplotlib', 'misc', 'dark',
-    ['brg', 'nipy_spectral', 'gist_ncar'])
+    ['nipy_spectral', 'gist_ncar'])
 
 register_cmaps('Rainbow', 'matplotlib', 'misc', 'any',
-    ['hsv', 'gist_rainbow', 'rainbow', 'jet'])
+    ['brg', 'hsv', 'gist_rainbow', 'rainbow', 'jet'])
 
 register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'dark',
     ['CMRmap', 'cubehelix', 'gist_earth', 'gist_stern',
@@ -741,12 +742,12 @@ register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'any',
     ['flag', 'prism'])
 
 
-register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'light',
-    ['blues'])
-
 register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'dark',
     ['bgyw', 'bgy', 'kbc', 'bmw', 'bmy', 'kgy', 'gray',
-     'dimgray', 'fire', 'kb', 'kg', 'kr'])
+     'dimgray', 'fire'])
+
+register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'any',
+    ['blues', 'kr', 'kg', 'kb'])
 
 register_cmaps('Diverging', 'colorcet', 'cet', 'light',
     ['coolwarm','gwv'])
