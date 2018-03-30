@@ -52,7 +52,7 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
-            self.comm = plot.renderer.comm_manager.get_client_comm(plot, on_msg=self.on_msg)
+            self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()

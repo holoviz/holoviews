@@ -136,8 +136,7 @@ class NdWidget(param.Parameterized):
         self.jinjaEnv = jinja2.Environment(loader=templateLoader)
         if not self.embed:
             comm_manager = self.renderer.comm_manager
-            self.comm = comm_manager.get_client_comm(self.plot,
-                                                     id=self.id+'_client',
+            self.comm = comm_manager.get_client_comm(id=self.id+'_client',
                                                      on_msg=self._process_update)
 
 
