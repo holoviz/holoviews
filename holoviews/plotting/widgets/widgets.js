@@ -580,8 +580,14 @@ function handleAddOutput(event, handle) {
 function handleClearOutput(event, handle) {
   var id = handle.cell.output_area._hv_plot_id;
   if (id === undefined) { return; }
-    comm = window.HoloViews.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
-    comm.send({event_type: 'delete', 'id': id})
+  var comm = window.HoloViews.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
+  if (comm !== null) {
+    comm.send({event_type: 'delete', 'id': id});
+  }
+  if ((window.Bokeh !== undefined) & (id in window.Bokeh.index)) {
+    window.Bokeh.index[id].model.document.clear();
+    delete Bokeh.index[id];
+  }
 }
 
 function register_renderer(events, OutputArea) {
