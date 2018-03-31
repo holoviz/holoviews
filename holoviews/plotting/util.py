@@ -749,13 +749,13 @@ register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'dark',
 register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'any',
     ['blues', 'kr', 'kg', 'kb'])
 
-register_cmaps('Diverging', 'colorcet', 'cet', 'light',
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'light',
     ['coolwarm','gwv'])
 
-register_cmaps('Diverging', 'colorcet', 'cet', 'dark',
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'dark',
     ['bkr', 'bky'])
 
-register_cmaps('Diverging', 'colorcet', 'cet', 'medium',
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'medium',
     ['bjy'])
 
 # Actually from 'cet', but listed as 'misc' to sort by mpl
