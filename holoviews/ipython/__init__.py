@@ -161,6 +161,9 @@ class notebook_extension(extension):
         Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+        if hasattr(ip, 'kernel'):
+            Renderer.comm_manager.get_client_comm(self._process_comm_msg,
+                                                  "hv-extension-comm")
 
         # Create a message for the logo (if shown)
         self.load_hvjs(logo=p.logo,
@@ -237,9 +240,6 @@ class notebook_extension(extension):
                                 'plotly_logo': plotly_logo,
                                 'message':     message})
         publish_display_data(data={'text/html': html})
-
-        Renderer.comm_manager.get_client_comm(cls._process_comm_msg,
-                                              "hv-extension-comm")
 
         # Vanilla JS mime type is only consumed by classic notebook
         # Custom mime type is only consumed by JupyterLab
