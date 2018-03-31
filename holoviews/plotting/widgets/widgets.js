@@ -617,9 +617,12 @@ function register_renderer(events, OutputArea) {
 }
 
 if (window.Jupyter !== undefined) {
-  var events = require('base/js/events');
-  var OutputArea = require('notebook/js/outputarea').OutputArea;
-  if (OutputArea.prototype.mime_types().indexOf(EXEC_MIME_TYPE) == -1) {
-    register_renderer(events, OutputArea);
+  try {
+    var events = require('base/js/events');
+    var OutputArea = require('notebook/js/outputarea').OutputArea;
+    if (OutputArea.prototype.mime_types().indexOf(EXEC_MIME_TYPE) == -1) {
+      register_renderer(events, OutputArea);
+    }
+  } catch(err) {
   }
 }
