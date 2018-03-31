@@ -585,7 +585,7 @@ providers = ['matplotlib', 'bokeh', 'colorcet']
 def _list_cmaps(provider=None, records=False):
     """
     List available colormaps by combining matplotlib, bokeh, and
-    colorcet colormaps or palettes if available. May also be 
+    colorcet colormaps or palettes if available. May also be
     narrowed down to a particular provider or list of providers.
     """
     if provider is None:
@@ -595,7 +595,7 @@ def _list_cmaps(provider=None, records=False):
             raise ValueError('Colormap provider %r not recognized, must '
                              'be one of %r' % (provider, providers))
         provider = [provider]
-        
+
     cmaps = []
 
     def info(provider,names):
@@ -646,14 +646,14 @@ def register_cmaps(category, provider, source, bg, names):
                                           bg=bg))
 
 
-def list_cmaps(provider=None, records=False, name=None, category=None, source=None, 
+def list_cmaps(provider=None, records=False, name=None, category=None, source=None,
                bg=None, reverse=None):
     """
     Return colormap names matching the specified filters.
     """
     # Only uses names actually imported and currently available
     available = _list_cmaps(provider=provider, records=True)
-    
+
     matches = set()
 
     for avail in available:
@@ -672,9 +672,9 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
                    # suitable values for reversed version if appropriate
                    r=r._replace(name=aname)
                    if aname.endswith('_r') and (r.category is not 'Diverging'):
-                       if r.bg=='light': 
+                       if r.bg=='light':
                            r=r._replace(bg='dark')
-                       elif r.bg=='dark': 
+                       elif r.bg=='dark':
                            r=r._replace(bg='light')
 
                    if ((    name is None or     name in r.name) and
@@ -689,9 +689,10 @@ def list_cmaps(provider=None, records=False, name=None, category=None, source=No
                 r = CMapInfo(aname,provider=avail.provider,category='Miscellaneous',source=None,bg=None)
                 matches.add(r)
 
-    # Return results sorted by category if category information is provided        
+    # Return results sorted by category if category information is provided
     if records:
-        return list(unique_iterator(sorted(matches, key=lambda r: (r.category,r.bg,r.source,r.name.lower(),r.provider))))
+        return list(unique_iterator(sorted(matches, 
+                    key=lambda r: (r.category.split(" ")[-1],r.bg,r.name.lower(),r.provider,r.source))))
     else:
         return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))
 
@@ -722,7 +723,7 @@ register_cmaps('Diverging', 'matplotlib', 'misc', 'light',
     ['coolwarm', 'bwr', 'seismic'])
 
 register_cmaps('Categorical', 'matplotlib', 'colorbrewer', 'any',
-    ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2', 
+    ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2',
      'Set1', 'Set2', 'Set3'])
 
 register_cmaps('Categorical', 'matplotlib', 'd3', 'any',
@@ -750,7 +751,7 @@ register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'any',
     ['blues', 'kr', 'kg', 'kb'])
 
 register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'light',
-    ['coolwarm','gwv'])
+    ['coolwarm', 'gwv'])
 
 register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'dark',
     ['bkr', 'bky'])
@@ -758,9 +759,9 @@ register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'dark',
 register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'medium',
     ['bjy'])
 
-# Actually from 'cet', but listed as 'misc' to sort by mpl
-register_cmaps('Rainbow', 'colorcet', 'misc', 'any',
+register_cmaps('Uniform Rainbow', 'colorcet', 'cet', 'any',
     ['rainbow', 'colorwheel','isolum'])
+
 
 register_cmaps('Uniform Sequential', 'bokeh', 'bids', 'dark',
     ['Viridis', 'Plasma', 'Inferno', 'Magma'])
@@ -868,7 +869,7 @@ def _get_min_distance_numpy(element):
         if len(distances):
             return distances.min()
     return 0
-    
+
 
 def get_min_distance(element):
     """
