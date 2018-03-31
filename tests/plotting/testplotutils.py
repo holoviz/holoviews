@@ -474,8 +474,20 @@ class TestMPLColormapUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
 
     def test_mpl_colormap_sequential(self):
+        colors = mplcmap_to_palette('YlGn', 3)
+        self.assertEqual(colors, ['#ffffe5', '#77c578', '#004529'])
+
+    def test_mpl_colormap_sequential_reverse(self):
+        colors = mplcmap_to_palette('YlGn_r', 3)
+        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'][::-1])
+
+    def test_mpl_colormap_diverging(self):
         colors = mplcmap_to_palette('RdBu', 3)
         self.assertEqual(colors, ['#67001f', '#f6f6f6', '#053061'])
+
+    def test_mpl_colormap_diverging_reverse(self):
+        colors = mplcmap_to_palette('RdBu_r', 3)
+        self.assertEqual(colors, ['#67001f', '#f7f6f6', '#053061'][::-1])
 
     def test_mpl_colormap_perceptually_uniform(self):
         colors = mplcmap_to_palette('viridis', 4)
@@ -510,8 +522,20 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#1f77b4', '#8c564b', '#9edae5'][::-1])
 
     def test_bokeh_palette_sequential(self):
+        colors = bokeh_palette_to_palette('YlGn', 3)
+        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'])
+
+    def test_bokeh_palette_sequential_reverse(self):
+        colors = bokeh_palette_to_palette('YlGn_r', 3)
+        self.assertEqual(colors, ['#ffffe5', '#78c679', '#004529'][::-1])
+
+    def test_bokeh_palette_diverging(self):
         colors = bokeh_palette_to_palette('RdBu', 3)
         self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'])
+        
+    def test_bokeh_palette_diverging_reverse(self):
+        colors = bokeh_palette_to_palette('RdBu_r', 3)
+        self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'][::-1])
 
     def test_bokeh_palette_uniform_interpolated(self):
         colors = bokeh_palette_to_palette('Viridis', 4)
