@@ -252,7 +252,8 @@ class notebook_extension(extension):
     @classmethod
     def _process_comm_msg(cls, msg):
         """
-        Processes global comm messages to process deletions.
+        Processes comm messages to handle global actions such as
+        cleaning up plots.
         """
         if msg['event_type'] == 'delete':
             Renderer._delete_plot(msg['id'])
