@@ -558,10 +558,10 @@ function render(props, node) {
 /**
  * Handle when a new output is added
  */
-function handleAddOutput(event, handle) {
+function handle_add_output(event, handle) {
   var output_area = handle.output_area;
   var output = handle.output;
-  // limit handleAddOutput to display_data with EXEC_MIME_TYPE content only
+  // limit handle_add_output to display_data with EXEC_MIME_TYPE content only
   if ((output.output_type != "display_data") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
     return
   }
@@ -577,7 +577,7 @@ function handleAddOutput(event, handle) {
  */
 
 
-function handleClearOutput(event, handle) {
+function handle_clear_output(event, handle) {
   var id = handle.cell.output_area._hv_plot_id;
   if (id === undefined) { return; }
   var comm = window.HoloViews.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
@@ -606,9 +606,9 @@ function register_renderer(events, OutputArea) {
     return toinsert
   }
 
-  events.on('output_added.OutputArea', handleAddOutput);
-  events.on('clear_output.CodeCell', handleClearOutput);
-  events.on('delete.Cell', handleClearOutput);
+  events.on('output_added.OutputArea', handle_add_output);
+  events.on('clear_output.CodeCell', handle_clear_output);
+  events.on('delete.Cell', handle_clear_output);
 
   OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
     safe: true,
