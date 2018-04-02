@@ -1,8 +1,21 @@
 import numpy as np
 
-from holoviews.element import Image
+from holoviews.core.spaces import DynamicMap
+from holoviews.element import Image, Curve
+from holoviews.streams import Stream
 
 from .testplot import TestMPLPlot, mpl_renderer
+
+
+class TestElementPlot(TestMPLPlot):
+
+    def test_stream_cleanup(self):
+        stream = Stream.define(str('Test'), test=1)()
+        dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
+        plot = mpl_renderer.get_plot(dmap)
+        self.assertTrue(bool(stream._subscribers))
+        plot.cleanup()
+        self.assertFalse(bool(stream._subscribers))
 
 
 class TestColorbarPlot(TestMPLPlot):
