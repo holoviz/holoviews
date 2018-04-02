@@ -63,6 +63,19 @@ class Plot(param.Parameterized):
         raise NotImplementedError
 
 
+    def cleanup(self):
+        """
+        Cleans up references to the plot on the attached Stream
+        subscribers.
+        """
+        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        for plot in plots:
+            for stream in set(plot.streams):
+                stream._subscribers = [
+                    (p, subscriber) for p, subscriber in stream._subscribers
+                    if util.get_method_owner(subscriber) not in plots]
+
+
     @property
     def id(self):
         return self.comm.id if self.comm else id(self.state)
@@ -534,7 +547,7 @@ class DimensionedPlot(Plot):
         """
         comm = None
         if self.dynamic or self.renderer.widget_mode == 'live':
-            comm = self.renderer.comm_manager.get_server_comm(self)
+            comm = self.renderer.comm_manager.get_server_comm()
         return comm
 
 

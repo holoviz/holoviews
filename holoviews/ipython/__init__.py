@@ -161,6 +161,9 @@ class notebook_extension(extension):
         Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+        if hasattr(ip, 'kernel'):
+            Renderer.comm_manager.get_client_comm(self._process_comm_msg,
+                                                  "hv-extension-comm")
 
         # Create a message for the logo (if shown)
         self.load_hvjs(logo=p.logo,
@@ -245,6 +248,15 @@ class notebook_extension(extension):
                 MIME_TYPES['js']           : widgetjs,
                 MIME_TYPES['jlab-hv-load'] : widgetjs
             })
+
+    @classmethod
+    def _process_comm_msg(cls, msg):
+        """
+        Processes comm messages to handle global actions such as
+        cleaning up plots.
+        """
+        if msg['event_type'] == 'delete':
+            Renderer._delete_plot(msg['id'])
 
 
     @param.parameterized.bothmethod

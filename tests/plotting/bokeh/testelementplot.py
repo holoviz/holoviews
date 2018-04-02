@@ -66,6 +66,14 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(source.data['image'][0].mean(), 2)
         self.assertNotIn(source, plot.current_handles)
 
+    def test_stream_cleanup(self):
+        stream = Stream.define(str('Test'), test=1)()
+        dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+        self.assertTrue(bool(stream._subscribers))
+        plot.cleanup()
+        self.assertFalse(bool(stream._subscribers))
+
     @attr(optional=1)  # Requires Flexx
     def test_element_formatter_xaxis(self):
         def formatter(x):

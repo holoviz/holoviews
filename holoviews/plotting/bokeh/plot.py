@@ -10,11 +10,12 @@ from bokeh.models.widgets import Panel, Tabs
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
-from ...core.util import basestring, wrap_tuple, unique_iterator
+from ...core.util import basestring, wrap_tuple, unique_iterator, get_method_owner
 from ...streams import Stream
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
                     GenericElementPlot, GenericOverlayPlot)
 from ..util import attach_streams, displayable, collate
+from .callbacks import Callback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
                    bokeh_version)
@@ -239,6 +240,27 @@ class BokehPlot(DimensionedPlot):
         should be updated.
         """
         return []
+
+
+    def cleanup(self):
+        """
+        Cleans up references to the plot after the plot has been
+        deleted. Traverses through all plots cleaning up Callbacks and
+        Stream subscribers.
+        """
+        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        for plot in plots:
+            streams = list(plot.streams)
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callbacks = {k: cb for k, cb in callback._callbacks.items()
+                            if cb is not callback}
+                Callback._callbacks = callbacks
+            for stream in set(streams):
+                stream._subscribers = [
+                    (p, subscriber) for p, subscriber in stream._subscribers
+                    if get_method_owner(subscriber) not in plots
+                ]
 
 
     def _fontsize(self, key, label='fontsize', common=True):

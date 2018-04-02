@@ -57,12 +57,11 @@ class Comm(object):
 
     js_template = ''
 
-    def __init__(self, plot, id=None, on_msg=None):
+    def __init__(self, id=None, on_msg=None):
         """
         Initializes a Comms object
         """
         self.id = id if id else uuid.uuid4().hex
-        self._plot = plot
         self._on_msg = on_msg
         self._comm = None
 
@@ -191,12 +190,12 @@ class JupyterCommJS(JupyterComm):
     </script>
     """
 
-    def __init__(self, plot, id=None, on_msg=None):
+    def __init__(self, id=None, on_msg=None):
         """
         Initializes a Comms object
         """
         from IPython import get_ipython
-        super(JupyterCommJS, self).__init__(plot, id, on_msg)
+        super(JupyterCommJS, self).__init__(id, on_msg)
         self.manager = get_ipython().kernel.comm_manager
         self.manager.register_target(self.id, self._handle_open)
 
@@ -240,14 +239,14 @@ class CommManager(object):
     client_comm = Comm
 
     @classmethod
-    def get_server_comm(cls, plot, on_msg=None, id=None):
-        comm = cls.server_comm(plot, id, on_msg)
+    def get_server_comm(cls, on_msg=None, id=None):
+        comm = cls.server_comm(id, on_msg)
         cls._comms[comm.id] = comm
         return comm
 
     @classmethod
-    def get_client_comm(cls, plot, on_msg=None, id=None):
-        comm = cls.client_comm(plot, id, on_msg)
+    def get_client_comm(cls, on_msg=None, id=None):
+        comm = cls.client_comm(id, on_msg)
         cls._comms[comm.id] = comm
         return comm
 
