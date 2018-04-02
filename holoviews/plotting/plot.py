@@ -23,7 +23,7 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay, get_method_owner)
+                   split_dmap_overlay)
 
 
 class Plot(param.Parameterized):
@@ -73,7 +73,7 @@ class Plot(param.Parameterized):
             for stream in set(plot.streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
-                    if get_method_owner(subscriber) not in plots]
+                    if util.get_method_owner(subscriber) not in plots]
 
 
     @property
