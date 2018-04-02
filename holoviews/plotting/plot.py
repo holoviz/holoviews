@@ -23,7 +23,7 @@ from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
                    compute_overlayable_zorders, get_plot_frame,
-                   split_dmap_overlay)
+                   split_dmap_overlay, get_method_owner)
 
 
 class Plot(param.Parameterized):
@@ -65,8 +65,15 @@ class Plot(param.Parameterized):
 
     def cleanup(self):
         """
-        Allows defining cleanup actions to perform on plot deletion.
+        Cleans up references to the plot on the attached Stream
+        subscribers.
         """
+        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        for plot in plots:
+            for stream in set(plot.streams):
+                stream._subscribers = [
+                    (p, subscriber) for p, subscriber in stream._subscribers
+                    if get_method_owner(subscriber) not in plots]
 
 
     @property
