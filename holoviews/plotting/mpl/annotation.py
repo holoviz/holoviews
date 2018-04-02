@@ -73,7 +73,9 @@ class HLinePlot(AnnotationPlot):
 class TextPlot(AnnotationPlot):
     "Draw the Text annotation object"
 
-    style_opts = ['alpha', 'color', 'family', 'weight', 'rotation', 'fontsize', 'visible']
+    style_opts = ['alpha', 'color', 'family', 'weight', 'rotation',
+                  'horizontalalignment', 'verticalalignment', 'fontsize',
+                  'visible']
 
     def draw_annotation(self, axis, data, opts):
         (x,y, text, fontsize,
@@ -92,29 +94,52 @@ class LabelsPlot(ColorbarPlot):
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
 
-    style_opts = ['alpha', 'color', 'visible', 'linewidth',
-                  'linestyle', 'marker', 'ms', 'cmap']
+    xoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    yoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    style_opts = ['alpha', 'color', 'family', 'weight', 'size', 'visible',
+                  'horizontalalignment', 'verticalalignment', 'cmap']
 
     _plot_methods = dict(single='annotate')
 
     def get_data(self, element, ranges, style):
         xs, ys = (element.dimension_values(i) for i in range(2))
-        text = element.dimension_values(2)
+        tdim = element.get_dimension(2)
+        text = [tdim.pprint_value(v) for v in element.dimension_values(tdim)]
         positions = (ys, xs) if self.invert_axes else (xs, ys)
+        if self.xoffset is not None:
+            xs += self.xoffset
+        if self.yoffset is not None:
+            ys += self.yoffset
+
         cdim = element.get_dimension(self.color_index)
-        self._norm_kwargs(element, ranges, style, cdim)
-        cs = element.dimension_values(cdim) if cdim else np.full(len(text), np.NaN)
+        if cdim:
+            self._norm_kwargs(element, ranges, style, cdim)
+        cs = element.dimension_values(cdim) if cdim else None
         style = {k: v for k, v in style.items() if k not in ['vmin', 'vmax']}
+        if 'size' in style: style['fontsize'] = style.pop('size')
+        if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
+        if 'verticalalignment' not in style: style['verticalalignment'] = 'center'
         return positions + (text, cs), style, {}
 
     def init_artists(self, ax, plot_args, plot_kwargs):
+        if plot_args[-1] is not None:
+            cmap = plot_kwargs.pop('cmap', None)
+            colors = list(np.unique(plot_args[-1]))
+        else:
+            cmap = None
+            plot_args = plot_args[:-1]
+
         texts = []
-        cmap = plot_kwargs.pop('cmap', None)
-        colors = list(np.unique(plot_args[-1]))
-        for x, y, text, color in zip(*plot_args):
-            if color is not None and cmap is not None:
+        for item in zip(*plot_args):
+            x, y, text = item[:3]
+            if len(item) == 4 and cmap is not None:
+                color = item[3]
                 if plot_args[-1].dtype.kind in 'if':
-                    plot_kwargs['color'] = cmap(color)
+                    plot_kwargs['color'] = cmap()
                 else:
                     color = colors.index(color) if color in colors else np.NaN
                     plot_kwargs['color'] = cmap(color)

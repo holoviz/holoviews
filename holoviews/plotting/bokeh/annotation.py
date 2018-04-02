@@ -74,6 +74,12 @@ class LabelsPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
+    xoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    yoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
     style_opts = text_properties + ['cmap']
 
     _plot_methods = dict(single='text', batched='text')
@@ -81,11 +87,16 @@ class LabelsPlot(ColorbarPlot):
 
     def get_data(self, element, ranges, style):
         style = self.style[self.cyclic_index]
-        dims = element.dimensions(label=True)
+        dims = element.dimensions()
         coords = (1, 0) if self.invert_axes else (0, 1)
-        xdim, ydim, tdim = (dimension_sanitizer(dims[i]) for i in coords+(2,))
+        xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in coords+(2,))
         mapping = dict(x=xdim, y=ydim, text=tdim)
-        data = {d: element.dimension_values(d) for d in (xdim, ydim, tdim)}
+        data = {d: element.dimension_values(d) for d in (xdim, ydim)}
+        if self.xoffset is not None:
+            data[xdim] = data[xdim] + self.xoffset
+        if self.yoffset is not None:
+            data[xdim] = data[ydim] + self.yoffset
+        data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
         cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
         data.update(cdata)
