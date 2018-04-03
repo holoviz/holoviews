@@ -17,9 +17,9 @@ extras_require = {}
 extras_require['notebook-dependencies'] = ['ipython', 'pyzmq', 'jinja2', 'tornado',
                                            'jsonschema', 'notebook', 'pygments']
 # IPython Notebook + matplotlib
-extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib']
+extras_require['recommended'] = extras_require['notebook-dependencies'] + ['matplotlib', 'bokeh>=0.12.14,<=0.12.15']
 # Additional, useful third-party packages
-extras_require['extras'] = (['pandas', 'seaborn', 'bokeh>=0.12.14,<=0.12.15']
+extras_require['extras'] = (['pandas', 'seaborn']
                             + extras_require['recommended'])
 # Everything including cyordereddict (optimization) and nosetests
 extras_require['all'] = (extras_require['recommended']
