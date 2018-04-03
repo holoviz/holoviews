@@ -14,10 +14,10 @@ except:
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
 
+from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine
-from ...core.util import datetime_types
 from ..plot import GenericElementPlot
-from .element import (ElementPlot, CompositeElementPlot,
+from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
                       text_properties, line_properties)
 from .plot import BokehPlot
 from .util import date_to_integer
@@ -62,6 +62,51 @@ class TextPlot(ElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+
+class LabelsPlot(ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    xoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    yoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    style_opts = text_properties + ['cmap']
+
+    _plot_methods = dict(single='text', batched='text')
+    _batched_style_opts = text_properties
+
+    def get_data(self, element, ranges, style):
+        style = self.style[self.cyclic_index]
+        dims = element.dimensions()
+        coords = (1, 0) if self.invert_axes else (0, 1)
+        xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in coords+(2,))
+        mapping = dict(x=xdim, y=ydim, text=tdim)
+        data = {d: element.dimension_values(d) for d in (xdim, ydim)}
+        if self.xoffset is not None:
+            data[xdim] = data[xdim] + self.xoffset
+        if self.yoffset is not None:
+            data[ydim] = data[ydim] + self.yoffset
+        data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
+
+        cdim = element.get_dimension(self.color_index)
+        if cdim is None:
+            return data, mapping, style
+
+        cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
+        data['text_color'] = cdata[dimension_sanitizer(cdim.name)]
+        mapping['text_color'] = cmapping['text_color']
+        return data, mapping, style
 
 
 

@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord, Div, HexTiles)
+                        TriMesh, Violin, Chord, Div, HexTiles, Labels)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -29,7 +29,7 @@ except:
     DFrame = None
 
 from .annotation import (TextPlot, LineAnnotationPlot, SplinePlot,
-                         ArrowPlot, DivPlot)
+                         ArrowPlot, DivPlot, LabelsPlot)
 from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
@@ -97,6 +97,7 @@ associations = {Overlay: OverlayPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 Text: TextPlot,
+                Labels: LabelsPlot,
                 Spline: SplinePlot,
                 Arrow: ArrowPlot,
                 Div: DivPlot,
@@ -197,6 +198,7 @@ options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
+options.Labels = Options('style', text_align='center', text_baseline='middle')
 
 # Graphs
 options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),

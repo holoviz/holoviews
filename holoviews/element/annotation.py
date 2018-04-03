@@ -4,6 +4,7 @@ import param
 
 from ..core.util import datetime_types, basestring
 from ..core import Dimension, Element2D, Element
+from ..core.data import Dataset
 
 
 class Annotation(Element2D):
@@ -266,3 +267,24 @@ class Div(Element):
             raise ValueError("Div element html data must be a string "
                              "type, found %s type." % type(html).__name__)
         super(Div, self).__init__(html, **params)
+
+
+
+class Labels(Dataset, Element2D):
+    """
+    Labels represents a collection of text labels associated with 2D
+    coordinates. Unlike the Text annotation, Labels is a Dataset type
+    which allows drawing vectorized labels from tabular or gridded
+    data.
+    """
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
+        The label of the x- and y-dimension of the Labels element in form
+        of a string or dimension object.""")
+
+    group = param.String(default='Labels', constant=True)
+
+    vdims = param.List([Dimension('Label')], bounds=(1, None), doc="""
+        Defines the value dimension corresponding to the label text.""")
+

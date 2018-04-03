@@ -1112,7 +1112,7 @@ class ColorbarPlot(ElementPlot):
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
         data[field] = cdata
-        if factors is not None:
+        if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
         mapping[name] = {'field': field, 'transform': mapper}
         return data, mapping
