@@ -184,7 +184,7 @@ class CustomJSCallback(MessageCallback):
             comm_status.event_buffer = [];
         }}
 
-        function on_msg(msg){{
+        function on_msg(msg) {{
           // Receives acknowledgement from Python, processing event
           // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
@@ -290,10 +290,11 @@ class CustomJSCallback(MessageCallback):
         attributes back to python.
         """
         # Generate callback JS code to get all the requested data
+        plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce,
-                                                plot_id=self.plot.state._id)
+                                                plot_id=plot_id)
 
         attributes = self.attributes_js(self.attributes)
         conditions = ["%s" % cond for cond in self.skip]

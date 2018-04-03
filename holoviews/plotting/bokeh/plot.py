@@ -78,6 +78,9 @@ class BokehPlot(DimensionedPlot):
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
 
+    _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
+                     'poly_select', 'ypan', 'xpan']
+
     backend = 'bokeh'
 
     @property
@@ -224,6 +227,25 @@ class BokehPlot(DimensionedPlot):
         else:
             source.data.update(data)
 
+    def _update_callbacks(self, plot):
+        """
+        Iterates over all subplots and updates existing CustomJS
+        callbacks with models that were replaced when compositing
+        subplots into a CompositePlot and sets the plot id to match
+        the root level bokeh model.
+        """
+        subplots = self.traverse(lambda x: x, [GenericElementPlot])
+        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
+                        for t in self._merged_tools}
+        for subplot in subplots:
+            for cb in subplot.callbacks:
+                for c in cb.callbacks:
+                    for tool, objs in merged_tools.items():
+                        if tool in c.args and objs:
+                            c.args[tool] = objs[0]
+                    if self.top_level:
+                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
+
     @property
     def state(self):
         """
@@ -334,26 +356,6 @@ class CompositePlot(BokehPlot):
           {'title': '15pt'}""")
 
     _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
-
-    _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
-                     'poly_select', 'ypan', 'xpan']
-
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing subplots
-        into a CompositePlot
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-
 
     def _get_title(self, key):
         title_div = None
@@ -541,9 +543,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot = Column(title, plot)
             self.handles['title'] = title
 
-        self._update_callbacks(plot)
         self.handles['plot'] = plot
         self.handles['plots'] = plots
+
+        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
         self.drawn = True
@@ -591,6 +594,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_xaxis: models = models[::-1]
             plot = Column(*models, **kwargs)
         return plot
+
 
     @update_shared_sources
     def update_frame(self, key, ranges=None):
@@ -844,9 +848,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot, **kwargs)
 
-        self._update_callbacks(layout_plot)
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
+
+        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
