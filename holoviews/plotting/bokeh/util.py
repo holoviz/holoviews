@@ -1,4 +1,4 @@
-import inspect, re, time, sys
+import re, time, sys
 from distutils.version import LooseVersion
 from collections import defaultdict
 import datetime as dt
@@ -31,7 +31,8 @@ except:
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
-from ...core.util import basestring, unique_array, callable_name, pd, dt64_to_dt
+from ...core.util import (basestring, unique_array, callable_name, pd,
+                          dt64_to_dt, _getargspec)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 
 from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES
@@ -379,7 +380,7 @@ def py2js_tickformatter(formatter, msg=''):
         param.main.warning(msg+error)
         return
 
-    args = inspect.getargspec(formatter).args
+    args = _getargspec(formatter).args
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])

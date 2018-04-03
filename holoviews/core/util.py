@@ -28,6 +28,15 @@ try:
 except:
    import builtins as builtins   # noqa (compatibility)
 
+try:
+    # Python 3
+    _getargspec = inspect.getfullargspec
+    get_keywords = operator.attrgetter('varkw')
+except AttributeError:
+    # Python 2
+    _getargspec = inspect.getargspec
+    get_keywords = operator.attrgetter('keywords')
+
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 
@@ -235,24 +244,25 @@ def argspec(callable_obj):
     if (isinstance(callable_obj, type)
         and issubclass(callable_obj, param.ParameterizedFunction)):
         # Parameterized function.__call__ considered function in py3 but not py2
-        spec = inspect.getargspec(callable_obj.__call__)
-        args=spec.args[1:]
+        spec = _getargspec(callable_obj.__call__)
+        args = spec.args[1:]
     elif inspect.isfunction(callable_obj):    # functions and staticmethods
-        return inspect.getargspec(callable_obj)
+        spec = _getargspec(callable_obj)
+        args = spec.args
     elif isinstance(callable_obj, partial): # partials
         arglen = len(callable_obj.args)
-        spec =  inspect.getargspec(callable_obj.func)
+        spec =  _getargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
     elif inspect.ismethod(callable_obj):    # instance and class methods
-        spec = inspect.getargspec(callable_obj)
+        spec = _getargspec(callable_obj)
         args = spec.args[1:]
     else:                                   # callable objects
         return argspec(callable_obj.__call__)
 
-    return inspect.ArgSpec(args     = args,
-                           varargs  = spec.varargs,
-                           keywords = spec.keywords,
-                           defaults = spec.defaults)
+    return inspect.ArgSpec(args=args,
+                           varargs=spec.varargs,
+                           keywords=get_keywords(spec),
+                           defaults=spec.defaults)
 
 
 
