@@ -564,7 +564,7 @@ class layout_chords(Operation):
         tgt_idx = search_indices(tgt, nodes)
         if element.vdims:
             values = element.dimension_values(2)
-            if values.dtype.kind not in 'if':
+            if values.dtype.kind not in 'uif':
                 values = np.ones(len(element), dtype='int')
             else:
                 if values.dtype.kind == 'f':

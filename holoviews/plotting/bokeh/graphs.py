@@ -99,14 +99,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         cvals = element.dimension_values(cdim)
         if idx in self._node_columns:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'if':
+        elif idx == 2 and cvals.dtype.kind in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
 
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
-        if factors is None or (factors.dtype.kind in 'if' and idx not in self._node_columns):
+        if factors is None or (factors.dtype.kind in 'uif' and idx not in self._node_columns):
             colors, factors = None, None
         else:
             if factors.dtype.kind == 'f':
@@ -155,7 +155,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         nodes = element.nodes.dimension_values(2)
         node_positions = element.nodes.array([0, 1])
         # Map node indices to integers
-        if nodes.dtype.kind not in 'if':
+        if nodes.dtype.kind not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {str(node_indices[k]): (y, x) if self.invert_axes else (x, y)
@@ -352,7 +352,7 @@ class ChordPlot(GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'if':
+            if values.dtype.kind in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})
