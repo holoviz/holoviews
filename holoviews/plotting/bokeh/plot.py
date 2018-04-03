@@ -341,8 +341,9 @@ class CompositePlot(BokehPlot):
     def _update_callbacks(self, plot):
         """
         Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing subplots
-        into a CompositePlot
+        callbacks with models that were replaced when compositing
+        subplots into a CompositePlot and sets the plot id to match
+        the root level bokeh model.
         """
         subplots = self.traverse(lambda x: x, [GenericElementPlot])
         merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
@@ -353,6 +354,8 @@ class CompositePlot(BokehPlot):
                     for tool, objs in merged_tools.items():
                         if tool in c.args and objs:
                             c.args[tool] = objs[0]
+                    if self.top_level:
+                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
 
 
     def _get_title(self, key):
@@ -541,9 +544,10 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             plot = Column(title, plot)
             self.handles['title'] = title
 
-        self._update_callbacks(plot)
         self.handles['plot'] = plot
         self.handles['plots'] = plots
+
+        self._update_callbacks(plot)
         if self.shared_datasource:
             self.sync_sources()
         self.drawn = True
@@ -591,6 +595,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             if self.shared_xaxis: models = models[::-1]
             plot = Column(*models, **kwargs)
         return plot
+
 
     @update_shared_sources
     def update_frame(self, key, ranges=None):
@@ -844,9 +849,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             self.handles['title'] = title
             layout_plot = Column(title, layout_plot, **kwargs)
 
-        self._update_callbacks(layout_plot)
         self.handles['plot'] = layout_plot
         self.handles['plots'] = plots
+
+        self._update_callbacks(layout_plot)
         if self.shared_datasource:
             self.sync_sources()
 
