@@ -599,9 +599,7 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop(prefix+'clims', None)
         values = np.asarray(element.dimension_values(vdim))
         if clim is None:
-            if not isinstance(values, np.ndarray):
-                values = np.array(values)
-            if len(values) and values.dtype.kind in 'if':
+            if len(values) and values.dtype.kind in 'uif':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True

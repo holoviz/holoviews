@@ -790,7 +790,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'if':
+            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
                 cd = categorize_array(cd, cdim)
             if k not in data or len(data[k]) != [len(data[key]) for key in data if key != k][0]:
                 data[k].append(cd)
@@ -854,10 +854,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         cdim = color_dim or group_dim
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if cvals.dtype.kind in 'if' and no_cidx:
+            if cvals.dtype.kind in 'uif' and no_cidx:
                 cvals = categorize_array(cvals, color_dim)
 
-            factors = None if cvals.dtype.kind in 'if' else list(cvals)
+            factors = None if cvals.dtype.kind in 'uif' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:

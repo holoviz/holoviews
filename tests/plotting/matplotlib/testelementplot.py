@@ -20,6 +20,12 @@ class TestElementPlot(TestMPLPlot):
 
 class TestColorbarPlot(TestMPLPlot):
 
+    def test_colormapper_unsigned_int(self):
+        img = Image(np.array([[1, 1, 1, 2], [2, 2, 3, 4]]).astype('uint16'))
+        plot = mpl_renderer.get_plot(img)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_clim(), (1, 4))
+
     def test_colormapper_symmetric(self):
         img = Image(np.array([[0, 1], [2, 3]])).options(symmetric=True)
         plot = mpl_renderer.get_plot(img)

@@ -91,7 +91,7 @@ class ContourPlot(PathPlot):
             array = np.full(len(paths), element.level)
         else:
             array = element.dimension_values(cdim, expanded=False)
-        if array.dtype.kind not in 'if':
+        if array.dtype.kind not in 'uif':
             array = np.searchsorted(np.unique(array), array)
         style['array']= array
         self._norm_kwargs(element, ranges, style, cdim)

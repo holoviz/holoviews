@@ -515,7 +515,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind in 'if':
+            if cs.dtype.kind in 'uif':
                 style['c'] = cs
             else:
                 categories = np.unique(cs)
