@@ -119,7 +119,6 @@ class LabelsPlot(ColorbarPlot):
         if cdim:
             self._norm_kwargs(element, ranges, style, cdim)
         cs = element.dimension_values(cdim) if cdim else None
-        style = {k: v for k, v in style.items() if k not in ['vmin', 'vmax']}
         if 'size' in style: style['fontsize'] = style.pop('size')
         if 'horizontalalignment' not in style: style['horizontalalignment'] = 'center'
         if 'verticalalignment' not in style: style['verticalalignment'] = 'center'
@@ -129,6 +128,7 @@ class LabelsPlot(ColorbarPlot):
         if plot_args[-1] is not None:
             cmap = plot_kwargs.pop('cmap', None)
             colors = list(np.unique(plot_args[-1]))
+            vmin, vmax = plot_kwargs.pop('vmin'), plot_kwargs.pop('vmax')
         else:
             cmap = None
             plot_args = plot_args[:-1]
@@ -139,7 +139,8 @@ class LabelsPlot(ColorbarPlot):
             if len(item) == 4 and cmap is not None:
                 color = item[3]
                 if plot_args[-1].dtype.kind in 'if':
-                    plot_kwargs['color'] = cmap()
+                    color = (color - vmin) / (vmax-vmin)
+                    plot_kwargs['color'] = cmap(color)
                 else:
                     color = colors.index(color) if color in colors else np.NaN
                     plot_kwargs['color'] = cmap(color)

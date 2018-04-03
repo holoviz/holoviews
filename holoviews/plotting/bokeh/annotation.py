@@ -98,9 +98,14 @@ class LabelsPlot(ColorbarPlot):
             data[xdim] = data[ydim] + self.yoffset
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
+
+        cdim = element.get_dimension(self.color_index)
+        if cdim is None:
+            return data, mapping, style
+
         cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
-        data.update(cdata)
-        mapping.update(cmapping)
+        data['text_color'] = cdata[dimension_sanitizer(cdim.name)]
+        mapping['text_color'] = cmapping['text_color']
         return data, mapping, style
 
 
