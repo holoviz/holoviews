@@ -78,6 +78,9 @@ class BokehPlot(DimensionedPlot):
         The toolbar location, must be one of 'above', 'below',
         'left', 'right', None.""")
 
+    _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
+                     'poly_select', 'ypan', 'xpan']
+
     backend = 'bokeh'
 
     @property
@@ -224,6 +227,25 @@ class BokehPlot(DimensionedPlot):
         else:
             source.data.update(data)
 
+    def _update_callbacks(self, plot):
+        """
+        Iterates over all subplots and updates existing CustomJS
+        callbacks with models that were replaced when compositing
+        subplots into a CompositePlot and sets the plot id to match
+        the root level bokeh model.
+        """
+        subplots = self.traverse(lambda x: x, [GenericElementPlot])
+        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
+                        for t in self._merged_tools}
+        for subplot in subplots:
+            for cb in subplot.callbacks:
+                for c in cb.callbacks:
+                    for tool, objs in merged_tools.items():
+                        if tool in c.args and objs:
+                            c.args[tool] = objs[0]
+                    if self.top_level:
+                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
+
     @property
     def state(self):
         """
@@ -334,29 +356,6 @@ class CompositePlot(BokehPlot):
           {'title': '15pt'}""")
 
     _title_template = "<span style='font-size: {fontsize}'><b>{title}</b></font>"
-
-    _merged_tools = ['pan', 'box_zoom', 'box_select', 'lasso_select',
-                     'poly_select', 'ypan', 'xpan']
-
-    def _update_callbacks(self, plot):
-        """
-        Iterates over all subplots and updates existing CustomJS
-        callbacks with models that were replaced when compositing
-        subplots into a CompositePlot and sets the plot id to match
-        the root level bokeh model.
-        """
-        subplots = self.traverse(lambda x: x, [GenericElementPlot])
-        merged_tools = {t: list(plot.select({'type': TOOLS[t]}))
-                        for t in self._merged_tools}
-        for subplot in subplots:
-            for cb in subplot.callbacks:
-                for c in cb.callbacks:
-                    for tool, objs in merged_tools.items():
-                        if tool in c.args and objs:
-                            c.args[tool] = objs[0]
-                    if self.top_level:
-                        c.code = c.code.replace('PLACEHOLDER_PLOT_ID', self.id)
-
 
     def _get_title(self, key):
         title_div = None
