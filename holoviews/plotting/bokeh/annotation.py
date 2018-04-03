@@ -95,7 +95,7 @@ class LabelsPlot(ColorbarPlot):
         if self.xoffset is not None:
             data[xdim] = data[xdim] + self.xoffset
         if self.yoffset is not None:
-            data[xdim] = data[ydim] + self.yoffset
+            data[ydim] = data[ydim] + self.yoffset
         data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
         self._categorize_data(data, (xdim, ydim), element.dimensions())
 
