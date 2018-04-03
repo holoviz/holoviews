@@ -23,7 +23,6 @@ class TestLabelsPlot(TestMPLPlot):
         labels = Labels([])
         plot = mpl_renderer.get_plot(labels)
         artist = plot.handles['artist']
-        expected = {'x': np.array([]), 'y': np.array([]), 'Label': []}
         self.assertEqual(artist, [])
 
     def test_labels_formatter(self):
