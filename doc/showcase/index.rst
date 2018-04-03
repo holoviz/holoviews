@@ -61,9 +61,9 @@ Third party libraries, simulators and toolkits that make use of
 HoloViews for easier visualization and analysis:
 
 * `ImaGen library <http://ioam.github.io/imagen>`_: Generate
-  HoloViews `Image <https://holoviews/reference/elements/bokeh/Image.html>`_
+  HoloViews `Image <https://holoviews.org/reference/elements/bokeh/Image.html>`_
   and 
-  `RGB <https://holoviews/reference/elements/bokeh/RGB.html>`_ 
+  `RGB <https://holoviews.org/reference/elements/bokeh/RGB.html>`_ 
   patterns from mathematical functions.
 
 * `Topology in Condensed Matter course <https://topocondmat.org/>`_:
