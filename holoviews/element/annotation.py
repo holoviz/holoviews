@@ -4,8 +4,7 @@ import param
 
 from ..core.util import datetime_types, basestring
 from ..core import Dimension, Element2D, Element
-
-from .chart import Points
+from ..core.data import Dataset
 
 
 class Annotation(Element2D):
@@ -271,12 +270,18 @@ class Div(Element):
 
 
 
-class Labels(Points):
+class Labels(Dataset, Element2D):
     """
     Labels represents a collection of text labels associated with 2D
-    coordinates. Unlike other Annotation types it is vectorized to
-    draw labels from a dataset.
+    coordinates. Unlike the Text annotation, Labels is a Dataset type
+    which allows drawing vectorized labels from tabular or gridded
+    data.
     """
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2), constant=True, doc="""
+        The label of the x- and y-dimension of the Labels element in form
+        of a string or dimension object.""")
 
     group = param.String(default='Labels', constant=True)
 
