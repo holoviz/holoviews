@@ -1309,6 +1309,18 @@ class GridTests(object):
         self.assertEqual(self.dataset_grid_inv.dimension_values(2, flat=False),
                          expanded_zs)
 
+    def test_dataset_groupby_with_transposed_dimensions(self):
+        dat = np.zeros((3,5,7))
+        dataset = Dataset((range(7), range(5), range(3), dat), ['z','x','y'], 'value')
+        grouped = dataset.groupby('z', kdims=['y', 'x'])
+        self.assertEqual(grouped.last.dimension_values(2, flat=False), dat[:, :, -1].T)
+
+    def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
+        dat = np.zeros((3,5,7))
+        dataset = Dataset((range(7), range(5), range(3), dat), ['z','x','y'], 'value')
+        grouped = dataset.groupby('z', kdims=['y', 'x'], dynamic=True)
+        self.assertEqual(grouped[2].dimension_values(2, flat=False), dat[:, :, -1].T)
+
 
 
 class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
@@ -1908,3 +1920,9 @@ class RasterDatasetTest(GridTests, ComparisonTestCase):
                               [ 0.06925999,  0.05800389,  0.05620127]])
         self.assertEqual(dataset.dimension_values('z', flat=False),
                          canonical)
+
+    def test_dataset_groupby_with_transposed_dimensions(self):
+        raise SkipTest('Image interface does not support multi-dimensional data.')
+
+    def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
+        raise SkipTest('Image interface does not support multi-dimensional data.')
