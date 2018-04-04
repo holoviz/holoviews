@@ -63,20 +63,14 @@ def get_setup_version(reponame):
         print("WARNING: autover unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should refer to autover's documentation to bundle autover or add it as a dependency.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
-
-PYPI_BLURB = """
-HoloViews is designed to make data analysis and visualization seamless and simple. With HoloViews, you can usually express what you want to do in very few lines of code, letting you focus on what you are trying to explore and convey, not on the process of plotting.
-
-Check out the `HoloViews web site <http://holoviews.org>`_ for extensive examples and documentation.
-"""
-
 setup_args.update(dict(
     name='holoviews',
     version=get_setup_version("holoviews"),
     install_requires=install_requires,
     extras_require=extras_require,
     description='Stop plotting your data - annotate your data and let it visualize itself.',
-    long_description=PYPI_BLURB,
+    long_description=open("README.md").read(),
+    long_description_content_type="text/markdown",
     author="Jean-Luc Stevens and Philipp Rudiger",
     author_email="holoviews@gmail.com",
     maintainer="IOAM",
