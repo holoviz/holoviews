@@ -29,6 +29,9 @@ class Chart(Dataset, Element2D):
         The value dimensions of the Chart, usually corresponding to a
         number of dependent variables.""")
 
+    # Enables adding index if 1D array like data is supplied
+    _auto_indexable_1d = True
+
     def __getitem__(self, index):
         sliced = super(Chart, self).__getitem__(index)
         if not isinstance(sliced, Chart):

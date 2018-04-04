@@ -425,7 +425,7 @@ class HeterogeneousColumnTypes(HomogeneousColumnTypes):
                          np.array(['M', 'F']))
 
     def test_dataset_implicit_indexing_init(self):
-        dataset = Dataset(self.ys, kdims=['x'], vdims=['y'])
+        dataset = Scatter(self.ys, kdims=['x'], vdims=['y'])
         self.assertTrue(isinstance(dataset.data, self.data_instance_type))
 
     def test_dataset_tuple_init(self):
@@ -887,20 +887,20 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         self.init_column_data()
 
     def test_dataset_series_construct(self):
-        ds = Dataset(pd.Series([1, 2, 3], name='A'))
-        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
+        ds = Scatter(pd.Series([1, 2, 3], name='A'))
+        self.assertEqual(ds, Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
 
     def test_dataset_df_construct_autoindex(self):
-        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'test', 'A')
-        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'test', 'A'))
+        ds = Scatter(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'test', 'A')
+        self.assertEqual(ds, Scatter(([0, 1, 2], [1, 2, 3]), 'test', 'A'))
 
     def test_dataset_df_construct_not_autoindex(self):
-        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'index', 'A')
-        self.assertEqual(ds, Dataset(([1, 2, 3], [1, 2, 3]), 'index', 'A'))
+        ds = Scatter(pd.DataFrame([1, 2, 3], columns=['A'], index=[1, 2, 3]), 'index', 'A')
+        self.assertEqual(ds, Scatter(([1, 2, 3], [1, 2, 3]), 'index', 'A'))
 
     def test_dataset_single_column_construct(self):
-        ds = Dataset(pd.DataFrame([1, 2, 3], columns=['A']))
-        self.assertEqual(ds, Dataset(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
+        ds = Scatter(pd.DataFrame([1, 2, 3], columns=['A']))
+        self.assertEqual(ds, Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'A'))
 
     def test_dataset_df_duplicate_columns_raises(self):
         df = pd.DataFrame(np.random.randint(-100,100, size=(100, 2)), columns=list("AB"))
