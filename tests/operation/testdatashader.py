@@ -234,7 +234,34 @@ class DatashaderRasterizeTests(ComparisonTestCase):
         if ds_version is None or ds_version <= '0.6.4':
             raise SkipTest('Regridding operations require datashader>=0.7.0')
 
+    def test_rasterize_trimesh_no_vdims(self):
+        simplices = [(0, 1, 2), (3, 2, 1)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices))
+        img = rasterize(trimesh, width=3, height=3, dynamic=False)
+        image = Image(np.array([[2, 1, 2], [1, 2, 1], [2, 1, 2]]),
+                      bounds=(0, 0, 1, 1), vdims='Count')
+        self.assertEqual(img, image)
+
     def test_rasterize_trimesh(self):
+        simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
+        vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
+        trimesh = TriMesh((simplices, vertices), vdims=['z'])
+        img = rasterize(trimesh, width=3, height=3, dynamic=False)
+        image = Image(np.array([[1.5, 1.5, np.NaN], [0.5, 1.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(0, 0, 1, 1))
+        self.assertEqual(img, image)
+
+    def test_rasterize_trimesh_vertex_vdims(self):
+        simplices = [(0, 1, 2), (3, 2, 1)]
+        vertices = [(0., 0., 1), (0., 1., 2), (1., 0., 3), (1., 1., 4)]
+        trimesh = TriMesh((simplices, Points(vertices, vdims='z')))
+        img = rasterize(trimesh, width=3, height=3, dynamic=False)
+        image = Image(np.array([[2., 3., np.NaN], [1.5, 2.5, np.NaN], [np.NaN, np.NaN, np.NaN]]),
+                      bounds=(0, 0, 1, 1), vdims='z')
+        self.assertEqual(img, image)
+
+    def test_rasterize_trimesh_ds_aggregator(self):
         simplices = [(0, 1, 2, 0.5), (3, 2, 1, 1.5)]
         vertices = [(0., 0.), (0., 1.), (1., 0), (1, 1)]
         trimesh = TriMesh((simplices, vertices), vdims=['z'])
