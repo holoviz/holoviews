@@ -7,10 +7,12 @@ package:
 source:
   path: ..
 
-extra:
-  channels:
-    - conda-forge
-    
+build:
+  noarch: python
+  number: 0
+  script: python setup.py --quiet install --single-version-externally-managed --record record.txt
+
+
 requirements:
   build:
     - python
