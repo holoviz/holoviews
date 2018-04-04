@@ -527,6 +527,7 @@ class Dataset(Element):
             kdims = [self.get_dimension(d) for d in group_dims]
             group_kwargs = dict(util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
+            kdims = group_kwargs['kdims']
             drop_dim = len(kdims) != len(group_kwargs['kdims'])
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
@@ -534,7 +535,7 @@ class Dataset(Element):
                 if np.isscalar(group):
                     return group_type(([group],), group=self.group,
                                       label=self.label, vdims=self.vdims)
-                data = group.reindex(group_dims)
+                data = group.reindex(kdims)
                 if drop_dim and self.interface.gridded:
                     data = data.columns()
                 return group_type(data, **group_kwargs)

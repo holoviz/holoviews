@@ -346,6 +346,8 @@ class GridInterface(DictInterface):
 
         # Find all the keys along supplied dimensions
         keys = [cls.coords(dataset, d.name) for d in dimensions]
+        transpose = [dataset.ndims-dataset.kdims.index(kd) for kd in kdims]
+        transpose += [i for i in range(dataset.ndims) if i not in transpose]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -363,7 +365,8 @@ class GridInterface(DictInterface):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
                 for vdim in dataset.vdims:
-                    group_data[vdim.name] = np.squeeze(group_data[vdim.name])
+                    data = group_data[vdim.name].transpose(transpose)
+                    group_data[vdim.name] = np.squeeze(data)
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
 
