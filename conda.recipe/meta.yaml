@@ -7,10 +7,6 @@ package:
 source:
   path: ..
 
-extra:
-  channels:
-    - conda-forge
-
 build:
   noarch: python
   number: 0
