@@ -326,7 +326,11 @@ class GridInterface(DictInterface):
     def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
         # Get dimensions information
         dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
-        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+        if 'kdims' in kwargs:
+            kdims = kwargs['kdims']
+        else:
+            kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+            kwargs['kdims'] = kdims
 
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
@@ -339,14 +343,15 @@ class GridInterface(DictInterface):
         group_type = dict if group_type == 'raw' else group_type
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
-            group_kwargs['kdims'] = kdims
+        else:
+            kwargs.pop('kdims')
         group_kwargs.update(kwargs)
 
         drop_dim = any(d not in group_kwargs['kdims'] for d in kdims)
 
         # Find all the keys along supplied dimensions
         keys = [cls.coords(dataset, d.name) for d in dimensions]
-        transpose = [dataset.ndims-dataset.kdims.index(kd) for kd in kdims]
+        transpose = [dataset.ndims-dataset.kdims.index(kd)-1 for kd in kdims]
         transpose += [i for i in range(dataset.ndims) if i not in transpose]
 
         # Iterate over the unique entries applying selection masks
@@ -365,7 +370,8 @@ class GridInterface(DictInterface):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
                 for vdim in dataset.vdims:
-                    data = group_data[vdim.name].transpose(transpose)
+                    data = group_data[vdim.name]
+                    data = data.transpose(transpose[::-1])
                     group_data[vdim.name] = np.squeeze(data)
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
