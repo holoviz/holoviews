@@ -523,12 +523,11 @@ class Dataset(Element):
         dim_names = [d.name for d in dimensions]
 
         if dynamic:
-            group_dims = [d.name for d in self.kdims if d not in dimensions]
-            kdims = [self.get_dimension(d) for d in group_dims]
+            group_dims = [kd for kd in self.kdims if kd not in dimensions]
+            kdims = [self.get_dimension(d) for d in kwargs.pop('kdims', group_dims)]
+            drop_dim = len(group_dims) != len(kdims)
             group_kwargs = dict(util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
-            kdims = group_kwargs['kdims']
-            drop_dim = len(kdims) != len(group_kwargs['kdims'])
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
                 group = self.select(**constraint)
