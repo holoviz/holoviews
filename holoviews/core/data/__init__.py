@@ -173,7 +173,7 @@ class Dataset(Element):
 
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
-    _auto_indexable_1d = True
+    _auto_indexable_1d = False
 
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
