@@ -227,6 +227,8 @@ class AggregationOperation(ResamplingOperation):
             inner_element = elements[0]
             if inner_element.vdims:
                 field = inner_element.vdims[0].name
+            elif isinstance(inner_element, TriMesh) and inner_element.nodes.kdims:
+                field = inner_element.nodes.vdims[0].name
             elif isinstance(element, NdOverlay):
                 field = element.kdims[0].name
             else:
@@ -631,7 +633,13 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
+        agg = self.p.aggregator
         if not (element.vdims or element.nodes.vdims):
+            if not isinstance(agg, (rd.count, rd.any)) and agg.column is not None:
+                raise ValueError("Aggregation column %s not found on TriMesh element. "
+                                 "The supplied TriMesh does not define any value "
+                                 "dimensions.")
+            self.p.aggregator = ds.count() if not isinstance(agg, ds.any) else agg
             return aggregate._process(self, element, key)
         elif element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
