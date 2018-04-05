@@ -140,7 +140,8 @@ class notebook_extension(extension):
                    'between %r' % p.display_formats)
             display(HTML('<b>Warning</b>: %s' % msg))
 
-        if notebook_extension._loaded == False:
+        loaded = notebook_extension._loaded
+        if loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             Store.output_settings.initialize(list(Store.renderers.keys()))
@@ -161,8 +162,9 @@ class notebook_extension(extension):
         Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
-        if hasattr(ip, 'kernel'):
-            Renderer.comm_manager.get_client_comm(self._process_comm_msg,
+
+        if hasattr(ip, 'kernel') and not loaded:
+            Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
                                                   "hv-extension-comm")
 
         # Create a message for the logo (if shown)
