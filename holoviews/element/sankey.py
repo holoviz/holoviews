@@ -1,6 +1,5 @@
 from functools import cmp_to_key
 from itertools import cycle
-from collections import defaultdict
 
 import param
 import numpy as np
@@ -8,7 +7,7 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, basestring, max_range, unique_array
+from ..core.util import OrderedDict, unique_array
 from .graphs import Graph, redim_graph
 from .util import quadratic_bezier
 
@@ -245,7 +244,6 @@ class layout_sankey(Operation):
         def resolveCollisions():
             for nodes in node_map.values():
                 y = y0
-                n = len(nodes)
                 nodes.sort(key=cmp_to_key(self.ascendingBreadth))
                 for node in nodes:
                     dy = y-node['y0']

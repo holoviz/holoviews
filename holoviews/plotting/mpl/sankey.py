@@ -1,9 +1,8 @@
 import param
-import numpy as np
 
 from ...core.util import basestring, max_range
 from .graphs import GraphPlot
-from matplotlib.patches import Rectangle, FancyBboxPatch
+from matplotlib.patches import Rectangle
 from matplotlib.collections import PatchCollection
 
 
@@ -46,7 +45,7 @@ class SankeyPlot(GraphPlot):
     
     def get_data(self, element, ranges, style):
         data, style, axis_kwargs = super(SankeyPlot, self).get_data(element, ranges, style)
-        rects, labels, value_labels = [], [], []
+        rects, labels = [], []
         label_dim = element.nodes.get_dimension(self.label_index)
         value_dim = element.vdims[0]
         values = [] if label_dim is None else element.nodes.dimension_values(label_dim)
