@@ -7,7 +7,7 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, unique_array
+from ..core.util import OrderedDict, unique_array, RecursionError
 from .graphs import Graph, redim_graph
 from .util import quadratic_bezier
 
