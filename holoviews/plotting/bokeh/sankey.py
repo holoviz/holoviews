@@ -43,6 +43,26 @@ class SankeyPlot(GraphPlot):
 
     def get_data(self, element, ranges, style):
         data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
+        self._compute_quads(element, data, mapping)
+        style['nodes_line_color'] = 'black'
+
+        lidx = element.nodes.get_dimension(self.label_index)
+        if lidx is None:
+            if self.label_index is not None:
+                dims = element.nodes.dimensions()[2:]
+                self.warning("label_index supplied to Sankey not found, "
+                             "expected one of %s, got %s." %
+                             (dims, self.label_index))
+            return data, mapping, style
+
+        self._compute_labels(element, data, mapping)
+        self._patch_hover(element, data)
+        return data, mapping, style
+
+    def _compute_quads(self, element, data, mapping):
+        """
+        Computes the node quad glyph data.x
+        """
         quad_mapping = {'left': 'x0', 'right': 'x1', 'bottom': 'y0', 'top': 'y1'}
         quad_data = dict(data['scatter_1'])
         quad_data.update({'x0': [], 'x1': [], 'y0': [], 'y1': []})
@@ -55,16 +75,12 @@ class SankeyPlot(GraphPlot):
         if 'node_fill_color' in mapping['scatter_1']:
             quad_mapping['fill_color'] = mapping['scatter_1']['node_fill_color']
         mapping['quad_1'] = quad_mapping
-        style['nodes_line_color'] = 'black'
 
+    def _compute_labels(self, element, data, mapping):
+        """
+        Computes labels for the nodes and adds it to the data.
+        """
         lidx = element.nodes.get_dimension(self.label_index)
-        if lidx is None:
-            if self.label_index is not None:
-                dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Sankey not found, "
-                             "expected one of %s, got %s." %
-                             (dims, self.label_index))
-            return data, mapping, style
         if element.vdims:
             edges = Dataset(element)[element[element.vdims[0].name]>0]
             nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
@@ -94,9 +110,6 @@ class SankeyPlot(GraphPlot):
         data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in labels])
         align = 'left' if self.label_position == 'right' else 'right'
         mapping['text_1'] = dict(text='text', x='x', y='y', text_baseline='middle', text_align=align)
-
-        self._patch_hover(element, data)
-        return data, mapping, style
 
     def _patch_hover(self, element, data):
         """
