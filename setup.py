@@ -40,13 +40,17 @@ def embed_version(basepath, ref='v0.2.2'):
     import io, zipfile
     try:    from urllib.request import urlopen
     except: from urllib import urlopen
-    response = urlopen('https://github.com/ioam/autover/archive/{ref}.zip'.format(ref=ref))
-    zf = zipfile.ZipFile(io.BytesIO(response.read()))
-    ref = ref[1:] if ref.startswith('v') else ref
-    embed_version = zf.read('autover-{ref}/autover/version.py'.format(ref=ref))
-    with open(os.path.join(basepath, 'version.py'), 'wb') as f:
-        f.write(embed_version)
-
+    try:
+        url = 'https://github.com/ioam/autover/archive/{ref}.zip'
+        response = urlopen(url.format(ref=ref))
+        zf = zipfile.ZipFile(io.BytesIO(response.read()))
+        ref = ref[1:] if ref.startswith('v') else ref
+        embed_version = zf.read('autover-{ref}/autover/version.py'.format(ref=ref))
+        with open(os.path.join(basepath, 'version.py'), 'wb') as f:
+            f.write(embed_version)
+        return importlib.import_module("version")
+    except:
+        return None
 
 def get_setup_version(reponame):
     """
@@ -59,8 +63,7 @@ def get_setup_version(reponame):
     try:
         from param import version
     except:
-        embed_version(basepath)
-        version = importlib.import_module("version")
+        version = embed_version(basepath)
     if version is not None:
         return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
     else:
