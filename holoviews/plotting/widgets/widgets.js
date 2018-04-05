@@ -522,8 +522,6 @@ function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_di
 
 if (window.HoloViews === undefined) {
   window.HoloViews = {}
-} else {
-  delete HoloViews.comms["hv-extension-comm"]
 }
 
 var _namespace = {
@@ -532,6 +530,7 @@ var _namespace = {
   comms: {},
   comm_status: {},
   index: {},
+  plot_index: {},
   kernels: {},
   receivers: {}
 }
@@ -567,27 +566,33 @@ function handle_add_output(event, handle) {
   }
   var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
   if (output.metadata[EXEC_MIME_TYPE]["id"] !== undefined) {
+    var id = output.metadata[EXEC_MIME_TYPE]["id"];
     toinsert[0].firstChild.textContent = output.data[JS_MIME_TYPE];
-    output_area._hv_plot_id = output.metadata[EXEC_MIME_TYPE]["id"];
+    output_area._hv_plot_id = id;
+    HoloViews.plot_index[id] = output_area;
   }
 }
 
 /**
  * Handle when an output is cleared or removed
  */
-
-
 function handle_clear_output(event, handle) {
   var id = handle.cell.output_area._hv_plot_id;
-  if (id === undefined) { return; }
+  if ((id === undefined) || !(id in HoloViews.plot_index)) { return; }
   var comm = window.HoloViews.comm_manager.get_client_comm("hv-extension-comm", "hv-extension-comm", function () {});
   if (comm !== null) {
     comm.send({event_type: 'delete', 'id': id});
   }
+  delete HoloViews.plot_index[id];
   if ((window.Bokeh !== undefined) & (id in window.Bokeh.index)) {
     window.Bokeh.index[id].model.document.clear();
     delete Bokeh.index[id];
   }
+}
+
+function handle_kernel_cleanup(event, handle) {
+  delete HoloViews.comms["hv-extension-comm"];
+  window.HoloViews.plot_index = {}
 }
 
 function register_renderer(events, OutputArea) {
@@ -609,6 +614,7 @@ function register_renderer(events, OutputArea) {
   events.on('output_added.OutputArea', handle_add_output);
   events.on('clear_output.CodeCell', handle_clear_output);
   events.on('delete.Cell', handle_clear_output);
+  events.on('kernel_ready.Kernel', handle_kernel_cleanup);
 
   OutputArea.prototype.register_mime_type(EXEC_MIME_TYPE, append_mime, {
     safe: true,
