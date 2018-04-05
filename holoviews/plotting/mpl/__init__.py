@@ -296,8 +296,7 @@ options.Nodes = Options('style', edgecolors='black', facecolors=Cycle(),
 options.EdgePaths = Options('style', color='black')
 options.Sankey = Options('plot', xaxis=None, yaxis=None, fig_size=400,
                          aspect=1.6, show_frame=False)
-options.Sankey = Options('style', node_color=Cycle('tab20' if mpl_ge_200 else 'Vega20'),
-                         edge_color='grey', node_edgecolors='black',
+options.Sankey = Options('style', edge_color='grey', node_edgecolors='black',
                          edge_alpha=0.6, node_size=6)
 
 # Statistics

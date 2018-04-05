@@ -59,6 +59,8 @@ class SankeyPlot(GraphPlot):
                 if self.show_values:
                     value = value_dim.pprint_value(node['value'])
                     label = '%s - %s' % (label, value)
+                    if value_dim.unit:
+                        label += ' %s' % value_dim.unit
                 x = x1+(x1-x0)/3. if self.label_position == 'right' else x0-(x1-x0)/3.
                 labels.append((label, (x, (y0+y1)/2.)))
         data['rects'] = rects

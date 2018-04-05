@@ -317,7 +317,10 @@ class Sankey(Graph):
                 values = unique_array(np.concatenate([src, tgt]))
                 nodes = Dataset(values, 'index')
             elif not isinstance(nodes, Dataset):
-                nodes = Dataset(nodes)
+                try:
+                    nodes = Dataset(nodes)
+                except:
+                    nodes = Dataset(nodes, 'index')
             if not nodes.kdims:
                 raise ValueError('Could not determine index in supplied node data. '
                                  'Ensure data has at least one key dimension, '

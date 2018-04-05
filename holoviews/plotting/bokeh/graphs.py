@@ -40,7 +40,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge', 'bezier': 'edge'}
 
-    style_opts = (['edge_'+p for p in line_properties] +
+    style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
                   ['node_size', 'cmap', 'edge_cmap'])
 

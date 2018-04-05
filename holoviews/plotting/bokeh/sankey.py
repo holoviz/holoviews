@@ -1,17 +1,19 @@
 import param
 import numpy as np
 
+from bokeh.models import Patches, HoverTool
+
 from ...core.data import Dataset
-from ...core.util import basestring, max_range
+from ...core.util import basestring, max_range, dimension_sanitizer
 from .graphs import GraphPlot
-from bokeh.models import Patches
+
 
 
 class SankeyPlot(GraphPlot):
 
     color_index = param.ClassSelector(default=2, class_=(basestring, int),
                                       allow_None=True, doc="""
-        Index of the dimension from which the node labels will be drawn""")
+        Index of the dimension from which the node colors will be drawn""")
 
     label_index = param.ClassSelector(default=2, class_=(basestring, int),
                                       allow_None=True, doc="""
@@ -26,7 +28,7 @@ class SankeyPlot(GraphPlot):
     
     _style_groups = dict(GraphPlot._style_groups, quad='nodes', text='label')
 
-    _draw_order = ['patches', 'multi_line', 'text', 'quad']
+    _draw_order = ['patches', 'multi_line', 'quad', 'text']
 
     style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
                                          'label_text_font_size']
@@ -77,6 +79,8 @@ class SankeyPlot(GraphPlot):
             for i, node in enumerate(element._sankey['nodes']):
                 value = value_dim.pprint_value(node['value'])
                 label = '%s - %s' % (labels[i], value)
+                if value_dim.unit:
+                    label += ' %s' % value_dim.unit
                 value_labels.append(label)
             labels = value_labels
                 
@@ -90,6 +94,17 @@ class SankeyPlot(GraphPlot):
         data['text_1'] = dict(x=xs, y=ys, text=[str(l) for l in labels])
         align = 'left' if self.label_position == 'right' else 'right'
         mapping['text_1'] = dict(text='text', x='x', y='y', text_baseline='middle', text_align=align)
+
+        # Replace hover data with label_index data
+        if self.inspection_policy == 'edges' and any(isinstance(t, HoverTool) for t in self.state.tools):
+            src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
+            if src == 'start': src += '_values'
+            if tgt == 'end':   tgt += '_values'
+            lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))
+            src_vals = data['patches_1'][src]
+            tgt_vals = data['patches_1'][tgt]
+            data['patches_1'][src] = [lookup.get(v, v) for v in src_vals]
+            data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
         return data, mapping, style
 
     def get_extents(self, element, ranges):
