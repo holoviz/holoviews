@@ -1,3 +1,5 @@
+from __future__ import division
+
 from functools import cmp_to_key
 from itertools import cycle
 
