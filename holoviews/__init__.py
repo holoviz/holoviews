@@ -6,14 +6,8 @@ import numpy as np # noqa (API import)
 import param
 
 
-try:
-    from version import Version
-    __version__ = str(Version(fpath=__file__, archive_commit="$Format:%h$",
-                              reponame="holoviews"))
-except:
-    import json
-    __version__ = json.load(open(os.path.join(os.path.split(__file__)[0],
-                                              '.version'), 'r'))['version_string']
+__version__ = str(param.version.Version(fpath=__file__, archive_commit="$Format:%h$",
+                                        reponame="holoviews"))
 
 from .core import archive, config                        # noqa (API import)
 from .core.dimension import OrderedDict, Dimension       # noqa (API import)

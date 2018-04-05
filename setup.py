@@ -10,7 +10,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.5.1,<2.0', 'numpy>=1.0']
+install_requires = ['param>=1.6.0,<2.0', 'numpy>=1.0']
 extras_require = {}
 
 # Notebook dependencies of IPython 3
@@ -28,7 +28,7 @@ extras_require['all'] = (extras_require['recommended']
 
 
 
-def embed_version(basepath, ref='v0.2.1'):
+def embed_version(basepath, ref='v0.2.2'):
     """
     Autover is purely a build time dependency in all cases (conda and
     pip) except for when you use pip's remote git support [git+url] as
@@ -56,11 +56,15 @@ def get_setup_version(reponame):
     import json, importlib
     basepath = os.path.split(__file__)[0]
     version_file_path = os.path.join(basepath, reponame, '.version')
-    version = importlib.import_module("version")
+    try:
+        from param import version
+    except:
+        embed_version(basepath)
+        version = importlib.import_module("version")
     if version is not None:
         return version.Version.setup_version(basepath, reponame, archive_commit="$Format:%h$")
     else:
-        print("WARNING: autover unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should refer to autover's documentation to bundle autover or add it as a dependency.")
+        print("WARNING: param>=1.6.0 unavailable. If you are installing a package, this warning can safely be ignored. If you are creating a package or otherwise operating in a git repository, you should install param>=1.6.0.")
         return json.load(open(version_file_path, 'r'))['version_string']
 
 setup_args.update(dict(
