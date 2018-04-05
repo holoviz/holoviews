@@ -25,7 +25,7 @@ class SankeyPlot(GraphPlot):
 
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
-    
+
     _style_groups = dict(GraphPlot._style_groups, quad='nodes', text='label')
 
     _draw_order = ['patches', 'multi_line', 'quad', 'text']
@@ -44,7 +44,7 @@ class SankeyPlot(GraphPlot):
     def get_data(self, element, ranges, style):
         data, mapping, style = super(SankeyPlot, self).get_data(element, ranges, style)
         quad_mapping = {'left': 'x0', 'right': 'x1', 'bottom': 'y0', 'top': 'y1'}
-        quad_data = data['scatter_1']
+        quad_data = dict(data['scatter_1'])
         quad_data.update({'x0': [], 'x1': [], 'y0': [], 'y1': []})
         for node in element._sankey['nodes']:
             quad_data['x0'].append(node['x0'])
@@ -61,7 +61,7 @@ class SankeyPlot(GraphPlot):
         if lidx is None:
             if self.label_index is not None:
                 dims = element.nodes.dimensions()[2:]
-                self.warning("label_index supplied to Chord not found, "
+                self.warning("label_index supplied to Sankey not found, "
                              "expected one of %s, got %s." %
                              (dims, self.label_index))
             return data, mapping, style
@@ -83,7 +83,7 @@ class SankeyPlot(GraphPlot):
                     label += ' %s' % value_dim.unit
                 value_labels.append(label)
             labels = value_labels
-                
+
         ys = nodes.dimension_values(1)
         nodes = element._sankey['nodes']
         offset = (nodes[0]['x1']-nodes[0]['x0'])/4.
@@ -95,17 +95,24 @@ class SankeyPlot(GraphPlot):
         align = 'left' if self.label_position == 'right' else 'right'
         mapping['text_1'] = dict(text='text', x='x', y='y', text_baseline='middle', text_align=align)
 
-        # Replace hover data with label_index data
-        if self.inspection_policy == 'edges' and any(isinstance(t, HoverTool) for t in self.state.tools):
-            src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
-            if src == 'start': src += '_values'
-            if tgt == 'end':   tgt += '_values'
-            lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))
-            src_vals = data['patches_1'][src]
-            tgt_vals = data['patches_1'][tgt]
-            data['patches_1'][src] = [lookup.get(v, v) for v in src_vals]
-            data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
+        self._patch_hover(element, data)
         return data, mapping, style
+
+    def _patch_hover(self, element, data):
+        """
+        Replace edge start and end hover data with label_index data.
+        """
+        if not (self.inspection_policy == 'edges' and any(isinstance(t, HoverTool) for t in self.state.tools)):
+            return
+        lidx = element.nodes.get_dimension(self.label_index)
+        src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]
+        if src == 'start': src += '_values'
+        if tgt == 'end':   tgt += '_values'
+        lookup = dict(zip(*(element.nodes.dimension_values(d) for d in (2, lidx))))
+        src_vals = data['patches_1'][src]
+        tgt_vals = data['patches_1'][tgt]
+        data['patches_1'][src] = [lookup.get(v, v) for v in src_vals]
+        data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
     def get_extents(self, element, ranges):
         """
