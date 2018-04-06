@@ -60,13 +60,33 @@ class SankeyPlot(GraphPlot):
                     label = '%s - %s' % (label, value)
                     if value_dim.unit:
                         label += ' %s' % value_dim.unit
-                x = x1+(x1-x0)/3. if self.label_position == 'right' else x0-(x1-x0)/3.
+                x = x1+(x1-x0)/4. if self.label_position == 'right' else x0-(x1-x0)/4.
                 labels.append((label, (x, (y0+y1)/2.)))
         data['rects'] = rects
         if labels:
             data['text'] = labels
         return data, style, axis_kwargs
-    
+
+    def _update_labels(self, ax, data, style):
+        labels = self.handles.get('labels', [])
+        for label in labels:
+            try:
+                label.remove()
+            except:
+                pass
+        if 'text' not in data:
+            return []
+
+        fontsize = style.get('text_font_size', 8)
+        align = 'left' if self.label_position == 'right' else 'right'
+        labels = []
+        for text in data['text']:
+            label = ax.annotate(*text, xycoords='data',
+                                horizontalalignment=align, fontsize=fontsize,
+                                verticalalignment='center', rotation_mode='anchor')
+            labels.append(label)
+        return labels
+
     def init_artists(self, ax, plot_args, plot_kwargs):
         artists = super(SankeyPlot, self).init_artists(ax, plot_args, plot_kwargs)
         groups = [g for g in self._style_groups if g != 'node']
@@ -75,14 +95,17 @@ class SankeyPlot(GraphPlot):
                      if not (any(k.startswith(p) for p in groups) or 'size' in k)}
         rects = [Rectangle(**rect) for rect in plot_args['rects']]
         artists['rects'] = ax.add_collection(PatchCollection(rects, **node_opts))
-        if 'text' in plot_args:
-            fontsize = plot_kwargs.get('text_font_size', 8)
-            align = 'left' if self.label_position == 'right' else 'right'
-            labels = []
-            for text in plot_args['text']:
-                label = ax.annotate(*text, xycoords='data',
-                                    horizontalalignment=align, fontsize=fontsize,
-                                    verticalalignment='center', rotation_mode='anchor')
-            labels.append(label)
-            artists['labels'] = labels
+        artists['labels'] = self._update_labels(ax, plot_args, plot_kwargs)
         return artists
+
+    def update_handles(self, key, axis, element, ranges, style):
+        data, style, axis_kwargs = self.get_data(element, ranges, style)
+        self._update_nodes(element, data, style)
+        self._update_edges(element, data, style)
+        self.handles['labels'] = self._update_labels(axis, data, style)
+        rects = self.handles['rects']
+        paths = [Rectangle(**r) for r in data['rects']]
+        rects.set_paths(paths)
+        if 'node_facecolors' in style:
+            rects.set_facecolors(style['node_facecolors'])
+        return axis_kwargs
