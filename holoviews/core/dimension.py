@@ -6,6 +6,7 @@ baseclass for classes that accept Dimension values.
 from __future__ import unicode_literals
 import re
 import datetime as dt
+import inspect
 from operator import itemgetter
 
 import numpy as np
@@ -1216,6 +1217,33 @@ class Dimensioned(LabelledData):
         from ..util import opts
         expanded = opts.expand_options(options, backend)
         return self.opts(expanded, backend, clone)
+
+
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        """
+        Resolves the class hierarchy for the class rendering the
+        object using any display hooks registered on Store.display
+        hooks.  The output of all registered display_hooks is then
+        combined and returned.
+        """
+        class_hierarchy = inspect.getmro(type(self))
+        hooks = []
+        for cls in class_hierarchy:
+            if cls in Store.display_hooks:
+                hooks += Store.display_hooks[cls]
+
+        data, metadata = {}, {}
+        for hook in hooks:
+            out = hook(self)
+            if out is None:
+                continue
+            elif isinstance(out, tuple):
+                d, md = out
+            else:
+                d, md = out, {}
+            data.update(d)
+            metadata.update(md)
+        return data, metadata
 
 
 

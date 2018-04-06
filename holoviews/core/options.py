@@ -1034,6 +1034,9 @@ class Store(object):
     # IPython Notebook or a GUI application)
     display_formats = ['html']
 
+    # A mapping from Dimensioned type to display hook
+    display_hooks = defaultdict(list)
+
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
     _options = {}

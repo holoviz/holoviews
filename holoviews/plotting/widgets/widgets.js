@@ -561,12 +561,16 @@ function handle_add_output(event, handle) {
   var output_area = handle.output_area;
   var output = handle.output;
   // limit handle_add_output to display_data with EXEC_MIME_TYPE content only
-  if ((output.output_type != "display_data") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
+  if ((output.output_type != "execute_result") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
     return
   }
+  var id = output.metadata[EXEC_MIME_TYPE]["id"];
   var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
-  if (output.metadata[EXEC_MIME_TYPE]["id"] !== undefined) {
-    var id = output.metadata[EXEC_MIME_TYPE]["id"];
+  if (id !== undefined) {
+    var hv_div = document.createElement("div");
+	// TODO: Add .addClass('output_subarea output_html rendered_html')
+    hv_div.innerHTML = output.data[HTML_MIME_TYPE];
+	toinsert[0].append(hv_div);
     toinsert[0].firstChild.textContent = output.data[JS_MIME_TYPE];
     output_area._hv_plot_id = id;
     HoloViews.plot_index[id] = output_area;
