@@ -550,7 +550,9 @@ var CLASS_NAME = 'output';
  * Render data to the DOM node
  */
 function render(props, node) {
+  var div = document.createElement("div");
   var script = document.createElement("script");
+  node.appendChild(div);
   node.appendChild(script);
 }
 
@@ -567,11 +569,8 @@ function handle_add_output(event, handle) {
   var id = output.metadata[EXEC_MIME_TYPE]["id"];
   var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
   if (id !== undefined) {
-    var hv_div = document.createElement("div");
-	// TODO: Add .addClass('output_subarea output_html rendered_html')
-    hv_div.innerHTML = output.data[HTML_MIME_TYPE];
-	toinsert[0].append(hv_div);
-    toinsert[0].firstChild.textContent = output.data[JS_MIME_TYPE];
+	toinsert[0].children[0].innerHTML = output.data[HTML_MIME_TYPE];
+    toinsert[0].children[1].textContent = output.data[JS_MIME_TYPE];
     output_area._hv_plot_id = id;
     HoloViews.plot_index[id] = output_area;
   }
