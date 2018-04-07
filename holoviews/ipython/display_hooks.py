@@ -14,8 +14,8 @@ import holoviews
 from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
 from ..core import (
-    Dimensioned, ViewableElement, HoloMap, AdjointLayout, NdLayout,
-    GridSpace, Layout, CompositeOverlay, DynamicMap
+    ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
+    Layout, CompositeOverlay, DynamicMap
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
@@ -82,20 +82,20 @@ def first_frame(obj):
     "Only display the first frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
-    return renderer.components(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 def middle_frame(obj):
     "Only display the (approximately) middle frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return renderer.components(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 def last_frame(obj):
     "Only display the last frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
-    return renderer.components(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 #===============#
 # Display hooks #
