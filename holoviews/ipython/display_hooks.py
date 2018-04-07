@@ -149,7 +149,7 @@ def display_hook(fn):
     def wrapped(element):
         global FULL_TRACEBACK
         if Store.current_backend is None:
-            return
+            return {}, {}
 
         try:
             max_frames = OutputSettings.options['max_frames']

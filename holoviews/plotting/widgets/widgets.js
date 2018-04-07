@@ -562,8 +562,7 @@ function render(props, node) {
 function handle_add_output(event, handle) {
   var output_area = handle.output_area;
   var output = handle.output;
-  // limit handle_add_output to display_data with EXEC_MIME_TYPE content only
-  if ((output.output_type != "execute_result") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
+  if (!output.data.hasOwnProperty(EXEC_MIME_TYPE)) {
     return
   }
   var id = output.metadata[EXEC_MIME_TYPE]["id"];
