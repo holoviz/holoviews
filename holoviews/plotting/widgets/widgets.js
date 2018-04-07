@@ -569,7 +569,11 @@ function handle_add_output(event, handle) {
     var id = output.metadata[EXEC_MIME_TYPE]["id"];
     toinsert[0].firstChild.textContent = output.data[JS_MIME_TYPE];
     output_area._hv_plot_id = id;
-    HoloViews.plot_index[id] = output_area;
+    if ((window.Bokeh !== undefined) && (id in Bokeh.index)) {
+      HoloViews.plot_index[id] = Bokeh.index[id];
+    } else {
+      HoloViews.plot_index[id] = null;
+    }
   }
 }
 
