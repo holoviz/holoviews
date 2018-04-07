@@ -60,8 +60,7 @@ def render(obj, **kwargs):
     if renderer.fig == 'pdf':
         renderer = renderer.instance(fig='png')
 
-    data, metadata = renderer.components(obj, **kwargs)
-    return data, metadata
+    return renderer.components(obj, **kwargs)
 
 
 def single_frame_plot(obj):
@@ -122,6 +121,24 @@ def option_state(element):
         if raised_exception:
             dynamic_optstate(element, state=optstate)
 
+
+def mimebundle_to_html(bundle):
+    """
+    Converts a MIME bundle into HTML.
+    """
+    if isinstance(bundle, tuple):
+        data, metadata = bundle
+    else:
+        data = bundle
+    if 'text/html' not in data:
+        raise ValueError("MIME bundle must contain text/html data")
+    html = data['text/html']
+    if 'application/javascript' in data:
+        js = data['application/javascript']
+        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+    return html
+
+
 def display_hook(fn):
     @wraps(fn)
     def wrapped(element):
@@ -131,18 +148,19 @@ def display_hook(fn):
 
         try:
             max_frames = OutputSettings.options['max_frames']
-            output = fn(element, max_frames=max_frames)
+            mimebundle = fn(element, max_frames=max_frames)
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
-            #if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                #if type(holoviews.archive) is not FileArchive:
-                    #holoviews.archive.add(element, html=html)
+            if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
+                if type(holoviews.archive) is not FileArchive:
+                    html = mimebundle_to_html(mimebundle)
+                    holoviews.archive.add(element, html=html)
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
 
-            return output
+            return mimebundle
         except SkipRendering as e:
             if e.warn:
                 sys.stderr.write(str(e))
@@ -155,7 +173,7 @@ def display_hook(fn):
             info = dict(name=e.etype.__name__,
                         message=str(e.value).replace('\n','<br>'))
             msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
-            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}, {}
+            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}
 
         except Exception:
             raise
@@ -323,6 +341,3 @@ def set_display_hooks(ip):
     Store.display_hooks[Dimensioned].append(pprint_display)
     Store.display_hooks[ViewableElement].append(element_png_display)
     Store.display_hooks[ViewableElement].append(element_svg_display)
-
-    # Give plot instances rich display
-    #html_formatter.for_type(Plot, plot_display)

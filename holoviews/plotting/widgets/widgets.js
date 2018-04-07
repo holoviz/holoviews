@@ -569,7 +569,7 @@ function handle_add_output(event, handle) {
   var id = output.metadata[EXEC_MIME_TYPE]["id"];
   var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
   if (id !== undefined) {
-	toinsert[0].children[0].innerHTML = output.data[HTML_MIME_TYPE];
+    toinsert[0].children[0].innerHTML = output.data[HTML_MIME_TYPE];
     toinsert[0].children[1].textContent = output.data[JS_MIME_TYPE];
     output_area._hv_plot_id = id;
     HoloViews.plot_index[id] = output_area;
