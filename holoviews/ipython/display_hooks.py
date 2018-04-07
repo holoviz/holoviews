@@ -11,12 +11,12 @@ from IPython import get_ipython
 from IPython.display import publish_display_data
 
 import holoviews
-from holoviews.plotting import Plot
 from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
-from ..core import (Dimensioned, ViewableElement, UniformNdMapping,
-                    HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
-                    CompositeOverlay, DynamicMap)
+from ..core import (
+    Dimensioned, ViewableElement, HoloMap, AdjointLayout, NdLayout,
+    GridSpace, Layout, CompositeOverlay, DynamicMap
+)
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
 from ..util.settings import OutputSettings
