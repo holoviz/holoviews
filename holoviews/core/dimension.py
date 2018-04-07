@@ -6,7 +6,6 @@ baseclass for classes that accept Dimension values.
 from __future__ import unicode_literals
 import re
 import datetime as dt
-import inspect
 from operator import itemgetter
 
 import numpy as np
@@ -1226,25 +1225,7 @@ class Dimensioned(LabelledData):
         hooks.  The output of all registered display_hooks is then
         combined and returned.
         """
-        class_hierarchy = inspect.getmro(type(self))
-        hooks = []
-        for cls in class_hierarchy:
-            if cls in Store.display_hooks:
-                hooks += Store.display_hooks[cls]
-
-        data, metadata = {}, {}
-        for hook in hooks:
-            out = hook(self)
-            if out is None:
-                continue
-            elif isinstance(out, tuple):
-                d, md = out
-            else:
-                d, md = out, {}
-            data.update(d)
-            metadata.update(md)
-        return data, metadata
-
+        return Store.render(self)
 
 
 class ViewableElement(Dimensioned):

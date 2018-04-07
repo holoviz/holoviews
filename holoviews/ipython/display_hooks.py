@@ -140,6 +140,11 @@ def mimebundle_to_html(bundle):
 
 
 def display_hook(fn):
+    """
+    A decorator to wrap display hooks that return a MIME bundle or None.
+    Additionally it handles adding output to the notebook archive, saves
+    files specified with the output magic and handles tracebacks.
+    """
     @wraps(fn)
     def wrapped(element):
         global FULL_TRACEBACK
@@ -159,21 +164,21 @@ def display_hook(fn):
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
-
+            if mimebundle is None:
+                return {}, {}
             return mimebundle
         except SkipRendering as e:
             if e.warn:
                 sys.stderr.write(str(e))
-            return None
+            return {}, {}
         except AbbreviatedException as e:
-
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
                                                                   e.traceback))
             info = dict(name=e.etype.__name__,
                         message=str(e.value).replace('\n','<br>'))
             msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
-            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}
+            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}, {}
 
         except Exception:
             raise
@@ -282,51 +287,46 @@ def pprint_display(obj):
     return display(obj, raw=True)
 
 
+def image_display(element, max_frames, fmt):
+    """
+    Used to render elements to an image format (svg or png) if requested
+    in the display formats.
+    """
+    if fmt not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info:
+        IPython.display.display(IPython.display.HTML(info))
+        return
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    plot = renderer.get_plot(element)
+
+    # Current renderer does not support the image format
+    if fmt not in renderer.params('fig').objects:
+        return None
+
+    data, info = renderer(plot, fmt=fmt)
+    return {info['mime_type']: data}
+
+
 @display_hook
-def element_png_display(element, max_frames):
+def png_display(element, max_frames):
     """
     Used to render elements to PNG if requested in the display formats.
     """
-    if 'png' not in Store.display_formats:
-        return None
-    info = process_object(element)
-    if info:
-        IPython.display.display(IPython.display.HTML(info))
-        return
-
-    backend = Store.current_backend
-    if type(element) not in Store.registry[backend]:
-        return None
-    renderer = Store.renderers[backend]
-    # Current renderer does not support PNG
-    if 'png' not in renderer.params('fig').objects:
-        return None
-
-    data, info = renderer(element, fmt='png')
-    return {info['mime_type']: data}
+    return image_display(element, max_frames, fmt='png')
 
 
 @display_hook
-def element_svg_display(element, max_frames):
+def svg_display(element, max_frames):
     """
     Used to render elements to SVG if requested in the display formats.
     """
-    if 'svg' not in Store.display_formats:
-        return None
-    info = process_object(element)
-    if info:
-        IPython.display.display(IPython.display.HTML(info))
-        return
-
-    backend = Store.current_backend
-    if type(element) not in Store.registry[backend]:
-        return None
-    renderer = Store.renderers[backend]
-    # Current renderer does not support SVG
-    if 'svg' not in renderer.params('fig').objects:
-        return None
-    data, info = renderer(element, fmt='svg')
-    return {info['mime_type']: data}
+    return image_display(element, max_frames, fmt='svg')
 
 
 # display_video output by default, but may be set to first_frame,
@@ -335,9 +335,3 @@ render_anim = None
 
 def plot_display(plot):
     return plot.renderer.components(plot)
-
-
-def set_display_hooks(ip):
-    Store.display_hooks[Dimensioned].append(pprint_display)
-    Store.display_hooks[ViewableElement].append(element_png_display)
-    Store.display_hooks[ViewableElement].append(element_svg_display)
