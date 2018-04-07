@@ -47,7 +47,6 @@ class TestSankeyPlot(TestMPLPlot):
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
         ).options(label_index='label')
         plot = mpl_renderer.get_plot(sankey)
-        rects = plot.handles['rects']
         labels = plot.handles['labels']
 
         text_data = {'x': np.array([18.75, 18.75, 1003.75, 1003.75, 1003.75]),
@@ -58,4 +57,3 @@ class TestSankeyPlot(TestMPLPlot):
             self.assertEqual(text.xy[0], text_data['x'][i])
             self.assertEqual(text.xy[1], text_data['y'][i])
             self.assertEqual(text.get_text(), text_data['text'][i])
-        raise Exception()
