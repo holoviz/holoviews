@@ -1634,3 +1634,18 @@ def compute_edges(edges):
     midpoints = (edges[:-1] + edges[1:])/2.0
     boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
     return np.concatenate([boundaries[:1], midpoints, boundaries[-1:]])
+
+
+def mimebundle_to_html(bundle):
+    """
+    Converts a MIME bundle into HTML.
+    """
+    if isinstance(bundle, tuple):
+        data, metadata = bundle
+    else:
+        data = bundle
+    html = data.get('text/html', '')
+    if 'application/javascript' in data:
+        js = data['application/javascript']
+        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+    return html
