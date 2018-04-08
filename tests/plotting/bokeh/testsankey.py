@@ -14,7 +14,7 @@ class TestSankeyPlot(TestBokehPlot):
             ('A', 'X', 5), ('A', 'Y', 7), ('A', 'Z', 6),
             ('B', 'X', 2), ('B', 'Y', 9), ('B', 'Z', 4)]
         )
-        plot = bokeh_renderer.get_plot(sankey)
+        plot = list(bokeh_renderer.get_plot(sankey).subplots.values())[0]
         scatter_source = plot.handles['scatter_1_source']
         quad_source = plot.handles['quad_1_source']
         text_source = plot.handles['text_1_source']
@@ -50,7 +50,7 @@ class TestSankeyPlot(TestBokehPlot):
             (1, 2, 2), (1, 3, 9), (1, 4, 4)],
             Dataset(enumerate('ABXYZ'), 'index', 'label'))
         ).options(label_index='label', tools=['hover'])
-        plot = bokeh_renderer.get_plot(sankey)
+        plot = list(bokeh_renderer.get_plot(sankey).subplots.values())[0]
 
         scatter_source = plot.handles['scatter_1_source']
         text_source = plot.handles['text_1_source']
