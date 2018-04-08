@@ -59,11 +59,24 @@ class XArrayInterface(GridInterface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
 
-        if isinstance (data, xr.DataArray):
-            if data.name:
-                vdim = Dimension(data.name)
-            elif vdims:
+        def retrieve_unit_and_label(dim):
+            if isinstance(dim, str):
+                dim = Dimension(dim)
+            dim.unit = data[dim.name].attrs.get('units')
+            label = data[dim.name].attrs.get('long_name')
+            if label is not None:
+                dim.label = label
+            return dim
+
+        if isinstance(data, xr.DataArray):
+            if vdims:
                 vdim = vdims[0]
+            elif data.name:
+                vdim = Dimension(data.name)
+                vdim.unit = data.attrs.get('units')
+                label = data.attrs.get('long_name')
+                if label is not None:
+                    vdim.label = label
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
                 if vdim.name in data.dims:
@@ -111,6 +124,7 @@ class XArrayInterface(GridInterface):
         else:
             if vdims is None:
                 vdims = list(data.data_vars.keys())
+                vdims = [retrieve_unit_and_label(vd) for vd in vdims]
             if kdims is None:
                 xrdims = list(data.dims)
                 kdims = [name for name in data.indexes.keys()
@@ -121,6 +135,7 @@ class XArrayInterface(GridInterface):
                     for c in data.coords:
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
+                kdims = [retrieve_unit_and_label(kd) for kd in kdims]
             vdims = [vd if isinstance(vd, Dimension) else Dimension(vd) for vd in vdims]
             kdims = [kd if isinstance(kd, Dimension) else Dimension(kd) for kd in kdims]
 
@@ -135,13 +150,6 @@ class XArrayInterface(GridInterface):
             raise DataError("xarray Dataset must define coordinates "
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
-
-        # retrieve units and labels from Dataset:
-        for d in kdims + vdims:
-            d.unit = data[d.name].attrs.get('units')
-            label = data[d.name].attrs.get('long_name')
-            if label is not None:
-                d.label = label
 
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
