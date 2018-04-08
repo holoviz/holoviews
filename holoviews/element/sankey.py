@@ -9,7 +9,7 @@ import numpy as np
 from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
-from ..core.util import OrderedDict, unique_array, RecursionError
+from ..core.util import OrderedDict, unique_array, RecursionError, get_param_values
 from .graphs import Graph, Nodes, EdgePaths, redim_graph
 from .util import quadratic_bezier
 
@@ -35,7 +35,8 @@ class _layout_sankey(Operation):
 
     def _process(self, element, key=None):
         nodes, edges, graph = self.layout(element, **self.p)
-        return Sankey((element.data, nodes, edges), sankey=graph)
+        params = get_param_values(element)
+        return Sankey((element.data, nodes, edges), sankey=graph, **params)
 
     def layout(self, element, **params):
         self.p = param.ParamOverrides(self, params)
