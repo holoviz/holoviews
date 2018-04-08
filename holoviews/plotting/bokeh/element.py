@@ -1074,7 +1074,7 @@ class ColorbarPlot(ElementPlot):
         if isinstance(cmap, dict) and factors:
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
         else:
-            palette = process_cmap(cmap, self.color_levels or ncolors)
+            palette = process_cmap(cmap, self.color_levels or ncolors, categorical=ncolors is not None)
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)

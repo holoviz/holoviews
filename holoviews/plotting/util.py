@@ -462,7 +462,7 @@ def map_colors(arr, crange, cmap, hex=True):
     """
     if isinstance(crange, np.ndarray):
         xsorted = np.argsort(crange)
-        ypos = np.searchsorted(crange[xsorted], arr)
+        ypos = np.searchsorted(crange, arr)
         arr = xsorted[ypos]
     else:
         if isinstance(crange, tuple):
@@ -478,7 +478,7 @@ def map_colors(arr, crange, cmap, hex=True):
         return arr
 
 
-def mplcmap_to_palette(cmap, ncolors=None):
+def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
@@ -494,28 +494,32 @@ def mplcmap_to_palette(cmap, ncolors=None):
             cmap = cm.get_cmap(cmap)
         except:
             cmap = cm.get_cmap(cmap.lower())
-    if isinstance(cmap, ListedColormap) and cmap.N > ncolors:
-        palette = [rgb2hex(c) for c in cmap(np.arange(cmap.N))]
-        if len(palette) != ncolors:
-            palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
-        return palette
+    if isinstance(cmap, ListedColormap):
+        if categorical:
+            palette = [rgb2hex(cmap.colors[i%cmap.N]) for i in range(ncolors)]
+            return palette
+        elif cmap.N > ncolors:
+            palette = [rgb2hex(c) for c in cmap(np.arange(cmap.N))]
+            if len(palette) != ncolors:
+                palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+            return palette
     return [rgb2hex(c) for c in cmap(np.linspace(0, 1, ncolors))]
 
 
-def bokeh_palette_to_palette(cmap, ncolors=None):
+def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
     from bokeh import palettes
 
     # Handle categorical colormaps to avoid interpolation
-    categorical = ['accent', 'category', 'dark', 'colorblind', 'pastel',
+    categories = ['accent', 'category', 'dark', 'colorblind', 'pastel',
                    'set1', 'set2', 'set3', 'paired']
-    categorical = any(cat in cmap.lower() for cat in categorical)
+    cmap_categorical = any(cat in cmap.lower() for cat in categories)
     reverse = False
     if cmap.endswith('_r'):
         cmap = cmap[:-2]
         reverse = True
 
     # Some colormaps are inverted compared to matplotlib
-    inverted = (not categorical and not cmap.capitalize() in palettes.mpl)
+    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl)
     if inverted:
         reverse=not reverse
     ncolors = ncolors or 256
@@ -534,7 +538,7 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
 
     if isinstance(palette, dict):
         palette = palette[max(palette)]
-        if not categorical:
+        if not cmap_categorical:
             if len(palette) < ncolors:
                 palette = polylinear_gradient(palette, ncolors)
     elif callable(palette):
@@ -542,9 +546,12 @@ def bokeh_palette_to_palette(cmap, ncolors=None):
     if reverse: palette = palette[::-1]
 
     if len(palette) != ncolors:
-        lpad, rpad = -0.5, 0.49999999999
-        indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
-        palette = [palette[int(np.round(v))] for v in indexes]
+        if categorical and cmap_categorical:
+            palette = [palette[i%len(palette)] for i in range(ncolors)]
+        else:
+            lpad, rpad = -0.5, 0.49999999999
+            indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
+            palette = [palette[int(np.round(v))] for v in indexes]
     return palette
 
 
@@ -787,7 +794,7 @@ register_cmaps('Categorical', 'bokeh', 'misc', 'any',
 
 
 
-def process_cmap(cmap, ncolors=None, provider=None):
+def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     """
     Convert valid colormap specifications to a list of colors.
     """
@@ -802,9 +809,9 @@ def process_cmap(cmap, ncolors=None, provider=None):
         bk_cmaps = _list_cmaps('bokeh')
         cet_cmaps = _list_cmaps('colorcet')
         if provider=='matplotlib' or (provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)):
-            palette = mplcmap_to_palette(cmap, ncolors)
+            palette = mplcmap_to_palette(cmap, ncolors, categorical)
         elif provider=='bokeh' or (provider is None and (cmap in bk_cmaps or cmap.capitalize() in bk_cmaps)):
-            palette = bokeh_palette_to_palette(cmap, ncolors)
+            palette = bokeh_palette_to_palette(cmap, ncolors, categorical)
         elif provider=='colorcet' or (provider is None and cmap in cet_cmaps):
             from colorcet import palette
             if cmap.endswith('_r'):
