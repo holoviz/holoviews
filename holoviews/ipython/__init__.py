@@ -7,6 +7,7 @@ import holoviews
 from param import ipython as param_ext
 from IPython.display import HTML, publish_display_data
 
+from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
 from ..element.comparison import ComparisonTestCase
@@ -14,7 +15,7 @@ from ..util import extension
 from ..plotting.renderer import Renderer, MIME_TYPES
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
-from .display_hooks import set_display_hooks
+from .display_hooks import pprint_display, png_display, svg_display
 
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
@@ -145,7 +146,9 @@ class notebook_extension(extension):
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             Store.output_settings.initialize(list(Store.renderers.keys()))
-            set_display_hooks(ip)
+            Store.set_display_hook('html+js', LabelledData, pprint_display)
+            Store.set_display_hook('png', LabelledData, png_display)
+            Store.set_display_hook('svg', LabelledData, svg_display)
             notebook_extension._loaded = True
 
         css = ''

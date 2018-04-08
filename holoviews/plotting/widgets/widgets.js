@@ -550,7 +550,9 @@ var CLASS_NAME = 'output';
  * Render data to the DOM node
  */
 function render(props, node) {
+  var div = document.createElement("div");
   var script = document.createElement("script");
+  node.appendChild(div);
   node.appendChild(script);
 }
 
@@ -560,14 +562,14 @@ function render(props, node) {
 function handle_add_output(event, handle) {
   var output_area = handle.output_area;
   var output = handle.output;
-  // limit handle_add_output to display_data with EXEC_MIME_TYPE content only
-  if ((output.output_type != "display_data") || (!output.data.hasOwnProperty(EXEC_MIME_TYPE))) {
+  if (!output.data.hasOwnProperty(EXEC_MIME_TYPE)) {
     return
   }
+  var id = output.metadata[EXEC_MIME_TYPE]["id"];
   var toinsert = output_area.element.find("." + CLASS_NAME.split(' ')[0]);
-  if (output.metadata[EXEC_MIME_TYPE]["id"] !== undefined) {
-    var id = output.metadata[EXEC_MIME_TYPE]["id"];
-    toinsert[0].firstChild.textContent = output.data[JS_MIME_TYPE];
+  if (id !== undefined) {
+    toinsert[0].children[0].innerHTML = output.data[HTML_MIME_TYPE];
+    toinsert[0].children[1].textContent = output.data[JS_MIME_TYPE];
     output_area._hv_plot_id = id;
     if ((window.Bokeh !== undefined) && (id in Bokeh.index)) {
       HoloViews.plot_index[id] = Bokeh.index[id];

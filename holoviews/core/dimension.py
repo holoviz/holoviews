@@ -1218,6 +1218,15 @@ class Dimensioned(LabelledData):
         return self.opts(expanded, backend, clone)
 
 
+    def _repr_mimebundle_(self, include=None, exclude=None):
+        """
+        Resolves the class hierarchy for the class rendering the
+        object using any display hooks registered on Store.display
+        hooks.  The output of all registered display_hooks is then
+        combined and returned.
+        """
+        return Store.render(self)
+
 
 class ViewableElement(Dimensioned):
     """

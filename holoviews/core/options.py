@@ -35,6 +35,7 @@ Store:
 import pickle
 import traceback
 import difflib
+import inspect
 from contextlib import contextmanager
 from collections import OrderedDict, defaultdict
 
@@ -1034,6 +1035,9 @@ class Store(object):
     # IPython Notebook or a GUI application)
     display_formats = ['html']
 
+    # A mapping from Dimensioned type to display hook
+    _display_hooks = defaultdict(dict)
+
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
     _options = {}
@@ -1253,6 +1257,41 @@ class Store(object):
 
             name = view_class.__name__
             cls._options[backend][name] = opt_groups
+
+
+    @classmethod
+    def set_display_hook(cls, group, objtype, hook):
+        """
+        Specify a display hook that will be applied to objects of type
+        objtype. The group specifies the set to which the display hook
+        belongs, allowing the Store to compute the precedence within
+        each group.
+        """
+        cls._display_hooks[group][objtype] = hook
+
+
+    @classmethod
+    def render(cls, obj):
+        """
+        Using any display hooks that have been registered, render the
+        object to a dictionary of MIME types and metadata information.
+        """
+        class_hierarchy = inspect.getmro(type(obj))
+        hooks = []
+        for _, type_hooks in cls._display_hooks.items():
+            for cls in class_hierarchy:
+                if cls in type_hooks:
+                    hooks.append(type_hooks[cls])
+                    break
+
+        data, metadata = {}, {}
+        for hook in hooks:
+            d, md = hook(obj)
+            data.update(d)
+            metadata.update(md)
+        if not data:
+            return None
+        return data, metadata
 
 
 
