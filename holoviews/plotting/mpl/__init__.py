@@ -27,7 +27,6 @@ from .renderer import MPLRenderer
 
 
 mpl_ge_150 = LooseVersion(mpl.__version__) >= '1.5.0'
-mpl_ge_200 = LooseVersion(mpl.__version__) >= '2.0.0'
 
 if pd:
     try:
@@ -85,7 +84,7 @@ if config.style_17:
 
 # Define Palettes and cycles from matplotlib colormaps
 Palette.colormaps.update({cm: plt.get_cmap(cm) for cm in plt.cm.datad
-                          if not ('spectral' in cm or (mpl_ge_200 and 'Vega' in cm))})
+                          if not ('spectral' in cm or 'Vega' in cm)})
 listed_cmaps = [cm for cm in Palette.colormaps.values() if isinstance(cm, ListedColormap)]
 Cycle.default_cycles.update({cm.name: list(cm.colors) for cm in listed_cmaps})
 

@@ -26,9 +26,18 @@ class SankeyPlot(GraphPlot):
     show_values = param.Boolean(default=True, doc="""
         Whether to show the values.""")
 
+    node_width = param.Number(default=15, doc="""
+        Width of the nodes.""")
+
+    node_padding = param.Integer(default=10, doc="""
+        Number of pixels of padding relative to the bounds.""")
+
+    iterations = param.Integer(default=32, doc="""
+        Number of iterations to run the layout algorithm.""")
+
     _style_groups = dict(GraphPlot._style_groups, quad='nodes', text='label')
 
-    _draw_order = ['patches', 'multi_line', 'quad', 'text']
+    _draw_order = ['patches', 'quad', 'text']
 
     style_opts = GraphPlot.style_opts + ['edge_fill_alpha', 'nodes_line_color',
                                          'label_text_font_size']
@@ -128,9 +137,6 @@ class SankeyPlot(GraphPlot):
         data['patches_1'][tgt] = [lookup.get(v, v) for v in tgt_vals]
 
     def get_extents(self, element, ranges):
-        """
-        A Chord plot is always drawn on a unit circle.
-        """
         xdim, ydim = element.nodes.kdims[:2]
         xpad = .05 if self.label_index is None else 0.25
         x0, x1 = ranges[xdim.name]

@@ -23,6 +23,15 @@ class SankeyPlot(GraphPlot):
                                           doc="""
         Whether node labels should be placed to the left or right.""")
 
+    node_width = param.Number(default=15, doc="""
+        Width of the nodes.""")
+
+    node_padding = param.Integer(default=10, doc="""
+        Number of pixels of padding relative to the bounds.""")
+
+    iterations = param.Integer(default=32, doc="""
+        Number of iterations to run the layout algorithm.""")
+
     filled = True
     
     def get_extents(self, element, ranges):

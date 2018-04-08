@@ -10,13 +10,14 @@ from ..core.dimension import Dimension
 from ..core.data import Dataset
 from ..core.operation import Operation
 from ..core.util import OrderedDict, unique_array, RecursionError
-from .graphs import Graph, redim_graph
+from .graphs import Graph, Nodes, EdgePaths, redim_graph
 from .util import quadratic_bezier
 
 
-class layout_sankey(Operation):
+class _layout_sankey(Operation):
     """
-    Computes a Sankey diagram from a Graph element.
+    Computes a Sankey diagram from a Graph element for internal use in
+    the Sankey element constructor.
 
     Adapted from d3-sankey under BSD-3 license.
     """
@@ -28,11 +29,16 @@ class layout_sankey(Operation):
 
     node_padding = param.Integer(default=10, doc="""
         Number of pixels of padding relative to the bounds.""")
-    
+
     iterations = param.Integer(default=32, doc="""
         Number of iterations to run the layout algorithm.""")
 
     def _process(self, element, key=None):
+        nodes, edges, graph = self.layout(element, **self.p)
+        return Sankey((element.data, nodes, edges), sankey=graph)
+
+    def layout(self, element, **params):
+        self.p = param.ParamOverrides(self, params)
         graph = {'nodes': [], 'links': []}
         self.computeNodeLinks(element, graph)
         self.computeNodeValues(graph)
@@ -54,9 +60,7 @@ class layout_sankey(Operation):
             kdims = element.node_type.kdims
         nodes = element.node_type(node_data, kdims=kdims, vdims=element.nodes.vdims)
         edges = element.edge_type(paths)
-        sankey = Sankey((element.data, nodes, edges), compute=False)
-        sankey._sankey = graph
-        return sankey
+        return nodes, edges, graph
 
 
     def computePaths(self, graph):
@@ -74,7 +78,7 @@ class layout_sankey(Operation):
             bottom = quadratic_bezier(src, tgt, ctr1, ctr2)
             mid = np.array([(x1, y1),
                             (x1, y1+link['width'])])
-    
+
             xmid = (x0+x1)/2.
             y0 = y0+link['width']
             y1 = y1+link['width']
@@ -95,7 +99,7 @@ class layout_sankey(Operation):
     @classmethod
     def weightedTarget(cls, link):
         return cls.nodeCenter(link['target']) * link['value']
-    
+
     @classmethod
     def nodeCenter(cls, node):
         return (node['y0'] + node['y1']) / 2
@@ -116,7 +120,7 @@ class layout_sankey(Operation):
     def computeNodeLinks(cls, element, graph):
         """
         Populate the sourceLinks and targetLinks for each node.
-        Also, if the source and target are not objects, assume they are indices.  
+        Also, if the source and target are not objects, assume they are indices.
         """
         index = element.nodes.kdims[-1]
         node_map = {}
@@ -197,7 +201,7 @@ class layout_sankey(Operation):
             if n['x0'] not in node_map:
                 node_map[n['x0']] = []
             node_map[n['x0']].append(n)
-        
+
         _, y0, _, y1 = self.p.bounds
         py = self.p.node_padding
 
@@ -208,12 +212,12 @@ class layout_sankey(Operation):
                 ky = (y1 - y0 - (len(nodes)-1) * py) / nsum
                 kys.append(ky)
             ky = np.min(kys)
-            
+
             for nodes in node_map.values():
                 for i, node in enumerate(nodes):
                     node['y0'] = i
                     node['y1'] = i + node['value'] * ky
-                    
+
             for link in graph['links']:
                 link['width'] = link['value'] * ky
 
@@ -241,7 +245,7 @@ class layout_sankey(Operation):
                     dy = (weighted/tsum - center)*alpha
                     node['y0'] += dy
                     node['y1'] += dy
-                    
+
 
         def resolveCollisions():
             for nodes in node_map.values():
@@ -253,7 +257,7 @@ class layout_sankey(Operation):
                         node['y0'] += dy
                         node['y1'] += dy
                     y = node['y1'] + py
-                
+
                 dy = y-py-y1
                 if dy > 0:
                     node['y0'] -= dy
@@ -296,19 +300,21 @@ class layout_sankey(Operation):
 class Sankey(Graph):
     """
     Sankey is an acyclic, directed Graph type that represents the flow
-    of some quantity between its nodes. 
+    of some quantity between its nodes.
     """
-    
+
     group = param.String(default='Sankey', constant=True)
 
     vdims = param.List(default=[Dimension('Value')])
 
-    def __init__(self, data, kdims=None, vdims=None, compute=True, **params):
+    def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, tuple):
             data = data + (None,)*(3-len(data))
             edges, nodes, edgepaths = data
         else:
             edges, nodes, edgepaths = data, None, None
+        sankey_graph = params.pop('sankey', None)
+        compute = not (sankey_graph and isinstance(nodes, Nodes) and isinstance(edgepaths, EdgePaths))
         super(Graph, self).__init__(edges, kdims=kdims, vdims=vdims, **params)
         if compute:
             if nodes is None:
@@ -326,10 +332,10 @@ class Sankey(Graph):
                                  'Ensure data has at least one key dimension, '
                                  'which matches the node ids on the edges.')
             self._nodes = nodes
-            chord = layout_sankey(self)
-            self._nodes = chord.nodes
-            self._edgepaths = chord.edgepaths
-            self._sankey = chord._sankey
+            nodes, edgepaths, graph = _layout_sankey.instance().layout(self)
+            self._nodes = nodes
+            self._edgepaths = edgepaths
+            self._sankey = graph
         else:
             if not isinstance(nodes, self.node_type):
                 raise TypeError("Expected Nodes object in data, found %s."
@@ -339,6 +345,11 @@ class Sankey(Graph):
                 raise TypeError("Expected EdgePaths object in data, found %s."
                                 % type(edgepaths))
             self._edgepaths = edgepaths
-            self._sankey = None
+            self._sankey = sankey_graph
         self._validate()
         self.redim = redim_graph(self, mode='dataset')
+
+    def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
+        if data is None:
+            overrides['sankey'] = self._sankey
+        return super(Sankey, self).clone(data, shared_data, new_type, *args, **overrides)
