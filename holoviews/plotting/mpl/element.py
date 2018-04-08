@@ -599,7 +599,10 @@ class ColorbarPlot(ElementPlot):
         clim = opts.pop(prefix+'clims', None)
         values = np.asarray(element.dimension_values(vdim))
         if clim is None:
-            if len(values) and values.dtype.kind in 'uif':
+            if not len(values):
+                clim = (0, 0)
+                categorical = False
+            elif values.dtype.kind in 'uif':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
@@ -609,8 +612,10 @@ class ColorbarPlot(ElementPlot):
                         clim = (values[values!=0].min(), clim[1])
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
+                categorical = False
             else:
                 clim = (0, len(np.unique(values))-1)
+                categorical = True
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
@@ -663,7 +668,7 @@ class ColorbarPlot(ElementPlot):
                 palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
                            for f in factors]
             else:
-                palette = process_cmap(cmap, ncolors)
+                palette = process_cmap(cmap, ncolors, categorical=categorical)
             cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])

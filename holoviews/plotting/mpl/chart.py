@@ -520,7 +520,7 @@ class PointPlot(ChartPlot, ColorbarPlot):
             else:
                 categories = np.unique(cs)
                 xsorted = np.argsort(categories)
-                ypos = np.searchsorted(categories[xsorted], cs)
+                ypos = np.searchsorted(categories, cs)
                 style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
         elif color:
