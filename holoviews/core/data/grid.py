@@ -364,11 +364,13 @@ class GridInterface(DictInterface):
             else:
                 group_data = cls.select(dataset, **select)
 
-            if np.isscalar(group_data) or (isinstance(group_data, array_types) and da.group_data.shape == ()):
+            if np.isscalar(group_data) or (isinstance(group_data, array_types) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
+                if isinstance(group_data, array_types):
+                    group_data = {dataset.vdims[0].name: group_data}
                 for vdim in dataset.vdims:
                     data = group_data[vdim.name]
                     data = data.transpose(transpose[::-1])
