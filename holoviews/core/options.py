@@ -1289,8 +1289,6 @@ class Store(object):
             d, md = hook(obj)
             data.update(d)
             metadata.update(md)
-        if not data:
-            return None
         return data, metadata
 
 
