@@ -237,7 +237,7 @@ class Graph(Dataset, Element2D):
     def clone(self, data=None, shared_data=True, new_type=None, *args, **overrides):
         if data is None:
             data = (self.data, self.nodes)
-            if self._edgepaths:
+            if self._edgepaths is not None:
                 data = data + (self.edgepaths,)
             overrides['plot_id'] = self._plot_id
         elif not isinstance(data, tuple):

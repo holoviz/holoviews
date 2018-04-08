@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord, Div, HexTiles, Labels)
+                        TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -43,6 +43,7 @@ from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
 from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
+from .sankey import SankeyPlot
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
 from .tabular import TablePlot
 from .util import bokeh_version # noqa (API import)
@@ -108,6 +109,7 @@ associations = {Overlay: OverlayPlot,
                 Nodes: NodePlot,
                 EdgePaths: PathPlot,
                 TriMesh: TriMeshPlot,
+                Sankey: SankeyPlot,
 
                 # Tabular
                 Table: TablePlot,
@@ -201,25 +203,22 @@ options.Arrow = Options('style', arrow_size=10)
 options.Labels = Options('style', text_align='center', text_baseline='middle')
 
 # Graphs
-options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
-                        node_line_color='black',
-                        node_nonselection_fill_color=Cycle(),
-                        node_hover_line_color='black',
-                        node_hover_fill_color='limegreen',
-                        node_nonselection_alpha=0.2,
-                        edge_nonselection_alpha=0.2,
-                        node_nonselection_line_color='black',
-                        edge_line_color='black', edge_line_width=2,
-                        edge_nonselection_line_color='black',
-                        edge_hover_line_color='limegreen')
-options.TriMesh = Options('style', node_size=5, node_line_color='black',
-                          node_fill_color='white', edge_line_color='black',
-                          node_hover_fill_color='limegreen',
-                          edge_hover_line_color='limegreen',
-                          edge_nonselection_alpha=0.2,
-                          edge_nonselection_line_color='black',
-                          node_nonselection_alpha=0.2,
-                          edge_line_width=1)
+options.Graph = Options(
+    'style', node_size=15, node_fill_color=Cycle(),
+    node_line_color='black', node_nonselection_fill_color=Cycle(),
+    node_hover_line_color='black', node_hover_fill_color='limegreen',
+    node_nonselection_alpha=0.2, edge_nonselection_alpha=0.2,
+    node_nonselection_line_color='black', edge_line_color='black',
+    edge_line_width=2, edge_nonselection_line_color='black',
+    edge_hover_line_color='limegreen'
+)
+options.TriMesh = Options(
+    'style', node_size=5, node_line_color='black',
+    node_fill_color='white', edge_line_color='black',
+    node_hover_fill_color='limegreen', edge_line_width=1,
+    edge_hover_line_color='limegreen', edge_nonselection_alpha=0.2,
+    edge_nonselection_line_color='black', node_nonselection_alpha=0.2,
+)
 options.TriMesh = Options('plot', tools=[])
 options.Chord = Options('style', node_size=15, node_fill_color=Cycle(),
                         node_line_color='black',
@@ -246,6 +245,16 @@ options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
                             line_width=2, selection_color='limegreen',
                             hover_line_color='indianred')
 options.EdgePaths = Options('plot', tools=['hover', 'tap'])
+options.Sankey = Options(
+    'plot', xaxis=None, yaxis=None, inspection_policy='edges',
+    selection_policy='nodes', width=1000, height=600, show_frame=False
+)
+options.Sankey = Options(
+    'style', node_line_alpha=0, node_nonselection_alpha=0.2,
+    node_size=10, edge_nonselection_alpha=0.2, edge_line_alpha=0,
+    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20'
+)
+
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
@@ -260,9 +269,12 @@ options.Points = Options('style', muted_alpha=0.2)
 options.Polygons = Options('style', muted_alpha=0.2)
 
 # Statistics
-options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
-                               fill_alpha=0.5, muted_alpha=0.2)
-options.Violin = Options('style', violin_fill_color=Cycle(),
-                         violin_line_color='black', violin_fill_alpha=0.5,
-                         stats_color='black', box_color='black',
-                         median_color='white')
+options.Distribution = Options(
+    'style', fill_color=Cycle(), line_color='black', fill_alpha=0.5,
+    muted_alpha=0.2
+)
+options.Violin = Options(
+    'style', violin_fill_color=Cycle(), violin_line_color='black',
+    violin_fill_alpha=0.5, stats_color='black', box_color='black',
+    median_color='white'
+)

@@ -8,6 +8,7 @@ display in the IPython Notebook (optional).
 
 from ..core.options import Cycle, Compositor
 from ..element import Area, Polygons
+from ..element.sankey import _layout_sankey, Sankey
 from .plot import Plot
 from .renderer import Renderer, HTML_TAGS # noqa (API import)
 from .util import list_cmaps # noqa (API import)
@@ -21,6 +22,11 @@ Compositor.register(Compositor("Bivariate", bivariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,
                                output_type=Polygons))
+Compositor.register(Compositor("Sankey", _layout_sankey, None,
+                               'data', transfer_options=True,
+                               transfer_parameters=True,
+                               output_type=Sankey))
+
 
 DEFAULT_CYCLE = ['#30a2da', '#fc4f30', '#e5ae38', '#6d904f', '#8b8b8b', '#17becf',
                  '#9467bd', '#d62728', '#1f77b4', '#e377c2', '#8c564b', '#bcbd22']

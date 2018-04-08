@@ -224,12 +224,13 @@ if sys.version_info.major >= 3:
     unicode = str
     long = int
     generator_types = (zip, range, types.GeneratorType)
+    RecursionError = RecursionError # noqa
 else:
     basestring = basestring
     unicode = unicode
     from itertools import izip
     generator_types = (izip, xrange, types.GeneratorType) # noqa
-
+    RecursionError = RuntimeError
 
 
 def argspec(callable_obj):
