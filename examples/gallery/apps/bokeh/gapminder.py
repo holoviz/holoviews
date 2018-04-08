@@ -60,13 +60,16 @@ def animate_update():
 def slider_update(attrname, old, new):
     hvplot.update((new,))
 
+callback_id = None
+
 def animate():
+    global callback_id
     if button.label == '► Play':
         button.label = '❚❚ Pause'
-        doc.add_periodic_callback(animate_update, 200)
+        callback_id = doc.add_periodic_callback(animate_update, 200)
     else:
         button.label = '► Play'
-        doc.remove_periodic_callback(animate_update)
+        doc.remove_periodic_callback(callback_id)
 
 start, end = ds.range('Year')
 slider = Slider(start=start, end=end, value=start, step=1, title="Year")
