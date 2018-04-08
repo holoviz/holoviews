@@ -120,37 +120,37 @@ class StatisticalCompositorTest(ComparisonTestCase):
 
     def test_distribution_composite(self):
         dist = Distribution(np.array([0, 1, 2]))
-        area = Compositor.collapse_element(dist)
+        area = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(area, Area)
         self.assertEqual(area.vdims, [Dimension(('Value_density', 'Value Density'))])
 
     def test_distribution_composite_transfer_opts(self):
         dist = Distribution(np.array([0, 1, 2])).opts(style=dict(color='red'))
-        area = Compositor.collapse_element(dist)
+        area = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', area, 'style').kwargs
         self.assertEqual(opts.get('color', None), 'red')
 
     def test_distribution_composite_transfer_opts_with_group(self):
         dist = Distribution(np.array([0, 1, 2]), group='Test').opts(style=dict(color='red'))
-        area = Compositor.collapse_element(dist)
+        area = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', area, 'style').kwargs
         self.assertEqual(opts.get('color', None), 'red')
         
     def test_distribution_composite_custom_vdim(self):
         dist = Distribution(np.array([0, 1, 2]), vdims=['Test'])
-        area = Compositor.collapse_element(dist)
+        area = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(area, Area)
         self.assertEqual(area.vdims, [Dimension('Test')])
 
     def test_distribution_composite_not_filled(self):
         dist = Distribution(np.array([0, 1, 2])).opts(plot=dict(filled=False))
-        curve = Compositor.collapse_element(dist)
+        curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
         self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
 
     def test_distribution_composite_empty_not_filled(self):
         dist = Distribution([]).opts(plot=dict(filled=False))
-        curve = Compositor.collapse_element(dist)
+        curve = Compositor.collapse_element(dist, backend='matplotlib')
         self.assertIsInstance(curve, Curve)
         self.assertEqual(curve.vdims, [Dimension(('Value_density', 'Value Density'))])
 
