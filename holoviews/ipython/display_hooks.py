@@ -4,7 +4,7 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import sys, traceback
+import os, sys, traceback
 
 import IPython
 from IPython import get_ipython
@@ -19,6 +19,7 @@ from ..core import (
 )
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
+from ..core.util import mimebundle_to_html
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -122,22 +123,6 @@ def option_state(element):
             dynamic_optstate(element, state=optstate)
 
 
-def mimebundle_to_html(bundle):
-    """
-    Converts a MIME bundle into HTML.
-    """
-    if isinstance(bundle, tuple):
-        data, metadata = bundle
-    else:
-        data = bundle
-    if 'text/html' not in data:
-        raise ValueError("MIME bundle must contain text/html data")
-    html = data['text/html']
-    if 'application/javascript' in data:
-        js = data['application/javascript']
-        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
-    return html
-
 
 def display_hook(fn):
     """
@@ -154,18 +139,21 @@ def display_hook(fn):
         try:
             max_frames = OutputSettings.options['max_frames']
             mimebundle = fn(element, max_frames=max_frames)
+            if mimebundle is None:
+                return {}, {}
+
+            html = mimebundle_to_html(mimebundle)
+            if os.environ.get('HV_DOC_HTML', False):
+                mimebundle = {'text/html': html}, {}
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
             if not any(fn.__name__.endswith(suffix) for suffix in disabled_suffixes):
-                if type(holoviews.archive) is not FileArchive and mimebundle is not None:
-                    html = mimebundle_to_html(mimebundle)
+                if type(holoviews.archive) is not FileArchive:
                     holoviews.archive.add(element, html=html)
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
-            if mimebundle is None:
-                return {}, {}
             return mimebundle
         except SkipRendering as e:
             if e.warn:
