@@ -465,7 +465,10 @@ class contours(Operation):
                     subpaths.append(path.vertices)
                 else:
                     subpaths += np.split(path.vertices, np.where(path.codes==1)[0][1:])
-            subpath = np.concatenate([p for sp in subpaths for p in (sp, empty)][:-1])
+            if len(subpaths):
+                subpath = np.concatenate([p for sp in subpaths for p in (sp, empty)][:-1])
+            else:
+                subpath = np.array([])
             paths.append({(xdim, ydim): subpath, element.vdims[0].name: level})
         contours = contour_type(paths, label=element.label, kdims=element.kdims, vdims=vdims)
         if self.p.overlaid:
