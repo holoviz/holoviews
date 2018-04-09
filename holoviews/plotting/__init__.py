@@ -17,7 +17,8 @@ from ..operation.stats import univariate_kde, bivariate_kde
 Compositor.register(Compositor("Distribution", univariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,
-                               output_type=Area))
+                               output_type=Area,
+                               backends=['bokeh', 'matplotlib']))
 Compositor.register(Compositor("Bivariate", bivariate_kde, None,
                                'data', transfer_options=True,
                                transfer_parameters=True,
