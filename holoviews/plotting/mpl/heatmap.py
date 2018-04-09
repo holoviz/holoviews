@@ -55,6 +55,12 @@ class HeatMapPlot(RasterPlot):
         Ticks along y-axis/annulars specified as an integer, explicit list of
         ticks or function. If `None`, no ticks are shown.""")
 
+
+    def get_extents(self, element, ranges):
+        ys, xs = element.gridded.interface.shape(element.gridded, gridded=True)
+        return (0, 0, xs, ys)
+
+
     @classmethod
     def is_radial(cls, heatmap):
         opts = cls.lookup_options(heatmap, 'plot').options
@@ -167,7 +173,8 @@ class HeatMapPlot(RasterPlot):
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
-        style['annotations'] = self._annotate_values(element.gridded)
+        if self.show_values:
+            style['annotations'] = self._annotate_values(element.gridded)
         style['origin'] = 'upper'
         vdim = element.vdims[0]
         self._norm_kwargs(element, ranges, style, vdim)
