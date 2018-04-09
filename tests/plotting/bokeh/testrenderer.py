@@ -26,6 +26,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
         self.renderer = BokehRenderer.instance()
+        self.renderer.notebook_context = False
 
     def test_save_html(self):
         bytesio = BytesIO()

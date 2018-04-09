@@ -8,6 +8,7 @@ from param.parameterized import bothmethod
 import bokeh
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
+from bokeh.document import Document
 from bokeh.io import curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
@@ -139,7 +140,8 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        doc = curdoc() if doc is None else doc
+        if doc is None:
+            doc = Document() if self_or_cls.notebook_context else curdoc()
         doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
         plot.document = doc
