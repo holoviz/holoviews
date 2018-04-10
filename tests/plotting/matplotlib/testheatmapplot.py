@@ -15,6 +15,11 @@ class TestLayoutPlot(TestMPLPlot):
         self.assertEqual(artist.get_array().data, arr.T[::-1, ::-1])
         self.assertEqual(artist.get_extent(), (0, 2, 0, 3))
 
+    def test_heatmap_extents(self):
+        hmap = HeatMap([('A', 50, 1), ('B', 2, 2), ('C', 50, 1)])
+        plot = mpl_renderer.get_plot(hmap)
+        self.assertEqual(plot.get_extents(hmap, {}), (0, 0, 3, 2))
+
     def test_heatmap_xmarks_int(self):
         hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(xmarks=2)
         plot = mpl_renderer.get_plot(hmap)
