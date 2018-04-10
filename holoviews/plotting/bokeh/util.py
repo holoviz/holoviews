@@ -509,6 +509,8 @@ def update_shared_sources(f):
         shared_sources = self.handles.get('shared_sources', [])
         for source in shared_sources:
             source.data.clear()
+            if self.document and self.document._held_events:
+                self.document._held_events = self.document._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
 
