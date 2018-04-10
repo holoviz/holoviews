@@ -7,6 +7,7 @@ from nose.plugins.attrib import attr
 import numpy as np
 
 from holoviews import HoloMap, Image, GridSpace, Table, Curve, Store
+from holoviews.plotting import Renderer
 from holoviews.element.comparison import ComparisonTestCase
 
 try:
@@ -26,6 +27,11 @@ class BokehRendererTest(ComparisonTestCase):
         self.image2 = Image(np.array([[1,0],[4,-2]]), label='Image2')
         self.map1 = HoloMap({1:self.image1, 2:self.image2}, label='TestMap')
         self.renderer = BokehRenderer.instance()
+        self.nbcontext = Renderer.notebook_context 
+        Renderer.notebook_context = False
+
+    def tearDown(self):
+        Renderer.notebook_context = self.nbcontext
 
     def test_save_html(self):
         bytesio = BytesIO()

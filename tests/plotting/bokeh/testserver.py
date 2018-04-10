@@ -4,6 +4,7 @@ from holoviews.core.spaces import DynamicMap
 from holoviews.core.options import Store
 from holoviews.element import Curve, Polygons, Path, HLine
 from holoviews.element.comparison import ComparisonTestCase
+from holoviews.plotting import Renderer
 from holoviews.streams import RangeXY, PlotReset
 
 try:
@@ -30,11 +31,14 @@ class TestBokehServerSetup(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
+        self.nbcontext = Renderer.notebook_context 
+        Renderer.notebook_context = False
 
     def tearDown(self):
         Store.current_backend = self.previous_backend
         bokeh_renderer.last_plot = None
         Callback._callbacks = {}
+        Renderer.notebook_context = self.nbcontext
 
     def test_render_server_doc_element(self):
         obj = Curve([])
