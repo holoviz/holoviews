@@ -271,19 +271,23 @@ class BokehPlot(DimensionedPlot):
         deleted. Traverses through all plots cleaning up Callbacks and
         Stream subscribers.
         """
-        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        plots = self.traverse(lambda x: x, [BokehPlot])
         for plot in plots:
+            if not isinstance(plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)):
+                continue
             streams = list(plot.streams)
-            for callback in plot.callbacks:
-                streams += callback.streams
-                callbacks = {k: cb for k, cb in callback._callbacks.items()
-                            if cb is not callback}
-                Callback._callbacks = callbacks
             for stream in set(streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
                     if get_method_owner(subscriber) not in plots
                 ]
+            if not isinstance(plot, GenericElementPlot):
+                continue
+            for callback in plot.callbacks:
+                streams += callback.streams
+                callbacks = {k: cb for k, cb in callback._callbacks.items()
+                            if cb is not callback}
+                Callback._callbacks = callbacks
 
 
     def _fontsize(self, key, label='fontsize', common=True):

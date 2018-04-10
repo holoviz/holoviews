@@ -68,8 +68,10 @@ class Plot(param.Parameterized):
         Cleans up references to the plot on the attached Stream
         subscribers.
         """
-        plots = self.traverse(lambda x: x, [GenericElementPlot])
+        plots = self.traverse(lambda x: x, [Plot])
         for plot in plots:
+            if not isinstance(plot, (GenericCompositePlot, GenericElementPlot, GenericOverlayPlot)):
+                continue
             for stream in set(plot.streams):
                 stream._subscribers = [
                     (p, subscriber) for p, subscriber in stream._subscribers
