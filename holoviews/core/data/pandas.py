@@ -98,6 +98,8 @@ class PandasInterface(Interface):
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
+            elif isinstance(data, list) and len(data) == 0:
+                data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
                 data = None
             elif (isinstance(data, dict) and not all(d in data for d in columns) and

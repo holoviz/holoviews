@@ -850,6 +850,11 @@ class ArrayDatasetTest(HomogeneousColumnTypes, ComparisonTestCase):
         self.data_instance_type = np.ndarray
         self.init_column_data()
 
+    def test_dataset_empty_list_init_dtypes(self):
+        dataset = Dataset([], kdims=['x'], vdims=['y'])
+        for d in 'xy':
+            self.assertEqual(dataset.dimension_values(d).dtype, np.float64)
+
     def test_dataset_simple_dict_sorted(self):
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
@@ -885,6 +890,11 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         Dataset.datatype = [self.datatype]
         self.data_instance_type = pd.DataFrame
         self.init_column_data()
+
+    def test_dataset_empty_list_init_dtypes(self):
+        dataset = Dataset([], kdims=['x'], vdims=['y'])
+        for d in 'xy':
+            self.assertEqual(dataset.dimension_values(d).dtype, np.float64)
 
     def test_dataset_series_construct(self):
         ds = Scatter(pd.Series([1, 2, 3], name='A'))
@@ -1061,6 +1071,11 @@ class DictDatasetTest(HeterogeneousColumnTypes, ScalarColumnTypes, ComparisonTes
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
                                           kdims=['x'], vdims=['y']))
+
+    def test_dataset_empty_list_init_dtypes(self):
+        dataset = Dataset([], kdims=['x'], vdims=['y'])
+        for d in 'xy':
+            self.assertEqual(dataset.dimension_values(d).dtype, np.float64)
 
 
 class GridTests(object):
