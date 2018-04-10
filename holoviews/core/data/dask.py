@@ -92,9 +92,12 @@ class DaskInterface(PandasInterface):
             series = dataset.data[alias]
             if isinstance(k, slice):
                 if k.start is not None:
-                    masks.append(k.start <= series)
+                    # Workaround for dask issue #3392
+                    kval = util.numpy_scalar_to_python(k.start)
+                    masks.append(kval <= series)
                 if k.stop is not None:
-                    masks.append(series < k.stop)
+                    kval = util.numpy_scalar_to_python(k.stop)
+                    masks.append(series < kval)
             elif isinstance(k, (set, list)):
                 iter_slc = None
                 for ik in k:

@@ -1649,3 +1649,15 @@ def mimebundle_to_html(bundle):
         js = data['application/javascript']
         html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
     return html
+
+
+def numpy_scalar_to_python(scalar):
+    """
+    Converts a NumPy scalar to a regular python type.
+    """
+    scalar_type = type(scalar)
+    if np.issubclass_(scalar_type, np.float_):
+        return float(scalar)
+    elif np.issubclass_(scalar_type, np.int_):
+        return int(scalar)
+    return scalar
