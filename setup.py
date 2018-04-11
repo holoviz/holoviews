@@ -37,7 +37,7 @@ def embed_version(basepath, ref='v0.2.2'):
     This function acts as a fallback to make Version available until
     PEP518 is commonly supported by pip to express build dependencies.
     """
-    import io, zipfile
+    import io, zipfile, importlib
     try:    from urllib.request import urlopen
     except: from urllib import urlopen
     try:
