@@ -7,8 +7,27 @@ for filing bug reports, testing and contributing a number of new
 features and bug fixes with special thanks to @mansenfranzen, @ea42gh,
 @drs251 and @jakirkham.
 
+New components:
+
+- Added ``HexTiles`` element to plot data binned into a hexagonal
+  tiling ([#1141](https://github.com/ioam/holoviews/issues/1141))
+- Added ``Labels`` element to plot a large number of text labels at
+  once ([#1837](https://github.com/ioam/holoviews/issues/1837))
+- Added ``Sankey`` element to plot directed flow graphs
+  ([#1123](https://github.com/ioam/holoviews/issues/1123))
+- Added ``TriMesh`` element and datashading operation to plot small
+  and large irregular meshes
+  ([#2143](https://github.com/ioam/holoviews/pull/2143))
+- Added ``Div`` element to add arbitrary HTML elements to a bokeh plot
+  ([#2221](https://github.com/ioam/holoviews/issues/2221))
+- Added ``PointDraw``, ``PolyDraw``, ``BoxEdit`` and ``PolyEdit``
+  streams to allow drawing on bokeh plot and syncing drawn or edited
+  data to Python ([#2268](https://github.com/ioam/holoviews/issues/2459))
+  
 Features:
 
+- Added radial ``HeatMap`` option to allow plotting heatmaps with a
+  cyclic x-axis ([#2139](https://github.com/ioam/holoviews/pull/2155))
 - All elements now support declaring bin edges as well as centers
   allowing ``Histogram`` and ``QuadMesh`` to become first class
   ``Dataset`` types
@@ -24,23 +43,6 @@ Features:
 - n-dimensional dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/ioam/holoviews/pull/2305))
-- Added ``Div`` element to add arbitrary HTML elements to a bokeh plot
-  ([#2221](https://github.com/ioam/holoviews/issues/2221))
-- Added radial ``HeatMap`` option to allow plotting heatmaps with a
-  cyclic x-axis ([#2139](https://github.com/ioam/holoviews/pull/2155))
-- Added ``PointDraw``, ``PolyDraw``, ``BoxEdit`` and ``PolyEdit``
-  streams to allow drawing on bokeh plot and syncing drawn or edited
-  data to Python
-  ([#2268](https://github.com/ioam/holoviews/issues/2459))
-- Added ``HexTiles`` element to plot data binned into a hexagonal
-  tiling ([#1141](https://github.com/ioam/holoviews/issues/1141))
-- Added ``Labels`` element to plot a large number of text labels at
-  once ([#1837](https://github.com/ioam/holoviews/issues/1837))
-- Added ``Sankey`` element to plot directed flow graphs
-  ([#1123](https://github.com/ioam/holoviews/issues/1123))
-- Added ``TriMesh`` element and datashading operation to plot small
-  and large irregular meshes
-  ([#2143](https://github.com/ioam/holoviews/pull/2143))
 
 Enhancements:
 
