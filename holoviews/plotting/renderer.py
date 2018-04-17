@@ -70,8 +70,9 @@ static_template = """
 """
 
 embed_js = """
-// Sorry for this hack! See #2574 if you want to be sad
+// Ugly hack - see #2574 for more information
 if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
+  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
   var htmlObject = document.createElement('div');
   htmlObject.innerHTML = `{html}`;
   var scriptTags = document.getElementsByTagName('script');
