@@ -1,3 +1,119 @@
+Version 1.10.0
+==============
+
+This is a major release with a large number of new features, bug fixes
+and also a small number of API changes. Many thanks for the many users
+for filing bug reports, testing and contributing a number of new
+features and bug fixes with special thanks to @mansenfranzen, @ea42gh,
+@drs251 and @jakirkham.
+
+Features:
+
+- All elements now support declaring bin edges as well as centers
+  allowing ``Histogram`` and ``QuadMesh`` to become first class
+  ``Dataset`` types
+  ([#547](https://github.com/ioam/holoviews/issues/547))
+- Added a ``Chord`` element to draw flow graphs between different
+  nodes ([#2137](https://github.com/ioam/holoviews/issues/2137))
+- Full compatibility with JupyterLab when installing the
+  jupyterlab_holoviews extension
+  ([#687](https://github.com/ioam/holoviews/issues/687))
+- The initial or default widget value can now be set via the
+  Dimension.default parameter
+  ([#704](https://github.com/ioam/holoviews/issues/704))
+- n-dimensional dask arrays are now supported directly via the gridded
+  dictionary data interface
+  ([#2305](https://github.com/ioam/holoviews/pull/2305))
+- Added ``Div`` element to add arbitrary HTML elements to a bokeh plot
+  ([#2221](https://github.com/ioam/holoviews/issues/2221))
+- Added radial ``HeatMap`` option to allow plotting heatmaps with a
+  cyclic x-axis ([#2139](https://github.com/ioam/holoviews/pull/2155))
+- Added ``PointDraw``, ``PolyDraw``, ``BoxEdit`` and ``PolyEdit``
+  streams to allow drawing on bokeh plot and syncing drawn or edited
+  data to Python
+  ([#2268](https://github.com/ioam/holoviews/issues/2459))
+- Added ``HexTiles`` element to plot data binned into a hexagonal
+  tiling ([#1141](https://github.com/ioam/holoviews/issues/1141))
+- Added ``Labels`` element to plot a large number of text labels at
+  once ([#1837](https://github.com/ioam/holoviews/issues/1837))
+- Added ``Sankey`` element to plot directed flow graphs
+  ([#1123](https://github.com/ioam/holoviews/issues/1123))
+- Added ``TriMesh`` element and datashading operation to plot small
+  and large irregular meshes
+  ([#2143](https://github.com/ioam/holoviews/pull/2143))
+
+Enhancements:
+
+- Improvements to exceptions
+  ([#1127](https://github.com/ioam/holoviews/issues/1127))
+- Toolbar position can now be controlled at layout level and added
+  ``merge_toolbar`` option
+  ([#1977](https://github.com/ioam/holoviews/issues/1977))
+- Bokeh themes can now be applied at the renderer level
+  ([#1861](https://github.com/ioam/holoviews/issues/1861))
+- Dataframe and Series index can now be referenced by name when
+  constructing an element
+  ([#2000](https://github.com/ioam/holoviews/issues/2000))
+- Option setting methods such as ``.opts``, ``.options`` and
+  ``hv.opts`` now allow specifying the backend instead of defaulting
+  to the current backend
+  ([#1801](https://github.com/ioam/holoviews/issues/1801))
+- Handled API changes in streamz 0.3.0 in Buffer stream
+  ([#2409](https://github.com/ioam/holoviews/issues/2409))
+- Supported GIF output on windows using new matplotlib pillow
+  animation support
+  ([#385](https://github.com/ioam/holoviews/issues/385))
+- Provided simplified interface to ``rasterize`` most element types
+  using datashader
+  ([#2465](https://github.com/ioam/holoviews/pull/2465))
+- ``Bivariate`` element now support ``levels`` as a plot option
+  ([#2099](https://github.com/ioam/holoviews/issues/2099))
+- ``NdLayout`` and ``GridSpace`` now consistently support ``*``
+  operation ([#2075](https://github.com/ioam/holoviews/issues/2075))
+- The bokeh backend no longer has a hard dependency on matplotlib
+  ([#829](https://github.com/ioam/holoviews/issues/829))
+- ``DynamicMap`` may now return (``Nd``)``Overlay`` with varying
+  number of elements
+  ([#1388](https://github.com/ioam/holoviews/issues/1388))
+- In the notebook deleting or re-executing a cell will now delete the
+  plot and clean up any attached streams
+  ([#2141](https://github.com/ioam/holoviews/issues/2141))
+- Added ``color_levels`` plot option to set discrete number of levels
+  during colormapping
+  ([#2483](https://github.com/ioam/holoviews/pull/2483))
+
+Fixes:
+
+- ``Layout`` and ``Overlay`` objects no longer create lower-case nodes
+  on attribute access
+  ([#2331](https://github.com/ioam/holoviews/pull/2331))
+- ``Dimension.step`` now correctly respects both integer and float
+  steps ([#1707](https://github.com/ioam/holoviews/issues/1707))
+- Fixed timezone issues when using linked streams on datetime axes
+  ([#2459](https://github.com/ioam/holoviews/issues/2459))
+
+
+Backward compatibility changes:
+
+- Image elements now expect and validate regular sampling
+  ([#1869](https://github.com/ioam/holoviews/issues/1869)), for
+  irregularly sampled data QuadMesh should be used.
+- Tabular elements will no longer default to use ``ArrayInterface``
+  instead preferring pandas and dictionary data formats
+  ([#1236](https://github.com/ioam/holoviews/issues/1236))
+- ``Cycle``/``Palette`` values are no longer zipped together instead
+  cycling independently
+  ([#2333](https://github.com/ioam/holoviews/pull/2333))
+- The default color ``Cycle`` was expanded
+  ([#2483](https://github.com/ioam/holoviews/pull/2483))
+- Categorical colormapping was made consistent across backends
+  changing the behavior of categorical matplotlib colormaps
+  ([#2483](https://github.com/ioam/holoviews/pull/2483))
+- Disabled auto-indexable property of the Dataset baseclass, i.e. if
+  single column is supplied no integer index column is added
+  automatically ([#2522](https://github.com/ioam/holoviews/pull/2522))
+
+
 Version 1.9.5
 =============
 
