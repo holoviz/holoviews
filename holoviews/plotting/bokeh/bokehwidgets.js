@@ -23,8 +23,12 @@ var BokehMethods = {
       return;
     }
     var data = this.frames[current];
-	if (data !== undefined) {
-      var doc = HoloViews.plot_index[data.root].model.document;
+    if (data !== undefined) {
+      if (data.root in HoloViews.plot_index) {
+        var doc = HoloViews.plot_index[data.root].model.document;
+      } else {
+        var doc = Bokeh.index[data.root].model.document;
+      }
       doc.apply_json_patch(data.content);
     }
   },
@@ -33,11 +37,15 @@ var BokehMethods = {
       this.receiver = new Bokeh.protocol.Receiver()
     } else {
       this.receiver = null;
-	}
+    }
     return HoloViewsWidget.prototype.init_comms.call(this);
   },
   process_msg : function(msg) {
-    var doc = HoloViews.plot_index[this.plot_id].model.document;
+    if (this.plot_id in HoloViews.plot_index) {
+      var doc = HoloViews.plot_index[this.plot_id].model.document;
+    } else {
+      var doc = Bokeh.index[this.plot_id].model.document;
+    }
     if (this.receiver === null) { return }
     var receiver = this.receiver;
     if (msg.buffers.length > 0) {
