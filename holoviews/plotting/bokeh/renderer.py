@@ -34,15 +34,20 @@ NOTEBOOK_DIV = """
 
 # Following JS block becomes body of the message handler callback
 bokeh_msg_handler = """
-var plot = HoloViews.plot_index["{plot_id}"];
+var plot_id = "{plot_id}";
+if (plot_id in HoloViews.plot_index) {
+  var doc = HoloViews.plot_index[plot_id];
+} else {
+  var doc = Bokeh.index[plot_id];
+}
 
-if ("{plot_id}" in HoloViews.receivers) {{
-  var receiver = HoloViews.receivers["{plot_id}"];
+if (plot_id in HoloViews.receivers) {{
+  var receiver = HoloViews.receivers[plot_id];
 }} else if (Bokeh.protocol === undefined) {{
   return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
-  HoloViews.receivers["{plot_id}"] = receiver;
+  HoloViews.receivers[plot_id] = receiver;
 }}
 
 if (buffers.length > 0) {{
