@@ -69,6 +69,17 @@ static_template = """
 </html>
 """
 
+embed_js = """
+if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{element_id}'))) {{
+  var htmlObject = document.createElement('div');
+  htmlObject.innerHTML = `{html}`;
+  var scriptTags = document.getElementsByTagName('script');
+  var parentTag = scriptTags[scriptTags.length-1].parentNode;
+  parentTag.append(htmlObject)
+}}
+"""
+
+
 class Renderer(Exporter):
     """
     The job of a Renderer is to turn the plotting state held within
@@ -311,6 +322,7 @@ class Renderer(Exporter):
         if isinstance(plot, NdWidget):
             js, html = plot(as_script=True)
             plot_id = plot.plot_id
+            element_id = plot.id
         else:
             html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
@@ -322,7 +334,10 @@ class Renderer(Exporter):
                                                        comm_id=plot.comm.id,
                                                        plot_id=plot_id)
                 js = '\n'.join([js, comm_js])
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+            element_id = plot_id
+            html = "<div id='%s' style='display: table; margin: 0 auto;'>%s</div>" % (element_id, html)
+        if not os.environ.get('HV_DOC_HTML', False) and js is not None:
+            js = embed_js.format(element_id=element_id, plot_id=plot_id, html=html) + js
 
         data['text/html'] = html
         if js:
