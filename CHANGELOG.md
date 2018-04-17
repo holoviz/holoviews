@@ -9,15 +9,17 @@ features and bug fixes with special thanks to @mansenfranzen, @ea42gh,
 
 New components:
 
-- Added ``HexTiles`` element to plot data binned into a hexagonal
-  tiling ([#1141](https://github.com/ioam/holoviews/issues/1141))
-- Added ``Labels`` element to plot a large number of text labels at
-  once ([#1837](https://github.com/ioam/holoviews/issues/1837))
 - Added ``Sankey`` element to plot directed flow graphs
   ([#1123](https://github.com/ioam/holoviews/issues/1123))
 - Added ``TriMesh`` element and datashading operation to plot small
   and large irregular meshes
+- Added a ``Chord`` element to draw flow graphs between different
+  nodes ([#2137](https://github.com/ioam/holoviews/issues/2137))
   ([#2143](https://github.com/ioam/holoviews/pull/2143))
+- Added ``HexTiles`` element to plot data binned into a hexagonal
+  tiling ([#1141](https://github.com/ioam/holoviews/issues/1141))
+- Added ``Labels`` element to plot a large number of text labels at
+  once ([#1837](https://github.com/ioam/holoviews/issues/1837))
 - Added ``Div`` element to add arbitrary HTML elements to a bokeh plot
   ([#2221](https://github.com/ioam/holoviews/issues/2221))
 - Added ``PointDraw``, ``PolyDraw``, ``BoxEdit`` and ``PolyEdit``
@@ -32,8 +34,6 @@ Features:
   allowing ``Histogram`` and ``QuadMesh`` to become first class
   ``Dataset`` types
   ([#547](https://github.com/ioam/holoviews/issues/547))
-- Added a ``Chord`` element to draw flow graphs between different
-  nodes ([#2137](https://github.com/ioam/holoviews/issues/2137))
 - Full compatibility with JupyterLab when installing the
   jupyterlab_holoviews extension
   ([#687](https://github.com/ioam/holoviews/issues/687))
