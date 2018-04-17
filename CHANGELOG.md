@@ -95,7 +95,7 @@ Fixes:
   ([#2459](https://github.com/ioam/holoviews/issues/2459))
 
 
-Backward compatibility changes:
+Changes affecting backwards compatibility:
 
 - Image elements now expect and validate regular sampling
   ([#1869](https://github.com/ioam/holoviews/issues/1869)), for
