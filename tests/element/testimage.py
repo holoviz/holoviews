@@ -55,9 +55,8 @@ class TestImage(LoggingComparisonTestCase):
         vals = np.random.rand(20,20)
         xs = np.linspace(0,10,20)
         ys = np.linspace(0,10,20)
-        ys[-1] += 0.001
-        Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
-
+        ys[-1] += 0.01
+        Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-2)
 
     def test_image_rtol_config(self):
         vals = np.random.rand(20,20)
