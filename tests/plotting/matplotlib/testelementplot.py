@@ -32,6 +32,12 @@ class TestColorbarPlot(TestMPLPlot):
         artist = plot.handles['artist']
         self.assertEqual(artist.get_clim(), (-3, 3))
 
+    def test_colormapper_clims(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(clims=(0, 4))
+        plot = mpl_renderer.get_plot(img)
+        artist = plot.handles['artist']
+        self.assertEqual(artist.get_clim(), (0, 4))
+        
     def test_colormapper_color_levels(self):
         img = Image(np.array([[0, 1], [2, 3]])).options(color_levels=5)
         plot = mpl_renderer.get_plot(img)
