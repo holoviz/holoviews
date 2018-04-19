@@ -302,15 +302,3 @@ def connect_edges(graph):
         end = end_ds.array(end_ds.kdims[:2])
         paths.append(np.array([start[0], end[0]]))
     return paths
-
-
-def validate_regular_sampling(img, dimension, rtol=10e-6):
-    """
-    Validates regular sampling of Image elements ensuring that
-    coordinates the difference in sampling steps is at most rtol times
-    the smallest sampling step. Returns a boolean indicating whether
-    the sampling is regular.
-    """
-    diffs = np.diff(img.dimension_values(dimension, expanded=False))
-    vals = np.unique(diffs)
-    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)

@@ -1553,6 +1553,17 @@ def bound_range(vals, density, time_unit='us'):
     return low-halfd, high+halfd, density, invert
 
 
+def validate_regular_sampling(values, rtol=10e-6):
+    """
+    Validates regular sampling of a 1D array ensuring that the difference
+    in sampling steps is at most rtol times the smallest sampling step.
+    Returns a boolean indicating whether the sampling is regular.
+    """
+    diffs = np.diff(values)
+    vals = np.unique(diffs)
+    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)
+
+
 def compute_density(start, end, length, time_unit='us'):
     """
     Computes a grid density given the edges and number of samples.

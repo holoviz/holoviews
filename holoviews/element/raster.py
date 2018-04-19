@@ -14,8 +14,7 @@ from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .graphs import TriMesh
 from .tabular import Table
-from .util import (compute_slice_bounds, categorical_aggregate2d,
-                   validate_regular_sampling)
+from .util import compute_slice_bounds, categorical_aggregate2d
 
 
 class Raster(Element2D):
@@ -285,8 +284,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
         # Ensure coordinates are regularly sampled
         xdim, ydim = self.kdims
-        xvalid = validate_regular_sampling(self, xdim, self.rtol)
-        yvalid = validate_regular_sampling(self, ydim, self.rtol)
+        xvals, yvals = (self.dimension_values(d, expanded=False) for d in self.kdims)
+        xvalid = util.validate_regular_sampling(xvals, self.rtol)
+        yvalid = util.validate_regular_sampling(yvals, self.rtol)
         msg = ("{clsname} dimension{dims} not evenly sampled to relative "
                "tolerance of {rtol}. Please use the QuadMesh element for "
                "irregularly sampled data or set a higher tolerance on "
