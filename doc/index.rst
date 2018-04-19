@@ -71,6 +71,13 @@ directly depends only on `Numpy <http://numpy.org>`_ and `Param <http://ioam.git
 Additional installation and configuration options are described in the
 `user guide <user_guide/Installing_and_Configuring.html>`_.
 
+PyViz
+-----
+
+HoloViews is part of the PyViz family of tools.  The `PyViz website <http://pyviz.org>`_
+shows how to use HoloViews together with other libraries to solve complex problems,
+including detailed tutorials and examples.
+
 
 Usage
 -----
