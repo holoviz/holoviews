@@ -167,10 +167,10 @@ class _layout_sankey(Operation):
             for node in nodes:
                 node['depth'] = depth
                 for link in node['sourceLinks']:
-                    if link['target'] not in next_nodes:
+                    if not any(link['target'] is node for node in next_nodes):
                         next_nodes.append(link['target'])
             nodes = next_nodes
-            depth +=1
+            depth += 1
             if depth > 10000:
                 raise RecursionError('Sankey diagrams only support acyclic graphs.')
 
@@ -181,10 +181,10 @@ class _layout_sankey(Operation):
             for node in nodes:
                 node['height'] = depth
                 for link in node['targetLinks']:
-                    if link['source'] not in next_nodes:
+                    if not any(link['source'] is node for node in next_nodes):
                         next_nodes.append(link['source'])
             nodes = next_nodes
-            depth +=1
+            depth += 1
             if depth > 10000:
                 raise RecursionError('Sankey diagrams only support acyclic graphs.')
 
