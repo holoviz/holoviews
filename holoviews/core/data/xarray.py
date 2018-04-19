@@ -127,9 +127,10 @@ class XArrayInterface(GridInterface):
                 vdims = [retrieve_unit_and_label(vd) for vd in vdims]
             if kdims is None:
                 xrdims = list(data.dims)
+                xrcoords = list(data.coords)
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
-                kdims = sorted(kdims, key=lambda x: (xrdims.index(x) if x in xrdims else float('inf'), x))
+                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
                 if set(xrdims) != set(kdims):
                     virtual_dims = [xd for xd in xrdims if xd not in kdims]
                     for c in data.coords:
