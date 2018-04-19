@@ -155,6 +155,14 @@ class ChordTests(ComparisonTestCase):
         self.assertEqual(chord.nodes, Nodes(nodes))
         self.assertEqual(chord.array(), np.array(self.simplices))
 
+    def test_chord_constructor_self_reference(self):
+        chord = Chord([('A', 'B', 2), ('B', 'A', 3), ('A', 'A', 2)])
+        nodes = np.array(
+            [[-0.5, 0.866025, 0],
+             [0.5, -0.866025, 1]]
+        ) 
+        self.assertEqual(chord.nodes, Nodes(nodes))
+
 
 
 class TriMeshTests(ComparisonTestCase):
