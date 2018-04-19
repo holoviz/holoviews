@@ -581,7 +581,7 @@ class layout_chords(Operation):
             matrix[s, t] += v
 
         # Compute weighted angular slice for each connection
-        weights_of_areas = (matrix.sum(axis=0) + matrix.sum(axis=1)) - matrix.diagonal()
+        weights_of_areas = (matrix.sum(axis=0) + matrix.sum(axis=1))
         areas_in_radians = (weights_of_areas / weights_of_areas.sum()) * (2 * np.pi)
 
         # We add a zero in the begging for the cumulative sum
@@ -608,9 +608,11 @@ class layout_chords(Operation):
         empty = np.array([[np.NaN, np.NaN]])
         paths = []
         for i in range(len(element)):
-            src_area, tgt_area = all_areas[src_idx[i]], all_areas[tgt_idx[i]]
+            sidx, tidx = src_idx[i], tgt_idx[i]
+            src_area, tgt_area = all_areas[sidx], all_areas[tidx]
+            n_conns = matrix[sidx, tidx]
             subpaths = []
-            for _ in range(int(values[i])):
+            for _ in range(int(n_conns)):
                 if not src_area or not tgt_area:
                     continue
                 x0, y0 = src_area.pop()
@@ -625,7 +627,7 @@ class layout_chords(Operation):
             if subpaths:
                 paths.append(np.concatenate(subpaths))
             else:
-                paths.append(np.array([]))
+                paths.append(np.empty((0, 2)))
 
         # Construct Chord element from components
         if nodes_el:
