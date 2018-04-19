@@ -12,7 +12,7 @@ try:
     from holoviews.plotting.bokeh.util import bokeh_version
 
     from bokeh.events import Tap
-    from bokeh.models import Range1d, Plot, ColumnDataSource
+    from bokeh.models import Range1d, Plot
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
