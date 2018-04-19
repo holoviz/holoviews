@@ -5,10 +5,10 @@ Unit tests of Image elements
 import numpy as np
 import holoviews as hv
 from holoviews.element import  Image, Curve
-from holoviews.element.comparison import ComparisonTestCase
+from ..utils import LoggingComparisonTestCase
 
 
-class TestImage(ComparisonTestCase):
+class TestImage(LoggingComparisonTestCase):
 
     def setUp(self):
         self.array1 = np.array([(0, 1, 2), (3, 4, 5)])
@@ -45,11 +45,11 @@ class TestImage(ComparisonTestCase):
         vals = np.random.rand(20,20)
         xs = np.linspace(0,10,20)
         ys = np.linspace(0,10,20)
-        ys[-1] += 0.001
-
-        regexp = 'Image dimension ys is not evenly sampled(.+?)'
-        with self.assertRaisesRegexp(ValueError, regexp):
-            Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals')
+        ys[-1] += 0.1
+        Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals')
+        substr = ('set a higher tolerance on hv.config.image_rtol or '
+                  'the rtol parameter in the Image constructor.')
+        self.log_handler.assertEndsWith('WARNING', substr)
 
     def test_image_rtol_constructor(self):
         vals = np.random.rand(20,20)

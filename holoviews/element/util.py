@@ -308,16 +308,9 @@ def validate_regular_sampling(img, dimension, rtol=10e-6):
     """
     Validates regular sampling of Image elements ensuring that
     coordinates the difference in sampling steps is at most rtol times
-    the smallest sampling step. By default ensures the largest
-    sampling difference is less than one millionth of the smallest
-    sampling step.
+    the smallest sampling step. Returns a boolean indicating whether
+    the sampling is regular.
     """
-    dim = img.get_dimension(dimension)
-    diffs = np.diff(img.dimension_values(dim, expanded=False))
+    diffs = np.diff(img.dimension_values(dimension, expanded=False))
     vals = np.unique(diffs)
-    msg = ("{clsname} dimension {dim} is not evenly sampled to rtol "
-           "tolerance of {rtol}, please use the QuadMesh element for "
-           "unevenly or irregularly sampled data.")
-    if len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol:
-        raise ValueError(msg.format(clsname=type(img).__name__,
-                                    dim=dim, rtol=rtol))
+    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)

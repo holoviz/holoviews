@@ -284,8 +284,22 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled
-        validate_regular_sampling(self, 0, self.rtol)
-        validate_regular_sampling(self, 1, self.rtol)
+        xdim, ydim = self.kdims
+        xvalid = validate_regular_sampling(self, xdim, self.rtol)
+        yvalid = validate_regular_sampling(self, ydim, self.rtol)
+        msg = ("{clsname} dimension{dims} not evenly sampled to relative "
+               "tolerance of {rtol}. Please use the QuadMesh element for "
+               "irregularly sampled data or set a higher tolerance on "
+               "hv.config.image_rtol or the rtol parameter in the "
+               "{clsname} constructor.")
+        dims = None
+        if not xvalid:
+            dims = ' %s is ' % xdim if yvalid else '(s) %s and %s are' % (xdim, ydim)
+        elif not yvalid:
+            dims = ' %s is' % ydim
+        if dims:
+            self.warning(msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
+
 
 
     def __setstate__(self, state):
