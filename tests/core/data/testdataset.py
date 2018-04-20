@@ -1850,6 +1850,15 @@ class XArrayDatasetTest(GridDatasetTest):
         data_dim = Dimension("data_name")
         self.assertEqual(ds_from_ds.vdims[0], data_dim)
 
+    def test_xarray_coord_ordering(self):
+        import xarray as xr
+        data = np.zeros((3,4,5))
+        coords = OrderedDict([('b', range(3)), ('c', range(4)), ('a', range(5))])
+        darray = xr.DataArray(data, coords=coords, dims=['b', 'c', 'a'])
+        dataset = xr.Dataset({'value': darray}, coords=coords)
+        ds = Dataset(dataset)
+        self.assertEqual(ds.kdims, ['b', 'c', 'a'])
+
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
         raise SkipTest("Not supported")
