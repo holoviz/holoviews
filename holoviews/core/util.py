@@ -82,7 +82,7 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
-    image_rtol = param.Number(default=10e-6, doc="""
+    image_rtol = param.Number(default=10e-4, doc="""
       The tolerance used to enforce regular sampling for regular,
       gridded data where regular sampling is expected. Expressed as the
       maximal allowable sampling difference between sample
@@ -1551,6 +1551,17 @@ def bound_range(vals, density, time_unit='us'):
     if isinstance(low, datetime_types):
         halfd = np.timedelta64(int(round(halfd)), time_unit)
     return low-halfd, high+halfd, density, invert
+
+
+def validate_regular_sampling(values, rtol=10e-6):
+    """
+    Validates regular sampling of a 1D array ensuring that the difference
+    in sampling steps is at most rtol times the smallest sampling step.
+    Returns a boolean indicating whether the sampling is regular.
+    """
+    diffs = np.diff(values)
+    vals = np.unique(diffs)
+    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):

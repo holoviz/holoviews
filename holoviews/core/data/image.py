@@ -34,6 +34,10 @@ class ImageInterface(GridInterface):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
             xs, ys = np.asarray(data[kdims[0].name]), np.asarray(data[kdims[1].name])
+            xvalid = util.validate_regular_sampling(xs, eltype.rtol or util.config.image_rtol)
+            yvalid = util.validate_regular_sampling(ys, eltype.rtol or util.config.image_rtol)
+            if not xvalid or not yvalid:
+                raise ValueError('ImageInterface only supports regularly sampled coordinates')
             l, r, xdensity, invertx = util.bound_range(xs, None, eltype._time_unit)
             b, t, ydensity, inverty = util.bound_range(ys, None, eltype._time_unit)
             kwargs['bounds'] = BoundingBox(points=((l, b), (r, t)))
