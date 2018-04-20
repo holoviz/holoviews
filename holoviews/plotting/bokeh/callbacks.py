@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import param
-from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
+from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection)
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
@@ -355,6 +355,9 @@ class ServerCallback(MessageCallback):
                 continue
             if isinstance(resolved, dict):
                 resolved = resolved.get(p)
+            elif isinstance(resolved, Selection) and p in ['1d', 'indices']:
+                # Handle resolving bokeh Selection 1d indices
+                resolved = resolved[p]
             else:
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
