@@ -20,6 +20,7 @@ from ..core import (
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
 from ..core.util import mimebundle_to_html
+from ..plotting import Plot
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -252,6 +253,8 @@ def display(obj, raw=False, **kwargs):
     elif isinstance(obj, (HoloMap, DynamicMap)):
         with option_state(obj):
             output = map_display(obj)
+    elif isinstance(obj, Plot):
+        output = render(obj)
     else:
         output = {'text/plain': repr(obj)}
 
