@@ -1,3 +1,21 @@
+Version 1.10.1
+==============
+
+This is a minor bug fix release with a number of fixes for regressions
+and minor bugs introduced in the 1.10.0 release:
+
+Fixes:
+
+- Fixed static HTML export of notebooks
+  ([#2574](https://github.com/ioam/holoviews/pull/2574))
+- Ensured Chord element allows recurrent edges
+  ([#2583](https://github.com/ioam/holoviews/pull/2583))
+- Restored behavior for inferring key dimensions order from XArray
+  Dataset ([#2579](https://github.com/ioam/holoviews/pull/2579))
+- Fixed Selection1D stream on bokeh server after changes in bokeh
+  0.12.15 ([#2586](https://github.com/ioam/holoviews/pull/2586))
+
+
 Version 1.10.0
 ==============
 
@@ -48,7 +66,7 @@ Features:
 
 - Added [radial ``HeatMap``](http://holoviews.org/reference/elements/bokeh/RadialHeatMap.html) 
   option to allow plotting heatmaps with a cyclic x-axis
-  ([#2139](https://github.com/ioam/holoviews/pull/2155))
+  ([#2139](https://github.com/ioam/holoviews/pull/2139))
 - All elements now support declaring bin edges as well as centers
   allowing ``Histogram`` and ``QuadMesh`` to become first class
   ``Dataset`` types
