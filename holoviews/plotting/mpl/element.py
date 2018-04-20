@@ -616,6 +616,9 @@ class ColorbarPlot(ElementPlot):
             else:
                 clim = (0, len(np.unique(values))-1)
                 categorical = True
+        else:
+            categorical = values.dtype.kind not in 'uif'
+
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
