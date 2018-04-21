@@ -295,6 +295,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
+            if self.handles['hover'].renderers == 'auto':
+                self.handles['hover'].renderers = []
             self.handles['hover'].renderers.append(renderer)
 
 
