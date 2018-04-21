@@ -256,7 +256,7 @@ def display(obj, raw=False, **kwargs):
     elif isinstance(obj, Plot):
         output = render(obj)
     else:
-        output = {'text/plain': repr(obj)}
+        output = obj
 
     if raw:
         return output
@@ -264,7 +264,7 @@ def display(obj, raw=False, **kwargs):
         data, metadata = output
     else:
         data, metadata = output, {}
-    publish_display_data(data, metadata)
+    return IPython.display.display(data, metadata=metadata)
 
 
 def pprint_display(obj):
@@ -287,7 +287,7 @@ def image_display(element, max_frames, fmt):
         return None
     info = process_object(element)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(IPython.display.HTML(info))
         return
 
     backend = Store.current_backend
