@@ -652,6 +652,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
+        if hover.renderers == 'auto':
+            hover.renderers = []
         hover.renderers.append(renderer)
 
         # If datetime column is in the data replace hover formatter
@@ -1343,7 +1345,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                 tooltips = ()
             tool = self.handles['hover_tools'].get(tooltips)
             if tool:
-                renderers = tool.renderers+hover.renderers
+                tool_renderers = [] if tool.renderers == 'auto' else tool.renderers
+                hover_renderers = [] if hover.renderers == 'auto' else hover.renderers
+                renderers = tool_renderers + hover_renderers
                 tool.renderers = list(util.unique_iterator(renderers))
             if 'hover' not in self.handles:
                 self.handles['hover'] = tool
