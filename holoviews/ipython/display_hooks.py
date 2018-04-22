@@ -8,7 +8,7 @@ import os, sys, traceback
 
 import IPython
 from IPython import get_ipython
-from IPython.display import publish_display_data
+from IPython.display import HTML
 
 import holoviews
 from ..core.options import (Store, StoreOptions, SkipRendering,
@@ -49,7 +49,7 @@ def process_object(obj):
 def render(obj, **kwargs):
     info = process_object(obj)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     if render_anim is not None:
@@ -178,7 +178,7 @@ def display_hook(fn):
 def element_display(element, max_frames):
     info = process_object(element)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     backend = Store.current_backend
@@ -241,6 +241,7 @@ def display(obj, raw_output=False, **kwargs):
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
+    raw = True
     if isinstance(obj, GridSpace):
         with option_state(obj):
             output = grid_display(obj)
@@ -257,6 +258,7 @@ def display(obj, raw_output=False, **kwargs):
         output = render(obj)
     else:
         output = obj
+        raw = kwargs.pop('raw', False)
 
     if raw_output:
         return output
@@ -264,7 +266,7 @@ def display(obj, raw_output=False, **kwargs):
         data, metadata = output
     else:
         data, metadata = output, {}
-    return IPython.display.display(data, metadata=metadata, **kwargs)
+    return IPython.display.display(data, raw=raw, metadata=metadata, **kwargs)
 
 
 def pprint_display(obj):
@@ -287,7 +289,7 @@ def image_display(element, max_frames, fmt):
         return None
     info = process_object(element)
     if info:
-        display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     backend = Store.current_backend
