@@ -235,7 +235,7 @@ def grid_display(grid, max_frames):
     return render(grid)
 
 
-def display(obj, raw=False, **kwargs):
+def display(obj, raw_output=False, **kwargs):
     """
     Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
@@ -258,13 +258,13 @@ def display(obj, raw=False, **kwargs):
     else:
         output = obj
 
-    if raw:
+    if raw_output:
         return output
     elif isinstance(output, tuple):
         data, metadata = output
     else:
         data, metadata = output, {}
-    return IPython.display.display(data, metadata=metadata)
+    return IPython.display.display(data, metadata=metadata, **kwargs)
 
 
 def pprint_display(obj):
@@ -275,7 +275,7 @@ def pprint_display(obj):
     ip = get_ipython()  #  # noqa (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
-    return display(obj, raw=True)
+    return display(obj, raw_output=True)
 
 
 def image_display(element, max_frames, fmt):
