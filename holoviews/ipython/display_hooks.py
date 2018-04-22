@@ -301,7 +301,7 @@ def image_display(element, max_frames, fmt):
         return None
 
     data, info = renderer(plot, fmt=fmt)
-    return {info['mime_type']: data}
+    return {info['mime_type']: data}, {}
 
 
 @display_hook
