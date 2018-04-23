@@ -1,6 +1,7 @@
 from io import BytesIO
 import base64
 import logging
+import signal
 
 import param
 from param.parameterized import bothmethod
@@ -207,6 +208,14 @@ class BokehRenderer(Renderer):
             server.show('/')
         server.io_loop.add_callback(show_callback)
         server.start()
+
+        def sig_exit(*args, **kwargs):
+            loop.add_callback_from_signal(do_stop)
+
+        def do_stop(*args, **kwargs):
+            loop.stop()
+
+        signal.signal(signal.SIGINT, sig_exit)
         try:
             loop.start()
         except RuntimeError:
