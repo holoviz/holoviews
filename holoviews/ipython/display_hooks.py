@@ -8,7 +8,7 @@ import os, sys, traceback
 
 import IPython
 from IPython import get_ipython
-from IPython.display import publish_display_data
+from IPython.display import HTML
 
 import holoviews
 from ..core.options import (Store, StoreOptions, SkipRendering,
@@ -49,7 +49,7 @@ def process_object(obj):
 def render(obj, **kwargs):
     info = process_object(obj)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     if render_anim is not None:
@@ -178,7 +178,7 @@ def display_hook(fn):
 def element_display(element, max_frames):
     info = process_object(element)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     backend = Store.current_backend
@@ -235,12 +235,13 @@ def grid_display(grid, max_frames):
     return render(grid)
 
 
-def display(obj, raw=False, **kwargs):
+def display(obj, raw_output=False, **kwargs):
     """
     Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
+    raw = True
     if isinstance(obj, GridSpace):
         with option_state(obj):
             output = grid_display(obj)
@@ -256,15 +257,16 @@ def display(obj, raw=False, **kwargs):
     elif isinstance(obj, Plot):
         output = render(obj)
     else:
-        output = {'text/plain': repr(obj)}
+        output = obj
+        raw = kwargs.pop('raw', False)
 
-    if raw:
+    if raw_output:
         return output
     elif isinstance(output, tuple):
         data, metadata = output
     else:
         data, metadata = output, {}
-    publish_display_data(data, metadata)
+    return IPython.display.display(data, raw=raw, metadata=metadata, **kwargs)
 
 
 def pprint_display(obj):
@@ -275,7 +277,7 @@ def pprint_display(obj):
     ip = get_ipython()  #  # noqa (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
-    return display(obj, raw=True)
+    return display(obj, raw_output=True)
 
 
 def image_display(element, max_frames, fmt):
@@ -287,7 +289,7 @@ def image_display(element, max_frames, fmt):
         return None
     info = process_object(element)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     backend = Store.current_backend
