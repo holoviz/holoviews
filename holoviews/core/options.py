@@ -1286,7 +1286,10 @@ class Store(object):
 
         data, metadata = {}, {}
         for hook in hooks:
-            d, md = hook(obj)
+            ret = hook(obj)
+            if ret is None:
+                continue
+            d, md = ret
             data.update(d)
             metadata.update(md)
         return data, metadata
