@@ -121,6 +121,9 @@ Enhancements:
 - Added ``color_levels`` plot option to set discrete number of levels
   during colormapping
   ([#2483](https://github.com/ioam/holoviews/pull/2483))
+- Expanded the [Large Data](http://holoviews.org/user_guide/Large_Data.html)
+  user guide to show examples of all Element and Container types
+  supported for datashading and give performance guidelines.
 
 Fixes:
 
