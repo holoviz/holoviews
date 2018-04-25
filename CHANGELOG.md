@@ -77,6 +77,9 @@ Features:
 - n-dimensional Dask arrays are now supported directly via the gridded
   dictionary data interface
   ([#2305](https://github.com/ioam/holoviews/pull/2305))
+- Added new [Styling Plots](http://holoviews.org/user_guide/Styling_Plots.html)
+  and [Colormaps](http://holoviews.org/user_guide/Colormaps.html) 
+  user guides, including new functionality for working with colormaps.
 
 Enhancements:
 
@@ -118,6 +121,9 @@ Enhancements:
 - Added ``color_levels`` plot option to set discrete number of levels
   during colormapping
   ([#2483](https://github.com/ioam/holoviews/pull/2483))
+- Expanded the [Large Data](http://holoviews.org/user_guide/Large_Data.html)
+  user guide to show examples of all Element and Container types
+  supported for datashading and give performance guidelines.
 
 Fixes:
 
