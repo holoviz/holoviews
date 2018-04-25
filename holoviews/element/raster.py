@@ -217,7 +217,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
        The bounding region in sheet coordinates containing the data.""")
 
-    datatype = param.List(default=['image', 'grid', 'xarray', 'cube', 'dataframe', 'dictionary'])
+    datatype = param.List(default=['grid', 'xarray', 'image', 'cube', 'dataframe', 'dictionary'])
 
     group = param.String(default='Image', constant=True)
 
@@ -237,6 +237,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):
+        supplied_bounds = bounds
         if isinstance(data, Image):
             bounds = bounds or data.bounds
             xdensity = xdensity or data.xdensity
@@ -272,11 +273,17 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             l, b, r, t = bounds
             bounds = BoundingBox(points=((l, b), (r, t)))
 
+        data_bounds = None
+        if self.interface is ImageInterface and not isinstance(data, np.ndarray):
+            data_bounds = self.bounds.lbrt()
         l, b, r, t = bounds.lbrt()
         xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
         ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        self._validate(data_bounds, supplied_bounds)
 
+
+    def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
             if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
@@ -300,6 +307,27 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         if dims:
             self.warning(msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
 
+        if not supplied_bounds:
+            return
+
+        if data_bounds is None:
+            (x0, x1), (y0, y1) = (self.interface.range(self, kd.name) for kd in self.kdims)
+            xstep = (1./self.xdensity)/2.
+            ystep = (1./self.ydensity)/2.
+            if not isinstance(x0, util.datetime_types):
+                x0, x1 = (x0-xstep, x1+xstep)
+            if not isinstance(y0, util.datetime_types):
+                y0, y1 = (y0-ystep, y1+ystep)
+            bounds = (x0, y0, x1, y1)
+        else:
+            bounds = data_bounds
+
+        if not all(np.isclose(r, c, rtol=self.rtol) for r, c in zip(bounds, self.bounds.lbrt())
+               if not isinstance(r, util.datetime_types) and np.isfinite(r)):
+            raise ValueError('Supplied Image bounds do not match the coordinates defined '
+                             'in the data. Bounds only have to be declared if no coordinates '
+                             'are supplied, otherwise they must match the data. To change '
+                             'the displayed extents set the range on the x- and y-dimensions.')
 
 
     def __setstate__(self, state):
