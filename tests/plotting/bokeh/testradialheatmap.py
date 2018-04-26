@@ -1,8 +1,16 @@
 from __future__ import absolute_import
 
-import numpy as np
 from itertools import product
+
+import numpy as np
+
+from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
+
+try:
+    from holoviews.plotting.bokeh import RadialHeatMapPlot
+except:
+    pass
 
 from .testplot import TestBokehPlot, bokeh_renderer
 
@@ -268,3 +276,9 @@ class BokehRadialHeatMapPlotTests(TestBokehPlot):
         self.assertEqual(list(source_ann["x"]), list(self.x))
         self.assertEqual(list(source_ann["y"]), list(self.y))
         self.assertEqual(list(source_ann["z"]), self.z)
+
+    def test_heatmap_holomap(self):
+        hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
+                      'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
+        plot = bokeh_renderer.get_plot(hm.options(radial=True))
+        self.assertIsInstance(plot, RadialHeatMapPlot)

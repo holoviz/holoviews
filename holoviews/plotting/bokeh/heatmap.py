@@ -3,7 +3,9 @@ import numpy as np
 
 from bokeh.models import HoverTool, Span
 from bokeh.models.glyphs import AnnularWedge
+
 from ...core.util import is_nan, dimension_sanitizer
+from ...core.spaces import HoloMap
 from .element import (ColorbarPlot, CompositeElementPlot,
                       line_properties, fill_properties, text_properties)
 from .util import mpl_to_bokeh
@@ -56,6 +58,7 @@ class HeatMapPlot(ColorbarPlot):
 
     @classmethod
     def is_radial(cls, heatmap):
+        heatmap = heatmap.last if isinstance(heatmap, HoloMap) else heatmap
         opts = cls.lookup_options(heatmap, 'plot').options
         return ((any(o in opts for o in ('start_angle', 'radius_inner', 'radius_outer'))
                  and not (opts.get('radial') == False)) or opts.get('radial', False))

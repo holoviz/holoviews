@@ -5,7 +5,7 @@ from holoviews.element import HeatMap, Image
 from .testplot import TestMPLPlot, mpl_renderer
 
 
-class TestLayoutPlot(TestMPLPlot):
+class TestHeatMapPlot(TestMPLPlot):
 
     def test_heatmap_invert_axes(self):
         arr = np.array([[0, 1, 2], [3, 4, 5]])

@@ -2,7 +2,13 @@ from itertools import product
 
 import numpy as np
 
+from holoviews.core.spaces import HoloMap
 from holoviews.element.raster import HeatMap
+
+try:
+    from holoviews.plotting.mpl import RadialHeatMapPlot
+except:
+    pass
 
 from .testplot import TestMPLPlot, mpl_renderer
 
@@ -65,3 +71,8 @@ class RadialHeatMapPlotTests(TestMPLPlot):
         for circle, r in zip(yseparators, [0.25, 0.375]):
             self.assertEqual(circle.radius, r)
 
+    def test_heatmap_holomap(self):
+        hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
+                      'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
+        plot = bokeh_renderer.get_plot(hm.options(radial=True))
+        self.assertIsInstance(plot, RadialHeatMapPlot)
