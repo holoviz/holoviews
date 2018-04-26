@@ -131,7 +131,7 @@ class opts(param.ParameterizedFunction):
             for opt, value in options.items():
                 found = False
                 valid_options = []
-                for g, group_opts in obj_options.groups.items():
+                for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
                         found = True

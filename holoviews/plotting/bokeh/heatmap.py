@@ -229,7 +229,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
     style_opts = (['xmarks_' + p for p in line_properties] + \
                   ['ymarks_' + p for p in line_properties] + \
                   ['annular_' + p for p in fill_properties + line_properties] + \
-                  ['ticks_' + p for p in text_properties] + ['width', 'cmap'])
+                  ['ticks_' + p for p in text_properties] + ['cmap'])
 
     def __init__(self, *args, **kwargs):
         super(RadialHeatMapPlot, self).__init__(*args, **kwargs)

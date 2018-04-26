@@ -71,9 +71,10 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     _style_groups = {'rect': 'whisker', 'segment': 'whisker',
                      'vbar': 'box', 'hbar': 'box', 'circle': 'outlier'}
 
-    style_opts = (['whisker_'+p for p in line_properties] +\
-                  ['box_'+p for p in fill_properties+line_properties] +\
-                  ['outlier_'+p for p in fill_properties+line_properties] + ['width', 'cmap'])
+    style_opts = (['whisker_'+p for p in line_properties] +
+                  ['box_'+p for p in fill_properties+line_properties] +
+                  ['outlier_'+p for p in fill_properties+line_properties] +
+                  ['width', 'box_width', 'cmap'])
 
     _stream_data = False # Plot does not support streaming data
 
@@ -132,7 +133,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         out_data = defaultdict(list, {'index': [], vdim: []})
 
         # Define glyph-data mapping
-        width = style.get('width', 0.7)
+        width = style.get('box_width', style.get('width', 0.7))
         if self.invert_axes:
             vbar_map = {'y': 'index', 'left': 'top', 'right': 'bottom', 'height': width}
             seg_map = {'y0': 'x0', 'y1': 'x1', 'x0': 'y0', 'x1': 'y1'}

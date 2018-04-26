@@ -16,6 +16,17 @@ try:
 except:
     plotly_renderer = None
 
+from .. import option_intersections
+
+
+class TestPlotDefinitions(ComparisonTestCase):
+
+    known_clashes = [(('Curve',), {'width'}), (('ErrorBars',), {'width'})]
+
+    def test_plotly_option_definitions(self):
+        # Check option definitions do not introduce new clashes
+        self.assertEqual(option_intersections('plotly'), self.known_clashes)
+
 
 @attr(optional=1)
 class TestPlotlyPlotInstantiation(ComparisonTestCase):
