@@ -74,5 +74,5 @@ class RadialHeatMapPlotTests(TestMPLPlot):
     def test_heatmap_holomap(self):
         hm = HoloMap({'A': HeatMap(np.random.randint(0, 10, (100, 3))),
                       'B': HeatMap(np.random.randint(0, 10, (100, 3)))})
-        plot = bokeh_renderer.get_plot(hm.options(radial=True))
+        plot = mpl_renderer.get_plot(hm.options(radial=True))
         self.assertIsInstance(plot, RadialHeatMapPlot)
