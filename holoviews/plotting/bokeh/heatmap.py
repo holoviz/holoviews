@@ -3,7 +3,9 @@ import numpy as np
 
 from bokeh.models import HoverTool, Span
 from bokeh.models.glyphs import AnnularWedge
+
 from ...core.util import is_nan, dimension_sanitizer
+from ...core.spaces import HoloMap
 from .element import (ColorbarPlot, CompositeElementPlot,
                       line_properties, fill_properties, text_properties)
 from .util import mpl_to_bokeh
@@ -56,6 +58,7 @@ class HeatMapPlot(ColorbarPlot):
 
     @classmethod
     def is_radial(cls, heatmap):
+        heatmap = heatmap.last if isinstance(heatmap, HoloMap) else heatmap
         opts = cls.lookup_options(heatmap, 'plot').options
         return ((any(o in opts for o in ('start_angle', 'radius_inner', 'radius_outer'))
                  and not (opts.get('radial') == False)) or opts.get('radial', False))
@@ -264,7 +267,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
         """
 
         array = np.array([mapper.get(x) for x in values])
-
         return array[:, 0], array[:, 1]
 
 
@@ -509,10 +511,20 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
 
         # annular wedges
         bins_ann = self._get_bins("radius", order_ann)
-        inner_radius, outer_radius = self._get_bounds(bins_ann, yvals)
+        if len(bins_ann):
+            inner_radius, outer_radius = self._get_bounds(bins_ann, yvals)
+            data_text_ann = self._get_ann_labels_data(order_ann, bins_ann)
+        else:
+            inner_radius, outer_radius =  [], []
+            data_text_ann = dict(x=[], y=[], text=[], angle=[])
 
         bins_seg = self._get_bins("angle", order_seg, True)
-        start_angle, end_angle = self._get_bounds(bins_seg, xvals)
+        if len(bins_seg):
+            start_angle, end_angle = self._get_bounds(bins_seg, xvals)
+            data_text_seg = self._get_seg_labels_data(order_seg, bins_seg)
+        else:
+            start_angle, end_angle = [], []
+            data_text_seg = dict(x=[], y=[], text=[], angle=[])
 
         # create ColumnDataSources
         data_annular = {"start_angle": start_angle,
@@ -527,9 +539,6 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                 values = ['-' if is_nan(v) else vdim.pprint_value(v)
                           for v in aggregate.dimension_values(vdim)]
                 data_annular[sanitized] = values
-
-        data_text_seg = self._get_seg_labels_data(order_seg, bins_seg)
-        data_text_ann = self._get_ann_labels_data(order_ann, bins_ann)
 
         data_xmarks = self._get_xmarks_data(order_seg, bins_seg)
         data_ymarks = self._get_ymarks_data(order_ann, bins_ann)
