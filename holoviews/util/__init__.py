@@ -85,7 +85,7 @@ class opts(param.ParameterizedFunction):
 
         if isinstance(options, basestring):
             from .parser import OptsSpec
-            try:     ns = get_ipython().user_ns
+            try:     ns = get_ipython().user_ns  # noqa
             except:  ns = globals()
             options = OptsSpec.parse(options, ns=ns)
 
