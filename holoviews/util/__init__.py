@@ -85,7 +85,9 @@ class opts(param.ParameterizedFunction):
 
         if isinstance(options, basestring):
             from .parser import OptsSpec
-            options = OptsSpec.parse(options)
+            try:     ns = get_ipython().user_ns
+            except:  ns = globals()
+            options = OptsSpec.parse(options, ns=ns)
 
 
         errmsg = StoreOptions.validation_error_message(options)
