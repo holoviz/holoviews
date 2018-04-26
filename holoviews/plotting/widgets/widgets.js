@@ -596,9 +596,20 @@ function handle_clear_output(event, handle) {
   }
 }
 
+/**
+ * Handle kernel restart event
+ */
 function handle_kernel_cleanup(event, handle) {
   delete HoloViews.comms["hv-extension-comm"];
   window.HoloViews.plot_index = {}
+}
+
+/**
+ * Handle update_display_data messages
+ */
+function handle_update_output(event, handle) {
+  handle_clear_output(event, {cell: {output_area: handle.output_area}})
+  handle_add_output(event, handle)
 }
 
 function register_renderer(events, OutputArea) {
@@ -617,7 +628,8 @@ function register_renderer(events, OutputArea) {
     return toinsert
   }
 
-  events.on('output_added.OutputArea', handle_add_output);
+  events.on('output_added.OutputArea', handle_add_output);	
+  events.on('output_updated.OutputArea', handle_update_output);
   events.on('clear_output.CodeCell', handle_clear_output);
   events.on('delete.Cell', handle_clear_output);
   events.on('kernel_ready.Kernel', handle_kernel_cleanup);
