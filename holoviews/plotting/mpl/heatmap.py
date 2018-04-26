@@ -225,6 +225,9 @@ class RadialHeatMapPlot(ColorbarPlot):
     radial = param.Boolean(default=True, doc="""
         Whether the HeatMap should be radial""")
 
+    show_values = param.Boolean(default=False, doc="""
+        Whether to annotate each pixel with its value.""")
+
     xmarks = param.Parameter(default=None, doc="""
         Add separation lines between segments for better readability. By
         default, does not show any separation lines. If parameter is of type
