@@ -261,7 +261,7 @@ if config.style_17:
 else:
     options.Spline = Options('style', edgecolor=Cycle())
 
-options.Arrow = Options('style', color='k', linewidth=2)
+options.Arrow = Options('style', color='k', linewidth=2, fontsize=13)
 # Paths
 options.Contours = Options('style', color=Cycle(), cmap='viridis')
 options.Contours = Options('plot', show_legend=True)

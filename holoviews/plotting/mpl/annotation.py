@@ -155,7 +155,7 @@ class ArrowPlot(AnnotationPlot):
     "Draw an arrow using the information supplied to the Arrow annotation"
 
     _arrow_style_opts = ['alpha', 'color', 'lw', 'linewidth', 'visible']
-    _text_style_opts = TextPlot.style_opts
+    _text_style_opts = TextPlot.style_opts + ['textsize', 'fontsize']
 
     style_opts = sorted(set(_arrow_style_opts + _text_style_opts))
 
@@ -170,6 +170,8 @@ class ArrowPlot(AnnotationPlot):
             xytext = (0, points if direction=='v' else -points)
         elif direction in ['>', '<']:
             xytext = (points if direction=='<' else -points, 0)
+        if 'textsize' in textopts:
+            textopts['fontsize'] = textopts.pop('textsize')
         return [axis.annotate(text, xy=(x, y), textcoords='offset points',
                               xytext=xytext, ha="center", va="center",
                               arrowprops=arrowprops, **textopts)]
