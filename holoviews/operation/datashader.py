@@ -27,7 +27,7 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh)
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours)
 from ..streams import RangeXY, PlotSize
 
 
@@ -35,7 +35,7 @@ class LinkableOperation(Operation):
     """
     Abstract baseclass for operations supporting linked inputs.
     """
-    
+
     link_inputs = param.Boolean(default=True, doc="""
         By default, the link_inputs parameter is set to True so that
         when applying an operation, backends that support linked
@@ -593,6 +593,25 @@ class regrid(AggregationOperation):
                              datatype=['xarray']+element.datatype)
 
 
+
+class contours_rasterize(aggregate):
+    """
+    Rasterizes the Contours element by weighting the aggregation by
+    the iso-contour levels if a value dimension is defined, otherwise
+    default to any aggregator.
+    """
+
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
+
+    def _get_aggregator(self, element, add_field=True):
+        agg = self.p.aggregator
+        if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+            return ds.any()
+        return super(contours_rasterize, self)._get_aggregator(element, add_field)
+
+
+
 class trimesh_rasterize(aggregate):
     """
     Rasterize the TriMesh element using the supplied aggregator. If
@@ -710,6 +729,7 @@ class rasterize(AggregationOperation):
                                issubclass(x.type, Dataset)
                                and not issubclass(x.type, Image)),
                     aggregate),
+                   (Contours, contours_rasterize),
                    (lambda x: (isinstance(x, Dataset) and
                                (not isinstance(x, Image))),
                     aggregate)]

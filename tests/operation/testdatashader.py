@@ -3,7 +3,7 @@ from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews import (Dimension, Curve, Points, Image, Dataset, RGB, Path,
-                       Graph, TriMesh, QuadMesh, NdOverlay)
+                       Graph, TriMesh, QuadMesh, NdOverlay, Contours)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.core.util import pd
 
@@ -107,6 +107,16 @@ class DatashaderAggregateTests(ComparisonTestCase):
         img = aggregate(path, dynamic=False,  x_range=(0, 1), y_range=(0, 1),
                         width=2, height=2)
         self.assertEqual(img, expected)
+
+    def test_aggregate_contours_with_vdim(self):
+        contours = Contours([[(0.2, 0.3, 1), (0.4, 0.7, 1)], [(0.4, 0.7, 2), (0.8, 0.99, 2)]], vdims='z')
+        img = rasterize(contours, dynamic=False)
+        self.assertEqual(img.vdims, ['z'])
+
+    def test_aggregate_contours_without_vdim(self):
+        contours = Contours([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]])
+        img = rasterize(contours, dynamic=False)
+        self.assertEqual(img.vdims, ['Count'])
 
     def test_aggregate_dframe_nan_path(self):
         path = Path([Path([[(0.2, 0.3), (0.4, 0.7)], [(0.4, 0.7), (0.8, 0.99)]]).dframe()])
