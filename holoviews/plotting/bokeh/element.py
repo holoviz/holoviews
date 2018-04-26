@@ -1338,7 +1338,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             hover = subplot.handles['hover']
             # Datetime formatter may have been applied, remove _dt_strings
             # to match on the hover tooltips, then merge tool renderers
-            if hover.tooltips:
+            if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
                 tooltips = tuple((name, spec.replace('_dt_strings', ''))
                                   for name, spec in hover.tooltips)
             else:

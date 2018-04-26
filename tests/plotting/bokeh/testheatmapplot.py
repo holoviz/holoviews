@@ -5,7 +5,7 @@ from holoviews.element import HeatMap, Points, Image
 from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
-    from bokeh.models import FactorRange
+    from bokeh.models import FactorRange, HoverTool
 except:
     pass
 
@@ -18,6 +18,16 @@ class TestHeatMapPlot(TestBokehPlot):
         self._test_hover_info(hm, [('x with space', '@{x_with_space}'),
                                    ('y with $pecial symbol', '@{y_with_pecial_symbol}'),
                                    ('z', '@{z}')])
+
+    def test_heatmap_custom_string_tooltip_hover(self):
+        tooltips = "<div><h1>Test</h1></div>"
+        custom_hover = HoverTool(tooltips=tooltips)
+        hm = HeatMap([(1,1,1), (2,2,0)], kdims=['x with space', 'y with $pecial symbol'])
+        hm = hm.options(tools=[custom_hover])
+        plot = bokeh_renderer.get_plot(hm)
+        hover = plot.handles['hover']
+        self.assertEqual(hover.tooltips, tooltips)
+        self.assertEqual(hover.renderers, [plot.handles['glyph_renderer']])
 
     def test_heatmap_hover_ensure_vdims_sanitized(self):
         hm = HeatMap([(1,1,1), (2,2,0)], vdims=['z with $pace'])
