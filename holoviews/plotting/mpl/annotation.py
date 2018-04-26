@@ -73,9 +73,7 @@ class HLinePlot(AnnotationPlot):
 class TextPlot(AnnotationPlot):
     "Draw the Text annotation object"
 
-    style_opts = ['alpha', 'color', 'family', 'weight', 'rotation',
-                  'horizontalalignment', 'verticalalignment', 'fontsize',
-                  'visible']
+    style_opts = ['alpha', 'color', 'family', 'weight', 'visible']
 
     def draw_annotation(self, axis, data, opts):
         (x,y, text, fontsize,

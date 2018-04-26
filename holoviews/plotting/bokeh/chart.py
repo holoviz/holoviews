@@ -660,7 +660,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
-    style_opts = line_properties + fill_properties + ['width', 'cmap']
+    style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
 
     _plot_methods = dict(single=('vbar', 'hbar'))
 
@@ -768,10 +768,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
             tops.append(top)
         return bottoms, tops
 
+
     def _glyph_properties(self, *args):
         props = super(BarPlot, self)._glyph_properties(*args)
-        del props['width']
-        return props
+        return {k: v for k, v in props.items() if k not in ['width', 'bar_width']}
 
 
     def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
@@ -822,7 +822,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             self.color_index = color_dim.name
 
         # Define style information
-        width = style.get('width', 1)
+        width = style.get('bar_width', style.get('width', 1))
         cmap = style.get('cmap')
         hover = any(t == 'hover' or isinstance(t, HoverTool)
                     for t in self.tools+self.default_tools)
