@@ -144,11 +144,16 @@ class PlotSelector(object):
 
 
     def __call__(self, obj, **kwargs):
+        plot_class = self.get_plot_class(obj)
+        return plot_class(obj, **kwargs)
+
+
+    def get_plot_class(self, obj):
         key = self.selector(obj)
         if key not in self.plot_classes:
             msg = "Key %s returned by selector not in set: %s"
             raise Exception(msg  % (key, ', '.join(self.plot_classes.keys())))
-        return self.plot_classes[key](obj, **kwargs)
+        return self.plot_classes[key]
 
 
     def __setattr__(self, label, value):
