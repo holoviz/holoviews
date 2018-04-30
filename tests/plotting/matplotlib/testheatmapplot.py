@@ -55,3 +55,19 @@ class TestHeatMapPlot(TestMPLPlot):
         plot = mpl_renderer.get_plot(hmap)
         for marker, pos in zip(plot.handles['ymarks'], (0, 1)):
             self.assertEqual(marker.get_ydata(), [pos, pos])
+
+    def test_heatmap_invert_xaxis(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(invert_xaxis=True)
+        plot = mpl_renderer.get_plot(hmap)
+        array = plot.handles['artist'].get_array()
+        expected = np.array([[np.NaN, 2.], [1., np.NaN]])
+        masked = np.ma.array(expected, mask=np.logical_not(np.isfinite(expected)))
+        self.assertEqual(array, masked)
+
+    def test_heatmap_invert_yaxis(self):
+        hmap = HeatMap([('A',1, 1), ('B', 2, 2)]).options(invert_yaxis=True)
+        plot = mpl_renderer.get_plot(hmap)
+        array = plot.handles['artist'].get_array()
+        expected = np.array([[np.NaN, 2.], [1., np.NaN]])
+        masked = np.ma.array(expected, mask=np.logical_not(np.isfinite(expected)))
+        self.assertEqual(array, masked)
