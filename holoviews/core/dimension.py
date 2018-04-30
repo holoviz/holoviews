@@ -1214,7 +1214,10 @@ class Dimensioned(LabelledData):
             options = {type(self).__name__: kwargs}
 
         from ..util import opts
-        expanded = opts.expand_options(options, backend)
+        if options is None:
+            expanded = {}
+        else:
+            expanded = opts.expand_options(options, backend)
         return self.opts(expanded, backend, clone)
 
 
