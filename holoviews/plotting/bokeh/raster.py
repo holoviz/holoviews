@@ -3,9 +3,9 @@ import param
 
 from bokeh.models import HoverTool
 from ...core.util import cartesian_product, dimension_sanitizer
-from ...element import Raster
+from ...element import Raster, RGB, HSV
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
-from .util import mpl_to_bokeh, colormesh
+from .util import mpl_to_bokeh, colormesh, bokeh_version
 
 
 class RasterPlot(ColorbarPlot):
@@ -17,6 +17,14 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
     _plot_methods = dict(single='image')
+    
+    def _hover_opts(self, element):
+        xdim, ydim = element.kdims
+        tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]
+        if bokeh_version >= '0.12.16' and not isinstance(element, (RGB, HSV)):
+            vdim = element.vdims[0]
+            tooltips.append((vdim.pprint_label, '@image'))
+        return tooltips, {}
 
     def __init__(self, *args, **kwargs):
         super(RasterPlot, self).__init__(*args, **kwargs)
