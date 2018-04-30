@@ -1,3 +1,36 @@
+Version 1.10.2
+==============
+
+This is a minor bug fix release with a number of small fixes for
+features and regressions introduced in 1.10:
+
+Enhancement:
+
+- Exposed Image hover functionality for upcoming bokeh 0.12.16 release
+  ([#2625](https://github.com/ioam/holoviews/pull/2625)) 
+
+Fixes:
+
+- Minor fixes for newly introduced elements and plots including Chord
+  ([#2581](https://github.com/ioam/holoviews/issues/2581)) and
+  RadialHeatMap
+  ([#2610](https://github.com/ioam/holoviews/issues/2610)
+- Fixes for .options method including resolving style and plot option
+  clashes ([#2411](https://github.com/ioam/holoviews/issues/2411)) and
+  calling it without arguments
+  ([#2630](https://github.com/ioam/holoviews/pull/2630))
+- Fixes for IPython display function
+  ([#2587](https://github.com/ioam/holoviews/issues/2587)) and
+  display_formats
+  ([#2592](https://github.com/ioam/holoviews/issues/2592))
+  
+Deprecations:
+
+- BoxWhisker and Bars ``width`` bokeh style options and Arrow
+  matplotlib ``fontsize`` option are deprecated
+  ([#2411](https://github.com/ioam/holoviews/issues/2411))
+
+
 Version 1.10.1
 ==============
 
