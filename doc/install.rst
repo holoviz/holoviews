@@ -55,11 +55,27 @@ can be installed using::
 
   conda install -c ioam/label/dev holoviews
 
-To get the very latest development version you can clone our git
-repositories::
+To get the very latest development version using ``pip``, you can use::
 
-  git clone git://github.com/ioam/param.git
-  git clone git://github.com/ioam/holoviews.git
+  pip install git+https://github.com/ioam/holoviews.git
+
+The alternative approach using git archive (e.g ``pip install
+https://github.com/ioam/holoviews/archive/master.zip``) is *not*
+recommended as you will have incomplete version strings.
+
+Anyone interested in following development can get the very latest
+version by cloning the git repository::
+
+  git clone https://github.com/ioam/holoviews.git
+
+To make this code available for import you then need to run::
+
+  python setup.py develop
+
+And you can then update holoviews at any time to the latest version by
+running::
+
+  git pull
 
 Once you've installed HoloViews, you can get started by launching
 Jupyter Notebook::
