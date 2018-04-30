@@ -7,6 +7,7 @@ from holoviews import Overlay, Curve, Image, HoloMap
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
+from holoviews.plotting import mpl          # noqa Register backends
 from nose.plugins.attrib import attr
 
 
@@ -110,3 +111,6 @@ class TestStoreOptionsCall(ComparisonTestCase):
         opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
         self.assertIs(opts.kwargs['xaxis'], None)
 
+
+    def test_holomap_options_empty_no_exception(self):
+        HoloMap({0: Image(np.random.rand(10,10))}).options()
