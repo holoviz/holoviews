@@ -1,8 +1,10 @@
 from __future__ import unicode_literals, absolute_import
 
-from collections import defaultdict
+from collections import defaultdict, namedtuple
+
 import traceback
 import warnings
+import bisect
 
 import numpy as np
 import param
@@ -24,7 +26,7 @@ def displayable(obj):
                                         for o in obj):
         return False
     if isinstance(obj, HoloMap):
-        return not (obj.type in [Layout, GridSpace, NdLayout])
+        return not (obj.type in [Layout, GridSpace, NdLayout, DynamicMap])
     if isinstance(obj, (GridSpace, Layout, NdLayout)):
         for el in obj.values():
             if not displayable(el):
@@ -49,6 +51,13 @@ def collate(obj):
 
         return obj.collate()
     if isinstance(obj, DynamicMap):
+        if obj.type in [DynamicMap, HoloMap]:
+            obj_name = obj.type.__name__
+            raise Exception("Nesting a %s inside a DynamicMap is not "
+                            "supported. Ensure that the DynamicMap callback "
+                            "returns an Element or (Nd)Overlay. If you have "
+                            "applied an operation ensure it is not dynamic by "
+                            "setting dynamic=False." % obj_name)
         return obj.collate()
     if isinstance(obj, HoloMap):
         display_warning.warning("Nesting {0}s within a {1} makes it difficult "
@@ -407,7 +416,11 @@ def dynamic_update(plot, subplot, key, overlay, items):
                                   subplot.current_frame)
     specs = [(i, get_overlay_spec(overlay, wrap_tuple(k), el))
              for i, (k, el) in enumerate(items)]
-    return closest_match(match_spec, specs)
+    closest = closest_match(match_spec, specs)
+    if closest is None:
+        return closest, None, False
+    matched = specs[closest][1]
+    return closest, matched, match_spec == matched
 
 
 def closest_match(match, specs, depth=0):
@@ -449,7 +462,7 @@ def map_colors(arr, crange, cmap, hex=True):
     """
     if isinstance(crange, np.ndarray):
         xsorted = np.argsort(crange)
-        ypos = np.searchsorted(crange[xsorted], arr)
+        ypos = np.searchsorted(crange, arr)
         arr = xsorted[ypos]
     else:
         if isinstance(crange, tuple):
@@ -460,66 +473,364 @@ def map_colors(arr, crange, cmap, hex=True):
         arr = np.ma.array(arr, mask=np.logical_not(np.isfinite(arr)))
     arr = cmap(arr)
     if hex:
-        arr *= 255
-        return ["#{0:02x}{1:02x}{2:02x}".format(*(int(v) for v in c[:-1]))
-                for c in arr]
+        return rgb2hex(arr)
     else:
         return arr
 
 
-def mplcmap_to_palette(cmap, ncolors=None):
+def mplcmap_to_palette(cmap, ncolors=None, categorical=False):
     """
     Converts a matplotlib colormap to palette of RGB hex strings."
     """
-    from matplotlib.colors import Colormap
+    from matplotlib.colors import Colormap, ListedColormap
+
+    ncolors = ncolors or 256
     if not isinstance(cmap, Colormap):
         import matplotlib.cm as cm
-        cmap = cm.get_cmap(cmap) #choose any matplotlib colormap here
-    if ncolors:
-        return [rgb2hex(cmap(i)) for i in np.linspace(0, 1, ncolors)]
-    return [rgb2hex(m) for m in cmap(np.arange(cmap.N))]
+        # Alias bokeh Category cmaps with mpl tab cmaps
+        if cmap.startswith('Category'):
+            cmap = cmap.replace('Category', 'tab')
+        try:
+            cmap = cm.get_cmap(cmap)
+        except:
+            cmap = cm.get_cmap(cmap.lower())
+    if isinstance(cmap, ListedColormap):
+        if categorical:
+            palette = [rgb2hex(cmap.colors[i%cmap.N]) for i in range(ncolors)]
+            return palette
+        elif cmap.N > ncolors:
+            palette = [rgb2hex(c) for c in cmap(np.arange(cmap.N))]
+            if len(palette) != ncolors:
+                palette = [palette[int(v)] for v in np.linspace(0, len(palette)-1, ncolors)]
+            return palette
+    return [rgb2hex(c) for c in cmap(np.linspace(0, 1, ncolors))]
 
 
-def bokeh_palette_to_palette(cmap, ncolors=None):
+def bokeh_palette_to_palette(cmap, ncolors=None, categorical=False):
     from bokeh import palettes
+
+    # Handle categorical colormaps to avoid interpolation
+    categories = ['accent', 'category', 'dark', 'colorblind', 'pastel',
+                   'set1', 'set2', 'set3', 'paired']
+    cmap_categorical = any(cat in cmap.lower() for cat in categories)
+    reverse = False
+    if cmap.endswith('_r'):
+        cmap = cmap[:-2]
+        reverse = True
+
+    # Some colormaps are inverted compared to matplotlib
+    inverted = (not cmap_categorical and not cmap.capitalize() in palettes.mpl)
+    if inverted:
+        reverse=not reverse
+    ncolors = ncolors or 256
+
+    # Alias mpl tab cmaps with bokeh Category cmaps
+    if cmap.startswith('tab'):
+        cmap = cmap.replace('tab', 'Category')
+
     # Process as bokeh palette
-    palette = getattr(palettes, cmap, None)
+    palette = getattr(palettes, cmap, getattr(palettes, cmap.capitalize(), None))
     if palette is None:
         raise ValueError("Supplied palette %s not found among bokeh palettes" % cmap)
-    elif isinstance(palette, dict):
-         if ncolors in palette:
-             palette = palette[ncolors]
-         else:
-             palette = sorted(palette.items())[-1][1]
-    if ncolors:
-        return [palette[i%len(palette)] for i in range(ncolors)]
-    return list(palette)
+    elif isinstance(palette, dict) and (cmap in palette or cmap.capitalize() in palette):
+        # Some bokeh palettes are doubly nested
+        palette = palette.get(cmap, palette.get(cmap.capitalize()))
+
+    if isinstance(palette, dict):
+        palette = palette[max(palette)]
+        if not cmap_categorical:
+            if len(palette) < ncolors:
+                palette = polylinear_gradient(palette, ncolors)
+    elif callable(palette):
+        palette = palette(ncolors)
+    if reverse: palette = palette[::-1]
+
+    if len(palette) != ncolors:
+        if categorical and cmap_categorical:
+            palette = [palette[i%len(palette)] for i in range(ncolors)]
+        else:
+            lpad, rpad = -0.5, 0.49999999999
+            indexes = np.linspace(lpad, (len(palette)-1)+rpad, ncolors)
+            palette = [palette[int(np.round(v))] for v in indexes]
+    return palette
 
 
-def process_cmap(cmap, ncolors=None):
+def linear_gradient(start_hex, finish_hex, n=10):
+    """
+    Interpolates the color gradient between to hex colors
+    """
+    s = hex2rgb(start_hex)
+    f = hex2rgb(finish_hex)
+    gradient = [s]
+    for t in range(1, n):
+        curr_vector = [int(s[j] + (float(t)/(n-1))*(f[j]-s[j])) for j in range(3)]
+        gradient.append(curr_vector)
+    return [rgb2hex([c/255. for c in rgb]) for rgb in gradient]
+
+
+def polylinear_gradient(colors, n):
+    """
+    Interpolates the color gradients between a list of hex colors.
+    """
+    n_out = int(float(n) / (len(colors)-1))
+    gradient = linear_gradient(colors[0], colors[1], n_out)
+
+    if len(colors) == len(gradient):
+        return gradient
+
+    for col in range(1, len(colors) - 1):
+        next_colors = linear_gradient(colors[col], colors[col+1], n_out+1)
+        gradient += next_colors[1:] if len(next_colors) > 1 else next_colors
+    return gradient
+
+
+cmap_info=[]
+CMapInfo=namedtuple('CMapInfo',['name','provider','category','source','bg'])
+providers = ['matplotlib', 'bokeh', 'colorcet']
+
+
+def _list_cmaps(provider=None, records=False):
+    """
+    List available colormaps by combining matplotlib, bokeh, and
+    colorcet colormaps or palettes if available. May also be
+    narrowed down to a particular provider or list of providers.
+    """
+    if provider is None:
+        provider = providers
+    elif isinstance(provider, basestring):
+        if provider not in providers:
+            raise ValueError('Colormap provider %r not recognized, must '
+                             'be one of %r' % (provider, providers))
+        provider = [provider]
+
+    cmaps = []
+
+    def info(provider,names):
+        return [CMapInfo(name=n,provider=provider,category=None,source=None,bg=None) for n in names] \
+               if records else list(names)
+
+    if 'matplotlib' in provider:
+        try:
+            import matplotlib.cm as cm
+            cmaps += info('matplotlib',
+                          [cmap for cmap in cm.cmap_d if not
+                           (cmap.startswith('cet_') or      # duplicates list below
+                            cmap.startswith('Vega') or      # deprecated in matplotlib=2.1
+                            cmap.startswith('spectral') )]) # deprecated in matplotlib=2.1
+        except:
+            pass
+    if 'bokeh' in provider:
+        try:
+            from bokeh import palettes
+            cmaps += info('bokeh', palettes.all_palettes)
+            cmaps += info('bokeh', [p+'_r' for p in palettes.all_palettes])
+        except:
+            pass
+    if 'colorcet' in provider:
+        try:
+            from colorcet import palette_n
+            cmaps += info('colorcet', palette_n)
+            cmaps += info('colorcet', [p+'_r' for p in palette_n])
+        except:
+            pass
+    return sorted(unique_iterator(cmaps))
+
+
+def register_cmaps(category, provider, source, bg, names):
+    """
+    Maintain descriptions of colormaps that include the following information:
+
+    name     - string name for the colormap
+    category - intended use or purpose, mostly following matplotlib
+    provider - package providing the colormap directly
+    source   - original source or creator of the colormaps
+    bg       - base/background color expected for the map
+               ('light','dark','medium','any' (unknown or N/A))
+    """
+    for name in names:
+        bisect.insort(cmap_info, CMapInfo(name=name, provider=provider,
+                                          category=category, source=source,
+                                          bg=bg))
+
+
+def list_cmaps(provider=None, records=False, name=None, category=None, source=None,
+               bg=None, reverse=None):
+    """
+    Return colormap names matching the specified filters.
+    """
+    # Only uses names actually imported and currently available
+    available = _list_cmaps(provider=provider, records=True)
+
+    matches = set()
+
+    for avail in available:
+        aname=avail.name
+        matched=False
+        basename=aname[:-2] if aname.endswith('_r') else aname
+
+        if (reverse is None or
+            (reverse==True and aname.endswith('_r')) or
+            (reverse==False and not aname.endswith('_r'))):
+            for r in cmap_info:
+               if (r.name==basename):
+                   matched=True
+
+                   # cmap_info stores only non-reversed info, so construct
+                   # suitable values for reversed version if appropriate
+                   r=r._replace(name=aname)
+                   if aname.endswith('_r') and (r.category is not 'Diverging'):
+                       if r.bg=='light':
+                           r=r._replace(bg='dark')
+                       elif r.bg=='dark':
+                           r=r._replace(bg='light')
+
+                   if ((    name is None or     name in r.name) and
+                       (provider is None or provider in r.provider) and
+                       (category is None or category in r.category) and
+                       (  source is None or   source in r.source) and
+                       (      bg is None or       bg in r.bg)):
+                       matches.add(r)
+            if not matched and (category is None or category=='Miscellaneous'):
+                # Return colormaps that exist but are not found in cmap_info
+                # under the 'Miscellaneous' category, with no source or bg
+                r = CMapInfo(aname,provider=avail.provider,category='Miscellaneous',source=None,bg=None)
+                matches.add(r)
+
+    # Return results sorted by category if category information is provided
+    if records:
+        return list(unique_iterator(sorted(matches, 
+                    key=lambda r: (r.category.split(" ")[-1],r.bg,r.name.lower(),r.provider,r.source))))
+    else:
+        return list(unique_iterator(sorted([rec.name for rec in matches], key=lambda n:n.lower())))
+
+
+register_cmaps('Uniform Sequential', 'matplotlib', 'bids', 'dark',
+    ['viridis', 'plasma', 'inferno', 'magma', 'cividis'])
+
+register_cmaps('Mono Sequential', 'matplotlib', 'colorbrewer', 'light',
+    ['Greys', 'Purples', 'Blues', 'Greens', 'Oranges', 'Reds',
+     'YlOrBr', 'YlOrRd', 'OrRd', 'PuRd', 'RdPu', 'BuPu',
+     'GnBu', 'PuBu', 'YlGnBu', 'PuBuGn', 'BuGn', 'YlGn'])
+
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'light',
+    ['gist_yarg', 'binary'])
+
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'dark',
+    ['afmhot', 'gray', 'bone', 'gist_gray', 'gist_heat',
+     'hot', 'pink'])
+
+register_cmaps('Other Sequential', 'matplotlib', 'misc', 'any',
+    ['copper', 'spring', 'summer', 'autumn', 'winter', 'cool', 'Wistia'])
+
+register_cmaps('Diverging', 'matplotlib', 'colorbrewer', 'light',
+    ['BrBG', 'PiYG', 'PRGn', 'PuOr', 'RdBu', 'RdGy',
+     'RdYlBu', 'RdYlGn', 'Spectral'])
+
+register_cmaps('Diverging', 'matplotlib', 'misc', 'light',
+    ['coolwarm', 'bwr', 'seismic'])
+
+register_cmaps('Categorical', 'matplotlib', 'colorbrewer', 'any',
+    ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2',
+     'Set1', 'Set2', 'Set3'])
+
+register_cmaps('Categorical', 'matplotlib', 'd3', 'any',
+    ['tab10', 'tab20', 'tab20b', 'tab20c'])
+
+register_cmaps('Rainbow', 'matplotlib', 'misc', 'dark',
+    ['nipy_spectral', 'gist_ncar'])
+
+register_cmaps('Rainbow', 'matplotlib', 'misc', 'any',
+    ['brg', 'hsv', 'gist_rainbow', 'rainbow', 'jet'])
+
+register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'dark',
+    ['CMRmap', 'cubehelix', 'gist_earth', 'gist_stern',
+     'gnuplot', 'gnuplot2', 'ocean', 'terrain'])
+
+register_cmaps('Miscellaneous', 'matplotlib', 'misc', 'any',
+    ['flag', 'prism'])
+
+
+register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'dark',
+    ['bgyw', 'bgy', 'kbc', 'bmw', 'bmy', 'kgy', 'gray',
+     'dimgray', 'fire'])
+
+register_cmaps('Uniform Sequential', 'colorcet', 'cet', 'any',
+    ['blues', 'kr', 'kg', 'kb'])
+
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'light',
+    ['coolwarm', 'gwv'])
+
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'dark',
+    ['bkr', 'bky'])
+
+register_cmaps('Uniform Diverging', 'colorcet', 'cet', 'medium',
+    ['bjy'])
+
+register_cmaps('Uniform Rainbow', 'colorcet', 'cet', 'any',
+    ['rainbow', 'colorwheel','isolum'])
+
+
+register_cmaps('Uniform Sequential', 'bokeh', 'bids', 'dark',
+    ['Viridis', 'Plasma', 'Inferno', 'Magma'])
+
+register_cmaps('Mono Sequential', 'bokeh', 'colorbrewer', 'light',
+    ['Blues', 'BuGn', 'BuPu', 'GnBu', 'Greens', 'Greys',
+     'OrRd', 'Oranges', 'PuBu', 'PuBuGn', 'PuRd', 'Purples',
+     'RdPu', 'Reds', 'YlGn', 'YlGnBu', 'YlOrBr', 'YlOrRd'])
+
+register_cmaps('Diverging', 'bokeh', 'colorbrewer', 'light',
+    ['BrBG', 'PiYG', 'PRGn', 'PuOr', 'RdBu', 'RdGy',
+     'RdYlBu', 'RdYlGn', 'Spectral'])
+
+register_cmaps('Categorical', 'bokeh', 'd3', 'any',
+    ['Category10', 'Category20', 'Category20b', 'Category20c'])
+
+register_cmaps('Categorical', 'bokeh', 'colorbrewer', 'any',
+    ['Accent', 'Dark2', 'Paired', 'Pastel1', 'Pastel2',
+     'Set1', 'Set2', 'Set3'])
+
+register_cmaps('Categorical', 'bokeh', 'misc', 'any',
+    ['Colorblind'])
+
+
+
+def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     """
     Convert valid colormap specifications to a list of colors.
     """
+    providers_checked="matplotlib, bokeh, or colorcet" if provider is None else provider
+
     if isinstance(cmap, Cycle):
         palette = [rgb2hex(c) if isinstance(c, tuple) else c for c in cmap.values]
     elif isinstance(cmap, list):
         palette = cmap
+    elif isinstance(cmap, basestring):
+        mpl_cmaps = _list_cmaps('matplotlib')
+        bk_cmaps = _list_cmaps('bokeh')
+        cet_cmaps = _list_cmaps('colorcet')
+        if provider=='matplotlib' or (provider is None and (cmap in mpl_cmaps or cmap.lower() in mpl_cmaps)):
+            palette = mplcmap_to_palette(cmap, ncolors, categorical)
+        elif provider=='bokeh' or (provider is None and (cmap in bk_cmaps or cmap.capitalize() in bk_cmaps)):
+            palette = bokeh_palette_to_palette(cmap, ncolors, categorical)
+        elif provider=='colorcet' or (provider is None and cmap in cet_cmaps):
+            from colorcet import palette
+            if cmap.endswith('_r'):
+                palette = list(reversed(palette[cmap[:-2]]))
+            else:
+                palette = palette[cmap]
+        else:
+            raise ValueError("Supplied cmap %s not found among %s colormaps." %
+                             (cmap,providers_checked))
     else:
         try:
-            # Process as matplotlib colormap
+            # Try processing as matplotlib colormap
             palette = mplcmap_to_palette(cmap, ncolors)
         except:
-            try:
-                palette = bokeh_palette_to_palette(cmap, ncolors)
-            except:
-                if isinstance(cmap, basestring):
-                    raise ValueError("Supplied cmap %s not found among "
-                                     "matplotlib or bokeh colormaps." % cmap)
-                palette = None
+            palette = None
     if not isinstance(palette, list):
-        raise TypeError("cmap argument expects a list, Cycle or valid matplotlib "
-                        "colormap or bokeh palette, found %s." % cmap)
-    if ncolors:
+        raise TypeError("cmap argument %s expects a list, Cycle or valid %s colormap or palette."
+                        % (cmap,providers_checked))
+    if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette
 
@@ -565,7 +876,7 @@ def _get_min_distance_numpy(element):
         if len(distances):
             return distances.min()
     return 0
-    
+
 
 def get_min_distance(element):
     """
@@ -586,6 +897,25 @@ def rgb2hex(rgb):
     if len(rgb) > 3:
         rgb = rgb[:-1]
     return "#{0:02x}{1:02x}{2:02x}".format(*(int(v*255) for v in rgb))
+
+
+def hex2rgb(hex):
+  ''' "#FFFFFF" -> [255,255,255] '''
+  # Pass 16 to the integer function for change of base
+  return [int(hex[i:i+2], 16) for i in range(1,6,2)]
+
+
+COLOR_ALIASES = {
+    'b': (0, 0, 1),
+    'c': (0, 0.75, 0.75),
+    'g': (0, 0.5, 0),
+    'k': (0, 0, 0),
+    'm': (0.75, 0, 0.75),
+    'r': (1, 0, 0),
+    'w': (1, 1, 1),
+    'y': (0.75, 0.75, 0),
+    'transparent': (0, 0, 0, 0)
+}
 
 
 # linear_kryw_0_100_c71 (aka "fire"):

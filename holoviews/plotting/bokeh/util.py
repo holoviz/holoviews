@@ -1,4 +1,4 @@
-import inspect, re, time, sys
+import re, time, sys
 from distutils.version import LooseVersion
 from collections import defaultdict
 import datetime as dt
@@ -31,10 +31,11 @@ except:
 
 from ...core.options import abbreviated_exception
 from ...core.overlay import Overlay
-from ...core.util import basestring, unique_array, callable_name, pd, dt64_to_dt
+from ...core.util import (basestring, unique_array, callable_name, pd,
+                          dt64_to_dt, _getargspec)
 from ...core.spaces import get_nested_dmaps, DynamicMap
 
-from ..util import dim_axis_label, rgb2hex
+from ..util import dim_axis_label, rgb2hex, COLOR_ALIASES
 
 # Conversion between matplotlib and bokeh markers
 markers = {'s': {'marker': 'square'},
@@ -53,7 +54,8 @@ def convert_timestamp(timestamp):
     """
     Converts bokehJS timestamp to datetime64.
     """
-    return np.datetime64(dt.datetime.fromtimestamp(timestamp/1000.))
+    datetime = dt.datetime.fromtimestamp(timestamp/1000., dt.timezone.utc)
+    return np.datetime64(datetime.replace(tzinfo=None))
 
 
 def rgba_tuple(rgba):
@@ -63,7 +65,7 @@ def rgba_tuple(rgba):
     if isinstance(rgba, tuple):
         return tuple(int(c*255) if i<3 else c for i, c in enumerate(rgba))
     else:
-        return rgba
+        return COLOR_ALIASES.get(rgba, rgba)
 
 
 def decode_bytes(array):
@@ -108,7 +110,7 @@ def mpl_to_bokeh(properties):
             new_properties.update(markers.get(v, {'marker': v}))
         elif (k == 'color' or k.endswith('_color')) and not isinstance(v, dict):
             with abbreviated_exception():
-                v = colors.ColorConverter.colors.get(v, v)
+                v = COLOR_ALIASES.get(v, v)
             if isinstance(v, tuple):
                 with abbreviated_exception():
                     v = rgb2hex(v)
@@ -318,7 +320,7 @@ def pad_width(model, table_padding=0.85, tabs_padding=1.2):
     elif isinstance(model, DataTable):
         width = model.width
         model.width = int(table_padding*width)
-    elif isinstance(model, WidgetBox):
+    elif isinstance(model, (WidgetBox, Div)):
         width = model.width
     elif model:
         width = model.plot_width
@@ -378,7 +380,7 @@ def py2js_tickformatter(formatter, msg=''):
         param.main.warning(msg+error)
         return
 
-    args = inspect.getargspec(formatter).args
+    args = _getargspec(formatter).args
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
@@ -507,6 +509,8 @@ def update_shared_sources(f):
         shared_sources = self.handles.get('shared_sources', [])
         for source in shared_sources:
             source.data.clear()
+            if self.document and self.document._held_events:
+                self.document._held_events = self.document._held_events[:-1]
 
         ret = f(self, *args, **kwargs)
 

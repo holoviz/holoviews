@@ -69,6 +69,19 @@ static_template = """
 </html>
 """
 
+embed_js = """
+// Ugly hack - see #2574 for more information
+if (!(document.getElementById('{plot_id}')) && !(document.getElementById('_anim_img{widget_id}'))) {{
+  console.log("Creating DOM nodes dynamically for assumed nbconvert export. To generate clean HTML output set HV_DOC_HTML as an environment variable.")
+  var htmlObject = document.createElement('div');
+  htmlObject.innerHTML = `{html}`;
+  var scriptTags = document.getElementsByTagName('script');
+  var parentTag = scriptTags[scriptTags.length-1].parentNode;
+  parentTag.append(htmlObject)
+}}
+"""
+
+
 class Renderer(Exporter):
     """
     The job of a Renderer is to turn the plotting state held within
@@ -156,6 +169,9 @@ class Renderer(Exporter):
 
     # Whether in a notebook context, set when running Renderer.load_nb
     notebook_context = False
+
+    # Plot registry
+    _plots = {}
 
     def __init__(self, **params):
         self.last_plot = None
@@ -304,10 +320,12 @@ class Renderer(Exporter):
         else:
             plot, fmt = self._validate(obj, fmt)
 
+        widget_id = None
         data, metadata = {}, {}
         if isinstance(plot, NdWidget):
             js, html = plot(as_script=True)
             plot_id = plot.plot_id
+            widget_id = plot.id
         else:
             html, js = self._figure_data(plot, fmt, as_script=True, **kwargs)
             plot_id = plot.id
@@ -319,13 +337,16 @@ class Renderer(Exporter):
                                                        comm_id=plot.comm.id,
                                                        plot_id=plot_id)
                 js = '\n'.join([js, comm_js])
-            html = "<div style='display: table; margin: 0 auto;'>%s</div>" % html
+            html = "<div id='%s' style='display: table; margin: 0 auto;'>%s</div>" % (plot_id, html)
+        if not os.environ.get('HV_DOC_HTML', False) and js is not None:
+            js = embed_js.format(widget_id=widget_id, plot_id=plot_id, html=html) + js
 
         data['text/html'] = html
         if js:
             data[MIME_TYPES['js']] = js
-            data[MIME_TYPES['jlab-hv-exec']] = js
+            data[MIME_TYPES['jlab-hv-exec']] = ''
             metadata['id'] = plot_id
+            self._plots[plot_id] = plot
         return (data, {MIME_TYPES['jlab-hv-exec']: metadata})
 
 
@@ -593,3 +614,15 @@ class Renderer(Exporter):
         with param.logging_level('ERROR'):
             cls.notebook_context = True
             cls.comm_manager = JupyterCommManager
+
+
+    @classmethod
+    def _delete_plot(cls, plot_id):
+        """
+        Deletes registered plots and calls Plot.cleanup
+        """
+        plot = cls._plots.get(plot_id)
+        if plot is None:
+            return
+        plot.cleanup()
+        del cls._plots[plot_id]

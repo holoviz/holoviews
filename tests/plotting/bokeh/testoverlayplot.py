@@ -1,6 +1,7 @@
 import numpy as np
 
-from holoviews.core import NdOverlay, HoloMap
+from holoviews.core import NdOverlay, HoloMap, DynamicMap
+from holoviews.core.options import Cycle
 from holoviews.element import Curve, Points, ErrorBars, Text
 
 from .testplot import TestBokehPlot, bokeh_renderer
@@ -137,3 +138,29 @@ class TestOverlayPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(overlay)
         extents = plot.get_extents(overlay, {})
         self.assertEqual(extents, (-10, -20, 10, 20))
+
+    def test_dynamic_subplot_remapping(self):
+        # Checks that a plot is appropriately updated when reused
+        def cb(X):
+            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X-2, X)})
+        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
+        plot = bokeh_renderer.get_plot(dmap)
+        plot.update((3,))
+        legend_labels = [item.label for item in plot.state.legend[0].items]
+        self.assertEqual(legend_labels, [{'value': '1'}, {'value': '2'}])
+        colors = Cycle().values
+        for i, (subplot, color) in enumerate(zip(plot.subplots.values(), colors[3:])):
+            self.assertEqual(subplot.handles['glyph'].line_color, color)
+            self.assertEqual(subplot.cyclic_index, i+3)
+            self.assertEqual(list(subplot.overlay_dims.values()), [i+1])
+
+    def test_dynamic_subplot_creation(self):
+        def cb(X):
+            return NdOverlay({i: Curve(np.arange(10)+i) for i in range(X)})
+        dmap = DynamicMap(cb, kdims=['X']).redim.range(X=(1, 10))
+        plot = bokeh_renderer.get_plot(dmap)
+        self.assertEqual(len(plot.subplots), 1)
+        plot.update((3,))
+        self.assertEqual(len(plot.subplots), 3)
+        for i, subplot in enumerate(plot.subplots.values()):
+            self.assertEqual(subplot.cyclic_index, i)

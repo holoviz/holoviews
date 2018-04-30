@@ -41,6 +41,10 @@ class ImageInterfaceTest(ComparisonTestCase):
         with self.assertRaises(DataError):
             Image((ys, xs, array))
 
+    def test_bounds_mismatch(self):
+        with self.assertRaises(ValueError):
+            Image((range(10), range(10), np.random.rand(10, 10)), bounds=0.5)
+
     def test_init_data_datetime_xaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')

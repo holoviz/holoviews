@@ -11,6 +11,7 @@ from ...streams import Buffer
 from ...core.util import dimension_sanitizer, datetime_types
 from ..plot import GenericElementPlot
 from .plot import BokehPlot
+from .util import bokeh_version
 
 
 class TablePlot(BokehPlot, GenericElementPlot):
@@ -19,9 +20,12 @@ class TablePlot(BokehPlot, GenericElementPlot):
 
     width = param.Number(default=400)
 
-    style_opts = ['row_headers', 'selectable', 'editable',
-                  'sortable', 'fit_columns', 'scroll_to_selection']
-
+    style_opts = (
+        ['row_headers', 'selectable', 'editable', 
+         'sortable', 'fit_columns', 'scroll_to_selection'] +
+        (['index_position'] if bokeh_version >= '0.12.15' else [])
+        )
+    
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a column.
         The hook is passed the plot object and the displayed
@@ -37,17 +41,6 @@ class TablePlot(BokehPlot, GenericElementPlot):
         self.callbacks = self._construct_callbacks()
         self.streaming = [s for s in self.streams if isinstance(s, Buffer)]
         self.static_source = False
-
-    def _execute_hooks(self, element):
-        """
-        Executes finalize hooks
-        """
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
-
 
     def get_data(self, element, ranges, style):
         return ({dimension_sanitizer(d.name): element.dimension_values(d)

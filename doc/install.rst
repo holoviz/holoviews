@@ -20,7 +20,7 @@ backend, and the `Jupyter/IPython Notebook <http://jupyter.org>`_.
 A similar set of packages can be installed using ``pip``, if that
 command is available on your system::
 
-  pip install 'holoviews[recommended]'
+  pip install "holoviews[recommended]"
 
 ``pip`` also supports other installation options, including a minimal
 install of only the packages necessary to generate and manipulate
@@ -37,7 +37,7 @@ project.
 Alternatively, you can ask ``pip`` to install a larger set of
 packages that provide additional functionality in HoloViews::
 
-  pip install 'holoviews[extras]'
+  pip install "holoviews[extras]"
 
 This option installs all the required and recommended packages,
 including the `pandas <http://pandas.pydata.org/>`_ and `Seaborn
@@ -48,7 +48,7 @@ Lastly, to get *everything*, including `cyordereddict
 speed optimizations and `nose <https://pypi.python.org/pypi/nose/>`_
 for running unit tests, you can use::
 
-  pip install 'holoviews[all]'
+  pip install "holoviews[all]"
 
 Between releases, development snapshots are made available on conda and
 can be installed using::

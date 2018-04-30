@@ -27,16 +27,15 @@ install:
   - conda update -q conda
   # Useful for debugging any issues with conda
   - conda info -a
-  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION flake8 scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=4.2.0 param matplotlib=2.1.2 xarray
+  - conda create -q -n test-environment python=$TRAVIS_PYTHON_VERSION flake8 scipy=1.0.0 numpy freetype nose pandas=0.22.0 jupyter ipython=5.4.1 param matplotlib=2.1.2 xarray
   - source activate test-environment
-  - conda install -c conda-forge  iris plotly flexx --quiet
-  - conda install -c bokeh datashader dask bokeh=0.12.14 selenium
+  - conda install -c conda-forge  iris plotly flexx ffmpeg --quiet
+  - conda install -c bokeh datashader dask bokeh=0.12.15 selenium
   - if [[ "$TRAVIS_PYTHON_VERSION" == "3.4" ]]; then
       conda install python=3.4.3;
     fi
   - rm -r $SITE_PACKAGES/numpy*
   - python setup.py develop
-  - pip install git+git://github.com/ioam/param.git
   - pip install path.py
   - pip install coveralls awscli deepdiff
   - if [ "$TRAVIS_PULL_REQUEST" == 'false' ]; then
@@ -69,7 +68,7 @@ script:
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
   - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
   - flake8 --ignore=E,W,F999,F405 holoviews tests
-  - nosetests --with-doctest --with-coverage --cover-package=holoviews -v
+  - nosetests --with-doctest --with-coverage --cover-package=holoviews
   - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
   - cd ../../; mv doc/Tutorials/.coverage ./.coverage.notebooks

@@ -65,6 +65,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
 
           {'ticks': '20pt', 'title': '15pt', 'ylabel': '5px', 'xlabel': '5px'}""")
 
+    gridstyle = param.Dict(default={}, doc="""
+        Allows customizing the grid style, e.g. grid_line_color defines
+        the line color for both grids while xgrid_line_color exclusively
+        customizes the x-axis grid lines.""")
+
     labelled = param.List(default=['x', 'y'], doc="""
         Whether to plot the 'x' and 'y' labels.""")
 
@@ -178,7 +183,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         return copied_tools
 
 
-    def _get_hover_data(self, data, element):
+    def _get_hover_data(self, data, element, dimensions=None):
         """
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
@@ -186,7 +191,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
             return
 
-        for d in element.dimensions():
+        for d in (dimensions or element.dimensions()):
             dim = util.dimension_sanitizer(d.name)
             if dim not in data:
                 data[dim] = element.dimension_values(d)
@@ -457,6 +462,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
+        else:
+            replace = ['bounds', 'bands']
+            style_items = list(self.gridstyle.items())
+            both = {k: v for k, v in style_items if k.startswith('grid_') or k.startswith('minor_grid')}
+            xgrid = {k.replace('xgrid', 'grid'): v for k, v in style_items if 'xgrid' in k}
+            ygrid = {k.replace('ygrid', 'grid'): v for k, v in style_items if 'ygrid' in k}
+            xopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                     for k, v in dict(both, **xgrid).items()}
+            yopts = {k.replace('grid_', '') if any(r in k for r in replace) else k: v
+                     for k, v in dict(both, **ygrid).items()}
+            plot.xgrid[0].update(**xopts)
+            plot.ygrid[0].update(**yopts)
 
 
     def _update_ranges(self, element, ranges):
@@ -611,6 +628,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         allowed_properties = glyph.properties()
         properties = mpl_to_bokeh(properties)
         merged = dict(properties, **mapping)
+        legend = merged.pop('legend', None)
         for glyph_type in ('', 'selection_', 'nonselection_', 'hover_', 'muted_'):
             if renderer:
                 glyph = getattr(renderer, glyph_type+'glyph', None)
@@ -619,16 +637,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             filtered = self._filter_properties(merged, glyph_type, allowed_properties)
             glyph.update(**filtered)
 
-
-    def _execute_hooks(self, element):
-        """
-        Executes finalize hooks
-        """
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
+        if legend is not None:
+            for leg in self.state.legend:
+                for item in leg.items:
+                    if renderer in item.renderers:
+                        item.label = legend
 
 
     def _postprocess_hover(self, renderer, source):
@@ -639,6 +652,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         hover = self.handles.get('hover')
         if hover is None:
             return
+        if hover.renderers == 'auto':
+            hover.renderers = []
         hover.renderers.append(renderer)
 
         # If datetime column is in the data replace hover formatter
@@ -786,7 +801,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             max_cycles = None
         else:
             style_element = element
-            max_cycles = len(self.style._options)
+            max_cycles = self.style._max_cycles
         style = self.lookup_options(style_element, 'style')
         self.style = style.max_cycles(max_cycles) if max_cycles else style
 
@@ -968,6 +983,9 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
+    color_levels = param.Integer(default=None, doc="""
+        Number of discrete colors to use when colormapping.""")
+
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
 
@@ -994,8 +1012,13 @@ class ColorbarPlot(ElementPlot):
     logz  = param.Boolean(default=False, doc="""
          Whether to apply log scaling to the z-axis.""")
 
+    symmetric = param.Boolean(default=False, doc="""
+        Whether to make the colormap symmetric around zero.""")
+
     _colorbar_defaults = dict(bar_line_color='black', label_standoff=8,
                               major_tick_line_color='black')
+
+    _default_nan = '#8b8b8b'
 
     def _draw_colorbar(self, plot, color_mapper):
         if CategoricalColorMapper and isinstance(color_mapper, CategoricalColorMapper):
@@ -1042,12 +1065,18 @@ class ColorbarPlot(ElementPlot):
                 low, high = ranges.get(dim.name)
             else:
                 low, high = element.range(dim.name)
+            if self.symmetric:
+                sym_max = max(abs(low), high)
+                low, high = -sym_max, sym_max
         else:
             low, high = None, None
 
         cmap = colors or style.pop('cmap', 'viridis')
-        palette = process_cmap(cmap, ncolors)
         nan_colors = {k: rgba_tuple(v) for k, v in self.clipping_colors.items()}
+        if isinstance(cmap, dict) and factors:
+            palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
+        else:
+            palette = process_cmap(cmap, self.color_levels or ncolors, categorical=ncolors is not None)
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)
@@ -1085,7 +1114,7 @@ class ColorbarPlot(ElementPlot):
         mapper = self._get_colormapper(cdim, element, ranges, style,
                                        factors, colors)
         data[field] = cdata
-        if factors is not None:
+        if factors is not None and self.show_legend:
             mapping['legend'] = {'field': field}
         mapping[name] = {'field': field, 'transform': mapper}
         return data, mapping
@@ -1309,14 +1338,16 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             hover = subplot.handles['hover']
             # Datetime formatter may have been applied, remove _dt_strings
             # to match on the hover tooltips, then merge tool renderers
-            if hover.tooltips:
+            if hover.tooltips and not isinstance(hover.tooltips, util.basestring):
                 tooltips = tuple((name, spec.replace('_dt_strings', ''))
                                   for name, spec in hover.tooltips)
             else:
                 tooltips = ()
             tool = self.handles['hover_tools'].get(tooltips)
             if tool:
-                renderers = tool.renderers+hover.renderers
+                tool_renderers = [] if tool.renderers == 'auto' else tool.renderers
+                hover_renderers = [] if hover.renderers == 'auto' else hover.renderers
+                renderers = tool_renderers + hover_renderers
                 tool.renderers = list(util.unique_iterator(renderers))
             if 'hover' not in self.handles:
                 self.handles['hover'] = tool
@@ -1375,7 +1406,9 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         elif not self.overlaid:
             self._process_legend()
         self.drawn = True
+        self.handles['plots'] = plots
 
+        self._update_callbacks(self.handles['plot'])
         if 'plot' in self.handles and not self.tabs:
             plot = self.handles['plot']
             self.handles['xaxis'] = plot.xaxis[0]
@@ -1421,7 +1454,6 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         for k, subplot in self.subplots.items():
             el = None
 
-
             # If in Dynamic mode propagate elements to subplots
             if isinstance(self.hmap, DynamicMap) and element:
                 # In batched mode NdOverlay is passed to subplot directly
@@ -1429,9 +1461,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                     el = element
                 # If not batched get the Element matching the subplot
                 elif element is not None:
-                    idx = dynamic_update(self, subplot, k, element, items)
+                    idx, spec, exact = dynamic_update(self, subplot, k, element, items)
                     if idx is not None:
                         _, el = items.pop(idx)
+                        if not exact:
+                            self._update_subplot(subplot, spec)
 
                 # Skip updates to subplots when its streams is not one of
                 # the streams that initiated the update
@@ -1440,9 +1474,10 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
-            self.warning("Some Elements returned by the dynamic callback "
-                         "were not initialized correctly and could not be "
-                         "rendered.")
+            init_kwargs = {'plot': self.handles['plot'], 'plots': self.handles['plots']}
+            self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
+            if not self.overlaid:
+                self._process_legend()
 
         if element and not self.overlaid and not self.tabs and not self.batched:
             self._update_plot(key, self.handles['plot'], element)

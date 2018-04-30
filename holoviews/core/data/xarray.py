@@ -59,11 +59,24 @@ class XArrayInterface(GridInterface):
         kdim_param = element_params['kdims']
         vdim_param = element_params['vdims']
 
-        if isinstance (data, xr.DataArray):
-            if data.name:
-                vdim = Dimension(data.name)
-            elif vdims:
+        def retrieve_unit_and_label(dim):
+            if isinstance(dim, str):
+                dim = Dimension(dim)
+            dim.unit = data[dim.name].attrs.get('units')
+            label = data[dim.name].attrs.get('long_name')
+            if label is not None:
+                dim.label = label
+            return dim
+
+        if isinstance(data, xr.DataArray):
+            if vdims:
                 vdim = vdims[0]
+            elif data.name:
+                vdim = Dimension(data.name)
+                vdim.unit = data.attrs.get('units')
+                label = data.attrs.get('long_name')
+                if label is not None:
+                    vdim.label = label
             elif len(vdim_param.default) == 1:
                 vdim = vdim_param.default[0]
                 if vdim.name in data.dims:
@@ -80,6 +93,7 @@ class XArrayInterface(GridInterface):
                                 cls)
             vdims = [vdim]
             data = data.to_dataset(name=vdim.name)
+
         if not isinstance(data, xr.Dataset):
             if kdims is None:
                 kdims = kdim_param.default
@@ -110,18 +124,22 @@ class XArrayInterface(GridInterface):
         else:
             if vdims is None:
                 vdims = list(data.data_vars.keys())
+                vdims = [retrieve_unit_and_label(vd) for vd in vdims]
             if kdims is None:
                 xrdims = list(data.dims)
+                xrcoords = list(data.coords)
                 kdims = [name for name in data.indexes.keys()
                          if isinstance(data[name].data, np.ndarray)]
-                kdims = sorted(kdims, key=lambda x: (xrdims.index(x) if x in xrdims else float('inf'), x))
+                kdims = sorted(kdims, key=lambda x: (xrcoords.index(x) if x in xrcoords else float('inf'), x))
                 if set(xrdims) != set(kdims):
                     virtual_dims = [xd for xd in xrdims if xd not in kdims]
                     for c in data.coords:
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
+                kdims = [retrieve_unit_and_label(kd) for kd in kdims]
+            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd) for vd in vdims]
+            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd) for kd in kdims]
 
-        kdims = [d if isinstance(d, Dimension) else Dimension(d) for d in kdims]
         not_found = []
         for d in kdims:
             if not any(d.name == k or (isinstance(v, xr.DataArray) and d.name in v.dims)
@@ -133,6 +151,7 @@ class XArrayInterface(GridInterface):
             raise DataError("xarray Dataset must define coordinates "
                             "for all defined kdims, %s coordinates not found."
                             % not_found, cls)
+
         return data, {'kdims': kdims, 'vdims': vdims}, {}
 
 
@@ -271,7 +290,7 @@ class XArrayInterface(GridInterface):
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
-            return data.flatten() if flat else data
+            return data.T.flatten() if flat else data
         else:
             return cls.coords(dataset, dim.name, ordered=True)
 

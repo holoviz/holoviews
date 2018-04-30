@@ -1,6 +1,7 @@
 from io import BytesIO
 import base64
 import logging
+import signal
 
 import param
 from param.parameterized import bothmethod
@@ -8,6 +9,7 @@ from param.parameterized import bothmethod
 import bokeh
 from bokeh.application.handlers import FunctionHandler
 from bokeh.application import Application
+from bokeh.document import Document
 from bokeh.io import curdoc, show as bkshow
 from bokeh.models import Model
 from bokeh.resources import CDN, INLINE
@@ -33,15 +35,20 @@ NOTEBOOK_DIV = """
 
 # Following JS block becomes body of the message handler callback
 bokeh_msg_handler = """
-var plot = Bokeh.index["{plot_id}"];
+var plot_id = "{plot_id}";
+if (plot_id in HoloViews.plot_index) {{
+  var plot = HoloViews.plot_index[plot_id];
+}} else {{
+  var plot = Bokeh.index[plot_id];
+}}
 
-if ("{plot_id}" in HoloViews.receivers) {{
-  var receiver = HoloViews.receivers["{plot_id}"];
+if (plot_id in HoloViews.receivers) {{
+  var receiver = HoloViews.receivers[plot_id];
 }} else if (Bokeh.protocol === undefined) {{
   return;
 }} else {{
   var receiver = new Bokeh.protocol.Receiver();
-  HoloViews.receivers["{plot_id}"] = receiver;
+  HoloViews.receivers[plot_id] = receiver;
 }}
 
 if (buffers.length > 0) {{
@@ -139,7 +146,8 @@ class BokehRenderer(Renderer):
         Allows supplying a document attach the plot to, useful when
         combining the bokeh model with another plot.
         """
-        doc = curdoc() if doc is None else doc
+        if doc is None:
+            doc = Document() if self_or_cls.notebook_context else curdoc()
         doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
         plot.document = doc
@@ -200,6 +208,14 @@ class BokehRenderer(Renderer):
             server.show('/')
         server.io_loop.add_callback(show_callback)
         server.start()
+
+        def sig_exit(*args, **kwargs):
+            loop.add_callback_from_signal(do_stop)
+
+        def do_stop(*args, **kwargs):
+            loop.stop()
+
+        signal.signal(signal.SIGINT, sig_exit)
         try:
             loop.start()
         except RuntimeError:

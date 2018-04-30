@@ -173,7 +173,7 @@ class Dataset(Element):
 
     # In the 1D case the interfaces should not automatically add x-values
     # to supplied data
-    _auto_indexable_1d = True
+    _auto_indexable_1d = False
 
     # Define a class used to transform Datasets into other Element types
     _conversion_interface = DataConversion
@@ -192,10 +192,10 @@ class Dataset(Element):
         kwargs.update(process_dimensions(kdims, vdims))
         kdims, vdims = kwargs.get('kdims'), kwargs.get('vdims')
 
+        validate_vdims = kwargs.pop('_validate_vdims', True)
         initialized = Interface.initialize(type(self), data, kdims, vdims,
                                            datatype=kwargs.get('datatype'))
         (data, self.interface, dims, extra_kws) = initialized
-        validate_vdims = kwargs.pop('_validate_vdims', True)
         super(Dataset, self).__init__(data, **dict(kwargs, **dict(dims, **extra_kws)))
         self.interface.validate(self, validate_vdims)
 
@@ -523,18 +523,18 @@ class Dataset(Element):
         dim_names = [d.name for d in dimensions]
 
         if dynamic:
-            group_dims = [d.name for d in self.kdims if d not in dimensions]
-            kdims = [self.get_dimension(d) for d in group_dims]
+            group_dims = [kd for kd in self.kdims if kd not in dimensions]
+            kdims = [self.get_dimension(d) for d in kwargs.pop('kdims', group_dims)]
+            drop_dim = len(group_dims) != len(kdims)
             group_kwargs = dict(util.get_param_values(self), kdims=kdims)
             group_kwargs.update(kwargs)
-            drop_dim = len(kdims) != len(group_kwargs['kdims'])
             def load_subset(*args):
                 constraint = dict(zip(dim_names, args))
                 group = self.select(**constraint)
                 if np.isscalar(group):
                     return group_type(([group],), group=self.group,
                                       label=self.label, vdims=self.vdims)
-                data = group.reindex(group_dims)
+                data = group.reindex(kdims)
                 if drop_dim and self.interface.gridded:
                     data = data.columns()
                 return group_type(data, **group_kwargs)

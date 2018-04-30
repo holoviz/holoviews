@@ -3,10 +3,11 @@ Unit tests of the StoreOptions class used to control custom options on
 Store as used by the %opts magic.
 """
 import numpy as np
-from holoviews import Overlay, Curve, Image
+from holoviews import Overlay, Curve, Image, HoloMap
 from holoviews.core.options import Store, StoreOptions
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews import plotting              # noqa Register backends
+from holoviews.plotting import mpl          # noqa Register backends
 from nose.plugins.attrib import attr
 
 
@@ -100,4 +101,16 @@ class TestStoreOptionsCall(ComparisonTestCase):
         self.assertEqual(Store.lookup_options('matplotlib',
             layout, 'plot').kwargs['hspace'], 10)
 
+    def test_holomap_opts(self):
+        hmap = HoloMap({0: Image(np.random.rand(10,10))}).opts(plot=dict(xaxis=None))
+        opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
+        self.assertIs(opts.kwargs['xaxis'], None)
 
+    def test_holomap_options(self):
+        hmap = HoloMap({0: Image(np.random.rand(10,10))}).options(xaxis=None)
+        opts = Store.lookup_options('matplotlib', hmap.last, 'plot')
+        self.assertIs(opts.kwargs['xaxis'], None)
+
+
+    def test_holomap_options_empty_no_exception(self):
+        HoloMap({0: Image(np.random.rand(10,10))}).options()

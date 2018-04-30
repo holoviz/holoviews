@@ -7,14 +7,16 @@ import holoviews
 from param import ipython as param_ext
 from IPython.display import HTML, publish_display_data
 
+from ..core.dimension import LabelledData
 from ..core.tree import AttrTree
 from ..core.options import Store
+from ..core.util import mimebundle_to_html
 from ..element.comparison import ComparisonTestCase
 from ..util import extension
 from ..plotting.renderer import Renderer, MIME_TYPES
 from .magics import load_magics
 from .display_hooks import display  # noqa (API import)
-from .display_hooks import set_display_hooks
+from .display_hooks import pprint_display, png_display, svg_display
 
 
 AttrTree._disabled_prefixes = ['_repr_','_ipython_canary_method_should_not_exist']
@@ -140,11 +142,14 @@ class notebook_extension(extension):
                    'between %r' % p.display_formats)
             display(HTML('<b>Warning</b>: %s' % msg))
 
-        if notebook_extension._loaded == False:
+        loaded = notebook_extension._loaded
+        if loaded == False:
             param_ext.load_ipython_extension(ip, verbose=False)
             load_magics(ip)
             Store.output_settings.initialize(list(Store.renderers.keys()))
-            set_display_hooks(ip)
+            Store.set_display_hook('html+js', LabelledData, pprint_display)
+            Store.set_display_hook('png', LabelledData, png_display)
+            Store.set_display_hook('svg', LabelledData, svg_display)
             notebook_extension._loaded = True
 
         css = ''
@@ -161,6 +166,10 @@ class notebook_extension(extension):
         Renderer.load_nb()
         for r in [r for r in resources if r != 'holoviews']:
             Store.renderers[r].load_nb(inline=p.inline)
+
+        if hasattr(ip, 'kernel') and not loaded:
+            Renderer.comm_manager.get_client_comm(notebook_extension._process_comm_msg,
+                                                  "hv-extension-comm")
 
         # Create a message for the logo (if shown)
         self.load_hvjs(logo=p.logo,
@@ -241,10 +250,22 @@ class notebook_extension(extension):
         # Vanilla JS mime type is only consumed by classic notebook
         # Custom mime type is only consumed by JupyterLab
         if JS:
-            publish_display_data(data={
+            mimebundle = {
                 MIME_TYPES['js']           : widgetjs,
                 MIME_TYPES['jlab-hv-load'] : widgetjs
-            })
+            }
+            if os.environ.get('HV_DOC_HTML', False):
+                mimebundle = {'text/html': mimebundle_to_html(mimebundle)}
+            publish_display_data(data=mimebundle)
+
+    @classmethod
+    def _process_comm_msg(cls, msg):
+        """
+        Processes comm messages to handle global actions such as
+        cleaning up plots.
+        """
+        if msg['event_type'] == 'delete':
+            Renderer._delete_plot(msg['id'])
 
 
     @param.parameterized.bothmethod

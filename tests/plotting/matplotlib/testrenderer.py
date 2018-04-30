@@ -66,4 +66,11 @@ class MPLRendererTest(ComparisonTestCase):
         w, h = self.renderer.get_size(plot)
         self.assertEqual((w, h), (288, 288))
 
+    def test_render_gif(self):
+        data, metadata = self.renderer.components(self.map1, 'gif')
+        self.assertIn("<img src='data:image/gif", data['text/html'])
 
+    @attr(optional=1) # Requires ffmpeg
+    def test_render_mp4(self):
+        data, metadata = self.renderer.components(self.map1, 'mp4')
+        self.assertIn("<source src='data:video/mp4", data['text/html'])

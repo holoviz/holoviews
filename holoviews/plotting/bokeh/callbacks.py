@@ -1,7 +1,7 @@
 from collections import defaultdict
 
 import param
-from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource)
+from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection)
 
 from ...core import OrderedDict
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
@@ -52,7 +52,7 @@ class MessageCallback(object):
         self.plot = plot
         self.streams = streams
         if plot.renderer.mode != 'server':
-            self.comm = plot.renderer.comm_manager.get_client_comm(plot, on_msg=self.on_msg)
+            self.comm = plot.renderer.comm_manager.get_client_comm(on_msg=self.on_msg)
         self.source = source
         self.handle_ids = defaultdict(dict)
         self.reset()
@@ -184,7 +184,7 @@ class CustomJSCallback(MessageCallback):
             comm_status.event_buffer = [];
         }}
 
-        function on_msg(msg){{
+        function on_msg(msg) {{
           // Receives acknowledgement from Python, processing event
           // and unblocking Comm if event queue empty
           msg = JSON.parse(msg.content.data);
@@ -290,10 +290,11 @@ class CustomJSCallback(MessageCallback):
         attributes back to python.
         """
         # Generate callback JS code to get all the requested data
+        plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce,
-                                                plot_id=self.plot.state._id)
+                                                plot_id=plot_id)
 
         attributes = self.attributes_js(self.attributes)
         conditions = ["%s" % cond for cond in self.skip]
@@ -354,6 +355,9 @@ class ServerCallback(MessageCallback):
                 continue
             if isinstance(resolved, dict):
                 resolved = resolved.get(p)
+            elif isinstance(resolved, Selection) and p in ['1d', 'indices']:
+                # Handle resolving bokeh Selection 1d indices
+                resolved = resolved[p]
             else:
                 resolved = getattr(resolved, p, None)
         return {'id': model.ref['id'], 'value': resolved}
@@ -536,19 +540,34 @@ class PointerXYCallback(Callback):
     extra_models= ['x_range', 'y_range']
 
     on_events = ['mousemove']
+
     # Clip x and y values to available axis range
     code = """
-           if (x_range.type.endsWith('Range1d')) {
-             if (cb_obj.x < x_range.start) {
-               data['x'] = x_range.start }
-             else if (cb_obj.x > x_range.end) {
-               data['x'] = x_range.end }}
-           if (y_range.type.endsWith('Range1d')) {
-             if (cb_obj.y < y_range.start) {
-               data['y'] = y_range.start }
-             else if (cb_obj.y > y_range.end) {
-               data['y'] = y_range.end }}
-           """
+    if (x_range.type.endsWith('Range1d')) {
+      xstart = x_range.start;
+      xend = x_range.end;
+      if (xstart > xend) {
+        [xstart, xend] = [xend, xstart]
+      }
+      if (cb_obj.x < xstart) {
+        data['x'] = xstart;
+      } else if (cb_obj.x > xend) {
+        data['x'] = xend;
+      }
+    }
+    if (y_range.type.endsWith('Range1d')) {
+      ystart = y_range.start;
+      yend = y_range.end;
+      if (ystart > yend) {
+        [ystart, yend] = [yend, ystart]
+      }
+      if (cb_obj.y < ystart) {
+        data['y'] = ystart;
+      } else if (cb_obj.y > yend) {
+        data['y'] = yend;
+      }
+    }
+    """
 
     def _process_msg(self, msg):
         x_range = self.plot.handles.get('x_range')
@@ -575,12 +594,19 @@ class PointerXCallback(PointerXYCallback):
     attributes = {'x': 'cb_obj.x'}
     extra_models= ['x_range']
     code = """
-           if (x_range.type.endsWith('Range1d')) {
-             if (cb_obj.x < x_range.start) {
-               data['x'] = x_range.start }
-             else if (cb_obj.x > x_range.end) {
-               data['x'] = x_range.end }}
-           """
+    if (x_range.type.endsWith('Range1d')) {
+      xstart = x_range.start;
+      xend = x_range.end;
+      if (xstart > xend) {
+        [xstart, xend] = [xend, xstart]
+      }
+      if (cb_obj.x < xstart) {
+        data['x'] = xstart;
+      } else if (cb_obj.x > xend) {
+        data['x'] = xend;
+      }
+    }
+    """
 
 class PointerYCallback(PointerXYCallback):
     """
@@ -590,12 +616,19 @@ class PointerYCallback(PointerXYCallback):
     attributes = {'y': 'cb_obj.y'}
     extra_models= ['y_range']
     code = """
-           if (y_range.type.endsWith('Range1d')) {
-             if (cb_obj.y < y_range.start) {
-               data['y'] = y_range.start }
-             else if (cb_obj.y > y_range.end) {
-               data['y'] = y_range.end }}
-           """
+    if (y_range.type.endsWith('Range1d')) {
+      ystart = y_range.start;
+      yend = y_range.end;
+      if (ystart > yend) {
+        [ystart, yend] = [yend, ystart]
+      }
+      if (cb_obj.y < ystart) {
+        data['y'] = ystart;
+      } else if (cb_obj.y > yend) {
+        data['y'] = yend;
+      }
+    }
+    """
 
 class DrawCallback(PointerXYCallback):
     on_events = ['pan', 'panstart', 'panend']

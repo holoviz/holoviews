@@ -40,7 +40,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
     # Map each glyph to a style group
     _style_groups = {'scatter': 'node', 'multi_line': 'edge', 'patches': 'edge', 'bezier': 'edge'}
 
-    style_opts = (['edge_'+p for p in line_properties] +
+    style_opts = (['edge_'+p for p in fill_properties+line_properties] +
                   ['node_'+p for p in fill_properties+line_properties] +
                   ['node_size', 'cmap', 'edge_cmap'])
 
@@ -67,7 +67,9 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             dims = element.nodes.dimensions()
             dims = [(dims[2].pprint_label, '@{index_hover}')]+dims[3:]
         elif self.inspection_policy == 'edges':
-            dims = element.kdims+element.vdims
+            kdims = [(kd.pprint_label, '@{%s_values}' % kd)
+                     if kd in ('start', 'end') else kd for kd in element.kdims]
+            dims = kdims+element.vdims
         else:
             dims = []
         return dims, {}
@@ -99,14 +101,14 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         cvals = element.dimension_values(cdim)
         if idx in self._node_columns:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'if':
+        elif idx == 2 and cvals.dtype.kind in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
 
         default_cmap = 'viridis' if factors is None else 'tab20'
         cmap = style.get('edge_cmap', style.get('cmap', default_cmap))
-        if factors is None or (factors.dtype.kind in 'if' and idx not in self._node_columns):
+        if factors is None or (factors.dtype.kind in 'uif' and idx not in self._node_columns):
             colors, factors = None, None
         else:
             if factors.dtype.kind == 'f':
@@ -155,7 +157,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
         nodes = element.nodes.dimension_values(2)
         node_positions = element.nodes.array([0, 1])
         # Map node indices to integers
-        if nodes.dtype.kind not in 'if':
+        if nodes.dtype.kind not in 'uif':
             node_indices = {v: i for i, v in enumerate(nodes)}
             index = np.array([node_indices[n] for n in nodes], dtype=np.int32)
             layout = {str(node_indices[k]): (y, x) if self.invert_axes else (x, y)
@@ -206,7 +208,10 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                     point_data[dimension_sanitizer(d.name)] = element.nodes.dimension_values(d)
             elif self.inspection_policy == 'edges':
                 for d in element.dimensions():
-                    path_data[dimension_sanitizer(d.name)] = element.dimension_values(d)
+                    dim_name = dimension_sanitizer(d.name)
+                    if dim_name in ('start', 'end'):
+                        dim_name += '_values'
+                    path_data[dim_name] = element.dimension_values(d)
         data = {'scatter_1': point_data, self.edge_glyph: path_data, 'layout': layout}
         mapping = {'scatter_1': point_mapping, self.edge_glyph: edge_mapping}
         return data, mapping, style
@@ -290,6 +295,8 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                 setattr(renderer.edge_renderer, glyph_type+'glyph', new_glyph)
         self.handles[self.edge_glyph+'_glyph'] = renderer.edge_renderer.glyph
         if 'hover' in self.handles:
+            if self.handles['hover'].renderers == 'auto':
+                self.handles['hover'].renderers = []
             self.handles['hover'].renderers.append(renderer)
 
 
@@ -352,7 +359,7 @@ class ChordPlot(GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'if':
+            if values.dtype.kind in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

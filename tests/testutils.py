@@ -82,13 +82,14 @@ class TestOptsUtil(ComparisonTestCase):
     """
 
     def setUp(self):
+        self.backend = Store.current_backend
+        Store.current_backend = 'matplotlib'
         self.store_copy = OptionTree(sorted(Store.options().items()),
                                      groups=['style', 'plot', 'norm'])
-        self.backend = 'matplotlib'
-
         super(TestOptsUtil, self).setUp()
 
     def tearDown(self):
+        Store.current_backend = self.backend
         Store.options(val=self.store_copy)
         Store._custom_options = {k:{} for k in Store._custom_options.keys()}
         super(TestOptsUtil, self).tearDown()

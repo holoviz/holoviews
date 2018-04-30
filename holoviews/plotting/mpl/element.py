@@ -1,9 +1,8 @@
-import math, copy
+import math
 
 import param
 import numpy as np
 import matplotlib as mpl
-import matplotlib.pyplot as plt
 import matplotlib.colors as mpl_colors
 from matplotlib import ticker
 from matplotlib.dates import date2num
@@ -13,7 +12,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update
+from ..util import dynamic_update, process_cmap
 from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter
 from distutils.version import LooseVersion
@@ -149,12 +148,7 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         if not subplots and not self.drawn:
             self._finalize_artist(element)
 
-        for hook in self.finalize_hooks:
-            try:
-                hook(self, element)
-            except Exception as e:
-                self.warning("Plotting hook %r could not be applied:\n\n %s" % (hook, e))
-
+        self._execute_hooks(element)
         return super(ElementPlot, self)._finalize_axis(key)
 
 
@@ -423,8 +417,11 @@ class ElementPlot(GenericElementPlot, MPLPlot):
         key = list(self.hmap.data.keys())[-1]
         dim_map = dict(zip((d.name for d in self.hmap.kdims), key))
         key = tuple(dim_map.get(d.name, None) for d in self.dimensions)
-
         ranges = self.compute_ranges(self.hmap, key, ranges)
+        self.current_ranges = ranges
+        self.current_frame = element
+        self.current_key = key
+
         ranges = util.match_spec(element, ranges)
 
         style = dict(zorder=self.zorder, **self.style[self.cyclic_index])
@@ -482,6 +479,9 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
+    color_levels = param.Integer(default=None, doc="""
+        Number of discrete colors to use when colormapping.""")
+
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
         setting color for NaN values and for values above and below
@@ -507,6 +507,8 @@ class ColorbarPlot(ElementPlot):
         Whether to make the colormap symmetric around zero.""")
 
     _colorbars = {}
+
+    _default_nan = '#8b8b8b'
 
     def __init__(self, *args, **kwargs):
         super(ColorbarPlot, self).__init__(*args, **kwargs)
@@ -595,23 +597,28 @@ class ColorbarPlot(ElementPlot):
         to be passed to matplotlib plot function.
         """
         clim = opts.pop(prefix+'clims', None)
+        values = np.asarray(element.dimension_values(vdim))
         if clim is None:
-            cs = element.dimension_values(vdim)
-            if not isinstance(cs, np.ndarray):
-                cs = np.array(cs)
-            if len(cs) and cs.dtype.kind in 'if':
+            if not len(values):
+                clim = (0, 0)
+                categorical = False
+            elif values.dtype.kind in 'uif':
                 clim = ranges[vdim.name] if vdim.name in ranges else element.range(vdim)
                 if self.logz:
                     # Lower clim must be >0 when logz=True
                     # Choose the maximum between the lowest non-zero value
                     # and the overall range
                     if clim[0] == 0:
-                        vals = element.dimension_values(vdim)
-                        clim = (vals[vals!=0].min(), clim[1])
+                        clim = (values[values!=0].min(), clim[1])
                 if self.symmetric:
                     clim = -np.abs(clim).max(), np.abs(clim).max()
+                categorical = False
             else:
-                clim = (0, len(np.unique(cs)))
+                clim = (0, len(np.unique(values))-1)
+                categorical = True
+        else:
+            categorical = values.dtype.kind not in 'uif'
+
         if self.logz:
             if self.symmetric:
                 norm = mpl_colors.SymLogNorm(vmin=clim[0], vmax=clim[1],
@@ -623,13 +630,14 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmax'] = clim[1]
 
         # Check whether the colorbar should indicate clipping
-        values = np.asarray(element.dimension_values(vdim))
         if values.dtype.kind not in 'OSUM':
+            ncolors = self.color_levels
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:
                 el_min, el_max = -np.inf, np.inf
         else:
+            ncolors = clim[-1]+1
             el_min, el_max = -np.inf, np.inf
         vmin = -np.inf if opts[prefix+'vmin'] is None else opts[prefix+'vmin']
         vmax = np.inf if opts[prefix+'vmax'] is None else opts[prefix+'vmax']
@@ -641,16 +649,12 @@ class ColorbarPlot(ElementPlot):
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
-        cmap = opts.get(prefix+'cmap')
-        if isinstance(cmap, list):
-            cmap = mpl_colors.ListedColormap(cmap)
-        elif isinstance(cmap, util.basestring):
-            cmap = copy.copy(plt.cm.get_cmap(cmap))
-        else:
-            cmap = copy.copy(cmap)
+        cmap = opts.get(prefix+'cmap', 'viridis')
         colors = {}
         for k, val in self.clipping_colors.items():
-            if isinstance(val, tuple):
+            if val == 'transparent':
+                colors[k] = {'color': 'w', 'alpha': 0}
+            elif isinstance(val, tuple):
                 colors[k] = {'color': val[:3],
                              'alpha': val[3] if len(val) > 3 else 1}
             elif isinstance(val, util.basestring):
@@ -660,6 +664,15 @@ class ColorbarPlot(ElementPlot):
                     alpha = int(color[-2:], 16)/255.
                     color = color[:-2]
                 colors[k] = {'color': color, 'alpha': alpha}
+
+        if not isinstance(cmap, mpl_colors.Colormap):
+            if isinstance(cmap, dict):
+                factors = np.unique(values)
+                palette = [cmap.get(f, colors.get('NaN', {'color': self._default_nan})['color'])
+                           for f in factors]
+            else:
+                palette = process_cmap(cmap, ncolors, categorical=categorical)
+            cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
         if 'NaN' in colors: cmap.set_bad(**colors['NaN'])
@@ -825,15 +838,15 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         for k, subplot in self.subplots.items():
             el = None if empty else element.get(k, None)
             if isinstance(self.hmap, DynamicMap) and not empty:
-                idx = dynamic_update(self, subplot, k, element, items)
+                idx, spec, exact = dynamic_update(self, subplot, k, element, items)
                 if idx is not None:
                     _, el = items.pop(idx)
+                    if not exact:
+                        self._update_subplot(subplot, spec)
             subplot.update_frame(key, ranges, el)
 
         if isinstance(self.hmap, DynamicMap) and items:
-            raise Exception("Some Elements returned by the dynamic callback "
-                            "were not initialized correctly and could not be "
-                            "rendered.")
+            self._create_dynamic_subplots(key, items, ranges)
 
         if self.show_legend and not empty:
             self._adjust_legend(element, axis)

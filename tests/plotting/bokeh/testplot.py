@@ -15,6 +15,17 @@ try:
 except:
     bokeh_renderer = None
 
+from .. import option_intersections
+
+
+class TestPlotDefinitions(ComparisonTestCase):
+
+    known_clashes = [(('Bars',), {'width'}), (('BoxWhisker',), {'width'})]
+
+    def test_bokeh_option_definitions(self):
+        # Check option definitions do not introduce new clashes
+        self.assertEqual(option_intersections('bokeh'), self.known_clashes)
+
 
 class TestBokehPlot(ComparisonTestCase):
 

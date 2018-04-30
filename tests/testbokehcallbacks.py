@@ -12,7 +12,7 @@ try:
     from holoviews.plotting.bokeh.util import bokeh_version
 
     from bokeh.events import Tap
-    from bokeh.models import Range1d, Plot, ColumnDataSource
+    from bokeh.models import Range1d, Plot, ColumnDataSource, Selection
     bokeh_renderer = Store.renderers['bokeh']
 except:
     bokeh_renderer = None
@@ -83,7 +83,7 @@ class TestBokehServerJSCallbacks(ComparisonTestCase):
 
     def test_server_callback_resolve_attr_spec_source_selected(self):
         source = ColumnDataSource()
-        source.selected['1d']['indices'] = [1, 2, 3]
+        source.selected = Selection(indices=[1, 2, 3])
         msg = Callback.resolve_attr_spec('cb_obj.selected.1d.indices', source)
         self.assertEqual(msg, {'id': source.ref['id'], 'value': [1, 2, 3]})
 

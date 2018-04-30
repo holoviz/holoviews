@@ -317,7 +317,7 @@ class GridInterface(DictInterface):
             return data.T.flatten() if flat else data
         elif expanded:
             data = cls.coords(dataset, dim.name, expanded=True)
-            return data.flatten() if flat else data
+            return data.T.flatten() if flat else data
         else:
             return cls.coords(dataset, dim.name, ordered=True)
 
@@ -326,7 +326,11 @@ class GridInterface(DictInterface):
     def groupby(cls, dataset, dim_names, container_type, group_type, **kwargs):
         # Get dimensions information
         dimensions = [dataset.get_dimension(d, strict=True) for d in dim_names]
-        kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+        if 'kdims' in kwargs:
+            kdims = kwargs['kdims']
+        else:
+            kdims = [kdim for kdim in dataset.kdims if kdim not in dimensions]
+            kwargs['kdims'] = kdims
 
         invalid = [d for d in dimensions if dataset.data[d.name].ndim > 1]
         if invalid:
@@ -339,13 +343,16 @@ class GridInterface(DictInterface):
         group_type = dict if group_type == 'raw' else group_type
         if issubclass(group_type, Element):
             group_kwargs.update(util.get_param_values(dataset))
-            group_kwargs['kdims'] = kdims
+        else:
+            kwargs.pop('kdims')
         group_kwargs.update(kwargs)
 
         drop_dim = any(d not in group_kwargs['kdims'] for d in kdims)
 
         # Find all the keys along supplied dimensions
         keys = [cls.coords(dataset, d.name) for d in dimensions]
+        transpose = [dataset.ndims-dataset.kdims.index(kd)-1 for kd in kdims]
+        transpose += [i for i in range(dataset.ndims) if i not in transpose]
 
         # Iterate over the unique entries applying selection masks
         grouped_data = []
@@ -357,13 +364,17 @@ class GridInterface(DictInterface):
             else:
                 group_data = cls.select(dataset, **select)
 
-            if np.isscalar(group_data) or (isinstance(group_data, array_types) and da.group_data.shape == ()):
+            if np.isscalar(group_data) or (isinstance(group_data, array_types) and group_data.shape == ()):
                 group_data = {dataset.vdims[0].name: np.atleast_1d(group_data)}
                 for dim, v in zip(dim_names, unique_key):
                     group_data[dim] = np.atleast_1d(v)
             elif not drop_dim:
+                if isinstance(group_data, array_types):
+                    group_data = {dataset.vdims[0].name: group_data}
                 for vdim in dataset.vdims:
-                    group_data[vdim.name] = np.squeeze(group_data[vdim.name])
+                    data = group_data[vdim.name]
+                    data = data.transpose(transpose[::-1])
+                    group_data[vdim.name] = np.squeeze(data)
             group_data = group_type(group_data, **group_kwargs)
             grouped_data.append((tuple(unique_key), group_data))
 

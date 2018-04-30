@@ -1,7 +1,8 @@
 from collections import defaultdict
 
+import param
 import numpy as np
-from bokeh.models import Span, Arrow
+from bokeh.models import Span, Arrow, Div as BkDiv
 try:
     from bokeh.models.arrow_heads import TeeHead, NormalHead
     arrow_start = {'<->': NormalHead, '<|-|>': NormalHead}
@@ -13,10 +14,12 @@ except:
     arrow_end = {'->': NormalHead, '-[': OpenHead, '-|>': NormalHead,
                  '-': None}
 
+from ...core.util import datetime_types, dimension_sanitizer, basestring
 from ...element import HLine
-from ...core.util import datetime_types
-from .element import (ElementPlot, CompositeElementPlot,
+from ..plot import GenericElementPlot
+from .element import (ElementPlot, CompositeElementPlot, ColorbarPlot,
                       text_properties, line_properties)
+from .plot import BokehPlot
 from .util import date_to_integer
 
 
@@ -59,6 +62,51 @@ class TextPlot(ElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+
+class LabelsPlot(ColorbarPlot):
+
+    color_index = param.ClassSelector(default=None, class_=(basestring, int),
+                                      allow_None=True, doc="""
+      Index of the dimension from which the color will the drawn""")
+
+    show_legend = param.Boolean(default=False, doc="""
+        Whether to show legend for the plot.""")
+
+    xoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    yoffset = param.Number(default=None, doc="""
+      Amount of offset to apply to labels along x-axis.""")
+
+    style_opts = text_properties + ['cmap']
+
+    _plot_methods = dict(single='text', batched='text')
+    _batched_style_opts = text_properties
+
+    def get_data(self, element, ranges, style):
+        style = self.style[self.cyclic_index]
+        dims = element.dimensions()
+        coords = (1, 0) if self.invert_axes else (0, 1)
+        xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in coords+(2,))
+        mapping = dict(x=xdim, y=ydim, text=tdim)
+        data = {d: element.dimension_values(d) for d in (xdim, ydim)}
+        if self.xoffset is not None:
+            data[xdim] = data[xdim] + self.xoffset
+        if self.yoffset is not None:
+            data[ydim] = data[ydim] + self.yoffset
+        data[tdim] = [dims[2].pprint_value(v) for v in element.dimension_values(2)]
+        self._categorize_data(data, (xdim, ydim), element.dimensions())
+
+        cdim = element.get_dimension(self.color_index)
+        if cdim is None:
+            return data, mapping, style
+
+        cdata, cmapping = self._get_color_data(element, ranges, style, name='text_color')
+        data['text_color'] = cdata[dimension_sanitizer(cdim.name)]
+        mapping['text_color'] = cmapping['text_color']
+        return data, mapping, style
 
 
 
@@ -192,3 +240,55 @@ class ArrowPlot(CompositeElementPlot):
 
     def get_extents(self, element, ranges=None):
         return None, None, None, None
+
+
+
+class DivPlot(BokehPlot, GenericElementPlot):
+
+    height = param.Number(default=300)
+
+    width = param.Number(default=300)
+
+    finalize_hooks = param.HookList(default=[], doc="""
+        Optional list of hooks called when finalizing a column.
+        The hook is passed the plot object and the displayed
+        object, and other plotting handles can be accessed via plot.handles.""")
+
+    _stream_data = False
+
+    def __init__(self, element, plot=None, **params):
+        super(DivPlot, self).__init__(element, **params)
+        self.callbacks = []
+        self.handles = {} if plot is None else self.handles['plot']
+
+
+    def get_data(self, element, ranges, style):
+        return element.data, {}, style
+
+
+    def initialize_plot(self, ranges=None, plot=None, plots=None, source=None):
+        """
+        Initializes a new plot object with the last available frame.
+        """
+        # Get element key and ranges for frame
+        element = self.hmap.last
+        key = self.keys[-1]
+        self.current_frame = element
+        self.current_key = key
+
+        data, _, _ = self.get_data(element, ranges, {})
+        div = BkDiv(text=data, width=self.width, height=self.height)
+        self.handles['plot'] = div
+        self._execute_hooks(element)
+        self.drawn = True
+        return div
+
+
+    def update_frame(self, key, ranges=None, plot=None):
+        """
+        Updates an existing plot with data corresponding
+        to the key.
+        """
+        element = self._get_frame(key)
+        text, _, _ = self.get_data(element, ranges, {})
+        self.handles['plot'].text = text

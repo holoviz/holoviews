@@ -16,7 +16,7 @@ from ...core.options import Store, SkipRendering
 from ...core.util import int_to_roman, int_to_alpha, basestring
 from ..plot import (DimensionedPlot, GenericLayoutPlot, GenericCompositePlot,
                     GenericElementPlot)
-from ..util import attach_streams
+from ..util import attach_streams, collate, displayable
 from .util import compute_ratios, fix_aspect
 
 
@@ -361,8 +361,9 @@ class GridPlot(CompositePlot):
             self.handles['fig'].set_size_inches(self.fig_inches)
         subplots, subaxes = OrderedDict(), OrderedDict()
         frame_ranges = self.compute_ranges(layout, None, ranges)
+        keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self.keys])
+                                    for key in keys])
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         r, c = (0, 0)
         for coord in layout.keys(full_grid=True):
@@ -371,6 +372,8 @@ class GridPlot(CompositePlot):
             # Create subplot
             if type(view) in (Layout, NdLayout):
                 raise SkipRendering("Cannot plot nested Layouts.")
+            if not displayable(view):
+                view = collate(view)
             if view is not None:
                 vtype = view.type if isinstance(view, HoloMap) else view.__class__
                 opts = self.lookup_options(view, 'plot').options
@@ -883,8 +886,9 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         tight = self.tight
         collapsed_layout = layout.clone(shared_data=False, id=layout.id)
         frame_ranges = self.compute_ranges(layout, None, None)
+        keys = self.keys[:1] if self.dynamic else self.keys
         frame_ranges = OrderedDict([(key, self.compute_ranges(layout, key, frame_ranges))
-                                    for key in self.keys])
+                                    for key in keys])
         layout_subplots, layout_axes = {}, {}
         for r, c in self.coords:
             # Compute the layout type from shape
@@ -1009,6 +1013,8 @@ class LayoutPlot(GenericLayoutPlot, CompositePlot):
         for pos in positions:
             # Pos will be one of 'main', 'top' or 'right' or None
             view = layout.get(pos, None)
+            if not displayable(view):
+                view = collate(view)
             ax = axes.get(pos, None)
             if view is None or not view.traverse(lambda x: x, [Element]):
                 projections.append(None)

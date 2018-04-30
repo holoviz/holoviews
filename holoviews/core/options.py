@@ -35,6 +35,7 @@ Store:
 import pickle
 import traceback
 import difflib
+import inspect
 from contextlib import contextmanager
 from collections import OrderedDict, defaultdict
 
@@ -391,7 +392,7 @@ class Options(param.Parameterized):
        skipping over invalid keywords or not. May only be specified at
        the class level.""")
 
-    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, **kwargs):
+    def __init__(self, key=None, allowed_keywords=[], merge_keywords=True, max_cycles=None, **kwargs):
 
         invalid_kws = []
         for kwarg in sorted(kwargs.keys()):
@@ -409,7 +410,9 @@ class Options(param.Parameterized):
                          % (repr(invalid_kws), str(allowed_keywords)))
 
         self.kwargs = {k:v for k,v in kwargs.items() if k not in invalid_kws}
-        self._options = self._expand_options(kwargs)
+        self._options = []
+        self._max_cycles = max_cycles
+
         allowed_keywords = (allowed_keywords if isinstance(allowed_keywords, Keywords)
                             else Keywords(allowed_keywords))
         super(Options, self).__init__(allowed_keywords=allowed_keywords,
@@ -443,24 +446,6 @@ class Options(param.Parameterized):
         return self.__class__(key=self.key, **dict(self.kwargs, **inherited_style))
 
 
-    def _expand_options(self, kwargs):
-        """
-        Expand out Cycle objects into multiple sets of keyword values.
-
-        To elaborate, the full Cartesian product over the supplied
-        Cycle objects is expanded into a list, allowing infinite,
-        cyclic indexing in the __getitem__ method."""
-        filter_static = dict((k,v) for (k,v) in kwargs.items() if not isinstance(v, Cycle))
-        filter_cycles = [(k,v) for (k,v) in kwargs.items() if isinstance(v, Cycle)]
-
-        if not filter_cycles: return [kwargs]
-
-        filter_names, filter_values = list(zip(*filter_cycles))
-
-        cyclic_tuples = list(zip(*[val.values for val in filter_values]))
-        return [dict(zip(filter_names, tps), **filter_static) for tps in cyclic_tuples]
-
-
     def keys(self):
         "The keyword names across the supplied options."
         return sorted(list(self.kwargs.keys()))
@@ -468,30 +453,45 @@ class Options(param.Parameterized):
 
     def max_cycles(self, num):
         """
-        Truncates all contained Cycle objects to a maximum number
-        of Cycles and returns a new Options object with the
-        truncated or resampled Cycles.
+        Truncates all contained Palette objects to a maximum number
+        of samples and returns a new Options object containing the
+        truncated or resampled Palettes.
         """
-        kwargs = {kw: (arg[num] if isinstance(arg, Cycle) else arg)
+        kwargs = {kw: (arg[num] if isinstance(arg, Palette) else arg)
                   for kw, arg in self.kwargs.items()}
-        return self(**kwargs)
+        return self(max_cycles=num, **kwargs)
 
+
+    @property
+    def cyclic(self):
+        "Returns True if the options cycle, otherwise False"
+        return any(isinstance(val, Cycle) for val in self.kwargs.values())
 
     def __getitem__(self, index):
         """
         Infinite cyclic indexing of options over the integers,
         looping over the set of defined Cycle objects.
         """
-        return dict(self._options[index % len(self._options)])
+        if len(self.kwargs) == 0:
+            return {}
+
+        cycles = {k:v.values for k,v in self.kwargs.items() if isinstance(v, Cycle)}
+        options = {}
+        for key, values in cycles.items():
+            options[key] = values[index % len(values)]
+
+        static = {k:v for k,v in self.kwargs.items() if not isinstance(v, Cycle)}
+        return dict(static, **options)
 
 
     @property
     def options(self):
         "Access of the options keywords when no cycles are defined."
-        if len(self._options) == 1:
-            return dict(self._options[0])
+        if not self.cyclic:
+            return self[0]
         else:
-            raise Exception("The options property may only be used with non-cyclic Options.")
+            raise Exception("The options property may only be used"
+                            " with non-cyclic Options.")
 
 
     def __repr__(self):
@@ -762,6 +762,9 @@ class Compositor(param.Parameterized):
       The mode of the Compositor object which may be either 'data' or
       'display'.""")
 
+    backends = param.List(default=[], doc="""
+      Defines which backends to apply the Compositor for.""")
+
     operation = param.Parameter(doc="""
        The Operation to apply when collapsing overlays.""")
 
@@ -794,7 +797,7 @@ class Compositor(param.Parameterized):
     definitions = [] # The set of all the compositor instances
 
     @classmethod
-    def strongest_match(cls, overlay, mode):
+    def strongest_match(cls, overlay, mode, backend=None):
         """
         Returns the single strongest matching compositor operation
         given an overlay. If no matches are found, None is returned.
@@ -803,7 +806,7 @@ class Compositor(param.Parameterized):
         highest match value as returned by the match_level method.
         """
         match_strength = [(op.match_level(overlay), op) for op in cls.definitions
-                          if op.mode == mode]
+                          if op.mode == mode and (not op.backends or backend in op.backends)]
         matches = [(match[0], op, match[1]) for (match, op) in match_strength if match is not None]
         if matches == []: return None
         else:             return sorted(matches)[0]
@@ -814,6 +817,7 @@ class Compositor(param.Parameterized):
         """
         Finds any applicable compositor and applies it.
         """
+        from .element import Element
         from .overlay import Overlay, CompositeOverlay
         unpack = False
         if not isinstance(overlay, CompositeOverlay):
@@ -821,8 +825,9 @@ class Compositor(param.Parameterized):
             unpack = True
 
         prev_ids = tuple()
+        processed = defaultdict(list)
         while True:
-            match = cls.strongest_match(overlay, mode)
+            match = cls.strongest_match(overlay, mode, backend)
             if match is None:
                 if unpack and len(overlay) == 1:
                     return overlay.values()[0]
@@ -834,6 +839,9 @@ class Compositor(param.Parameterized):
             else:
                 values = overlay.items()
                 sliced = overlay.clone(values[start:stop])
+            items = sliced.traverse(lambda x: x, [Element])
+            if applicable_op and all(el in processed[applicable_op] for el in items):
+                return overlay
             result = applicable_op.apply(sliced, ranges, backend)
             if applicable_op.group:
                 result = result.relabel(group=applicable_op.group)
@@ -841,6 +849,7 @@ class Compositor(param.Parameterized):
                 result = [result]
             else:
                 result = list(zip(sliced.keys(), [result]))
+            processed[applicable_op] += [el for r in result for el in r.traverse(lambda x: x, [Element])]
             overlay = overlay.clone(values[:start]+result+values[stop:])
 
             # Guard against infinite recursion for no-ops
@@ -898,7 +907,7 @@ class Compositor(param.Parameterized):
 
 
     def __init__(self, pattern, operation, group, mode, transfer_options=False,
-                 transfer_parameters=False, output_type=None, **kwargs):
+                 transfer_parameters=False, output_type=None, backends=None, **kwargs):
         self._pattern_spec, labels = [], []
 
         for path in pattern.split('*'):
@@ -920,6 +929,7 @@ class Compositor(param.Parameterized):
                                          pattern=pattern,
                                          operation=operation,
                                          mode=mode,
+                                         backends=backends or [],
                                          kwargs=kwargs,
                                          transfer_options=transfer_options,
                                          transfer_parameters=transfer_parameters)
@@ -1024,6 +1034,9 @@ class Store(object):
     # A list of formats to be published for display on the frontend (e.g
     # IPython Notebook or a GUI application)
     display_formats = ['html']
+
+    # A mapping from Dimensioned type to display hook
+    _display_hooks = defaultdict(dict)
 
     # Once register_plotting_classes is called, this OptionTree is
     # populated for the given backend.
@@ -1244,6 +1257,42 @@ class Store(object):
 
             name = view_class.__name__
             cls._options[backend][name] = opt_groups
+
+
+    @classmethod
+    def set_display_hook(cls, group, objtype, hook):
+        """
+        Specify a display hook that will be applied to objects of type
+        objtype. The group specifies the set to which the display hook
+        belongs, allowing the Store to compute the precedence within
+        each group.
+        """
+        cls._display_hooks[group][objtype] = hook
+
+
+    @classmethod
+    def render(cls, obj):
+        """
+        Using any display hooks that have been registered, render the
+        object to a dictionary of MIME types and metadata information.
+        """
+        class_hierarchy = inspect.getmro(type(obj))
+        hooks = []
+        for _, type_hooks in cls._display_hooks.items():
+            for cls in class_hierarchy:
+                if cls in type_hooks:
+                    hooks.append(type_hooks[cls])
+                    break
+
+        data, metadata = {}, {}
+        for hook in hooks:
+            ret = hook(obj)
+            if ret is None:
+                continue
+            d, md = ret
+            data.update(d)
+            metadata.update(md)
+        return data, metadata
 
 
 

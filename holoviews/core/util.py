@@ -28,6 +28,15 @@ try:
 except:
    import builtins as builtins   # noqa (compatibility)
 
+try:
+    # Python 3
+    _getargspec = inspect.getfullargspec
+    get_keywords = operator.attrgetter('varkw')
+except AttributeError:
+    # Python 2
+    _getargspec = inspect.getargspec
+    get_keywords = operator.attrgetter('keywords')
+
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)
 
@@ -73,7 +82,7 @@ class Config(param.ParameterizedFunction):
        recommended that users switch this on to update any uses of
        __call__ as it will be deprecated in future.""")
 
-    image_rtol = param.Number(default=10e-6, doc="""
+    image_rtol = param.Number(default=10e-4, doc="""
       The tolerance used to enforce regular sampling for regular,
       gridded data where regular sampling is expected. Expressed as the
       maximal allowable sampling difference between sample
@@ -210,17 +219,18 @@ def deephash(obj):
 
 
 # Python3 compatibility
-if sys.version_info.major == 3:
+if sys.version_info.major >= 3:
     basestring = str
     unicode = str
     long = int
     generator_types = (zip, range, types.GeneratorType)
+    RecursionError = RecursionError # noqa
 else:
     basestring = basestring
     unicode = unicode
     from itertools import izip
     generator_types = (izip, xrange, types.GeneratorType) # noqa
-
+    RecursionError = RuntimeError
 
 
 def argspec(callable_obj):
@@ -235,24 +245,25 @@ def argspec(callable_obj):
     if (isinstance(callable_obj, type)
         and issubclass(callable_obj, param.ParameterizedFunction)):
         # Parameterized function.__call__ considered function in py3 but not py2
-        spec = inspect.getargspec(callable_obj.__call__)
-        args=spec.args[1:]
+        spec = _getargspec(callable_obj.__call__)
+        args = spec.args[1:]
     elif inspect.isfunction(callable_obj):    # functions and staticmethods
-        return inspect.getargspec(callable_obj)
+        spec = _getargspec(callable_obj)
+        args = spec.args
     elif isinstance(callable_obj, partial): # partials
         arglen = len(callable_obj.args)
-        spec =  inspect.getargspec(callable_obj.func)
+        spec =  _getargspec(callable_obj.func)
         args = [arg for arg in spec.args[arglen:] if arg not in callable_obj.keywords]
     elif inspect.ismethod(callable_obj):    # instance and class methods
-        spec = inspect.getargspec(callable_obj)
+        spec = _getargspec(callable_obj)
         args = spec.args[1:]
     else:                                   # callable objects
         return argspec(callable_obj.__call__)
 
-    return inspect.ArgSpec(args     = args,
-                           varargs  = spec.varargs,
-                           keywords = spec.keywords,
-                           defaults = spec.defaults)
+    return inspect.ArgSpec(args=args,
+                           varargs=spec.varargs,
+                           keywords=get_keywords(spec),
+                           defaults=spec.defaults)
 
 
 
@@ -394,6 +405,13 @@ def bytes_to_unicode(value):
     if isinstance(value, bytes):
         return unicode(value.decode('utf-8'))
     return value
+
+
+def get_method_owner(method):
+    """
+    Gets the instance that owns the supplied method
+    """
+    return method.__self__ if sys.version_info.major >= 3 else method.im_self
 
 
 def capitalize_unicode_name(s):
@@ -1489,7 +1507,7 @@ def expand_grid_coords(dataset, dim):
     arrays = [dataset.interface.coords(dataset, d.name, True)
               for d in dataset.kdims]
     idx = dataset.get_dimension_index(dim)
-    return cartesian_product(arrays, flat=False)[idx]
+    return cartesian_product(arrays, flat=False)[idx].T
 
 
 def dt64_to_dt(dt64):
@@ -1533,6 +1551,17 @@ def bound_range(vals, density, time_unit='us'):
     if isinstance(low, datetime_types):
         halfd = np.timedelta64(int(round(halfd)), time_unit)
     return low-halfd, high+halfd, density, invert
+
+
+def validate_regular_sampling(values, rtol=10e-6):
+    """
+    Validates regular sampling of a 1D array ensuring that the difference
+    in sampling steps is at most rtol times the smallest sampling step.
+    Returns a boolean indicating whether the sampling is regular.
+    """
+    diffs = np.diff(values)
+    vals = np.unique(diffs)
+    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)
 
 
 def compute_density(start, end, length, time_unit='us'):
@@ -1616,3 +1645,30 @@ def compute_edges(edges):
     midpoints = (edges[:-1] + edges[1:])/2.0
     boundaries = (2*edges[0] - midpoints[0], 2*edges[-1] - midpoints[-1])
     return np.concatenate([boundaries[:1], midpoints, boundaries[-1:]])
+
+
+def mimebundle_to_html(bundle):
+    """
+    Converts a MIME bundle into HTML.
+    """
+    if isinstance(bundle, tuple):
+        data, metadata = bundle
+    else:
+        data = bundle
+    html = data.get('text/html', '')
+    if 'application/javascript' in data:
+        js = data['application/javascript']
+        html += '\n<script type="application/javascript">{js}</script>'.format(js=js)
+    return html
+
+
+def numpy_scalar_to_python(scalar):
+    """
+    Converts a NumPy scalar to a regular python type.
+    """
+    scalar_type = type(scalar)
+    if np.issubclass_(scalar_type, np.float_):
+        return float(scalar)
+    elif np.issubclass_(scalar_type, np.int_):
+        return int(scalar)
+    return scalar

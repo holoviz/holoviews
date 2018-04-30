@@ -4,21 +4,23 @@ Definition and registration of display hooks for the IPython Notebook.
 from functools import wraps
 from contextlib import contextmanager
 
-import sys, traceback
+import os, sys, traceback
 
 import IPython
 from IPython import get_ipython
-from IPython.display import publish_display_data
+from IPython.display import HTML
 
 import holoviews
-from holoviews.plotting import Plot
 from ..core.options import (Store, StoreOptions, SkipRendering,
                             AbbreviatedException)
-from ..core import (ViewableElement, UniformNdMapping,
-                    HoloMap, AdjointLayout, NdLayout, GridSpace, Layout,
-                    CompositeOverlay, DynamicMap)
+from ..core import (
+    ViewableElement, HoloMap, AdjointLayout, NdLayout, GridSpace,
+    Layout, CompositeOverlay, DynamicMap
+)
 from ..core.traversal import unique_dimkeys
 from ..core.io import FileArchive
+from ..core.util import mimebundle_to_html
+from ..plotting import Plot
 from ..util.settings import OutputSettings
 from .magics import OptsMagic, OutputMagic
 
@@ -47,9 +49,8 @@ def process_object(obj):
 def render(obj, **kwargs):
     info = process_object(obj)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
-
 
     if render_anim is not None:
         return render_anim(obj)
@@ -61,12 +62,7 @@ def render(obj, **kwargs):
     if renderer.fig == 'pdf':
         renderer = renderer.instance(fig='png')
 
-    data, metadata = renderer.components(obj, **kwargs)
-    html = data.pop('text/html')
-    publish_display_data({'text/html': html})
-    if data or metadata:
-        publish_display_data(data, metadata=metadata)
-    return ''
+    return renderer.components(obj, **kwargs)
 
 
 def single_frame_plot(obj):
@@ -88,20 +84,20 @@ def first_frame(obj):
     "Only display the first frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(0)
-    return renderer.html(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 def middle_frame(obj):
     "Only display the (approximately) middle frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     middle_frame = int(len(plot) / 2)
     plot.update(middle_frame)
-    return renderer.html(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 def last_frame(obj):
     "Only display the last frame of an animated plot"
     plot, renderer, fmt = single_frame_plot(obj)
     plot.update(len(plot))
-    return renderer.html(plot, fmt)
+    return {'text/html': renderer.html(plot, fmt)}
 
 #===============#
 # Display hooks #
@@ -127,16 +123,29 @@ def option_state(element):
         if raised_exception:
             dynamic_optstate(element, state=optstate)
 
+
+
 def display_hook(fn):
+    """
+    A decorator to wrap display hooks that return a MIME bundle or None.
+    Additionally it handles adding output to the notebook archive, saves
+    files specified with the output magic and handles tracebacks.
+    """
     @wraps(fn)
     def wrapped(element):
         global FULL_TRACEBACK
         if Store.current_backend is None:
-            return
+            return {}, {}
 
         try:
-            html = fn(element,
-                      max_frames=OutputSettings.options['max_frames'])
+            max_frames = OutputSettings.options['max_frames']
+            mimebundle = fn(element, max_frames=max_frames)
+            if mimebundle is None:
+                return {}, {}
+
+            html = mimebundle_to_html(mimebundle)
+            if os.environ.get('HV_DOC_HTML', False):
+                mimebundle = {'text/html': html}, {}
 
             # Only want to add to the archive for one display hook...
             disabled_suffixes = ['png_display', 'svg_display']
@@ -146,21 +155,19 @@ def display_hook(fn):
             filename = OutputSettings.options['filename']
             if filename:
                 Store.renderers[Store.current_backend].save(element, filename)
-
-            return html
+            return mimebundle
         except SkipRendering as e:
             if e.warn:
                 sys.stderr.write(str(e))
-            return None
+            return {}, {}
         except AbbreviatedException as e:
-
             FULL_TRACEBACK = '\n'.join(traceback.format_exception(e.etype,
                                                                   e.value,
                                                                   e.traceback))
             info = dict(name=e.etype.__name__,
                         message=str(e.value).replace('\n','<br>'))
             msg =  '<i> [Call holoviews.ipython.show_traceback() for details]</i>'
-            return "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)
+            return {'text/html': "<b>{name}</b>{msg}<br>{message}".format(msg=msg, **info)}, {}
 
         except Exception:
             raise
@@ -171,24 +178,14 @@ def display_hook(fn):
 def element_display(element, max_frames):
     info = process_object(element)
     if info:
-        IPython.display.display(IPython.display.HTML(info))
+        display(HTML(info))
         return
 
     backend = Store.current_backend
     if type(element) not in Store.registry[backend]:
         return None
 
-    # Drop back to png if pdf selected, notebook PDF rendering is buggy
-    renderer = Store.renderers[backend]
-    if renderer.fig == 'pdf':
-        renderer = renderer.instance(fig='png')
-
-    data, metadata = renderer.components(element)
-    html = data.pop('text/html')
-    publish_display_data({'text/html': html})
-    if data or metadata:
-        publish_display_data(data, metadata=metadata)
-    return ''
+    return render(element)
 
 
 @display_hook
@@ -238,27 +235,38 @@ def grid_display(grid, max_frames):
     return render(grid)
 
 
-def display(obj, raw=False, **kwargs):
+def display(obj, raw_output=False, **kwargs):
     """
     Renders any HoloViews object to HTML and displays it
     using the IPython display function. If raw is enabled
     the raw HTML is returned instead of displaying it directly.
     """
+    raw = True
     if isinstance(obj, GridSpace):
         with option_state(obj):
-            html = grid_display(obj)
+            output = grid_display(obj)
     elif isinstance(obj, (CompositeOverlay, ViewableElement)):
         with option_state(obj):
-            html = element_display(obj)
+            output = element_display(obj)
     elif isinstance(obj, (Layout, NdLayout, AdjointLayout)):
         with option_state(obj):
-            html = layout_display(obj)
+            output = layout_display(obj)
     elif isinstance(obj, (HoloMap, DynamicMap)):
         with option_state(obj):
-            html = map_display(obj)
+            output = map_display(obj)
+    elif isinstance(obj, Plot):
+        output = render(obj)
     else:
-        return repr(obj) if raw else IPython.display.display(obj, **kwargs)
-    return html if raw else IPython.display.display(IPython.display.HTML(html))
+        output = obj
+        raw = kwargs.pop('raw', False)
+
+    if raw_output:
+        return output
+    elif isinstance(output, tuple):
+        data, metadata = output
+    else:
+        data, metadata = output, {}
+    return IPython.display.display(data, raw=raw, metadata=metadata, **kwargs)
 
 
 def pprint_display(obj):
@@ -269,56 +277,49 @@ def pprint_display(obj):
     ip = get_ipython()  #  # noqa (in IPython namespace)
     if not ip.display_formatter.formatters['text/plain'].pprint:
         return None
-    return display(obj, raw=True)
+    return display(obj, raw_output=True)
+
+
+def image_display(element, max_frames, fmt):
+    """
+    Used to render elements to an image format (svg or png) if requested
+    in the display formats.
+    """
+    if fmt not in Store.display_formats:
+        return None
+    info = process_object(element)
+    if info:
+        display(HTML(info))
+        return
+
+    backend = Store.current_backend
+    if type(element) not in Store.registry[backend]:
+        return None
+    renderer = Store.renderers[backend]
+    plot = renderer.get_plot(element)
+
+    # Current renderer does not support the image format
+    if fmt not in renderer.params('fig').objects:
+        return None
+
+    data, info = renderer(plot, fmt=fmt)
+    return {info['mime_type']: data}, {}
 
 
 @display_hook
-def element_png_display(element, max_frames):
+def png_display(element, max_frames):
     """
     Used to render elements to PNG if requested in the display formats.
     """
-    if 'png' not in Store.display_formats:
-        return None
-    info = process_object(element)
-    if info:
-        IPython.display.display(IPython.display.HTML(info))
-        return
-
-
-    backend = Store.current_backend
-    if type(element) not in Store.registry[backend]:
-        return None
-    renderer = Store.renderers[backend]
-    # Current renderer does not support PNG
-    if 'png' not in renderer.params('fig').objects:
-        return None
-
-    data, info = renderer(element, fmt='png')
-    return data
+    return image_display(element, max_frames, fmt='png')
 
 
 @display_hook
-def element_svg_display(element, max_frames):
+def svg_display(element, max_frames):
     """
     Used to render elements to SVG if requested in the display formats.
     """
-    if 'svg' not in Store.display_formats:
-        return None
-    info = process_object(element)
-    if info:
-        IPython.display.display(IPython.display.HTML(info))
-        return
-
-
-    backend = Store.current_backend
-    if type(element) not in Store.registry[backend]:
-        return None
-    renderer = Store.renderers[backend]
-    # Current renderer does not support SVG
-    if 'svg' not in renderer.params('fig').objects:
-        return None
-    data, info = renderer(element, fmt='svg')
-    return data
+    return image_display(element, max_frames, fmt='svg')
 
 
 # display_video output by default, but may be set to first_frame,
@@ -326,22 +327,4 @@ def element_svg_display(element, max_frames):
 render_anim = None
 
 def plot_display(plot):
-    return plot.renderer.html(plot)
-
-
-def set_display_hooks(ip):
-    html_formatter = ip.display_formatter.formatters['text/html']
-    html_formatter.for_type(ViewableElement, pprint_display)
-    html_formatter.for_type(UniformNdMapping, pprint_display)
-    html_formatter.for_type(AdjointLayout, pprint_display)
-    html_formatter.for_type(Layout, pprint_display)
-    # Give plot instances rich display
-    html_formatter.for_type(Plot, plot_display)
-
-    # Note: Disable additional hooks from calling archive
-    #       (see disabled_suffixes variable in the display decorator)
-    png_formatter = ip.display_formatter.formatters['image/png']
-    png_formatter.for_type(ViewableElement, element_png_display)
-
-    svg_formatter = ip.display_formatter.formatters['image/svg+xml']
-    svg_formatter.for_type(ViewableElement, element_svg_display)
+    return plot.renderer.components(plot)

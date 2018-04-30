@@ -14,8 +14,7 @@ from ..core.util import dimension_range, compute_density, datetime_types
 from .chart import Curve
 from .graphs import TriMesh
 from .tabular import Table
-from .util import (compute_slice_bounds, categorical_aggregate2d,
-                   validate_regular_sampling)
+from .util import compute_slice_bounds, categorical_aggregate2d
 
 
 class Raster(Element2D):
@@ -231,17 +230,29 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
+    rtol = param.Number(default=None, doc="""The tolerance used to enforce 
+            regular sampling for regular, gridded data where regular sampling is 
+            expected. Expressed as the maximal allowable sampling difference 
+            between sample locations.""")
+
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):
+        supplied_bounds = bounds
         if isinstance(data, Image):
             bounds = bounds or data.bounds
             xdensity = xdensity or data.xdensity
             ydensity = ydensity or data.ydensity
+            if rtol is None: rtol = data.rtol
         extents = extents if extents else (None, None, None, None)
         if (data is None
             or (isinstance(data, (list, tuple)) and not data)
             or (isinstance(data, np.ndarray) and data.size == 0)):
             data = np.zeros((2, 2))
+        if rtol is not None:
+            params['rtol'] = rtol
+        else:
+            params['rtol'] = config.image_rtol
+
         Dataset.__init__(self, data, kdims=kdims, vdims=vdims, extents=extents, **params)
         if not self.interface.gridded:
             raise DataError("%s type expects gridded data, %s is columnar."
@@ -262,21 +273,61 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
             l, b, r, t = bounds
             bounds = BoundingBox(points=((l, b), (r, t)))
 
+        data_bounds = None
+        if self.interface is ImageInterface and not isinstance(data, np.ndarray):
+            data_bounds = self.bounds.lbrt()
         l, b, r, t = bounds.lbrt()
         xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
         ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
+        self._validate(data_bounds, supplied_bounds)
 
+
+    def _validate(self, data_bounds, supplied_bounds):
         if len(self.shape) == 3:
             if self.shape[2] != len(self.vdims):
                 raise ValueError("Input array has shape %r but %d value dimensions defined"
                                  % (self.shape, len(self.vdims)))
 
         # Ensure coordinates are regularly sampled
+        xdim, ydim = self.kdims
+        xvals, yvals = (self.dimension_values(d, expanded=False) for d in self.kdims)
+        xvalid = util.validate_regular_sampling(xvals, self.rtol)
+        yvalid = util.validate_regular_sampling(yvals, self.rtol)
+        msg = ("{clsname} dimension{dims} not evenly sampled to relative "
+               "tolerance of {rtol}. Please use the QuadMesh element for "
+               "irregularly sampled data or set a higher tolerance on "
+               "hv.config.image_rtol or the rtol parameter in the "
+               "{clsname} constructor.")
+        dims = None
+        if not xvalid:
+            dims = ' %s is ' % xdim if yvalid else '(s) %s and %s are' % (xdim, ydim)
+        elif not yvalid:
+            dims = ' %s is' % ydim
+        if dims:
+            self.warning(msg.format(clsname=type(self).__name__, dims=dims, rtol=self.rtol))
 
-        rtol = config.image_rtol if rtol is None else rtol
-        validate_regular_sampling(self, 0, rtol)
-        validate_regular_sampling(self, 1, rtol)
+        if not supplied_bounds:
+            return
+
+        if data_bounds is None:
+            (x0, x1), (y0, y1) = (self.interface.range(self, kd.name) for kd in self.kdims)
+            xstep = (1./self.xdensity)/2.
+            ystep = (1./self.ydensity)/2.
+            if not isinstance(x0, util.datetime_types):
+                x0, x1 = (x0-xstep, x1+xstep)
+            if not isinstance(y0, util.datetime_types):
+                y0, y1 = (y0-ystep, y1+ystep)
+            bounds = (x0, y0, x1, y1)
+        else:
+            bounds = data_bounds
+
+        if not all(np.isclose(r, c, rtol=self.rtol) for r, c in zip(bounds, self.bounds.lbrt())
+               if not isinstance(r, util.datetime_types) and np.isfinite(r)):
+            raise ValueError('Supplied Image bounds do not match the coordinates defined '
+                             'in the data. Bounds only have to be declared if no coordinates '
+                             'are supplied, otherwise they must match the data. To change '
+                             'the displayed extents set the range on the x- and y-dimensions.')
 
 
     def __setstate__(self, state):
@@ -744,4 +795,3 @@ class HeatMap(Dataset, Element2D):
                      "the 2D aggregate is now computed dynamically "
                      "during plotting.")
         return self.gridded.dimension_values(2, flat=False)
-

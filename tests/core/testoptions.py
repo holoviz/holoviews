@@ -130,6 +130,19 @@ class TestCycle(ComparisonTestCase):
         self.assertEqual(opts[5], {'one': 'c', 'two': 3})
 
 
+    def test_cycle_expansion_unequal(self):
+        cycle1 = Cycle(values=['a', 'b', 'c', 'd'])
+        cycle2 = Cycle(values=[1, 2, 3])
+
+        opts = Options('test', one=cycle1, two=cycle2)
+        self.assertEqual(opts[0], {'one': 'a', 'two': 1})
+        self.assertEqual(opts[1], {'one': 'b', 'two': 2})
+        self.assertEqual(opts[2], {'one': 'c', 'two': 3})
+        self.assertEqual(opts[3], {'one': 'd', 'two': 1})
+        self.assertEqual(opts[4], {'one': 'a', 'two': 2})
+        self.assertEqual(opts[5], {'one': 'b', 'two': 3})
+
+
     def test_cycle_slice(self):
         cycle1 = Cycle(values=['a', 'b', 'c'])[2]
         cycle2 = Cycle(values=[1, 2, 3])
@@ -137,8 +150,18 @@ class TestCycle(ComparisonTestCase):
         opts = Options('test', one=cycle1, two=cycle2)
         self.assertEqual(opts[0], {'one': 'a', 'two': 1})
         self.assertEqual(opts[1], {'one': 'b', 'two': 2})
-        self.assertEqual(opts[2], {'one': 'a', 'two': 1})
-        self.assertEqual(opts[3], {'one': 'b', 'two': 2})
+        self.assertEqual(opts[2], {'one': 'a', 'two': 3})
+        self.assertEqual(opts[3], {'one': 'b', 'two': 1})
+
+
+    def test_cyclic_property_true(self):
+        cycle1 = Cycle(values=['a', 'b', 'c'])
+        opts = Options('test', one=cycle1, two='two')
+        self.assertEqual(opts.cyclic, True)
+
+    def test_cyclic_property_false(self):
+        opts = Options('test', one='one', two='two')
+        self.assertEqual(opts.cyclic, False)
 
 
     def test_options_property_disabled(self):

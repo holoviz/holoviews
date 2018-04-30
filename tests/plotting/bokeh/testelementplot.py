@@ -16,7 +16,7 @@ except:
 
 
 
-class TestElementPlotPlot(TestBokehPlot):
+class TestElementPlot(TestBokehPlot):
 
     def test_element_show_frame_disabled(self):
         curve = Curve(range(10)).opts(plot=dict(show_frame=False))
@@ -66,6 +66,14 @@ class TestElementPlotPlot(TestBokehPlot):
         self.assertEqual(source.data['image'][0].mean(), 2)
         self.assertNotIn(source, plot.current_handles)
 
+    def test_stream_cleanup(self):
+        stream = Stream.define(str('Test'), test=1)()
+        dmap = DynamicMap(lambda test: Curve([]), streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+        self.assertTrue(bool(stream._subscribers))
+        plot.cleanup()
+        self.assertFalse(bool(stream._subscribers))
+
     @attr(optional=1)  # Requires Flexx
     def test_element_formatter_xaxis(self):
         def formatter(x):
@@ -82,3 +90,44 @@ class TestElementPlotPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertIsInstance(plot.yaxis[0].formatter, FuncTickFormatter)
 
+    def test_element_grid_options(self):
+        grid_style = {'grid_line_color': 'blue', 'grid_line_width': 1.5, 'ygrid_bounds': (0.3, 0.7),
+                      'minor_xgrid_line_color': 'lightgray', 'xgrid_line_dash': [4, 4]}
+        curve = Curve(range(10)).options(show_grid=True, gridstyle=grid_style)
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(plot.state.xgrid[0].grid_line_color, 'blue')
+        self.assertEqual(plot.state.xgrid[0].grid_line_width, 1.5)
+        self.assertEqual(plot.state.xgrid[0].grid_line_dash, [4, 4])
+        self.assertEqual(plot.state.xgrid[0].minor_grid_line_color, 'lightgray')
+        self.assertEqual(plot.state.ygrid[0].grid_line_color, 'blue')
+        self.assertEqual(plot.state.ygrid[0].grid_line_width, 1.5)
+        self.assertEqual(plot.state.ygrid[0].bounds, (0.3, 0.7))
+
+
+class TestColorbarPlot(TestBokehPlot):
+
+    def test_colormapper_symmetric(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(symmetric=True)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low, -3)
+        self.assertEqual(cmapper.high, 3)
+
+    def test_colormapper_color_levels(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(color_levels=5)
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(len(cmapper.palette), 5)
+
+    def test_colormapper_transparent_nan(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(clipping_colors={'NaN': 'transparent'})
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.nan_color, 'rgba(0, 0, 0, 0)')
+
+    def test_colormapper_min_max_colors(self):
+        img = Image(np.array([[0, 1], [2, 3]])).options(clipping_colors={'min': 'red', 'max': 'blue'})
+        plot = bokeh_renderer.get_plot(img)
+        cmapper = plot.handles['color_mapper']
+        self.assertEqual(cmapper.low_color, 'red')
+        self.assertEqual(cmapper.high_color, 'blue')

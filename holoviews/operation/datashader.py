@@ -9,6 +9,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 import datashader as ds
+import datashader.reductions as rd
 import datashader.transfer_functions as tf
 import dask.dataframe as dd
 from param.parameterized import bothmethod
@@ -26,11 +27,25 @@ from ..core import (Operation, Element, Dimension, NdOverlay,
 from ..core.data import PandasInterface, XArrayInterface
 from ..core.sheetcoords import BoundingBox
 from ..core.util import get_param_values, basestring, datetime_types, dt_to_int
-from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh)
+from ..element import (Image, Path, Curve, RGB, Graph, TriMesh, QuadMesh, Contours)
 from ..streams import RangeXY, PlotSize
 
 
-class ResamplingOperation(Operation):
+class LinkableOperation(Operation):
+    """
+    Abstract baseclass for operations supporting linked inputs.
+    """
+
+    link_inputs = param.Boolean(default=True, doc="""
+        By default, the link_inputs parameter is set to True so that
+        when applying an operation, backends that support linked
+        streams update RangeXY streams on the inputs of the operation.
+        Disable when you do not want the resulting plot to be
+        interactive, e.g. when trying to display an interactive plot a
+        second time.""")
+
+
+class ResamplingOperation(LinkableOperation):
     """
     Abstract baseclass for resampling operations
     """
@@ -81,13 +96,6 @@ class ResamplingOperation(Operation):
                                         is_instance=False, default=Image,
                                         doc="""
         The type of the returned Elements, must be a 2D Dataset type.""")
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying shade, backends that support linked streams
-        update RangeXY streams on the inputs of the shade operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     precompute = param.Boolean(default=False, doc="""
         Whether to apply precomputing operations. Precomputing can
@@ -166,6 +174,7 @@ class ResamplingOperation(Operation):
             width = int(min([(xspan/self.p.x_sampling), width]))
         if self.p.y_sampling:
             height = int(min([(yspan/self.p.y_sampling), height]))
+        width, height = max([width, 1]), max([height, 1])
         xunit, yunit = float(xspan)/width, float(yspan)/height
         xs, ys = (np.linspace(xstart+xunit/2., xend-xunit/2., width),
                   np.linspace(ystart+yunit/2., yend-yunit/2., height))
@@ -174,7 +183,64 @@ class ResamplingOperation(Operation):
 
 
 
-class aggregate(ResamplingOperation):
+class AggregationOperation(ResamplingOperation):
+    """
+    AggregationOperation extends the ResamplingOperation defining an
+    aggregator parameter used to define a datashader Reduction.
+    """
+
+    aggregator = param.ClassSelector(class_=(ds.reductions.Reduction, basestring),
+                                     default=ds.count(), doc="""
+        Datashader reduction function used for aggregating the data.
+        The aggregator may also define a column to aggregate; if
+        no column is defined the first value dimension of the element
+        will be used. May also be defined as a string.""")
+
+    _agg_methods = {
+        'any':   rd.any,
+        'count': rd.count,
+        'first': rd.first,
+        'last':  rd.last,
+        'mode':  rd.mode,
+        'mean':  rd.mean,
+        'var':   rd.var,
+        'std':   rd.std,
+        'min':   rd.min,
+        'max':   rd.max
+    }
+
+    def _get_aggregator(self, element, add_field=True):
+        agg = self.p.aggregator
+        if isinstance(agg, basestring):
+            if agg not in self._agg_methods:
+                agg_methods = sorted(agg)
+                raise ValueError('Aggregation method %r is not known; '
+                                 'aggregator must be one of: %r' %
+                                 (agg, agg_methods))
+            agg = self._agg_methods[agg]()
+
+        elements = element.traverse(lambda x: x, [Element])
+        if add_field and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+            if not elements:
+                raise ValueError('Could not find any elements to apply '
+                                 '%s operation to.' % type(self).__name__)
+            inner_element = elements[0]
+            if inner_element.vdims:
+                field = inner_element.vdims[0].name
+            elif isinstance(inner_element, TriMesh) and inner_element.nodes.kdims:
+                field = inner_element.nodes.vdims[0].name
+            elif isinstance(element, NdOverlay):
+                field = element.kdims[0].name
+            else:
+                raise ValueError('Could not determine dimension to apply '
+                                 '%s operation to. Declare the dimension '
+                                 'to aggregate as part of the datashader '
+                                 'aggregator.' % type(self).__name__)
+            agg = type(agg)(field)
+        return agg
+
+
+class aggregate(AggregationOperation):
     """
     aggregate implements 2D binning for any valid HoloViews Element
     type using datashader. I.e., this operation turns a HoloViews
@@ -199,8 +265,6 @@ class aggregate(ResamplingOperation):
     the linked plot.
     """
 
-    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=ds.count())
 
     @classmethod
     def get_agg_data(cls, obj, category=None):
@@ -281,7 +345,8 @@ class aggregate(ResamplingOperation):
         x, y = element.last.dimensions()[0:2]
         info = self._get_sampling(element, x, y)
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = info
-        agg_params = dict({k: v for k, v in self.p.items() if k in aggregate.params()},
+        agg_params = dict({k: v for k, v in dict(self.get_param_values(), **self.p).items()
+                           if k in aggregate.params()},
                           x_range=x_range, y_range=y_range)
 
         # Optimize categorical counts by aggregating them individually
@@ -340,7 +405,7 @@ class aggregate(ResamplingOperation):
 
 
     def _process(self, element, key=None):
-        agg_fn = self.p.aggregator
+        agg_fn = self._get_aggregator(element)
         category = agg_fn.column if isinstance(agg_fn, ds.count_cat) else None
 
         if (isinstance(element, NdOverlay) and
@@ -383,7 +448,7 @@ class aggregate(ResamplingOperation):
                       datatype=['xarray'], vdims=vdims)
 
         dfdata = PandasInterface.as_dframe(data)
-        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, self.p.aggregator)
+        agg = getattr(cvs, glyph)(dfdata, x.name, y.name, agg_fn)
         if 'x_axis' in agg.coords and 'y_axis' in agg.coords:
             agg = agg.rename({'x_axis': x, 'y_axis': y})
         if xtype == 'datetime':
@@ -405,21 +470,19 @@ class aggregate(ResamplingOperation):
 
 
 
-class regrid(ResamplingOperation):
+class regrid(AggregationOperation):
     """
     regrid allows resampling a HoloViews Image type using specified
     up- and downsampling functions defined using the aggregator and
     interpolation parameters respectively. By default upsampling is
     disabled to avoid unnecessarily upscaling an image that has to be
     sent to the browser. Also disables expanding the image beyond its
-    original bounds avoiding unneccessarily padding the output array
-    with nan values.
+    original bounds avoiding unnecessarily padding the output array
+    with NaN values.
     """
 
-    aggregator = param.ObjectSelector(default='mean',
-        objects=['first', 'last', 'mean', 'mode', 'std', 'var', 'min', 'max'], doc="""
-        Aggregation method.
-        """)
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
 
     expand = param.Boolean(default=False, doc="""
        Whether the x_range and y_range should be allowed to expand
@@ -481,14 +544,13 @@ class regrid(ResamplingOperation):
         if ds_version <= '0.5.0':
             raise RuntimeError('regrid operation requires datashader>=0.6.0')
 
+        # Compute coords, anges and size
         x, y = element.kdims
-        coords = tuple(element.dimension_values(d, expanded=False)
-                       for d in [x, y])
+        coords = tuple(element.dimension_values(d, expanded=False) for d in [x, y])
         info = self._get_sampling(element, x, y)
         (x_range, y_range), _, (width, height), (xtype, ytype) = info
-        arrays = self._get_xarrays(element, coords, xtype, ytype)
 
-        # Disable upsampling if requested
+        # Disable upsampling by clipping size and ranges
         (xstart, xend), (ystart, yend) = (x_range, y_range)
         xspan, yspan = (xend-xstart), (yend-ystart)
         if not self.p.upsample and self.p.target is None:
@@ -500,21 +562,28 @@ class regrid(ResamplingOperation):
             exspan, eyspan = (x1-x0), (y1-y0)
             width = min([int((xspan/exspan) * len(coords[0])), width])
             height = min([int((yspan/eyspan) * len(coords[1])), height])
+            width, height = max([width, 1]), max([height, 1])
 
-        # Get expanded or bounded ranges
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
+
+        # Apply regridding to each value dimension
         regridded = {}
+        arrays = self._get_xarrays(element, coords, xtype, ytype)
+        agg_fn = self._get_aggregator(element, add_field=False)
         for vd, xarr in arrays.items():
             rarray = cvs.raster(xarr, upsample_method=self.p.interpolation,
-                                downsample_method=self.p.aggregator)
+                                downsample_method=agg_fn)
+
+            # Convert datetime coordinates
             if xtype == "datetime":
                 rarray[x.name] = (rarray[x.name]/10e5).astype('datetime64[us]')
             if ytype == "datetime":
                 rarray[y.name] = (rarray[y.name]/10e5).astype('datetime64[us]')
             regridded[vd] = rarray
-
         regridded = xr.Dataset(regridded)
+
+        # Compute bounds (converting datetimes)
         if xtype == 'datetime':
             xstart, xend = (np.array([xstart, xend])/10e5).astype('datetime64[us]')
         if ytype == 'datetime':
@@ -524,16 +593,35 @@ class regrid(ResamplingOperation):
                              datatype=['xarray']+element.datatype)
 
 
+
+class contours_rasterize(aggregate):
+    """
+    Rasterizes the Contours element by weighting the aggregation by
+    the iso-contour levels if a value dimension is defined, otherwise
+    default to any aggregator.
+    """
+
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
+
+    def _get_aggregator(self, element, add_field=True):
+        agg = self.p.aggregator
+        if not element.vdims and agg.column is None and not isinstance(agg, (rd.count, rd.any)):
+            return ds.any()
+        return super(contours_rasterize, self)._get_aggregator(element, add_field)
+
+
+
 class trimesh_rasterize(aggregate):
     """
     Rasterize the TriMesh element using the supplied aggregator. If
-    the TriMesh nodes or edges define a value dimension will plot
-    filled and shaded polygons otherwise returns a wiremesh of the
+    the TriMesh nodes or edges define a value dimension, will plot
+    filled and shaded polygons; otherwise returns a wiremesh of the
     data.
     """
 
-    aggregator = param.ClassSelector(class_=ds.reductions.Reduction,
-                                     default=None)
+    aggregator = param.ClassSelector(default=ds.mean(),
+                                     class_=(ds.reductions.Reduction, basestring))
 
     interpolation = param.ObjectSelector(default='bilinear',
                                          objects=['bilinear', None], doc="""
@@ -564,7 +652,13 @@ class trimesh_rasterize(aggregate):
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)
 
+        agg = self.p.aggregator
         if not (element.vdims or element.nodes.vdims):
+            if not isinstance(agg, (rd.count, rd.any)) and agg.column is not None:
+                raise ValueError("Aggregation column %s not found on TriMesh element. "
+                                 "The supplied TriMesh does not define any value "
+                                 "dimensions.")
+            self.p.aggregator = ds.count() if not isinstance(agg, ds.any) else agg
             return aggregate._process(self, element, key)
         elif element._plot_id in self._precomputed:
             precomputed = self._precomputed[element._plot_id]
@@ -578,7 +672,7 @@ class trimesh_rasterize(aggregate):
 
         vdim = element.vdims[0] if element.vdims else element.nodes.vdims[0]
         interpolate = bool(self.p.interpolation)
-        agg = cvs.trimesh(pts, simplices, agg=self.p.aggregator,
+        agg = cvs.trimesh(pts, simplices, agg=self._get_aggregator(element),
                           interp=interpolate, mesh=mesh)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], vdims=[vdim])
@@ -589,7 +683,7 @@ class trimesh_rasterize(aggregate):
 class quadmesh_rasterize(trimesh_rasterize):
     """
     Rasterize the QuadMesh element using the supplied aggregator.
-    Simply converts to a TriMesh and let's trimesh_rasterize
+    Simply converts to a TriMesh and lets trimesh_rasterize
     handle the actual rasterization.
     """
 
@@ -598,14 +692,14 @@ class quadmesh_rasterize(trimesh_rasterize):
 
 
 
-class rasterize(ResamplingOperation):
+class rasterize(AggregationOperation):
     """
-    Rasterize is a high-level operation which will rasterize any
-    Element or combination of Elements aggregating it with the supplied
+    Rasterize is a high-level operation that will rasterize any
+    Element or combination of Elements, aggregating them with the supplied
     aggregator and interpolation method.
 
     The default aggregation method depends on the type of Element but
-    usually defaults to the count of samples in each bin, other
+    usually defaults to the count of samples in each bin. Other
     aggregators can be supplied implementing mean, max, min and other
     reduction operations.
 
@@ -628,47 +722,32 @@ class rasterize(ResamplingOperation):
                                          objects=['bilinear', None], doc="""
         The interpolation method to apply during rasterization.""")
 
-    def _process(self, element, key=None):
-        # Get input Images to avoid multiple rasterization
-        imgs = element.traverse(lambda x: x, [Image])
-
-        # Rasterize TriMeshes
-        tri_params = dict({k: v for k, v in self.p.items()
-                           if k in aggregate.params()}, dynamic=False)
-        trirasterize = trimesh_rasterize.instance(**tri_params)
-        trirasterize._precomputed = self._precomputed
-        element = element.map(trirasterize, TriMesh)
-        self._precomputed = trirasterize._precomputed
-
-        # Rasterize QuadMesh
-        quad_params = dict({k: v for k, v in self.p.items()
-                           if k in aggregate.params()}, dynamic=False)
-        quadrasterize = quadmesh_rasterize.instance(**quad_params)
-        quadrasterize._precomputed = self._precomputed
-        element = element.map(quadrasterize, QuadMesh)
-        self._precomputed = quadrasterize._precomputed
-
-        # Rasterize NdOverlay of objects
-        agg_params = dict({k: v for k, v in self.p.items()
-                           if k in aggregate.params()}, dynamic=False)
-        dsrasterize = aggregate.instance(**agg_params)
-        dsrasterize._precomputed = self._precomputed
-        predicate = lambda x: (isinstance(x, NdOverlay) and
+    _transforms = [(Image, regrid),
+                   (TriMesh, trimesh_rasterize),
+                   (QuadMesh, quadmesh_rasterize),
+                   (lambda x: (isinstance(x, NdOverlay) and
                                issubclass(x.type, Dataset)
-                               and not issubclass(x.type, Image))
-        element = element.map(dsrasterize, predicate)
+                               and not issubclass(x.type, Image)),
+                    aggregate),
+                   (Contours, contours_rasterize),
+                   (lambda x: (isinstance(x, Dataset) and
+                               (not isinstance(x, Image))),
+                    aggregate)]
 
-        # Rasterize other Dataset types
-        predicate = lambda x: (isinstance(x, Dataset) and
-                               (not isinstance(x, Image) or x in imgs))
-        element = element.map(dsrasterize, predicate)
-        self._precomputed = dsrasterize._precomputed
-
+    def _process(self, element, key=None):
+        for predicate, transform in self._transforms:
+            op_params = dict({k: v for k, v in self.p.items()
+                              if k in transform.params() and v is not None},
+                             dynamic=False)
+            op = transform.instance(**op_params)
+            op._precomputed = self._precomputed
+            element = element.map(op, predicate)
+            self._precomputed = op._precomputed
         return element
 
 
 
-class shade(Operation):
+class shade(LinkableOperation):
     """
     shade applies a normalization function followed by colormapping to
     an Image or NdOverlay of Images, returning an RGB Element.
@@ -677,8 +756,8 @@ class shade(Operation):
 
     In the 2D case data is normalized and colormapped, while a 3D
     array representing categorical aggregates will be supplied a color
-    key for each category. The colormap (cmap) may be supplied as an
-    Iterable or a Callable.
+    key for each category. The colormap (cmap) for the 2D case may be
+    supplied as an Iterable or a Callable.
     """
 
     cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
@@ -690,9 +769,10 @@ class shade(Operation):
         colormap.""")
 
     color_key = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
-        Iterable or callable which returns colors as hex colors, to
+        Iterable or callable that returns colors as hex colors, to
         be used for the color key of categorical datashader output.
-        Callable type must allow mapping colors between 0 and 1.""")
+        Callable type must allow mapping colors for supplied values 
+        between 0 and 1.""")
 
     normalization = param.ClassSelector(default='eq_hist',
                                         class_=(basestring, Callable),
@@ -706,13 +786,6 @@ class shade(Operation):
         Min and max data values to use for colormap interpolation, when
         wishing to override autoranging.
         """)
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying shade, backends that support linked streams
-        update RangeXY streams on the inputs of the shade operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     min_alpha = param.Number(default=40, doc="""
         The minimum alpha value to use for non-empty pixels when doing
@@ -899,7 +972,7 @@ class stack(Operation):
 
 
 
-class SpreadingOperation(Operation):
+class SpreadingOperation(LinkableOperation):
     """
     Spreading expands each pixel in an Image based Element a certain
     number of pixels on all sides according to a given shape, merging
@@ -915,13 +988,6 @@ class SpreadingOperation(Operation):
     shape = param.ObjectSelector(default='circle', objects=['circle', 'square'],
                                  doc="""
         The shape to spread by. Options are 'circle' [default] or 'square'.""")
-
-    link_inputs = param.Boolean(default=True, doc="""
-        By default, the link_inputs parameter is set to True so that
-        when applying spreading, backends that support linked streams
-        update RangeXY streams on the inputs of the dynspread operation.
-        Disable when you do not want the resulting plot to be interactive,
-        e.g. when trying to display an interactive plot a second time.""")
 
     @classmethod
     def uint8_to_uint32(cls, img):
@@ -1019,7 +1085,7 @@ class _connect_edges(Operation):
         or concatenated with NaN separators.""")
 
     def _bundle(self, position_df, edges_df):
-        raise NotImplementedError('_connect edges is an abstract baseclass '
+        raise NotImplementedError('_connect_edges is an abstract baseclass '
                                   'and does not implement any actual bundling.')
 
     def _process(self, element, key=None):

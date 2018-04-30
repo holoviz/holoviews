@@ -71,7 +71,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         renderer = plot.handles['glyph_renderer']
         hover = plot.handles['hover']
         self.assertIsInstance(renderer.inspection_policy, EdgesAndLinkedNodes)
-        self.assertEqual(hover.tooltips, [('start', '@{start}'), ('end', '@{end}')])
+        self.assertEqual(hover.tooltips, [('start', '@{start_values}'), ('end', '@{end_values}')])
         self.assertIn(renderer, hover.renderers)
 
     def test_graph_inspection_policy_edges_non_default_names(self):

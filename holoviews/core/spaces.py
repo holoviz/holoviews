@@ -3,6 +3,7 @@ import types
 from numbers import Number
 from itertools import groupby
 from functools import partial
+from collections import defaultdict
 from contextlib import contextmanager
 from inspect import ArgSpec
 
@@ -70,6 +71,55 @@ class HoloMap(UniformNdMapping, Overlayable):
             with item_check(False):
                 return NdLayout(self, **kwargs).reindex(dimensions)
         return self.groupby(dimensions, container_type=NdLayout, **kwargs)
+
+
+    def opts(self, options=None, backend=None, clone=True, **kwargs):
+        """
+        Applies options on an object or nested group of objects in a
+        by options group returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.opts(style={'cmap': 'viridis'}, plot={'show_title': False})
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.opts({'Image': {'plot':  {'show_title': False},
+                                'style': {'cmap': 'viridis}}})
+
+        If no opts are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
+        """
+        data = OrderedDict([(k, v.opts(options, backend, clone, **kwargs))
+                             for k, v in self.data.items()])
+        return self.clone(data)
+
+
+    def options(self, options=None, backend=None, clone=True, **kwargs):
+        """
+        Applies options on an object or nested group of objects in a
+        flat format returning a new object with the options
+        applied. If the options are to be set directly on the object a
+        simple format may be used, e.g.:
+
+            obj.options(cmap='viridis', show_title=False)
+
+        If the object is nested the options must be qualified using
+        a type[.group][.label] specification, e.g.:
+
+            obj.options('Image', cmap='viridis', show_title=False)
+
+        or using:
+
+            obj.options({'Image': dict(cmap='viridis', show_title=False)})
+
+        If no options are supplied all options on the object will be reset.
+        Disabling clone will modify the object inplace.
+        """
+        data = OrderedDict([(k, v.options(options, backend, clone, **kwargs))
+                             for k, v in self.data.items()])
+        return self.clone(data)
 
 
     def split_overlays(self):
@@ -1180,6 +1230,7 @@ class DynamicMap(HoloMap):
             return self
 
         container = initialized.last.clone(shared_data=False)
+        type_counter = defaultdict(int)
 
         # Get stream mapping from callback
         remapped_streams = []
@@ -1204,11 +1255,37 @@ class DynamicMap(HoloMap):
 
             # Define collation callback
             def collation_cb(*args, **kwargs):
-                return self[args][kwargs['selection_key']]
-            callback = Callable(partial(collation_cb, selection_key=k),
+                layout = self[args]
+                layout_type = type(layout).__name__
+                if len(container.keys()) != len(layout.keys()):
+                    raise ValueError('Collated DynamicMaps must return '
+                                     '%s with consistent number of items.'
+                                     % layout_type)
+
+                key = kwargs['selection_key']
+                index = kwargs['selection_index']
+                obj_type = kwargs['selection_type']
+                dyn_type_map = defaultdict(list)
+                for k, v in layout.data.items():
+                    if k == key:
+                        return layout[k]
+                    dyn_type_map[type(v)].append(v)
+
+                dyn_type_counter = {t: len(vals) for t, vals in dyn_type_map.items()}
+                if dyn_type_counter != type_counter:
+                    raise ValueError('The objects in a %s returned by a '
+                                     'DynamicMap must consistently return '
+                                     'the same number of items of the '
+                                     'same type.' % layout_type)
+                return dyn_type_map[obj_type][index]
+
+            callback = Callable(partial(collation_cb, selection_key=k,
+                                        selection_index=type_counter[type(v)],
+                                        selection_type=type(v)),
                                 inputs=[self])
             vdmap = self.clone(callback=callback, shared_data=False,
                                streams=vstreams)
+            type_counter[type(v)] += 1
 
             # Remap source of streams
             for stream in vstreams:
@@ -1407,24 +1484,6 @@ class GridSpace(UniformNdMapping):
         super(GridSpace, self).__init__(initial_items, kdims=kdims, **params)
         if self.ndims > 2:
             raise Exception('Grids can have no more than two dimensions.')
-
-
-    def __mul__(self, other):
-        if isinstance(other, GridSpace):
-            if set(self.keys()) != set(other.keys()):
-                raise KeyError("Can only overlay two ParameterGrids if their keys match")
-            zipped = zip(self.keys(), self.values(), other.values())
-            overlayed_items = [(k, el1 * el2) for (k, el1, el2) in zipped]
-            return self.clone(overlayed_items)
-        elif isinstance(other, UniformNdMapping) and len(other) == 1:
-            view = other.last
-        elif isinstance(other, UniformNdMapping) and len(other) != 1:
-            raise Exception("Can only overlay with HoloMap of length 1")
-        else:
-            view = other
-
-        overlayed_items = [(k, el * view) for k, el in self.items()]
-        return self.clone(overlayed_items)
 
 
     def __lshift__(self, other):

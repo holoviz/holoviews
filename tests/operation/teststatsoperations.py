@@ -7,7 +7,7 @@ except:
 
 import numpy as np
 
-from holoviews import Distribution, Bivariate, Area, Image
+from holoviews import Distribution, Bivariate, Area, Image, Contours, Polygons
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.stats import (univariate_kde, bivariate_kde)
 
@@ -47,6 +47,20 @@ class KDEOperationTests(ComparisonTestCase):
         img = Image(np.array([[0, 0], [27711861.782675, 0]]),
                     bounds=(-2, -2, 6, 6), vdims=['Density'])
         self.assertEqual(kde, img)
+
+    def test_bivariate_kde_contours(self):
+        bivariate = Bivariate(np.random.rand(100, 2))
+        kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
+                            y_range=(0, 1), contours=True, levels=10)
+        self.assertIsInstance(kde, Contours)
+        self.assertEqual(len(kde.data), 10)
+
+    def test_bivariate_kde_contours_filled(self):
+        bivariate = Bivariate(np.random.rand(100, 2))
+        kde = bivariate_kde(bivariate, n_samples=100, x_range=(0, 1),
+                            y_range=(0, 1), contours=True, filled=True, levels=10)
+        self.assertIsInstance(kde, Polygons)
+        self.assertEqual(len(kde.data), 10)
 
     def test_bivariate_kde_nans(self):
         kde = bivariate_kde(self.bivariate_nans, n_samples=2, x_range=(0, 4),

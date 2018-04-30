@@ -25,6 +25,15 @@ except:
 
 class TestCallbacks(ComparisonTestCase):
 
+    def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'bokeh'
+
+    def tearDown(self):
+        Store.current_backend = self.previous_backend
+        bokeh_renderer.last_plot = None
+        Callback._callbacks = {}
+
     def test_stream_callback(self):
         dmap = DynamicMap(lambda x, y: Points([(x, y)]), kdims=[], streams=[PointerXY()])
         plot = bokeh_renderer.get_plot(dmap)
@@ -59,6 +68,15 @@ class TestCallbacks(ComparisonTestCase):
         self.assertEqual(data['x'], np.arange(10))
         self.assertEqual(data['y'], np.arange(10, 20))
 
+    def test_callback_cleanup(self):
+        stream = PointerX(x=0)
+        dmap = DynamicMap(lambda x: Curve([x]), streams=[stream])
+        plot = bokeh_renderer.get_plot(dmap)
+        self.assertTrue(bool(stream._subscribers))
+        self.assertTrue(bool(Callback._callbacks))
+        plot.cleanup()
+        self.assertFalse(bool(stream._subscribers))
+        self.assertFalse(bool(Callback._callbacks))
 
 
 class TestEditToolCallbacks(ComparisonTestCase):

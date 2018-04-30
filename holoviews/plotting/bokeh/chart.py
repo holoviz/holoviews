@@ -660,7 +660,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
        Index of the dimension in the supplied Bars
        Element, which will stacked.""")
 
-    style_opts = line_properties + fill_properties + ['width', 'cmap']
+    style_opts = line_properties + fill_properties + ['width', 'bar_width', 'cmap']
 
     _plot_methods = dict(single=('vbar', 'hbar'))
 
@@ -768,10 +768,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
             tops.append(top)
         return bottoms, tops
 
+
     def _glyph_properties(self, *args):
         props = super(BarPlot, self)._glyph_properties(*args)
-        del props['width']
-        return props
+        return {k: v for k, v in props.items() if k not in ['width', 'bar_width']}
 
 
     def _add_color_data(self, ds, ranges, style, cdim, data, mapping, factors, colors):
@@ -790,7 +790,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Merge data and mappings
         mapping.update(cmapping)
         for k, cd in cdata.items():
-            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'if':
+            if isinstance(cmapper, CategoricalColorMapper) and cd.dtype.kind in 'uif':
                 cd = categorize_array(cd, cdim)
             if k not in data or len(data[k]) != [len(data[key]) for key in data if key != k][0]:
                 data[k].append(cd)
@@ -822,7 +822,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
             self.color_index = color_dim.name
 
         # Define style information
-        width = style.get('width', 1)
+        width = style.get('bar_width', style.get('width', 1))
         cmap = style.get('cmap')
         hover = any(t == 'hover' or isinstance(t, HoverTool)
                     for t in self.tools+self.default_tools)
@@ -854,10 +854,10 @@ class BarPlot(ColorbarPlot, LegendPlot):
         cdim = color_dim or group_dim
         cvals = element.dimension_values(cdim, expanded=False) if cdim else None
         if cvals is not None:
-            if cvals.dtype.kind in 'if' and no_cidx:
+            if cvals.dtype.kind in 'uif' and no_cidx:
                 cvals = categorize_array(cvals, color_dim)
 
-            factors = None if cvals.dtype.kind in 'if' else list(cvals)
+            factors = None if cvals.dtype.kind in 'uif' else list(cvals)
             if cdim is xdim and factors:
                 factors = list(categorize_array(factors, xdim))
             if cmap is None and factors:

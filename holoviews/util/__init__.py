@@ -85,7 +85,9 @@ class opts(param.ParameterizedFunction):
 
         if isinstance(options, basestring):
             from .parser import OptsSpec
-            options = OptsSpec.parse(options)
+            try:     ns = get_ipython().user_ns  # noqa
+            except:  ns = globals()
+            options = OptsSpec.parse(options, ns=ns)
 
 
         errmsg = StoreOptions.validation_error_message(options)
@@ -131,7 +133,7 @@ class opts(param.ParameterizedFunction):
             for opt, value in options.items():
                 found = False
                 valid_options = []
-                for g, group_opts in obj_options.groups.items():
+                for g, group_opts in sorted(obj_options.groups.items()):
                     if opt in group_opts.allowed_keywords:
                         expanded[objspec][g][opt] = value
                         found = True
@@ -312,8 +314,8 @@ class extension(param.ParameterizedFunction):
             try:
                 __import__(backend)
             except:
-                self.warning("%s is not available, ensure %s is installed "
-                             "to activate %s extension." % (backend, backend))
+                self.warning("%s could not be imported, ensure %s is installed."
+                             % (backend, backend))
             try:
                 __import__('holoviews.plotting.%s' % imp)
                 if selected_backend is None:

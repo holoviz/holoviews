@@ -38,8 +38,13 @@ class PandasInterface(Interface):
         if util.is_series(data):
             data = data.to_frame()
         if util.is_dataframe(data):
-            if eltype._auto_indexable_1d and len(data.columns) == 1:
-                data = data.reset_index()
+            ncols = len(data.columns)
+            index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
+            if index_names == [None]:
+                index_names = ['index']
+            if eltype._auto_indexable_1d and ncols == 1 and kdims is None:
+                kdims = list(index_names)
+
             if isinstance(kdim_param.bounds[1], int):
                 ndim = min([kdim_param.bounds[1], len(kdim_param.default)])
             else:
@@ -58,7 +63,6 @@ class PandasInterface(Interface):
                 vdims = list(data.columns[:nvdim if nvdim else None])
 
             # Handle reset of index if kdims reference index by name
-            index_names = data.index.names if isinstance(data, pd.DataFrame) else [data.index.name]
             for kd in kdims:
                 if isinstance(kd, Dimension): kd = kd.name
                 if kd in data.columns:
@@ -70,6 +74,20 @@ class PandasInterface(Interface):
             if any(isinstance(d, (np.int64, int)) for d in kdims+vdims):
                 raise DataError("pandas DataFrame column names used as dimensions "
                                 "must be strings not integers.", cls)
+
+            if kdims:
+                kdim = kdims[0].name if isinstance(kdims[0], Dimension) else kdims[0]
+                if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
+                    data = data.copy()
+                    data.insert(0, kdim, np.arange(len(data)))
+
+            for d in kdims+vdims:
+                if isinstance(d, Dimension): d = d.name
+                if len([c for c in data.columns if c == d]) > 1:
+                    raise DataError('Dimensions may not reference duplicated DataFrame '
+                                    'columns (found duplicate %r columns). If you want to plot '
+                                    'a column against itself simply declare two dimensions '
+                                    'with the same name. '% d, cls)
         else:
             # Check if data is of non-numeric type
             # Then use defined data type
@@ -80,6 +98,8 @@ class PandasInterface(Interface):
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))
+            elif isinstance(data, list) and len(data) == 0:
+                data = {c: np.array([]) for c in columns}
             elif isinstance(data, (list, dict)) and data in ([], {}):
                 data = None
             elif (isinstance(data, dict) and not all(d in data for d in columns) and

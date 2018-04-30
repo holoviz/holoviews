@@ -2,7 +2,8 @@ import param
 import numpy as np
 
 from ..core.dimension import Dimension, process_dimensions
-from ..core.element import Element
+from ..core.data import Dataset
+from ..core.element import Element, Element2D
 from ..core.util import get_param_values, OrderedDict
 from .chart import Chart, BoxWhisker
 
@@ -16,6 +17,9 @@ class StatisticsElement(Chart):
     """
 
     __abstract = True
+
+    # Ensure Interface does not add an index
+    _auto_indexable_1d = False
 
     def __init__(self, data, kdims=None, vdims=None, **params):
         if isinstance(data, Element):
@@ -119,9 +123,6 @@ class Distribution(StatisticsElement):
 
     vdims = param.List(default=[Dimension('Density')], bounds=(0, 1))
 
-    # Ensure Interface does not add an index
-    _auto_indexable_1d = False
-
 
 class Violin(BoxWhisker):
     """
@@ -132,3 +133,19 @@ class Violin(BoxWhisker):
     """
 
     group = param.String(default='Violin', constant=True)
+
+
+class HexTiles(Dataset, Element2D):
+    """
+    HexTiles is a statistical element with a visual representation
+    that renders a density map of the data values as a hexagonal grid.
+
+    Before display the data is aggregated either by counting the values
+    in each hexagonal bin or by computing aggregates.
+    """
+
+    group = param.String(default='HexTiles', constant=True)
+
+    kdims = param.List(default=[Dimension('x'), Dimension('y')],
+                       bounds=(2, 2))
+

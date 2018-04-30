@@ -15,8 +15,9 @@ import param
 
 from ...core import OrderedDict, Dimension, Store
 from ...core.util import match_spec, unique_iterator, basestring, max_range
-from ...element import Raster
+from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
+from ..plot import PlotSelector
 from ..util import compute_sizes, get_sideplot_ranges, get_min_distance
 from .element import ElementPlot, ColorbarPlot, LegendPlot
 from .path  import PathPlot
@@ -407,6 +408,8 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
 
         # Check if plot is colormapped
         plot_type = Store.registry['matplotlib'].get(type(range_item))
+        if isinstance(plot_type, PlotSelector):
+            plot_type = plot_type.get_plot_class(range_item)
         opts = self.lookup_options(range_item, 'plot')
         if plot_type and issubclass(plot_type, ColorbarPlot):
             cidx = opts.options.get('color_index', None)
@@ -415,7 +418,7 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
             cdim = None
 
         # Get colormapping options
-        if isinstance(range_item, Raster) or cdim:
+        if isinstance(range_item, (HeatMap, Raster)) or cdim:
             style = self.lookup_options(range_item, 'style')[self.cyclic_index]
             cmap = cm.get_cmap(style.get('cmap'))
             main_range = style.get('clims', main_range)
@@ -515,12 +518,12 @@ class PointPlot(ChartPlot, ColorbarPlot):
         if cdim and cmap:
             cs = element.dimension_values(self.color_index)
             # Check if numeric otherwise treat as categorical
-            if cs.dtype.kind in 'if':
+            if cs.dtype.kind in 'uif':
                 style['c'] = cs
             else:
                 categories = np.unique(cs)
                 xsorted = np.argsort(categories)
-                ypos = np.searchsorted(categories[xsorted], cs)
+                ypos = np.searchsorted(categories, cs)
                 style['c'] = xsorted[ypos]
             self._norm_kwargs(element, ranges, style, cdim)
         elif color:

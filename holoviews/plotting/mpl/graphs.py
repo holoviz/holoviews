@@ -62,7 +62,7 @@ class GraphPlot(ColorbarPlot):
         cvals = element.dimension_values(edge_cdim)
         if idx in [0, 1]:
             factors = element.nodes.dimension_values(2, expanded=False)
-        elif idx == 2 and cvals.dtype.kind in 'if':
+        elif idx == 2 and cvals.dtype.kind in 'uif':
             factors = None
         else:
             factors = unique_array(cvals)
@@ -242,7 +242,7 @@ class ChordPlot(GraphPlot):
         nodes = element.nodes
         if element.vdims:
             values = element.dimension_values(element.vdims[0])
-            if values.dtype.kind in 'if':
+            if values.dtype.kind in 'uif':
                 edges = Dataset(element)[values>0]
                 nodes = list(np.unique([edges.dimension_values(i) for i in range(2)]))
                 nodes = element.nodes.select(**{element.nodes.kdims[2].name: nodes})

@@ -14,7 +14,7 @@ from ...element import (Curve, Points, Scatter, Image, Raster, Path,
                         ErrorBars, Text, HLine, VLine, Spline, Spikes,
                         Table, ItemTable, Area, HSV, QuadMesh, VectorField,
                         Graph, Nodes, EdgePaths, Distribution, Bivariate,
-                        TriMesh, Violin, Chord)
+                        TriMesh, Violin, Chord, Div, HexTiles, Labels, Sankey)
 from ...core.options import Options, Cycle, Palette
 from ...core.util import VersionError
 
@@ -28,17 +28,22 @@ try:
 except:
     DFrame = None
 
-from .annotation import TextPlot, LineAnnotationPlot, SplinePlot, ArrowPlot
+from .annotation import (TextPlot, LineAnnotationPlot, SplinePlot,
+                         ArrowPlot, DivPlot, LabelsPlot)
+from ..plot import PlotSelector
 from .callbacks import Callback # noqa (API import)
 from .element import OverlayPlot, ElementPlot
 from .chart import (PointPlot, CurvePlot, SpreadPlot, ErrorPlot, HistogramPlot,
                     SideHistogramPlot, BarPlot, SpikesPlot, SideSpikesPlot,
                     AreaPlot, VectorFieldPlot)
 from .graphs import GraphPlot, NodePlot, TriMeshPlot, ChordPlot
+from .heatmap import HeatMapPlot, RadialHeatMapPlot
+from .hex_tiles import HexTilesPlot
 from .path import PathPlot, PolygonPlot, ContourPlot
 from .plot import GridPlot, LayoutPlot, AdjointLayoutPlot
-from .raster import RasterPlot, RGBPlot, HeatMapPlot, HSVPlot, QuadMeshPlot
+from .raster import RasterPlot, RGBPlot, HSVPlot, QuadMeshPlot
 from .renderer import BokehRenderer
+from .sankey import SankeyPlot
 from .stats import DistributionPlot, BivariatePlot, BoxWhiskerPlot, ViolinPlot
 from .tabular import TablePlot
 from .util import bokeh_version # noqa (API import)
@@ -74,7 +79,10 @@ associations = {Overlay: OverlayPlot,
                 RGB: RGBPlot,
                 HSV: HSVPlot,
                 Raster: RasterPlot,
-                HeatMap: HeatMapPlot,
+                HeatMap: PlotSelector(HeatMapPlot.is_radial,
+                                      {True: RadialHeatMapPlot,
+                                       False: HeatMapPlot},
+                                      True),
                 QuadMesh: QuadMeshPlot,
 
                 # Paths
@@ -90,8 +98,10 @@ associations = {Overlay: OverlayPlot,
                 HLine: LineAnnotationPlot,
                 VLine: LineAnnotationPlot,
                 Text: TextPlot,
+                Labels: LabelsPlot,
                 Spline: SplinePlot,
                 Arrow: ArrowPlot,
+                Div: DivPlot,
 
                 # Graph Elements
                 Graph: GraphPlot,
@@ -99,6 +109,7 @@ associations = {Overlay: OverlayPlot,
                 Nodes: NodePlot,
                 EdgePaths: PathPlot,
                 TriMesh: TriMeshPlot,
+                Sankey: SankeyPlot,
 
                 # Tabular
                 Table: TablePlot,
@@ -108,7 +119,8 @@ associations = {Overlay: OverlayPlot,
                 Distribution: DistributionPlot,
                 Bivariate: BivariatePlot,
                 BoxWhisker: BoxWhiskerPlot,
-                Violin: ViolinPlot}
+                Violin: ViolinPlot,
+                HexTiles: HexTilesPlot}
 
 
 if DFrame is not None:
@@ -131,10 +143,7 @@ else:
 AdjointLayoutPlot.registry[Histogram] = SideHistogramPlot
 AdjointLayoutPlot.registry[Spikes] = SideSpikesPlot
 
-
 point_size = np.sqrt(6) # Matches matplotlib default
-Cycle.default_cycles['default_colors'] =  ['#30a2da', '#fc4f30', '#e5ae38',
-                                           '#6d904f', '#8b8b8b']
 
 # Register bokeh.palettes with Palette and Cycle
 def colormap_generator(palette):
@@ -183,33 +192,33 @@ options.Image = Options('style', cmap=dflt_cmap)
 options.GridImage = Options('style', cmap=dflt_cmap)
 options.Raster = Options('style', cmap=dflt_cmap)
 options.QuadMesh = Options('style', cmap=dflt_cmap, line_alpha=0)
-options.HeatMap = Options('style', cmap='RdYlBu_r', line_alpha=0)
+options.HeatMap = Options('style', cmap='RdYlBu_r', annular_line_alpha=0,
+                          xmarks_line_color="#FFFFFF", xmarks_line_width=3,
+                          ymarks_line_color="#FFFFFF", ymarks_line_width=3)
 
 # Annotations
 options.HLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.VLine = Options('style', color=Cycle(), line_width=3, alpha=1)
 options.Arrow = Options('style', arrow_size=10)
+options.Labels = Options('style', text_align='center', text_baseline='middle')
 
 # Graphs
-options.Graph = Options('style', node_size=15, node_fill_color=Cycle(),
-                        node_line_color='black',
-                        node_nonselection_fill_color=Cycle(),
-                        node_hover_line_color='black',
-                        node_hover_fill_color='limegreen',
-                        node_nonselection_alpha=0.2,
-                        edge_nonselection_alpha=0.2,
-                        node_nonselection_line_color='black',
-                        edge_line_color='black', edge_line_width=2,
-                        edge_nonselection_line_color='black',
-                        edge_hover_line_color='limegreen')
-options.TriMesh = Options('style', node_size=5, node_line_color='black',
-                          node_fill_color='white', edge_line_color='black',
-                          node_hover_fill_color='limegreen',
-                          edge_hover_line_color='limegreen',
-                          edge_nonselection_alpha=0.2,
-                          edge_nonselection_line_color='black',
-                          node_nonselection_alpha=0.2,
-                          edge_line_width=1)
+options.Graph = Options(
+    'style', node_size=15, node_fill_color=Cycle(),
+    node_line_color='black', node_nonselection_fill_color=Cycle(),
+    node_hover_line_color='black', node_hover_fill_color='limegreen',
+    node_nonselection_alpha=0.2, edge_nonselection_alpha=0.2,
+    node_nonselection_line_color='black', edge_line_color='black',
+    edge_line_width=2, edge_nonselection_line_color='black',
+    edge_hover_line_color='limegreen'
+)
+options.TriMesh = Options(
+    'style', node_size=5, node_line_color='black',
+    node_fill_color='white', edge_line_color='black',
+    node_hover_fill_color='limegreen', edge_line_width=1,
+    edge_hover_line_color='limegreen', edge_nonselection_alpha=0.2,
+    edge_nonselection_line_color='black', node_nonselection_alpha=0.2,
+)
 options.TriMesh = Options('plot', tools=[])
 options.Chord = Options('style', node_size=15, node_fill_color=Cycle(),
                         node_line_color='black',
@@ -236,6 +245,16 @@ options.EdgePaths = Options('style', color='black', nonselection_alpha=0.2,
                             line_width=2, selection_color='limegreen',
                             hover_line_color='indianred')
 options.EdgePaths = Options('plot', tools=['hover', 'tap'])
+options.Sankey = Options(
+    'plot', xaxis=None, yaxis=None, inspection_policy='edges',
+    selection_policy='nodes', width=1000, height=600, show_frame=False
+)
+options.Sankey = Options(
+    'style', node_line_alpha=0, node_nonselection_alpha=0.2,
+    node_size=10, edge_nonselection_alpha=0.2, edge_line_alpha=0,
+    edge_fill_alpha=0.6, label_text_font_size='8pt', cmap='Category20'
+)
+
 
 # Define composite defaults
 options.GridMatrix = Options('plot', shared_xaxis=True, shared_yaxis=True,
@@ -250,9 +269,12 @@ options.Points = Options('style', muted_alpha=0.2)
 options.Polygons = Options('style', muted_alpha=0.2)
 
 # Statistics
-options.Distribution = Options('style', fill_color=Cycle(), line_color='black',
-                               fill_alpha=0.5, muted_alpha=0.2)
-options.Violin = Options('style', violin_fill_color=Cycle(),
-                         violin_line_color='black', violin_fill_alpha=0.5,
-                         stats_color='black', box_color='black',
-                         median_color='white')
+options.Distribution = Options(
+    'style', fill_color=Cycle(), line_color='black', fill_alpha=0.5,
+    muted_alpha=0.2
+)
+options.Violin = Options(
+    'style', violin_fill_color=Cycle(), violin_line_color='black',
+    violin_fill_alpha=0.5, stats_color='black', box_color='black',
+    median_color='white'
+)

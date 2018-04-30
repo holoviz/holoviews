@@ -49,7 +49,7 @@ class CurvePlot(ElementPlot):
 
     graph_obj = go.Scatter
 
-    style_opts = ['color', 'dash', 'width']
+    style_opts = ['color', 'dash', 'width', 'line_width']
 
     def graph_options(self, element, ranges):
         if 'steps' in self.interpolation:
@@ -57,6 +57,8 @@ class CurvePlot(ElementPlot):
         opts = super(CurvePlot, self).graph_options(element, ranges)
         opts['mode'] = 'lines'
         style = self.style[self.cyclic_index]
+        if 'line_width' in style:
+            style['width'] = style.pop('line_width')
         opts['line'] = style
         return opts
 
@@ -83,6 +85,8 @@ class ErrorBarsPlot(ElementPlot):
         pos_error = element.dimension_values(pos_idx)
 
         style = self.style[self.cyclic_index]
+        if 'line_width' in style:
+            style['width'] = style.pop('line_width')
         error_y = dict(type='data', array=pos_error,
                        arrayminus=neg_error, visible=True, **style)
         return (), dict(x=element.dimension_values(0),
