@@ -16,12 +16,12 @@ build:
 requirements:
   build:
     - python
-    - param >=1.6.0,<2.0
+    - param >=1.6.1,<2.0
     - numpy
     - setuptools
   run:
     - python
-    - param >=1.6.0,<2.0
+    - param >=1.6.1,<2.0
     - numpy
     - matplotlib>=2.1
     - bokeh >=0.12.15,<=0.12.16
