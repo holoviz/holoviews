@@ -170,8 +170,7 @@ class HeatMapPlot(RasterPlot):
         data = np.flipud(element.gridded.dimension_values(2, flat=False))
         data = np.ma.array(data, mask=np.logical_not(np.isfinite(data)))
         if self.invert_axes: data = data.T[::-1, ::-1]
-        if self.invert_xaxis: data = data[:, ::-1]
-        if self.invert_yaxis: data = data[::-1]
+
         shape = data.shape
         style['aspect'] = shape[0]/shape[1]
         style['extent'] = (0, shape[1], 0, shape[0])
