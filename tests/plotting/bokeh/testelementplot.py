@@ -27,7 +27,7 @@ class TestElementPlot(TestBokehPlot):
         curve = Curve([])
         plot = bokeh_renderer.get_plot(curve)
         self.assertTrue(plot.handles['glyph_renderer'].visible)
-        
+
     def test_element_no_xaxis(self):
         curve = Curve(range(10)).opts(plot=dict(xaxis=None))
         plot = bokeh_renderer.get_plot(curve).state
@@ -48,6 +48,24 @@ class TestElementPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.yaxis[0].major_label_orientation, np.pi/2)
 
+    def test_element_labelled_x_disabled(self):
+        curve = Curve(range(10)).options(labelled=['y'])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].axis_label, '')
+        self.assertEqual(plot.yaxis[0].axis_label, 'y')
+
+    def test_element_labelled_y_disabled(self):
+        curve = Curve(range(10)).options(labelled=['x'])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].axis_label, 'x')
+        self.assertEqual(plot.yaxis[0].axis_label, '')
+
+    def test_element_labelled_both_disabled(self):
+        curve = Curve(range(10)).options(labelled=[])
+        plot = bokeh_renderer.get_plot(curve).state
+        self.assertEqual(plot.xaxis[0].axis_label, '')
+        self.assertEqual(plot.yaxis[0].axis_label, '')
+        
     def test_static_source_optimization(self):
         global data
         data = np.ones((5, 5))
