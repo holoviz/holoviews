@@ -11,6 +11,7 @@ from collections import defaultdict
 from functools import partial
 from contextlib import contextmanager
 from distutils.version import LooseVersion
+from operator import itemgetter
 
 from threading import Thread, Event
 import numpy as np
@@ -1327,9 +1328,8 @@ def drop_streams(streams, kdims, keys):
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
                        if kdim not in stream_params])
-    values = list(zip(*keys))
-    keys = zip(*[values[i] for i in inds])
-    return dims, list(keys)
+    get = itemgetter(*inds)
+    return dims, [get(k) for k in keys]
 
 
 def itervalues(obj):
