@@ -1327,7 +1327,9 @@ def drop_streams(streams, kdims, keys):
     stream_params = stream_parameters(streams)
     inds, dims = zip(*[(ind, kdim) for ind, kdim in enumerate(kdims)
                        if kdim not in stream_params])
-    return dims, [tuple(wrap_tuple(key)[ind] for ind in inds) for key in keys]
+    values = list(zip(*keys))
+    keys = zip(*[values[i] for i in inds])
+    return dims, list(keys)
 
 
 def itervalues(obj):
