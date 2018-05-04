@@ -127,9 +127,9 @@ class NdWidget(param.Parameterized):
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
 
+        items = [] if self.plot.dynamic else [(k, None) for k in self.keys]
         with item_check(False):
-            self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                      kdims=list(self.dimensions), sort=False)
+            self.mock_obj = NdMapping(items, kdims=list(self.dimensions), sort=False)
 
         NdWidget.widgets[self.id] = self
 
@@ -302,9 +302,9 @@ class SelectionWidget(NdWidget):
         # Generate widget data
         widgets, dimensions, init_dim_vals = [], [], []
         if self.plot.dynamic:
-            hierarchy = hierarchical(list(self.mock_obj.data.keys()))
-        else:
             hierarchy = None
+        else:
+            hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
             # Hide widget if it has 1-to-1 mapping to next widget
             if self.plot.dynamic:
