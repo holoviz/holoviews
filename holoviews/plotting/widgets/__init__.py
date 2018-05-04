@@ -301,7 +301,10 @@ class SelectionWidget(NdWidget):
     def get_widgets(self):
         # Generate widget data
         widgets, dimensions, init_dim_vals = [], [], []
-        hierarchy = hierarchical(list(self.mock_obj.data.keys()))
+        if self.plot.dynamic:
+            hierarchy = hierarchical(list(self.mock_obj.data.keys()))
+        else:
+            hierarchy = None
         for idx, dim in enumerate(self.mock_obj.kdims):
             # Hide widget if it has 1-to-1 mapping to next widget
             if self.plot.dynamic:
