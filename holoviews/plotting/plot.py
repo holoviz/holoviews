@@ -673,11 +673,7 @@ class GenericElementPlot(DimensionedPlot):
         self.top_level = keys is None
         if self.top_level:
             dimensions = self.hmap.kdims
-            values = [d.values for d in dimensions]
-            if dynamic and values and all(values):
-                keys = list(product(*values))
-            else:
-                keys = list(self.hmap.data.keys())
+            keys = list(self.hmap.data.keys())
 
         self.style = self.lookup_options(plot_element, 'style') if style is None else style
         plot_opts = self.lookup_options(plot_element, 'plot').options
