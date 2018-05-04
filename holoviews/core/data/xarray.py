@@ -60,7 +60,7 @@ class XArrayInterface(GridInterface):
         vdim_param = element_params['vdims']
 
         def retrieve_unit_and_label(dim):
-            if isinstance(dim, str):
+            if isinstance(dim, util.basestring):
                 dim = Dimension(dim)
             dim.unit = data[dim.name].attrs.get('units')
             label = data[dim.name].attrs.get('long_name')
