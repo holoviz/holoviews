@@ -7,6 +7,7 @@ import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
+from ...core.ndmapping import item_check
 from ...core.util import (dimension_sanitizer, bytes_to_unicode,
                           unique_array, unicode, isnumeric,
                           wrap_tuple_streams, drop_streams)
@@ -110,9 +111,11 @@ class NdWidget(param.Parameterized):
         for stream in plot.streams:
             if any(k in plot.dimensions for k in stream.contents):
                 streams.append(stream)
+
+        keys = plot.keys[:1] if self.plot.dynamic else plot.keys
         self.dimensions, self.keys = drop_streams(streams,
                                                   plot.dimensions,
-                                                  plot.keys)
+                                                  keys)
         defaults = [kd.default for kd in self.dimensions]
         self.init_key = tuple(v if d is None else d for v, d in
                               zip(self.keys[0], defaults))
@@ -124,9 +127,11 @@ class NdWidget(param.Parameterized):
             self.renderer = Store.renderers[backend]
         else:
             self.renderer = renderer
+
         # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  kdims=list(self.dimensions), sort=False)
+        with item_check(False):
+            self.mock_obj = NdMapping([(k, None) for k in self.keys], kdims=list(self.dimensions),
+                                      sort=False)
 
         NdWidget.widgets[self.id] = self
 
@@ -298,7 +303,10 @@ class SelectionWidget(NdWidget):
     def get_widgets(self):
         # Generate widget data
         widgets, dimensions, init_dim_vals = [], [], []
-        hierarchy = hierarchical(list(self.mock_obj.data.keys()))
+        if self.plot.dynamic:
+            hierarchy = None
+        else:
+            hierarchy = hierarchical(list(self.mock_obj.data.keys()))
         for idx, dim in enumerate(self.mock_obj.kdims):
             # Hide widget if it has 1-to-1 mapping to next widget
             if self.plot.dynamic:
