@@ -111,9 +111,11 @@ class NdWidget(param.Parameterized):
         for stream in plot.streams:
             if any(k in plot.dimensions for k in stream.contents):
                 streams.append(stream)
+
+        keys = plot.keys[:1] if self.plot.dynamic else plot.keys
         self.dimensions, self.keys = drop_streams(streams,
                                                   plot.dimensions,
-                                                  plot.keys)
+                                                  keys)
         defaults = [kd.default for kd in self.dimensions]
         self.init_key = tuple(v if d is None else d for v, d in
                               zip(self.keys[0], defaults))
@@ -125,11 +127,11 @@ class NdWidget(param.Parameterized):
             self.renderer = Store.renderers[backend]
         else:
             self.renderer = renderer
-        # Create mock NdMapping to hold the common dimensions and keys
 
-        items = [] if self.plot.dynamic else [(k, None) for k in self.keys]
+        # Create mock NdMapping to hold the common dimensions and keys
         with item_check(False):
-            self.mock_obj = NdMapping(items, kdims=list(self.dimensions), sort=False)
+            self.mock_obj = NdMapping([(k, None) for k in self.keys], kdims=list(self.dimensions),
+                                      sort=False)
 
         NdWidget.widgets[self.id] = self
 
