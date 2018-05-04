@@ -7,6 +7,7 @@ import numpy as np
 
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
+from ...core.ndmapping import item_check
 from ...core.util import (dimension_sanitizer, bytes_to_unicode,
                           unique_array, unicode, isnumeric,
                           wrap_tuple_streams, drop_streams)
@@ -125,8 +126,10 @@ class NdWidget(param.Parameterized):
         else:
             self.renderer = renderer
         # Create mock NdMapping to hold the common dimensions and keys
-        self.mock_obj = NdMapping([(k, None) for k in self.keys],
-                                  kdims=list(self.dimensions), sort=False)
+
+        with item_check(False):
+            self.mock_obj = NdMapping([(k, None) for k in self.keys],
+                                      kdims=list(self.dimensions), sort=False)
 
         NdWidget.widgets[self.id] = self
 
