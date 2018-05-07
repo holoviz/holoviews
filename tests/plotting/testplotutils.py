@@ -5,7 +5,7 @@ from nose.plugins.attrib import attr
 
 import numpy as np
 
-from holoviews import NdOverlay, Overlay
+from holoviews import NdOverlay, Overlay, Dimension
 from holoviews.core.spaces import DynamicMap, HoloMap
 from holoviews.core.options import Store, Cycle
 from holoviews.element.comparison import ComparisonTestCase
@@ -321,6 +321,22 @@ class TestOverlayableZorders(ComparisonTestCase):
         self.assertNotIn(area2, sources[0])
         self.assertNotIn(curve_redim, sources[2])
         self.assertNotIn(curve, sources[2])
+
+
+class TestInitializeDynamic(ComparisonTestCase):
+
+    def test_dynamicmap_default_initializes(self):
+        dims = [Dimension('N', default=5, range=(0, 10))]
+        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        initialize_dynamic(dmap)
+        self.assertEqual(dmap.keys(), [5])
+
+    def test_dynamicmap_numeric_values_initializes(self):
+        dims = [Dimension('N', values=[10, 5, 0])]
+        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        initialize_dynamic(dmap)
+        self.assertEqual(dmap.keys(), [0])
+
 
 
 class TestSplitDynamicMapOverlay(ComparisonTestCase):

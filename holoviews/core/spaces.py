@@ -807,8 +807,13 @@ class DynamicMap(HoloMap):
         for kdim in self.kdims:
             if str(kdim) in stream_params:
                 key.append(None)
+            elif kdim.default:
+                key.append(kdim.default)
             elif kdim.values:
-                key.append(kdim.values[0])
+                if all(util.isnumeric(v) for v in kdim.values):
+                    key.append(sorted(kdim.values)[0])
+                else:
+                    key.append(kdim.values[0])
             elif kdim.range[0] is not None:
                 key.append(kdim.range[0])
             else:
