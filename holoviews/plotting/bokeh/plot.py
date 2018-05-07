@@ -563,12 +563,13 @@ class GridPlot(CompositePlot, GenericCompositePlot):
         width, height = self.renderer.get_size(plot)
         x_axis, y_axis = None, None
         kwargs = dict(sizing_mode=self.sizing_mode)
+        keys = self.layout.keys(full_grid=True)
         if self.xaxis:
             flip = self.shared_xaxis
             rotation = self.xrotation
             lsize = self._fontsize('xlabel').get('fontsize')
             tsize = self._fontsize('xticks', common=False).get('fontsize')
-            xfactors = list(unique_iterator(self.layout.dimension_values(0)))
+            xfactors = list(unique_iterator([wrap_tuple(k)[0] for k in keys]))
             x_axis = make_axis('x', width, xfactors, self.layout.kdims[0],
                                flip=flip, rotation=rotation, label_size=lsize,
                                tick_size=tsize)
@@ -577,7 +578,7 @@ class GridPlot(CompositePlot, GenericCompositePlot):
             rotation = self.yrotation
             lsize = self._fontsize('ylabel').get('fontsize')
             tsize = self._fontsize('yticks', common=False).get('fontsize')
-            yfactors = list(unique_iterator(self.layout.dimension_values(1)))
+            yfactors = list(unique_iterator([k[1] for k in keys]))
             y_axis = make_axis('y', height, yfactors, self.layout.kdims[1],
                                flip=flip, rotation=rotation, label_size=lsize,
                                tick_size=tsize)
