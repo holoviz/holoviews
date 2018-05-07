@@ -257,16 +257,17 @@ class Text(Annotation):
 
 class Div(Element):
     """
-    The Div element represents a div DOM node in an HTML document.
+    The Div element represents a div DOM node in an HTML document defined
+    as a string containing valid HTML.
     """
 
     group = param.String(default='Div', constant=True)
 
-    def __init__(self, html, **params):
-        if not isinstance(html, basestring):
+    def __init__(self, data, **params):
+        if not isinstance(data, basestring):
             raise ValueError("Div element html data must be a string "
-                             "type, found %s type." % type(html).__name__)
-        super(Div, self).__init__(html, **params)
+                             "type, found %s type." % type(data).__name__)
+        super(Div, self).__init__(data, **params)
 
 
 
