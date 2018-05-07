@@ -1336,6 +1336,13 @@ class GridTests(object):
         grouped = dataset.groupby('z', kdims=['y', 'x'], dynamic=True)
         self.assertEqual(grouped[2].dimension_values(2, flat=False), dat[:, :, -1].T)
 
+    def test_dataset_slice_inverted_dimension(self):
+        xs = np.arange(30)[::-1]
+        ys = np.random.rand(30)
+        ds = Dataset((xs, ys), 'x', 'y')
+        sliced = ds[5:15]
+        self.assertEqual(sliced, Dataset((xs[15:25], ys[15:25]), 'x', 'y'))
+
 
 
 class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
@@ -1973,3 +1980,6 @@ class RasterDatasetTest(GridTests, ComparisonTestCase):
 
     def test_dataset_dynamic_groupby_with_transposed_dimensions(self):
         raise SkipTest('Image interface does not support multi-dimensional data.')
+
+    def test_dataset_slice_inverted_dimension(self):
+        raise SkipTest('Image interface does not support 1D data')
