@@ -373,3 +373,25 @@ class TestSelectionWidget(ComparisonTestCase):
         hmap = HoloMap({chr(65+i): Curve([1, 2, 3]) for i in range(10)}, dim)
         with self.assertRaises(ValueError):
             bokeh_renderer.get_widget(hmap, 'widgets').get_widgets()
+
+    def test_dynamicmap_default_value_slider_plot_initialization(self):
+        dims = [Dimension('N', default=5, range=(0, 10))]
+        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        widgets = bokeh_renderer.get_widget(dmap, 'widgets')
+        widgets.get_widgets()
+        self.assertEqual(widgets.plot.current_key, (5,))
+
+    def test_dynamicmap_unsorted_numeric_values_slider_plot_initialization(self):
+        dims = [Dimension('N', values=[10, 5, 0])]
+        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        widgets = bokeh_renderer.get_widget(dmap, 'widgets')
+        widgets.get_widgets()
+        self.assertEqual(widgets.plot.current_key, (0,))
+
+    def test_dynamicmap_unsorted_numeric_values_slider_plot_update(self):
+        dims = [Dimension('N', values=[10, 5, 0])]
+        dmap = DynamicMap(lambda N: Curve([1, N, 5]), kdims=dims)
+        widgets = bokeh_renderer.get_widget(dmap, 'widgets')
+        widgets.get_widgets()
+        widgets.update((2,))
+        self.assertEqual(widgets.plot.current_key, (10,))
