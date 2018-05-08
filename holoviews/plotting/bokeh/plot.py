@@ -225,6 +225,18 @@ class BokehPlot(DimensionedPlot):
                     source.data.update(converted_data)
                 else:
                     source.stream(data, stream.length)
+            return
+
+        # Determine if the CDS.data requires a full update or simply needs
+        # to be updated, this is done by determining whether newly added
+        # or not updated columns have the same length
+        new_length = [len(v) for v in data.values() if isinstance(v, (list, np.ndarray))]
+        length = [len(v) for v in source.data.values() if isinstance(v, (list, np.ndarray))]
+        not_updated = [k for k in source.data if k not in data]
+        new = [k for k in data if k not in source.data]
+        if ((not_updated and new_length and any(len(source.data[n]) != new_length[0] for n in not_updated))
+            or (new and length and any(len(data[n]) != length[0] for n in new))):
+            source.data = data
         else:
             source.data.update(data)
 
