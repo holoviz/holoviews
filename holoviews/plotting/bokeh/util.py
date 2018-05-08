@@ -241,7 +241,7 @@ def make_axis(axis, size, factors, dim, flip=False, rotation=0,
         opts = dict(y_axis_label=axis_label, x_range=ranges2,
                     y_range=ranges, plot_width=width, plot_height=size)
 
-    p = Figure(toolbar_location=None, **opts)
+    p = Figure(toolbar_location=None, tools=[], **opts)
     p.outline_line_alpha = 0
     p.grid.grid_line_alpha = 0
 
