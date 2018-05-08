@@ -922,17 +922,12 @@ class PolyDrawCallback(CDSCallback):
                                  empty_value=self.streams[0].empty_value,
                                  renderers=[plot.handles['glyph_renderer']])
         plot.state.tools.append(poly_tool)
-        super(PolyDrawCallback, self).initialize()
 
-    def _process_msg(self, msg):
-        data = super(PolyDrawCallback, self)._process_msg(msg)['data']
-        element = self.plot.current_frame
+        element = plot.current_frame
         x, y = element.dimensions('key', label=True)
-        if 'xs' in data and 'xs' != x:
-            data[x] = data.pop('xs', [])
-        if 'ys' in data and 'ys' != y:
-            data[y] = data.pop('ys', [])
-        return dict(data=data)
+        data = dict(plot.handles['source'].data)
+        for stream in self.streams:
+            stream.update(data=data)
 
 
 class BoxEditCallback(CDSCallback):
