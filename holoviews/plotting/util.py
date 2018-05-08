@@ -437,8 +437,9 @@ def closest_match(match, specs, depth=0):
             if is_number(match[0]) and is_number(spec[0]):
                 match_length = -abs(match[0]-spec[0])
             elif all(isinstance(s[0], basestring) for s in [spec, match]):
-                match_length = max(i for i in range(len(match[0]))
-                                   if match[0].startswith(spec[0][:i]))
+                matches = [i for i in range(len(match[0]))
+                           if match[0].startswith(spec[0][:i])]
+                match_length = max(matches) if matches else 0
             else:
                 match_length = 0
             match_lengths.append((i, match_length, spec[0]))
