@@ -132,7 +132,14 @@ class QuadMeshPlot(ColorbarPlot):
     def init_artists(self, ax, plot_args, plot_kwargs):
         locs = plot_kwargs.pop('locs', None)
         artist = ax.pcolormesh(*plot_args, **plot_kwargs)
+        colorbar = self.handles.get('cbar')
+        if colorbar:
+            colorbar.set_norm(artist.norm)
+            colorbar.set_array(artist.get_array())
+            colorbar.set_clim(artist.get_clim())
+            colorbar.update_normal(artist)
         return {'artist': artist, 'locs': locs}
+
 
 
 class RasterGridPlot(GridPlot, OverlayPlot):
