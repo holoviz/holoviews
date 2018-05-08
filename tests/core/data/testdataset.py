@@ -13,7 +13,7 @@ except ImportError:
     da = None
 
 from holoviews import Dataset, HoloMap, Dimension, Image
-from holoviews.element import Distribution, Points, Scatter
+from holoviews.element import Distribution, Points, Scatter, Curve
 from holoviews.element.comparison import ComparisonTestCase
 
 from collections import OrderedDict
@@ -1343,6 +1343,13 @@ class GridTests(object):
         sliced = ds[5:15]
         self.assertEqual(sliced, Dataset((xs[15:25], ys[15:25]), 'x', 'y'))
 
+    def test_sample_2d(self):
+        xs = ys = np.linspace(0, 6, 50)
+        XS, YS = np.meshgrid(xs, ys)
+        values = np.sin(XS)
+        sampled = Dataset((xs, ys, values), ['x', 'y'], 'z').sample(y=0)
+        self.assertEqual(sampled, Curve((xs, values[0]), vdims='z'))
+
 
 
 class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
@@ -1522,6 +1529,7 @@ class GridDatasetTest(GridTests, HomogeneousColumnTypes, ComparisonTestCase):
         with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], (ds, Dataset)):
             partial = ds.to(Dataset, kdims=['Val'], vdims=['Val2'], groupby='y', dynamic=True)
             self.assertEqual(partial[19]['Val'], array[:, -1, :].T.flatten())
+
 
 
 class DaskGridDatasetTest(GridDatasetTest):
@@ -1983,3 +1991,6 @@ class RasterDatasetTest(GridTests, ComparisonTestCase):
 
     def test_dataset_slice_inverted_dimension(self):
         raise SkipTest('Image interface does not support 1D data')
+
+    def test_sample_2d(self):
+        raise SkipTest('Image interface only supports Image type')
