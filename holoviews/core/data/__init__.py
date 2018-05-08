@@ -416,7 +416,8 @@ class Dataset(Element):
             if np.isscalar(selection):
                 selection = [samples[0]+(selection,)]
             else:
-                selection = tuple(selection.columns(kdims+self.vdims).values())
+                reindexed = selection.clone(new_type=Dataset).reindex(kdims)
+                selection = tuple(reindexed.columns(kdims+self.vdims).values())
 
             datatype = list(util.unique_iterator(self.datatype+['dataframe', 'dict']))
             return self.clone(selection, kdims=kdims, new_type=new_type,
