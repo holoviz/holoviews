@@ -750,7 +750,7 @@ class PlotReset(LinkedStream):
     A stream signalling when a plot reset event has been triggered.
     """
 
-    reset = param.Boolean(default=False, constant=True, doc="""
+    resetting = param.Boolean(default=False, constant=True, doc="""
         Whether a reset event is being signalled.""")
 
     def __init__(self, *args, **params):
