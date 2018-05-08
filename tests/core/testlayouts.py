@@ -187,6 +187,24 @@ class GridTest(CompositeTest):
         grid = GridSpace(zip(keys, vals))
         self.assertEqual(grid.shape, (2,2))
 
+    def test_grid_index_snap(self):
+        vals = [self.view1, self.view2, self.view3, self.view2]
+        keys = [(0,0), (0,1), (1,0), (1,1)]
+        grid = GridSpace(zip(keys, vals))
+        self.assertEqual(grid[0.1, 0.1], self.view1)
+
+    def test_grid_index_strings(self):
+        vals = [self.view1, self.view2, self.view3, self.view2]
+        keys = [('A', 0), ('B', 1), ('C', 0), ('D', 1)]
+        grid = GridSpace(zip(keys, vals))
+        self.assertEqual(grid['B', 1], self.view2)
+
+    def test_grid_index_one_axis(self):
+        vals = [self.view1, self.view2, self.view3, self.view2]
+        keys = [('A', 0), ('B', 1), ('C', 0), ('D', 1)]
+        grid = GridSpace(zip(keys, vals))
+        self.assertEqual(grid[:, 0], GridSpace([(('A', 0), self.view1), (('C', 0), self.view3)]))
+
     def test_gridspace_overlay_element(self):
         items = [(0, self.view1), (1, self.view2), (2, self.view3), (3, self.view2)]
         grid = GridSpace(items, 'X')
