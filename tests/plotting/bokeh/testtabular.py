@@ -2,6 +2,7 @@ from datetime import datetime as dt
 from unittest import SkipTest
 
 from holoviews.core.options import Store
+from holoviews.core.spaces import DynamicMap
 from holoviews.element import Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import CDSStream
@@ -62,3 +63,13 @@ class TestBokehTablePlot(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(table)
         self.assertEqual(len(plot.callbacks), 1)
         self.assertIsInstance(plot.callbacks[0], CDSCallback)
+
+    def test_table_change_columns(self):
+        lengths = {'a': 1, 'b': 2, 'c': 3}
+        table = DynamicMap(lambda a: Table(range(lengths[a]), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
+        plot = bokeh_renderer.get_plot(table)
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a'])
+        self.assertEqual(plot.handles['plot'].columns[0].title, 'a')
+        plot.update(('b',))
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['b'])
+        self.assertEqual(plot.handles['plot'].columns[0].title, 'b')

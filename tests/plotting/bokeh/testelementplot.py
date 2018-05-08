@@ -121,6 +121,26 @@ class TestElementPlot(TestBokehPlot):
         self.assertEqual(plot.state.ygrid[0].grid_line_width, 1.5)
         self.assertEqual(plot.state.ygrid[0].bounds, (0.3, 0.7))
 
+    def test_change_cds_columns(self):
+        lengths = {'a': 1, 'b': 2, 'c': 3}
+        curve = DynamicMap(lambda a: Curve(range(lengths[a]), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a', 'y'])
+        self.assertEqual(plot.state.xaxis[0].axis_label, 'a')
+        plot.update(('b',))
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['b', 'y'])
+        self.assertEqual(plot.state.xaxis[0].axis_label, 'b')
+
+    def test_update_cds_columns(self):
+        curve = DynamicMap(lambda a: Curve(range(10), a), kdims=['a']).redim.values(a=['a', 'b', 'c'])
+        plot = bokeh_renderer.get_plot(curve)
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a', 'y'])
+        self.assertEqual(plot.state.xaxis[0].axis_label, 'a')
+        plot.update(('b',))
+        self.assertEqual(sorted(plot.handles['source'].data.keys()), ['a', 'b', 'y'])
+        self.assertEqual(plot.state.xaxis[0].axis_label, 'b')
+
+
 
 class TestColorbarPlot(TestBokehPlot):
 
