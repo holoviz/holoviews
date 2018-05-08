@@ -1,3 +1,37 @@
+Version 1.10.3
+==============
+
+This is a minor bug fix release including a number of crucial fixes
+for issues reported by our users.
+
+Enhancement:
+
+- The dimensions of elements may now be changed allowing updates to
+  axis labels and table column headers
+  ([#2666](https://github.com/ioam/holoviews/pull/2666))
+  
+Fixes:
+
+- Fix for ``labelled`` plot option
+  ([#2643](https://github.com/ioam/holoviews/pull/2643))
+- Optimized initialization of dynamic plots specifying a large
+  parameter space
+  ([#2646](https://github.com/ioam/holoviews/pull/2646))
+- Fixed unicode and reversed axis slicing issues in XArrayInterface
+  ([#2658](https://github.com/ioam/holoviews/issues/2658),
+   [#2653](https://github.com/ioam/holoviews/pull/2653))
+- Fixed widget sorting issues when applying dynamic groupby
+  ([#2641](https://github.com/ioam/holoviews/issues/2641))
+  
+API:
+
+- The PlotReset reset parameter was renamed to resetting to avoid
+  clash with a method
+  ([#2665](https://github.com/ioam/holoviews/pull/2665))
+- PolyDraw tool data parameter now always indexed with 'xs' and 'ys'
+  keys for consistency
+  ([#2650](https://github.com/ioam/holoviews/issues/2650))
+
 Version 1.10.2
 ==============
 
@@ -7,7 +41,7 @@ features and regressions introduced in 1.10:
 Enhancement:
 
 - Exposed Image hover functionality for upcoming bokeh 0.12.16 release
-  ([#2625](https://github.com/ioam/holoviews/pull/2625)) 
+  ([#2625](https://github.com/ioam/holoviews/pull/2625))
 
 Fixes:
 
