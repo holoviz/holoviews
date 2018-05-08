@@ -1042,6 +1042,8 @@ class GenericOverlayPlot(GenericElementPlot):
 
         for k, obj in items:
             subplot = self._create_subplot(k, vmaps[keys.index(k)], [], ranges)
+            if subplot is None:
+                continue
             self.subplots[k] = subplot
             subplot.initialize_plot(ranges, **init_kwargs)
             subplot.update_frame(key, ranges, element=obj)
@@ -1074,6 +1076,8 @@ class GenericOverlayPlot(GenericElementPlot):
             subplots = self.subplots.items()
         for key, subplot in subplots:
             found = False
+            if subplot is None:
+                continue
             layer = overlay.data.get(key, None)
             if isinstance(self.hmap, DynamicMap) and layer is None:
                 for _, layer in items:
