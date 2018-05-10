@@ -21,11 +21,11 @@ class TablePlot(BokehPlot, GenericElementPlot):
     width = param.Number(default=400)
 
     style_opts = (
-        ['row_headers', 'selectable', 'editable', 
+        ['row_headers', 'selectable', 'editable',
          'sortable', 'fit_columns', 'scroll_to_selection'] +
         (['index_position'] if bokeh_version >= '0.12.15' else [])
         )
-    
+
     finalize_hooks = param.HookList(default=[], doc="""
         Optional list of hooks called when finalizing a column.
         The hook is passed the plot object and the displayed

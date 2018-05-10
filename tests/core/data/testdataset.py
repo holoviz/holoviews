@@ -916,7 +916,7 @@ class DFDatasetTest(HeterogeneousColumnTypes, ComparisonTestCase):
         df = pd.DataFrame(np.random.randint(-100,100, size=(100, 2)), columns=list("AB"))
         with self.assertRaises(DataError):
             Dataset(df[['A', 'A']])
-        
+
     def test_dataset_extract_vdims(self):
         df = pd.DataFrame({'x': [1, 2, 3], 'y': [1, 2, 3], 'z': [1, 2, 3]},
                           columns=['x', 'y', 'z'])

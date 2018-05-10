@@ -33,7 +33,7 @@ class TestHTMLDisplay(TestDisplayHooks):
                       'application/vnd.holoviews_exec.v0+json'}
         self.assertEqual(set(data), mime_types)
 
-        
+
 class TestPNGDisplay(TestDisplayHooks):
 
     def setUp(self):

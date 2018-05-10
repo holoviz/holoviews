@@ -375,7 +375,7 @@ class SelectionWidget(NdWidget):
 
         value_labels = escape_list(escape_vals([dim.pprint_value(v)
                                                 for v in dim_vals]))
-        
+
         dim_vals = escape_list(escape_vals(dim_vals))
         next_vals = escape_dict({k: escape_vals(v) for k, v in next_vals.items()})
         return {'type': widget_type, 'vals': dim_vals, 'labels': value_labels,

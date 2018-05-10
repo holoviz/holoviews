@@ -339,7 +339,7 @@ class Dimension(param.Parameterized):
         if isinstance(spec, tuple):
             if not all(isinstance(s, basestring) for s in spec) or len(spec) != 2:
                 raise ValueError("Dimensions specified as a tuple must be a tuple "
-                                 "consisting of the name and label not: %s" % str(spec)) 
+                                 "consisting of the name and label not: %s" % str(spec))
             name, label = spec
             all_params['name'] = name
             all_params['label'] = label

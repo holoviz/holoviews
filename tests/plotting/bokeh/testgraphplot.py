@@ -117,7 +117,7 @@ class TestBokehGraphPlot(TestBokehPlot):
         self.assertEqual(cmapper.factors, ['Output', 'Input'])
         self.assertEqual(node_source.data['Label'], self.node_info['Label'])
         self.assertEqual(glyph.fill_color, {'field': 'Label', 'transform': cmapper})
-    
+
     def test_graph_nodes_numerically_colormapped(self):
         g = self.graph3.opts(plot=dict(color_index='Weight'), style=dict(cmap='viridis'))
         plot = bokeh_renderer.get_plot(g)

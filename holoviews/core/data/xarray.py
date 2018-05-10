@@ -213,7 +213,7 @@ class XArrayInterface(GridInterface):
         drop_dim = any(d not in group_kwargs['kdims'] for d in element_dims)
 
         # XArray 0.7.2 does not support multi-dimensional groupby
-        # Replace custom implementation when 
+        # Replace custom implementation when
         # https://github.com/pydata/xarray/pull/818 is merged.
         group_by = [d.name for d in index_dims]
         data = []
@@ -331,7 +331,7 @@ class XArrayInterface(GridInterface):
             ncoords = len(coords)
             if np.all(coords[1:] < coords[:-1]):
                 if np.isscalar(ind):
-                    ind = ncoords-ind-1 
+                    ind = ncoords-ind-1
                 elif isinstance(ind, slice):
                     start = None if ind.stop is None else ncoords-ind.stop
                     stop = None if ind.start is None else ncoords-ind.start

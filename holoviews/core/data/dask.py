@@ -129,7 +129,7 @@ class DaskInterface(PandasInterface):
         if indexed and len(df) == 1 and len(columns.vdims) == 1:
             return df[columns.vdims[0].name].compute().iloc[0]
         return df
-    
+
     @classmethod
     def groupby(cls, columns, dimensions, container_type, group_type, **kwargs):
         index_dims = [columns.get_dimension(d) for d in dimensions]

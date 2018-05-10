@@ -471,7 +471,7 @@ class DimensionedPlot(Plot):
         # Traverse object and accumulate options by key
         traversed = obj.traverse(lookup, specs)
         options = defaultdict(lambda: defaultdict(list))
-        default_opts = defaultdict(lambda: defaultdict(list)) 
+        default_opts = defaultdict(lambda: defaultdict(list))
         for key, opts in traversed:
             defaults = opts.pop('defaults', {})
             for opt, v in opts.items():

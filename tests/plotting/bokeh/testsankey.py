@@ -42,7 +42,7 @@ class TestSankeyPlot(TestBokehPlot):
             self.assertEqual(quad_source.data[k], quad_data[k])
 
         self.assertEqual(patch_source.data['Value'], np.array([5, 7, 6, 2, 9, 4]))
-        
+
 
     def test_sankey_label_index(self):
         sankey = Sankey(([
@@ -55,7 +55,7 @@ class TestSankeyPlot(TestBokehPlot):
         scatter_source = plot.handles['scatter_1_source']
         text_source = plot.handles['text_1_source']
         patch_source = plot.handles['patches_1_source']
-        
+
         scatter_index = np.arange(5)
         self.assertEqual(scatter_source.data['index'], scatter_index)
 
@@ -71,4 +71,4 @@ class TestSankeyPlot(TestBokehPlot):
                       'Value': np.array([5, 7, 6, 2, 9, 4])}
         for k in patch_data:
             self.assertEqual(patch_source.data[k], patch_data[k])
-            
+

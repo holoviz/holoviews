@@ -80,7 +80,7 @@ class OperationTests(ComparisonTestCase):
         op_freq_dim = op_hist.get_dimension('x_frequency')
         self.assertEqual(op_freq_dim.label, 'x Frequency')
 
-        # Because the operation labels are now different from the 
+        # Because the operation labels are now different from the
         #  default Element label, change back before comparing.
         op_hist = op_hist.redim(x_frequency='Frequency')
         hist = Histogram(([0.1, 0.1, 0.133333], [0, 3, 6, 9]))
@@ -94,7 +94,7 @@ class OperationTests(ComparisonTestCase):
         op_freq_dim = op_hist.get_dimension('x_frequency')
         self.assertEqual(op_freq_dim.label, 'x Frequency')
 
-        # Because the operation labels are now different from the 
+        # Because the operation labels are now different from the
         #  default Element label, change back before comparing.
         op_hist = op_hist.redim(x_frequency='Frequency')
         hist = Histogram(([0.25, 0.25, 0.5], [0., 1., 2., 3.]))
@@ -108,7 +108,7 @@ class OperationTests(ComparisonTestCase):
         op_freq_dim = op_hist.get_dimension('x_frequency')
         self.assertEqual(op_freq_dim.label, 'x Frequency')
 
-        # Because the operation labels are now different from the 
+        # Because the operation labels are now different from the
         #  default Element label, change back before comparing.
         op_hist = op_hist.redim(x_frequency='Frequency')
         hist = Histogram(([3, 3, 4], [0, 3, 6, 9]))

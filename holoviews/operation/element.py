@@ -444,7 +444,7 @@ class contours(Operation):
             levels = np.linspace(zmin, zmax, levels)
         else:
             levels = self.p.levels
-            
+
         xdim, ydim = element.dimensions('key', label=True)
         fig = Figure()
         ax = Axes(fig, [0, 0, 1, 1])
@@ -584,7 +584,7 @@ class histogram(Operation):
             params['vdims'] = [view.get_dimension(self.p.weight_dimension)]
         else:
             label = self.p.frequency_label.format(dim=selected_dim)
-            params['vdims'] = [Dimension('{}_frequency'.format(selected_dim), 
+            params['vdims'] = [Dimension('{}_frequency'.format(selected_dim),
                                          label=label)]
 
         if view.group != view.__class__.__name__:

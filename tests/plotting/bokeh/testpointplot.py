@@ -17,7 +17,7 @@ except:
 
 
 class TestPointPlot(TestBokehPlot):
-    
+
     def test_points_colormapping(self):
         points = Points(np.random.rand(10, 4), vdims=['a', 'b']).opts(plot=dict(color_index=3))
         self._test_colormapping(points, 3)
@@ -127,7 +127,7 @@ class TestPointPlot(TestBokehPlot):
                          dtype='<U7')
         self.assertEqual(plot.handles['source'].data['line_width'], line_width)
         self.assertEqual(plot.handles['source'].data['color'], color)
-    
+
     def test_points_overlay_datetime_hover(self):
         if pd is None:
             raise SkipTest("Test requires pandas")
@@ -153,7 +153,7 @@ class TestPointPlot(TestBokehPlot):
         obj = obj(plot=opts)
         self._test_hover_info(obj, [('Test', '@{Test}'), ('x', '@{x}'),
                                     ('y', '@{y}')])
-    
+
     def test_points_no_single_item_legend(self):
         points = Points([('A', 1), ('B', 2)], label='A')
         plot = bokeh_renderer.get_plot(points)

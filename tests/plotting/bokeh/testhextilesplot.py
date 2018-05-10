@@ -26,7 +26,7 @@ class TestHexTilesOperation(TestBokehPlot):
                             vdims='Count')
         self.assertEqual(binned, expected)
 
-    
+
     def test_hex_tiles_sum_value_aggregation(self):
         tiles = HexTiles([(0, 0, 1), (0.5, 0.5, 2), (-0.5, -0.5, 3), (-0.4, -0.4, 4)], vdims='z')
         binned = hex_binning(tiles, gridsize=3, aggregator=np.sum)
@@ -54,7 +54,7 @@ class TestHexTilesPlot(TestBokehPlot):
         tiles = HexTiles([(np.NaN, 0), (1, np.NaN)])
         plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
         self.assertEqual(plot.handles['source'].data, {'q': [], 'r': []})
-    
+
     def test_hex_tiles_zero_min_count(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(min_count=0)
         plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]
@@ -68,7 +68,7 @@ class TestHexTilesPlot(TestBokehPlot):
         glyph = plot.handles['glyph']
         self.assertEqual(glyph.size, 0.066666666666666666)
         self.assertEqual(glyph.aspect_scale, 0.5)
-    
+
     def test_hex_tiles_gridsize_tuple_flat_orientation(self):
         tiles = HexTiles([(0, 0), (0.5, 0.5), (-0.5, -0.5), (-0.4, -0.4)]).options(gridsize=(5, 10), orientation='flat')
         plot = list(bokeh_renderer.get_plot(tiles).subplots.values())[0]

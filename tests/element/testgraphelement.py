@@ -90,7 +90,7 @@ class GraphTests(ComparisonTestCase):
     def test_select_by_node_in_edges_selection_mode(self):
         graph = Graph(((self.source, self.target),))
         selection = Graph(([(1, 0), (2, 0)], list(zip(*self.nodes))[0:3]))
-        self.assertEqual(graph.select(index=(1, 3)), selection) 
+        self.assertEqual(graph.select(index=(1, 3)), selection)
 
     def test_select_by_node_in_nodes_selection_mode(self):
         graph = Graph(((self.source, self.source+1), self.nodes))
@@ -115,7 +115,7 @@ class GraphTests(ComparisonTestCase):
     def test_select_by_edge_data(self):
         graph = Graph(((self.target, self.source, self.edge_info),), vdims=['info'])
         selection = Graph(([(0, 0, 0), (0, 1, 1)], list(zip(*self.nodes))[:2]), vdims=['info'])
-        self.assertEqual(graph.select(info=(0, 2)), selection) 
+        self.assertEqual(graph.select(info=(0, 2)), selection)
 
     def test_graph_node_range(self):
         graph = Graph(((self.target, self.source),))
@@ -160,7 +160,7 @@ class ChordTests(ComparisonTestCase):
         nodes = np.array(
             [[-0.5, 0.866025, 0],
              [0.5, -0.866025, 1]]
-        ) 
+        )
         self.assertEqual(chord.nodes, Nodes(nodes))
 
 

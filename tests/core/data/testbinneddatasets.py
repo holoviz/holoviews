@@ -237,7 +237,7 @@ class Irregular2DBinsTest(ComparisonTestCase):
         dataset = Dataset(da, ['lon', 'lat'], 'A')
         # Ensure that canonicalization drops the constant dimension
         self.assertEqual(dataset.dimension_values('A', flat=False), zs[0])
-        
+
     def test_groupby_3d_from_xarray(self):
         try:
             import xarray as xr

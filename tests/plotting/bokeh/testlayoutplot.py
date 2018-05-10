@@ -130,7 +130,7 @@ class TestLayoutPlot(TestBokehPlot):
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
-    
+
     def test_empty_adjoint_plot(self):
         adjoint = Curve([0,1,1,2,3]) << Empty() << Curve([0,1,1,0,1])
         plot = bokeh_renderer.get_plot(adjoint)
@@ -179,7 +179,7 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertEqual(data['B'], hmap1[1].dimension_values(1))
         self.assertEqual(data['C'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
         self.assertEqual(data['D'], np.full_like(hmap1[1].dimension_values(0), np.NaN))
-        
+
     def test_shared_axes(self):
         curve = Curve(range(10))
         img = Image(np.random.rand(10,10))

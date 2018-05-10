@@ -129,7 +129,7 @@ class ResamplingOperation(LinkableOperation):
                     x_range = np.max([x0, ex0]), np.min([x1, ex1])
                 if x_range[0] == x_range[1]:
                     x_range = (x_range[0]-0.5, x_range[0]+0.5)
-                    
+
                 if self.p.expand or not self.p.y_range:
                     y_range = self.p.y_range or element.range(y)
                 else:
@@ -763,7 +763,7 @@ class shade(LinkableOperation):
     cmap = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
         Iterable or callable which returns colors as hex colors
         or web color names (as defined by datashader), to be used
-        for the colormap of single-layer datashader output. 
+        for the colormap of single-layer datashader output.
         Callable type must allow mapping colors between 0 and 1.
         The default value of None reverts to Datashader's default
         colormap.""")
@@ -771,7 +771,7 @@ class shade(LinkableOperation):
     color_key = param.ClassSelector(class_=(Iterable, Callable, dict), doc="""
         Iterable or callable that returns colors as hex colors, to
         be used for the color key of categorical datashader output.
-        Callable type must allow mapping colors for supplied values 
+        Callable type must allow mapping colors for supplied values
         between 0 and 1.""")
 
     normalization = param.ClassSelector(default='eq_hist',

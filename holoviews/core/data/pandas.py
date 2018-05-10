@@ -134,7 +134,7 @@ class PandasInterface(Interface):
                 data = pd.DataFrame(data, columns=columns)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
-    
+
     @classmethod
     def isscalar(cls, dataset, dim):
         name = dataset.get_dimension(dim, strict=True).name
