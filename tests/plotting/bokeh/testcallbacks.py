@@ -108,7 +108,7 @@ class TestEditToolCallbacks(ComparisonTestCase):
         plot = bokeh_renderer.get_plot(points)
         self.assertIsInstance(plot.callbacks[0], PointDrawCallback)
         self.assertEqual(point_draw.element, points)
-        
+
     def test_point_draw_callback_with_vdims(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
         point_draw = PointDraw(source=points)
@@ -144,12 +144,12 @@ class TestEditToolCallbacks(ComparisonTestCase):
 
     def test_box_edit_callback(self):
         boxes = Polygons([Box(0, 0, 1)])
-        box_edit = BoxEdit(source=boxes) 
+        box_edit = BoxEdit(source=boxes)
         plot = bokeh_renderer.get_plot(boxes)
         self.assertIsInstance(plot.callbacks[0], BoxEditCallback)
         callback = plot.callbacks[0]
         source = plot.handles['rect_source']
-        self.assertEqual(source.data, {'x': [0], 'y': [0], 'width': [1], 'height': [1]}) 
+        self.assertEqual(source.data, {'x': [0], 'y': [0], 'width': [1], 'height': [1]})
         data = {'x': [0, 1], 'y': [0, 1], 'width': [0.5, 2], 'height': [2, 0.5]}
         callback.on_msg({'data': data})
         element = Polygons([Box(0, 0, (0.5, 2)), Box(1, 1, (2, 0.5))])

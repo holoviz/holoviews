@@ -97,11 +97,11 @@ class ErrorBarsPlot(ElementPlot):
 class BivariatePlot(ColorbarPlot):
 
     ncontours = param.Integer(default=None)
-    
+
     graph_obj = go.Histogram2dcontour
 
     style_opts = ['cmap']
-    
+
     def graph_options(self, element, ranges):
         opts = super(BivariatePlot, self).graph_options(element, ranges)
         if self.ncontours:

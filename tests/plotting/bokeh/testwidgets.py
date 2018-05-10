@@ -230,7 +230,7 @@ class TestSelectionWidget(ComparisonTestCase):
         self.assertEqual(slider['next_dim'], Dimension('Y'))
         self.assertEqual(eval(slider['next_vals']),
                          {str(float(i)): [chr(65+i)] for i in range(10)})
-        
+
         dropdown = widgets[1]
         self.assertEqual(dropdown['type'], 'dropdown')
         self.assertEqual(dropdown['dim'], 'Y')

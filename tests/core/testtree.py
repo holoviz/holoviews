@@ -50,7 +50,7 @@ class AttrTreeTest(ComparisonTestCase):
     def test_deep_getitem_str(self):
         self.assertEqual(self.tree['A.I'], 1)
         self.assertEqual(self.tree['B.II'], 2)
-        
+
     def test_deep_setitem(self):
         self.tree[('C', 'I')] = 3
         self.assertEqual(self.tree.C.I, 3)
@@ -58,7 +58,7 @@ class AttrTreeTest(ComparisonTestCase):
     def test_deep_setitem_str(self):
         self.tree['C.I'] = 3
         self.assertEqual(self.tree.C.I, 3)
-        
+
     def test_delitem(self):
         Btree = self.tree.B
         del self.tree['B']
@@ -74,7 +74,7 @@ class AttrTreeTest(ComparisonTestCase):
     def test_delitem_keyerror(self):
         with self.assertRaises(KeyError):
             del self.tree['C']
-        
+
     def test_deep_delitem(self):
         BTree = self.tree.B
         del self.tree[('B', 'II')]

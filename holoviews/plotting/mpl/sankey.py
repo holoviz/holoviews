@@ -7,11 +7,11 @@ from matplotlib.collections import PatchCollection
 
 
 class SankeyPlot(GraphPlot):
-    
+
     color_index = param.ClassSelector(default=2, class_=(basestring, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
-    
+
     label_index = param.ClassSelector(default=2, class_=(basestring, int),
                                       allow_None=True, doc="""
         Index of the dimension from which the node labels will be drawn""")
@@ -33,7 +33,7 @@ class SankeyPlot(GraphPlot):
         Number of iterations to run the layout algorithm.""")
 
     filled = True
-    
+
     def get_extents(self, element, ranges):
         """
         A Chord plot is always drawn on a unit circle.
@@ -51,7 +51,7 @@ class SankeyPlot(GraphPlot):
         x0, x1 = max_range([xdim.range, (x0, x1)])
         y0, y1 = max_range([ydim.range, (y0-(0.05*ydiff), y1+(0.05*ydiff))])
         return (x0, y0, x1, y1)
-    
+
     def get_data(self, element, ranges, style):
         data, style, axis_kwargs = super(SankeyPlot, self).get_data(element, ranges, style)
         rects, labels = [], []

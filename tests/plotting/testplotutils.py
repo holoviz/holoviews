@@ -548,7 +548,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
     def test_bokeh_palette_diverging(self):
         colors = bokeh_palette_to_palette('RdBu', 3)
         self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'])
-        
+
     def test_bokeh_palette_diverging_reverse(self):
         colors = bokeh_palette_to_palette('RdBu_r', 3)
         self.assertEqual(colors, ['#67001f', '#f7f7f7', '#053061'][::-1])
@@ -566,7 +566,7 @@ class TestBokehPaletteUtils(ComparisonTestCase):
         self.assertEqual(colors, ['#440154', '#30678D', '#35B778', '#FDE724'][::-1])
 
 
-        
+
 class TestPlotUtils(ComparisonTestCase):
 
     def test_get_min_distance_float32_type(self):

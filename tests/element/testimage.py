@@ -75,5 +75,5 @@ class TestImage(LoggingComparisonTestCase):
         ys[-1] += 0.001
         img = Image({'vals':vals, 'xs':xs, 'ys':ys}, ['xs','ys'], 'vals', rtol=10e-3)
         self.assertEqual(img.clone().rtol, 10e-3)
-        
+
 

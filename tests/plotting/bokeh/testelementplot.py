@@ -65,7 +65,7 @@ class TestElementPlot(TestBokehPlot):
         plot = bokeh_renderer.get_plot(curve).state
         self.assertEqual(plot.xaxis[0].axis_label, '')
         self.assertEqual(plot.yaxis[0].axis_label, '')
-        
+
     def test_static_source_optimization(self):
         global data
         data = np.ones((5, 5))

@@ -475,7 +475,7 @@ class Renderer(Exporter):
 
         widgetjs = '\n'.join(open_and_read(path, f)
                              for f in basejs + extensionjs if f is not None)
-        widgetcss = '\n'.join(open_and_read(path, f) 
+        widgetcss = '\n'.join(open_and_read(path, f)
                               for f in css if f is not None)
 
         dependencies = {}

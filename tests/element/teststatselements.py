@@ -92,7 +92,7 @@ class StatisticalElementTest(ComparisonTestCase):
         dist = Bivariate(np.array([[0, 1], [1, 2], [2, 3]]))
         self.assertEqual(dist.get_dimension_type(0), np.int64)
         self.assertEqual(dist.get_dimension_type(1), np.int64)
-        
+
     def test_distribution_array_vdim_type(self):
         dist = Distribution(np.array([0, 1, 2]))
         self.assertEqual(dist.get_dimension_type(1), np.float64)
@@ -135,7 +135,7 @@ class StatisticalCompositorTest(ComparisonTestCase):
         area = Compositor.collapse_element(dist, backend='matplotlib')
         opts = Store.lookup_options('matplotlib', area, 'style').kwargs
         self.assertEqual(opts.get('color', None), 'red')
-        
+
     def test_distribution_composite_custom_vdim(self):
         dist = Distribution(np.array([0, 1, 2]), vdims=['Test'])
         area = Compositor.collapse_element(dist, backend='matplotlib')

@@ -69,7 +69,7 @@ class PathPlot(ColorbarPlot):
                 splits = [0]+list(np.where(np.diff(path[:, cidx])!=0)[0]+1)
                 for (s1, s2) in zip(splits[:-1], splits[1:]):
                     cvals.append(path[s1, cidx])
-                    paths.append(path[s1:s2+1, :2])           
+                    paths.append(path[s1:s2+1, :2])
             xs, ys = ([path[:, idx] for path in paths] for idx in inds)
             data = dict(xs=xs, ys=ys, **{dim_name: np.array(cvals)})
         cmapper = self._get_colormapper(cdim, element, ranges, style)
@@ -105,7 +105,7 @@ class PathPlot(ColorbarPlot):
 
         return data, elmapping, style
 
-    
+
 class ContourPlot(LegendPlot, PathPlot):
 
     color_index = param.ClassSelector(default=0, class_=(util.basestring, int),
@@ -123,7 +123,7 @@ class ContourPlot(LegendPlot, PathPlot):
         else:
             dims = list(self.overlay_dims.keys())+self.hmap.last.vdims
         return dims, {}
-    
+
     def _get_hover_data(self, data, element):
         """
         Initializes hover data based on Element dimension values.

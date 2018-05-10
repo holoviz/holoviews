@@ -55,7 +55,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
         sdim = element.get_dimension(self.size_index)
         if not sdim or self.static_source:
             return data, mapping
-        
+
         map_key = 'size_' + sdim.name
         ms = style.get('size', np.sqrt(6))**2
         sizes = element.dimension_values(self.size_index)
@@ -563,7 +563,7 @@ class SpikesPlot(ColorbarPlot):
                 bs, ts = [], []
                 # Iterate over current NdOverlay and compute extents
                 # from position and length plot options
-                frame = self.current_frame or self.hmap.last 
+                frame = self.current_frame or self.hmap.last
                 for el in frame.values():
                     opts = self.lookup_options(el, 'plot').options
                     pos = opts.get('position', self.position)

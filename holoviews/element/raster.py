@@ -230,9 +230,9 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-    rtol = param.Number(default=None, doc="""The tolerance used to enforce 
-            regular sampling for regular, gridded data where regular sampling is 
-            expected. Expressed as the maximal allowable sampling difference 
+    rtol = param.Number(default=None, doc="""The tolerance used to enforce
+            regular sampling for regular, gridded data where regular sampling is
+            expected. Expressed as the maximal allowable sampling difference
             between sample locations.""")
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,

@@ -1160,7 +1160,7 @@ class DynamicMap(HoloMap):
             dmap = Dynamic(self, operation=dynamic_select, streams=self.streams)
             dmap.data = selection.data
             return dmap
-            
+
 
 
     def _cache(self, key, val):

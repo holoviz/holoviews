@@ -74,7 +74,7 @@ def animate():
 start, end = ds.range('Year')
 slider = Slider(start=start, end=end, value=start, step=1, title="Year")
 slider.on_change('value', slider_update)
-        
+
 button = Button(label='► Play', width=60)
 button.on_click(animate)
 

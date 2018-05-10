@@ -26,7 +26,7 @@ class TestSankeyPlot(TestMPLPlot):
             self.assertEqual(text.xy[0], text_data['x'][i])
             self.assertEqual(text.xy[1], text_data['y'][i])
             self.assertEqual(text.get_text(), text_data['text'][i])
-            
+
         quad_data = {
             'x0': [0, 0, 985.0, 985.0, 985.0],
             'x1': [15, 15, 1000.0, 1000.0, 1000.0],

@@ -140,7 +140,7 @@ class TestDimensioned_options(CustomBackendTestCase):
         opts = Store.lookup_options('backend_1', obj1, 'style')
         assert opts.options == {'style_opt1': 'A'}
         assert obj1 is obj2
-    
+
     def test_apply_options_cloned(self):
         obj1 = TestObj([])
         obj2 = obj1.options(style_opt1='A')

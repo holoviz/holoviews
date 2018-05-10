@@ -408,7 +408,7 @@ class TestBufferStream(ComparisonTestCase):
         data = {'x': np.array([1]), 'y': np.array([2])}
         buff = Buffer(data)
         self.assertEqual(buff.data, data)
-    
+
     def test_buffer_dict_send(self):
         data = {'x': np.array([0]), 'y': np.array([1])}
         buff = Buffer(data)
@@ -468,7 +468,7 @@ class TestBufferStream(ComparisonTestCase):
         buff.send(pd.DataFrame({'x': np.array([1]), 'y': np.array([2])}))
         dframe = pd.DataFrame({'x': np.array([0, 1]), 'y': np.array([1, 2])}, index=[0, 0])
         self.assertEqual(buff.data.values, dframe.reset_index().values)
-        
+
     def test_buffer_dframe_larger_than_length(self):
         data = pd.DataFrame({'x': np.array([0]), 'y': np.array([1])})
         buff = Buffer(data, length=1, index=False)

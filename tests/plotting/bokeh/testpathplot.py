@@ -56,7 +56,7 @@ class TestPathPlot(TestBokehPlot):
         self.assertEqual(len(source.data['ys']), 0)
         self.assertEqual(len(source.data['Intensity']), 0)
 
-        
+
 
 class TestPolygonPlot(TestBokehPlot):
 

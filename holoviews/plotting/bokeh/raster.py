@@ -17,7 +17,7 @@ class RasterPlot(ColorbarPlot):
 
     style_opts = ['cmap']
     _plot_methods = dict(single='image')
-    
+
     def _hover_opts(self, element):
         xdim, ydim = element.kdims
         tooltips = [(xdim.pprint_label, '$x'), (ydim.pprint_label, '$y')]

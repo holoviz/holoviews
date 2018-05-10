@@ -373,7 +373,7 @@ class DatashaderStackTests(ComparisonTestCase):
     def test_stack_over_compositor(self):
         combined = stack(self.rgb1*self.rgb2, compositor='over')
         self.assertEqual(combined, self.rgb2)
-    
+
     def test_stack_over_compositor_reverse(self):
         combined = stack(self.rgb2*self.rgb1, compositor='over')
         self.assertEqual(combined, self.rgb1)

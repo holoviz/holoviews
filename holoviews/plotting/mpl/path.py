@@ -11,7 +11,7 @@ class PathPlot(ColorbarPlot):
     aspect = param.Parameter(default='square', doc="""
         PathPlots axes usually define single space so aspect of Paths
         follows aspect in data coordinates by default.""")
-    
+
     color_index = param.ClassSelector(default=None, class_=(util.basestring, int),
                                       allow_None=True, doc="""
       Index of the dimension from which the color will the drawn""")
@@ -98,7 +98,7 @@ class ContourPlot(PathPlot):
         style['clim'] = style.pop('vmin'), style.pop('vmax')
         return (paths,), style, {}
 
-    
+
 class PolygonPlot(ContourPlot):
     """
     PolygonPlot draws the polygon paths in the supplied Polygons

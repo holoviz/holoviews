@@ -618,7 +618,7 @@ class VectorFieldPlot(ColorbarPlot):
         ys = element.dimension_values(yidx) if len(element.data) else []
         radians = element.dimension_values(2) if len(element.data) else []
         if self.invert_axes: radians = radians+1.5*np.pi
-        angles = list(np.rad2deg(radians)) 
+        angles = list(np.rad2deg(radians))
         if self.rescale_lengths:
             min_dist = get_min_distance(element)
             input_scale = input_scale / min_dist

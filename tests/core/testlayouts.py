@@ -268,4 +268,4 @@ class GridTest(CompositeTest):
                           (3, Overlay([self.view3, self.view2]))]
         expected = GridSpace(expected_items, 'X')
         self.assertEqual(grid2*grid, expected)
-        
+

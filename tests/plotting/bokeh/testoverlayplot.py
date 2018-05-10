@@ -80,7 +80,7 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(yaxis=None))
         plot = bokeh_renderer.get_plot(overlay).state
         self.assertFalse(plot.yaxis[0].visible)
-        
+
     def test_overlay_xrotation(self):
         overlay = (Curve(range(10)) * Curve(range(10))).opts(plot=dict(xrotation=90))
         plot = bokeh_renderer.get_plot(overlay).state

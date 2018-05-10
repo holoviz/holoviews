@@ -31,7 +31,7 @@ class TestBokehServerSetup(ComparisonTestCase):
         if not bokeh_renderer:
             raise SkipTest("Bokeh required to test plot instantiation")
         Store.current_backend = 'bokeh'
-        self.nbcontext = Renderer.notebook_context 
+        self.nbcontext = Renderer.notebook_context
         Renderer.notebook_context = False
 
     def tearDown(self):
