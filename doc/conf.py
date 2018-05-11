@@ -76,6 +76,7 @@ html_context = {
         ('User Guide', 'user_guide/index'),
         ('Gallery', 'gallery/index'),
         ('Reference Gallery', 'reference/index'),
+        ('Releases', 'releases'),
         ('API', 'Reference_Manual/index'),
         ('FAQ', 'FAQ')
     ),
