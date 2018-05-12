@@ -15,7 +15,7 @@ class RasterPlot(ColorbarPlot):
     show_legend = param.Boolean(default=False, doc="""
         Whether to show legend for the plot.""")
 
-    style_opts = ['cmap']
+    style_opts = ['cmap', 'alpha']
     _plot_methods = dict(single='image')
 
     def _hover_opts(self, element):
@@ -70,7 +70,7 @@ class RasterPlot(ColorbarPlot):
 
 class RGBPlot(RasterPlot):
 
-    style_opts = []
+    style_opts = ['alpha']
     _plot_methods = dict(single='image_rgba')
 
     def get_data(self, element, ranges, style):
