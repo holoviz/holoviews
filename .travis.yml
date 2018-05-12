@@ -67,7 +67,7 @@ before-script:
 script:
   - export HOLOVIEWSRC=`pwd`'/holoviews.rc'
   - echo 'import holoviews as hv;hv.config(style_17=True);hv.config.warn_options_call=True' > holoviews.rc
-  - flake8 --ignore=E,W,F999,F405 holoviews tests
+  - flake8 --ignore=E,W,F999,F405 --select=E101,E112,E113,E115,E125,E133,E223,E224,E227,E242,E262,E273,E274,E275,E304,E742,E743,W191,W291,W293,W601,W602,W603,W604,W605 holoviews tests
   - nosetests --with-doctest --with-coverage --cover-package=holoviews
   - cd doc/nbpublisher; chmod +x test_notebooks.py; QT_QPA_PLATFORM='offscreen' BOKEH_DEV=True ./test_notebooks.py
   - chmod +x concat_html.py; ./concat_html.py ../test_data ../test_html
