@@ -1128,6 +1128,18 @@ class GridTests(object):
         self.assertEqual(dataset.dimension_values('z', flat=False),
                          canonical)
 
+    def test_select_slice(self):
+        ds = self.eltype((self.grid_xs, self.grid_ys[:2],
+                          self.grid_zs[:2]), kdims=['x', 'y'],
+                         vdims=['z'])
+        self.assertEqual(self.dataset_grid.select(y=slice(0, 0.25)), ds)
+
+    def test_select_tuple(self):
+        ds = self.eltype((self.grid_xs, self.grid_ys[:2],
+                          self.grid_zs[:2]), kdims=['x', 'y'],
+                         vdims=['z'])
+        self.assertEqual(self.dataset_grid.select(y=(0, 0.25)), ds)
+
     def test_dataset_ndloc_index(self):
         xs, ys = np.linspace(0.12, 0.81, 10), np.linspace(0.12, 0.391, 5)
         arr = np.arange(10)*np.arange(5)[np.newaxis].T

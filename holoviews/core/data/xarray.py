@@ -400,11 +400,11 @@ class XArrayInterface(GridInterface):
                 return GridInterface.select(dataset, selection_mask, **selection)
             dim = dim.name
             if isinstance(v, slice):
-                dim_vals = dataset.data[k].values
                 v = (v.start, v.stop)
             if isinstance(v, set):
                 validated[dim] = list(v)
             elif isinstance(v, tuple):
+                dim_vals = dataset.data[k].values
                 upper = None if v[1] is None else v[1]-sys.float_info.epsilon*10
                 v = v[0], upper
                 if dim_vals.dtype.kind not in 'OSU' and np.all(dim_vals[1:] < dim_vals[:-1]):
