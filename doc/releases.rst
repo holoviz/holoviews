@@ -4,16 +4,15 @@ Releases
   .. Converted from RST using: pandoc -s -t rst ../CHANGELOG.md -o CHANGELOG.rst
      Take care with backticks in links!
 
-This page displays the HoloViews CHANGELOG as well as the following
-release pages that highlight the most important changes in each new
-version:
+Announcements
+*************
 
 * `Version 1.10 <http://blog.holoviews.org/release_1.10.html>`__ (April 11, 2018)
 
 
+Release notes
+*************
 
-Version 1.10
-~~~~~~~~~~~~
 
 Version 1.10.3
 --------------
