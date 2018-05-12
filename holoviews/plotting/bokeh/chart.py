@@ -2,8 +2,7 @@ from collections import defaultdict
 
 import numpy as np
 import param
-from bokeh.models import (CategoricalColorMapper, CustomJS, HoverTool,
-                          Whisker, Range1d)
+from bokeh.models import CategoricalColorMapper, CustomJS, Whisker, Range1d
 from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
@@ -125,7 +124,7 @@ class PointPlot(LegendPlot, ColorbarPlot):
             for k, v in sdata.items():
                 data[k].append(v)
 
-            if any(isinstance(t, HoverTool) for t in self.state.tools):
+            if 'hover' in self.handles:
                 for dim, k in zip(element.dimensions(), key):
                     sanitized = dimension_sanitizer(dim.name)
                     data[sanitized].append([k]*nvals)
@@ -605,7 +604,7 @@ class SpikesPlot(ColorbarPlot):
             mapping['color'] = {'field': cdim.name,
                                 'transform': cmapper}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
+        if 'hover' in self.handles and not self.static_source:
             for d in dims:
                 data[dimension_sanitizer(d)] = element.dimension_values(d)
 
@@ -824,8 +823,7 @@ class BarPlot(ColorbarPlot, LegendPlot):
         # Define style information
         width = style.get('bar_width', style.get('width', 1))
         cmap = style.get('cmap')
-        hover = any(t == 'hover' or isinstance(t, HoverTool)
-                    for t in self.tools+self.default_tools)
+        hover = 'hover' in self.handles
 
         # Group by stack or group dim if necessary
         if group_dim is None:

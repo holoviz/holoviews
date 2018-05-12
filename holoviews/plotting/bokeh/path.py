@@ -3,8 +3,6 @@ from collections import defaultdict
 import param
 import numpy as np
 
-from bokeh.models import HoverTool
-
 from ...core import util
 from .element import ColorbarPlot, LegendPlot, line_properties, fill_properties
 from .util import expand_batched_style
@@ -39,7 +37,7 @@ class PathPlot(ColorbarPlot):
         """
         Initializes hover data based on Element dimension values.
         """
-        if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
+        if 'hover' not in self.handles or self.static_source:
             return
 
         for k, v in self.overlay_dims.items():
@@ -129,7 +127,7 @@ class ContourPlot(LegendPlot, PathPlot):
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
         """
-        if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
+        if 'hover' not in self.handles or self.static_source:
             return
 
         for d in element.vdims:

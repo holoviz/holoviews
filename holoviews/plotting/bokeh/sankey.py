@@ -1,7 +1,7 @@
 import param
 import numpy as np
 
-from bokeh.models import Patches, HoverTool
+from bokeh.models import Patches
 
 from ...core.data import Dataset
 from ...core.util import basestring, max_range, dimension_sanitizer
@@ -124,7 +124,7 @@ class SankeyPlot(GraphPlot):
         """
         Replace edge start and end hover data with label_index data.
         """
-        if not (self.inspection_policy == 'edges' and any(isinstance(t, HoverTool) for t in self.state.tools)):
+        if not (self.inspection_policy == 'edges' and 'hover' in self.handles):
             return
         lidx = element.nodes.get_dimension(self.label_index)
         src, tgt = [dimension_sanitizer(kd.name) for kd in element.kdims[:2]]

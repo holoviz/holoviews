@@ -4,7 +4,7 @@ from functools import partial
 import param
 import numpy as np
 
-from bokeh.models import FactorRange, HoverTool, Circle, VBar, HBar
+from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from ...core.dimension import Dimension
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
@@ -162,7 +162,7 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
                     label = label[0]
             else:
                 label = key
-            hover = any(isinstance(t, HoverTool) for t in self.state.tools)
+            hover = 'hover' in self.handles
 
             # Add color factor
             if cidx is not None and cidx<element.ndims:

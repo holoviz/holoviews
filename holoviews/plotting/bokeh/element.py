@@ -188,7 +188,7 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         Initializes hover data based on Element dimension values.
         If empty initializes with no data.
         """
-        if not any(isinstance(t, HoverTool) for t in self.state.tools) or self.static_source:
+        if 'hover' not in self.handles or self.static_source:
             return
 
         for d in (dimensions or element.dimensions()):
