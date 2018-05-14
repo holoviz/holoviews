@@ -169,3 +169,16 @@ class TestColorbarPlot(TestBokehPlot):
         cmapper = plot.handles['color_mapper']
         self.assertEqual(cmapper.low_color, 'red')
         self.assertEqual(cmapper.high_color, 'blue')
+
+
+class TestOverlayPlot(TestBokehPlot):
+
+    def test_overlay_projection_clashing(self):
+        overlay = Curve([]).options(projection='polar') * Curve([]).options(projection='custom')
+        with self.assertRaises(Exception):
+            bokeh_renderer.get_plot(overlay)
+
+    def test_overlay_projection_propagates(self):
+        overlay = Curve([]) * Curve([]).options(projection='custom')
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual([p.projection for p in plot.subplots.values()], ['custom', 'custom'])
