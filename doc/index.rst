@@ -129,6 +129,7 @@ guide <user_guide/Installing_and_Configuring.html>`_.
    User Guide <user_guide/index>
    Reference Gallery <reference/index>
    Showcase <showcase/index>
+   Releases <releases>
    API <Reference_Manual/index>
    FAQ
    Github source <http://github.com/ioam/holoviews>
