@@ -2,9 +2,8 @@ from collections import defaultdict
 
 import param
 import numpy as np
-from bokeh.models import HoverTool, ColumnDataSource
 from bokeh.models import (StaticLayoutProvider, NodesAndLinkedEdges,
-                          EdgesAndLinkedNodes, Patches, Bezier)
+                          EdgesAndLinkedNodes, Patches, Bezier, ColumnDataSource)
 
 from ...core.data import Dataset
 from ...core.util import (basestring, dimension_sanitizer, unique_array,
@@ -200,7 +199,7 @@ class GraphPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
             edge_mapping.update(pmapping)
 
         # Get hover data
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
+        if 'hover' in self.handles:
             if self.inspection_policy == 'nodes':
                 index_dim = element.nodes.get_dimension(2)
                 point_data['index_hover'] = [index_dim.pprint_value(v) for v in element.nodes.dimension_values(2)]

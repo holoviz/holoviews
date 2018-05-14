@@ -1,7 +1,6 @@
 import numpy as np
 import param
 
-from bokeh.models import HoverTool
 from ...core.util import cartesian_product, dimension_sanitizer
 from ...element import Raster, RGB, HSV
 from .element import ElementPlot, ColorbarPlot, line_properties, fill_properties
@@ -170,7 +169,7 @@ class QuadMeshPlot(ColorbarPlot):
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
             data = {'left': x0, 'right': x1, dimension_sanitizer(z.name): zvals,
                     'bottom': y0, 'top': y1}
-            if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
+            if 'hover' in self.handles and not self.static_source:
                 data[dimension_sanitizer(x.name)] = element.dimension_values(x)
                 data[dimension_sanitizer(y.name)] = element.dimension_values(y)
         return data, mapping, style

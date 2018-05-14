@@ -1,7 +1,7 @@
 import param
 import numpy as np
 
-from bokeh.models import HoverTool, Span
+from bokeh.models import Span
 from bokeh.models.glyphs import AnnularWedge
 
 from ...core.util import is_nan, dimension_sanitizer
@@ -90,7 +90,7 @@ class HeatMapPlot(ColorbarPlot):
             yvals = [ydim.pprint_value(yv) for yv in yvals]
         data = {x: xvals, y: yvals, 'zvalues': zvals}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools) and not self.static_source:
+        if 'hover' in self.handles and not self.static_source:
             for vdim in element.vdims:
                 sanitized = dimension_sanitizer(vdim.name)
                 data[sanitized] = ['-' if is_nan(v) else vdim.pprint_value(v)
@@ -533,7 +533,7 @@ class RadialHeatMapPlot(CompositeElementPlot, ColorbarPlot):
                         "outer_radius": outer_radius,
                         z: zvals, x: xvals, y: yvals}
 
-        if any(isinstance(t, HoverTool) for t in self.state.tools):
+        if 'hover' in self.handles:
             for vdim in element.vdims:
                 sanitized = dimension_sanitizer(vdim.name)
                 values = ['-' if is_nan(v) else vdim.pprint_value(v)
