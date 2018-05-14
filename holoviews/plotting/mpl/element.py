@@ -770,6 +770,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
         data = OrderedDict()
         used_labels = []
         for handle, label in zip(all_handles, all_labels):
+            # Ensure that artists with multiple handles are supported
+            if isinstance(handle, list): handle = tuple(handle)
             if handle and (handle not in data) and label and label not in used_labels:
                 data[handle] = label
                 used_labels.append(label)
