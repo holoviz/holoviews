@@ -1077,6 +1077,11 @@ class DictDatasetTest(HeterogeneousColumnTypes, ScalarColumnTypes, ComparisonTes
         for d in 'xy':
             self.assertEqual(dataset.dimension_values(d).dtype, np.float64)
 
+    def test_dataset_empty_combined_dimension(self):
+        ds = Dataset({('x', 'y'): []}, kdims=['x', 'y'])
+        ds2 = Dataset({'x': [], 'y': []}, kdims=['x', 'y'])
+        self.assertEqual(ds, ds2)
+
 
 class GridTests(object):
     """
