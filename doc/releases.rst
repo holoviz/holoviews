@@ -14,6 +14,27 @@ Release notes
 *************
 
 
+Version 1.10.4
+--------------
+
+This is a minor bug fix release including a number of crucial fixes
+for issues reported by our users.
+
+Enhancement:
+
+- Allow setting alpha on Image/RGB/HSV and Raster types in bokeh
+  (`#2680 <https://github.com/ioam/holoviews/pull/2680>`_)
+
+Fixes:
+
+- Fixed bug running display multiple times in one cell
+  (`#2677 <https://github.com/ioam/holoviews/pull/2677>`_)
+- Avoid sending hover data unless explicitly requested
+  (`#2681 <https://github.com/ioam/holoviews/pull/2681>`_)
+- Fixed bug slicing xarray with tuples
+  (`#2674 <https://github.com/ioam/holoviews/pull/2674>`_)
+
+
 Version 1.10.3
 --------------
 
