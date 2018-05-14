@@ -89,11 +89,15 @@ class DictInterface(Interface):
             for d, vals in data.items():
                 if isinstance(d, tuple):
                     vals = np.asarray(vals)
-                    if not vals.ndim == 2 and vals.shape[1] == len(d):
+                    if vals.shape == (0,):
+                        for sd in d:
+                            unpacked.append((sd, np.array([], dtype=vals.dtype)))
+                    elif not vals.ndim == 2 and vals.shape[1] == len(d):
                         raise ValueError("Values for %s dimensions did not have "
                                          "the expected shape.")
-                    for i, sd in enumerate(d):
-                        unpacked.append((sd, vals[:, i]))
+                    else:
+                        for i, sd in enumerate(d):
+                            unpacked.append((sd, vals[:, i]))
                 else:
                     vals = vals if np.isscalar(vals) else np.asarray(vals)
                     if not np.isscalar(vals) and not vals.ndim == 1:
