@@ -1025,6 +1025,7 @@ class GenericOverlayPlot(GenericElementPlot):
                         fontsize=self.fontsize, streams=streams,
                         renderer=self.renderer, adjoined=self.adjoined,
                         stream_sources=self.stream_sources,
+                        projection=self.projection,
                         zorder=zorder, **passed_handles)
         return plottype(obj, **plotopts)
 
