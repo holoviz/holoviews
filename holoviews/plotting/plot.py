@@ -879,6 +879,9 @@ class GenericOverlayPlot(GenericElementPlot):
     _passed_handles = []
 
     def __init__(self, overlay, ranges=None, batched=True, keys=None, **params):
+        if 'projection' not in params:
+            params['projection'] = self._get_projection(overlay)
+
         super(GenericOverlayPlot, self).__init__(overlay, ranges=ranges, keys=keys,
                                                  batched=batched, **params)
 
