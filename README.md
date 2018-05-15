@@ -92,11 +92,11 @@ And then you can launch Jupyter Notebook to explore them:
 
     jupyter notebook
 
-To work with JupyterLab you will also need the HoloViews JupyterLab
+To work with JupyterLab you will also need the PyViz JupyterLab
 extension:
 
     conda install -c conda-forge jupyterlab
-    jupyter labextension install @pyviz/jupyterlab_holoviews
+    jupyter labextension install @pyviz/jupyterlab_pyviz
 
 Once you have installed JupyterLab and the extension launch it with::
 
