@@ -203,6 +203,7 @@ class AggregationOperation(ResamplingOperation):
         'last':  rd.last,
         'mode':  rd.mode,
         'mean':  rd.mean,
+        'sum':   rd.sum,
         'var':   rd.var,
         'std':   rd.std,
         'min':   rd.min,
@@ -213,7 +214,7 @@ class AggregationOperation(ResamplingOperation):
         agg = self.p.aggregator
         if isinstance(agg, basestring):
             if agg not in self._agg_methods:
-                agg_methods = sorted(agg)
+                agg_methods = sorted(self._agg_methods)
                 raise ValueError('Aggregation method %r is not known; '
                                  'aggregator must be one of: %r' %
                                  (agg, agg_methods))
