@@ -858,7 +858,7 @@ class ResetCallback(Callback):
     on_events = ['reset']
 
     def _process_msg(self, msg):
-        return {'reset': True}
+        return {'resetting': True}
 
 
 class CDSCallback(Callback):
