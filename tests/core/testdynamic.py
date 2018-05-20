@@ -7,7 +7,7 @@ from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
-from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX
+from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX, Buffer
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
@@ -228,6 +228,20 @@ class DynamicMapMethods(ComparisonTestCase):
                      "reindex may only be used to reorder dimensions.")
         with self.assertRaisesRegexp(ValueError, exception):
             dmap.reindex(['x'])
+
+    def test_dynamic_groupby_kdims_and_streams(self):
+        def plot_function(mydim, data):
+            return Scatter(data[data[:, 2]==mydim])
+
+        buff = Buffer(data=np.empty((0, 3)))
+        dmap = DynamicMap(plot_function, streams=[buff], kdims='mydim').redim.values(mydim=[0, 1, 2])
+        ndlayout = dmap.groupby('mydim', container_type=NdLayout)
+        self.assertIsInstance(ndlayout[0], DynamicMap)
+        data = np.array([(0, 0, 0), (1, 1, 1), (2, 2, 2)])
+        buff.send(data)
+        self.assertEqual(ndlayout[0][()], Scatter([(0, 0)]))
+        self.assertEqual(ndlayout[1][()], Scatter([(1, 1)]))
+        self.assertEqual(ndlayout[2][()], Scatter([(2, 2)]))
 
 
 class DynamicMapUnboundedProperty(ComparisonTestCase):
