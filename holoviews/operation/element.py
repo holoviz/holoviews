@@ -434,9 +434,9 @@ class contours(Operation):
         elif isinstance(element, Image):
             data = [np.flipud(element.dimension_values(2, flat=False))]
         elif isinstance(element, QuadMesh):
-            data = (element.dimension_values(0, False),
-                    element.dimension_values(1, False),
-                    element.data[2])
+            data = (element.dimension_values(0, False, flat=False),
+                    element.dimension_values(1, False, flat=False),
+                    element.dimension_values(2, flat=False))
 
         if isinstance(self.p.levels, int):
             levels = self.p.levels+2 if self.p.filled else self.p.levels+3
