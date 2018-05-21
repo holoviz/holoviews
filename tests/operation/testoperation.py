@@ -2,7 +2,8 @@ import numpy as np
 from nose.plugins.attrib import attr
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
-                       Contours, Polygons, Points, Histogram, Curve, Area)
+                       Contours, Polygons, Points, Histogram, Curve, Area,
+                       QuadMesh)
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
@@ -61,6 +62,29 @@ class OperationTests(ComparisonTestCase):
                              (np.NaN, np.NaN, 0.5), (0.25, 0.5, 0.5),
                              (0.5, 0.45, 0.5)]],
                             vdims=img.vdims)
+        self.assertEqual(op_contours, contour)
+
+    @attr(optional=1) # Requires matplotlib
+    def test_qmesh_contours(self):
+        qmesh = QuadMesh(([0, 1, 2], [1, 2, 3], np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])))
+        op_contours = contours(qmesh, levels=[0.5])
+        contour = Contours([[(0,  1.166667, 0.5), (0.5, 1., 0.5),
+                             (np.NaN, np.NaN, 0.5), (1.5, 1., 0.5),
+                             (2, 1.1, 0.5)]],
+                            vdims=qmesh.vdims)
+        self.assertEqual(op_contours, contour)
+
+    @attr(optional=1) # Requires matplotlib
+    def test_qmesh_curvilinear_contours(self):
+        x = y = np.arange(3)
+        xs, ys = np.meshgrid(x, y)
+        zs = np.array([[0, 1, 0], [3, 4, 5.], [6, 7, 8]])
+        qmesh = QuadMesh((xs, ys+0.1, zs))
+        op_contours = contours(qmesh, levels=[0.5])
+        contour = Contours([[(0,  0.266667, 0.5), (0.5, 0.1, 0.5),
+                             (np.NaN, np.NaN, 0.5), (1.5, 0.1, 0.5),
+                             (2, 0.2, 0.5)]],
+                            vdims=qmesh.vdims)
         self.assertEqual(op_contours, contour)
 
     @attr(optional=1) # Requires matplotlib
