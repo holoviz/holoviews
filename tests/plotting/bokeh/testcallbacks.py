@@ -8,7 +8,7 @@ from holoviews.core.options import Store
 from holoviews.element import Points, Polygons, Box, Curve
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
-                               PointerXY, PointerX)
+                               PointerXY, PointerX, PlotReset)
 from holoviews.plotting import comms
 
 try:
@@ -83,6 +83,25 @@ class TestCallbacks(ComparisonTestCase):
         self.assertFalse(bool(Callback._callbacks))
 
 
+class TestResetCallback(ComparisonTestCase):
+
+    def setUp(self):
+        self.previous_backend = Store.current_backend
+        Store.current_backend = 'bokeh'
+        self.comm_manager = bokeh_renderer.comm_manager
+        bokeh_renderer.comm_manager = comms.CommManager
+
+    def test_reset_callback(self):
+        resets = []
+        def record(resetting):
+            resets.append(resetting)
+        curve = Curve([])
+        PlotReset(source=curve).add_subscriber(record)
+        plot = bokeh_server_renderer.get_plot(curve)
+        plot.callbacks[0].on_msg({'reset': True})
+        self.assertEqual(resets, [True])
+
+        
 class TestEditToolCallbacks(ComparisonTestCase):
 
     def setUp(self):
