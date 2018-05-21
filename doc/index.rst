@@ -97,7 +97,7 @@ To work with JupyterLab you will also need the HoloViews JupyterLab
 extension::
 
   conda install -c conda-forge jupyterlab
-  jupyter labextension install @pyviz/jupyterlab_holoviews
+  jupyter labextension install @pyviz/jupyterlab_pyviz
 
 Once you have installed JupyterLab and the extension launch it with::
 

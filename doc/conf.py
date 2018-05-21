@@ -12,8 +12,8 @@ from ..setup import setup_args
 
 # Declare information specific to this project.
 project = u'HoloViews'
-authors = u'IOAM: Jean-Luc R. Stevens, Philipp Rudiger, and James A. Bednar'
-copyright = u'2017 ' + authors
+authors = u'PyViz developers'
+copyright = u'2018 ' + authors
 ioam_module = 'holoviews'
 description = 'Stop plotting your data - annotate your data and let it visualize itself.'
 
