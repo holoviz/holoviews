@@ -147,6 +147,8 @@ class QuadMeshPlot(ColorbarPlot):
         if self.static_source:
             return {}, mapping, style
 
+        x, y = dimension_sanitizer(x.name), dimension_sanitizer(y.name)
+
         zdata = element.dimension_values(z, flat=False)
         if irregular:
             dims = element.kdims
@@ -156,11 +158,24 @@ class QuadMeshPlot(ColorbarPlot):
             X, Y = colormesh(X, Y)
             zvals = zdata.T.flatten() if self.invert_axes else zdata.flatten()
             XS, YS = [], []
-            for x, y, zval in zip(X, Y, zvals):
-                if np.isfinite(zval):
-                    XS.append(list(x[:-1]))
-                    YS.append(list(y[:-1]))
-            data = {'xs': XS, 'ys': YS, z.name: zvals[np.isfinite(zvals)]}
+            mask = []
+            xc, yc = [], []
+            for xs, ys, zval in zip(X, Y, zvals):
+                xs, ys = xs[:-1], ys[:-1]
+                if np.isfinite(zval) and all(np.isfinite(c) for c in xs) and all(np.isfinite(c) for c in ys):
+                    XS.append(list(xs))
+                    YS.append(list(ys))
+                    mask.append(True)
+                    if 'hover' in self.handles:
+                        xc.append(xs.mean())
+                        yc.append(ys.mean())
+                else:
+                    mask.append(False)
+
+            data = {'xs': XS, 'ys': YS, z.name: zvals[np.array(mask)]}
+            if 'hover' in self.handles:
+                data[x] = np.array(xc)
+                data[y] = np.array(yc)
         else:
             xc, yc = (element.interface.coords(element, x, edges=True),
                       element.interface.coords(element, y, edges=True))
@@ -170,8 +185,8 @@ class QuadMeshPlot(ColorbarPlot):
             data = {'left': x0, 'right': x1, dimension_sanitizer(z.name): zvals,
                     'bottom': y0, 'top': y1}
             if 'hover' in self.handles and not self.static_source:
-                data[dimension_sanitizer(x.name)] = element.dimension_values(x)
-                data[dimension_sanitizer(y.name)] = element.dimension_values(y)
+                data[x] = element.dimension_values(x)
+                data[y] = element.dimension_values(y)
         return data, mapping, style
 
 
