@@ -13,7 +13,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types)
+                         basestring, datetime_types, isfinite)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
@@ -548,10 +548,10 @@ class histogram(Operation):
         else:
             weights = None
 
-        data = data[np.isfinite(data)]
+        data = data[isfinite(data)]
         hist_range = self.p.bin_range or view.range(selected_dim)
         # Avoids range issues including zero bin range and empty bins
-        if hist_range == (0, 0) or any(not np.isfinite(r) for r in hist_range):
+        if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
             hist_range = (0, 1)
         if self.p.log:
             bin_min = max([abs(hist_range[0]), data[data>0].min()])

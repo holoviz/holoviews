@@ -162,7 +162,7 @@ class QuadMeshPlot(ColorbarPlot):
             xc, yc = [], []
             for xs, ys, zval in zip(X, Y, zvals):
                 xs, ys = xs[:-1], ys[:-1]
-                if np.isfinite(zval) and all(np.isfinite(c) for c in xs) and all(np.isfinite(c) for c in ys):
+                if np.isfinite(zval) and all(np.isfinite(xs)) and all(np.isfinite(ys)):
                     XS.append(list(xs))
                     YS.append(list(ys))
                     mask.append(True)

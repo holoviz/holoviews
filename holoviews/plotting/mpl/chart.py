@@ -14,7 +14,7 @@ mpl_version = LooseVersion(mpl.__version__)
 import param
 
 from ...core import OrderedDict, Dimension, Store
-from ...core.util import match_spec, unique_iterator, basestring, max_range
+from ...core.util import match_spec, unique_iterator, basestring, max_range, isfinite
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
 from ..plot import PlotSelector
@@ -316,8 +316,8 @@ class HistogramPlot(ChartPlot):
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         ylow, yhigh = element.get_dimension(1).range
-        y0 = np.nanmin([0, y0]) if ylow is None or not np.isfinite(ylow) else ylow
-        y1 = np.nanmax([0, y1]) if yhigh is None or not np.isfinite(yhigh) else yhigh
+        y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
+        y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
         return (x0, y0, x1, y1)
 
 
@@ -860,7 +860,7 @@ class BarPlot(LegendPlot):
 
                     # Update variables
                     bars[tuple(val_key)] = bar
-                    prev += val if np.isfinite(val) else 0
+                    prev += val if isfinite(val) else 0
                     labels.append(label)
         title = [element.kdims[indices[cg]].pprint_label
                  for cg in self.color_by if indices[cg] < ndims]
@@ -890,7 +890,7 @@ class BarPlot(LegendPlot):
                         height = float(vals[0]) if len(vals) else np.NaN
                         bar[0].set_height(height)
                         bar[0].set_y(prev)
-                        prev += height if np.isfinite(height) else 0
+                        prev += height if isfinite(height) else 0
         return {'xticks': self.handles['xticks']}
 
 

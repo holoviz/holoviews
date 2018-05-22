@@ -11,7 +11,7 @@ from operator import itemgetter
 import numpy as np
 import param
 
-from ..core.util import (basestring, sanitize_identifier,
+from ..core.util import (basestring, sanitize_identifier, isfinite,
                          group_sanitizer, label_sanitizer, max_range,
                          find_range, dimension_sanitizer, OrderedDict,
                          bytes_to_unicode, unicode, dt64_to_dt, unique_array,
@@ -1081,7 +1081,7 @@ class Dimensioned(LabelledData):
         dimension = self.get_dimension(dimension)
         if dimension is None:
             return (None, None)
-        elif all(v is not None and np.isfinite(v) for v in dimension.range):
+        elif all(isfinite(v) for v in dimension.range):
             return dimension.range
         elif data_range:
             if dimension in self.kdims+self.vdims:

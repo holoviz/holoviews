@@ -10,7 +10,7 @@ except:
 
 from ...core import Dimension, Operation
 from ...core.options import Compositor, SkipRendering
-from ...core.util import basestring
+from ...core.util import basestring, isfinite
 from ...element import HexTiles
 from .element import ColorbarPlot, line_properties, fill_properties
 from .util import bokeh_version
@@ -53,7 +53,7 @@ class hex_binning(Operation):
         x, y = (element.dimension_values(i) for i in indexes)
         if not len(x):
             return element.clone([])
-        finite = np.isfinite(x) & np.isfinite(y)
+        finite = isfinite(x) & isfinite(y)
         x, y = x[finite], y[finite]
         q, r = cartesian_to_axial(x, y, size, orientation+'top', scale)
         coords = q, r

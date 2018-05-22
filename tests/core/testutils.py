@@ -17,7 +17,7 @@ except:
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges
+    date_range, dt_to_int, compute_edges, isfinite
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -615,6 +615,37 @@ class TestDatetimeUtils(unittest.TestCase):
         drange = date_range(start, end, 10)
         self.assertEqual(drange[0], start+np.timedelta64(50, 'ms'))
         self.assertEqual(drange[-1], end-np.timedelta64(50, 'ms'))
+
+
+class TestNumericUtilities(ComparisonTestCase):
+
+    def test_isfinite_none(self):
+        self.assertFalse(isfinite(None))
+
+    def test_isfinite_nan(self):
+        self.assertFalse(isfinite(float('NaN')))
+
+    def test_isfinite_inf(self):
+        self.assertFalse(isfinite(float('inf')))
+
+    def test_isfinite_float(self):
+        self.assertTrue(isfinite(1.2))
+
+    def test_isfinite_float_array(self):
+        array = np.array([1.2, 3.0, np.NaN])
+        self.assertEqual(isfinite(array), np.array([True, True, False]))
+        
+    def test_isfinite_datetime(self):
+        dt = datetime.datetime(2017, 1, 1)
+        self.assertTrue(isfinite(dt))
+
+    def test_isfinite_datetime64(self):
+        dt64 = np.datetime64(datetime.datetime(2017, 1, 1))
+        self.assertTrue(isfinite(dt64))
+
+    def test_isfinite_datetime64_array(self):
+        dt64 = np.array([np.datetime64(datetime.datetime(2017, 1, i)) for i in range(1, 4)])
+        self.assertEqual(isfinite(dt64), np.array([True, True, True]))
 
 
 class TestComputeEdges(ComparisonTestCase):

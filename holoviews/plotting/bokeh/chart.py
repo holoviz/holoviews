@@ -7,7 +7,7 @@ from bokeh.models.tools import BoxSelectTool
 from bokeh.transform import jitter
 
 from ...core import Dataset, OrderedDict
-from ...core.util import max_range, basestring, dimension_sanitizer
+from ...core.util import max_range, basestring, dimension_sanitizer, isfinite
 from ...element import Bars
 from ...operation import interpolate_curve
 from ..util import compute_sizes, get_min_distance, dim_axis_label
@@ -344,8 +344,8 @@ class HistogramPlot(ElementPlot):
     def get_extents(self, element, ranges):
         x0, y0, x1, y1 = super(HistogramPlot, self).get_extents(element, ranges)
         ylow, yhigh = element.get_dimension(1).range
-        y0 = np.nanmin([0, y0]) if ylow is None or not np.isfinite(ylow) else ylow
-        y1 = np.nanmax([0, y1]) if yhigh is None or not np.isfinite(yhigh) else yhigh
+        y0 = ylow if isfinite(ylow) else np.nanmin([0, y0])
+        y1 = yhigh if isfinite(yhigh) else np.nanmax([0, y1])
         return (x0, y0, x1, y1)
 
 

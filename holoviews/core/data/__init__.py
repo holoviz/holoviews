@@ -249,7 +249,7 @@ class Dataset(Element):
         dim = self.get_dimension(dim)
         if dim is None:
             return (None, None)
-        elif all(v is not None and np.isfinite(v) for v in dim.range):
+        elif all(util.isfinite(v) for v in dim.range):
             return dim.range
         elif dim in self.dimensions() and data_range and len(self):
             lower, upper = self.interface.range(self, dim)
