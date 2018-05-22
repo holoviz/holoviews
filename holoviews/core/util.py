@@ -46,7 +46,7 @@ try:
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
     else:
         from pandas.types.dtypes import DatetimeTZDtypeType
-    datetime_types = datetime_types + (pd.Timestamp, DatetimeTZDtypeType)
+    datetime_types = datetime_types + (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
     timedelta_types = timedelta_types + (pd.Timedelta,)
 except ImportError:
     pd = None
@@ -703,7 +703,7 @@ def isfinite(val):
         if val.dtype.kind in 'USMO':
             return np.ones_like(val, dtype=bool)
         return np.isfinite(val)
-    elif isinstance(val, datetime_types+(basestring,)):
+    elif isinstance(val, datetime_types+timedelta_types+(basestring,)):
         return True
     return np.isfinite(val)
 

@@ -523,9 +523,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
             updates = {}
-            if low is not None and util.isfinite(low):
+            if util.isfinite(low):
                 updates['start'] = (axis_range.start, low)
-            if high is not None and util.isfinite(high):
+            if util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
             for k, (old, new) in updates.items():
                 axis_range.update(**{k:new})
