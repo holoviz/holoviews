@@ -18,7 +18,7 @@ from ..core.layout import Empty, NdLayout, Layout
 from ..core.options import Store, Compositor, SkipRendering
 from ..core.overlay import NdOverlay
 from ..core.spaces import HoloMap, DynamicMap
-from ..core.util import stream_parameters
+from ..core.util import stream_parameters, isfinite
 from ..element import Table
 from .util import (get_dynamic_mode, initialize_unbounded, dim_axis_label,
                    attach_streams, traverse_setter, get_nested_streams,
@@ -799,8 +799,7 @@ class GenericElementPlot(DimensionedPlot):
         else:
             max_extent = []
             for l1, l2 in zip(range_extents, extents):
-                if (isinstance(l2, util.datetime_types)
-                    or (l2 is not None and np.isfinite(l2))):
+                if isfinite(l2):
                     max_extent.append(l2)
                 else:
                     max_extent.append(l1)

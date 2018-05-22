@@ -692,6 +692,22 @@ def isnumeric(val):
         return False
 
 
+def isfinite(val):
+    """
+    Helper function to determine if scalar or array value is finite extending
+    np.isfinite with support for None, string, datetime types.
+    """
+    if val is None:
+        return False
+    elif isinstance(val, np.ndarray):
+        if val.dtype.kind in 'USMO':
+            return np.ones_like(val, dtype=bool)
+        return np.isfinite(val)
+    elif isinstance(val, datetime_types+(basestring,)):
+        return True
+    return np.isfinite(val)
+
+
 def find_minmax(lims, olims):
     """
     Takes (a1, a2) and (b1, b2) as input and returns
@@ -756,8 +772,8 @@ def dimension_range(lower, upper, dimension):
     """
     lower, upper = max_range([(lower, upper), dimension.soft_range])
     dmin, dmax = dimension.range
-    lower = lower if dmin is None or not np.isfinite(dmin) else dmin
-    upper = upper if dmax is None or not np.isfinite(dmax) else dmax
+    lower = dmin if isfinite(dmin) else lower
+    upper = dmax if isfinite(dmax) else upper
     return lower, upper
 
 

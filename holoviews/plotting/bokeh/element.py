@@ -523,11 +523,9 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
             updates = {}
-            if low is not None and (isinstance(low, util.datetime_types)
-                                    or np.isfinite(low)):
+            if low is not None and util.isfinite(low):
                 updates['start'] = (axis_range.start, low)
-            if high is not None and (isinstance(high, util.datetime_types)
-                                     or np.isfinite(high)):
+            if high is not None and util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
             for k, (old, new) in updates.items():
                 axis_range.update(**{k:new})
@@ -1126,9 +1124,9 @@ class ColorbarPlot(ElementPlot):
             if isinstance(low, (bool, np.bool_)): low = int(low)
             if isinstance(high, (bool, np.bool_)): high = int(high)
             opts = {}
-            if np.isfinite(low):
+            if util.isfinite(low):
                 opts['low'] = low
-            if np.isfinite(high):
+            if util.isfinite(high):
                 opts['high'] = high
             color_opts = [('NaN', 'nan_color'), ('max', 'high_color'), ('min', 'low_color')]
             opts.update({opt: colors[name] for name, opt in color_opts if name in colors})

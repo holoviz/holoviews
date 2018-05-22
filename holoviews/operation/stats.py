@@ -3,7 +3,7 @@ import numpy as np
 
 from ..core import Dimension, Dataset, NdOverlay
 from ..core.operation import Operation
-from ..core.util import basestring, cartesian_product
+from ..core.util import basestring, cartesian_product, isfinite
 from ..element import (Curve, Area, Image, Distribution, Bivariate,
                        Contours, Polygons)
 
@@ -13,9 +13,9 @@ from .element import contours
 def _kde_support(bin_range, bw, gridsize, cut, clip):
     """Establish support for a kernel density estimate."""
     kmin, kmax = bin_range[0] - bw * cut, bin_range[1] + bw * cut
-    if clip[0] is not None and np.isfinite(clip[0]):
+    if isfinite(clip[0]):
         kmin = max(kmin, clip[0])
-    if clip[1] is not None and np.isfinite(clip[1]):
+    if isfinite(clip[1]):
         kmax = min(kmax, clip[1])
     return np.linspace(kmin, kmax, gridsize)
 
@@ -95,7 +95,7 @@ class univariate_kde(Operation):
 
         data = element.dimension_values(selected_dim)
         bin_range = self.p.bin_range or element.range(selected_dim)
-        if bin_range == (0, 0) or any(not np.isfinite(r) for r in bin_range):
+        if bin_range == (0, 0) or any(not isfinite(r) for r in bin_range):
             bin_range = (0, 1)
         elif bin_range[0] == bin_range[1]:
             bin_range = (bin_range[0]-0.5, bin_range[1]+0.5)
@@ -186,16 +186,16 @@ class bivariate_kde(Operation):
         data = element.array([0, 1]).T
         xmin, xmax = self.p.x_range or element.range(0)
         ymin, ymax = self.p.y_range or element.range(1)
-        if any(not np.isfinite(v) for v in (xmin, xmax)):
+        if any(not isfinite(v) for v in (xmin, xmax)):
             xmin, xmax = -0.5, 0.5
         elif xmin == xmax:
             xmin, xmax = xmin-0.5, xmax+0.5
-        if any(not np.isfinite(v) for v in (ymin, ymax)):
+        if any(not isfinite(v) for v in (ymin, ymax)):
             ymin, ymax = -0.5, 0.5
         elif ymin == ymax:
             ymin, ymax = ymin-0.5, ymax+0.5
 
-        data = data[:, np.isfinite(data).min(axis=0)] if data.shape[1] > 1 else np.empty((2, 0))
+        data = data[:, isfinite(data).min(axis=0)] if data.shape[1] > 1 else np.empty((2, 0))
         if data.shape[1] > 1:
             kde = stats.gaussian_kde(data)
             if self.p.bandwidth:
