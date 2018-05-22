@@ -157,7 +157,17 @@ class GraphTests(ComparisonTestCase):
         graph = Graph.from_networkx(FG, nx.circular_layout)
         self.assertEqual(graph.dimension_values('weight'), np.array([0.125, 0.75, 1.2, 0.375]))
 
-
+    @attr(optional=1)
+    def test_from_networkx_only_nodes(self):
+        try:
+            import networkx as nx
+        except:
+            raise SkipTest('Test requires networkx to be installed')
+        G = nx.Graph()
+        G.add_nodes_from([1, 2, 3])
+        graph = Graph.from_networkx(G, nx.circular_layout)
+        self.assertEqual(graph.nodes.dimension_values(2), np.array([1, 2, 3]))
+        
 class ChordTests(ComparisonTestCase):
 
     def setUp(self):
