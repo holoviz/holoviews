@@ -2,6 +2,7 @@
 Unit tests of Graph Element.
 """
 from unittest import SkipTest
+from nose.plugins.attrib import attr
 
 import numpy as np
 from holoviews.core.data import Dataset
@@ -128,6 +129,33 @@ class GraphTests(ComparisonTestCase):
         self.assertEqual(redimmed.nodes, graph.nodes.redim(x='x2', y='y2'))
         self.assertEqual(redimmed.edgepaths, graph.edgepaths.redim(x='x2', y='y2'))
 
+    @attr(optional=1)
+    def test_from_networkx_with_node_attrs(self):
+        try:
+            import networkx as nx
+        except:
+            raise SkipTest('Test requires networkx to be installed')
+        G = nx.karate_club_graph()
+        graph = Graph.from_networkx(G, nx.circular_layout)
+        clubs = np.array([
+            'Mr. Hi', 'Mr. Hi', 'Mr. Hi', 'Mr. Hi', 'Mr. Hi', 'Mr. Hi',
+            'Mr. Hi', 'Mr. Hi', 'Mr. Hi', 'Officer', 'Mr. Hi', 'Mr. Hi',
+            'Mr. Hi', 'Mr. Hi', 'Officer', 'Officer', 'Mr. Hi', 'Mr. Hi',
+            'Officer', 'Mr. Hi', 'Officer', 'Mr. Hi', 'Officer', 'Officer',
+            'Officer', 'Officer', 'Officer', 'Officer', 'Officer', 'Officer',
+            'Officer', 'Officer', 'Officer', 'Officer'])
+        self.assertEqual(graph.nodes.dimension_values('club'), clubs)
+
+    @attr(optional=1)
+    def test_from_networkx_with_edge_attrs(self):
+        try:
+            import networkx as nx
+        except:
+            raise SkipTest('Test requires networkx to be installed')
+        FG = nx.Graph()
+        FG.add_weighted_edges_from([(1,2,0.125), (1,3,0.75), (2,4,1.2), (3,4,0.375)])
+        graph = Graph.from_networkx(FG, nx.circular_layout)
+        self.assertEqual(graph.dimension_values('weight'), np.array([0.125, 0.75, 1.2, 0.375]))
 
 
 class ChordTests(ComparisonTestCase):
