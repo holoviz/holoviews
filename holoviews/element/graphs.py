@@ -385,10 +385,17 @@ class Graph(Dataset, Element2D):
         """
         Generate a HoloViews Graph from a networkx.Graph object and
         networkx layout function. Any keyword arguments will be passed
-        to the layout function.
+        to the layout function. By default it will extract all node
+        and edge attributes from the networkx.Graph but explicit node
+        information may also be supplied.
         """
         positions = layout_function(G, **kwargs)
-        edges = G.edges()
+        edges = []
+        for start, end in G.edges():
+            attrs = sorted(G.adj[start][end].items())
+            edges.append((start, end)+tuple(v for k, v in attrs))
+        edge_vdims = [k for k, v in attrs] if edges else []
+
         if nodes:
             idx_dim = nodes.kdims[-1].name
             xs, ys = zip(*[v for k, v in sorted(positions.items())])
@@ -398,8 +405,13 @@ class Graph(Dataset, Element2D):
             nodes = nodes.add_dimension('x', 0, xs)
             nodes = nodes.add_dimension('y', 1, ys).clone(new_type=cls.node_type)
         else:
-            nodes = cls.node_type([tuple(pos)+(idx,) for idx, pos in sorted(positions.items())])
-        return cls((edges, nodes))
+            nodes = []
+            for idx, pos in sorted(positions.items()):
+                attrs = sorted(G.nodes[idx].items())
+                nodes.append(tuple(pos)+(idx,)+tuple(v for k, v in attrs))
+            vdims = [k for k, v in attrs] if nodes else []
+            nodes = cls.node_type(nodes, vdims=vdims)
+        return cls((edges, nodes), vdims=edge_vdims)
 
 
 
