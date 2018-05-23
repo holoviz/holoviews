@@ -204,7 +204,7 @@ class GridInterface(DictInterface):
         if edges and not isedges:
             data = cls._infer_interval_breaks(data)
         elif not edges and isedges:
-            data = np.convolve(data, [0.5, 0.5], 'valid')
+            data = data[:-1] + np.diff(data)/2.
         return data
 
 
