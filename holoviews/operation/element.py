@@ -13,7 +13,7 @@ from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
 from ..core.data import ArrayInterface, DictInterface
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
-                         basestring, datetime_types, isfinite)
+                         basestring, datetime_types, isfinite, dt_to_int)
 from ..element.chart import Histogram, Scatter
 from ..element.raster import Raster, Image, RGB, QuadMesh
 from ..element.path import Contours, Polygons
@@ -553,31 +553,42 @@ class histogram(Operation):
         # Avoids range issues including zero bin range and empty bins
         if hist_range == (0, 0) or any(not isfinite(r) for r in hist_range):
             hist_range = (0, 1)
+
+        datetimes = False
+        steps = self.p.num_bins + 1
+        start, end = hist_range
+        if data.dtype.kind == 'M' or (data.dtype.kind == 'O' and isinstance(data[0], datetime_types)):
+            start, end = dt_to_int(start, 'ns'), dt_to_int(end, 'ns')
+            datetimes = True
+            data = data.astype('datetime64[ns]').astype('int64') * 1000.
+            hist_range = start, end
+
         if self.p.log:
-            bin_min = max([abs(hist_range[0]), data[data>0].min()])
-            edges = np.logspace(np.log10(bin_min), np.log10(hist_range[1]),
-                                self.p.num_bins+1)
+            bin_min = max([abs(start), data[data>0].min()])
+            edges = np.logspace(np.log10(bin_min), np.log10(end), steps)
         else:
-            edges = np.linspace(hist_range[0], hist_range[1], self.p.num_bins + 1)
+            edges = np.linspace(start, end, steps)
         normed = False if self.p.mean_weighted and self.p.weight_dimension else self.p.normed
 
         if len(data):
             if normed:
                 # This covers True, 'height', 'integral'
-                hist, edges = np.histogram(data, density=True, range=hist_range,
+                hist, edges = np.histogram(data, density=True, range=(start, end),
                                            weights=weights, bins=edges)
                 if normed=='height':
                     hist /= hist.max()
             else:
-                hist, edges = np.histogram(data, normed=normed, range=hist_range,
+                hist, edges = np.histogram(data, normed=normed, range=(start, end),
                                            weights=weights, bins=edges)
                 if self.p.weight_dimension and self.p.mean_weighted:
-                    hist_mean, _ = np.histogram(data, density=False, range=hist_range,
+                    hist_mean, _ = np.histogram(data, density=False, range=(start, end),
                                                 bins=self.p.num_bins)
                     hist /= hist_mean
         else:
             hist = np.zeros(self.p.num_bins)
         hist[np.isnan(hist)] = 0
+        if datetimes:
+            edges = (edges/10e5).astype('datetime64[us]')
 
         params = {}
         if self.p.weight_dimension:
