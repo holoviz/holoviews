@@ -8,7 +8,7 @@ from holoviews.core import Store, DynamicMap, GridSpace
 from holoviews.element import Curve, Scatter3D, Image
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import PointerX
-from holoviews.plotting import comms
+import pyviz_comms as comms
 
 try:
     import holoviews.plotting.plotly # noqa (Activate backend)

@@ -9,7 +9,7 @@ from holoviews.element import Points, Polygons, Box, Curve, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
                                PointerXY, PointerX, PlotReset)
-from holoviews.plotting import comms
+import pyviz_comms as comms
 
 try:
     from bokeh.models import PolyEditTool
