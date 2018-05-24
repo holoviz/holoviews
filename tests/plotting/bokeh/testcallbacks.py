@@ -143,6 +143,12 @@ class TestEditToolCallbacks(ComparisonTestCase):
         self.assertEqual(plot.handles['source'].js_property_callbacks,
                          {'change:data': [plot.callbacks[0].callbacks[0]]})
 
+    def test_point_draw_callback_with_vdims_initialization(self):
+        points = Points([(0, 1, 'A')], vdims=['A'])
+        stream = PointDraw(source=points)
+        bokeh_server_renderer.get_plot(points)
+        self.assertEqual(stream.element.dimension_values('A'), np.array(['A']))
+        
     def test_point_draw_callback_with_vdims(self):
         points = Points([(0, 1, 'A')], vdims=['A'])
         point_draw = PointDraw(source=points)

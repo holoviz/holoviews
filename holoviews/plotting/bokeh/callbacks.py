@@ -4,6 +4,7 @@ import param
 from bokeh.models import (CustomJS, FactorRange, DatetimeAxis, ColumnDataSource, Selection)
 
 from ...core import OrderedDict
+from ...core.util import dimension_sanitizer
 from ...streams import (Stream, PointerXY, RangeXY, Selection1D, RangeX,
                         RangeY, PointerX, PointerY, BoundsX, BoundsY,
                         Tap, SingleTap, DoubleTap, MouseEnter, MouseLeave,
@@ -907,6 +908,15 @@ class PointDrawCallback(CDSCallback):
                                    empty_value=self.streams[0].empty_value,
                                    renderers=renderers)
         self.plot.state.tools.append(point_tool)
+        source = self.plot.handles['source']
+
+        # Add any value dimensions not already in the CDS data
+        # ensuring the element can be reconstituted in entirety
+        element = self.plot.current_frame
+        for d in element.vdims:
+            dim = dimension_sanitizer(d.name)
+            if dim not in source.data:
+                source.data[dim] = element.dimension_values(d)
         super(PointDrawCallback, self).initialize(plot_id)
 
 
