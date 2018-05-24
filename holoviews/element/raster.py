@@ -215,7 +215,7 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
     """
 
     bounds = param.ClassSelector(class_=BoundingRegion, default=BoundingBox(), doc="""
-       The bounding region in sheet coordinates containing the data.""")
+        The bounding region in sheet coordinates containing the data.""")
 
     datatype = param.List(default=['image', 'grid', 'xarray', 'cube', 'dataframe', 'dictionary'])
 
@@ -223,17 +223,17 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
                        bounds=(2, 2), constant=True, doc="""
-        The label of the x- and y-dimension of the Raster in form
+        The label of the x- and y-dimension of the Raster in the form
         of a string or dimension object.""")
 
     vdims = param.List(default=[Dimension('z')],
                        bounds=(1, 1), doc="""
         The dimension description of the data held in the matrix.""")
 
-    rtol = param.Number(default=None, doc="""The tolerance used to enforce
-            regular sampling for regular, gridded data where regular sampling is
-            expected. Expressed as the maximal allowable sampling difference
-            between sample locations.""")
+    rtol = param.Number(default=None, doc="""
+        The tolerance used to enforce regular sampling for regular, gridded
+        data where regular sampling is expected. Expressed as the maximal 
+        allowable sampling difference between sample locations.""")
 
     def __init__(self, data, kdims=None, vdims=None, bounds=None, extents=None,
                  xdensity=None, ydensity=None, rtol=None, **params):

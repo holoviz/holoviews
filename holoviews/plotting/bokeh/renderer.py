@@ -93,8 +93,8 @@ class BokehRenderer(Renderer):
                     'holomap': {'default': ['widgets', 'scrubber', 'auto', None],
                                 'server': ['server', 'auto', None]}}
 
-    webgl = param.Boolean(default=False, doc="""Whether to render plots with WebGL
-        if bokeh version >=0.10""")
+    webgl = param.Boolean(default=False, doc="""
+        Whether to render plots with WebGL if available""")
 
     widgets = {'scrubber': BokehScrubberWidget,
                'widgets': BokehSelectionWidget,

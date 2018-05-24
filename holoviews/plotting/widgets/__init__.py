@@ -70,12 +70,12 @@ class NdWidget(param.Parameterized):
     # JSON export options #
     #######################
 
-    export_json = param.Boolean(default=False, doc="""Whether to export
-         plots as json files, which can be dynamically loaded through
-         a callback from the slider.""")
+    export_json = param.Boolean(default=False, doc="""
+         Whether to export plots as JSON files, which can be
+         dynamically loaded through a callback from the slider.""")
 
     json_save_path = param.String(default='./json_figures', doc="""
-         If export_json is enabled the widget will save the json
+         If export_json is enabled the widget will save the JSON
          data to this path. If None data will be accessible via the
          json_data attribute.""")
 
@@ -84,7 +84,7 @@ class NdWidget(param.Parameterized):
          from this path, if None defaults to json_save_path. For loading
          the data from within the notebook the path must be relative,
          when exporting the notebook the path can be set to another
-         location like a webserver where the json files can be uploaded to.""")
+         location like a webserver where the JSON files can be uploaded to.""")
 
     ##############################
     # Javascript include options #

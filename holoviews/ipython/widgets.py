@@ -26,14 +26,14 @@ class ProgressBar(ProgressIndicator):
 
     display = param.ObjectSelector(default='stdout',
                   objects=['stdout', 'disabled', 'broadcast'], doc="""
-       Parameter to control display of the progress bar. By default,
-       progress is shown on stdout but this may be disabled e.g. for
-       jobs that log standard output to file.
-
-       If the output mode is set to 'broadcast', a socket is opened on
-       a stated port to broadcast the completion percentage. The
-       RemoteProgress class may then be used to view the progress from
-       a different process.""")
+        Parameter to control display of the progress bar. By default,
+        progress is shown on stdout but this may be disabled e.g. for
+        jobs that log standard output to file.
+ 
+        If the output mode is set to 'broadcast', a socket is opened on
+        a stated port to broadcast the completion percentage. The
+        RemoteProgress class may then be used to view the progress from
+        a different process.""")
 
     width = param.Integer(default=70, doc="""
         The width of the progress bar as the number of characters""")
@@ -131,10 +131,9 @@ class RemoteProgress(ProgressBar):
     """
 
     hostname=param.String(default='localhost', doc="""
-      Hostname where progress is being broadcast.""")
+        Hostname where progress is being broadcast.""")
 
-    port = param.Integer(default=8080,
-                         doc="""Target port on hostname.""")
+    port = param.Integer(default=8080, doc="Target port on hostname.")
 
     def __init__(self, port, **params):
         super(RemoteProgress, self).__init__(port=port, **params)

@@ -82,8 +82,9 @@ class notebook_extension(extension):
 
     logo = param.Boolean(default=True, doc="Toggles display of HoloViews logo")
 
-    inline = param.Boolean(default=True, doc="""Whether to inline JS and CSS resources,
-        if disabled resources are loaded from CDN if one is available.""")
+    inline = param.Boolean(default=True, doc="""
+        Whether to inline JS and CSS resources. 
+        If disabled, resources are loaded from CDN if one is available.""")
 
     width = param.Number(default=None, bounds=(0, 100), doc="""
         Width of the notebook as a percentage of the browser screen window width.""")
