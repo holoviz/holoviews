@@ -213,8 +213,8 @@ class PandasInterface(Interface):
             return grouped.aggregate(fn, **kwargs).reset_index()
         else:
             agg = reindexed.apply(fn, **kwargs)
-            return pd.DataFrame.from_items([(col, [v]) for col, v in
-                                            zip(agg.index, agg.values)])
+            data = dict(((col, [v]) for col, v in zip(agg.index, agg.values)))
+            return pd.DataFrame(data, columns=list(agg.index))
 
 
     @classmethod
