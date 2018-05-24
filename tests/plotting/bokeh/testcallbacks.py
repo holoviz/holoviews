@@ -5,7 +5,7 @@ import numpy as np
 
 from holoviews.core import DynamicMap
 from holoviews.core.options import Store
-from holoviews.element import Points, Polygons, Box, Curve
+from holoviews.element import Points, Polygons, Box, Curve, Table
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.streams import (PointDraw, PolyDraw, PolyEdit, BoxEdit,
                                PointerXY, PointerX, PlotReset)
@@ -262,3 +262,16 @@ class TestEditToolCallbacks(ComparisonTestCase):
         element = Polygons([[(1, 1), (2, 2), (3, 3)], [(3, 3), (4, 4), (5, 5)]])
         self.assertEqual(poly_edit.element, element)
         self.assertEqual(poly_edit2.element, element)
+
+    def test_point_draw_shared_datasource_callback(self):
+        points = Points([1, 2, 3])
+        table = Table(points.data, ['x', 'y'])
+        layout = (points + table).options(shared_datasource=True, clone=False)
+        PointDraw(source=points)
+        self.assertIs(points.data, table.data)
+        plot = bokeh_renderer.get_plot(layout)
+        point_plot = plot.subplots[(0, 0)].subplots['main']
+        table_plot = plot.subplots[(0, 1)].subplots['main']
+        self.assertIs(point_plot.handles['source'], table_plot.handles['source'])
+        self.assertIn(plot.id, point_plot.callbacks[0].callbacks[0].code)
+        self.assertNotIn('PLACEHOLDER_PLOT_ID', point_plot.callbacks[0].callbacks[0].code)

@@ -284,13 +284,14 @@ class CustomJSCallback(MessageCallback):
         return code
 
 
-    def get_customjs(self, references):
+    def get_customjs(self, references, plot_id=None):
         """
         Creates a CustomJS callback that will send the requested
         attributes back to python.
         """
         # Generate callback JS code to get all the requested data
-        plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
+        if plot_id is None:
+            plot_id = self.plot.id if self.plot.top_level else 'PLACEHOLDER_PLOT_ID'
         self_callback = self.js_callback.format(comm_id=self.comm.id,
                                                 timeout=self.timeout,
                                                 debounce=self.debounce,
@@ -498,7 +499,7 @@ class Callback(CustomJSCallback, ServerCallback):
     the data sent by the callback before it is passed to the streams.
     """
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         handles = self._init_plot_handles()
         for handle_name in self.models:
             if handle_name not in handles:
@@ -523,7 +524,7 @@ class Callback(CustomJSCallback, ServerCallback):
             if self.plot.renderer.mode == 'server':
                 self.set_server_callback(handle)
             else:
-                js_callback = self.get_customjs(handles)
+                js_callback = self.get_customjs(handles, plot_id=plot_id)
                 self.set_customjs_callback(js_callback, handle)
                 self.callbacks.append(js_callback)
             self._callbacks[cb_hash] = self
@@ -871,8 +872,8 @@ class CDSCallback(Callback):
     models = ['source']
     on_changes = ['data']
 
-    def initialize(self):
-        super(CDSCallback, self).initialize()
+    def initialize(self, plot_id=None):
+        super(CDSCallback, self).initialize(plot_id)
         for stream in self.streams:
             stream.update(data=self.plot_handles['source'].data)
 
@@ -895,7 +896,7 @@ class CDSCallback(Callback):
 
 class PointDrawCallback(CDSCallback):
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         try:
             from bokeh.models import PointDrawTool
         except Exception:
@@ -906,12 +907,12 @@ class PointDrawCallback(CDSCallback):
                                    empty_value=self.streams[0].empty_value,
                                    renderers=renderers)
         self.plot.state.tools.append(point_tool)
-        super(PointDrawCallback, self).initialize()
+        super(PointDrawCallback, self).initialize(plot_id)
 
 
 class PolyDrawCallback(CDSCallback):
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         try:
             from bokeh.models import PolyDrawTool
         except:
@@ -925,7 +926,7 @@ class PolyDrawCallback(CDSCallback):
         data = dict(plot.handles['source'].data)
         for stream in self.streams:
             stream.update(data=data)
-        super(CDSCallback, self).initialize()
+        super(CDSCallback, self).initialize(plot_id)
 
 
 class BoxEditCallback(CDSCallback):
@@ -977,7 +978,7 @@ class BoxEditCallback(CDSCallback):
 
 class PolyEditCallback(CDSCallback):
 
-    def initialize(self):
+    def initialize(self, plot_id=None):
         try:
             from bokeh.models import PolyEditTool
         except:
@@ -994,7 +995,7 @@ class PolyEditCallback(CDSCallback):
             vertex_tool = PolyEditTool(vertex_renderer=r1)
             plot.state.tools.append(vertex_tool)
         vertex_tool.renderers.append(plot.handles['glyph_renderer'])
-        super(PolyEditCallback, self).initialize()
+        super(PolyEditCallback, self).initialize(plot_id)
 
 
 
