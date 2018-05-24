@@ -37,17 +37,29 @@ except AttributeError:
     _getargspec = inspect.getargspec
     get_keywords = operator.attrgetter('keywords')
 
+numpy_version = LooseVersion(np.__version__)
+
 datetime_types = (np.datetime64, dt.datetime, dt.date)
 timedelta_types = (np.timedelta64, dt.timedelta,)
+arraylike_types = (np.ndarray,)
 
 try:
     import pandas as pd
-    if LooseVersion(pd.__version__) > '0.20.0':
+    pandas_version = LooseVersion(pd.__version__)
+    if pandas_version > '0.20.0':
         from pandas.core.dtypes.dtypes import DatetimeTZDtypeType
+        from pandas.core.dtypes.generic import ABCSeries, ABCIndexClass
     else:
         from pandas.types.dtypes import DatetimeTZDtypeType
-    datetime_types = datetime_types + (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
-    timedelta_types = timedelta_types + (pd.Timedelta,)
+        from pandas.types.dtypes.generic import ABCSeries, ABCIndexClass
+    pandas_datetime_types = (pd.Timestamp, DatetimeTZDtypeType, pd.Period)
+    pandas_timedelta_types = (pd.Timedelta,)
+    datetime_types = datetime_types + pandas_datetime_types
+    timedelta_types = timedelta_types + pandas_timedelta_types
+    arraylike_types = arraylike_types + (ABCSeries, ABCIndexClass)
+    if pandas_version > '0.23.0':
+        from pandas.core.dtypes.generic import ABCExtensionArray
+        arraylike_types = arraylike_types + (ABCExtensionArray,)
 except ImportError:
     pd = None
 
@@ -692,18 +704,65 @@ def isnumeric(val):
         return False
 
 
+def asarray(arraylike, strict=True):
+    """
+    Converts arraylike objects to NumPy ndarray types. Errors if
+    object is not arraylike and strict option is enabled.
+    """
+    if isinstance(arraylike, np.ndarray):
+        return arraylike
+    elif isinstance(arraylike, list):
+        return np.asarray(arraylike, dtype=object)
+    elif not isinstance(arraylike, np.ndarray) and isinstance(arraylike, arraylike_types):
+        return arraylike.values
+    elif hasattr(arraylike, '__array__'):
+        return np.asarray(arraylike)
+    elif strict:
+        raise ValueError('Could not convert %s type to array' % type(arraylike))
+    return arraylike
+
+
+nat_as_integer = np.datetime64('NAT').view('i8')
+
+def isnat(val):
+    """
+    Checks if the value is a NaT. Should only be called on datetimelike objects.
+    """
+    if (isinstance(val, (np.datetime64, np.timedelta64)) or
+        (isinstance(val, np.ndarray) and val.dtype.kind == 'M')):
+        if numpy_version >= '1.13':
+            return np.isnat(val)
+        else:
+            return val.view('i8') == nat_as_integer
+    elif pd and val is pd.NaT:
+        return True
+    elif pd and isinstance(val, pandas_datetime_types+pandas_timedelta_types):
+        return pd.isna(val)
+    else:
+        return False
+
+
 def isfinite(val):
     """
     Helper function to determine if scalar or array value is finite extending
     np.isfinite with support for None, string, datetime types.
     """
+    if not np.isscalar(val):
+        val = asarray(val, strict=False)
+
     if val is None:
         return False
     elif isinstance(val, np.ndarray):
-        if val.dtype.kind in 'USMO':
+        if val.dtype.kind == 'M':
+            return ~isnat(val)
+        elif val.dtype.kind == 'O':
+            return np.array([isfinite(v) for v in val], dtype=bool)
+        elif val.dtype.kind in 'US':
             return np.ones_like(val, dtype=bool)
         return np.isfinite(val)
-    elif isinstance(val, datetime_types+timedelta_types+(basestring,)):
+    elif isinstance(val, datetime_types+timedelta_types):
+        return not isnat(val)
+    elif isinstance(val, basestring):
         return True
     return np.isfinite(val)
 
