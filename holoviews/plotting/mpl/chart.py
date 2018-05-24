@@ -370,7 +370,7 @@ class HistogramPlot(ChartPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(element)
+        edges, hvals, widths, lims, datetime = self._process_hist(element)
 
         ticks = self._compute_ticks(element, edges, widths, lims)
         ax_settings = self._process_axsettings(element, lims, ticks)
