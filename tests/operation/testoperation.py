@@ -1,9 +1,12 @@
+import datetime as dt
+
 import numpy as np
 from nose.plugins.attrib import attr
 
 from holoviews import (HoloMap, NdOverlay, NdLayout, GridSpace, Image,
                        Contours, Polygons, Points, Histogram, Curve, Area,
-                       QuadMesh)
+                       QuadMesh, Dataset)
+from holoviews.core.util import pd
 from holoviews.element.comparison import ComparisonTestCase
 from holoviews.operation.element import (operation, transform, threshold,
                                          gradient, contours, histogram,
@@ -136,6 +139,40 @@ class OperationTests(ComparisonTestCase):
         #  default Element label, change back before comparing.
         op_hist = op_hist.redim(x_frequency='Frequency')
         hist = Histogram(([3, 3, 4], [0, 3, 6, 9]))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_operation_datetime(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)])
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        hist_data = {'Date': np.array(['2017-01-01T00:00:00.000000', '2017-01-01T17:59:59.999999',
+                                       '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000',
+                                       '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
+                     'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
+                                                   3.85802469e-18])}
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    def test_histogram_operation_datetime64(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        hist_data = {'Date': np.array(['2017-01-01T00:00:00.000000', '2017-01-01T17:59:59.999999',
+                                       '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000',
+                                       '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
+                     'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
+                                                   3.85802469e-18])}
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
+        self.assertEqual(op_hist, hist)
+
+    @attr(optional=1) # Requires matplotlib
+    def test_histogram_operation_pd_period(self):
+        dates = pd.date_range('2017-01-01', '2017-01-04', freq='D').to_period('D')
+        op_hist = histogram(Dataset(dates, 'Date'), num_bins=4)
+        hist_data = {'Date': np.array(['2017-01-01T00:00:00.000000', '2017-01-01T17:59:59.999999',
+                                       '2017-01-02T12:00:00.000000', '2017-01-03T06:00:00.000000',
+                                       '2017-01-04T00:00:00.000000'], dtype='datetime64[us]'),
+                     'Date_frequency': np.array([  3.85802469e-18,   3.85802469e-18,   3.85802469e-18,
+                                                   3.85802469e-18])}
+        hist = Histogram(hist_data, kdims='Date', vdims=('Date_frequency', 'Date Frequency'))
         self.assertEqual(op_hist, hist)
 
     def test_points_histogram_weighted(self):
