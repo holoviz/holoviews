@@ -961,9 +961,16 @@ class DynamicMap(HoloMap):
         Disabling clone will modify the object inplace.
         """
         from ..util import Dynamic
-        dmap = Dynamic(self, operation=lambda obj, **dynkwargs: obj.options(options, backend,
-                                                                            clone, **kwargs),
+        obj = self if clone else self.clone()
+        dmap = Dynamic(obj, operation=lambda obj, **dynkwargs: obj.options(options, backend,
+                                                                           clone, **kwargs),
                        streams=self.streams, link_inputs=True)
+        if not clone:
+            with util.disable_constant(self):
+                self.callback = dmap.callback
+            self.callback.inputs[:] = [obj]
+            obj.callback.inputs[:] = []
+            dmap = self
         dmap.data = OrderedDict([(k, v.options(options, backend, **kwargs))
                                  for k, v in self.data.items()])
         return dmap
