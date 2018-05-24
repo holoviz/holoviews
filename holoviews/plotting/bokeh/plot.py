@@ -347,9 +347,10 @@ class BokehPlot(DimensionedPlot):
                     plots.append(plot)
                 shared_sources.append(new_source)
                 source_cols[id(new_source)] = [c for c in new_source.data]
+        plot_id = self.id if self.top_level else None
         for plot in plots:
             for callback in plot.callbacks:
-                callback.initialize()
+                callback.initialize(plot_id=plot_id)
         self.handles['shared_sources'] = shared_sources
         self.handles['source_cols'] = source_cols
 
