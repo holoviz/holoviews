@@ -11,14 +11,12 @@ class Surface(Image, Element3D):
     The data should be supplied as a dense NxM matrix.
     """
 
-    extents = param.Tuple(default=(None, None, None,
-                                   None, None, None),
-        doc="""Allows overriding the extents of the Element
-               in 3D space defined as (xmin, ymin, zmin,
-               xmax, ymax, zmax).""")
+    extents = param.Tuple(default=(None, None, None, None, None, None), doc="""
+        Allows overriding the extents of the Element in 3D space
+        defined as (xmin, ymin, zmin, xmax, ymax, zmax).""")
 
     kdims = param.List(default=[Dimension('x'), Dimension('y')],
-                                bounds=(2,2), doc="""
+                       bounds=(2,2), doc="""
         The Surface x and y dimensions of the space defined
         by the supplied extent.""")
 

@@ -868,12 +868,11 @@ class GenericOverlayPlot(GenericElementPlot):
     show_legend = param.Boolean(default=True, doc="""
         Whether to show legend for the plot.""")
 
-    style_grouping = param.Integer(default=2,
-                                   doc="""The length of the type.group.label
-        spec that will be used to group Elements into style groups, i.e.
-        a style_grouping value of 1 will group just by type, a value of 2
-        will group by type and group and a value of 3 will group by the
-        full specification.""")
+    style_grouping = param.Integer(default=2, doc="""
+        The length of the type.group.label spec that will be used to
+        group Elements into style groups.  A style_grouping value of
+        1 will group just by type, a value of 2 will group by type and
+        group, and a value of 3 will group by the full specification.""")
 
     _passed_handles = []
 
