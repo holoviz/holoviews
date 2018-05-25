@@ -11,12 +11,13 @@ from bokeh.layouts import gridplot
 from bokeh.models import (ColumnDataSource, Column, Row, Div)
 from bokeh.models.widgets import Panel, Tabs
 from bokeh.plotting.helpers import _known_tools as known_tools
+from bokeh.util.serialization import convert_datetime_array
 
 from ...core import (OrderedDict, Store, AdjointLayout, NdLayout, Layout,
                      Empty, GridSpace, HoloMap, Element, DynamicMap)
 from ...core.options import SkipRendering
 from ...core.util import (basestring, wrap_tuple, unique_iterator,
-                          get_method_owner, wrap_tuple_streams)
+                          get_method_owner, datetime_types, wrap_tuple_streams)
 from ...streams import Stream
 from ..links import Link
 from ..plot import (DimensionedPlot, GenericCompositePlot, GenericLayoutPlot,
@@ -25,7 +26,7 @@ from ..util import attach_streams, displayable, collate
 from .callbacks import LinkCallback
 from .util import (layout_padding, pad_plots, filter_toolboxes, make_axis,
                    update_shared_sources, empty_plot, decode_bytes,
-                   theme_attr_json, cds_column_replace)
+                   theme_attr_json, cds_column_replace, date_to_integer)
 
 TOOLS = {name: tool if isinstance(tool, basestring) else type(tool())
          for name, tool in known_tools.items()}
@@ -226,8 +227,24 @@ class BokehPlot(DimensionedPlot):
         """
         Initializes a data source to be passed into the bokeh glyph.
         """
-        data = {k: decode_bytes(vs) for k, vs in data.items()}
+        data = self._postprocess_data(data)
         return ColumnDataSource(data=data)
+
+
+    def _postprocess_data(self, data):
+        """
+        Applies necessary type transformation to the data before
+        it is set on a ColumnDataSource.
+        """
+        new_data = {}
+        for k, values in data.items():
+            values = decode_bytes(values) # Bytes need decoding to strings
+
+            # Certain datetime types need to be converted
+            if len(values) and isinstance(values[0], datetime_types):
+                values = np.array([date_to_integer(v) for v in values])
+            new_data[k] = values
+        return new_data
 
 
     def _update_datasource(self, source, data):
@@ -237,7 +254,7 @@ class BokehPlot(DimensionedPlot):
         if not self.document:
             return
 
-        data = {k: decode_bytes(vs) for k, vs in data.items()}
+        data = self._postprocess_data(data)
         empty = all(len(v) == 0 for v in data.values())
         if (self.streaming and self.streaming[0].data is self.current_frame.data
             and self._stream_data and not empty):

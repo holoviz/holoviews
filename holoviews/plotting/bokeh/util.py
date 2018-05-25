@@ -3,6 +3,7 @@ from __future__ import absolute_import, division, unicode_literals
 import re
 import time
 import sys
+import calendar
 import datetime as dt
 
 from collections import defaultdict
@@ -542,10 +543,10 @@ def date_to_integer(date):
     """
     if isinstance(date, np.datetime64):
         date = dt64_to_dt(date)
-    if pd and isinstance(date, pd.Timestamp):
-        dt_int = date.timestamp()*1000
-    elif isinstance(date, (dt.datetime, dt.date)):
-        dt_int = time.mktime(date.timetuple())*1000
+    elif pd and isinstance(date, pd.Timestamp):
+        date = date.to_pydatetime()
+    if hasattr(date, 'timetuple'):
+        dt_int = calendar.timegm(date.timetuple())*1000
     else:
         raise ValueError('Datetime type not recognized')
     return dt_int

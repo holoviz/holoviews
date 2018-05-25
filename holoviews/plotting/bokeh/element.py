@@ -40,7 +40,7 @@ from .styles import (
 from .util import (
     bokeh_version, decode_bytes, get_tab_title, glyph_order,
     py2js_tickformatter, recursive_model_update, theme_attr_json,
-    cds_column_replace, hold_policy, match_dim_specs
+    cds_column_replace, hold_policy, match_dim_specs, date_to_integer
 )
 
 
@@ -634,6 +634,8 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 if reset_supported:
                     updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
+                if isinstance(new, util.datetime_types):
+                    new = date_to_integer(new)
                 axis_range.update(**{k:new})
                 if streaming and not k.startswith('reset_'):
                     axis_range.trigger(k, old, new)

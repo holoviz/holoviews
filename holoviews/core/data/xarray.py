@@ -12,6 +12,17 @@ from ..element import Element
 from .grid import GridInterface
 from .interface import Interface, DataError, dask_array_module
 
+try:
+    import cftime
+    util.datetime_types += (
+        cftime._cftime.DatetimeGregorian,
+        cftime._cftime.Datetime360Day,
+        cftime._cftime.DatetimeJulian,
+        cftime._cftime.DatetimeNoLeap,
+        cftime._cftime.DatetimeProlepticGregorian)
+except:
+    pass
+
 
 class XArrayInterface(GridInterface):
 
