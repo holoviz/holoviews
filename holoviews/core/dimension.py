@@ -4,21 +4,28 @@ axis or map dimension. Also supplies the Dimensioned abstract
 baseclass for classes that accept Dimension values.
 """
 from __future__ import unicode_literals
+
 import re
 import datetime as dt
+
 from operator import itemgetter
+from collections import defaultdict, Counter
+from itertools import chain
+from functools import reduce
 
-import numpy as np
 import param
+import numpy as np
 
-from ..core import util
-from ..core.util import (basestring, sanitize_identifier, isfinite,
-                         group_sanitizer, label_sanitizer, max_range,
-                         find_range, dimension_sanitizer, OrderedDict,
-                         bytes_to_unicode, unicode, dt64_to_dt, unique_array,
-                         builtins, config, disable_constant)
 from .options import Store, StoreOptions
 from .pprint import PrettyPrinter
+from .tree import AttrTree
+from .util import (
+    basestring, sanitize_identifier, isfinite, group_sanitizer,
+    label_sanitizer, max_range, find_range, dimension_sanitizer,
+    OrderedDict, bytes_to_unicode, unicode, dt64_to_dt, unique_array,
+    builtins, config, dimension_range, disable_constant, get_path,
+    make_path_unique, int_to_roman
+)
 
 # Alias parameter support for pickle loading
 
@@ -1303,3 +1310,125 @@ class ViewableElement(Dimensioned):
     _auxiliary_component = False
 
     group = param.String(default='ViewableElement', constant=True)
+
+
+
+class DimensionedTree(AttrTree, Dimensioned):
+    """
+    A DimensionedTree is an AttrTree with Viewable objects as its leaf
+    nodes. It combines the tree like data structure of a tree while
+    extending it with the deep indexable properties of Dimensioned
+    and LabelledData objects.
+    """
+
+    group = param.String(default='DimensionedTree', constant=True)
+
+    _deep_indexable = True
+
+    def __init__(self, items=None, identifier=None, parent=None, **kwargs):
+        if items and all(isinstance(item, Dimensioned) for item in items):
+            items = self._process_items(items)
+        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
+        AttrTree.__init__(self, items, identifier, parent, **kwargs)
+        Dimensioned.__init__(self, self.data, **params)
+
+
+    @classmethod
+    def from_values(cls, vals):
+        """
+        Returns a DimensionedTree given a list (or tuple) of viewable
+        elements or just a single viewable element.
+        """
+        return cls(items=cls._process_items(vals))
+
+
+    @classmethod
+    def _process_items(cls, vals):
+        """
+        Processes a list of Labelled types unpacking any objects of
+        the same type (e.g. a DimensionedTree) and finding unique paths for
+        all the items in the list.
+        """
+        if type(vals) is cls:
+            return vals.data
+        elif not isinstance(vals, (list, tuple)):
+            vals = [vals]
+        items = []
+        counts = defaultdict(lambda: 1)
+        cls._unpack_paths(vals, items, counts)
+        items = cls._deduplicate_items(items)
+        return items
+
+
+    @classmethod
+    def _deduplicate_items(cls, items):
+        """
+        Iterates over the paths a second time and ensures that partial
+        paths are not overlapping.
+        """
+        counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
+        if sum(counter.values()) == len(counter):
+            return items
+
+        new_items = []
+        counts = defaultdict(lambda: 0)
+        for i, (path, item) in enumerate(items):
+            if counter[path] > 1:
+                path = path + (int_to_roman(counts[path]+1),)
+            elif counts[path]:
+                path = path[:-1] + (int_to_roman(counts[path]+1),)
+            new_items.append((path, item))
+            counts[path] += 1
+        return new_items
+
+
+    @classmethod
+    def _unpack_paths(cls, objs, items, counts):
+        """
+        Recursively unpacks lists and DimensionedTree-like objects, accumulating
+        into the supplied list of items.
+        """
+        if type(objs) is cls:
+            objs = objs.items()
+        for item in objs:
+            path, obj = item if isinstance(item, tuple) else (None, item)
+            if type(obj) is cls:
+                cls._unpack_paths(obj, items, counts)
+                continue
+            new = path is None or len(path) == 1
+            path = get_path(item) if new else path
+            new_path = make_path_unique(path, counts, new)
+            items.append((new_path, obj))
+
+
+    @property
+    def uniform(self):
+        from .traversal import uniform
+        return uniform(self)
+
+
+    def dimension_values(self, dimension, expanded=True, flat=True):
+        "Returns the values along the specified dimension."
+        dimension = self.get_dimension(dimension, strict=True).name
+        all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
+        if dimension in chain.from_iterable(all_dims):
+            values = [el.dimension_values(dimension) for el in self
+                      if dimension in el.dimensions(label=True)]
+            vals = np.concatenate(values)
+            return vals if expanded else unique_array(vals)
+        else:
+            return super(DimensionedTree, self).dimension_values(dimension,
+                                                                 expanded, flat)
+
+
+    def regroup(self, group):
+        """
+        Assign a new group string to all the elements and return a new
+        Layout.
+        """
+        new_items = [el.relabel(group=group) for el in self.data.values()]
+        return reduce(lambda x,y: x+y, new_items)
+
+
+    def __len__(self):
+        return len(self.data)

@@ -5,18 +5,11 @@ AdjointLayout allows one or two Views to be adjoined to a primary View
 to act as supplementary elements.
 """
 
-from functools import reduce
-from itertools import chain
-from collections import defaultdict, Counter
-
+import param
 import numpy as np
 
-import param
-
-from .dimension import Dimension, Dimensioned, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement, DimensionedTree
 from .ndmapping import OrderedDict, NdMapping, UniformNdMapping
-from .tree import AttrTree
-from .util import (unique_array, get_path, make_path_unique, int_to_roman)
 from . import traversal
 
 
@@ -351,17 +344,16 @@ class NdLayout(UniformNdMapping):
         return clone
 
 
-
 # To be removed after 1.3.0
 class Warning(param.Parameterized): pass
 collate_deprecation = Warning(name='Deprecation Warning')
 
-class Layout(AttrTree, Dimensioned):
+class Layout(DimensionedTree):
     """
-    A Layout is an AttrTree with ViewableElement objects as leaf
-    values. Unlike AttrTree, a Layout supports a rich display,
+    A Layout is an DimensionedTree with ViewableElement objects as leaf
+    values. Unlike DimensionedTree, a Layout supports a rich display,
     displaying leaf items in a grid style layout. In addition to the
-    usual AttrTree indexing, Layout supports indexing of items by
+    usual DimensionedTree indexing, Layout supports indexing of items by
     their row and column index in the layout.
 
     The maximum number of columns in such a layout may be controlled
@@ -374,84 +366,7 @@ class Layout(AttrTree, Dimensioned):
 
     def __init__(self, items=None, identifier=None, parent=None, **kwargs):
         self.__dict__['_max_cols'] = 4
-        if items and all(isinstance(item, Dimensioned) for item in items):
-            items = self._process_items(items)
-        params = {p: kwargs.pop(p) for p in list(self.params().keys())+['id', 'plot_id'] if p in kwargs}
-        AttrTree.__init__(self, items, identifier, parent, **kwargs)
-        Dimensioned.__init__(self, self.data, **params)
-
-
-    @classmethod
-    def from_values(cls, vals):
-        """
-        Returns a Layout given a list (or tuple) of viewable
-        elements or just a single viewable element.
-        """
-        return cls(items=cls._process_items(vals))
-
-
-    @classmethod
-    def _process_items(cls, vals):
-        """
-        Processes a list of Labelled types unpacking any objects of
-        the same type (e.g. a Layout) and finding unique paths for
-        all the items in the list.
-        """
-        if type(vals) is cls:
-            return vals.data
-        elif not isinstance(vals, (list, tuple)):
-            vals = [vals]
-        items = []
-        counts = defaultdict(lambda: 1)
-        cls._unpack_paths(vals, items, counts)
-        items = cls._deduplicate_items(items)
-        return items
-
-
-    @classmethod
-    def _deduplicate_items(cls, items):
-        """
-        Iterates over the paths a second time and ensures that partial
-        paths are not overlapping.
-        """
-        counter = Counter([path[:i] for path, _ in items for i in range(1, len(path)+1)])
-        if sum(counter.values()) == len(counter):
-            return items
-
-        new_items = []
-        counts = defaultdict(lambda: 0)
-        for i, (path, item) in enumerate(items):
-            if counter[path] > 1:
-                path = path + (int_to_roman(counts[path]+1),)
-            elif counts[path]:
-                path = path[:-1] + (int_to_roman(counts[path]+1),)
-            new_items.append((path, item))
-            counts[path] += 1
-        return new_items
-
-
-    @classmethod
-    def _unpack_paths(cls, objs, items, counts):
-        """
-        Recursively unpacks lists and Layout-like objects, accumulating
-        into the supplied list of items.
-        """
-        if type(objs) is cls:
-            objs = objs.items()
-        for item in objs:
-            path, obj = item if isinstance(item, tuple) else (None, item)
-            if type(obj) is cls:
-                cls._unpack_paths(obj, items, counts)
-                continue
-            new = path is None or len(path) == 1
-            path = get_path(item) if new else path
-            new_path = make_path_unique(path, counts, new)
-            items.append((new_path, obj))
-
-
-    @property
-    def uniform(self):
-        return traversal.uniform(self)
+        super(DimensionedTree, self).__init__(items, identifier, parent, **kwargs)
 
     @property
     def shape(self):
@@ -461,66 +376,6 @@ class Layout(AttrTree, Dimensioned):
         nrows = num // self._max_cols
         last_row_cols = num % self._max_cols
         return nrows+(1 if last_row_cols else 0), min(num, self._max_cols)
-
-
-    def relabel(self, label=None, group=None, depth=0):
-        # Standard relabel method except _max_cols and _display transferred
-        relabelled = super(Layout, self).relabel(label=label, group=group, depth=depth)
-        relabelled.__dict__['_max_cols'] = self.__dict__['_max_cols']
-        return relabelled
-
-    def clone(self, *args, **overrides):
-        """
-        Clone method for Layout matches Dimensioned.clone except the
-        display mode is also propagated.
-        """
-        clone = super(Layout, self).clone(*args, **overrides)
-        clone._max_cols = self._max_cols
-        clone.id = self.id
-        return clone
-
-
-    def dimension_values(self, dimension, expanded=True, flat=True):
-        "Returns the values along the specified dimension."
-        dimension = self.get_dimension(dimension, strict=True).name
-        all_dims = self.traverse(lambda x: [d.name for d in x.dimensions()])
-        if dimension in chain.from_iterable(all_dims):
-            values = [el.dimension_values(dimension) for el in self
-                      if dimension in el.dimensions(label=True)]
-            vals = np.concatenate(values)
-            return vals if expanded else unique_array(vals)
-        else:
-            return super(Layout, self).dimension_values(dimension,
-                                                        expanded, flat)
-
-
-    def cols(self, ncols):
-        self._max_cols = ncols
-        return self
-
-
-    def display(self, option):
-        "Sets the display policy of the Layout before returning self"
-        self.warning('Layout display option is deprecated and no longer needs to be used')
-        return self
-
-
-    def select(self, selection_specs=None, **selections):
-        return super(Layout, self).select(selection_specs, **selections)
-
-
-    def grid_items(self):
-        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
-                for idx, (path, item) in enumerate(self.items())}
-
-
-    def regroup(self, group):
-        """
-        Assign a new group string to all the elements and return a new
-        Layout.
-        """
-        new_items = [el.relabel(group=group) for el in self.data.values()]
-        return reduce(lambda x,y: x+y, new_items)
 
 
     def __getitem__(self, key):
@@ -542,8 +397,30 @@ class Layout(AttrTree, Dimensioned):
         return super(Layout, self).__getitem__(key)
 
 
-    def __len__(self):
-        return len(self.data)
+    def clone(self, *args, **overrides):
+        """
+        Clone method for Layout matches Dimensioned.clone except the
+        cols setting is also propagated.
+        """
+        clone = super(Layout, self).clone(*args, **overrides)
+        clone._max_cols = self._max_cols
+        return clone
+
+
+    def cols(self, ncols):
+        self._max_cols = ncols
+        return self
+
+
+    def display(self, option):
+        "Sets the display policy of the Layout before returning self"
+        self.warning('Layout display option is deprecated and no longer needs to be used')
+        return self
+
+
+    def grid_items(self):
+        return {tuple(np.unravel_index(idx, self.shape)): (path, item)
+                for idx, (path, item) in enumerate(self.items())}
 
 
     def __add__(self, other):
