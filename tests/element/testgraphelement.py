@@ -167,6 +167,19 @@ class GraphTests(ComparisonTestCase):
         G.add_nodes_from([1, 2, 3])
         graph = Graph.from_networkx(G, nx.circular_layout)
         self.assertEqual(graph.nodes.dimension_values(2), np.array([1, 2, 3]))
+
+    @attr(optional=1)
+    def test_from_networkx_custom_nodes(self):
+        try:
+            import networkx as nx
+        except:
+            raise SkipTest('Test requires networkx to be installed')
+        FG = nx.Graph()
+        FG.add_weighted_edges_from([(1,2,0.125), (1,3,0.75), (2,4,1.2), (3,4,0.375)])
+        nodes = Dataset([(1, 'A'), (2, 'B'), (3, 'A'), (4, 'B')], 'index', 'some_attribute')
+        graph = Graph.from_networkx(FG, nx.circular_layout, nodes=nodes)
+        self.assertEqual(graph.nodes.dimension_values('some_attribute'), np.array(['A', 'B', 'A', 'B']))
+
         
 class ChordTests(ComparisonTestCase):
 

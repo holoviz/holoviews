@@ -400,7 +400,7 @@ class Graph(Dataset, Element2D):
             idx_dim = nodes.kdims[-1].name
             xs, ys = zip(*[v for k, v in sorted(positions.items())])
             indices = list(nodes.dimension_values(idx_dim))
-            edges = [(src, tgt) for (src, tgt) in edges if src in indices and tgt in indices]
+            edges = [edge for edge in edges if edge[0] in indices and edge[1] in indices]
             nodes = nodes.select(**{idx_dim: [eid for e in edges for eid in e]}).sort()
             nodes = nodes.add_dimension('x', 0, xs)
             nodes = nodes.add_dimension('y', 1, ys).clone(new_type=cls.node_type)
