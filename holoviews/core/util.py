@@ -1638,7 +1638,7 @@ def validate_regular_sampling(values, rtol=10e-6):
     """
     diffs = np.diff(values)
     vals = np.unique(diffs)
-    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > diffs.min()*rtol)
+    return not (len(vals) > 1 and np.abs(vals.min()-vals.max()) > abs(diffs.min()*rtol))
 
 
 def compute_density(start, end, length, time_unit='us'):
