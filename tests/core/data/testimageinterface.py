@@ -118,7 +118,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         xs = date_range(start, end, 10)
-        bounds = (start, 0, end, 10)
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.xdensity, 1e-5)
         self.assertEqual(image.ydensity, 1)
@@ -127,7 +126,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
         ys = date_range(start, end, 10)
-        bounds = (0, start, 10, end)
         image = Image((self.xs, ys, self.array))
         self.assertEqual(image.xdensity, 0.5)
         self.assertEqual(image.ydensity, 1e-5)
@@ -176,7 +174,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
     def test_slice_datetime_yaxis(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        bounds = (-10, start, 10, end)
         ys = date_range(start, end, 10)
         image = Image((self.xs, ys, self.array))
         sliced = image[:, start+np.timedelta64(120, 'ms'): start+np.timedelta64(520, 'ms')]
@@ -213,7 +210,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
     def test_range_datetime_xdim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        bounds = (start, 0, end, 10)
         xs = date_range(start, end, 10)
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.range(0), (start, end))
@@ -224,7 +220,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
     def test_range_datetime_ydim(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        bounds = (-10, start, 10, end)
         ys = date_range(start, end, 10)
         image = Image((self.xs, ys, self.array))
         self.assertEqual(image.range(1), (start, end))
@@ -239,7 +234,6 @@ class Image_ImageInterfaceTests(InterfaceTests):
     def test_dimension_values_datetime_xcoords(self):
         start = np.datetime64(dt.datetime.today())
         end = start+np.timedelta64(1, 's')
-        bounds = (start, 0, end, 10)
         xs = date_range(start, end, 10)
         image = Image((xs, self.ys, self.array))
         self.assertEqual(image.dimension_values(0, expanded=False),

@@ -5,8 +5,6 @@ try:
 except:
     dd = None
 
-from holoviews.core.data import Dataset
-
 from .testpandasinterface import PandasInterfaceTests
 
 

@@ -4,6 +4,7 @@ from unittest import SkipTest
 import numpy as np
 
 try:
+    import iris
     from iris.tests.stock import lat_lon_cube
 except ImportError:
     raise SkipTest("Could not import iris, skipping IrisInterface tests.")

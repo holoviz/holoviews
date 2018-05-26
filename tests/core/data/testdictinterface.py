@@ -3,7 +3,6 @@ import numpy as np
 
 from holoviews.core.dimension import OrderedDict as cyODict
 from holoviews.core.data import Dataset
-from holoviews.element.comparison import ComparisonTestCase
 
 from .base import HeterogeneousColumnTests, ScalarColumnTests, InterfaceTests
 
