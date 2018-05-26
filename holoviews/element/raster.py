@@ -665,6 +665,8 @@ class HSV(RGB):
         """
         Conversion from HSV to RGB.
         """
+        coords = tuple(self.dimension_values(d, expanded=False)
+                       for d in self.kdims)
         data = [self.dimension_values(d, flat=False)
                 for d in self.vdims]
 
@@ -674,7 +676,7 @@ class HSV(RGB):
 
         params = util.get_param_values(self)
         del params['vdims']
-        return RGB(np.dstack(hsv)[::-1], bounds=self.bounds,
+        return RGB(coords+hsv, bounds=self.bounds,
                    xdensity=self.xdensity, ydensity=self.ydensity,
                    **params)
 
