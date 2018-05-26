@@ -56,7 +56,7 @@ class InterfaceTests(ComparisonTestCase):
     element = Dataset
 
     def setUp(self):
-        self.restore_datatype = Dataset.datatype
+        self.restore_datatype = self.element.datatype
         self.element.datatype = [self.datatype]
         self.init_column_data()
         self.init_grid_data()

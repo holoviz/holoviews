@@ -23,15 +23,9 @@ class IrisInterfaceTests(GridInterfaceTests):
     """
 
     datatype = 'cube'
+    data_type = iris.cube.Cube
 
-    def setUp(self):
-        import iris
-        self.restore_datatype = Dataset.datatype
-        Dataset.datatype = ['cube']
-        self.eltype = Dataset
-        self.data_instance_type = iris.cube.Cube
-        self.init_column_data()
-        self.init_grid_data()
+    def init_data(self):
         self.cube = lat_lon_cube()
         self.epsilon = 0.01
 
@@ -148,7 +142,7 @@ class IrisInterfaceTests(GridInterfaceTests):
 
     def test_select_slice(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1+self.epsilon)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1.01)).data.data,
                          np.array([[1,  2], [5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_set(self):
@@ -162,8 +156,8 @@ class IrisInterfaceTests(GridInterfaceTests):
 
     def test_select_multi_slice1(self):
         cube = Dataset(self.cube)
-        self.assertEqual(cube.select(longitude=(0, 1+self.epsilon),
-                                     latitude=(0, 1+self.epsilon)).data.data,
+        self.assertEqual(cube.select(longitude=(0, 1.01),
+                                     latitude=(0, 1.01)).data.data,
                          np.array([[5,  6], [9, 10]], dtype=np.int32))
 
     def test_select_multi_slice2(self):
