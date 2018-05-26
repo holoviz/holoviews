@@ -261,8 +261,8 @@ class HistogramPlot(ChartPlot):
 
         # Get plot ranges and values
         dims = hist.dimensions()[:2]
-        edges, hvals, widths, lims, datetime = self._process_hist(hist)
-        if datetime and not dims[0].value_format:
+        edges, hvals, widths, lims, isdatetime = self._process_hist(hist)
+        if isdatetime and not dims[0].value_format:
             dt_format = Dimension.type_formatters[np.datetime64]
             dims[0] = dims[0](value_format=DateFormatter(dt_format))
 
@@ -297,13 +297,13 @@ class HistogramPlot(ChartPlot):
         hist_vals = np.array(values)
         xlim = hist.range(0)
         ylim = hist.range(1)
-        datetime = False
+        isdatetime = False
         if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
             edges = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in edges])
             xlim = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in xlim])
-            datetime = True
+            isdatetime = True
         widths = np.diff(edges)
-        return edges[:-1], hist_vals, widths, xlim+ylim, datetime
+        return edges[:-1], hist_vals, widths, xlim+ylim, isdatetime
 
 
     def _compute_ticks(self, element, edges, widths, lims):
@@ -370,7 +370,7 @@ class HistogramPlot(ChartPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         # Process values, axes and style
-        edges, hvals, widths, lims, datetime = self._process_hist(element)
+        edges, hvals, widths, lims, _ = self._process_hist(element)
 
         ticks = self._compute_ticks(element, edges, widths, lims)
         ax_settings = self._process_axsettings(element, lims, ticks)
@@ -394,12 +394,12 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims, datetime = super(SideHistogramPlot, self)._process_hist(hist)
+        edges, hvals, widths, lims, isdatetime = super(SideHistogramPlot, self)._process_hist(hist)
         offset = self.offset * lims[3]
         hvals *= 1-self.offset
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
-        return edges, hvals, widths, lims, datetime
+        return edges, hvals, widths, lims, isdatetime
 
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
