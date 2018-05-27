@@ -384,8 +384,8 @@ def py2js_tickformatter(formatter, msg=''):
     arg_define = 'var %s = tick;' % args[0] if args else ''
     return_js = 'return formatter();\n'
     jsfunc = '\n'.join([arg_define, jscode, return_js])
-    match = re.search('(function \(.*\))', jsfunc )
-    return jsfunc[:match.start()] + 'function ()' + jsfunc[match.end():]
+    match = re.search('(formatter \= function \(.*\))', jsfunc )
+    return jsfunc[:match.start()] + 'formatter = function ()' + jsfunc[match.end():]
 
 
 def get_tab_title(key, frame, overlay):
