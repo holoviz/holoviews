@@ -25,8 +25,9 @@ try:
     datatypes = ['dataframe', 'dictionary', 'grid', 'ndelement', 'array']
     DFColumns = PandasInterface
 except ImportError:
-    pass
+    pd = None
 except Exception as e:
+    pd = None
     param.main.warning('Pandas interface failed to import with '
                        'following error: %s' % e)
 
@@ -132,7 +133,15 @@ class DataConversion(object):
             else:
                 selected = self._element
         else:
-            selected = self._element.reindex(groupby+kdims, vdims)
+            if pd and issubclass(self._element.interface, PandasInterface):
+                ds_dims = self._element.dimensions()
+                ds_kdims = [self._element.get_dimension(d) if d in ds_dims else d
+                            for d in groupby+kdims]
+                ds_vdims = [self._element.get_dimension(d) if d in ds_dims else d
+                            for d in vdims]
+                selected = self._element.clone(kdims=ds_kdims, vdims=ds_vdims)
+            else:
+                selected = self._element.reindex(groupby+kdims, vdims)
         params = {'kdims': [selected.get_dimension(kd, strict=True) for kd in kdims],
                   'vdims': [selected.get_dimension(vd, strict=True) for vd in vdims],
                   'label': selected.label}
