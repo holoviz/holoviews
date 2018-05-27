@@ -876,7 +876,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         kwargs = dict(sizing_mode=self.sizing_mode)
         if self.tabs:
             plots = filter_toolboxes([p for t, p in tab_plots])
-            panels = [Panel(child=child, title=title) for title, child in tab_plots]
+            panels = [Panel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels)
         else:
             plots = layout_padding(plots, self.renderer)
