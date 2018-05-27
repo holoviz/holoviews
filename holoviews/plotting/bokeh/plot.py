@@ -1,5 +1,6 @@
 import json
 from itertools import groupby
+from collections import defaultdict
 
 import numpy as np
 import param
@@ -698,10 +699,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
                 continue
             else:
                 layout_count += 1
-            subplot_data = self._create_subplots(view, positions,
-                                                 layout_dimensions, frame_ranges,
-                                                 num=0 if empty else layout_count)
-            subplots, adjoint_layout = subplot_data
+            num = 0 if empty else layout_count
+            subplots, adjoint_layout = self._create_subplots(
+                view, positions, layout_dimensions, frame_ranges, num=num
+            )
 
             # Generate the AdjointLayoutsPlot which will coordinate
             # plotting of AdjointLayouts in the larger grid
@@ -759,6 +760,7 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             plotopts.update(subplot_opts)
 
             if vtype is Empty:
+                adjoint_clone[pos] = element
                 subplots[pos] = None
                 continue
             elif plot_type is None:
@@ -787,75 +789,100 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
     def initialize_plot(self, plots=None, ranges=None):
         ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-        passed_plots = [] if plots is None else plots
-        plots = [[] for _ in range(self.rows)]
-        tab_titles = {}
-        insert_rows, insert_cols = [], []
-        offset = 0
-        for r, c in self.coords:
-            subplot = self.subplots.get((r, c), None)
-            if subplot is not None:
-                shared_plots = passed_plots if self.shared_axes else None
-                subplots = subplot.initialize_plot(ranges=ranges, plots=shared_plots)
 
-                # Computes plotting offsets depending on
-                # number of adjoined plots
-                offset = sum(r >= ir for ir in insert_rows)
-                if len(subplots) > 2:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    if r not in insert_rows:
-                        # Insert and pad marginal row if none exists
-                        plots.insert(r+offset, [None for _ in range(len(plots[r]))])
-                        # Pad previous rows
-                        for ir in range(r):
-                            plots[ir].insert(c+1, None)
-                        # Add to row offset
-                        insert_rows.append(r)
-                        offset += 1
-                    # Add top marginal
-                    plots[r+offset-1] += [subplots.pop(-1), None]
-                elif len(subplots) > 1:
-                    # Add pad column in this position
-                    insert_cols.append(c)
-                    # Pad previous rows
-                    for ir in range(r):
-                        plots[r].insert(c+1, None)
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += 2*[None]
-                else:
-                    # Pad top marginal if one exists
-                    if r in insert_rows:
-                        plots[r+offset-1] += [None] * (1+(c in insert_cols))
-                plots[r+offset] += subplots
-                if len(subplots) == 1 and c in insert_cols:
-                    plots[r+offset].append(None)
-                passed_plots.append(subplots[0])
+        # Compute total height and width
+        widths = []
+        for c in range(self.cols):
+            c_widths = []
+            for r in range(self.rows):
+                subplot = self.subplots.get((r, c), None)
+                nsubplots = 1 if subplot is None else len(subplot.layout)
+                c_widths.append(2 if nsubplots > 1 else 1)
+            widths.append(max(c_widths))
+
+        heights = []
+        for r in range(self.rows):
+            r_heights = []
+            for c in range(self.cols):
+                subplot = self.subplots.get((r, c), None)
+                nsubplots = 1 if subplot is None else len(subplot.layout)
+                r_heights.append(2 if nsubplots > 2 else 1)
+            heights.append(max(r_heights))
+
+        # Generate empty grid
+        passed_plots = [] if plots is None else plots
+        rows = sum(heights)
+        cols = sum(widths)
+        plots = [[None]*cols for _ in range(rows)]
+
+        r_offset = 0
+        col_offsets = defaultdict(int)
+        tab_plots = []
+
+        for r in range(self.rows):
+            # Compute row offset
+            row = [(k, sp) for k, sp in self.subplots.items() if k[0] == r]
+            row_padded = any(len(sp.layout) > 2 for k, sp in row)
+            if row_padded:
+                r_offset += 1
+
+            for c in range(self.cols):
+                subplot = self.subplots.get((r, c), None)
+
+                # Compute column offset
+                col = [(k, sp) for k, sp in self.subplots.items() if k[1] == c]
+                col_padded = any(len(sp.layout) > 1 for k, sp in col)
+                if col_padded:
+                    col_offsets[r] += 1
+                c_offset = col_offsets.get(r, 0)
+
+                if subplot is None:
+                    continue
+
+                shared_plots = list(passed_plots) if self.shared_axes else None
+                subplots = subplot.initialize_plot(ranges=ranges, plots=shared_plots)
+                nsubplots = len(subplots)
+
+                # If tabs enabled lay out AdjointLayout on grid
                 if self.tabs:
                     title = subplot.subplots['main']._format_title(self.keys[-1],
                                                                    dimensions=False)
                     if not title:
                         title = ' '.join(self.paths[r,c])
-                    tab_titles[r, c] = title
-            else:
-                plots[r+offset] += [empty_plot(0, 0)]
+                    if nsubplots == 1:
+                        grid = subplots[0]
+                    elif nsubplots == 2:
+                        grid = gridplot([subplots], merge_tools=self.merge_tools,
+                                        toolbar_location=self.toolbar)
+                    else:
+                        grid = [[subplots[2], None], subplots[:2]]
+                        grid = gridplot(children=grid, merge_tools=self.merge_tools,
+                                        toolbar_location=self.toolbar)
+                    tab_plots.append((title, grid))
+                    continue
 
-        # Replace None types with empty plots
-        # to avoid bokeh bug
-        plots = layout_padding(plots, self.renderer)
+                # Situate plot in overall grid
+                if nsubplots > 2:
+                    plots[r+r_offset-1][c+c_offset-1] = subplots[2]
+                plot_column = plots[r+r_offset]
+                if nsubplots > 1:
+                    plot_column[c+c_offset-1] = subplots[0]
+                    plot_column[c+c_offset] = subplots[1]
+                else:
+                    plot_column[c+c_offset-int(col_padded)] = subplots[0]
+                passed_plots.append(subplots[0])
 
         # Wrap in appropriate layout model
         kwargs = dict(sizing_mode=self.sizing_mode)
         if self.tabs:
-            panels = [Panel(child=child, title=str(tab_titles.get((r, c))))
-                      for r, row in enumerate(plots)
-                      for c, child in enumerate(row)
-                      if child is not None]
+            plots = filter_toolboxes([p for t, p in tab_plots])
+            panels = [Panel(child=child, title=title) for title, child in tab_plots]
             layout_plot = Tabs(tabs=panels)
         else:
+            plots = layout_padding(plots, self.renderer)
             plots = filter_toolboxes(plots)
             plots, width = pad_plots(plots)
+
             layout_plot = gridplot(children=plots, width=width,
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools, **kwargs)
@@ -927,11 +954,11 @@ class AdjointLayoutPlot(BokehPlot):
             # Pos will be one of 'main', 'top' or 'right' or None
             subplot = self.subplots.get(pos, None)
             # If no view object or empty position, disable the axis
-            if subplot:
-                passed_plots = plots  + adjoined_plots
-                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
-            else:
+            if subplot is None:
                 adjoined_plots.append(empty_plot(0, 0))
+            else:
+                passed_plots = plots + adjoined_plots
+                adjoined_plots.append(subplot.initialize_plot(ranges=ranges, plots=passed_plots))
         self.drawn = True
         if not adjoined_plots: adjoined_plots = [None]
         return adjoined_plots
