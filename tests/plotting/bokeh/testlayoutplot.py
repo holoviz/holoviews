@@ -7,7 +7,7 @@ from .testplot import TestBokehPlot, bokeh_renderer
 
 try:
     from bokeh.layouts import Column, Row
-    from bokeh.models import Div, ToolbarBox
+    from bokeh.models import Div, ToolbarBox, GlyphRenderer, Tabs, Panel
     from bokeh.plotting import Figure
 except:
     pass
@@ -130,7 +130,6 @@ class TestLayoutPlot(TestBokehPlot):
         positions = [(0, 0), (0, 1), (1, 0), (2, 0), (3, 0)]
         self.assertEqual(sorted(plot.subplots.keys()), positions)
 
-
     def test_empty_adjoint_plot(self):
         adjoint = Curve([0,1,1,2,3]) << Empty() << Curve([0,1,1,0,1])
         plot = bokeh_renderer.get_plot(adjoint)
@@ -143,6 +142,29 @@ class TestLayoutPlot(TestBokehPlot):
         self.assertEqual(row2.children[1].plot_width, 0)
         self.assertEqual(row2.children[0].plot_height, row2.children[1].plot_height)
 
+    def test_layout_plot_with_adjoints(self):
+        layout = (Curve([]) + Curve([]).hist()).cols(1)
+        plot = bokeh_renderer.get_plot(layout)
+        toolbar, column = plot.state.children
+        self.assertIsInstance(toolbar, ToolbarBox)
+        self.assertIsInstance(column, Column)
+        row1, row2 = column.children
+        fig1, fig2 = row1.children
+        fig3, fig4 = row2.children
+        for fig in (fig1, fig2, fig3, fig4):
+            self.assertIsInstance(fig, Figure)
+        self.assertEqual([r for r in fig2.renderers if isinstance(r, GlyphRenderer)], [])
+
+    def test_layout_plot_tabs_with_adjoints(self):
+        layout = (Curve([]) + Curve([]).hist()).options(tabs=True)
+        plot = bokeh_renderer.get_plot(layout)
+        self.assertIsInstance(plot.state, Tabs)
+        panel1, panel2 = plot.state.tabs
+        self.assertIsInstance(panel1, Panel)
+        self.assertIsInstance(panel2, Panel)
+        self.assertEqual(panel1.title, 'Curve I')
+        self.assertEqual(panel2.title, 'AdjointLayout I')
+        
     def test_layout_shared_source_synced_update(self):
         hmap = HoloMap({i: Dataset({chr(65+j): np.random.rand(i+2)
                                     for j in range(4)}, kdims=['A', 'B', 'C', 'D'])
