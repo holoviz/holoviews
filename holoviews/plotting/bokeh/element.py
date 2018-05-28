@@ -826,10 +826,10 @@ class ElementPlot(BokehPlot, GenericElementPlot):
             if scroll_zoom:
                 scroll_zoom.zoom_on_axis = False
 
-        if not (self.drawn or xupdate) and self.apply_xrange:
+        if (not self.drawn or xupdate) and self.apply_xrange:
             self._update_range(x_range, l, r, xfactors, self.invert_xaxis,
                                self._shared['x'], self.logx, streaming)
-        if not (self.drawn or yupdate) and self.apply_yrange:
+        if (not self.drawn or yupdate) and self.apply_yrange:
             self._update_range(y_range, b, t, yfactors, self.invert_yaxis,
                                self._shared['y'], self.logy, streaming)
 
