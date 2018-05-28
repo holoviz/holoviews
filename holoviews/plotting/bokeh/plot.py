@@ -787,10 +787,11 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
         return subplots, adjoint_clone
 
 
-    def initialize_plot(self, plots=None, ranges=None):
-        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
-
-        # Compute total height and width
+    def _compute_grid(self):
+        """
+        Computes an empty grid to position the plots on by expanding
+        any AdjointLayouts into multiple rows and columns.
+        """
         widths = []
         for c in range(self.cols):
             c_widths = []
@@ -810,11 +811,18 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             heights.append(max(r_heights))
 
         # Generate empty grid
-        passed_plots = [] if plots is None else plots
         rows = sum(heights)
         cols = sum(widths)
-        plots = [[None]*cols for _ in range(rows)]
+        grid = [[None]*cols for _ in range(rows)]
 
+        return grid
+
+
+    def initialize_plot(self, plots=None, ranges=None):
+        ranges = self.compute_ranges(self.layout, self.keys[-1], None)
+
+        plot_grid = self._compute_grid()
+        passed_plots = [] if plots is None else plots
         r_offset = 0
         col_offsets = defaultdict(int)
         tab_plots = []
@@ -863,8 +871,8 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
 
                 # Situate plot in overall grid
                 if nsubplots > 2:
-                    plots[r+r_offset-1][c+c_offset-1] = subplots[2]
-                plot_column = plots[r+r_offset]
+                    plot_grid[r+r_offset-1][c+c_offset-1] = subplots[2]
+                plot_column = plot_grid[r+r_offset]
                 if nsubplots > 1:
                     plot_column[c+c_offset-1] = subplots[0]
                     plot_column[c+c_offset] = subplots[1]
@@ -879,11 +887,10 @@ class LayoutPlot(CompositePlot, GenericLayoutPlot):
             panels = [Panel(child=child, title=t) for t, child in tab_plots]
             layout_plot = Tabs(tabs=panels)
         else:
-            plots = layout_padding(plots, self.renderer)
-            plots = filter_toolboxes(plots)
-            plots, width = pad_plots(plots)
-
-            layout_plot = gridplot(children=plots, width=width,
+            plot_grid = layout_padding(plot_grid, self.renderer)
+            plot_grid = filter_toolboxes(plot_grid)
+            plot_grid, width = pad_plots(plot_grid)
+            layout_plot = gridplot(children=plot_grid, width=width,
                                    toolbar_location=self.toolbar,
                                    merge_tools=self.merge_tools, **kwargs)
 
