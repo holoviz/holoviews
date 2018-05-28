@@ -12,7 +12,7 @@ import param
 from ..core.io import Exporter
 from ..core.options import Store, StoreOptions, SkipRendering, Compositor
 from ..core.util import find_file, unicode, unbound_dimensions, basestring
-from .. import Layout, HoloMap, AdjointLayout
+from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
@@ -183,6 +183,14 @@ class Renderer(Exporter):
         """
         Given a HoloViews Viewable return a corresponding plot instance.
         """
+        if isinstance(obj, DynamicMap) and obj.unbounded:
+            dims = ', '.join('%r' % dim for dim in obj.unbounded)
+            msg = ('DynamicMap cannot be displayed without explicit indexing '
+                   'as {dims} dimension(s) are unbounded. '
+                   '\nSet dimensions bounds with the DynamicMap redim.range '
+                   'or redim.values methods.')
+            raise SkipRendering(msg.format(dims=dims))
+
         # Initialize DynamicMaps with first data item
         initialize_dynamic(obj)
 
@@ -484,7 +492,7 @@ class Renderer(Exporter):
         if extras:
             dependencies.update(cls.extra_dependencies)
         for backend in backends:
-            dependencies['backend'] = Store.renderers[backend].backend_dependencies
+            dependencies[backend] = Store.renderers[backend].backend_dependencies
 
         js_html, css_html = '', ''
         for _, dep in sorted(dependencies.items(), key=lambda x: x[0]):
