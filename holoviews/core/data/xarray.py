@@ -348,13 +348,13 @@ class XArrayInterface(GridInterface):
 
         isel = dict(zip(slice_dims, adjusted_indices))
         all_scalar = all(map(np.isscalar, indices))
-        if all_scalar and len(dataset.vdims) == 1:
+        if all_scalar and len(indices) == len(kdims) and len(dataset.vdims) == 1:
             return dataset.data[dataset.vdims[0].name].isel(**isel).values.item()
 
         # Detect if the indexing is selecting samples or slicing the array
         sampled = (all(isinstance(ind, np.ndarray) and ind.dtype.kind != 'b'
                        for ind in adjusted_indices) and len(indices) == len(kdims))
-        if sampled or all_scalar:
+        if sampled or (all_scalar and len(indices) == len(kdims)):
             if all_scalar: isel = {k: [v] for k, v in isel.items()}
             return dataset.data.isel_points(**isel).to_dataframe().reset_index()
         else:
@@ -382,7 +382,8 @@ class XArrayInterface(GridInterface):
             if len(vals) == 1:
                 constant[kd.name] = vals[0]
         if len(constant) == len(dropped_kdims):
-            return dataset.data.sel(**constant)
+            return dataset.data.sel(**{k: v for k, v in constant.items()
+                                       if k in dataset.data.dims})
         elif dropped_kdims:
             return tuple(dataset.columns(kdims+vdims).values())
         return dataset.data
