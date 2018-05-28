@@ -145,7 +145,8 @@ class Binned2DTest(ComparisonTestCase):
 
     def test_groupby_xdim(self):
         grouped = self.dataset2d.groupby('x', group_type=Dataset)
-        holomap = HoloMap({self.xs[i:i+2].mean(): Dataset((self.ys, self.zs[:, i]), 'y', 'z')
+        holomap = HoloMap({(self.xs[i]+np.diff(self.xs[i:i+2])/2.)[0]:
+                           Dataset((self.ys, self.zs[:, i]), 'y', 'z')
                            for i in range(3)}, kdims=['x'])
         self.assertEqual(grouped, holomap)
 

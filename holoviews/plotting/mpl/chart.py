@@ -14,7 +14,9 @@ mpl_version = LooseVersion(mpl.__version__)
 import param
 
 from ...core import OrderedDict, Dimension, Store
-from ...core.util import match_spec, unique_iterator, basestring, max_range, isfinite
+from ...core.util import (
+    match_spec, unique_iterator, basestring, max_range, isfinite, datetime_types
+)
 from ...element import Raster, HeatMap
 from ...operation import interpolate_curve
 from ..plot import PlotSelector
@@ -258,7 +260,11 @@ class HistogramPlot(ChartPlot):
         el_ranges = match_spec(hist, ranges)
 
         # Get plot ranges and values
-        edges, hvals, widths, lims = self._process_hist(hist)
+        dims = hist.dimensions()[:2]
+        edges, hvals, widths, lims, isdatetime = self._process_hist(hist)
+        if isdatetime and not dims[0].value_format:
+            dt_format = Dimension.type_formatters[np.datetime64]
+            dims[0] = dims[0](value_format=DateFormatter(dt_format))
 
         style = self.style[self.cyclic_index]
         if self.invert_axes:
@@ -275,6 +281,7 @@ class HistogramPlot(ChartPlot):
 
         ticks = self._compute_ticks(hist, edges, widths, lims)
         ax_settings = self._process_axsettings(hist, lims, ticks)
+        ax_settings['dimensions'] = dims
 
         return self._finalize_axis(self.keys[-1], ranges=el_ranges, element=hist, **ax_settings)
 
@@ -288,9 +295,15 @@ class HistogramPlot(ChartPlot):
         edges = hist.interface.coords(hist, x, edges=True)
         values = hist.dimension_values(1)
         hist_vals = np.array(values)
+        xlim = hist.range(0)
+        ylim = hist.range(1)
+        isdatetime = False
+        if edges.dtype.kind == 'M' or isinstance(edges[0], datetime_types):
+            edges = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in edges])
+            xlim = date2num([v.tolist() if isinstance(v, np.datetime64) else v for v in xlim])
+            isdatetime = True
         widths = np.diff(edges)
-        lims = hist.range(0) + hist.range(1)
-        return edges[:-1], hist_vals, widths, lims
+        return edges[:-1], hist_vals, widths, xlim+ylim, isdatetime
 
 
     def _compute_ticks(self, element, edges, widths, lims):
@@ -357,7 +370,7 @@ class HistogramPlot(ChartPlot):
 
     def update_handles(self, key, axis, element, ranges, style):
         # Process values, axes and style
-        edges, hvals, widths, lims = self._process_hist(element)
+        edges, hvals, widths, lims, _ = self._process_hist(element)
 
         ticks = self._compute_ticks(element, edges, widths, lims)
         ax_settings = self._process_axsettings(element, lims, ticks)
@@ -381,12 +394,12 @@ class SideHistogramPlot(AdjoinedPlot, HistogramPlot):
         """
         Subclassed to offset histogram by defined amount.
         """
-        edges, hvals, widths, lims = super(SideHistogramPlot, self)._process_hist(hist)
+        edges, hvals, widths, lims, isdatetime = super(SideHistogramPlot, self)._process_hist(hist)
         offset = self.offset * lims[3]
         hvals *= 1-self.offset
         hvals += offset
         lims = lims[0:3] + (lims[3] + offset,)
-        return edges, hvals, widths, lims
+        return edges, hvals, widths, lims, isdatetime
 
 
     def _update_artists(self, n, element, edges, hvals, widths, lims, ranges):
