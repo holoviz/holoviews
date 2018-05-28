@@ -238,6 +238,16 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
                          datatype=['dictionary'])
         self.assertEqual(ds.ndloc[[0, 1, 2], [1, 2, 3]], sliced)
 
+    def test_reindex_drop_scalars_xs(self):
+        reindexed = self.dataset_grid.ndloc[:, 0].reindex()
+        ds = Dataset((self.grid_ys, self.grid_zs[:, 0]), 'y', 'z')
+        self.assertEqual(reindexed, ds)
+
+    def test_reindex_drop_scalars_ys(self):
+        reindexed = self.dataset_grid.ndloc[0].reindex()
+        ds = Dataset((self.grid_xs, self.grid_zs[0]), 'x', 'z')
+        self.assertEqual(reindexed, ds)
+
 
 
 class DaskGridInterfaceTests(GridInterfaceTests):

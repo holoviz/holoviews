@@ -170,8 +170,8 @@ class DaskXArrayInterfaceTest(XArrayInterfaceTests):
         import dask.array
         self.grid_xs = [0, 1]
         self.grid_ys = [0.1, 0.2, 0.3]
-        self.grid_zs = [[0, 1], [2, 3], [4, 5]]
-        dask_zs = dask.array.from_array(np.array(self.grid_zs), 2)
+        self.grid_zs = np.array([[0, 1], [2, 3], [4, 5]])
+        dask_zs = dask.array.from_array(self.grid_zs, 2)
         self.dataset_grid = self.element((self.grid_xs, self.grid_ys,
                                          dask_zs), kdims=['x', 'y'],
                                         vdims=['z'])
