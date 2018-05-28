@@ -11,6 +11,7 @@ except:
 from holoviews.core.dimension import Dimension
 from holoviews.core.data import Dataset
 from holoviews.core.data.interface import DataError
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Scatter, Points, Distribution
 
 
@@ -140,3 +141,15 @@ class PandasInterfaceTests(HeterogeneousColumnTests, InterfaceTests):
         dataset = Dataset({2: 2, 1: 1, 3: 3}, kdims=['x'], vdims=['y'])
         self.assertEqual(dataset, Dataset([(i, i) for i in range(1, 4)],
                                           kdims=['x'], vdims=['y']))
+
+    def test_dataset_conversion_with_index(self):
+        df = pd.DataFrame({'y': [1, 2, 3]}, index=[0, 1, 2])
+        scatter = Dataset(df).to(Scatter, 'index', 'y')
+        self.assertEqual(scatter, Scatter(([0, 1, 2], [1, 2, 3]), 'index', 'y'))
+
+    def test_dataset_conversion_groupby_with_index(self):
+        df = pd.DataFrame({'y': [1, 2, 3], 'x': [0, 0, 1]}, index=[0, 1, 2])
+        scatters = Dataset(df).to(Scatter, 'index', 'y')
+        hmap = HoloMap({0: Scatter(([0, 1], [1, 2]), 'index', 'y'),
+                        1: Scatter([(2, 3)], 'index', 'y')}, 'x')
+        self.assertEqual(scatters, hmap)
