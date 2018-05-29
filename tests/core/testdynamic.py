@@ -5,12 +5,14 @@ import time
 import numpy as np
 from holoviews import Dimension, NdLayout, GridSpace, Layout
 from holoviews.core.spaces import DynamicMap, HoloMap, Callable
+from holoviews.core.options import Store
 from holoviews.element import Image, Scatter, Curve, Text, Points
 from holoviews.operation import histogram
 from holoviews.streams import Stream, PointerXY, PointerX, PointerY, RangeX, Buffer
 from holoviews.util import Dynamic
 from holoviews.element.comparison import ComparisonTestCase
 
+from .testdimensioned import CustomBackendTestCase, TestObj
 
 XY = Stream.define('XY', x=0,y=0)
 
@@ -242,6 +244,23 @@ class DynamicMapMethods(ComparisonTestCase):
         self.assertEqual(ndlayout[0][()], Scatter([(0, 0)]))
         self.assertEqual(ndlayout[1][()], Scatter([(1, 1)]))
         self.assertEqual(ndlayout[2][()], Scatter([(2, 2)]))
+
+
+
+class DynamicMapOptionsTests(CustomBackendTestCase):
+
+    def test_dynamic_options(self):
+        dmap = DynamicMap(lambda X: TestObj(None), kdims=['X']).redim.range(X=(0,10))
+        dmap = dmap.options(plot_opt1='red')
+        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        self.assertEqual(opts.options, {'plot_opt1': 'red'})
+    
+    def test_dynamic_options_no_clone(self):
+        dmap = DynamicMap(lambda X: TestObj(None), kdims=['X']).redim.range(X=(0,10))
+        dmap.options(plot_opt1='red', clone=False)
+        opts = Store.lookup_options('backend_1', dmap[0], 'plot')
+        self.assertEqual(opts.options, {'plot_opt1': 'red'})
+
 
 
 class DynamicMapUnboundedProperty(ComparisonTestCase):
