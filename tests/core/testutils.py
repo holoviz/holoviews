@@ -4,11 +4,12 @@ Unit tests of the helper functions in core.utils
 """
 import sys, math
 import unittest
-from unittest import SkipTest
-
 import datetime
-import numpy as np
+from unittest import SkipTest
+from itertools import product
 from collections import OrderedDict
+
+import numpy as np
 try:
     import pandas as pd
 except:
@@ -17,7 +18,7 @@ except:
 from holoviews.core.util import (
     sanitize_identifier_fn, find_range, max_range, wrap_tuple_streams,
     deephash, merge_dimensions, get_path, make_path_unique, compute_density,
-    date_range, dt_to_int, compute_edges, isfinite
+    date_range, dt_to_int, compute_edges, isfinite, cross_index
 )
 from holoviews import Dimension, Element
 from holoviews.streams import PointerXY
@@ -731,3 +732,42 @@ class TestComputeEdges(ComparisonTestCase):
     def test_uneven_edges(self):
         self.assertEqual(compute_edges(self.array3),
                          np.array([0.5, 1.5, 3.0, 5.0]))
+
+
+class TestCrossIndex(ComparisonTestCase):
+
+    def setUp(self):
+        self.values1 = ['A', 'B', 'C']
+        self.values2 = [1, 2, 3, 4]
+        self.values3 = ['?', '!']
+        self.values4 = ['x']
+
+    def test_cross_index_full_product(self):
+        values = [self.values1, self.values2, self.values3, self.values4]
+        cross_product = list(product(*values))
+        for i, p in enumerate(cross_product):
+            self.assertEqual(cross_index(values, i), p)
+
+    def test_cross_index_depth_1(self):
+        values = [self.values1]
+        cross_product = list(product(*values))
+        for i, p in enumerate(cross_product):
+            self.assertEqual(cross_index(values, i), p)
+
+    def test_cross_index_depth_2(self):
+        values = [self.values1, self.values2]
+        cross_product = list(product(*values))
+        for i, p in enumerate(cross_product):
+            self.assertEqual(cross_index(values, i), p)
+
+    def test_cross_index_depth_3(self):
+        values = [self.values1, self.values2, self.values3]
+        cross_product = list(product(*values))
+        for i, p in enumerate(cross_product):
+            self.assertEqual(cross_index(values, i), p)
+    
+    def test_cross_index_large(self):
+        values = [[chr(65+i) for i in range(26)], list(range(500)),
+                  [chr(97+i) for i in range(26)], [chr(48+i) for i in range(10)]]
+        self.assertEqual(cross_index(values, 50001), ('A', 192, 'i', '1'))
+        self.assertEqual(cross_index(values, 500001), ('D', 423, 'c', '1'))
