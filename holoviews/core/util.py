@@ -1557,16 +1557,17 @@ def cross_index(values, index):
     making up the cartesian product and a linear index, returning
     the cross product of the values at the supplied index.
     """
-    lengths = [len(v) for v in values][::-1]
-    partials = [np.product(lengths[:i]) for i in range(1, len(values)+1)][::-1]
-    length = partials.pop(0)
+    lengths = [len(v) for v in values]
+    length = np.product(lengths)
     if index >= length:
-        raise ValueError('Index out of bounds')
+        raise IndexError('Index %d out of bounds for cross-product of size %d'
+                         % (index, length))
     indexes = []
-    for p in partials:
+    for i in range(1, len(values))[::-1]:
+        p = np.product(lengths[-i:])
         indexes.append(index//p)
         index -= indexes[-1] * p
-    indexes.append(index%lengths[0])
+    indexes.append(index)
     return tuple(v[i] for v, i in zip(values, indexes))
 
 

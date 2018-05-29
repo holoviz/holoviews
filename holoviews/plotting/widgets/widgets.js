@@ -201,13 +201,19 @@ ScrubberWidget.prototype.set_frame = function(frame){
     return
   }
   widget.value = this.current_frame;
-  if(this.cached) {
-    this.update(frame)
-  } else {
+  if (this.dynamic || !this.cached) {
+    if ((this.time !== undefined) && ((this.wait) && ((this.time + 10000) > Date.now()))) {
+      this.queue.push(frame);
+      return
+    }
+    this.queue = [];
+    this.time = Date.now();
+    this.wait = true;
     this.dynamic_update(frame)
+  } else {
+    this.update(frame)
   }
 }
-
 
 ScrubberWidget.prototype.get_loop_state = function(){
   var button_group = document[this.loop_select_id].state;
