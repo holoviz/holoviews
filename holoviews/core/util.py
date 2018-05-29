@@ -1550,6 +1550,26 @@ def cartesian_product(arrays, flat=True, copy=False):
     return tuple(arr.copy() if copy else arr for arr in arrays)
 
 
+def cross_index(values, index):
+    """
+    Allows efficiently indexing into a cartesian product without
+    expanding it. The values should be defined as a list of iterables
+    making up the cartesian product and a linear index, returning
+    the cross product of the values at the supplied index.
+    """
+    lengths = [len(v) for v in values][::-1]
+    partials = [np.product(lengths[:i]) for i in range(1, len(values)+1)][::-1]
+    length = partials.pop(0)
+    if index >= length:
+        raise ValueError('Index out of bounds')
+    indexes = []
+    for p in partials:
+        indexes.append(index//p)
+        index -= indexes[-1] * p
+    indexes.append(index%lengths[0])
+    return tuple(v[i] for v, i in zip(values, indexes))
+
+
 def arglexsort(arrays):
     """
     Returns the indices of the lexicographical sorting

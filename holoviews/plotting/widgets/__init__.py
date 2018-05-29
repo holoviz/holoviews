@@ -8,9 +8,10 @@ import numpy as np
 from ...core import OrderedDict, NdMapping
 from ...core.options import Store
 from ...core.ndmapping import item_check
-from ...core.util import (dimension_sanitizer, bytes_to_unicode,
-                          unique_array, unicode, isnumeric,
-                          wrap_tuple_streams, drop_streams)
+from ...core.util import (
+    dimension_sanitizer, bytes_to_unicode, unique_array, unicode,
+    isnumeric, cross_index, wrap_tuple_streams, drop_streams
+)
 from ...core.traversal import hierarchical
 
 def escape_vals(vals, escape_numerics=True):
@@ -134,6 +135,12 @@ class NdWidget(param.Parameterized):
             if dim.values and all(isnumeric(v) for v in dim.values):
                 dim = dim.clone(values=sorted(dim.values))
             sorted_dims.append(dim)
+
+        if self.plot.dynamic:
+            self.length = np.product([len(d.values) for d in sorted_dims if d.values])
+        else:
+            self.length = len(self.plot)
+
         with item_check(False):
             self.mock_obj = NdMapping([(k, None) for k in self.keys],
                                       kdims=sorted_dims, sort=False)
@@ -192,7 +199,7 @@ class NdWidget(param.Parameterized):
         dynamic = json.dumps(self.plot.dynamic) if self.plot.dynamic else 'false'
         return dict(CDN=CDN, frames=self.get_frames(), delay=delay,
                     cached=cached, load_json=load_json, mode=mode, id=self.id,
-                    Nframes=len(self.plot), widget_name=name, json_path=json_path,
+                    Nframes=self.length, widget_name=name, json_path=json_path,
                     dynamic=dynamic, plot_id=self.plot_id)
 
 
@@ -245,11 +252,8 @@ class NdWidget(param.Parameterized):
 
 
     def update(self, key):
-        if not self.plot.dimensions:
-            self.plot.refresh()
-        else:
-            self.plot.update(key)
-            self.plot.push()
+        pass
+
 
 
 
@@ -271,6 +275,14 @@ class ScrubberWidget(NdWidget):
     js_template = param.String('jsscrubber.jinja', doc="""
         The jinja2 template used to generate the html output.""")
 
+    def update(self, key):
+        if not self.plot.dimensions:
+            self.plot.refresh()
+        else:
+            if self.plot.dynamic:
+                key = cross_index([d.values for d in self.mock_obj.kdims], key)
+            self.plot.update(key)
+            self.plot.push()
 
 
 class SelectionWidget(NdWidget):
