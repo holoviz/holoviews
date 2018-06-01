@@ -973,6 +973,8 @@ class GenericOverlayPlot(GenericElementPlot):
         opts = {'overlaid': overlay_type}
         if self.hmap.type == Overlay:
             style_key = (obj.type.__name__,) + key
+            if self.overlay_dims:
+                opts['overlay_dims'] = self.overlay_dims
         else:
             if not isinstance(key, tuple): key = (key,)
             style_key = group_fn(obj) + key
@@ -999,9 +1001,8 @@ class GenericOverlayPlot(GenericElementPlot):
         self.group_counter[group_key] += 1
         group_length = self.map_lengths[group_key]
 
-        if issubclass(plottype, GenericOverlayPlot):
+        if not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
             opts['group_counter'] = self.group_counter
-        elif not isinstance(plottype, PlotSelector) and issubclass(plottype, GenericOverlayPlot):
             opts['show_legend'] = self.show_legend
             if not any(len(frame) for frame in obj):
                 self.warning('%s is empty and will be skipped during plotting'
