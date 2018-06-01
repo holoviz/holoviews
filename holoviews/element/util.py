@@ -5,6 +5,7 @@ import numpy as np
 
 from ..core import Dataset, OrderedDict
 from ..core.boundingregion import BoundingBox
+from ..core.data import default_datatype
 from ..core.operation import Operation
 from ..core.sheetcoords import Slice
 from ..core.util import (is_nan, sort_topologically, one_to_one,
@@ -186,7 +187,7 @@ class categorical_aggregate2d(Operation):
             values = np.empty(nsamples)
             values[:] = np.NaN
             data[vdim.name] = values
-        dtype = 'dataframe' if pd else 'dictionary'
+        dtype = default_datatype
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
         concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
         reindexed = concat_data.reindex([xdim, ydim], vdims)

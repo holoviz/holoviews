@@ -11,7 +11,7 @@ from param import _is_number
 
 from ..core import (Operation, NdOverlay, Overlay, GridMatrix,
                     HoloMap, Dataset, Element, Collator, Dimension)
-from ..core.data import ArrayInterface, DictInterface
+from ..core.data import ArrayInterface, DictInterface, default_datatype
 from ..core.util import (group_sanitizer, label_sanitizer, pd,
                          basestring, datetime_types, isfinite, dt_to_int)
 from ..element.chart import Histogram, Scatter
@@ -792,10 +792,7 @@ class gridmatrix(param.ParameterizedFunction):
         # Creates a unified Dataset.data attribute
         # to draw the data from
         if isinstance(element.data, np.ndarray):
-            if 'dataframe' in Dataset.datatype:
-                el_data = element.table('dataframe')
-            else:
-                el_data = element.table('dictionary')
+            el_data = element.table(default_datatype)
         else:
             el_data = element.data
 
@@ -818,7 +815,7 @@ class gridmatrix(param.ParameterizedFunction):
                 if p.diagonal_type is not None:
                     if p.diagonal_type._auto_indexable_1d:
                         el = p.diagonal_type(el_data, kdims=[d1], vdims=[d2],
-                                             datatype=['dataframe', 'dictionary'])
+                                             datatype=[default_datatype])
                     else:
                         values = element.dimension_values(d1)
                         el = p.diagonal_type(values, kdims=[d1])
@@ -830,7 +827,7 @@ class gridmatrix(param.ParameterizedFunction):
             else:
                 kdims, vdims = ([d1, d2], []) if len(p.chart_type.kdims) == 2 else (d1, d2)
                 el = p.chart_type(el_data, kdims=kdims, vdims=vdims,
-                                  datatype=['dataframe', 'dictionary'])
+                                  datatype=[default_datatype])
             data[(d1.name, d2.name)] = el
         return data
 

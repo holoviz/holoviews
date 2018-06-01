@@ -293,7 +293,7 @@ class Dataset(Element):
             dimensions = dict(kdims=dims)
 
         if issubclass(self.interface, ArrayInterface) and np.asarray(dim_val).dtype != self.data.dtype:
-            element = self.clone(datatype=['pandas', 'dictionary'])
+            element = self.clone(datatype=[default_datatype])
             data = element.interface.add_dimension(element, dimension, dim_pos, dim_val, vdim)
         else:
             data = self.interface.add_dimension(self, dimension, dim_pos, dim_val, vdim)
