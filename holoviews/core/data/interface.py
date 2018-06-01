@@ -107,30 +107,21 @@ class Interface(param.Parameterized):
     def register(cls, interface):
         cls.interfaces[interface.datatype] = interface
 
-
     @classmethod
-    def cast(cls, dataset, datatype=None, cast_type=None):
+    def cast(cls, datasets, datatype=None, cast_type=None):
         """
         Given a list of Dataset objects, cast them to the specified
         datatype (by default the format matching the current interface)
         with the given cast_type (if specified).
         """
-        if len({type(c) for c in dataset}) > 1 and cast_type is None:
-            raise Exception("Please supply the common cast type")
-
-        if datatype is None:
-           datatype = cls.datatype
-
-        unchanged = all({c.interface==cls for c in dataset})
-        if unchanged and cast_type is None:
-            return dataset
-        elif unchanged:
-            return [cast_type(co, **dict(util.get_param_values(co)))
-                    for co in dataset]
-
-        return [co.clone(co.columns(), datatype=[datatype], new_type=cast_type)
-                for co in dataset]
-
+        datatype = datatype or cls.datatype
+        interfaces = list(util.unique_iterator((d.interface for d in datasets)))
+        cast = []
+        for ds in datasets:
+            if cast_type is not None or ds.interface.datatype in datatype:
+                ds = ds.clone(ds, datatype=[datatype], new_type=cast_type)
+            cast.append(ds)
+        return cast
 
     @classmethod
     def error(cls):
@@ -167,7 +158,7 @@ class Interface(param.Parameterized):
 
             if data.interface.datatype in datatype and data.interface.datatype in eltype.datatype:
                 data = data.data
-            elif data.interface.gridded:
+            elif data.interface.gridded and any(cls.interfaces[dt].gridded for dt in datatype):
                 gridded = OrderedDict([(kd.name, data.dimension_values(kd.name, expanded=False))
                                        for kd in data.kdims])
                 for vd in data.vdims:
