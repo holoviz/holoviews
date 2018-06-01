@@ -360,13 +360,10 @@ class XArrayInterface(GridInterface):
         else:
             return dataset.data.isel(**isel)
 
-
     @classmethod
-    def concat(cls, dataset_objs):
-        #cast_objs = cls.cast(dataset_objs)
-        # Reimplement concat to automatically add dimensions
-        # once multi-dimensional concat has been added to xarray.
-        return xr.concat([col.data for col in dataset_objs], dim='concat_dim')
+    def concat_dim(cls, datasets, dim, vdims):
+        return xr.concat([ds.assign_coords(**{dim.name: c}) for c, ds in datasets.items()],
+                         dim=dim.name)
 
     @classmethod
     def redim(cls, dataset, dimensions):

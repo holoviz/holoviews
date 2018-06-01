@@ -1,3 +1,4 @@
+from collections import defaultdict
 try:
     import itertools.izip as zip
 except ImportError:
@@ -105,9 +106,11 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def concat(cls, dataset_objs):
-        cast_objs = cls.cast(dataset_objs)
-        return np.concatenate([col.data for col in cast_objs])
+    def concat(cls, datasets, dimensions, vdims):
+        from . import default_datatype
+        keys, datasets = zip(*datasets)
+        datasets = cls.cast(datasets, default_datatype)
+        return datasets[0].interface.concat(list(zip(keys, datasets)), dimensions)
 
 
     @classmethod

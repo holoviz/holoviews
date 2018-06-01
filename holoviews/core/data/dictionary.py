@@ -1,5 +1,4 @@
-from collections import OrderedDict
-
+from collections import OrderedDict, defaultdict
 try:
     import itertools.izip as zip
 except ImportError:
@@ -185,17 +184,19 @@ class DictInterface(Interface):
             renamed.append((k, v))
         return OrderedDict(renamed)
 
+
     @classmethod
-    def concat(cls, dataset_objs):
-        cast_objs = cls.cast(dataset_objs)
-        cols = set(tuple(c.data.keys()) for c in cast_objs)
-        if len(cols) != 1:
-            raise Exception("In order to concatenate, all Dataset objects "
-                            "should have matching set of columns.")
-        concatenated = OrderedDict()
-        for column in cols.pop():
-            concatenated[column] = np.concatenate([obj[column] for obj in cast_objs])
-        return concatenated
+    def concat(cls, datasets, dimensions, vdims):
+        columns = defaultdict(list)
+        for key, ds in datasets:
+            for k, vals in ds.data.items():
+                columns[k].append(vals)
+            for d, k in zip(dimensions, key):
+                columns[d.name].append(np.full(len(ds), k))
+
+        template = datasets[0][1]
+        dims = dimensions+template.dimensions()
+        return OrderedDict([(d.name, np.concatenate(columns[d.name])) for d in dims])
 
 
     @classmethod
