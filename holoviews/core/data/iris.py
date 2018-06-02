@@ -4,6 +4,8 @@ import datetime
 from itertools import product
 
 import iris
+from iris.coords import AuxCoord
+from iris.cube import CubeList
 from iris.util import guess_coord_axis
 
 import numpy as np
@@ -229,6 +231,18 @@ class CubeInterface(GridInterface):
                 return container_type(data, kdims=dims)
         else:
             return container_type(data)
+
+    @classmethod
+    def concat_dim(cls, datasets, dim, vdims):
+        """
+        Concatenates datasets along one dimension
+        """
+        cubes = []
+        for c, cube in datasets.items():
+            cube = cube.copy()
+            cube.add_aux_coord(AuxCoord([c], var_name=dim.name))
+            cubes.append(cube)
+        return CubeList(cubes).merge()[0]
 
 
     @classmethod

@@ -118,7 +118,7 @@ class Interface(param.Parameterized):
         interfaces = list(util.unique_iterator((d.interface for d in datasets)))
         cast = []
         for ds in datasets:
-            if cast_type is not None or ds.interface.datatype in datatype:
+            if cast_type is not None or ds.interface.datatype != datatype:
                 ds = ds.clone(ds, datatype=[datatype], new_type=cast_type)
             cast.append(ds)
         return cast

@@ -138,7 +138,10 @@ class DictInterface(Interface):
         key = list(data.keys())[0]
 
         if len(data[key]) == 1 and key in dataset.vdims:
-            return data[key][0]
+            scalar = data[key][0]
+            return scalar.compute() if hasattr(scalar, 'compute') else scalar
+        return data
+
 
     @classmethod
     def isscalar(cls, dataset, dim):

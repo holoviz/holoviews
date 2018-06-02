@@ -92,6 +92,13 @@ def concat(datasets, datatype=None):
     keys, datasets = zip(*datasets)
     template = datasets[0]
     datatype = datatype or template.interface.datatype
+
+    # Handle non-general datatypes by casting to general type
+    if datatype == 'array':
+        datatype = default_datatype
+    elif datatype == 'image':
+        datatype = 'grid'
+
     datasets = template.interface.cast(datasets, datatype)
     template = datasets[0]
     data = list(zip(keys, datasets))

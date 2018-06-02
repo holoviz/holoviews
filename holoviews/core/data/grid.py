@@ -150,7 +150,8 @@ class GridInterface(DictInterface):
 
     @classmethod
     def isscalar(cls, dataset, dim):
-        return np.unique(cls.values(dataset, dim, expanded=False)) == 1
+        values = cls.values(dataset, dim, expanded=False)
+        return values.shape in ((), (1,)) or len(np.unique(values)) == 1
 
 
     @classmethod
