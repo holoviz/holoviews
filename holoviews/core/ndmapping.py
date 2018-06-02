@@ -429,15 +429,8 @@ class MultiDimensionalMapping(Dimensioned):
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
-        if datatype is None:
-            datatype = ['dataframe' if pd else 'dictionary']
-
-        tables = []
-        for key, value in self.data.items():
-            value = value.table(datatype=datatype, **kwargs)
-            for idx, (dim, val) in enumerate(zip(self.kdims, key)):
-                value = value.add_dimension(dim, idx, val)
-            tables.append(value)
+        new_data = [(key, value.table(datatype=datatype, **kwargs)) for key, value in self.data.items()]
+        tables = self.clone(tables, shared_data=False)
         return value.interface.concatenate(tables)
 
 

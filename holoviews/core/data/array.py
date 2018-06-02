@@ -106,14 +106,6 @@ class ArrayInterface(Interface):
 
 
     @classmethod
-    def concat(cls, datasets, dimensions, vdims):
-        from . import default_datatype
-        keys, datasets = zip(*datasets)
-        datasets = cls.cast(datasets, default_datatype)
-        return datasets[0].interface.concat(list(zip(keys, datasets)), dimensions)
-
-
-    @classmethod
     def sort(cls, dataset, by=[], reverse=False):
         data = dataset.data
         if len(by) == 1:

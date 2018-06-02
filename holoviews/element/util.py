@@ -189,7 +189,7 @@ class categorical_aggregate2d(Operation):
             data[vdim.name] = values
         dtype = default_datatype
         dense_data = Dataset(data, kdims=obj.kdims, vdims=obj.vdims, datatype=[dtype])
-        concat_data = obj.interface.concatenate([dense_data, obj], datatype=[dtype])
+        concat_data = obj.interface.concatenate([dense_data, obj], datatype=dtype)
         reindexed = concat_data.reindex([xdim, ydim], vdims)
         if not reindexed:
             agg = reindexed

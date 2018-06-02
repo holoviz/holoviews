@@ -84,26 +84,7 @@ def concat(datasets, datatype=None):
 
     Returns: Dataset
     """
-    if isinstance(datasets, NdMapping):
-        dimensions = datasets.kdims
-        datasets = datasets.data
-    if isinstance(datasets, (dict, OrderedDict)):
-        datasets = datasets.items()
-    keys, datasets = zip(*datasets)
-    template = datasets[0]
-    datatype = datatype or template.interface.datatype
-
-    # Handle non-general datatypes by casting to general type
-    if datatype == 'array':
-        datatype = default_datatype
-    elif datatype == 'image':
-        datatype = 'grid'
-
-    datasets = template.interface.cast(datasets, datatype)
-    template = datasets[0]
-    data = list(zip(keys, datasets))
-    concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
-    return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=Dataset)
+    return Interface.concatenate(datasets, datatype)
 
 
 class DataConversion(object):
