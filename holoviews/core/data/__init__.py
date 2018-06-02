@@ -61,9 +61,42 @@ if 'array' not in datatypes:
 
 from ..dimension import Dimension, process_dimensions
 from ..element import Element
-from ..ndmapping import OrderedDict
+from ..ndmapping import OrderedDict, NdMapping
 from ..spaces import HoloMap, DynamicMap
 from .. import util
+
+
+def concat(datasets, datatype=None):
+    """
+    Concatenates multiple datasets wrapped in an NdMapping type
+    along all of its dimensions. Before concatenation all datasets
+    are cast to the same datatype. For columnar data concatenation
+    adds the columns for the dimensions being concatenated along
+    and then concatenates all the old and new columns. For gridded
+    data a new axis is created for each dimension being concatenated
+    along and then hierarchically concatenates along each dimension.
+
+    Signature
+    ---------
+
+    datasets: NdMapping of Datasets defining dimensions to concatenate on
+    datatype: Datatype to cast data to before concatenation
+
+    Returns: Dataset
+    """
+    if isinstance(datasets, NdMapping):
+        dimensions = datasets.kdims
+        datasets = datasets.data
+    if isinstance(datasets, (dict, OrderedDict)):
+        datasets = datasets.items()
+    keys, datasets = zip(*datasets)
+    template = datasets[0]
+    datatype = datatype or template.interface.datatype
+    datasets = template.interface.cast(datasets, datatype)
+    template = datasets[0]
+    data = list(zip(keys, datasets))
+    concat_data = template.interface.concat(data, dimensions, vdims=template.vdims)
+    return template.clone(concat_data, kdims=dimensions+template.kdims, new_type=Dataset)
 
 
 class DataConversion(object):
