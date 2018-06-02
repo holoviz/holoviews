@@ -117,6 +117,7 @@ class GridInterface(DictInterface):
                             'actual shape: %s' % (vdim, valid_shape, shape), cls)
         return data, {'kdims':kdims, 'vdims':vdims}, {}
 
+
     @classmethod
     def concat(cls, datasets, dimensions, vdims):
         from . import Dataset

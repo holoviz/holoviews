@@ -1,4 +1,3 @@
-from collections import defaultdict
 try:
     import itertools.izip as zip
 except ImportError:

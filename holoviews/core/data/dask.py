@@ -251,7 +251,6 @@ class DaskInterface(PandasInterface):
             for d, k in zip(dimensions, key):
                 data[d.name] = k
             dataframes.append(data)
-        template = datasets[0][1]
         return dd.concat(dataframes)
 
     @classmethod

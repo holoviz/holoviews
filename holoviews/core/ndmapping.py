@@ -13,7 +13,7 @@ import param
 from . import util
 from .dimension import OrderedDict, Dimension, Dimensioned, ViewableElement
 from .util import (unique_iterator, sanitize_identifier, dimension_sort,
-                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label, pd)
+                   basestring, wrap_tuple, process_ellipses, get_ndmapping_label)
 
 
 class item_check(object):
@@ -429,9 +429,11 @@ class MultiDimensionalMapping(Dimensioned):
 
     def table(self, datatype=None, **kwargs):
         "Creates a table from the stored keys and data."
-        new_data = [(key, value.table(datatype=datatype, **kwargs)) for key, value in self.data.items()]
-        tables = self.clone(tables, shared_data=False)
-        return value.interface.concatenate(tables)
+        from .data.interface import Interface
+        new_data = [(key, value.table(datatype=datatype, **kwargs))
+                    for key, value in self.data.items()]
+        tables = self.clone(new_data)
+        return Interface.concatenate(tables)
 
 
     def dframe(self):

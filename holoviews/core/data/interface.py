@@ -115,7 +115,6 @@ class Interface(param.Parameterized):
         with the given cast_type (if specified).
         """
         datatype = datatype or cls.datatype
-        interfaces = list(util.unique_iterator((d.interface for d in datasets)))
         cast = []
         for ds in datasets:
             if cast_type is not None or ds.interface.datatype != datatype:
@@ -302,7 +301,7 @@ class Interface(param.Parameterized):
         """
         Utility function to concatenate an NdMapping of Dataset objects.
         """
-        from . import Dataset
+        from . import Dataset, default_datatype
         if isinstance(datasets, NdMapping):
             dimensions = datasets.kdims
             datasets = datasets.data

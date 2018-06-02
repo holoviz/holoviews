@@ -61,7 +61,7 @@ if 'array' not in datatypes:
 
 from ..dimension import Dimension, process_dimensions
 from ..element import Element
-from ..ndmapping import OrderedDict, NdMapping
+from ..ndmapping import OrderedDict
 from ..spaces import HoloMap, DynamicMap
 from .. import util
 
