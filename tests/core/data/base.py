@@ -1075,3 +1075,10 @@ class GriddedInterfaceTests(object):
         values = np.sin(XS)
         sampled = Dataset((xs, ys, values), ['x', 'y'], 'z').sample(y=0)
         self.assertEqual(sampled, Curve((xs, values[0]), vdims='z'))
+
+    def test_aggregate_2d_with_spreadfn(self):
+        array = np.random.rand(10, 5)
+        ds = Dataset((range(5), range(10), array), ['x', 'y'], 'z')
+        agg = ds.aggregate('x', np.mean, np.std)
+        example = Dataset((range(5), array.mean(axis=0), array.std(axis=0)), 'x', ['z', 'z_std'])
+        self.assertEqual(agg, example)

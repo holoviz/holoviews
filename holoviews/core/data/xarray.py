@@ -462,8 +462,9 @@ class XArrayInterface(GridInterface):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
         dim = dimension.name if isinstance(dimension, Dimension) else dimension
-        arr = xr.DataArray(values, coords=dataset.data.coords, name=dim,
-                           dims=dataset.data.indexes)
+        coords = {d.name: cls.coords(dataset, d.name) for d in dataset.kdims}
+        arr = xr.DataArray(values, coords=coords, name=dim,
+                           dims=tuple(d.name for d in dataset.kdims[::-1]))
         return dataset.data.assign(**{dim: arr})
 
 

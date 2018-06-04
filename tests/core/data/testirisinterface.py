@@ -74,6 +74,9 @@ class IrisInterfaceTests(GridInterfaceTests):
     def test_dataset_2D_aggregate_partial_hm_alias(self):
         raise SkipTest("Not supported")
 
+    def test_aggregate_2d_with_spreadfn(self):
+        raise SkipTest("Not supported")
+
     def test_dataset_sample_hm(self):
         raise SkipTest("Not supported")
 
