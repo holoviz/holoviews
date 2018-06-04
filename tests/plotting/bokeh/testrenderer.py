@@ -85,3 +85,20 @@ class BokehRendererTest(ComparisonTestCase):
         png, info = renderer(curve)
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
+
+
+    def test_bokeh_theming(self):
+        from bokeh.themes.theme import Theme
+
+        theme = Theme(
+            json={
+        'attrs' : {
+            'Figure' : {
+                'outline_line_color': '#444444'}
+        }
+            })
+        renderer = BokehRenderer.instance(fig='png')
+        renderer.theme = theme
+        plot = renderer.get_plot(Curve([]))
+        renderer(plot)
+        self.assertEqual(plot.state.outline_line_color, '#444444')
