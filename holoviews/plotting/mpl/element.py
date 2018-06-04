@@ -754,7 +754,8 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             element = overlay.data.get(key, False)
             if not subplot.show_legend or not element: continue
             title = ', '.join([d.name for d in dimensions])
-            handle = subplot.handles.get('artist', False)
+            handle = subplot.traverse(lambda p: p.handles['artist'],
+                                      [lambda p: 'artist' in p.handles])
             if isinstance(overlay, NdOverlay):
                 key = (dim.pprint_value(k) for k, dim in zip(key, dimensions))
                 label = ','.join([str(k) + dim.unit if dim.unit else str(k) for dim, k in
@@ -764,7 +765,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             else:
                 if isinstance(subplot, OverlayPlot):
                     legend_data += subplot.handles.get('legend_data', {}).items()
-                if element.label and handle:
+                elif element.label and handle:
                     legend_data.append((handle, element.label))
         all_handles, all_labels = list(zip(*legend_data)) if legend_data else ([], [])
         data = OrderedDict()
