@@ -148,7 +148,9 @@ class BokehRenderer(Renderer):
         """
         if doc is None:
             doc = Document() if self_or_cls.notebook_context else curdoc()
-        curdoc().theme = self_or_cls.theme
+
+        if self_or_cls.notebook_context:
+            curdoc().theme = self_or_cls.theme
         doc.theme = self_or_cls.theme
         plot = super(BokehRenderer, self_or_cls).get_plot(obj, renderer)
         plot.document = doc
