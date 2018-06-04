@@ -87,7 +87,6 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
 
-
     def test_theme_rendering(self):
         theme = Theme(
             json={

@@ -14,6 +14,7 @@ try:
     from bokeh.document import Document
     from bokeh.io import curdoc
     from bokeh.server.server import Server
+    from bokeh.themes.theme import Theme
 
     from holoviews.plotting.bokeh.callbacks import (
         Callback, RangeXYCallback, ResetCallback
@@ -155,3 +156,26 @@ class TestBokehServerRun(ComparisonTestCase):
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
         self.assertTrue(len(launched)==1)
+
+    def test_server_theming(self):
+        obj = Curve([])
+        theme = Theme(
+            json={
+        'attrs' : {
+            'Figure' : {
+                'outline_line_color': '#444444'}
+        }
+            })
+        bokeh_renderer.theme = theme
+        plots = []
+        def modify_doc(doc):
+            plot = bokeh_renderer.get_plot(obj, doc=doc)
+            plots.append(plot)
+            server.stop()
+        handler = FunctionHandler(modify_doc)
+        app = Application(handler)
+        server = Server({'/': app}, port=0)
+        server.start()
+        url = "http://localhost:" + str(server.port) + "/"
+        pull_session(session_id='Test', url=url, io_loop=server.io_loop)
+        self.assertTrue(plots[0].state.outline_line_color, '#444444')
