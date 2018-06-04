@@ -454,11 +454,11 @@ class ElementPlot(BokehPlot, GenericElementPlot):
         recursive_model_update(plot.xaxis[0], props.get('x', {}))
         recursive_model_update(plot.yaxis[0], props.get('y', {}))
 
-        if not self.overlaid:
-            if plot.title:
-                plot.title.update(**self._title_properties(key, plot, element))
-            else:
-                plot.title = Title(**self._title_properties(key, plot, element))
+        if plot.title:
+            plot.title.update(**self._title_properties(key, plot, element))
+        else:
+            plot.title = Title(**self._title_properties(key, plot, element))
+
         if not self.show_grid:
             plot.xgrid.grid_line_color = None
             plot.ygrid.grid_line_color = None
@@ -1217,7 +1217,7 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
                           'yticks', 'xrotation', 'yrotation', 'lod',
                           'border', 'invert_xaxis', 'invert_yaxis', 'sizing_mode',
                           'title_format', 'legend_position', 'legend_offset',
-                          'legend_cols']
+                          'legend_cols', 'gridstyle']
 
     def _process_legend(self):
         plot = self.handles['plot']
