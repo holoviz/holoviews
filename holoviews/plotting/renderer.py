@@ -16,7 +16,7 @@ from .. import Layout, HoloMap, AdjointLayout, DynamicMap
 from .widgets import NdWidget, ScrubberWidget, SelectionWidget
 
 from . import Plot
-from .comms import CommManager, JupyterCommManager
+from pyviz_comms import CommManager, JupyterCommManager
 from .util import displayable, collate, initialize_dynamic
 
 from param.parameterized import bothmethod

@@ -4,7 +4,7 @@ from unittest import SkipTest
 from holoviews.core.element import Element
 from holoviews.core.options import Store
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting import comms
+import pyviz_comms as comms
 
 try:
     from bokeh.models import (

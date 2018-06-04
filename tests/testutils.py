@@ -13,7 +13,7 @@ from holoviews.util import output, opts, OutputSettings
 from holoviews.core import OrderedDict
 
 from holoviews.core.options import OptionTree
-from holoviews.plotting.comms import CommManager
+from pyviz_comms import CommManager
 
 try:
     from holoviews.plotting import mpl

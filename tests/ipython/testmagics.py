@@ -9,7 +9,7 @@ except ImportError:
     raise SkipTest("Required dependencies not satisfied for testing magics")
 
 from holoviews.operation import Compositor
-from holoviews.plotting.comms import CommManager
+from pyviz_comms import CommManager
 
 class ExtensionTestCase(IPTestCase):
 

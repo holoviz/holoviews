@@ -1,7 +1,7 @@
 import json
 from nose.plugins.attrib import attr
 from holoviews.element.comparison import ComparisonTestCase
-from holoviews.plotting.comms import Comm, JupyterComm
+from pyviz_comms import Comm, JupyterComm
 
 
 class TestComm(ComparisonTestCase):

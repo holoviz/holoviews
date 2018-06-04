@@ -10,7 +10,7 @@ except ImportError:
 
 
 setup_args = {}
-install_requires = ['param>=1.6.1,<2.0', 'numpy>=1.0']
+install_requires = ['param>=1.6.1,<2.0', 'numpy>=1.0', 'pyviz_comms']
 extras_require = {}
 
 # Notebook dependencies of IPython 3
