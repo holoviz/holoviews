@@ -87,6 +87,9 @@ class ElementConversion(DataConversion):
     def vectorfield(self, kdims=None, vdims=None, groupby=None, **kwargs):
         return self(VectorField, kdims, vdims, groupby, **kwargs)
 
+    def violin(self, kdims=None, vdims=None, groupby=None, **kwargs):
+        return self(Violin, kdims, vdims, groupby, **kwargs)
+
 
 Dataset._conversion_interface = ElementConversion
 
