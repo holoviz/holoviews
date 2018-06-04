@@ -14,7 +14,6 @@ try:
     from bokeh.document import Document
     from bokeh.io import curdoc
     from bokeh.server.server import Server
-    from bokeh.themes.theme import Theme
 
     from holoviews.plotting.bokeh.callbacks import (
         Callback, RangeXYCallback, ResetCallback
