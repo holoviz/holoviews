@@ -13,6 +13,7 @@ from holoviews.element.comparison import ComparisonTestCase
 try:
     from bokeh.io import curdoc
     from holoviews.plotting.bokeh import BokehRenderer
+    from bokeh.themes.theme import Theme
 except:
     pass
 
@@ -87,9 +88,7 @@ class BokehRendererTest(ComparisonTestCase):
         self.assertEqual(info['file-ext'], 'png')
 
 
-    def test_bokeh_theming(self):
-        from bokeh.themes.theme import Theme
-
+    def test_theme_rendering(self):
         theme = Theme(
             json={
         'attrs' : {
