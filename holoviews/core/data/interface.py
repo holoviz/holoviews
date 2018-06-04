@@ -248,14 +248,18 @@ class Interface(param.Parameterized):
                 k = slice(*k)
             arr = cls.values(dataset, dim)
             if isinstance(k, slice):
-                if k.start is not None:
-                    mask &= k.start <= arr
-                if k.stop is not None:
-                    mask &= arr < k.stop
+                with warnings.catch_warnings():
+                    warnings.filterwarnings('ignore', r'invalid value encountered')
+                    if k.start is not None:
+                        mask &= k.start <= arr
+                    if k.stop is not None:
+                        mask &= arr < k.stop
             elif isinstance(k, (set, list)):
                 iter_slcs = []
                 for ik in k:
-                    iter_slcs.append(arr == ik)
+                    with warnings.catch_warnings():
+                        warnings.filterwarnings('ignore', r'invalid value encountered')
+                        iter_slcs.append(arr == ik)
                 mask &= np.logical_or.reduce(iter_slcs)
             elif callable(k):
                 mask &= k(arr)
