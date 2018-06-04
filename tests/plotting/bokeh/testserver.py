@@ -169,7 +169,8 @@ class TestBokehServerRun(ComparisonTestCase):
         bokeh_renderer.theme = theme
         plots = []
         def modify_doc(doc):
-            plot = bokeh_renderer.get_plot(obj, doc=doc)
+            bokeh_renderer(obj, doc=doc)
+            plot = bokeh_renderer.last_plot
             plots.append(plot)
             server.stop()
         handler = FunctionHandler(modify_doc)
@@ -178,4 +179,4 @@ class TestBokehServerRun(ComparisonTestCase):
         server.start()
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertTrue(plots[0].state.outline_line_color, '#444444')
+        self.assertEqual(plots[0].state.outline_line_color, '#444444')
