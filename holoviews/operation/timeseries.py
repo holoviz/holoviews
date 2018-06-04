@@ -49,7 +49,7 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            rolled = df.apply(self.p.function)
+            rolled = df.apply(self.p.function, raw=True)
         else:
             if self.p.function is np.mean:
                 rolled = df.mean()
