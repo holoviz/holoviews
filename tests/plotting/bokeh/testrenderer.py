@@ -13,6 +13,7 @@ from holoviews.element.comparison import ComparisonTestCase
 try:
     from bokeh.io import curdoc
     from holoviews.plotting.bokeh import BokehRenderer
+    from bokeh.themes.theme import Theme
 except:
     pass
 
@@ -85,3 +86,17 @@ class BokehRendererTest(ComparisonTestCase):
         png, info = renderer(curve)
         self.assertIsInstance(png, bytes)
         self.assertEqual(info['file-ext'], 'png')
+
+    def test_theme_rendering(self):
+        theme = Theme(
+            json={
+        'attrs' : {
+            'Figure' : {
+                'outline_line_color': '#444444'}
+        }
+            })
+        renderer = BokehRenderer.instance(fig='png')
+        renderer.theme = theme
+        plot = renderer.get_plot(Curve([]))
+        renderer(plot)
+        self.assertEqual(plot.state.outline_line_color, '#444444')
