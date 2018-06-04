@@ -4,6 +4,7 @@ import pandas as pd
 
 from ..core import Operation, Element
 from ..core.data import PandasInterface
+from ..core.util import pandas_version
 from ..element import Scatter
 
 
@@ -49,7 +50,8 @@ class rolling(Operation,RollingBase):
         df = df.set_index(xdim).rolling(win_type=self.p.window_type,
                                         **self._roll_kwargs())
         if self.p.window_type is None:
-            rolled = df.apply(self.p.function)
+            kwargs = {'raw': True} if pandas_version >= '0.23.0' else {}
+            rolled = df.apply(self.p.function, **kwargs)
         else:
             if self.p.function is np.mean:
                 rolled = df.mean()
