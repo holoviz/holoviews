@@ -3,7 +3,7 @@ from nose.plugins.attrib import attr
 import numpy as np
 
 from holoviews.core import Dimension, DynamicMap
-from holoviews.element import Curve, Image
+from holoviews.element import Curve, Image, Scatter, Labels
 from holoviews.streams import Stream
 
 from .testplot import TestBokehPlot, bokeh_renderer
@@ -182,3 +182,11 @@ class TestOverlayPlot(TestBokehPlot):
         overlay = Curve([]) * Curve([]).options(projection='custom')
         plot = bokeh_renderer.get_plot(overlay)
         self.assertEqual([p.projection for p in plot.subplots.values()], ['custom', 'custom'])
+
+    def test_overlay_gridstyle_applies(self):
+        grid_style = {'grid_line_color': 'blue', 'grid_line_width': 2}
+        overlay = (Scatter([(10,10)]).options(gridstyle=grid_style, show_grid=True, size=20)
+                   * Labels([(10, 10, 'A')]))
+        plot = bokeh_renderer.get_plot(overlay)
+        self.assertEqual(plot.state.xgrid[0].grid_line_color, 'blue')
+        self.assertEqual(plot.state.xgrid[0].grid_line_width, 2)
