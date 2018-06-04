@@ -156,27 +156,3 @@ class TestBokehServerRun(ComparisonTestCase):
         url = "http://localhost:" + str(server.port) + "/"
         pull_session(session_id='Test', url=url, io_loop=server.io_loop)
         self.assertTrue(len(launched)==1)
-
-    def test_server_theming(self):
-        obj = Curve([])
-        theme = Theme(
-            json={
-        'attrs' : {
-            'Figure' : {
-                'outline_line_color': '#444444'}
-        }
-            })
-        bokeh_renderer.theme = theme
-        plots = []
-        def modify_doc(doc):
-            bokeh_renderer(obj, doc=doc)
-            plot = bokeh_renderer.last_plot
-            plots.append(plot)
-            server.stop()
-        handler = FunctionHandler(modify_doc)
-        app = Application(handler)
-        server = Server({'/': app}, port=0)
-        server.start()
-        url = "http://localhost:" + str(server.port) + "/"
-        pull_session(session_id='Test', url=url, io_loop=server.io_loop)
-        self.assertEqual(plots[0].state.outline_line_color, '#444444')
