@@ -73,3 +73,47 @@ class TestCombinedDisplay(TestDisplayHooks):
                       'application/vnd.holoviews_exec.v0+json',
                       'image/svg+xml', 'image/png'}
         self.assertEqual(set(data), mime_types)
+
+
+class TestBokehTheming(TestDisplayHooks):
+
+    def setUp(self):
+        self.format = ['png']
+        super(TestBokehTheming, self).setUp()
+
+    def testfail(self):
+        from bokeh.themes.theme import Theme
+        from holoviews.ipython import display
+        import holoviews as hv
+        hv.extension('bokeh')
+
+        theme = Theme(
+            json={
+        'attrs' : {
+            'Figure' : {
+                'background_fill_color': '#2F2F2F',
+                'border_fill_color': '#2F2F2F',
+                'outline_line_color': '#444444',
+            },
+            'Grid': {
+                'grid_line_dash': [6, 4],
+                'grid_line_alpha': .3,
+            },
+
+            'Axis': {
+                'major_label_text_color': 'white',
+                'axis_label_text_color': 'white',
+                'major_tick_line_color': 'white',
+                'minor_tick_line_color': 'white',
+                'axis_line_color': "white"
+            }
+          }
+        })
+
+        renderer = hv.renderer('bokeh')
+        renderer.theme = theme
+
+        curve = hv.Curve([1,2,3])
+        display(curve)
+        self.assertEqual(renderer.last_plot.state.outline_line_color, '#444444')
+
