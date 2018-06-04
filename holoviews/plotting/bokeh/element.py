@@ -26,7 +26,7 @@ from ..util import dynamic_update, process_cmap
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
-                   decode_bytes)
+                   decode_bytes, bokeh_version)
 
 property_prefixes = ['selection', 'nonselection', 'muted', 'hover']
 
@@ -523,13 +523,18 @@ class ElementPlot(BokehPlot, GenericElementPlot):
                 self.warning("Logarithmic axis range encountered value less than or equal to zero, "
                              "please supply explicit lower-bound to override default of %.3f." % low)
             updates = {}
+            reset_supported = bokeh_version > '0.12.16'
             if util.isfinite(low):
                 updates['start'] = (axis_range.start, low)
+                if reset_supported:
+                    updates['reset_start'] = updates['start']
             if util.isfinite(high):
                 updates['end'] = (axis_range.end, high)
+                if reset_supported:
+                    updates['reset_end'] = updates['end']
             for k, (old, new) in updates.items():
                 axis_range.update(**{k:new})
-                if streaming:
+                if streaming and not k.startswith('reset_'):
                     axis_range.trigger(k, old, new)
         elif isinstance(axis_range, FactorRange):
             factors = list(decode_bytes(factors))
