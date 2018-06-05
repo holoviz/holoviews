@@ -530,7 +530,7 @@ function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_di
 if (window.HoloViews === undefined) {
   window.HoloViews = {}
   window.PyViz = window.HoloViews
-} else if ((window.HoloViews !== undefined) && (window.PyViz === undefined)) {
+} else if (window.PyViz === undefined) {
   window.PyViz = window.HoloViews
 }
 
