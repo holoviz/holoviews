@@ -177,8 +177,9 @@ class QuadMeshPlot(ColorbarPlot):
                 data[x] = np.array(xc)
                 data[y] = np.array(yc)
         else:
-            xc, yc = (element.interface.coords(element, x, edges=True),
-                      element.interface.coords(element, y, edges=True))
+            xc, yc = (element.interface.coords(element, x, edges=True, ordered=True),
+                      element.interface.coords(element, y, edges=True, ordered=True))
+            
             x0, y0 = cartesian_product([xc[:-1], yc[:-1]], copy=True)
             x1, y1 = cartesian_product([xc[1:], yc[1:]], copy=True)
             zvals = zdata.flatten() if self.invert_axes else zdata.T.flatten()
