@@ -526,10 +526,14 @@ function init_dropdown(id, plot_id, dim, vals, value, next_vals, labels, next_di
   });
 }
 
+
 if (window.HoloViews === undefined) {
   window.HoloViews = {}
   window.PyViz = window.HoloViews
+} else if (window.PyViz === undefined) {
+  window.PyViz = window.HoloViews
 }
+
 
 var _namespace = {
   init_slider: init_slider,
