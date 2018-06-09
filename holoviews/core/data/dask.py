@@ -11,6 +11,7 @@ import dask.dataframe as dd
 from dask.dataframe import DataFrame
 
 from .. import util
+from ..dimension import Dimension
 from ..element import Element
 from ..ndmapping import NdMapping, item_check, OrderedDict
 from .interface import Interface
@@ -44,10 +45,18 @@ class DaskInterface(PandasInterface):
 
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
-        data, kdims, vdims = PandasInterface.init(eltype, data, kdims, vdims)
+        data, dims, extra = PandasInterface.init(eltype, data, kdims, vdims)
         if not isinstance(data, DataFrame):
             data = dd.from_pandas(data, npartitions=cls.default_partitions, sort=False)
-        return data, kdims, vdims
+        kdims = [d.name if isinstance(d, Dimension) else d for d in dims['kdims']]
+
+        # If a key dimension can be found, speculatively reset index
+        # to work around lacking dask support for MultiIndex
+        if any(d for d in kdims if d not in data.columns):
+            reset = data.reset_index()
+            if all(d for d in kdims if d in reset.columns):
+                data = reset
+        return data, dims, extra
 
     @classmethod
     def shape(cls, dataset):
