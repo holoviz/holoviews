@@ -1,7 +1,7 @@
 import numpy as np
 
 from ..boundingregion import BoundingBox
-from ..dimension import Dimension
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import  NdMapping, item_check
 from ..sheetcoords import Slice, SheetCoordinateSystem
@@ -28,8 +28,7 @@ class ImageInterface(GridInterface):
             vdims = eltype.vdims
 
         kwargs = {}
-        dimensions = [d.name if isinstance(d, Dimension) else
-                      d for d in kdims + vdims]
+        dimensions = [dimension_name(d) for d in kdims + vdims]
         if isinstance(data, tuple):
             data = dict(zip(dimensions, data))
         if isinstance(data, dict):
@@ -277,7 +276,7 @@ class ImageInterface(GridInterface):
 
     @classmethod
     def aggregate(cls, dataset, kdims, function, **kwargs):
-        kdims = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+        kdims = [dimension_name(kd) for kd in kdims]
         axes = tuple(dataset.ndims-dataset.get_dimension_index(kdim)-1
                      for kdim in dataset.kdims if kdim not in kdims)
 

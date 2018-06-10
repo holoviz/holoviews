@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from .interface import Interface, DataError
-from ..dimension import Dimension
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check
@@ -64,7 +64,7 @@ class PandasInterface(Interface):
 
             # Handle reset of index if kdims reference index by name
             for kd in kdims:
-                if isinstance(kd, Dimension): kd = kd.name
+                kd = dimension_name(kd)
                 if kd in data.columns:
                     continue
                 if any(kd == ('index' if name is None else name)
@@ -76,13 +76,13 @@ class PandasInterface(Interface):
                                 "must be strings not integers.", cls)
 
             if kdims:
-                kdim = kdims[0].name if isinstance(kdims[0], Dimension) else kdims[0]
+                kdim = dimension_name(kdims[0])
                 if eltype._auto_indexable_1d and ncols == 1 and kdim not in data.columns:
                     data = data.copy()
                     data.insert(0, kdim, np.arange(len(data)))
 
             for d in kdims+vdims:
-                if isinstance(d, Dimension): d = d.name
+                d = dimension_name(d)
                 if len([c for c in data.columns if c == d]) > 1:
                     raise DataError('Dimensions may not reference duplicated DataFrame '
                                     'columns (found duplicate %r columns). If you want to plot '
@@ -93,8 +93,7 @@ class PandasInterface(Interface):
             # Then use defined data type
             kdims = kdims if kdims else kdim_param.default
             vdims = vdims if vdims else vdim_param.default
-            columns = [d.name if isinstance(d, Dimension) else d
-                       for d in kdims+vdims]
+            columns = [dimension_name(d) for d in kdims+vdims]
 
             if isinstance(data, dict) and all(c in data for c in columns):
                 data = cyODict(((d, data[d]) for d in columns))

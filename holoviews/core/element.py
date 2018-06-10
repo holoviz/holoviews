@@ -3,7 +3,7 @@ import numpy as np
 
 import param
 
-from .dimension import Dimension, Dimensioned, ViewableElement
+from .dimension import Dimension, Dimensioned, ViewableElement, as_dimension
 from .layout import Composable, Layout, NdLayout
 from .ndmapping import OrderedDict, NdMapping
 from .overlay import Overlayable, NdOverlay, CompositeOverlay
@@ -396,7 +396,7 @@ class Collator(NdMapping):
         if isinstance(item, self.merge_type):
             new_item = item.clone(cdims=constant_keys)
             for dim, val in dim_vals:
-                dim = dim if isinstance(dim, Dimension) else Dimension(dim)
+                dim = as_dimension(dim)
                 if dim not in new_item.kdims:
                     new_item = new_item.add_dimension(dim, 0, val)
         elif isinstance(item, self._nest_order[self.merge_type]):

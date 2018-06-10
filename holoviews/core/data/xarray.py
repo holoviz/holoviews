@@ -12,7 +12,7 @@ except ImportError:
     dask = None
 
 from .. import util
-from ..dimension import Dimension
+from ..dimension import Dimension, as_dimension, dimension_name
 from ..ndmapping import NdMapping, item_check, sorted_context
 from ..element import Element
 from .grid import GridInterface
@@ -99,16 +99,13 @@ class XArrayInterface(GridInterface):
                 kdims = kdim_param.default
             if vdims is None:
                 vdims = vdim_param.default
-            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
-                     for kd in kdims]
-            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd)
-                     for vd in vdims]
+            kdims = [as_dimension(kd) for kd in kdims]
+            vdims = [as_dimension(vd) for vd in vdims]
             if isinstance(data, tuple):
                 data = {d.name: vals for d, vals in zip(kdims + vdims, data)}
             elif isinstance(data, list) and data == []:
                 ndims = len(kdims)
-                dimensions = [d.name if isinstance(d, Dimension) else
-                              d for d in kdims + vdims]
+                dimensions = [d.name for d in kdims + vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
             if not isinstance(data, dict):
@@ -137,8 +134,8 @@ class XArrayInterface(GridInterface):
                         if c not in kdims and set(data[c].dims) == set(virtual_dims):
                             kdims.append(c)
                 kdims = [retrieve_unit_and_label(kd) for kd in kdims]
-            vdims = [vd if isinstance(vd, Dimension) else Dimension(vd) for vd in vdims]
-            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd) for kd in kdims]
+            vdims = [as_dimension(vd) for vd in vdims]
+            kdims = [as_dimension(kd) for kd in kdims]
 
         not_found = []
         for d in kdims:
@@ -458,7 +455,7 @@ class XArrayInterface(GridInterface):
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
         if not vdim:
             raise Exception("Cannot add key dimension to a dense representation.")
-        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        dim = dimension_name(dimension)
         coords = {d.name: cls.coords(dataset, d.name) for d in dataset.kdims}
         arr = xr.DataArray(values, coords=coords, name=dim,
                            dims=tuple(d.name for d in dataset.kdims[::-1]))

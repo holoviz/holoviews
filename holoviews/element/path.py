@@ -14,8 +14,9 @@ each collection of paths.
 import numpy as np
 
 import param
-from ..core import Dimension, Element2D, Dataset
+from ..core import Element2D, Dataset
 from ..core.data import MultiInterface
+from ..core.dimension import Dimension, as_dimension
 from ..core.util import disable_constant
 
 
@@ -150,8 +151,7 @@ class Contours(Path):
         super(Contours, self).__init__(data, kdims=kdims, **params)
         if params.get('level') is not None:
             with disable_constant(self):
-                self.vdims = [d if isinstance(d, Dimension) else Dimension(d)
-                              for d in vdims]
+                self.vdims = [as_dimension(d) for d in vdims]
         else:
             all_scalar = all(self.interface.isscalar(self, vdim) for vdim in self.vdims)
             if not all_scalar:

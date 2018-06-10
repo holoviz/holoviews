@@ -6,7 +6,7 @@ except ImportError:
 import numpy as np
 
 from .interface import Interface, DataError
-from ..dimension import Dimension
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..ndmapping import NdMapping, item_check
 from .. import util
@@ -29,8 +29,7 @@ class ArrayInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        dimensions = [d.name if isinstance(d, Dimension) else
-                      d for d in kdims + vdims]
+        dimensions = [dimension_name(d) for d in kdims + vdims]
         if ((isinstance(data, dict) or util.is_dataframe(data)) and
             all(d in data for d in dimensions)):
             dataset = [d if isinstance(d, np.ndarray) else np.asarray(data[d]) for d in dimensions]

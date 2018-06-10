@@ -7,7 +7,7 @@ except ImportError:
 import numpy as np
 
 from .interface import Interface, DataError
-from ..dimension import Dimension
+from ..dimension import Dimension, dimension_name
 from ..element import Element
 from ..dimension import OrderedDict as cyODict
 from ..ndmapping import NdMapping, item_check
@@ -40,8 +40,7 @@ class DictInterface(Interface):
         if vdims is None:
             vdims = eltype.vdims
 
-        dimensions = [d.name if isinstance(d, Dimension) else
-                      d for d in kdims + vdims]
+        dimensions = [dimension_name(d) for d in kdims + vdims]
         if isinstance(data, tuple):
             data = {d: v for d, v in zip(dimensions, data)}
         elif util.is_dataframe(data) and all(d in data for d in dimensions):
@@ -170,7 +169,7 @@ class DictInterface(Interface):
 
     @classmethod
     def add_dimension(cls, dataset, dimension, dim_pos, values, vdim):
-        dim = dimension.name if isinstance(dimension, Dimension) else dimension
+        dim = dimension_name(dimension)
         data = list(dataset.data.items())
         data.insert(dim_pos, (dim, values))
         return OrderedDict(data)

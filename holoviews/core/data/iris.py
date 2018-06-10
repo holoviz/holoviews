@@ -13,7 +13,7 @@ import numpy as np
 
 from .interface import Interface, DataError
 from .grid import GridInterface
-from ..dimension import Dimension
+from ..dimension import Dimension, as_dimension
 from ..element import Element
 from ..ndmapping import (NdMapping, item_check, sorted_context)
 from ..spaces import HoloMap
@@ -74,26 +74,24 @@ class CubeInterface(GridInterface):
     @classmethod
     def init(cls, eltype, data, kdims, vdims):
         if kdims:
-            kdim_names = [kd.name if isinstance(kd, Dimension) else kd for kd in kdims]
+            kdims = [as_dimension(kd) for kd in kdims]
+            kdim_names = [kd.name for kd in kdims]
         else:
             kdims = eltype.kdims
             kdim_names = [kd.name for kd in eltype.kdims]
-
 
         if not isinstance(data, iris.cube.Cube):
             if vdims is None:
                 vdims = eltype.vdims
             ndims = len(kdim_names)
-            kdims = [kd if isinstance(kd, Dimension) else Dimension(kd)
-                     for kd in kdims]
-            vdim = vdims[0] if isinstance(vdims[0], Dimension) else Dimension(vdims[0])
+            vdim = as_dimension(vdims[0])
+            vdims = [vdim]
             if isinstance(data, tuple):
                 value_array = data[-1]
                 data = {d: vals for d, vals in zip(kdim_names + [vdim.name], data)}
             elif isinstance(data, list) and data == []:
                 ndims = len(kdims)
-                dimensions = [d.name if isinstance(d, Dimension) else
-                              d for d in kdims + vdims]
+                dimensions = [d.name for d in kdims+vdims]
                 data = {d: np.array([]) for d in dimensions[:ndims]}
                 data.update({d: np.empty((0,) * ndims) for d in dimensions[ndims:]})
 
@@ -113,7 +111,7 @@ class CubeInterface(GridInterface):
         if kdims:
             coords = []
             for kd in kdims:
-                coord = data.coords(kd.name if isinstance(kd, Dimension) else kd)
+                coord = data.coords(kd.name)
                 if len(coord) == 0:
                     raise ValueError('Key dimension %s not found in '
                                      'Iris cube.' % kd)

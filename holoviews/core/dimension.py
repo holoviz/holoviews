@@ -41,6 +41,38 @@ def param_aliases(d):
     return d
 
 
+def as_dimension(dimension):
+    """
+    Converts tuple, dict and basestring types to Dimension and leaves
+    Dimension types untouched.
+    """
+    if isinstance(dimension, Dimension):
+        return dimension
+    elif isinstance(dimension, (tuple, dict, basestring)):
+        return Dimension(dimension)
+    else:
+        raise ValueError('%s type could not be interpreted as Dimension. '
+                         'Dimensions must be declared as a string, tuple, '
+                         'dictionary or Dimension type.')
+
+def dimension_name(dimension):
+    """
+    Looks up the dimension name on a Dimension or Dimension-like object.
+    """
+    if isinstance(dimension, Dimension):
+        return dimension.name
+    elif isinstance(dimension, basestring):
+        return dimension
+    elif isinstance(dimension, tuple):
+        return dimension[0]
+    elif isinstance(dimension, dict):
+        return dimension['name']
+    else:
+        raise ValueError('%s type could not be interpreted as Dimension. '
+                         'Dimensions must be declared as a string, tuple, '
+                         'dictionary or Dimension type.')
+
+
 def process_dimensions(kdims, vdims):
     """
     Processes kdims and vdims specifications into a dictionary
@@ -62,7 +94,7 @@ def process_dimensions(kdims, vdims):
                 raise ValueError('Dimensions must be defined as a tuple, '
                                  'string, dictionary or Dimension instance, '
                                  'found a %s type.' % type(dim).__name__)
-        dimensions[group] = [d if isinstance(d, Dimension) else Dimension(d) for d in dims]
+        dimensions[group] = [as_dimension(d) for d in dims]
     return dimensions
 
 
@@ -920,8 +952,6 @@ class Dimensioned(LabelledData):
                             'and Dimension instances, cannot lookup '
                             'Dimensions using %s type.' % type(dimension).__name__)
         all_dims = self.dimensions()
-        if isinstance(dimension, Dimension):
-            dimension = dimension.name
         if isinstance(dimension, int):
             if 0 <= dimension < len(all_dims):
                 return all_dims[dimension]
@@ -929,6 +959,7 @@ class Dimensioned(LabelledData):
                 raise KeyError("Dimension %r not found" % dimension)
             else:
                 return default
+        dimension = dimension_name(dimension)
         name_map = {dim.name: dim for dim in all_dims}
         name_map.update({dim.label: dim for dim in all_dims})
         name_map.update({dimension_sanitizer(dim.name): dim for dim in all_dims})
@@ -942,13 +973,13 @@ class Dimensioned(LabelledData):
         """
         Returns the index of the requested dimension.
         """
-        if isinstance(dim, Dimension): dim = dim.name
         if isinstance(dim, int):
             if (dim < (self.ndims + len(self.vdims)) or
                 dim < len(self.dimensions())):
                 return dim
             else:
                 return IndexError('Dimension index out of bounds')
+        dim = dimension_name(dim)
         try:
             dimensions = self.kdims+self.vdims
             return [i for i, d in enumerate(dimensions) if d == dim][0]
