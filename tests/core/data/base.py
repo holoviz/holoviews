@@ -1081,3 +1081,8 @@ class GriddedInterfaceTests(object):
         agg = ds.aggregate('x', np.mean, np.std)
         example = Dataset((range(5), array.mean(axis=0), array.std(axis=0)), 'x', ['z', 'z_std'])
         self.assertEqual(agg, example)
+
+    def test_reindex_2d_grid_to_1d(self):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.dataset_grid):
+            ds = self.dataset_grid.reindex(kdims=['x'])
+        self.assertEqual(ds, Dataset(self.dataset_grid.columns(), 'x', 'z'))
