@@ -96,7 +96,6 @@ class HomogeneousColumnTests(object):
     # all interfaces.
 
     def test_dataset_array_init_hm(self):
-        "Tests support for arrays (homogeneous)"
         dataset = Dataset(np.column_stack([self.xs, self.xs_2]),
                           kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
@@ -106,7 +105,7 @@ class HomogeneousColumnTests(object):
         if pd is None:
             raise SkipTest("Pandas not available")
         dataset = Dataset(pd.DataFrame({'x':self.xs, 'x2':self.xs_2}),
-                          kdims=['x'], vdims=[ 'x2'])
+                          kdims=['x'], vdims=['x2'])
         self.assertTrue(isinstance(dataset.data, self.data_type))
 
     def test_dataset_dataframe_init_hm_alias(self):
