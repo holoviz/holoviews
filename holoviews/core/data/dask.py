@@ -8,7 +8,7 @@ except ImportError:
 import numpy as np
 import pandas as pd
 import dask.dataframe as dd
-from dask.dataframe import DataFrame
+from dask.dataframe import DataFrame, Series
 
 from .. import util
 from ..dimension import Dimension
@@ -37,7 +37,7 @@ class DaskInterface(PandasInterface):
        some functions applied with aggregate and reduce will not work.
     """
 
-    types = (DataFrame,)
+    types = (DataFrame, Series)
 
     datatype = 'dask'
 
