@@ -423,8 +423,9 @@ class aggregate(AggregationOperation):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         (x0, x1), (y0, y1) = x_range, y_range
+        bounds = (x0, y0, x1, y1)
         params = dict(get_param_values(element), kdims=[x, y],
-                      datatype=['xarray'], bounds=(x0, y0, x1, y1))
+                      datatype=['xarray'], bounds=bounds)
 
         if x is None or y is None:
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
@@ -433,7 +434,7 @@ class aggregate(AggregationOperation):
         elif not len(data):
             xarray = xr.DataArray(np.full((height, width), np.NaN, dtype=np.float32),
                                   dims=[y.name, x.name], coords={x.name: xs, y.name: ys})
-            return self.p.element_type(xarray, **bounds)
+            return self.p.element_type(xarray, **params)
 
         cvs = ds.Canvas(plot_width=width, plot_height=height,
                         x_range=x_range, y_range=y_range)

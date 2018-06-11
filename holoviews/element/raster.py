@@ -279,6 +279,11 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         l, b, r, t = bounds.lbrt()
         xdensity = xdensity if xdensity else compute_density(l, r, dim1, self._time_unit)
         ydensity = ydensity if ydensity else compute_density(b, t, dim2, self._time_unit)
+        if not np.isfinite(xdensity) or not np.isfinite(ydensity):
+            raise ValueError('Density along Image axes could not be determined. '
+                             'If the data contains only one coordinate along the '
+                             'x- or y-axis ensure you declare the bounds and/or '
+                             'density.')
         SheetCoordinateSystem.__init__(self, bounds, xdensity, ydensity)
         self._validate(data_bounds, supplied_bounds)
 
