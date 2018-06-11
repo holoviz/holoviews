@@ -327,14 +327,20 @@ class Dataset(Element):
         Create a new object with a re-ordered set of dimensions.  Allows
         converting key dimensions to value dimensions and vice versa.
         """
+        gridded = self.interface.gridded
+        scalars = []
+        if gridded:
+            coords = [(d, self.interface.coords(self, d)) for d in self.kdims]
+            scalars = [d for d, vs in coords if len(vs) == 1]
+
         if kdims is None:
             # If no key dimensions are defined and interface is gridded
             # drop all scalar key dimensions
-            gridded = self.interface.gridded
             key_dims = [d for d in self.kdims if (not vdims or d not in vdims)
-                        and not (gridded and len(self.dimension_values(d, expanded=False)) == 1)]
+                        and not d in scalars]
         else:
             key_dims = [self.get_dimension(k, strict=True) for k in kdims]
+        dropped = [d for d in self.kdims if not d in key_dims and not d in scalars]
 
         new_type = None
         if vdims is None:
@@ -344,8 +350,12 @@ class Dataset(Element):
             new_type = self._vdim_reductions.get(len(val_dims), type(self))
 
         data = self.interface.reindex(self, key_dims, val_dims)
+        datatype = self.datatype
+        if gridded and dropped:
+            interfaces = [dt for dt in datatype if dt in self.interface.interfaces]
+            datatype = [dt for dt in datatype if not self.interface.interfaces[dt].gridded]
         return self.clone(data, kdims=key_dims, vdims=val_dims,
-                          new_type=new_type)
+                          new_type=new_type, datatype=datatype)
 
 
     def __getitem__(self, slices):
