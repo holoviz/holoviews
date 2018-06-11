@@ -22,7 +22,7 @@ datatypes = ['dictionary', 'grid']
 try:
     import pandas as pd # noqa (Availability import)
     from .pandas import PandasInterface
-    datatypes = ['dataframe', 'dictionary', 'grid', 'ndelement', 'array']
+    datatypes = ['dataframe', 'dictionary', 'grid', 'array']
     DFColumns = PandasInterface
 except ImportError:
     pd = None
