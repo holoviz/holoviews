@@ -844,7 +844,7 @@ def color_intervals(colors, levels, clip=None, N=255):
         raise ValueError('The number of colors in the colormap '
                          'must match the intervals defined in the '
                          'color_levels, expected %d colors found %d.'
-                         % (ncolors, len(cmap)))
+                         % (N, len(colors)))
     intervals = np.diff(levels)
     cmin, cmax = min(levels), max(levels)
     interval = cmax-cmin
