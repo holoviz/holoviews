@@ -22,7 +22,7 @@ from ...core.options import abbreviated_exception, SkipRendering
 from ...core import util
 from ...streams import Buffer
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap
+from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import BokehPlot, TOOLS
 from .util import (mpl_to_bokeh, get_tab_title,  py2js_tickformatter,
                    rgba_tuple, recursive_model_update, glyph_order,
@@ -986,8 +986,9 @@ class ColorbarPlot(ElementPlot):
                                       'opts': {'location': 'bottom_right',
                                                'orientation': 'horizontal'}}}
 
-    color_levels = param.Integer(default=None, doc="""
-        Number of discrete colors to use when colormapping.""")
+    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+        Number of discrete colors to use when colormapping or a set of color
+        intervals defining the range of values to map each color to.""")
 
     colorbar = param.Boolean(default=False, doc="""
         Whether to display a colorbar.""")
@@ -1079,7 +1080,18 @@ class ColorbarPlot(ElementPlot):
         if isinstance(cmap, dict) and factors:
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
         else:
-            palette = process_cmap(cmap, self.color_levels or ncolors, categorical=ncolors is not None)
+            if isinstance(self.color_levels, int):
+                ncolors = self.color_levels
+            elif isinstance(self.color_levels, list):
+                ncolors = len(self.color_levels) - 1
+                if isinstance(cmap, list) and len(cmap) != ncolors:
+                    raise ValueError('The number of colors in the colormap '
+                                     'must match the intervals defined in the '
+                                     'color_levels, expected %d colors found %d.'
+                                     % (ncolors, len(cmap)))
+            palette = process_cmap(cmap, ncolors, categorical=ncolors is not None)
+            if isinstance(self.color_levels, list):
+                palette = color_intervals(palette, self.color_levels, clip=(low, high))
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
 
         cmapper = self.handles.get(name)

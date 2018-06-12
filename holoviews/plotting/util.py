@@ -836,6 +836,29 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     return palette
 
 
+def color_intervals(colors, levels, clip=None, N=255):
+    """
+    Maps a set of intervals to colors given a fixed color range.
+    """
+    if len(colors) != len(levels)-1:
+        raise ValueError('The number of colors in the colormap '
+                         'must match the intervals defined in the '
+                         'color_levels, expected %d colors found %d.'
+                         % (ncolors, len(cmap)))
+    intervals = np.diff(levels)
+    cmin, cmax = min(levels), max(levels)
+    interval = cmax-cmin
+    cmap = []
+    for intv, c in zip(intervals, colors):
+        cmap += [c]*int(N*(intv/interval))
+    if clip is not None:
+        clmin, clmax = clip
+        lidx = int(N*((clmin-cmin)/interval))
+        uidx = int(N*((cmax-clmax)/interval))
+        cmap = cmap[lidx:N-uidx]
+    return cmap
+
+
 def dim_axis_label(dimensions, separator=', '):
     """
     Returns an axis label for one or more dimensions.
