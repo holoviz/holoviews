@@ -168,7 +168,7 @@ class BokehRenderer(Renderer):
 
 
     @bothmethod
-    def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None):
+    def app(self_or_cls, plot, show=False, new_window=False, websocket_origin=None, port=0):
         """
         Creates a bokeh app from a HoloViews object or plot. By
         default simply attaches the plot to bokeh's curdoc and returns
@@ -197,6 +197,12 @@ class BokehRenderer(Renderer):
         elif self_or_cls.notebook_context and not new_window:
             # If in notebook, show=True and no new window requested
             # display app inline
+            if isinstance(websocket_origin, list):
+                if len(websocket_origin) > 1:
+                    raise ValueError('In the notebook only a single websocket origin '
+                                     'may be defined, which must match the URL of the '
+                                     'notebook server.')
+                websocket_origin = websocket_origin[0]
             opts = dict(notebook_url=websocket_origin) if websocket_origin else {}
             return bkshow(app, **opts)
 
@@ -204,9 +210,11 @@ class BokehRenderer(Renderer):
         # start server and open in new browser tab
         from tornado.ioloop import IOLoop
         loop = IOLoop.current()
-        opts = dict(allow_websocket_origin=[websocket_origin]) if websocket_origin else {}
+        if websocket_origin and not isinstance(websocket_origin, list):
+            websocket_origin = [websocket_origin]
+        opts = dict(allow_websocket_origin=websocket_origin) if websocket_origin else {}
         opts['io_loop'] = loop
-        server = Server({'/': app}, port=0, **opts)
+        server = Server({'/': app}, port=port, **opts)
         def show_callback():
             server.show('/')
         server.io_loop.add_callback(show_callback)
