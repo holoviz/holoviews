@@ -248,6 +248,12 @@ class GridInterfaceTests(GriddedInterfaceTests, HomogeneousColumnTests, Interfac
         ds = Dataset((self.grid_xs, self.grid_zs[0]), 'x', 'z')
         self.assertEqual(reindexed, ds)
 
+    def test_reindex_2d_grid_to_1d(self):
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], self.dataset_grid):
+            ds = self.dataset_grid.reindex(kdims=['x'])
+        with DatatypeContext([self.datatype, 'dictionary' , 'dataframe'], Dataset):
+            self.assertEqual(ds, Dataset(self.dataset_grid.columns(), 'x', 'z'))
+
 
 
 class DaskGridInterfaceTests(GridInterfaceTests):
