@@ -13,7 +13,7 @@ from dask.dataframe import DataFrame, Series
 from .. import util
 from ..dimension import Dimension
 from ..element import Element
-from ..ndmapping import NdMapping, item_check, OrderedDict
+from ..ndmapping import NdMapping, item_check, OrderedDict, sorted_context
 from .interface import Interface
 from .pandas import PandasInterface
 
@@ -174,7 +174,7 @@ class DaskInterface(PandasInterface):
             group = group_type(groupby.get_group(coord), **group_kwargs)
             data.append((coord, group))
         if issubclass(container_type, NdMapping):
-            with item_check(False):
+            with item_check(False), sorted_context(False):
                 return container_type(data, kdims=index_dims)
         else:
             return container_type(data)
