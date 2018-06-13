@@ -330,7 +330,7 @@ class Dataset(Element):
         gridded = self.interface.gridded
         scalars = []
         if gridded:
-            coords = [(d, self.interface.coords(self, d)) for d in self.kdims]
+            coords = [(d, self.interface.coords(self, d.name)) for d in self.kdims]
             scalars = [d for d, vs in coords if len(vs) == 1]
 
         if kdims is None:
