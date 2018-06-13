@@ -28,7 +28,7 @@ from ..core import (Element, Empty, AdjointLayout, Overlay, Dimension,
                     HoloMap, Dimensioned, Layout, NdLayout, NdOverlay,
                     GridSpace, DynamicMap, GridMatrix, OrderedDict)
 from ..core.options import Options, Cycle
-from ..core.util import pd
+from ..core.util import pd, datetime_types, dt_to_int
 
 
 class ComparisonInterface(object):
@@ -265,8 +265,15 @@ class Comparison(ComparisonInterface):
 
     @classmethod
     def bounds_check(cls, el1, el2, msg=None):
+        lbrt1 = el1.bounds.lbrt()
+        lbrt2 = el2.bounds.lbrt()
         try:
-            cls.assert_array_almost_equal_fn(np.array(el1.bounds.lbrt()), np.array(el2.bounds.lbrt()))
+            for v1, v2 in zip(lbrt1, lbrt2):
+                if isinstance(v1, datetime_types):
+                    v1 = dt_to_int(v1)
+                if isinstance(v2, datetime_types):
+                    v2 = dt_to_int(v2)
+                cls.assert_array_almost_equal_fn(v1, v2)
         except AssertionError:
             raise cls.failureException("BoundingBoxes are mismatched: %s != %s."
                                        % (el1.bounds.lbrt(), el2.bounds.lbrt()))

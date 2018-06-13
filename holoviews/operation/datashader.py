@@ -423,6 +423,10 @@ class aggregate(AggregationOperation):
         (x_range, y_range), (xs, ys), (width, height), (xtype, ytype) = self._get_sampling(element, x, y)
 
         (x0, x1), (y0, y1) = x_range, y_range
+        if xtype == 'datetime':
+            x0, x1 = (np.array([x0, x1])/10e5).astype('datetime64[us]')
+        if ytype == 'datetime':
+            y0, y1 = (np.array([y0, y1])/10e5).astype('datetime64[us]')
         bounds = (x0, y0, x1, y1)
         params = dict(get_param_values(element), kdims=[x, y],
                       datatype=['xarray'], bounds=bounds)

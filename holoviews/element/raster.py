@@ -327,8 +327,15 @@ class Image(Dataset, Raster, SheetCoordinateSystem):
         else:
             bounds = data_bounds
 
-        if not all(np.isclose(r, c, rtol=self.rtol) for r, c in zip(bounds, self.bounds.lbrt())
-                   if util.isfinite(r) and not isinstance(r, util.datetime_types)):
+        not_close = False
+        for r, c in zip(bounds, self.bounds.lbrt()):
+            if isinstance(r, datetime_types):
+                r = util.dt_to_int(r)
+            if isinstance(c, datetime_types):
+                c = util.dt_to_int(c)
+            if util.isfinite(r) and not np.isclose(r, c, rtol=self.rtol):
+                not_close = True
+        if not_close:
             raise ValueError('Supplied Image bounds do not match the coordinates defined '
                              'in the data. Bounds only have to be declared if no coordinates '
                              'are supplied, otherwise they must match the data. To change '
