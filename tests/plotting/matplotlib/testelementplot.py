@@ -1,7 +1,7 @@
 import numpy as np
 
 from holoviews.core.spaces import DynamicMap
-from holoviews.element import Image, Curve
+from holoviews.element import Image, Curve, Scatter
 from holoviews.streams import Stream
 
 from .testplot import TestMPLPlot, mpl_renderer
@@ -54,6 +54,11 @@ class TestColorbarPlot(TestMPLPlot):
         img = Image(np.array([[0, 1], [2, 3]])).options(clipping_colors={'min': 'red', 'max': 'blue'})
         plot = mpl_renderer.get_plot(img)
         cmap = plot.handles['artist'].cmap
-        print(dir(cmap))
         self.assertEqual(cmap._rgba_under, (1.0, 0, 0, 1))
         self.assertEqual(cmap._rgba_over, (0, 0, 1.0, 1))
+
+    def test_colorbar_label(self):
+        scatter = Scatter(np.random.rand(100, 3), vdims=["y", "c"]).options(color_index=2, colorbar=True)
+        plot = mpl_renderer.get_plot(scatter)
+        cbar_ax = plot.handles['cax']
+        self.assertEqual(cbar_ax.get_ylabel(), 'c')

@@ -539,7 +539,8 @@ class ColorbarPlot(ElementPlot):
     def _finalize_artist(self, element):
         artist = self.handles.get('artist', None)
         if artist and self.colorbar:
-            self._draw_colorbar()
+            color_dim = element.get_dimension(getattr(self, 'color_index', None))
+            self._draw_colorbar(color_dim)
 
 
     def _draw_colorbar(self, dim=None, redraw=True):
