@@ -352,7 +352,6 @@ class Dataset(Element):
         data = self.interface.reindex(self, key_dims, val_dims)
         datatype = self.datatype
         if gridded and dropped:
-            interfaces = [dt for dt in datatype if dt in self.interface.interfaces]
             datatype = [dt for dt in datatype if not self.interface.interfaces[dt].gridded]
         return self.clone(data, kdims=key_dims, vdims=val_dims,
                           new_type=new_type, datatype=datatype)
