@@ -1,4 +1,4 @@
-from __future__ import unicode_literals, absolute_import
+from __future__ import unicode_literals, absolute_import, division
 
 from collections import defaultdict, namedtuple
 
@@ -834,6 +834,29 @@ def process_cmap(cmap, ncolors=None, provider=None, categorical=False):
     if ncolors and len(palette) != ncolors:
         return [palette[i%len(palette)] for i in range(ncolors)]
     return palette
+
+
+def color_intervals(colors, levels, clip=None, N=255):
+    """
+    Maps a set of intervals to colors given a fixed color range.
+    """
+    if len(colors) != len(levels)-1:
+        raise ValueError('The number of colors in the colormap '
+                         'must match the intervals defined in the '
+                         'color_levels, expected %d colors found %d.'
+                         % (N, len(colors)))
+    intervals = np.diff(levels)
+    cmin, cmax = min(levels), max(levels)
+    interval = cmax-cmin
+    cmap = []
+    for intv, c in zip(intervals, colors):
+        cmap += [c]*int(round(N*(intv/interval)))
+    if clip is not None:
+        clmin, clmax = clip
+        lidx = int(round(N*((clmin-cmin)/interval)))
+        uidx = int(round(N*((cmax-clmax)/interval)))
+        cmap = cmap[lidx:N-uidx]
+    return cmap
 
 
 def dim_axis_label(dimensions, separator=', '):

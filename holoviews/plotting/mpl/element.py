@@ -12,7 +12,7 @@ from ...core import (OrderedDict, NdOverlay, DynamicMap,
                      CompositeOverlay, Element3D, Element)
 from ...core.options import abbreviated_exception
 from ..plot import GenericElementPlot, GenericOverlayPlot
-from ..util import dynamic_update, process_cmap
+from ..util import dynamic_update, process_cmap, color_intervals
 from .plot import MPLPlot, mpl_rc_context
 from .util import wrap_formatter
 from distutils.version import LooseVersion
@@ -479,8 +479,9 @@ class ColorbarPlot(ElementPlot):
     colorbar = param.Boolean(default=False, doc="""
         Whether to draw a colorbar.""")
 
-    color_levels = param.Integer(default=None, doc="""
-        Number of discrete colors to use when colormapping.""")
+    color_levels = param.ClassSelector(default=None, class_=(int, list), doc="""
+        Number of discrete colors to use when colormapping or a set of color
+        intervals defining the range of values to map each color to.""")
 
     clipping_colors = param.Dict(default={}, doc="""
         Dictionary to specify colors for clipped values, allows
@@ -629,9 +630,18 @@ class ColorbarPlot(ElementPlot):
         opts[prefix+'vmin'] = clim[0]
         opts[prefix+'vmax'] = clim[1]
 
-        # Check whether the colorbar should indicate clipping
+        cmap = opts.get(prefix+'cmap', 'viridis')
         if values.dtype.kind not in 'OSUM':
-            ncolors = self.color_levels
+            ncolors = None
+            if isinstance(self.color_levels, int):
+                ncolors = self.color_levels
+            elif isinstance(self.color_levels, list):
+                ncolors = len(self.color_levels) - 1
+                if isinstance(cmap, list) and len(cmap) != ncolors:
+                    raise ValueError('The number of colors in the colormap '
+                                     'must match the intervals defined in the '
+                                     'color_levels, expected %d colors found %d.'
+                                     % (ncolors, len(cmap)))
             try:
                 el_min, el_max = np.nanmin(values), np.nanmax(values)
             except ValueError:
@@ -649,7 +659,6 @@ class ColorbarPlot(ElementPlot):
             self._cbar_extend = 'max'
 
         # Define special out-of-range colors on colormap
-        cmap = opts.get(prefix+'cmap', 'viridis')
         colors = {}
         for k, val in self.clipping_colors.items():
             if val == 'transparent':
@@ -672,6 +681,8 @@ class ColorbarPlot(ElementPlot):
                            for f in factors]
             else:
                 palette = process_cmap(cmap, ncolors, categorical=categorical)
+                if isinstance(self.color_levels, list):
+                    palette = color_intervals(palette, self.color_levels, clip=(vmin, vmax))
             cmap = mpl_colors.ListedColormap(palette)
         if 'max' in colors: cmap.set_over(**colors['max'])
         if 'min' in colors: cmap.set_under(**colors['min'])
