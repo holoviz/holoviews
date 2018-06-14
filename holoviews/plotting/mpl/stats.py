@@ -1,6 +1,7 @@
 import param
 import numpy as np
 
+from ...core.ndmapping import sorted_context
 from .chart import AreaPlot, ChartPlot
 from .path import PolygonPlot
 from .plot import AdjoinedPlot
@@ -64,7 +65,8 @@ class BoxPlot(ChartPlot):
 
 
     def get_data(self, element, ranges, style):
-        groups = element.groupby(element.kdims)
+        with sorted_context(False):
+            groups = element.groupby(element.kdims)
 
         data, labels = [], []
 
@@ -173,7 +175,8 @@ class ViolinPlot(BoxPlot):
         return artists
 
     def get_data(self, element, ranges, style):
-        groups = element.groupby(element.kdims)
+        with sorted_context(False):
+            groups = element.groupby(element.kdims)
 
         data, labels, colors = [], [], []
         elstyle = self.lookup_options(element, 'style')
