@@ -7,6 +7,7 @@ import numpy as np
 from bokeh.models import FactorRange, Circle, VBar, HBar
 
 from ...core.dimension import Dimension
+from ...core.ndmapping import sorted_context
 from ...core.util import (basestring, dimension_sanitizer, wrap_tuple,
                           unique_iterator)
 from ...operation.stats import univariate_kde
@@ -121,7 +122,8 @@ class BoxWhiskerPlot(CompositeElementPlot, ColorbarPlot, LegendPlot):
 
     def get_data(self, element, ranges, style):
         if element.kdims:
-            groups = element.groupby(element.kdims).data
+            with sorted_context(False):
+                groups = element.groupby(element.kdims).data
         else:
             groups = dict([(element.label, element)])
         vdim = dimension_sanitizer(element.vdims[0].name)
@@ -364,7 +366,8 @@ class ViolinPlot(BoxWhiskerPlot):
 
     def get_data(self, element, ranges, style):
         if element.kdims:
-            groups = element.groupby(element.kdims).data
+            with sorted_context(False):
+                groups = element.groupby(element.kdims).data
         else:
             groups = dict([((element.label,), element)])
 
