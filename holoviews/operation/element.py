@@ -708,12 +708,14 @@ class interpolate_curve(Operation):
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
         x, y = element.dimension_values(0), element.dimension_values(1)
-        is_datetime = x.dtype.kind == 'M' or isinstance(x[0], datetime_types)
+        dtype = x.dtype
+        is_datetime = dtype.kind == 'M' or isinstance(x[0], datetime_types)
         if is_datetime:
-            x = x.astype('datetime64[ns]').astype('int64') * 1000.
+            dt_type = dtype if dtype.kind == 'M' else 'datetime64[ns]'
+            x = x.astype(dt_type).astype('int64')
         xs, ys = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), y.astype('f'))
         if is_datetime:
-            xs = (xs/10e5).astype('datetime64[us]')
+            xs = xs.astype(dt_type)
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
         return element.clone((xs, ys.astype(y.dtype))+dvals)
 
