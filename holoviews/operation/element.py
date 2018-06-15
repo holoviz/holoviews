@@ -680,25 +680,17 @@ class interpolate_curve(Operation):
         steps[0, 1::2] = steps[0, 0:-2:2]
         steps[1:, 0::2] = y
         steps[1:, 1::2] = steps[1:, 2::2]
-        return steps
+        return steps[0, :], steps[1, :]
 
     @classmethod
     def pts_to_midstep(cls, x, y):
         steps = np.zeros((2, 2 * len(x)))
-        x = np.asanyarray(x)
-
-        # For this to work for dates as well as numbers this must be in the form
-        # t1 + (t2 - t1)/2 = t1 + time_delta
-        # and NOT
-        # (t1 + t2)/2 = date + date Addind dates is an error.
-        # This is somewhat fragile and might be replaced with a funciton call to 
-        # contain the calculation.
         steps[0, 1:-1:2] = steps[0, 2::2] = x[:-1] + (x[1:] - x[:-1])/2
 
         steps[0, 0], steps[0, -1] = x[0], x[-1]
         steps[1:, 0::2] = y
         steps[1:, 1::2] = steps[1:, 0::2]
-        return steps
+        return steps[0, :], steps[1, :]
 
     @classmethod
     def pts_to_poststep(cls, x, y):
@@ -707,7 +699,7 @@ class interpolate_curve(Operation):
         steps[0, 1::2] = steps[0, 2::2]
         steps[1:, 0::2] = y
         steps[1:, 1::2] = steps[1:, 0:-2:2]
-        return steps
+        return steps[0, :], steps[1, :]
 
     def _process_layer(self, element, key=None):
         INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
@@ -716,11 +708,14 @@ class interpolate_curve(Operation):
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
         x, y = element.dimension_values(0), element.dimension_values(1)
-        if 'f' in (x.dtype.kind, y.dtype.kind):
-            x, y = x.astype('float'), y.astype('float')
-        array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
+        is_datetime = x.dtype.kind == 'M' or isinstance(x[0], datetime_types)
+        if is_datetime:
+            x = x.astype('datetime64[ns]').astype('int64') * 1000.
+        xs, ys = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), y.astype('f'))
+        if is_datetime:
+            xs = (xs/10e5).astype('datetime64[us]')
         dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
-        return element.clone((array[0, :].astype(x.dtype), array[1, :].astype(y.dtype))+dvals)
+        return element.clone((xs, ys.astype(y.dtype))+dvals)
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
