@@ -192,14 +192,54 @@ class OperationTests(ComparisonTestCase):
         curve = Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
         self.assertEqual(interpolated, curve)
 
+    def test_interpolate_datetime_curve_pre(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-pre')
+        dates_interp = np.array([
+            '2016-12-31T23:58:50.602104000', '2016-12-31T23:58:50.602104000',
+            '2017-01-01T23:59:03.419954000', '2017-01-01T23:59:03.419954000',
+            '2017-01-02T23:59:16.237805000', '2017-01-02T23:59:16.237805000',
+            '2017-01-03T23:59:29.055655000'
+        ], dtype='datetime64[ns]')
+        print(interpolated.data.dtypes)
+        curve = Curve((dates_interp, [0, 1, 1, 2, 2, 3, 3]))
+        self.assertEqual(interpolated, curve)
+
     def test_interpolate_curve_mid(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-mid')
         curve = Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
         self.assertEqual(interpolated, curve)
 
+    def test_interpolate_datetime_curve_mid(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-mid')
+        dates_interp = np.array([
+            '2016-12-31T23:58:50.602104000', '2017-01-01T11:58:57.011029000',
+            '2017-01-01T11:58:57.011029000', '2017-01-02T11:59:09.828879000',
+            '2017-01-02T11:59:09.828879000', '2017-01-03T11:59:22.646730000',
+            '2017-01-03T11:59:22.646730000', '2017-01-03T23:59:29.055655000'
+        ], dtype='datetime64[ns]')
+        curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3, 3]))
+        self.assertEqual(interpolated, curve)
+
     def test_interpolate_curve_post(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-post')
         curve = Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
+        self.assertEqual(interpolated, curve)
+
+    def test_interpolate_datetime_curve_post(self):
+        dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
+        values = [0, 1, 2, 3]
+        interpolated = interpolate_curve(Curve((dates, values)), interpolation='steps-post')
+        dates_interp = np.array([
+            '2016-12-31T23:58:50.602104000', '2017-01-01T23:59:03.419954000',
+            '2017-01-01T23:59:03.419954000', '2017-01-02T23:59:16.237805000',
+            '2017-01-02T23:59:16.237805000', '2017-01-03T23:59:29.055655000',
+            '2017-01-03T23:59:29.055655000'
+        ], dtype='datetime64[ns]')
+        curve = Curve((dates_interp, [0, 0, 1, 1, 2, 2, 3]))
         self.assertEqual(interpolated, curve)
 
     def test_stack_area_overlay(self):
