@@ -1229,8 +1229,8 @@ class DynamicMap(HoloMap):
         """
         if not len(self):
             raise ValueError('Cannot split DynamicMap before it has been initialized')
-        elif not issubclass(self.type, Overlay):
-            return None, self
+        elif not issubclass(self.type, CompositeOverlay):
+            return [None], self
 
         from ..util import Dynamic
         keys = list(self.last.keys())
