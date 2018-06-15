@@ -251,6 +251,10 @@ class Comparison(ComparisonInterface):
     @classmethod
     def compare_arrays(cls, arr1, arr2, msg='Arrays'):
         try:
+            if arr1.dtype.kind == 'M':
+                arr1 = arr1.astype('datetime64[ns]').astype('int64')
+            if arr2.dtype.kind == 'M':
+                arr2 = arr2.astype('datetime64[ns]').astype('int64')
             assert_array_equal(arr1, arr2)
         except:
             try:
