@@ -1080,6 +1080,7 @@ class ColorbarPlot(ElementPlot):
         if isinstance(cmap, dict) and factors:
             palette = [cmap.get(f, nan_colors.get('NaN', self._default_nan)) for f in factors]
         else:
+            categorical = ncolors is not None
             if isinstance(self.color_levels, int):
                 ncolors = self.color_levels
             elif isinstance(self.color_levels, list):
@@ -1089,7 +1090,7 @@ class ColorbarPlot(ElementPlot):
                                      'must match the intervals defined in the '
                                      'color_levels, expected %d colors found %d.'
                                      % (ncolors, len(cmap)))
-            palette = process_cmap(cmap, ncolors, categorical=ncolors is not None)
+            palette = process_cmap(cmap, ncolors, categorical=categorical)
             if isinstance(self.color_levels, list):
                 palette = color_intervals(palette, self.color_levels, clip=(low, high))
         colormapper, opts = self._get_cmapper_opts(low, high, factors, nan_colors)
