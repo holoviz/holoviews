@@ -495,9 +495,6 @@ class histogram(Operation):
     groupby = param.ClassSelector(default=None, class_=(basestring, Dimension), doc="""
       Defines a dimension to group the Histogram returning an NdOverlay of Histograms.""")
 
-    individually = param.Boolean(default=True, doc="""
-      Specifies whether the histogram will be rescaled for each Element in a UniformNdMapping.""")
-
     log = param.Boolean(default=False, doc="""
       Whether to use base 10 logarithmic samples for the bin edges.""")
 
