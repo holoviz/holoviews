@@ -1402,7 +1402,8 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
         panels = []
         for key, subplot in self.subplots.items():
             frame = None
-            if self.tabs: subplot.overlaid = False
+            if self.tabs:
+                subplot.overlaid = False
             child = subplot.initialize_plot(ranges, plot, plots)
             if isinstance(element, CompositeOverlay):
                 frame = element.get(key, None)
@@ -1489,9 +1490,11 @@ class OverlayPlot(GenericOverlayPlot, LegendPlot):
             subplot.update_frame(key, ranges, element=el)
 
         if not self.batched and isinstance(self.hmap, DynamicMap) and items:
-            init_kwargs = {'plot': self.handles['plot'], 'plots': self.handles['plots']}
+            init_kwargs = {'plots': self.handles['plots']}
+            if not self.tabs:
+                init_kwargs['plot'] = self.handles['plot']
             self._create_dynamic_subplots(key, items, ranges, **init_kwargs)
-            if not self.overlaid:
+            if not self.overlaid and not self.tabs:
                 self._process_legend()
 
         if element and not self.overlaid and not self.tabs and not self.batched:
