@@ -9,8 +9,9 @@ try:
 except:
     raise SkipTest("Could not import xarray, skipping XArrayInterface tests.")
 
-from holoviews.core.data import Dataset
+from holoviews.core.data import Dataset, concat
 from holoviews.core.dimension import Dimension
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Image, RGB, HSV
 
 from .testimageinterface import (
@@ -108,6 +109,18 @@ class XArrayInterfaceTests(GridInterfaceTests):
         dataset = xr.Dataset({'value': darray}, coords=coords)
         ds = Dataset(dataset)
         self.assertEqual(ds.kdims, ['b', 'c', 'a'])
+
+    def test_concat_grid_3d_shape_mismatch(self):
+        arr1 = np.random.rand(3, 2)
+        arr2 = np.random.rand(2, 3)
+        ds1 = Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
+        ds2 = Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
+        hmap = HoloMap({1: ds1, 2: ds2})
+        arr = np.full((3, 3, 2), np.NaN)
+        arr[:, :2, 0] = arr1
+        arr[:2, :, 1] = arr2
+        ds = Dataset(([1, 2], [0, 1, 2], [1, 2, 3], arr), ['Default', 'x', 'y'], 'z')
+        self.assertEqual(concat(hmap), ds)
 
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"

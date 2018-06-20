@@ -6,11 +6,13 @@ import numpy as np
 try:
     import iris
     from iris.tests.stock import lat_lon_cube
+    from iris.exceptions import MergeError
 except ImportError:
     raise SkipTest("Could not import iris, skipping IrisInterface tests.")
 
-from holoviews.core.data import Dataset
+from holoviews.core.data import Dataset, concat
 from holoviews.core.data.iris import coord_to_dimension
+from holoviews.core.spaces import HoloMap
 from holoviews.element import Image
 
 from .testimageinterface import Image_ImageInterfaceTests
@@ -29,6 +31,15 @@ class IrisInterfaceTests(GridInterfaceTests):
     def init_data(self):
         self.cube = lat_lon_cube()
         self.epsilon = 0.01
+
+    def test_concat_grid_3d_shape_mismatch(self):
+        arr1 = np.random.rand(3, 2)
+        arr2 = np.random.rand(2, 3)
+        ds1 = Dataset(([0, 1], [1, 2, 3], arr1), ['x', 'y'], 'z')
+        ds2 = Dataset(([0, 1, 2], [1, 2], arr2), ['x', 'y'], 'z')
+        hmap = HoloMap({1: ds1, 2: ds2})
+        with self.assertRaises(MergeError):
+            concat(hmap)
 
     def test_dataset_array_init_hm(self):
         "Tests support for arrays (homogeneous)"
