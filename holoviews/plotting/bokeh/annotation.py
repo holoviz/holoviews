@@ -25,7 +25,7 @@ from .util import date_to_integer
 
 class TextPlot(ElementPlot):
 
-    style_opts = text_properties+['color']
+    style_opts = text_properties+['color', 'angle']
     _plot_methods = dict(single='text', batched='text')
 
     def get_data(self, element, ranges, style):
@@ -47,6 +47,7 @@ class TextPlot(ElementPlot):
             style['text_font_size'] = '%dPt' % element.fontsize
         if 'color' in style:
             style['text_color'] = style.pop('color')
+        style['angle'] = np.deg2rad(style.get('angle', element.rotation))
         return (data, mapping, style)
 
     def get_batched_data(self, element, ranges=None):
@@ -80,13 +81,15 @@ class LabelsPlot(ColorbarPlot):
     yoffset = param.Number(default=None, doc="""
       Amount of offset to apply to labels along x-axis.""")
 
-    style_opts = text_properties + ['cmap']
+    style_opts = text_properties + ['cmap', 'angle']
 
     _plot_methods = dict(single='text', batched='text')
     _batched_style_opts = text_properties
 
     def get_data(self, element, ranges, style):
         style = self.style[self.cyclic_index]
+        style['angle'] = np.deg2rad(style.get('angle', 0))
+
         dims = element.dimensions()
         coords = (1, 0) if self.invert_axes else (0, 1)
         xdim, ydim, tdim = (dimension_sanitizer(dims[i].name) for i in coords+(2,))
