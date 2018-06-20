@@ -25,7 +25,7 @@ requirements:
     - pyviz_comms
     - numpy
     - matplotlib>=2.1
-    - bokeh >=0.12.15,<=0.12.16
+    - bokeh >=0.12.15,<=0.13.0
     - jupyter
     - notebook
     - ipython >=5.4.0
