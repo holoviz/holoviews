@@ -192,6 +192,12 @@ class OperationTests(ComparisonTestCase):
         curve = Curve([(0, 0), (0, 0.5), (1, 0.5), (1, 1), (2, 1)])
         self.assertEqual(interpolated, curve)
 
+    def test_interpolate_curve_pre_with_values(self):
+        interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
+                                         interpolation='steps-pre')
+        curve = Curve([(0, 0, 'A'), (0, 0.5, 'B'), (1, 0.5, 'B'), (1, 1, 'C'), (2, 1, 'C')], vdims=['y', 'z'])
+        self.assertEqual(interpolated, curve)
+
     def test_interpolate_datetime_curve_pre(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
         values = [0, 1, 2, 3]
@@ -210,6 +216,14 @@ class OperationTests(ComparisonTestCase):
         curve = Curve([(0, 0), (0.5, 0), (0.5, 0.5), (1.5, 0.5), (1.5, 1), (2, 1)])
         self.assertEqual(interpolated, curve)
 
+    def test_interpolate_curve_mid_with_values(self):
+        interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
+                                         interpolation='steps-mid')
+        curve = Curve([(0, 0, 'A'), (0.5, 0, 'A'), (0.5, 0.5, 'B'),
+                       (1.5, 0.5, 'B'), (1.5, 1, 'C'), (2, 1, 'C')],
+                      vdims=['y', 'z'])
+        self.assertEqual(interpolated, curve)
+
     def test_interpolate_datetime_curve_mid(self):
         dates = np.array([dt.datetime(2017, 1, i) for i in range(1, 5)]).astype('M')
         values = [0, 1, 2, 3]
@@ -226,6 +240,14 @@ class OperationTests(ComparisonTestCase):
     def test_interpolate_curve_post(self):
         interpolated = interpolate_curve(Curve([0, 0.5, 1]), interpolation='steps-post')
         curve = Curve([(0, 0), (1, 0), (1, 0.5), (2, 0.5), (2, 1)])
+        self.assertEqual(interpolated, curve)
+
+    def test_interpolate_curve_post_with_values(self):
+        interpolated = interpolate_curve(Curve([(0, 0, 'A'), (1, 0.5, 'B'), (2, 1, 'C')], vdims=['y', 'z']),
+                                         interpolation='steps-post')
+        curve = Curve([(0, 0, 'A'), (1, 0, 'A'), (1, 0.5, 'B'),
+                       (2, 0.5, 'B'), (2, 1, 'C')],
+                      vdims=['y', 'z'])
         self.assertEqual(interpolated, curve)
 
     def test_interpolate_datetime_curve_post(self):
