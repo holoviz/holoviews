@@ -674,32 +674,52 @@ class interpolate_curve(Operation):
        Controls the transition point of the step along the x-axis.""")
 
     @classmethod
-    def pts_to_prestep(cls, x, y):
-        steps = np.zeros((2, 2 * len(x) - 1))
-        steps[0, 0::2] = x
-        steps[0, 1::2] = steps[0, 0:-2:2]
-        steps[1:, 0::2] = y
-        steps[1:, 1::2] = steps[1:, 2::2]
-        return steps
+    def pts_to_prestep(cls, x, values):
+        steps = np.zeros(2 * len(x) - 1)
+        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=v.dtype) for v in values)
+
+        steps[0::2] = x
+        steps[1::2] = steps[0:-2:2]
+
+        val_arrays = []
+        for v, s in zip(values, value_steps):
+            s[0::2] = v
+            s[1::2] = s[2::2]
+            val_arrays.append(s)
+
+        return steps, tuple(val_arrays)
 
     @classmethod
-    def pts_to_midstep(cls, x, y):
-        steps = np.zeros((2, 2 * len(x)))
-        x = np.asanyarray(x)
-        steps[0, 1:-1:2] = steps[0, 2::2] = (x[:-1] + x[1:]) / 2
-        steps[0, 0], steps[0, -1] = x[0], x[-1]
-        steps[1:, 0::2] = y
-        steps[1:, 1::2] = steps[1:, 0::2]
-        return steps
+    def pts_to_midstep(cls, x, values):
+        steps = np.zeros(2 * len(x))
+        value_steps = tuple(np.empty(2 * len(x), dtype=v.dtype) for v in values)
+
+        steps[1:-1:2] = steps[2::2] = x[:-1] + (x[1:] - x[:-1])/2
+        steps[0], steps[-1] = x[0], x[-1]
+
+        val_arrays = []
+        for v, s in zip(values, value_steps):
+            s[0::2] = v
+            s[1::2] = s[0::2]
+            val_arrays.append(s)
+
+        return steps, tuple(val_arrays)
 
     @classmethod
-    def pts_to_poststep(cls, x, y):
-        steps = np.zeros((2, 2 * len(x) - 1))
-        steps[0, 0::2] = x
-        steps[0, 1::2] = steps[0, 2::2]
-        steps[1:, 0::2] = y
-        steps[1:, 1::2] = steps[1:, 0:-2:2]
-        return steps
+    def pts_to_poststep(cls, x, values):
+        steps = np.zeros(2 * len(x) - 1)
+        value_steps = tuple(np.empty(2 * len(x) - 1, dtype=v.dtype) for v in values)
+
+        steps[0::2] = x
+        steps[1::2] = steps[2::2]
+
+        val_arrays = []
+        for v, s in zip(values, value_steps):
+            s[0::2] = v
+            s[1::2] = s[0:-2:2]
+            val_arrays.append(s)
+
+        return steps, tuple(val_arrays)
 
     def _process_layer(self, element, key=None):
         INTERPOLATE_FUNCS = {'steps-pre': self.pts_to_prestep,
@@ -707,12 +727,17 @@ class interpolate_curve(Operation):
                              'steps-post': self.pts_to_poststep}
         if self.p.interpolation not in INTERPOLATE_FUNCS:
             return element
-        x, y = element.dimension_values(0), element.dimension_values(1)
-        if 'f' in (x.dtype.kind, y.dtype.kind):
-            x, y = x.astype('float'), y.astype('float')
-        array = INTERPOLATE_FUNCS[self.p.interpolation](x, y)
-        dvals = tuple(element.dimension_values(d) for d in element.dimensions()[2:])
-        return element.clone((array[0, :].astype(x.dtype), array[1, :].astype(y.dtype))+dvals)
+        x = element.dimension_values(0)
+        dtype = x.dtype
+        is_datetime = dtype.kind == 'M' or isinstance(x[0], datetime_types)
+        if is_datetime:
+            dt_type = dtype if dtype.kind == 'M' else 'datetime64[ns]'
+            x = x.astype(dt_type).astype('int64')
+        dvals = tuple(element.dimension_values(d) for d in element.dimensions()[1:])
+        xs, dvals = INTERPOLATE_FUNCS[self.p.interpolation](x.astype('f'), dvals)
+        if is_datetime:
+            xs = xs.astype(dt_type)
+        return element.clone((xs,)+dvals)
 
     def _process(self, element, key=None):
         return element.map(self._process_layer, Element)
@@ -833,4 +858,3 @@ class gridmatrix(param.ParameterizedFunction):
                                   datatype=['dataframe', 'dictionary'])
             data[(d1.name, d2.name)] = el
         return data
-
