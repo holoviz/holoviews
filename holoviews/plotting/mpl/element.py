@@ -846,7 +846,7 @@ class OverlayPlot(LegendPlot, GenericOverlayPlot):
             range_obj = element
         else:
             range_obj = self.hmap
-        items = [] if element is None else element.items()
+        items = [] if element is None else list(element.data.items())
 
         if not empty:
             ranges = self.compute_ranges(range_obj, key, ranges)
